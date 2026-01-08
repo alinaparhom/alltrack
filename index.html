@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AllTrack — Mini App</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app">
+    <header class="hero">
+      <div class="hero__info">
+        <p class="hero__badge">AllTrack · Mini Apps</p>
+        <h1 class="hero__title">Контролируйте доставку и задачи в одном месте</h1>
+        <p class="hero__subtitle">Удобный, минималистичный и лёгкий инструмент для быстрой проверки статусов.</p>
+      </div>
+      <button class="hero__cta" type="button">Добавить отслеживание</button>
+    </header>
+
+    <section class="glass stats">
+      <div class="stats__item">
+        <span class="stats__label">Активные</span>
+        <strong class="stats__value">12</strong>
+      </div>
+      <div class="stats__item">
+        <span class="stats__label">На доставке</span>
+        <strong class="stats__value">4</strong>
+      </div>
+      <div class="stats__item">
+        <span class="stats__label">Завершены</span>
+        <strong class="stats__value">28</strong>
+      </div>
+    </section>
+
+    <section class="glass actions">
+      <button class="action" type="button">
+        <span class="action__icon">📦</span>
+        <div class="action__text">
+          <span class="action__title">Добавить посылку</span>
+          <span class="action__subtitle">Введите трек-номер</span>
+        </div>
+      </button>
+      <button class="action" type="button">
+        <span class="action__icon">✅</span>
+        <div class="action__text">
+          <span class="action__title">Создать задачу</span>
+          <span class="action__subtitle">Напомнить о статусе</span>
+        </div>
+      </button>
+      <button class="action" type="button">
+        <span class="action__icon">🔔</span>
+        <div class="action__text">
+          <span class="action__title">Уведомления</span>
+          <span class="action__subtitle">Настройте напоминания</span>
+        </div>
+      </button>
+    </section>
+
+    <section class="section">
+      <div class="section__header">
+        <h2>Последние треки</h2>
+        <button class="link" type="button">Смотреть все</button>
+      </div>
+      <div class="tracks">
+        <article class="glass track">
+          <div class="track__main">
+            <span class="track__status is-delivery">В пути</span>
+            <h3>ZA-204-5993</h3>
+            <p>Москва → Санкт-Петербург</p>
+          </div>
+          <div class="track__meta">
+            <span>ETA 2 дня</span>
+            <span>Обновлено 2 часа назад</span>
+          </div>
+        </article>
+        <article class="glass track">
+          <div class="track__main">
+            <span class="track__status is-waiting">Ожидание</span>
+            <h3>KS-511-4289</h3>
+            <p>Казань → Самара</p>
+          </div>
+          <div class="track__meta">
+            <span>ETA 5 дней</span>
+            <span>Обновлено вчера</span>
+          </div>
+        </article>
+        <article class="glass track">
+          <div class="track__main">
+            <span class="track__status is-ready">Доставлено</span>
+            <h3>PL-178-7710</h3>
+            <p>Екатеринбург → Пермь</p>
+          </div>
+          <div class="track__meta">
+            <span>Закрыто</span>
+            <span>Обновлено 4 дня назад</span>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="glass timeline">
+      <h2>Ближайшие шаги</h2>
+      <ul>
+        <li>
+          <strong>Сегодня, 15:30</strong>
+          <span>Проверить статус заказа ZA-204-5993</span>
+        </li>
+        <li>
+          <strong>Завтра, 10:00</strong>
+          <span>Созвон с курьером по заказу KS-511-4289</span>
+        </li>
+        <li>
+          <strong>19 июня, 09:00</strong>
+          <span>Сформировать отчёт по доставкам недели</span>
+        </li>
+      </ul>
+    </section>
+  </div>
+
+  <nav class="bottom-nav">
+    <button class="bottom-nav__item is-active" type="button">Главная</button>
+    <button class="bottom-nav__item" type="button">Треки</button>
+    <button class="bottom-nav__item" type="button">Задачи</button>
+    <button class="bottom-nav__item" type="button">Профиль</button>
+  </nav>
+
+  <script src="app.js"></script>
+</body>
+</html>

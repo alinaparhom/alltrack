@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>AllTrack — Mini App</title>
+  <title>AllTrack — учет МТЦ</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet" />
@@ -13,118 +13,145 @@
   <div class="app">
     <header class="hero">
       <div class="hero__info">
-        <p class="hero__badge">AllTrack · Mini Apps</p>
-        <h1 class="hero__title">Контролируйте доставку и задачи в одном месте</h1>
-        <p class="hero__subtitle">Удобный, минималистичный и лёгкий инструмент для быстрой проверки статусов.</p>
+        <p class="hero__badge">AllTrack · Mini App</p>
+        <h1 class="hero__title">Контроль МТЦ, ремонтов и передач в одном окне</h1>
+        <p class="hero__subtitle">Отмечайте наличие, перемещения между ответственными и статус ремонтов. Удобно на телефоне и в Telegram.</p>
       </div>
-      <button class="hero__cta" type="button">Добавить отслеживание</button>
+      <button class="hero__cta" type="button">Добавить актив</button>
     </header>
 
     <section class="glass stats">
       <div class="stats__item">
-        <span class="stats__label">Активные</span>
-        <strong class="stats__value">12</strong>
+        <span class="stats__label">В наличии</span>
+        <strong class="stats__value">124</strong>
       </div>
       <div class="stats__item">
-        <span class="stats__label">На доставке</span>
-        <strong class="stats__value">4</strong>
+        <span class="stats__label">В ремонте</span>
+        <strong class="stats__value">7</strong>
       </div>
       <div class="stats__item">
-        <span class="stats__label">Завершены</span>
-        <strong class="stats__value">28</strong>
+        <span class="stats__label">В пути</span>
+        <strong class="stats__value">15</strong>
       </div>
     </section>
 
     <section class="glass actions">
       <button class="action" type="button">
-        <span class="action__icon">📦</span>
+        <span class="action__icon">➕</span>
         <div class="action__text">
-          <span class="action__title">Добавить посылку</span>
-          <span class="action__subtitle">Введите трек-номер</span>
+          <span class="action__title">Добавить актив</span>
+          <span class="action__subtitle">Серийный номер и ответственный</span>
         </div>
       </button>
       <button class="action" type="button">
-        <span class="action__icon">✅</span>
+        <span class="action__icon">🔁</span>
         <div class="action__text">
-          <span class="action__title">Создать задачу</span>
-          <span class="action__subtitle">Напомнить о статусе</span>
+          <span class="action__title">Передать ответственность</span>
+          <span class="action__subtitle">Кому и где находится</span>
         </div>
       </button>
       <button class="action" type="button">
-        <span class="action__icon">🔔</span>
+        <span class="action__icon">⚠️</span>
         <div class="action__text">
-          <span class="action__title">Уведомления</span>
-          <span class="action__subtitle">Настройте напоминания</span>
+          <span class="action__title">Сообщить поломку</span>
+          <span class="action__subtitle">Опишите проблему и срочность</span>
+        </div>
+      </button>
+      <button class="action" type="button">
+        <span class="action__icon">🛠️</span>
+        <div class="action__text">
+          <span class="action__title">Запланировать ремонт</span>
+          <span class="action__subtitle">Назначьте сервис и дату</span>
         </div>
       </button>
     </section>
 
     <section class="section">
       <div class="section__header">
-        <h2>Последние треки</h2>
+        <h2>Активы под контролем</h2>
         <button class="link" type="button">Смотреть все</button>
       </div>
-      <div class="tracks">
-        <article class="glass track">
-          <div class="track__main">
-            <span class="track__status is-delivery">В пути</span>
-            <h3>ZA-204-5993</h3>
-            <p>Москва → Санкт-Петербург</p>
+      <div class="assets">
+        <article class="glass asset">
+          <div class="asset__main">
+            <span class="asset__status is-available">В наличии</span>
+            <h3>Сканер штрих‑кодов Zebra DS2208</h3>
+            <p>Ответственный: Илья Петров · Склад «Север»</p>
           </div>
-          <div class="track__meta">
-            <span>ETA 2 дня</span>
-            <span>Обновлено 2 часа назад</span>
-          </div>
-        </article>
-        <article class="glass track">
-          <div class="track__main">
-            <span class="track__status is-waiting">Ожидание</span>
-            <h3>KS-511-4289</h3>
-            <p>Казань → Самара</p>
-          </div>
-          <div class="track__meta">
-            <span>ETA 5 дней</span>
-            <span>Обновлено вчера</span>
+          <div class="asset__meta">
+            <span>Инв. № AT-00451</span>
+            <span>Проверка 2 дня назад</span>
           </div>
         </article>
-        <article class="glass track">
-          <div class="track__main">
-            <span class="track__status is-ready">Доставлено</span>
-            <h3>PL-178-7710</h3>
-            <p>Екатеринбург → Пермь</p>
+        <article class="glass asset">
+          <div class="asset__main">
+            <span class="asset__status is-transfer">В пути</span>
+            <h3>Ноутбук Lenovo ThinkPad E14</h3>
+            <p>Передача: Анна Смирнова → Кирилл Иванов</p>
           </div>
-          <div class="track__meta">
-            <span>Закрыто</span>
-            <span>Обновлено 4 дня назад</span>
+          <div class="asset__meta">
+            <span>Инв. № AT-00219</span>
+            <span>Ожидается сегодня</span>
+          </div>
+        </article>
+        <article class="glass asset">
+          <div class="asset__main">
+            <span class="asset__status is-repair">В ремонте</span>
+            <h3>Принтер HP LaserJet M404</h3>
+            <p>Сервис: FixLab · Ожидает запчасти</p>
+          </div>
+          <div class="asset__meta">
+            <span>Инв. № AT-00078</span>
+            <span>Срок 3 дня</span>
           </div>
         </article>
       </div>
     </section>
 
-    <section class="glass timeline">
-      <h2>Ближайшие шаги</h2>
+    <section class="glass list">
+      <div class="list__header">
+        <h2>Последние перемещения</h2>
+        <button class="link" type="button">История</button>
+      </div>
       <ul>
         <li>
-          <strong>Сегодня, 15:30</strong>
-          <span>Проверить статус заказа ZA-204-5993</span>
+          <strong>Сегодня, 11:40</strong>
+          <span>Монитор Dell P2422H передан Марии К. (офис «Центр»).</span>
         </li>
         <li>
-          <strong>Завтра, 10:00</strong>
-          <span>Созвон с курьером по заказу KS-511-4289</span>
+          <strong>Вчера, 17:20</strong>
+          <span>Комплект ключей №3 принят Иваном С. (склад «Юг»).</span>
         </li>
         <li>
-          <strong>19 июня, 09:00</strong>
-          <span>Сформировать отчёт по доставкам недели</span>
+          <strong>18 июня, 09:00</strong>
+          <span>Сканер Honeywell доставлен в сервис «РемСнаб».</span>
+        </li>
+      </ul>
+    </section>
+
+    <section class="glass list">
+      <div class="list__header">
+        <h2>Очередь ремонтов</h2>
+        <button class="link" type="button">Все заявки</button>
+      </div>
+      <ul>
+        <li>
+          <strong>Критично</strong>
+          <span>Генератор №AT-00911 — шум в двигателе, ожидание диагностики.</span>
+        </li>
+        <li>
+          <strong>Средний приоритет</strong>
+          <span>Сканер документов Epson — замена роликов, запчасти в пути.</span>
         </li>
       </ul>
     </section>
   </div>
 
   <nav class="bottom-nav">
-    <button class="bottom-nav__item is-active" type="button">Главная</button>
-    <button class="bottom-nav__item" type="button">Треки</button>
-    <button class="bottom-nav__item" type="button">Задачи</button>
-    <button class="bottom-nav__item" type="button">Профиль</button>
+    <button class="bottom-nav__item is-active" type="button">Обзор</button>
+    <button class="bottom-nav__item" type="button">Активы</button>
+    <button class="bottom-nav__item" type="button">Передачи</button>
+    <button class="bottom-nav__item" type="button">Сервис</button>
   </nav>
 
   <script src="app.js"></script>

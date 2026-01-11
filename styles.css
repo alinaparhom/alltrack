@@ -102,6 +102,13 @@ body {
   font-size: 18px;
 }
 
+.access__role {
+  margin: 0 0 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+
 .access__meta {
   margin: 0;
   font-size: 13px;
@@ -309,6 +316,22 @@ body {
 
 .access-overlay__icon {
   font-size: 32px;
+}
+
+.access-overlay--checking {
+  background: rgba(238, 243, 255, 0.6);
+  z-index: 9;
+}
+
+body.is-checking .app,
+body.is-checking .bottom-nav {
+  filter: blur(4px);
+  pointer-events: none;
+  user-select: none;
+}
+
+body:not(.is-checking) .access-overlay--checking {
+  display: none;
 }
 
 body.is-locked .app,

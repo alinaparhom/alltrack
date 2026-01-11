@@ -20,6 +20,15 @@
       <button class="hero__cta" type="button">Добавить актив</button>
     </header>
 
+    <section class="glass access" id="accessPanel" hidden>
+      <div class="access__content">
+        <p class="access__label">Доступ подтвержден</p>
+        <h2 class="access__name" id="accessName">—</h2>
+        <p class="access__meta" id="accessMeta">—</p>
+      </div>
+      <div class="access__badge" id="accessBadge">—</div>
+    </section>
+
     <section class="glass stats">
       <div class="stats__item">
         <span class="stats__label">В наличии</span>
@@ -145,6 +154,14 @@
         </li>
       </ul>
     </section>
+  </div>
+
+  <div class="access-overlay" id="accessOverlay" hidden>
+    <div class="glass access-overlay__card">
+      <span class="access-overlay__icon">🔒</span>
+      <h2>Доступ закрыт</h2>
+      <p id="accessOverlayText">Ваш ID не найден в списке прав. Обратитесь к супер‑администратору.</p>
+    </div>
   </div>
 
   <nav class="bottom-nav">

@@ -81,6 +81,44 @@ body {
   transform: scale(0.98);
 }
 
+.access {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 18px;
+}
+
+.access__label {
+  margin: 0;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.access__name {
+  margin: 6px 0 4px;
+  font-size: 18px;
+}
+
+.access__meta {
+  margin: 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.access__badge {
+  padding: 8px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  text-align: center;
+  min-width: 120px;
+}
+
 .glass {
   background: var(--glass);
   border: 1px solid var(--stroke);
@@ -249,6 +287,35 @@ body {
 .list span {
   font-size: 12px;
   color: var(--muted);
+}
+
+.access-overlay {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(238, 243, 255, 0.85);
+  backdrop-filter: blur(10px);
+  z-index: 10;
+}
+
+.access-overlay__card {
+  max-width: 420px;
+  text-align: center;
+  display: grid;
+  gap: 12px;
+}
+
+.access-overlay__icon {
+  font-size: 32px;
+}
+
+body.is-locked .app,
+body.is-locked .bottom-nav {
+  filter: blur(6px);
+  pointer-events: none;
+  user-select: none;
 }
 
 .bottom-nav {

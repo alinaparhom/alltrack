@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AllTrack — Контроль МТЦ</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f4f8ff;
+        --glass: rgba(255, 255, 255, 0.7);
+        --border: rgba(255, 255, 255, 0.9);
+        --text: #14213d;
+        --muted: #6a7a99;
+        --accent: #4c7dff;
+        --accent-soft: rgba(76, 125, 255, 0.12);
+        --success: #29c48c;
+        --warning: #ffb74d;
+        --danger: #ff6b6b;
+        --shadow: 0 18px 50px rgba(20, 33, 61, 0.12);
+        --radius: 22px;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+      }
+
+      body {
+        background: radial-gradient(circle at top, #ffffff 0%, #eef3ff 45%, #e7efff 100%);
+        color: var(--text);
+        min-height: 100vh;
+      }
+
+      .app {
+        max-width: 420px;
+        margin: 0 auto;
+        padding: 24px 20px 32px;
+      }
+
+      .header {
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+        margin-bottom: 24px;
+      }
+
+      .header__top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .brand__logo {
+        width: 44px;
+        height: 44px;
+        border-radius: 16px;
+        background: linear-gradient(135deg, #6ea8ff 0%, #9bd3ff 100%);
+        display: grid;
+        place-items: center;
+        color: white;
+        font-weight: 700;
+        box-shadow: 0 10px 25px rgba(76, 125, 255, 0.35);
+      }
+
+      .brand__text h1 {
+        font-size: 18px;
+        letter-spacing: 0.2px;
+      }
+
+      .brand__text span {
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      .pill {
+        background: var(--glass);
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        padding: 8px 14px;
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      .search {
+        background: var(--glass);
+        border-radius: var(--radius);
+        padding: 14px 16px;
+        border: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        box-shadow: var(--shadow);
+      }
+
+      .search input {
+        border: none;
+        background: transparent;
+        width: 100%;
+        font-size: 14px;
+        outline: none;
+        color: var(--text);
+      }
+
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 14px;
+        margin-bottom: 24px;
+      }
+
+      .card {
+        background: var(--glass);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 16px;
+        box-shadow: var(--shadow);
+      }
+
+      .card h3 {
+        font-size: 12px;
+        color: var(--muted);
+        margin-bottom: 10px;
+      }
+
+      .card strong {
+        font-size: 20px;
+      }
+
+      .card span {
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      .actions {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+        margin-bottom: 24px;
+      }
+
+      .action-btn {
+        background: white;
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        padding: 14px;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+        color: var(--text);
+        font-size: 13px;
+        box-shadow: var(--shadow);
+      }
+
+      .action-btn .icon {
+        width: 34px;
+        height: 34px;
+        border-radius: 12px;
+        display: grid;
+        place-items: center;
+        font-size: 16px;
+      }
+
+      .action-btn--primary .icon {
+        background: var(--accent-soft);
+        color: var(--accent);
+      }
+
+      .action-btn--success .icon {
+        background: rgba(41, 196, 140, 0.15);
+        color: var(--success);
+      }
+
+      .action-btn--warning .icon {
+        background: rgba(255, 183, 77, 0.2);
+        color: var(--warning);
+      }
+
+      .section {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        margin-bottom: 18px;
+      }
+
+      .section__header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .section__header h2 {
+        font-size: 16px;
+      }
+
+      .section__header a {
+        font-size: 12px;
+        color: var(--accent);
+        text-decoration: none;
+      }
+
+      .list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .list-item {
+        background: var(--glass);
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        padding: 14px 16px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        box-shadow: var(--shadow);
+      }
+
+      .list-item__title {
+        font-size: 14px;
+        font-weight: 600;
+      }
+
+      .list-item__meta {
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      .badge {
+        padding: 6px 10px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 600;
+      }
+
+      .badge--info {
+        background: var(--accent-soft);
+        color: var(--accent);
+      }
+
+      .badge--warn {
+        background: rgba(255, 183, 77, 0.2);
+        color: var(--warning);
+      }
+
+      .badge--danger {
+        background: rgba(255, 107, 107, 0.2);
+        color: var(--danger);
+      }
+
+      .footer {
+        margin-top: 24px;
+        text-align: center;
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      @media (max-width: 360px) {
+        .stats,
+        .actions {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="app">
+      <header class="header">
+        <div class="header__top">
+          <div class="brand">
+            <div class="brand__logo">AT</div>
+            <div class="brand__text">
+              <h1>AllTrack</h1>
+              <span>Контроль материально-технических ценностей</span>
+            </div>
+          </div>
+          <div class="pill">Сегодня: 12 операций</div>
+        </div>
+        <label class="search">
+          🔎
+          <input type="text" placeholder="Поиск по инвентарю, объектам, сотрудникам" />
+        </label>
+      </header>
+
+      <section class="stats">
+        <div class="card">
+          <h3>Активы на балансе</h3>
+          <strong>1 284</strong>
+          <span>+28 за неделю</span>
+        </div>
+        <div class="card">
+          <h3>На ремонте</h3>
+          <strong>16</strong>
+          <span>4 срочных</span>
+        </div>
+        <div class="card">
+          <h3>Перемещений</h3>
+          <strong>38</strong>
+          <span>за последние 7 дней</span>
+        </div>
+        <div class="card">
+          <h3>Списаний</h3>
+          <strong>3</strong>
+          <span>ожидают согласования</span>
+        </div>
+      </section>
+
+      <section class="actions">
+        <button class="action-btn action-btn--primary" type="button">
+          <span class="icon">➕</span>
+          Новое поступление
+        </button>
+        <button class="action-btn action-btn--success" type="button">
+          <span class="icon">🔁</span>
+          Перемещение
+        </button>
+        <button class="action-btn action-btn--warning" type="button">
+          <span class="icon">🛠️</span>
+          Ремонт / сервис
+        </button>
+        <button class="action-btn" type="button">
+          <span class="icon">📄</span>
+          Создать отчёт
+        </button>
+      </section>
+
+      <section class="section">
+        <div class="section__header">
+          <h2>Последние перемещения</h2>
+          <a href="#">Смотреть все</a>
+        </div>
+        <div class="list">
+          <div class="list-item">
+            <div>
+              <div class="list-item__title">Сканер Zebra DS2278</div>
+              <div class="list-item__meta">Склад → Магазин №12 · 2 часа назад</div>
+            </div>
+            <span class="badge badge--info">Доставка</span>
+          </div>
+          <div class="list-item">
+            <div>
+              <div class="list-item__title">Ноутбук Dell Latitude</div>
+              <div class="list-item__meta">Офис → Сервисный центр · вчера</div>
+            </div>
+            <span class="badge badge--warn">Диагностика</span>
+          </div>
+          <div class="list-item">
+            <div>
+              <div class="list-item__title">Паллетный принтер TSC</div>
+              <div class="list-item__meta">Склад → Зона отгрузки · 2 дня назад</div>
+            </div>
+            <span class="badge badge--info">Выдан</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section__header">
+          <h2>Ремонты и обслуживание</h2>
+          <a href="#">Контроль SLA</a>
+        </div>
+        <div class="list">
+          <div class="list-item">
+            <div>
+              <div class="list-item__title">Терминал Honeywell CT45</div>
+              <div class="list-item__meta">В работе 4 дня · Ответственный: Сервис</div>
+            </div>
+            <span class="badge badge--danger">Просрочка</span>
+          </div>
+          <div class="list-item">
+            <div>
+              <div class="list-item__title">Весы CAS AD-15</div>
+              <div class="list-item__meta">Ожидается диагностика · 1 день</div>
+            </div>
+            <span class="badge badge--warn">Ожидание</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section__header">
+          <h2>Инвентаризация</h2>
+          <a href="#">Запустить</a>
+        </div>
+        <div class="list">
+          <div class="list-item">
+            <div>
+              <div class="list-item__title">Филиал «Юг»</div>
+              <div class="list-item__meta">Старт 12 окт · 87% проверено</div>
+            </div>
+            <span class="badge badge--info">В процессе</span>
+          </div>
+          <div class="list-item">
+            <div>
+              <div class="list-item__title">Центральный склад</div>
+              <div class="list-item__meta">Запланировано на 18 окт</div>
+            </div>
+            <span class="badge badge--info">План</span>
+          </div>
+        </div>
+      </section>
+
+      <footer class="footer">Все данные обновляются в реальном времени через Telegram.</footer>
+    </main>
+  </body>
+</html>

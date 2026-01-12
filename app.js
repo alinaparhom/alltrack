@@ -165,6 +165,9 @@ const getUserNameValue = (user) => {
 };
 
 const getUserIdValue = (user) => {
+  if (typeof user === 'string' || typeof user === 'number') {
+    return user;
+  }
   if (!user || typeof user !== 'object') {
     return null;
   }

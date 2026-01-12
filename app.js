@@ -78,7 +78,18 @@ const getTelegramDisplayName = (tgUser) => {
   if (parts.length) {
     return parts.join(' ');
   }
+  if (tgUser.username) {
+    return `@${tgUser.username}`;
+  }
   return tgUser.first_name || '';
+};
+
+const getUserFullName = (user) => {
+  return user?.fullName || user?.full_name || user?.name || '';
+};
+
+const getUserRole = (user) => {
+  return user?.role || user?.position || user?.access || '';
 };
 
 const getInitials = (fullName = '') => {
@@ -117,10 +128,12 @@ const lockAccess = (message) => {
 };
 
 const unlockAccess = ({ user, organization, scope }) => {
+  const resolvedName = getUserFullName(user);
+  const resolvedRole = getUserRole(user);
   document.body.classList.remove('is-locked');
   document.body.classList.remove('is-checking');
   document.body.dataset.accessScope = scope;
-  document.body.dataset.userRole = user.role;
+  document.body.dataset.userRole = resolvedRole;
   if (accessOverlay) {
     accessOverlay.hidden = true;
   }
@@ -128,16 +141,16 @@ const unlockAccess = ({ user, organization, scope }) => {
     accessPanel.hidden = false;
   }
   if (accessName) {
-    accessName.textContent = getShortName(user.fullName);
+    accessName.textContent = getShortName(resolvedName);
   }
   if (accessRole) {
-    accessRole.textContent = `Роль: ${user.role}`;
+    accessRole.textContent = `Роль: ${resolvedRole || '—'}`;
   }
   if (accessMeta) {
     accessMeta.textContent = `Организация: ${organization}`;
   }
   if (accessAvatar) {
-    accessAvatar.textContent = getInitials(user.fullName);
+    accessAvatar.textContent = getInitials(resolvedName);
   }
   if (accessBadge) {
     accessBadge.textContent = scope === 'super' ? 'Супер‑админ' : organization;
@@ -162,7 +175,10 @@ const initAccess = async () => {
       lockAccess('Ваш ID не найден в списке прав. Обратитесь к супер‑администратору.');
       return;
     }
-    updateCheckingAccount({ fullName: access.user.fullName, role: access.user.role });
+    updateCheckingAccount({
+      fullName: getUserFullName(access.user),
+      role: getUserRole(access.user)
+    });
     unlockAccess(access);
   } catch (error) {
     lockAccess('Ошибка загрузки прав доступа. Проверьте файл access.json.');

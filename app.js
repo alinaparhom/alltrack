@@ -173,7 +173,19 @@ const isSuperAdminRole = (roleValue) => {
   );
 };
 
-const buildAccessResult = ({ user, organization, fallbackScope = 'organization' }) => {
+const buildAccessResult = ({
+  user,
+  organization,
+  fallbackScope = 'organization',
+  forceScope = null
+}) => {
+  if (forceScope) {
+    return {
+      user,
+      scope: forceScope,
+      organization
+    };
+  }
   const roleValue = getUserRoleValue(user);
   if (isSuperAdminRole(roleValue)) {
     return {
@@ -202,7 +214,8 @@ const findUserAccess = (userId, data) => {
     return buildAccessResult({
       user: superAdmin,
       organization: 'Все организации',
-      fallbackScope: 'organization'
+      fallbackScope: 'organization',
+      forceScope: 'super'
     });
   }
 

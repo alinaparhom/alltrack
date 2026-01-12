@@ -374,6 +374,7 @@ const waitForTelegramUser = async ({ timeoutMs = 4000, intervalMs = 150 } = {}) 
 const lockAccess = (message) => {
   document.body.classList.add('is-locked');
   document.body.classList.remove('is-checking');
+  document.body.classList.remove('is-super-admin');
   delete document.body.dataset.accessScope;
   delete document.body.dataset.userRole;
   if (accessOverlayText) {
@@ -392,6 +393,7 @@ const unlockAccess = ({ user, organization, scope, userId }) => {
     resolveAccountInfo({ user, scope });
   document.body.classList.remove('is-locked');
   document.body.classList.remove('is-checking');
+  document.body.classList.toggle('is-super-admin', scope === 'super');
   document.body.dataset.accessScope = scope;
   document.body.dataset.userRole = resolvedRole;
   if (accessOverlay) {

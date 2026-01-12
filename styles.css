@@ -25,6 +25,11 @@ body {
   padding-bottom: 84px;
 }
 
+body.is-super-admin .hero,
+body.is-super-admin .app__default {
+  display: none;
+}
+
 .app {
   display: flex;
   flex-direction: column;

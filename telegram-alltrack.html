@@ -837,15 +837,6 @@
         return combined || fallbackName || '';
       };
 
-      const resolveAccountInfo = ({ user, scope } = {}) => {
-        const fullName = getUserFullName(user, getTelegramDisplayName(getTelegramUser()));
-        const role = getUserRole(user) || (scope === 'super' ? 'Супер‑администратор' : '');
-        return {
-          fullName,
-          role
-        };
-      };
-
       const getTelegramDisplayName = (tgUser) => {
         if (!tgUser) {
           return '';
@@ -858,6 +849,15 @@
           return `@${tgUser.username}`;
         }
         return tgUser.first_name || '';
+      };
+
+      const resolveAccountInfo = ({ user, scope } = {}) => {
+        const fullName = getUserFullName(user, getTelegramDisplayName(getTelegramUser()));
+        const role = getUserRole(user) || (scope === 'super' ? 'Супер‑администратор' : '');
+        return {
+          fullName,
+          role
+        };
       };
 
       const getShortName = (fullName = '') => {

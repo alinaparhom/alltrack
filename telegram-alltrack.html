@@ -724,12 +724,19 @@
     </div>
 
     <script>
-      const tg = window.Telegram ? window.Telegram.WebApp : null;
+      const getTelegramWebApp = () => (window.Telegram ? window.Telegram.WebApp : null);
+      let telegramReady = false;
 
-      if (tg) {
-        tg.ready();
-        tg.expand();
-      }
+      const ensureTelegramReady = () => {
+        const tg = getTelegramWebApp();
+        if (tg && !telegramReady) {
+          tg.ready();
+          tg.expand();
+          telegramReady = true;
+        }
+      };
+
+      ensureTelegramReady();
 
       const accessOverlay = document.getElementById('accessOverlay');
       const accessOverlayText = document.getElementById('accessOverlayText');
@@ -872,6 +879,7 @@
       };
 
       const getTelegramUser = () => {
+        const tg = getTelegramWebApp();
         if (!tg) {
           return null;
         }
@@ -1027,6 +1035,7 @@
         const startedAt = Date.now();
         while (Date.now() - startedAt < timeoutMs) {
           await new Promise((resolve) => setTimeout(resolve, intervalMs));
+          ensureTelegramReady();
           if (getTelegramUser()) {
             return;
           }

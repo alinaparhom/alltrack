@@ -781,10 +781,22 @@
           user?.access ||
           user?.title ||
           user?.roles;
-        if (Array.isArray(roleValue)) {
-          return roleValue.filter(Boolean).join(', ');
-        }
-        return roleValue || '';
+        const normalizeRoleValue = (value) => {
+          if (!value) {
+            return '';
+          }
+          if (Array.isArray(value)) {
+            return value
+              .map((item) => normalizeRoleValue(item))
+              .filter(Boolean)
+              .join(', ');
+          }
+          if (typeof value === 'object') {
+            return normalizeRoleValue(value.name || value.title || value.role || value.label);
+          }
+          return String(value);
+        };
+        return normalizeRoleValue(roleValue);
       };
 
       const getUserFullName = (user, fallbackName = '') => {
@@ -792,8 +804,8 @@
         if (directName) {
           return directName;
         }
-        const lastName = user?.lastName || user?.last_name || user?.surname || '';
-        const firstName = user?.firstName || user?.first_name || user?.given_name || '';
+        const lastName = user?.lastName || user?.last_name || user?.surname || user?.family_name || '';
+        const firstName = user?.firstName || user?.first_name || user?.given_name || user?.name_first || '';
         const middleName = user?.middleName || user?.middle_name || user?.patronymic || '';
         const combined = [lastName, firstName, middleName].filter(Boolean).join(' ').trim();
         return combined || fallbackName || '';
@@ -827,12 +839,13 @@
         return getShortName(resolvedName);
       };
 
-      const updateCheckingAccount = (user) => {
+      const updateCheckingAccount = (user, scope) => {
         if (checkingName) {
           checkingName.textContent = formatAccountName(user, tg?.initDataUnsafe?.user);
         }
         if (checkingRole) {
-          checkingRole.textContent = `Роль: ${getUserRole(user) || '—'}`;
+          const resolvedRole = getUserRole(user) || (scope === 'super' ? 'Супер‑администратор' : '');
+          checkingRole.textContent = `Роль: ${resolvedRole || '—'}`;
         }
       };
 
@@ -946,8 +959,8 @@
           userMeta.textContent = `Организация: ${organization}`;
         }
         if (userBadge) {
-          const resolvedRole = getUserRole(user);
-          userBadge.textContent = resolvedRole || (scope === 'super' ? 'Супер‑администратор' : 'Роль не задана');
+          const resolvedRole = getUserRole(user) || (scope === 'super' ? 'Супер‑администратор' : '');
+          userBadge.textContent = resolvedRole || 'Роль не задана';
         }
         showScreenForAccess({ user, scope });
       };
@@ -970,7 +983,7 @@
             lockAccess('Ваш ID не найден в списке прав. Обратитесь к супер‑администратору.');
             return;
           }
-          updateCheckingAccount(access.user);
+          updateCheckingAccount(access.user, access.scope);
           unlockAccess(access);
         } catch (error) {
           lockAccess('Ошибка загрузки прав доступа. Проверьте файл access.json.');

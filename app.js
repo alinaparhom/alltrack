@@ -304,18 +304,19 @@ const updateCheckingAccount = ({ user, scope } = {}) => {
   }
 };
 
-const waitForTelegramUser = async ({ timeoutMs = 1200, intervalMs = 150 } = {}) => {
-  if (getTelegramUser()) {
-    return;
+const waitForTelegramUser = async ({ timeoutMs = 4000, intervalMs = 150 } = {}) => {
+  if (getUserId()) {
+    return true;
   }
   const startedAt = Date.now();
   while (Date.now() - startedAt < timeoutMs) {
     await new Promise((resolve) => setTimeout(resolve, intervalMs));
     ensureTelegramReady();
-    if (getTelegramUser()) {
-      return;
+    if (getUserId()) {
+      return true;
     }
   }
+  return false;
 };
 
 const lockAccess = (message) => {

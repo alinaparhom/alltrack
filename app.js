@@ -194,10 +194,16 @@ const getUserRole = (user) => {
     user?.role_name ||
     user?.roleName ||
     user?.position ||
+    user?.accessRole ||
+    user?.access_role ||
+    user?.permission ||
+    user?.permissions ||
+    user?.group ||
+    user?.group_name ||
     user?.access ||
     user?.title ||
     user?.roles;
-  return normalizeRoleValue(roleValue);
+  return normalizeRoleValue(roleValue).trim();
 };
 
 const getInitials = (fullName = '') => {

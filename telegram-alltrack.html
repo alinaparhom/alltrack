@@ -713,6 +713,7 @@
         <span class="access-overlay__icon">🔒</span>
         <h2>Доступ закрыт</h2>
         <p id="accessOverlayText">Ваш ID не найден в списке прав. Обратитесь к супер‑администратору.</p>
+        <p class="access-overlay__id" id="accessOverlayId">ID: —. Код принят в работу: —.</p>
       </div>
     </div>
 
@@ -748,6 +749,7 @@
 
       const accessOverlay = document.getElementById('accessOverlay');
       const accessOverlayText = document.getElementById('accessOverlayText');
+      const accessOverlayId = document.getElementById('accessOverlayId');
       const checkingOverlay = document.getElementById('checkingOverlay');
       const checkingName = document.getElementById('checkingName');
       const checkingId = document.getElementById('checkingId');
@@ -1014,9 +1016,7 @@
         if (checkingName) {
           checkingName.textContent = formatAccountName(user, getTelegramUser(), scope);
         }
-        if (checkingId) {
-          checkingId.textContent = `ID: ${userId || '—'}`;
-        }
+        updateUserIdIndicators(userId);
         if (checkingRole) {
           checkingRole.textContent = `Роль: ${role || '—'}`;
         }
@@ -1037,6 +1037,24 @@
         }
         const urlId = new URLSearchParams(window.location.search).get('user_id');
         return urlId ? urlId.trim() : null;
+      };
+
+      const formatUserIdStatus = (userId) => {
+        const normalizedId = normalizeId(userId) || '—';
+        return {
+          inline: `ID: ${normalizedId}`,
+          overlay: `ID: ${normalizedId}. Код принят в работу: ${normalizedId}.`
+        };
+      };
+
+      const updateUserIdIndicators = (userId) => {
+        const status = formatUserIdStatus(userId);
+        if (checkingId) {
+          checkingId.textContent = status.inline;
+        }
+        if (accessOverlayId) {
+          accessOverlayId.textContent = status.overlay;
+        }
       };
 
       const findUserAccess = (userId, data) => {
@@ -1212,6 +1230,7 @@
           }
           const normalizedUserId = normalizeId(userId) || userId;
           console.info(`ID пользователя принят в работу: ${normalizedUserId}`);
+          updateUserIdIndicators(normalizedUserId);
           const access = findUserAccess(normalizedUserId, data);
           if (!access) {
             lockAccess('Ваш ID не найден в списке прав. Обратитесь к супер‑администратору.');

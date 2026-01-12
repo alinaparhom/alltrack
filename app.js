@@ -449,10 +449,17 @@ const initAccess = async () => {
       lockAccess('Ваш ID не найден в списке прав. Обратитесь к супер‑администратору.');
       return;
     }
-    updateCheckingAccount({
-      user: access.user,
-      scope: access.scope
-    });
+    if (access.scope !== 'super') {
+      updateCheckingAccount({
+        user: access.user,
+        scope: access.scope
+      });
+    } else {
+      document.body.classList.remove('is-checking');
+      if (checkingOverlay) {
+        checkingOverlay.hidden = true;
+      }
+    }
     unlockAccess({ ...access, userId });
   } catch (error) {
     lockAccess('Ошибка загрузки прав доступа. Проверьте файл access.json.');

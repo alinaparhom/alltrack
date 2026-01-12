@@ -49,13 +49,29 @@ const normalizeId = (value) => {
   return normalized.length ? normalized : null;
 };
 
+const getUserIdValue = (user) => {
+  if (!user || typeof user !== 'object') {
+    return null;
+  }
+  return (
+    user.id ??
+    user.userId ??
+    user.user_id ??
+    user.telegramId ??
+    user.telegram_id ??
+    user.telegramID ??
+    user.tgId ??
+    user.tg_id
+  );
+};
+
 const findUserAccess = (userId, data) => {
   const normalizedId = normalizeId(userId);
   if (!normalizedId) {
     return null;
   }
   const superAdmin = data.superAdmins?.find(
-    (admin) => normalizeId(admin.id) === normalizedId
+    (admin) => normalizeId(getUserIdValue(admin)) === normalizedId
   );
   if (superAdmin) {
     return {
@@ -67,7 +83,13 @@ const findUserAccess = (userId, data) => {
 
   const organizations = data.organizations || {};
   for (const [organization, users] of Object.entries(organizations)) {
-    const matched = users.find((user) => normalizeId(user.id) === normalizedId);
+    const list = Array.isArray(users) ? users : users?.users;
+    if (!Array.isArray(list)) {
+      continue;
+    }
+    const matched = list.find(
+      (user) => normalizeId(getUserIdValue(user)) === normalizedId
+    );
     if (matched) {
       return {
         user: matched,
@@ -102,12 +124,31 @@ const getTelegramDisplayName = (tgUser) => {
   return tgUser.first_name || '';
 };
 
-const getUserFullName = (user) => {
-  return user?.fullName || user?.full_name || user?.name || '';
+const getUserFullName = (user, fallbackName = '') => {
+  const directName = user?.fullName || user?.full_name || user?.name || user?.fio || '';
+  if (directName) {
+    return directName;
+  }
+  const lastName = user?.lastName || user?.last_name || user?.surname || '';
+  const firstName = user?.firstName || user?.first_name || user?.given_name || '';
+  const middleName = user?.middleName || user?.middle_name || user?.patronymic || '';
+  const combined = [lastName, firstName, middleName].filter(Boolean).join(' ').trim();
+  return combined || fallbackName || '';
 };
 
 const getUserRole = (user) => {
-  return user?.role || user?.position || user?.access || '';
+  const roleValue =
+    user?.role ||
+    user?.role_name ||
+    user?.roleName ||
+    user?.position ||
+    user?.access ||
+    user?.title ||
+    user?.roles;
+  if (Array.isArray(roleValue)) {
+    return roleValue.filter(Boolean).join(', ');
+  }
+  return roleValue || '';
 };
 
 const getInitials = (fullName = '') => {
@@ -146,7 +187,10 @@ const lockAccess = (message) => {
 };
 
 const unlockAccess = ({ user, organization, scope }) => {
-  const resolvedName = getUserFullName(user);
+  const resolvedName = getUserFullName(
+    user,
+    getTelegramDisplayName(tg?.initDataUnsafe?.user)
+  );
   const resolvedRole = getUserRole(user);
   document.body.classList.remove('is-locked');
   document.body.classList.remove('is-checking');

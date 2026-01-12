@@ -40,19 +40,18 @@ buttons.forEach((button) => {
   });
 });
 
-const getTelegramUser = () => {
-  const tg = getTelegramWebApp();
-  if (!tg) {
-    return null;
-  }
-  if (tg.initDataUnsafe?.user) {
-    return tg.initDataUnsafe.user;
-  }
-  if (!tg.initData) {
+const getInitDataFromLocation = () => {
+  const searchParams = new URLSearchParams(window.location.search);
+  const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+  return searchParams.get('tgWebAppData') || hashParams.get('tgWebAppData');
+};
+
+const parseTelegramUser = (initData) => {
+  if (!initData) {
     return null;
   }
   try {
-    const params = new URLSearchParams(tg.initData);
+    const params = new URLSearchParams(initData);
     const userValue = params.get('user');
     if (!userValue) {
       return null;
@@ -61,6 +60,20 @@ const getTelegramUser = () => {
   } catch (error) {
     return null;
   }
+};
+
+const getTelegramUser = () => {
+  const tg = getTelegramWebApp();
+  if (tg?.initDataUnsafe?.user) {
+    return tg.initDataUnsafe.user;
+  }
+  const initData = tg?.initData || getInitDataFromLocation();
+  const user = parseTelegramUser(initData);
+  if (user) {
+    return user;
+  }
+  const fallbackInitData = getInitDataFromLocation();
+  return parseTelegramUser(fallbackInitData);
 };
 
 const getUserId = () => {

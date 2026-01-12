@@ -129,11 +129,27 @@ const getUserFullName = (user, fallbackName = '') => {
   if (directName) {
     return directName;
   }
-  const lastName = user?.lastName || user?.last_name || user?.surname || '';
-  const firstName = user?.firstName || user?.first_name || user?.given_name || '';
+  const lastName = user?.lastName || user?.last_name || user?.surname || user?.family_name || '';
+  const firstName = user?.firstName || user?.first_name || user?.given_name || user?.name_first || '';
   const middleName = user?.middleName || user?.middle_name || user?.patronymic || '';
   const combined = [lastName, firstName, middleName].filter(Boolean).join(' ').trim();
   return combined || fallbackName || '';
+};
+
+const normalizeRoleValue = (value) => {
+  if (!value) {
+    return '';
+  }
+  if (Array.isArray(value)) {
+    return value
+      .map((item) => normalizeRoleValue(item))
+      .filter(Boolean)
+      .join(', ');
+  }
+  if (typeof value === 'object') {
+    return normalizeRoleValue(value.name || value.title || value.role || value.label);
+  }
+  return String(value);
 };
 
 const getUserRole = (user) => {
@@ -145,10 +161,7 @@ const getUserRole = (user) => {
     user?.access ||
     user?.title ||
     user?.roles;
-  if (Array.isArray(roleValue)) {
-    return roleValue.filter(Boolean).join(', ');
-  }
-  return roleValue || '';
+  return normalizeRoleValue(roleValue);
 };
 
 const getInitials = (fullName = '') => {
@@ -160,13 +173,14 @@ const getInitials = (fullName = '') => {
   return initials || '—';
 };
 
-const updateCheckingAccount = ({ fullName, role } = {}) => {
+const updateCheckingAccount = ({ fullName, role, scope } = {}) => {
   const displayName = getShortName(fullName || getTelegramDisplayName(tg?.initDataUnsafe?.user));
   if (checkingName) {
     checkingName.textContent = displayName || '—';
   }
   if (checkingRole) {
-    checkingRole.textContent = `Роль: ${role || '—'}`;
+    const resolvedRole = role || (scope === 'super' ? 'Супер‑администратор' : '');
+    checkingRole.textContent = `Роль: ${resolvedRole || '—'}`;
   }
 };
 
@@ -191,7 +205,7 @@ const unlockAccess = ({ user, organization, scope }) => {
     user,
     getTelegramDisplayName(tg?.initDataUnsafe?.user)
   );
-  const resolvedRole = getUserRole(user);
+  const resolvedRole = getUserRole(user) || (scope === 'super' ? 'Супер‑администратор' : '');
   document.body.classList.remove('is-locked');
   document.body.classList.remove('is-checking');
   document.body.dataset.accessScope = scope;
@@ -239,7 +253,8 @@ const initAccess = async () => {
     }
     updateCheckingAccount({
       fullName: getUserFullName(access.user),
-      role: getUserRole(access.user)
+      role: getUserRole(access.user),
+      scope: access.scope
     });
     unlockAccess(access);
   } catch (error) {

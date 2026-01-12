@@ -109,6 +109,21 @@ const normalizeId = (value) => {
   return normalized.length ? normalized : null;
 };
 
+const isSameId = (leftValue, rightValue) => {
+  if (leftValue === null || leftValue === undefined) {
+    return false;
+  }
+  if (rightValue === null || rightValue === undefined) {
+    return false;
+  }
+  const leftNormalized = normalizeId(leftValue);
+  const rightNormalized = normalizeId(rightValue);
+  if (leftNormalized && rightNormalized) {
+    return leftNormalized === rightNormalized;
+  }
+  return String(leftValue).trim() === String(rightValue).trim();
+};
+
 const normalizePersonName = (value) => {
   if (!value) {
     return '';
@@ -154,6 +169,8 @@ const getUserIdValue = (user) => {
     return null;
   }
   return (
+    user.ID ??
+    user.Id ??
     user.id ??
     user.userId ??
     user.user_id ??
@@ -319,7 +336,7 @@ const findUserAccess = (userId, data) => {
   }
   const superAdmins = getAccessList(data.superAdmins);
   const superAdmin = superAdmins.find(
-    (admin) => normalizeId(getUserIdValue(admin)) === normalizedId
+    (admin) => isSameId(getUserIdValue(admin), normalizedId)
   );
   if (superAdmin) {
     return buildAccessResult({
@@ -352,7 +369,7 @@ const findUserAccess = (userId, data) => {
       continue;
     }
     const matched = list.find(
-      (user) => normalizeId(getUserIdValue(user)) === normalizedId
+      (user) => isSameId(getUserIdValue(user), normalizedId)
     );
     if (matched) {
       return buildAccessResult({

@@ -87,12 +87,26 @@ const getUserIdValue = (user) => {
   );
 };
 
+const getAccessList = (value) => {
+  if (Array.isArray(value)) {
+    return value;
+  }
+  if (value && Array.isArray(value.users)) {
+    return value.users;
+  }
+  if (value && Array.isArray(value.list)) {
+    return value.list;
+  }
+  return [];
+};
+
 const findUserAccess = (userId, data) => {
   const normalizedId = normalizeId(userId);
   if (!normalizedId) {
     return null;
   }
-  const superAdmin = data.superAdmins?.find(
+  const superAdmins = getAccessList(data.superAdmins);
+  const superAdmin = superAdmins.find(
     (admin) => normalizeId(getUserIdValue(admin)) === normalizedId
   );
   if (superAdmin) {
@@ -105,7 +119,7 @@ const findUserAccess = (userId, data) => {
 
   const organizations = data.organizations || {};
   for (const [organization, users] of Object.entries(organizations)) {
-    const list = Array.isArray(users) ? users : users?.users;
+    const list = getAccessList(users);
     if (!Array.isArray(list)) {
       continue;
     }
@@ -195,14 +209,36 @@ const getInitials = (fullName = '') => {
   return initials || '—';
 };
 
-const updateCheckingAccount = ({ fullName, role, scope } = {}) => {
-  const displayName = getShortName(fullName || getTelegramDisplayName(getTelegramUser()));
+const resolveAccountInfo = ({ user, scope } = {}) => {
+  const fullName = getUserFullName(user, getTelegramDisplayName(getTelegramUser()));
+  const role = getUserRole(user) || (scope === 'super' ? 'Супер‑администратор' : '');
+  return {
+    fullName,
+    role
+  };
+};
+
+const updateCheckingAccount = ({ user, scope } = {}) => {
+  const { fullName, role } = resolveAccountInfo({ user, scope });
+  const displayName = getShortName(fullName);
   if (checkingName) {
     checkingName.textContent = displayName || '—';
   }
   if (checkingRole) {
-    const resolvedRole = role || (scope === 'super' ? 'Супер‑администратор' : '');
-    checkingRole.textContent = `Роль: ${resolvedRole || '—'}`;
+    checkingRole.textContent = `Роль: ${role || '—'}`;
+  }
+};
+
+const waitForTelegramUser = async ({ timeoutMs = 1200, intervalMs = 150 } = {}) => {
+  if (getTelegramUser()) {
+    return;
+  }
+  const startedAt = Date.now();
+  while (Date.now() - startedAt < timeoutMs) {
+    await new Promise((resolve) => setTimeout(resolve, intervalMs));
+    if (getTelegramUser()) {
+      return;
+    }
   }
 };
 
@@ -223,11 +259,7 @@ const lockAccess = (message) => {
 };
 
 const unlockAccess = ({ user, organization, scope }) => {
-  const resolvedName = getUserFullName(
-    user,
-    getTelegramDisplayName(getTelegramUser())
-  );
-  const resolvedRole = getUserRole(user) || (scope === 'super' ? 'Супер‑администратор' : '');
+  const { fullName: resolvedName, role: resolvedRole } = resolveAccountInfo({ user, scope });
   document.body.classList.remove('is-locked');
   document.body.classList.remove('is-checking');
   document.body.dataset.accessScope = scope;
@@ -263,6 +295,7 @@ const initAccess = async () => {
       throw new Error('Не удалось загрузить список доступов');
     }
     const data = await response.json();
+    await waitForTelegramUser();
     const userId = getUserId();
     if (!userId) {
       lockAccess('Не удалось определить ID пользователя. Откройте приложение через Telegram.');
@@ -274,8 +307,7 @@ const initAccess = async () => {
       return;
     }
     updateCheckingAccount({
-      fullName: getUserFullName(access.user),
-      role: getUserRole(access.user),
+      user: access.user,
       scope: access.scope
     });
     unlockAccess(access);

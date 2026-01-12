@@ -756,6 +756,19 @@
         return normalized.length ? normalized : null;
       };
 
+      const getAccessList = (value) => {
+        if (Array.isArray(value)) {
+          return value;
+        }
+        if (value && Array.isArray(value.users)) {
+          return value.users;
+        }
+        if (value && Array.isArray(value.list)) {
+          return value.list;
+        }
+        return [];
+      };
+
       const getUserIdValue = (user) => {
         if (!user || typeof user !== 'object') {
           return null;
@@ -811,6 +824,15 @@
         return combined || fallbackName || '';
       };
 
+      const resolveAccountInfo = ({ user, scope } = {}) => {
+        const fullName = getUserFullName(user, getTelegramDisplayName(getTelegramUser()));
+        const role = getUserRole(user) || (scope === 'super' ? 'Супер‑администратор' : '');
+        return {
+          fullName,
+          role
+        };
+      };
+
       const getTelegramDisplayName = (tgUser) => {
         if (!tgUser) {
           return '';
@@ -833,10 +855,14 @@
         return fullName || '—';
       };
 
-      const formatAccountName = (user, tgUser) => {
+      const formatAccountName = (user, tgUser, scope) => {
         const fallbackName = getTelegramDisplayName(tgUser);
         const resolvedName = getUserFullName(user, fallbackName);
-        return getShortName(resolvedName);
+        const shortenedName = getShortName(resolvedName);
+        if (!shortenedName) {
+          return '—';
+        }
+        return shortenedName;
       };
 
       const getTelegramUser = () => {
@@ -862,12 +888,12 @@
       };
 
       const updateCheckingAccount = (user, scope) => {
+        const { role } = resolveAccountInfo({ user, scope });
         if (checkingName) {
-          checkingName.textContent = formatAccountName(user, getTelegramUser());
+          checkingName.textContent = formatAccountName(user, getTelegramUser(), scope);
         }
         if (checkingRole) {
-          const resolvedRole = getUserRole(user) || (scope === 'super' ? 'Супер‑администратор' : '');
-          checkingRole.textContent = `Роль: ${resolvedRole || '—'}`;
+          checkingRole.textContent = `Роль: ${role || '—'}`;
         }
       };
 
@@ -885,7 +911,8 @@
         if (!normalizedId) {
           return null;
         }
-        const superAdmin = data.superAdmins?.find(
+        const superAdmins = getAccessList(data.superAdmins);
+        const superAdmin = superAdmins.find(
           (admin) => normalizeId(getUserIdValue(admin)) === normalizedId
         );
         if (superAdmin) {
@@ -898,7 +925,7 @@
 
         const organizations = data.organizations || {};
         for (const [organization, users] of Object.entries(organizations)) {
-          const list = Array.isArray(users) ? users : users?.users;
+          const list = getAccessList(users);
           if (!Array.isArray(list)) {
             continue;
           }
@@ -975,16 +1002,29 @@
           userBar.hidden = false;
         }
         if (userName) {
-          userName.textContent = formatAccountName(user, getTelegramUser());
+          userName.textContent = formatAccountName(user, getTelegramUser(), scope);
         }
         if (userMeta) {
           userMeta.textContent = `Организация: ${organization}`;
         }
         if (userBadge) {
-          const resolvedRole = getUserRole(user) || (scope === 'super' ? 'Супер‑администратор' : '');
+          const { role: resolvedRole } = resolveAccountInfo({ user, scope });
           userBadge.textContent = resolvedRole || 'Роль не задана';
         }
         showScreenForAccess({ user, scope });
+      };
+
+      const waitForTelegramUser = async ({ timeoutMs = 1200, intervalMs = 150 } = {}) => {
+        if (getTelegramUser()) {
+          return;
+        }
+        const startedAt = Date.now();
+        while (Date.now() - startedAt < timeoutMs) {
+          await new Promise((resolve) => setTimeout(resolve, intervalMs));
+          if (getTelegramUser()) {
+            return;
+          }
+        }
       };
 
       const initAccess = async () => {
@@ -995,6 +1035,7 @@
             throw new Error('Не удалось загрузить список доступов');
           }
           const data = await response.json();
+          await waitForTelegramUser();
           const userId = getUserId();
           if (!userId) {
             lockAccess('Не удалось определить ID пользователя. Откройте приложение через Telegram.');

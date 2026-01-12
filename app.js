@@ -22,9 +22,11 @@ const accessAvatar = document.getElementById('accessAvatar');
 const accessMessage = document.getElementById('accessMessage');
 const accessOverlay = document.getElementById('accessOverlay');
 const accessOverlayText = document.getElementById('accessOverlayText');
+const accessOverlayId = document.getElementById('accessOverlayId');
 const checkingOverlay = document.getElementById('checkingOverlay');
 const checkingName = document.getElementById('checkingName');
 const checkingRole = document.getElementById('checkingRole');
+const checkingIdStatus = document.getElementById('checkingIdStatus');
 
 document.body.classList.add('is-checking');
 
@@ -249,6 +251,24 @@ const getInitials = (fullName = '') => {
   return initials || '—';
 };
 
+const formatUserIdStatus = (userId) => {
+  const normalizedId = normalizeId(userId) || '—';
+  return `Telegram ID: ${normalizedId}. Код принят в работу: ${normalizedId}.`;
+};
+
+const updateUserIdIndicators = (userId) => {
+  const message = formatUserIdStatus(userId);
+  if (accessId) {
+    accessId.textContent = message;
+  }
+  if (checkingIdStatus) {
+    checkingIdStatus.textContent = message;
+  }
+  if (accessOverlayId) {
+    accessOverlayId.textContent = message;
+  }
+};
+
 const resolveAccountInfo = ({ user, scope } = {}) => {
   const fullName = getUserFullName(user, getTelegramDisplayName(getTelegramUser()));
   const roles = getUserRolesList(user, scope);
@@ -323,10 +343,7 @@ const unlockAccess = ({ user, organization, scope, userId }) => {
   if (accessMeta) {
     accessMeta.textContent = `Организация: ${organization}`;
   }
-  if (accessId) {
-    const normalizedId = normalizeId(userId) || '—';
-    accessId.textContent = `Telegram ID: ${normalizedId}. Код принят в работу: ${normalizedId}.`;
-  }
+  updateUserIdIndicators(userId);
   if (accessMessage) {
     const rolesText = resolvedRoles.length ? resolvedRoles.join(', ') : '—';
     accessMessage.textContent = `Вошёл(а): ${resolvedName || '—'}. Доступные роли: ${rolesText}.`;
@@ -353,6 +370,7 @@ const initAccess = async () => {
       lockAccess('Не удалось определить ID пользователя. Откройте приложение через Telegram.');
       return;
     }
+    updateUserIdIndicators(userId);
     const access = findUserAccess(userId, data);
     if (!access) {
       lockAccess('Ваш ID не найден в списке прав. Обратитесь к супер‑администратору.');

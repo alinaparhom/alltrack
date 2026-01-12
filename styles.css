@@ -380,6 +380,12 @@ body {
   color: var(--muted);
 }
 
+.access-overlay__id {
+  font-size: 12px;
+  color: var(--muted);
+  word-break: break-word;
+}
+
 .access-overlay--checking {
   background: rgba(238, 243, 255, 0.6);
   z-index: 9;

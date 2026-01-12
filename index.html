@@ -35,131 +35,163 @@
       <div class="access__badge" id="accessBadge">—</div>
     </section>
 
-    <section class="glass stats">
-      <div class="stats__item">
-        <span class="stats__label">В наличии</span>
-        <strong class="stats__value">124</strong>
+    <section class="glass super-admin" id="superAdminPanel" hidden>
+      <div class="super-admin__header">
+        <div>
+          <p class="super-admin__label">Супер‑администратор</p>
+          <h2 class="super-admin__name" id="superAdminName">—</h2>
+        </div>
+        <span class="super-admin__chip">Все организации</span>
       </div>
-      <div class="stats__item">
-        <span class="stats__label">В ремонте</span>
-        <strong class="stats__value">7</strong>
-      </div>
-      <div class="stats__item">
-        <span class="stats__label">В пути</span>
-        <strong class="stats__value">15</strong>
+
+      <div class="super-admin__list" id="superAdminOrgs"></div>
+
+      <div class="super-admin__create">
+        <div class="super-admin__create-head">
+          <h3>Новая организация</h3>
+          <span class="super-admin__hint">Скоро</span>
+        </div>
+        <div class="super-admin__form">
+          <label class="super-admin__field">
+            <span>Название</span>
+            <input type="text" placeholder="Например, Северный склад" />
+          </label>
+          <label class="super-admin__field">
+            <span>Администратор</span>
+            <input type="text" placeholder="Фамилия Имя" />
+          </label>
+          <button class="super-admin__button" type="button" disabled>Создать</button>
+        </div>
       </div>
     </section>
 
-    <section class="glass actions">
-      <button class="action" type="button">
-        <span class="action__icon">➕</span>
-        <div class="action__text">
-          <span class="action__title">Добавить актив</span>
-          <span class="action__subtitle">Серийный номер и ответственный</span>
+    <div class="app__default" id="defaultWorkspace">
+      <section class="glass stats">
+        <div class="stats__item">
+          <span class="stats__label">В наличии</span>
+          <strong class="stats__value">124</strong>
         </div>
-      </button>
-      <button class="action" type="button">
-        <span class="action__icon">🔁</span>
-        <div class="action__text">
-          <span class="action__title">Передать ответственность</span>
-          <span class="action__subtitle">Кому и где находится</span>
+        <div class="stats__item">
+          <span class="stats__label">В ремонте</span>
+          <strong class="stats__value">7</strong>
         </div>
-      </button>
-      <button class="action" type="button">
-        <span class="action__icon">⚠️</span>
-        <div class="action__text">
-          <span class="action__title">Сообщить поломку</span>
-          <span class="action__subtitle">Опишите проблему и срочность</span>
+        <div class="stats__item">
+          <span class="stats__label">В пути</span>
+          <strong class="stats__value">15</strong>
         </div>
-      </button>
-      <button class="action" type="button">
-        <span class="action__icon">🛠️</span>
-        <div class="action__text">
-          <span class="action__title">Запланировать ремонт</span>
-          <span class="action__subtitle">Назначьте сервис и дату</span>
-        </div>
-      </button>
-    </section>
+      </section>
 
-    <section class="section">
-      <div class="section__header">
-        <h2>Активы под контролем</h2>
-        <button class="link" type="button">Смотреть все</button>
-      </div>
-      <div class="assets">
-        <article class="glass asset">
-          <div class="asset__main">
-            <span class="asset__status is-available">В наличии</span>
-            <h3>Сканер штрих‑кодов Zebra DS2208</h3>
-            <p>Ответственный: Илья Петров · Склад «Север»</p>
+      <section class="glass actions">
+        <button class="action" type="button">
+          <span class="action__icon">➕</span>
+          <div class="action__text">
+            <span class="action__title">Добавить актив</span>
+            <span class="action__subtitle">Серийный номер и ответственный</span>
           </div>
-          <div class="asset__meta">
-            <span>Инв. № AT-00451</span>
-            <span>Проверка 2 дня назад</span>
+        </button>
+        <button class="action" type="button">
+          <span class="action__icon">🔁</span>
+          <div class="action__text">
+            <span class="action__title">Передать ответственность</span>
+            <span class="action__subtitle">Кому и где находится</span>
           </div>
-        </article>
-        <article class="glass asset">
-          <div class="asset__main">
-            <span class="asset__status is-transfer">В пути</span>
-            <h3>Ноутбук Lenovo ThinkPad E14</h3>
-            <p>Передача: Анна Смирнова → Кирилл Иванов</p>
+        </button>
+        <button class="action" type="button">
+          <span class="action__icon">⚠️</span>
+          <div class="action__text">
+            <span class="action__title">Сообщить поломку</span>
+            <span class="action__subtitle">Опишите проблему и срочность</span>
           </div>
-          <div class="asset__meta">
-            <span>Инв. № AT-00219</span>
-            <span>Ожидается сегодня</span>
+        </button>
+        <button class="action" type="button">
+          <span class="action__icon">🛠️</span>
+          <div class="action__text">
+            <span class="action__title">Запланировать ремонт</span>
+            <span class="action__subtitle">Назначьте сервис и дату</span>
           </div>
-        </article>
-        <article class="glass asset">
-          <div class="asset__main">
-            <span class="asset__status is-repair">В ремонте</span>
-            <h3>Принтер HP LaserJet M404</h3>
-            <p>Сервис: FixLab · Ожидает запчасти</p>
-          </div>
-          <div class="asset__meta">
-            <span>Инв. № AT-00078</span>
-            <span>Срок 3 дня</span>
-          </div>
-        </article>
-      </div>
-    </section>
+        </button>
+      </section>
 
-    <section class="glass list">
-      <div class="list__header">
-        <h2>Последние перемещения</h2>
-        <button class="link" type="button">История</button>
-      </div>
-      <ul>
-        <li>
-          <strong>Сегодня, 11:40</strong>
-          <span>Монитор Dell P2422H передан Марии К. (офис «Центр»).</span>
-        </li>
-        <li>
-          <strong>Вчера, 17:20</strong>
-          <span>Комплект ключей №3 принят Иваном С. (склад «Юг»).</span>
-        </li>
-        <li>
-          <strong>18 июня, 09:00</strong>
-          <span>Сканер Honeywell доставлен в сервис «РемСнаб».</span>
-        </li>
-      </ul>
-    </section>
+      <section class="section">
+        <div class="section__header">
+          <h2>Активы под контролем</h2>
+          <button class="link" type="button">Смотреть все</button>
+        </div>
+        <div class="assets">
+          <article class="glass asset">
+            <div class="asset__main">
+              <span class="asset__status is-available">В наличии</span>
+              <h3>Сканер штрих‑кодов Zebra DS2208</h3>
+              <p>Ответственный: Илья Петров · Склад «Север»</p>
+            </div>
+            <div class="asset__meta">
+              <span>Инв. № AT-00451</span>
+              <span>Проверка 2 дня назад</span>
+            </div>
+          </article>
+          <article class="glass asset">
+            <div class="asset__main">
+              <span class="asset__status is-transfer">В пути</span>
+              <h3>Ноутбук Lenovo ThinkPad E14</h3>
+              <p>Передача: Анна Смирнова → Кирилл Иванов</p>
+            </div>
+            <div class="asset__meta">
+              <span>Инв. № AT-00219</span>
+              <span>Ожидается сегодня</span>
+            </div>
+          </article>
+          <article class="glass asset">
+            <div class="asset__main">
+              <span class="asset__status is-repair">В ремонте</span>
+              <h3>Принтер HP LaserJet M404</h3>
+              <p>Сервис: FixLab · Ожидает запчасти</p>
+            </div>
+            <div class="asset__meta">
+              <span>Инв. № AT-00078</span>
+              <span>Срок 3 дня</span>
+            </div>
+          </article>
+        </div>
+      </section>
 
-    <section class="glass list">
-      <div class="list__header">
-        <h2>Очередь ремонтов</h2>
-        <button class="link" type="button">Все заявки</button>
-      </div>
-      <ul>
-        <li>
-          <strong>Критично</strong>
-          <span>Генератор №AT-00911 — шум в двигателе, ожидание диагностики.</span>
-        </li>
-        <li>
-          <strong>Средний приоритет</strong>
-          <span>Сканер документов Epson — замена роликов, запчасти в пути.</span>
-        </li>
-      </ul>
-    </section>
+      <section class="glass list">
+        <div class="list__header">
+          <h2>Последние перемещения</h2>
+          <button class="link" type="button">История</button>
+        </div>
+        <ul>
+          <li>
+            <strong>Сегодня, 11:40</strong>
+            <span>Монитор Dell P2422H передан Марии К. (офис «Центр»).</span>
+          </li>
+          <li>
+            <strong>Вчера, 17:20</strong>
+            <span>Комплект ключей №3 принят Иваном С. (склад «Юг»).</span>
+          </li>
+          <li>
+            <strong>18 июня, 09:00</strong>
+            <span>Сканер Honeywell доставлен в сервис «РемСнаб».</span>
+          </li>
+        </ul>
+      </section>
+
+      <section class="glass list">
+        <div class="list__header">
+          <h2>Очередь ремонтов</h2>
+          <button class="link" type="button">Все заявки</button>
+        </div>
+        <ul>
+          <li>
+            <strong>Критично</strong>
+            <span>Генератор №AT-00911 — шум в двигателе, ожидание диагностики.</span>
+          </li>
+          <li>
+            <strong>Средний приоритет</strong>
+            <span>Сканер документов Epson — замена роликов, запчасти в пути.</span>
+          </li>
+        </ul>
+      </section>
+    </div>
   </div>
 
   <div class="access-overlay" id="accessOverlay" hidden>
@@ -193,6 +225,7 @@
   </nav>
 
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script src="super-admin.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

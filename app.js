@@ -37,8 +37,22 @@ const getUserId = () => {
   return urlId ? Number(urlId) : null;
 };
 
+const normalizeId = (value) => {
+  if (value === null || value === undefined) {
+    return null;
+  }
+  const trimmed = String(value).trim();
+  return trimmed.length ? trimmed : null;
+};
+
 const findUserAccess = (userId, data) => {
-  const superAdmin = data.superAdmins?.find((admin) => admin.id === userId);
+  const normalizedId = normalizeId(userId);
+  if (!normalizedId) {
+    return null;
+  }
+  const superAdmin = data.superAdmins?.find(
+    (admin) => normalizeId(admin.id) === normalizedId
+  );
   if (superAdmin) {
     return {
       user: superAdmin,
@@ -49,7 +63,7 @@ const findUserAccess = (userId, data) => {
 
   const organizations = data.organizations || {};
   for (const [organization, users] of Object.entries(organizations)) {
-    const matched = users.find((user) => user.id === userId);
+    const matched = users.find((user) => normalizeId(user.id) === normalizedId);
     if (matched) {
       return {
         user: matched,

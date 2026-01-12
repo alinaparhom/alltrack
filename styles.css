@@ -338,6 +338,32 @@ body {
   font-size: 32px;
 }
 
+.access-overlay__account {
+  display: grid;
+  gap: 6px;
+  padding: 12px 16px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  color: var(--text);
+}
+
+.access-overlay__label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--muted);
+}
+
+.access-overlay__account strong {
+  font-size: 16px;
+}
+
+.access-overlay__role {
+  font-size: 12px;
+  color: var(--muted);
+}
+
 .access-overlay--checking {
   background: rgba(238, 243, 255, 0.6);
   z-index: 9;

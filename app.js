@@ -14,6 +14,8 @@ const accessAvatar = document.getElementById('accessAvatar');
 const accessOverlay = document.getElementById('accessOverlay');
 const accessOverlayText = document.getElementById('accessOverlayText');
 const checkingOverlay = document.getElementById('checkingOverlay');
+const checkingName = document.getElementById('checkingName');
+const checkingRole = document.getElementById('checkingRole');
 
 document.body.classList.add('is-checking');
 
@@ -68,6 +70,17 @@ const getShortName = (fullName = '') => {
   return fullName || '—';
 };
 
+const getTelegramDisplayName = (tgUser) => {
+  if (!tgUser) {
+    return '';
+  }
+  const parts = [tgUser.last_name, tgUser.first_name].filter(Boolean);
+  if (parts.length) {
+    return parts.join(' ');
+  }
+  return tgUser.first_name || '';
+};
+
 const getInitials = (fullName = '') => {
   const parts = fullName.trim().split(/\s+/).filter(Boolean);
   if (parts.length === 0) {
@@ -75,6 +88,16 @@ const getInitials = (fullName = '') => {
   }
   const initials = parts.slice(0, 2).map((part) => part[0]?.toUpperCase()).join('');
   return initials || '—';
+};
+
+const updateCheckingAccount = ({ fullName, role } = {}) => {
+  const displayName = getShortName(fullName || getTelegramDisplayName(tg?.initDataUnsafe?.user));
+  if (checkingName) {
+    checkingName.textContent = displayName || '—';
+  }
+  if (checkingRole) {
+    checkingRole.textContent = `Роль: ${role || '—'}`;
+  }
 };
 
 const lockAccess = (message) => {
@@ -123,6 +146,7 @@ const unlockAccess = ({ user, organization, scope }) => {
 
 const initAccess = async () => {
   try {
+    updateCheckingAccount();
     const response = await fetch('access.json', { cache: 'no-store' });
     if (!response.ok) {
       throw new Error('Не удалось загрузить список доступов');
@@ -138,6 +162,7 @@ const initAccess = async () => {
       lockAccess('Ваш ID не найден в списке прав. Обратитесь к супер‑администратору.');
       return;
     }
+    updateCheckingAccount({ fullName: access.user.fullName, role: access.user.role });
     unlockAccess(access);
   } catch (error) {
     lockAccess('Ошибка загрузки прав доступа. Проверьте файл access.json.');

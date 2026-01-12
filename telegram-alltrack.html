@@ -839,9 +839,31 @@
         return getShortName(resolvedName);
       };
 
+      const getTelegramUser = () => {
+        if (!tg) {
+          return null;
+        }
+        if (tg.initDataUnsafe?.user) {
+          return tg.initDataUnsafe.user;
+        }
+        if (!tg.initData) {
+          return null;
+        }
+        try {
+          const params = new URLSearchParams(tg.initData);
+          const userValue = params.get('user');
+          if (!userValue) {
+            return null;
+          }
+          return JSON.parse(userValue);
+        } catch (error) {
+          return null;
+        }
+      };
+
       const updateCheckingAccount = (user, scope) => {
         if (checkingName) {
-          checkingName.textContent = formatAccountName(user, tg?.initDataUnsafe?.user);
+          checkingName.textContent = formatAccountName(user, getTelegramUser());
         }
         if (checkingRole) {
           const resolvedRole = getUserRole(user) || (scope === 'super' ? 'Супер‑администратор' : '');
@@ -850,7 +872,7 @@
       };
 
       const getUserId = () => {
-        const telegramId = tg?.initDataUnsafe?.user?.id;
+        const telegramId = getTelegramUser()?.id;
         if (telegramId !== undefined && telegramId !== null) {
           return String(telegramId);
         }
@@ -953,7 +975,7 @@
           userBar.hidden = false;
         }
         if (userName) {
-          userName.textContent = formatAccountName(user, tg?.initDataUnsafe?.user);
+          userName.textContent = formatAccountName(user, getTelegramUser());
         }
         if (userMeta) {
           userMeta.textContent = `Организация: ${organization}`;

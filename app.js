@@ -415,16 +415,22 @@ const lockAccess = (message) => {
 const unlockAccess = ({ user, organization, scope, userId }) => {
   const { fullName: resolvedName, role: resolvedRole, roles: resolvedRoles } =
     resolveAccountInfo({ user, scope });
+  const isRoleSuper =
+    scope === 'super' ||
+    isSuperAdminRole(resolvedRole) ||
+    isSuperAdminRole(resolvedRoles);
+  const effectiveScope = isRoleSuper ? 'super' : scope;
+  const effectiveOrganization = isRoleSuper ? 'Все организации' : organization;
   document.body.classList.remove('is-locked');
   document.body.classList.remove('is-checking');
-  document.body.classList.toggle('is-super-admin', scope === 'super');
-  document.body.dataset.accessScope = scope;
+  document.body.classList.toggle('is-super-admin', effectiveScope === 'super');
+  document.body.dataset.accessScope = effectiveScope;
   document.body.dataset.userRole = resolvedRole;
   if (accessOverlay) {
     accessOverlay.hidden = true;
   }
   if (accessPanel) {
-    accessPanel.hidden = scope === 'super';
+    accessPanel.hidden = effectiveScope === 'super';
   }
   if (accessName) {
     accessName.textContent = getShortName(resolvedName);
@@ -433,7 +439,7 @@ const unlockAccess = ({ user, organization, scope, userId }) => {
     accessRole.textContent = `Роль: ${resolvedRole || '—'}`;
   }
   if (accessMeta) {
-    accessMeta.textContent = `Организация: ${organization}`;
+    accessMeta.textContent = `Организация: ${effectiveOrganization}`;
   }
   updateUserIdIndicators(userId);
   if (accessMessage) {
@@ -444,9 +450,10 @@ const unlockAccess = ({ user, organization, scope, userId }) => {
     accessAvatar.textContent = getInitials(resolvedName);
   }
   if (accessBadge) {
-    accessBadge.textContent = scope === 'super' ? 'Супер‑админ' : organization;
+    accessBadge.textContent =
+      effectiveScope === 'super' ? 'Супер‑админ' : effectiveOrganization;
   }
-  if (scope === 'super') {
+  if (effectiveScope === 'super') {
     if (superAdminPanel) {
       superAdminPanel.hidden = false;
     }

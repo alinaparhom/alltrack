@@ -830,6 +830,24 @@
         return [lastName, firstName, middleName].filter(Boolean).join(' ').trim();
       };
 
+      const hasIdField = (value) => {
+        if (!value || typeof value !== 'object') {
+          return false;
+        }
+        return (
+          'id' in value ||
+          'ID' in value ||
+          'Id' in value ||
+          'userId' in value ||
+          'user_id' in value ||
+          'telegramId' in value ||
+          'telegram_id' in value ||
+          'telegramID' in value ||
+          'tgId' in value ||
+          'tg_id' in value
+        );
+      };
+
       const getAccessList = (value) => {
         if (Array.isArray(value)) {
           return value;
@@ -839,6 +857,32 @@
         }
         if (value && Array.isArray(value.list)) {
           return value.list;
+        }
+        if (value && typeof value === 'object') {
+          if (hasIdField(value)) {
+            return [value];
+          }
+          const values = Object.values(value);
+          if (values.length && values.every((item) => item && typeof item === 'object')) {
+            return values;
+          }
+        }
+        return [];
+      };
+
+      const getSuperAdminsList = (data = {}) => {
+        const candidates = [
+          data.superAdmins,
+          data.super_admins,
+          data.superAdmin,
+          data.super_admin,
+          data.super
+        ];
+        for (const candidate of candidates) {
+          const list = getAccessList(candidate);
+          if (list.length) {
+            return list;
+          }
         }
         return [];
       };
@@ -1079,7 +1123,7 @@
         if (!normalizedId) {
           return null;
         }
-        const superAdmins = getAccessList(data.superAdmins);
+        const superAdmins = getSuperAdminsList(data);
         const superAdmin = superAdmins.find(
           (admin) => isSameId(getUserIdValue(admin), normalizedId)
         );

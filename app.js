@@ -400,7 +400,7 @@ const unlockAccess = ({ user, organization, scope, userId }) => {
     accessOverlay.hidden = true;
   }
   if (accessPanel) {
-    accessPanel.hidden = false;
+    accessPanel.hidden = scope === 'super';
   }
   if (accessName) {
     accessName.textContent = getShortName(resolvedName);

@@ -571,6 +571,14 @@ body:not(.is-checking) .access-overlay--checking {
   display: none;
 }
 
+body.is-super-admin .access {
+  display: none;
+}
+
+body.is-super-admin .access-overlay--checking {
+  display: none;
+}
+
 body.is-locked .app,
 body.is-locked .bottom-nav {
   filter: blur(6px);

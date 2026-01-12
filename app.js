@@ -1,9 +1,16 @@
-const tg = window.Telegram ? window.Telegram.WebApp : null;
+const getTelegramWebApp = () => (window.Telegram ? window.Telegram.WebApp : null);
+let telegramReady = false;
 
-if (tg) {
-  tg.ready();
-  tg.expand();
-}
+const ensureTelegramReady = () => {
+  const tg = getTelegramWebApp();
+  if (tg && !telegramReady) {
+    tg.ready();
+    tg.expand();
+    telegramReady = true;
+  }
+};
+
+ensureTelegramReady();
 
 const accessPanel = document.getElementById('accessPanel');
 const accessName = document.getElementById('accessName');
@@ -22,6 +29,7 @@ document.body.classList.add('is-checking');
 const buttons = document.querySelectorAll('button');
 buttons.forEach((button) => {
   button.addEventListener('click', () => {
+    const tg = getTelegramWebApp();
     if (tg) {
       tg.HapticFeedback.selectionChanged();
     }
@@ -29,6 +37,7 @@ buttons.forEach((button) => {
 });
 
 const getTelegramUser = () => {
+  const tg = getTelegramWebApp();
   if (!tg) {
     return null;
   }
@@ -242,6 +251,7 @@ const waitForTelegramUser = async ({ timeoutMs = 1200, intervalMs = 150 } = {}) 
   const startedAt = Date.now();
   while (Date.now() - startedAt < timeoutMs) {
     await new Promise((resolve) => setTimeout(resolve, intervalMs));
+    ensureTelegramReady();
     if (getTelegramUser()) {
       return;
     }

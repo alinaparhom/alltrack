@@ -126,6 +126,51 @@ const getAccessList = (value) => {
   return [];
 };
 
+const normalizeRoleText = (value) => {
+  if (!value) {
+    return '';
+  }
+  if (Array.isArray(value)) {
+    return value.map((item) => normalizeRoleText(item)).filter(Boolean).join(', ');
+  }
+  if (typeof value === 'object') {
+    return normalizeRoleText(value.name || value.title || value.role || value.label);
+  }
+  return String(value);
+};
+
+const getUserRoleValue = (user) => {
+  return (
+    user?.role ||
+    user?.role_name ||
+    user?.roleName ||
+    user?.position ||
+    user?.accessRole ||
+    user?.access_role ||
+    user?.permission ||
+    user?.permissions ||
+    user?.group ||
+    user?.group_name ||
+    user?.access ||
+    user?.title ||
+    user?.roles
+  );
+};
+
+const isSuperAdminRole = (roleValue) => {
+  const normalized = normalizeRoleText(roleValue)
+    .toLowerCase()
+    .replace(/[‑–—]/g, '-')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return (
+    normalized.includes('супер-администратор') ||
+    normalized.includes('супер администратор') ||
+    normalized.includes('super-admin') ||
+    normalized.includes('super admin')
+  );
+};
+
 const findUserAccess = (userId, data) => {
   const normalizedId = normalizeId(userId);
   if (!normalizedId) {
@@ -153,6 +198,13 @@ const findUserAccess = (userId, data) => {
       (user) => normalizeId(getUserIdValue(user)) === normalizedId
     );
     if (matched) {
+      if (isSuperAdminRole(getUserRoleValue(matched))) {
+        return {
+          user: matched,
+          scope: 'super',
+          organization: 'Все организации'
+        };
+      }
       return {
         user: matched,
         scope: 'organization',

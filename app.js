@@ -78,14 +78,24 @@ const getTelegramUser = () => {
   return parseTelegramUser(fallbackInitData);
 };
 
-const getUserId = () => {
+const getUserIdWithSource = () => {
+  const tg = getTelegramWebApp();
+  const unsafeId = tg?.initDataUnsafe?.user?.id;
+  if (unsafeId !== undefined && unsafeId !== null) {
+    return { id: String(unsafeId), source: 'tg.initDataUnsafe.user.id' };
+  }
   const telegramId = getTelegramUser()?.id;
   if (telegramId !== undefined && telegramId !== null) {
-    return String(telegramId);
+    return { id: String(telegramId), source: 'parsed.initData.user.id' };
   }
   const urlId = new URLSearchParams(window.location.search).get('user_id');
-  return urlId ? urlId.trim() : null;
+  if (urlId) {
+    return { id: urlId.trim(), source: 'url.user_id' };
+  }
+  return { id: null, source: 'not-found' };
 };
+
+const getUserId = () => getUserIdWithSource().id;
 
 const normalizeId = (value) => {
   if (value === null || value === undefined) {
@@ -154,6 +164,21 @@ const getUserIdValue = (user) => {
   );
 };
 
+const getUserUsernameValue = (user) => {
+  if (!user || typeof user !== 'object') {
+    return '';
+  }
+  return (
+    user.username ||
+    user.userName ||
+    user.telegramUsername ||
+    user.telegram_username ||
+    user.tgUsername ||
+    user.tg_username ||
+    ''
+  );
+};
+
 const getAccessList = (value) => {
   if (Array.isArray(value)) {
     return value;
@@ -196,6 +221,50 @@ const getUserRoleValue = (user) => {
     user?.title ||
     user?.roles
   );
+};
+
+const buildTelegramNameCandidates = (telegramUser) => {
+  if (!telegramUser) {
+    return [];
+  }
+  const firstName = telegramUser.first_name || '';
+  const lastName = telegramUser.last_name || '';
+  const candidates = [];
+  if (lastName || firstName) {
+    const lastFirst = [lastName, firstName].filter(Boolean).join(' ');
+    const firstLast = [firstName, lastName].filter(Boolean).join(' ');
+    if (lastFirst) {
+      candidates.push(lastFirst);
+    }
+    if (firstLast) {
+      candidates.push(firstLast);
+    }
+  }
+  if (telegramUser.username) {
+    candidates.push(`@${telegramUser.username}`);
+    candidates.push(telegramUser.username);
+  }
+  return Array.from(new Set(candidates.filter(Boolean)));
+};
+
+const isMatchingByNameOrUsername = (user, candidates) => {
+  if (!candidates.length) {
+    return false;
+  }
+  const normalizedCandidates = candidates.map((candidate) => String(candidate).trim()).filter(Boolean);
+  if (!normalizedCandidates.length) {
+    return false;
+  }
+  const userName = getUserNameValue(user);
+  const userUsername = getUserUsernameValue(user);
+  const normalizedUserUsername = userUsername.replace(/^@/, '').toLowerCase();
+  return normalizedCandidates.some((candidate) => {
+    if (userName && isSamePersonName(userName, candidate)) {
+      return true;
+    }
+    const normalizedCandidate = candidate.replace(/^@/, '').toLowerCase();
+    return normalizedUserUsername && normalizedCandidate === normalizedUserUsername;
+  });
 };
 
 const isSuperAdminRole = (roleValue) => {
@@ -258,12 +327,10 @@ const findUserAccess = (userId, data) => {
     });
   }
   const telegramUser = getTelegramUser();
-  const telegramName =
-    [telegramUser?.last_name, telegramUser?.first_name].filter(Boolean).join(' ') ||
-    (telegramUser?.username ? `@${telegramUser.username}` : '');
-  if (telegramName) {
+  const telegramCandidates = buildTelegramNameCandidates(telegramUser);
+  if (telegramCandidates.length) {
     const superAdminByName = superAdmins.find((admin) =>
-      isSamePersonName(getUserNameValue(admin), telegramName)
+      isMatchingByNameOrUsername(admin, telegramCandidates)
     );
     if (superAdminByName) {
       return buildAccessResult({
@@ -290,6 +357,18 @@ const findUserAccess = (userId, data) => {
         organization,
         fallbackScope: 'organization'
       });
+    }
+    if (telegramCandidates.length) {
+      const matchedByName = list.find((user) =>
+        isMatchingByNameOrUsername(user, telegramCandidates)
+      );
+      if (matchedByName) {
+        return buildAccessResult({
+          user: matchedByName,
+          organization,
+          fallbackScope: 'organization'
+        });
+      }
     }
   }
 
@@ -445,14 +524,14 @@ const setCheckingOverlayVisibility = (visible) => {
 };
 
 const waitForTelegramUser = async ({ timeoutMs = 4000, intervalMs = 150 } = {}) => {
-  if (getUserId()) {
+  if (getUserIdWithSource().id) {
     return true;
   }
   const startedAt = Date.now();
   while (Date.now() - startedAt < timeoutMs) {
     await new Promise((resolve) => setTimeout(resolve, intervalMs));
     ensureTelegramReady();
-    if (getUserId()) {
+    if (getUserIdWithSource().id) {
       return true;
     }
   }
@@ -550,13 +629,15 @@ const initAccess = async () => {
     }
     const data = await response.json();
     await waitForTelegramUser();
-    const userId = getUserId();
+    const { id: userId, source: userIdSource } = getUserIdWithSource();
     if (!userId) {
       lockAccess('Не удалось определить ID пользователя. Откройте приложение через Telegram.');
       return;
     }
     const normalizedUserId = normalizeId(userId) || userId;
-    console.info(`ID пользователя принят в работу: ${normalizedUserId}`);
+    console.info(
+      `ID пользователя принят в работу: ${normalizedUserId}. Источник: ${userIdSource}`
+    );
     updateUserIdIndicators(normalizedUserId);
     const access = findUserAccess(normalizedUserId, data);
     if (!access) {

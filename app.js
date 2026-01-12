@@ -115,6 +115,7 @@ const normalizePersonName = (value) => {
   }
   return String(value)
     .toLowerCase()
+    .replace(/ё/g, 'е')
     .replace(/[‑–—]/g, '-')
     .replace(/[^a-zа-яё0-9]+/gi, ' ')
     .replace(/\s+/g, ' ')
@@ -270,12 +271,14 @@ const isMatchingByNameOrUsername = (user, candidates) => {
 const isSuperAdminRole = (roleValue) => {
   const normalized = normalizeRoleText(roleValue)
     .toLowerCase()
+    .replace(/ё/g, 'е')
     .replace(/[‑–—]/g, '-')
     .replace(/\s+/g, ' ')
     .trim();
   return (
     normalized.includes('супер-администратор') ||
     normalized.includes('супер администратор') ||
+    normalized.includes('суперадминистратор') ||
     normalized.includes('super-admin') ||
     normalized.includes('super admin')
   );

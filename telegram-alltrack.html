@@ -744,14 +744,87 @@
 
       document.body.classList.add('is-checking');
 
-      const formatAccountName = (user, tgUser) => {
-        const telegramName = [tgUser?.last_name, tgUser?.first_name].filter(Boolean).join(' ');
-        const sourceName = user?.fullName || telegramName || tgUser?.first_name || '—';
-        const parts = sourceName.split(' ').filter(Boolean);
+      const normalizeId = (value) => {
+        if (value === null || value === undefined) {
+          return null;
+        }
+        const digits = String(value).match(/\d+/g);
+        if (!digits) {
+          return null;
+        }
+        const normalized = digits.join('');
+        return normalized.length ? normalized : null;
+      };
+
+      const getUserIdValue = (user) => {
+        if (!user || typeof user !== 'object') {
+          return null;
+        }
+        return (
+          user.id ??
+          user.userId ??
+          user.user_id ??
+          user.telegramId ??
+          user.telegram_id ??
+          user.telegramID ??
+          user.tgId ??
+          user.tg_id
+        );
+      };
+
+      const getUserRole = (user) => {
+        const roleValue =
+          user?.role ||
+          user?.role_name ||
+          user?.roleName ||
+          user?.position ||
+          user?.access ||
+          user?.title ||
+          user?.roles;
+        if (Array.isArray(roleValue)) {
+          return roleValue.filter(Boolean).join(', ');
+        }
+        return roleValue || '';
+      };
+
+      const getUserFullName = (user, fallbackName = '') => {
+        const directName = user?.fullName || user?.full_name || user?.name || user?.fio || '';
+        if (directName) {
+          return directName;
+        }
+        const lastName = user?.lastName || user?.last_name || user?.surname || '';
+        const firstName = user?.firstName || user?.first_name || user?.given_name || '';
+        const middleName = user?.middleName || user?.middle_name || user?.patronymic || '';
+        const combined = [lastName, firstName, middleName].filter(Boolean).join(' ').trim();
+        return combined || fallbackName || '';
+      };
+
+      const getTelegramDisplayName = (tgUser) => {
+        if (!tgUser) {
+          return '';
+        }
+        const parts = [tgUser.last_name, tgUser.first_name].filter(Boolean);
+        if (parts.length) {
+          return parts.join(' ');
+        }
+        if (tgUser.username) {
+          return `@${tgUser.username}`;
+        }
+        return tgUser.first_name || '';
+      };
+
+      const getShortName = (fullName = '') => {
+        const parts = fullName.trim().split(/\s+/).filter(Boolean);
         if (parts.length >= 2) {
           return `${parts[0]} ${parts[1]}`;
         }
-        return sourceName;
+        return fullName || '—';
+      };
+
+      const formatAccountName = (user, tgUser) => {
+        const fallbackName = getTelegramDisplayName(tgUser);
+        const resolvedName = getUserFullName(user, fallbackName);
+        return getShortName(resolvedName);
       };
 
       const updateCheckingAccount = (user) => {
@@ -759,21 +832,27 @@
           checkingName.textContent = formatAccountName(user, tg?.initDataUnsafe?.user);
         }
         if (checkingRole) {
-          checkingRole.textContent = `Роль: ${user?.role || '—'}`;
+          checkingRole.textContent = `Роль: ${getUserRole(user) || '—'}`;
         }
       };
 
       const getUserId = () => {
         const telegramId = tg?.initDataUnsafe?.user?.id;
-        if (telegramId) {
-          return telegramId;
+        if (telegramId !== undefined && telegramId !== null) {
+          return String(telegramId);
         }
         const urlId = new URLSearchParams(window.location.search).get('user_id');
-        return urlId ? Number(urlId) : null;
+        return urlId ? urlId.trim() : null;
       };
 
       const findUserAccess = (userId, data) => {
-        const superAdmin = data.superAdmins?.find((admin) => admin.id === userId);
+        const normalizedId = normalizeId(userId);
+        if (!normalizedId) {
+          return null;
+        }
+        const superAdmin = data.superAdmins?.find(
+          (admin) => normalizeId(getUserIdValue(admin)) === normalizedId
+        );
         if (superAdmin) {
           return {
             user: superAdmin,
@@ -784,7 +863,13 @@
 
         const organizations = data.organizations || {};
         for (const [organization, users] of Object.entries(organizations)) {
-          const matched = users.find((user) => user.id === userId);
+          const list = Array.isArray(users) ? users : users?.users;
+          if (!Array.isArray(list)) {
+            continue;
+          }
+          const matched = list.find(
+            (user) => normalizeId(getUserIdValue(user)) === normalizedId
+          );
           if (matched) {
             return {
               user: matched,
@@ -815,9 +900,12 @@
         let target = null;
         if (scope === 'super') {
           target = document.querySelector('.role-screen[data-scope="super"]');
-        } else if (user?.role) {
-          const roleSelector = `.role-screen[data-role="${escapeRole(user.role)}"]`;
-          target = document.querySelector(roleSelector);
+        } else {
+          const resolvedRole = getUserRole(user);
+          if (resolvedRole) {
+            const roleSelector = `.role-screen[data-role="${escapeRole(resolvedRole)}"]`;
+            target = document.querySelector(roleSelector);
+          }
         }
         if (!target) {
           target = document.querySelector('.role-screen[data-role="default"]');
@@ -858,7 +946,8 @@
           userMeta.textContent = `Организация: ${organization}`;
         }
         if (userBadge) {
-          userBadge.textContent = user.role || (scope === 'super' ? 'Супер‑администратор' : 'Роль не задана');
+          const resolvedRole = getUserRole(user);
+          userBadge.textContent = resolvedRole || (scope === 'super' ? 'Супер‑администратор' : 'Роль не задана');
         }
         showScreenForAccess({ user, scope });
       };

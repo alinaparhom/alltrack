@@ -28,8 +28,30 @@ buttons.forEach((button) => {
   });
 });
 
+const getTelegramUser = () => {
+  if (!tg) {
+    return null;
+  }
+  if (tg.initDataUnsafe?.user) {
+    return tg.initDataUnsafe.user;
+  }
+  if (!tg.initData) {
+    return null;
+  }
+  try {
+    const params = new URLSearchParams(tg.initData);
+    const userValue = params.get('user');
+    if (!userValue) {
+      return null;
+    }
+    return JSON.parse(userValue);
+  } catch (error) {
+    return null;
+  }
+};
+
 const getUserId = () => {
-  const telegramId = tg?.initDataUnsafe?.user?.id;
+  const telegramId = getTelegramUser()?.id;
   if (telegramId !== undefined && telegramId !== null) {
     return String(telegramId);
   }
@@ -174,7 +196,7 @@ const getInitials = (fullName = '') => {
 };
 
 const updateCheckingAccount = ({ fullName, role, scope } = {}) => {
-  const displayName = getShortName(fullName || getTelegramDisplayName(tg?.initDataUnsafe?.user));
+  const displayName = getShortName(fullName || getTelegramDisplayName(getTelegramUser()));
   if (checkingName) {
     checkingName.textContent = displayName || '—';
   }
@@ -203,7 +225,7 @@ const lockAccess = (message) => {
 const unlockAccess = ({ user, organization, scope }) => {
   const resolvedName = getUserFullName(
     user,
-    getTelegramDisplayName(tg?.initDataUnsafe?.user)
+    getTelegramDisplayName(getTelegramUser())
   );
   const resolvedRole = getUserRole(user) || (scope === 'super' ? 'Супер‑администратор' : '');
   document.body.classList.remove('is-locked');

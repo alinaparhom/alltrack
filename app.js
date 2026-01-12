@@ -367,6 +367,11 @@ const unlockAccess = ({ user, organization, scope, userId }) => {
   if (accessBadge) {
     accessBadge.textContent = scope === 'super' ? 'Супер‑админ' : organization;
   }
+  if (scope === 'super' && window.initSuperAdminWorkspace) {
+    window.initSuperAdminWorkspace({ fullName: resolvedName });
+  } else if (window.resetSuperAdminWorkspace) {
+    window.resetSuperAdminWorkspace();
+  }
 };
 
 const initAccess = async () => {

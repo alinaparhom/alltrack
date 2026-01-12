@@ -26,7 +26,8 @@ body {
 }
 
 body.is-super-admin .hero,
-body.is-super-admin .app__default {
+body.is-super-admin .app__default,
+body.is-super-admin .access {
   display: none;
 }
 

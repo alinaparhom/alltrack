@@ -135,6 +135,16 @@ body {
   color: var(--muted);
 }
 
+.access__message {
+  margin: 10px 0 0;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 12px;
+  padding: 8px 10px;
+}
+
 .access__badge {
   padding: 8px 12px;
   border-radius: 999px;

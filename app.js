@@ -27,6 +27,8 @@ const checkingOverlay = document.getElementById('checkingOverlay');
 const checkingName = document.getElementById('checkingName');
 const checkingRole = document.getElementById('checkingRole');
 const checkingIdStatus = document.getElementById('checkingIdStatus');
+const superAdminPanel = document.getElementById('superAdminPanel');
+const defaultWorkspace = document.getElementById('defaultWorkspace');
 
 document.body.classList.add('is-checking');
 
@@ -431,10 +433,26 @@ const unlockAccess = ({ user, organization, scope, userId }) => {
   if (accessBadge) {
     accessBadge.textContent = scope === 'super' ? 'Супер‑админ' : organization;
   }
-  if (scope === 'super' && window.initSuperAdminWorkspace) {
-    window.initSuperAdminWorkspace({ fullName: resolvedName });
-  } else if (window.resetSuperAdminWorkspace) {
-    window.resetSuperAdminWorkspace();
+  if (scope === 'super') {
+    if (superAdminPanel) {
+      superAdminPanel.hidden = false;
+    }
+    if (defaultWorkspace) {
+      defaultWorkspace.hidden = true;
+    }
+    if (window.initSuperAdminWorkspace) {
+      window.initSuperAdminWorkspace({ fullName: resolvedName });
+    }
+  } else {
+    if (superAdminPanel) {
+      superAdminPanel.hidden = true;
+    }
+    if (defaultWorkspace) {
+      defaultWorkspace.hidden = false;
+    }
+    if (window.resetSuperAdminWorkspace) {
+      window.resetSuperAdminWorkspace();
+    }
   }
 };
 

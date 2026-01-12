@@ -171,6 +171,22 @@ const isSuperAdminRole = (roleValue) => {
   );
 };
 
+const buildAccessResult = ({ user, organization, fallbackScope = 'organization' }) => {
+  const roleValue = getUserRoleValue(user);
+  if (isSuperAdminRole(roleValue)) {
+    return {
+      user,
+      scope: 'super',
+      organization: 'Все организации'
+    };
+  }
+  return {
+    user,
+    scope: fallbackScope,
+    organization
+  };
+};
+
 const findUserAccess = (userId, data) => {
   const normalizedId = normalizeId(userId);
   if (!normalizedId) {
@@ -181,11 +197,11 @@ const findUserAccess = (userId, data) => {
     (admin) => normalizeId(getUserIdValue(admin)) === normalizedId
   );
   if (superAdmin) {
-    return {
+    return buildAccessResult({
       user: superAdmin,
-      scope: 'super',
-      organization: 'Все организации'
-    };
+      organization: 'Все организации',
+      fallbackScope: 'organization'
+    });
   }
 
   const organizations = data.organizations || {};
@@ -198,18 +214,11 @@ const findUserAccess = (userId, data) => {
       (user) => normalizeId(getUserIdValue(user)) === normalizedId
     );
     if (matched) {
-      if (isSuperAdminRole(getUserRoleValue(matched))) {
-        return {
-          user: matched,
-          scope: 'super',
-          organization: 'Все организации'
-        };
-      }
-      return {
+      return buildAccessResult({
         user: matched,
-        scope: 'organization',
-        organization
-      };
+        organization,
+        fallbackScope: 'organization'
+      });
     }
   }
 

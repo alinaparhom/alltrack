@@ -379,9 +379,12 @@ const findUserAccess = (userId, data) => {
     return null;
   }
   const superAdmins = getSuperAdminsList(data);
-  const superAdmin = superAdmins.find(
-    (admin) => isSameId(getUserIdValue(admin), normalizedId)
-  );
+  const matchesNormalizedId = (entry) => {
+    const entryId = normalizeId(getUserIdValue(entry));
+    return Boolean(entryId && entryId === normalizedId);
+  };
+
+  const superAdmin = superAdmins.find((admin) => matchesNormalizedId(admin));
   if (superAdmin) {
     return buildAccessResult({
       user: superAdmin,
@@ -412,9 +415,7 @@ const findUserAccess = (userId, data) => {
     if (!Array.isArray(list)) {
       continue;
     }
-    const matched = list.find(
-      (user) => isSameId(getUserIdValue(user), normalizedId)
-    );
+    const matched = list.find((user) => matchesNormalizedId(user));
     if (matched) {
       return buildAccessResult({
         user: matched,

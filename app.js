@@ -99,6 +99,45 @@ const normalizeId = (value) => {
   return normalized.length ? normalized : null;
 };
 
+const normalizePersonName = (value) => {
+  if (!value) {
+    return '';
+  }
+  return String(value)
+    .toLowerCase()
+    .replace(/[‑–—]/g, '-')
+    .replace(/[^a-zа-яё0-9]+/gi, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+};
+
+const isSamePersonName = (left, right) => {
+  const leftNormalized = normalizePersonName(left);
+  const rightNormalized = normalizePersonName(right);
+  if (!leftNormalized || !rightNormalized) {
+    return false;
+  }
+  return (
+    leftNormalized === rightNormalized ||
+    leftNormalized.includes(rightNormalized) ||
+    rightNormalized.includes(leftNormalized)
+  );
+};
+
+const getUserNameValue = (user) => {
+  if (!user || typeof user !== 'object') {
+    return '';
+  }
+  const directName = user.fullName || user.full_name || user.name || user.fio || '';
+  if (directName) {
+    return directName;
+  }
+  const lastName = user.lastName || user.last_name || user.surname || user.family_name || '';
+  const firstName = user.firstName || user.first_name || user.given_name || user.name_first || '';
+  const middleName = user.middleName || user.middle_name || user.patronymic || '';
+  return [lastName, firstName, middleName].filter(Boolean).join(' ').trim();
+};
+
 const getUserIdValue = (user) => {
   if (!user || typeof user !== 'object') {
     return null;
@@ -217,6 +256,23 @@ const findUserAccess = (userId, data) => {
       fallbackScope: 'organization',
       forceScope: 'super'
     });
+  }
+  const telegramUser = getTelegramUser();
+  const telegramName =
+    [telegramUser?.last_name, telegramUser?.first_name].filter(Boolean).join(' ') ||
+    (telegramUser?.username ? `@${telegramUser.username}` : '');
+  if (telegramName) {
+    const superAdminByName = superAdmins.find((admin) =>
+      isSamePersonName(getUserNameValue(admin), telegramName)
+    );
+    if (superAdminByName) {
+      return buildAccessResult({
+        user: superAdminByName,
+        organization: 'Все организации',
+        fallbackScope: 'organization',
+        forceScope: 'super'
+      });
+    }
   }
 
   const organizations = data.organizations || {};
@@ -499,8 +555,10 @@ const initAccess = async () => {
       lockAccess('Не удалось определить ID пользователя. Откройте приложение через Telegram.');
       return;
     }
-    updateUserIdIndicators(userId);
-    const access = findUserAccess(userId, data);
+    const normalizedUserId = normalizeId(userId) || userId;
+    console.info(`ID пользователя принят в работу: ${normalizedUserId}`);
+    updateUserIdIndicators(normalizedUserId);
+    const access = findUserAccess(normalizedUserId, data);
     if (!access) {
       lockAccess('Ваш ID не найден в списке прав. Обратитесь к супер‑администратору.');
       return;
@@ -508,14 +566,14 @@ const initAccess = async () => {
     if (access.scope === 'super') {
       document.body.classList.remove('is-checking');
       setCheckingOverlayVisibility(false);
-      unlockAccess({ ...access, userId });
+      unlockAccess({ ...access, userId: normalizedUserId });
       return;
     }
     updateCheckingAccount({
       user: access.user,
       scope: access.scope
     });
-    unlockAccess({ ...access, userId });
+    unlockAccess({ ...access, userId: normalizedUserId });
   } catch (error) {
     lockAccess('Ошибка загрузки прав доступа. Проверьте файл access.json.');
   } finally {

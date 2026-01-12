@@ -90,6 +90,55 @@
         color: var(--muted);
       }
 
+      .user-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 12px 16px;
+        border-radius: 18px;
+        background: var(--glass);
+        border: 1px solid var(--border);
+        box-shadow: var(--shadow);
+        font-size: 13px;
+        color: var(--muted);
+      }
+
+      .user-bar strong {
+        display: block;
+        color: var(--text);
+        font-size: 14px;
+      }
+
+      .user-badge {
+        padding: 6px 12px;
+        border-radius: 999px;
+        background: var(--accent-soft);
+        color: var(--accent);
+        font-size: 11px;
+        font-weight: 600;
+        white-space: nowrap;
+      }
+
+      .role-screen {
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+      }
+
+      .role-screen[hidden] {
+        display: none;
+      }
+
+      .role-title {
+        font-size: 16px;
+      }
+
+      .role-subtitle {
+        font-size: 12px;
+        color: var(--muted);
+      }
+
       .search {
         background: var(--glass);
         border-radius: var(--radius);
@@ -265,6 +314,39 @@
         color: var(--muted);
       }
 
+      .access-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(244, 248, 255, 0.75);
+        backdrop-filter: blur(12px);
+        display: grid;
+        place-items: center;
+        padding: 20px;
+        z-index: 10;
+      }
+
+      .access-overlay__card {
+        background: var(--glass);
+        border: 1px solid var(--border);
+        border-radius: 24px;
+        padding: 24px;
+        text-align: center;
+        box-shadow: var(--shadow);
+        max-width: 320px;
+      }
+
+      .access-overlay__icon {
+        font-size: 26px;
+        display: block;
+        margin-bottom: 12px;
+      }
+
+      body.is-checking .app,
+      body.is-locked .app {
+        filter: blur(2px);
+        pointer-events: none;
+      }
+
       @media (max-width: 360px) {
         .stats,
         .actions {
@@ -286,131 +368,449 @@
           </div>
           <div class="pill">Сегодня: 12 операций</div>
         </div>
+        <div class="user-bar" id="userBar" hidden>
+          <div>
+            <strong id="userName">—</strong>
+            <span id="userMeta">—</span>
+          </div>
+          <span class="user-badge" id="userBadge">—</span>
+        </div>
         <label class="search">
           🔎
           <input type="text" placeholder="Поиск по инвентарю, объектам, сотрудникам" />
         </label>
       </header>
 
-      <section class="stats">
+      <section class="role-screen" data-scope="super" hidden>
         <div class="card">
-          <h3>Активы на балансе</h3>
-          <strong>1 284</strong>
-          <span>+28 за неделю</span>
+          <h3 class="role-title">Панель супер‑админа</h3>
+          <span class="role-subtitle">Контроль всех организаций и ролей</span>
         </div>
-        <div class="card">
-          <h3>На ремонте</h3>
-          <strong>16</strong>
-          <span>4 срочных</span>
-        </div>
-        <div class="card">
-          <h3>Перемещений</h3>
-          <strong>38</strong>
-          <span>за последние 7 дней</span>
-        </div>
-        <div class="card">
-          <h3>Списаний</h3>
-          <strong>3</strong>
-          <span>ожидают согласования</span>
-        </div>
+        <section class="stats">
+          <div class="card">
+            <h3>Организаций</h3>
+            <strong>12</strong>
+            <span>в едином реестре</span>
+          </div>
+          <div class="card">
+            <h3>Пользователей</h3>
+            <strong>284</strong>
+            <span>активных</span>
+          </div>
+          <div class="card">
+            <h3>Запросов доступа</h3>
+            <strong>6</strong>
+            <span>ждут подтверждения</span>
+          </div>
+          <div class="card">
+            <h3>Инцидентов</h3>
+            <strong>3</strong>
+            <span>в работе</span>
+          </div>
+        </section>
+        <section class="actions">
+          <button class="action-btn action-btn--primary" type="button">
+            <span class="icon">🧭</span>
+            Карта организаций
+          </button>
+          <button class="action-btn action-btn--success" type="button">
+            <span class="icon">🧑‍💼</span>
+            Роли и доступы
+          </button>
+          <button class="action-btn action-btn--warning" type="button">
+            <span class="icon">📊</span>
+            Сводный отчёт
+          </button>
+          <button class="action-btn" type="button">
+            <span class="icon">⚙️</span>
+            Настройки системы
+          </button>
+        </section>
       </section>
 
-      <section class="actions">
-        <button class="action-btn action-btn--primary" type="button">
-          <span class="icon">➕</span>
-          Новое поступление
-        </button>
-        <button class="action-btn action-btn--success" type="button">
-          <span class="icon">🔁</span>
-          Перемещение
-        </button>
-        <button class="action-btn action-btn--warning" type="button">
-          <span class="icon">🛠️</span>
-          Ремонт / сервис
-        </button>
-        <button class="action-btn" type="button">
-          <span class="icon">📄</span>
-          Создать отчёт
-        </button>
+      <section class="role-screen" data-role="Администратор" hidden>
+        <div class="card">
+          <h3 class="role-title">Администрирование</h3>
+          <span class="role-subtitle">Контроль активов и пользователей в организации</span>
+        </div>
+        <section class="stats">
+          <div class="card">
+            <h3>Активы на балансе</h3>
+            <strong>1 284</strong>
+            <span>+28 за неделю</span>
+          </div>
+          <div class="card">
+            <h3>На ремонте</h3>
+            <strong>16</strong>
+            <span>4 срочных</span>
+          </div>
+          <div class="card">
+            <h3>Перемещений</h3>
+            <strong>38</strong>
+            <span>за 7 дней</span>
+          </div>
+          <div class="card">
+            <h3>Списаний</h3>
+            <strong>3</strong>
+            <span>на согласовании</span>
+          </div>
+        </section>
+        <section class="actions">
+          <button class="action-btn action-btn--primary" type="button">
+            <span class="icon">➕</span>
+            Новое поступление
+          </button>
+          <button class="action-btn action-btn--success" type="button">
+            <span class="icon">🔁</span>
+            Перемещение
+          </button>
+          <button class="action-btn action-btn--warning" type="button">
+            <span class="icon">🛠️</span>
+            Ремонт / сервис
+          </button>
+          <button class="action-btn" type="button">
+            <span class="icon">📄</span>
+            Создать отчёт
+          </button>
+        </section>
       </section>
 
-      <section class="section">
-        <div class="section__header">
-          <h2>Последние перемещения</h2>
-          <a href="#">Смотреть все</a>
+      <section class="role-screen" data-role="Инженер" hidden>
+        <div class="card">
+          <h3 class="role-title">Задачи инженера</h3>
+          <span class="role-subtitle">Диагностика и сервисное обслуживание</span>
         </div>
-        <div class="list">
-          <div class="list-item">
-            <div>
-              <div class="list-item__title">Сканер Zebra DS2278</div>
-              <div class="list-item__meta">Склад → Магазин №12 · 2 часа назад</div>
-            </div>
-            <span class="badge badge--info">Доставка</span>
+        <section class="section">
+          <div class="section__header">
+            <h2>Текущие заявки</h2>
+            <a href="#">Все заявки</a>
           </div>
-          <div class="list-item">
-            <div>
-              <div class="list-item__title">Ноутбук Dell Latitude</div>
-              <div class="list-item__meta">Офис → Сервисный центр · вчера</div>
+          <div class="list">
+            <div class="list-item">
+              <div>
+                <div class="list-item__title">Терминал Honeywell CT45</div>
+                <div class="list-item__meta">Диагностика · приоритет высокий</div>
+              </div>
+              <span class="badge badge--danger">Срочно</span>
             </div>
-            <span class="badge badge--warn">Диагностика</span>
-          </div>
-          <div class="list-item">
-            <div>
-              <div class="list-item__title">Паллетный принтер TSC</div>
-              <div class="list-item__meta">Склад → Зона отгрузки · 2 дня назад</div>
+            <div class="list-item">
+              <div>
+                <div class="list-item__title">Сканер Zebra DS2278</div>
+                <div class="list-item__meta">Проверка питания · 2 день</div>
+              </div>
+              <span class="badge badge--warn">В работе</span>
             </div>
-            <span class="badge badge--info">Выдан</span>
           </div>
-        </div>
+        </section>
+        <section class="actions">
+          <button class="action-btn action-btn--primary" type="button">
+            <span class="icon">🧰</span>
+            Открыть карту ремонта
+          </button>
+          <button class="action-btn action-btn--success" type="button">
+            <span class="icon">✅</span>
+            Закрыть заявку
+          </button>
+          <button class="action-btn" type="button">
+            <span class="icon">📦</span>
+            Запрос запчастей
+          </button>
+          <button class="action-btn" type="button">
+            <span class="icon">📝</span>
+            Отчёт по сервису
+          </button>
+        </section>
       </section>
 
-      <section class="section">
-        <div class="section__header">
-          <h2>Ремонты и обслуживание</h2>
-          <a href="#">Контроль SLA</a>
+      <section class="role-screen" data-role="Кладовщик" hidden>
+        <div class="card">
+          <h3 class="role-title">Работа склада</h3>
+          <span class="role-subtitle">Поступления, выдачи и перемещения</span>
         </div>
-        <div class="list">
-          <div class="list-item">
-            <div>
-              <div class="list-item__title">Терминал Honeywell CT45</div>
-              <div class="list-item__meta">В работе 4 дня · Ответственный: Сервис</div>
-            </div>
-            <span class="badge badge--danger">Просрочка</span>
+        <section class="section">
+          <div class="section__header">
+            <h2>Сегодня на складе</h2>
+            <a href="#">Список</a>
           </div>
-          <div class="list-item">
-            <div>
-              <div class="list-item__title">Весы CAS AD-15</div>
-              <div class="list-item__meta">Ожидается диагностика · 1 день</div>
+          <div class="list">
+            <div class="list-item">
+              <div>
+                <div class="list-item__title">Поступление: терминалы (12 шт.)</div>
+                <div class="list-item__meta">Поставщик: TechLine · 10:20</div>
+              </div>
+              <span class="badge badge--info">Проверка</span>
             </div>
-            <span class="badge badge--warn">Ожидание</span>
+            <div class="list-item">
+              <div>
+                <div class="list-item__title">Выдача: ноутбуки (4 шт.)</div>
+                <div class="list-item__meta">Объект «Север» · 13:40</div>
+              </div>
+              <span class="badge badge--warn">К отгрузке</span>
+            </div>
           </div>
-        </div>
+        </section>
+        <section class="actions">
+          <button class="action-btn action-btn--primary" type="button">
+            <span class="icon">📥</span>
+            Принять поставку
+          </button>
+          <button class="action-btn action-btn--success" type="button">
+            <span class="icon">📤</span>
+            Выдать актив
+          </button>
+          <button class="action-btn action-btn--warning" type="button">
+            <span class="icon">🔄</span>
+            Переместить
+          </button>
+          <button class="action-btn" type="button">
+            <span class="icon">📦</span>
+            Инвентаризация
+          </button>
+        </section>
       </section>
 
-      <section class="section">
-        <div class="section__header">
-          <h2>Инвентаризация</h2>
-          <a href="#">Запустить</a>
+      <section class="role-screen" data-role="Руководитель направления" hidden>
+        <div class="card">
+          <h3 class="role-title">Контроль направления</h3>
+          <span class="role-subtitle">Сводка по эффективности и рискам</span>
         </div>
-        <div class="list">
-          <div class="list-item">
-            <div>
-              <div class="list-item__title">Филиал «Юг»</div>
-              <div class="list-item__meta">Старт 12 окт · 87% проверено</div>
-            </div>
-            <span class="badge badge--info">В процессе</span>
+        <section class="stats">
+          <div class="card">
+            <h3>Готовность активов</h3>
+            <strong>93%</strong>
+            <span>рост за месяц</span>
           </div>
-          <div class="list-item">
-            <div>
-              <div class="list-item__title">Центральный склад</div>
-              <div class="list-item__meta">Запланировано на 18 окт</div>
-            </div>
-            <span class="badge badge--info">План</span>
+          <div class="card">
+            <h3>Ремонтов в SLA</h3>
+            <strong>18</strong>
+            <span>из 20</span>
           </div>
+          <div class="card">
+            <h3>Просрочки</h3>
+            <strong>2</strong>
+            <span>нужно внимание</span>
+          </div>
+          <div class="card">
+            <h3>Бюджет</h3>
+            <strong>68%</strong>
+            <span>использовано</span>
+          </div>
+        </section>
+        <section class="actions">
+          <button class="action-btn action-btn--primary" type="button">
+            <span class="icon">📈</span>
+            Отчёт KPI
+          </button>
+          <button class="action-btn action-btn--success" type="button">
+            <span class="icon">📌</span>
+            Критические риски
+          </button>
+          <button class="action-btn action-btn--warning" type="button">
+            <span class="icon">🧾</span>
+            Запросить списание
+          </button>
+          <button class="action-btn" type="button">
+            <span class="icon">🗂️</span>
+            План закупок
+          </button>
+        </section>
+      </section>
+
+      <section class="role-screen" data-role="default" hidden>
+        <div class="card">
+          <h3 class="role-title">Обзор</h3>
+          <span class="role-subtitle">Панель по умолчанию</span>
         </div>
+        <section class="section">
+          <div class="section__header">
+            <h2>Последние перемещения</h2>
+            <a href="#">Смотреть все</a>
+          </div>
+          <div class="list">
+            <div class="list-item">
+              <div>
+                <div class="list-item__title">Сканер Zebra DS2278</div>
+                <div class="list-item__meta">Склад → Магазин №12 · 2 часа назад</div>
+              </div>
+              <span class="badge badge--info">Доставка</span>
+            </div>
+            <div class="list-item">
+              <div>
+                <div class="list-item__title">Ноутбук Dell Latitude</div>
+                <div class="list-item__meta">Офис → Сервисный центр · вчера</div>
+              </div>
+              <span class="badge badge--warn">Диагностика</span>
+            </div>
+          </div>
+        </section>
       </section>
 
       <footer class="footer">Все данные обновляются в реальном времени через Telegram.</footer>
     </main>
+
+    <div class="access-overlay" id="accessOverlay" hidden>
+      <div class="access-overlay__card">
+        <span class="access-overlay__icon">🔒</span>
+        <h2>Доступ закрыт</h2>
+        <p id="accessOverlayText">Ваш ID не найден в списке прав. Обратитесь к супер‑администратору.</p>
+      </div>
+    </div>
+
+    <div class="access-overlay" id="checkingOverlay">
+      <div class="access-overlay__card">
+        <span class="access-overlay__icon">🔎</span>
+        <h2>Проверяем доступ</h2>
+        <p>Определяем ваш ID и роль в системе.</p>
+      </div>
+    </div>
+
+    <script>
+      const tg = window.Telegram ? window.Telegram.WebApp : null;
+
+      if (tg) {
+        tg.ready();
+        tg.expand();
+      }
+
+      const accessOverlay = document.getElementById('accessOverlay');
+      const accessOverlayText = document.getElementById('accessOverlayText');
+      const checkingOverlay = document.getElementById('checkingOverlay');
+      const userBar = document.getElementById('userBar');
+      const userName = document.getElementById('userName');
+      const userMeta = document.getElementById('userMeta');
+      const userBadge = document.getElementById('userBadge');
+      const roleScreens = document.querySelectorAll('.role-screen');
+
+      document.body.classList.add('is-checking');
+
+      const getUserId = () => {
+        const telegramId = tg?.initDataUnsafe?.user?.id;
+        if (telegramId) {
+          return telegramId;
+        }
+        const urlId = new URLSearchParams(window.location.search).get('user_id');
+        return urlId ? Number(urlId) : null;
+      };
+
+      const findUserAccess = (userId, data) => {
+        const superAdmin = data.superAdmins?.find((admin) => admin.id === userId);
+        if (superAdmin) {
+          return {
+            user: superAdmin,
+            scope: 'super',
+            organization: 'Все организации'
+          };
+        }
+
+        const organizations = data.organizations || {};
+        for (const [organization, users] of Object.entries(organizations)) {
+          const matched = users.find((user) => user.id === userId);
+          if (matched) {
+            return {
+              user: matched,
+              scope: 'organization',
+              organization
+            };
+          }
+        }
+
+        return null;
+      };
+
+      const hideAllScreens = () => {
+        roleScreens.forEach((screen) => {
+          screen.hidden = true;
+        });
+      };
+
+      const escapeRole = (value) => {
+        if (window.CSS && CSS.escape) {
+          return CSS.escape(value);
+        }
+        return value.replace(/"/g, '\\"');
+      };
+
+      const showScreenForAccess = ({ user, scope }) => {
+        hideAllScreens();
+        let target = null;
+        if (scope === 'super') {
+          target = document.querySelector('.role-screen[data-scope="super"]');
+        } else if (user?.role) {
+          const roleSelector = `.role-screen[data-role="${escapeRole(user.role)}"]`;
+          target = document.querySelector(roleSelector);
+        }
+        if (!target) {
+          target = document.querySelector('.role-screen[data-role="default"]');
+        }
+        if (target) {
+          target.hidden = false;
+        }
+      };
+
+      const lockAccess = (message) => {
+        document.body.classList.add('is-locked');
+        document.body.classList.remove('is-checking');
+        hideAllScreens();
+        if (accessOverlayText) {
+          accessOverlayText.textContent = message;
+        }
+        if (accessOverlay) {
+          accessOverlay.hidden = false;
+        }
+        if (userBar) {
+          userBar.hidden = true;
+        }
+      };
+
+      const unlockAccess = ({ user, organization, scope }) => {
+        document.body.classList.remove('is-locked');
+        document.body.classList.remove('is-checking');
+        if (accessOverlay) {
+          accessOverlay.hidden = true;
+        }
+        if (userBar) {
+          userBar.hidden = false;
+        }
+        if (userName) {
+          userName.textContent = user.fullName;
+        }
+        if (userMeta) {
+          userMeta.textContent = `${organization} · ${user.role}`;
+        }
+        if (userBadge) {
+          userBadge.textContent = scope === 'super' ? 'Супер‑админ' : organization;
+        }
+        showScreenForAccess({ user, scope });
+      };
+
+      const initAccess = async () => {
+        try {
+          const response = await fetch('access.json', { cache: 'no-store' });
+          if (!response.ok) {
+            throw new Error('Не удалось загрузить список доступов');
+          }
+          const data = await response.json();
+          const userId = getUserId();
+          if (!userId) {
+            lockAccess('Не удалось определить ID пользователя. Откройте приложение через Telegram.');
+            return;
+          }
+          const access = findUserAccess(userId, data);
+          if (!access) {
+            lockAccess('Ваш ID не найден в списке прав. Обратитесь к супер‑администратору.');
+            return;
+          }
+          unlockAccess(access);
+        } catch (error) {
+          lockAccess('Ошибка загрузки прав доступа. Проверьте файл access.json.');
+        } finally {
+          if (checkingOverlay) {
+            checkingOverlay.hidden = true;
+          }
+        }
+      };
+
+      initAccess();
+    </script>
   </body>
 </html>

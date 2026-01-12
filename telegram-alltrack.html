@@ -1096,13 +1096,22 @@
           userName.textContent = formatAccountName(user, getTelegramUser(), scope);
         }
         if (userMeta) {
-          userMeta.textContent = `Организация: ${organization}`;
+          const metaOrganization =
+            scope === 'super' || isSuperAdminRole(getUserRoleValue(user))
+              ? 'Все организации'
+              : organization;
+          userMeta.textContent = `Организация: ${metaOrganization}`;
         }
+        const { role: resolvedRole } = resolveAccountInfo({ user, scope });
         if (userBadge) {
-          const { role: resolvedRole } = resolveAccountInfo({ user, scope });
           userBadge.textContent = resolvedRole || 'Роль не задана';
         }
-        showScreenForAccess({ user, scope });
+        const isRoleSuper =
+          scope === 'super' ||
+          isSuperAdminRole(resolvedRole) ||
+          isSuperAdminRole(getUserRoleValue(user));
+        const effectiveScope = isRoleSuper ? 'super' : scope;
+        showScreenForAccess({ user, scope: effectiveScope });
       };
 
       const waitForTelegramUser = async ({ timeoutMs = 4000, intervalMs = 150 } = {}) => {

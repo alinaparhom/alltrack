@@ -795,6 +795,7 @@
         }
         return String(value)
           .toLowerCase()
+          .replace(/ё/g, 'е')
           .replace(/[‑–—]/g, '-')
           .replace(/[^a-zа-яё0-9]+/gi, ' ')
           .replace(/\s+/g, ' ')
@@ -918,7 +919,7 @@
         if (typeof value === 'object') {
           return normalizeRoleText(value.name || value.title || value.role || value.label);
         }
-        return String(value);
+        return String(value).replace(/ё/g, 'е');
       };
 
       const getUserRoleValue = (user) => {
@@ -948,6 +949,7 @@
         return (
           normalized.includes('супер-администратор') ||
           normalized.includes('супер администратор') ||
+          normalized.includes('суперадминистратор') ||
           normalized.includes('super-admin') ||
           normalized.includes('super admin')
         );
@@ -1063,7 +1065,7 @@
 
       const getTelegramUser = () => {
         const tg = getTelegramWebApp();
-        if (tg.initDataUnsafe?.user) {
+        if (tg?.initDataUnsafe?.user) {
           return tg.initDataUnsafe.user;
         }
         const initData = tg?.initData || getInitDataFromLocation();
@@ -1094,14 +1096,24 @@
         checkingOverlay.style.display = visible ? '' : 'none';
       };
 
-      const getUserId = () => {
+      const getUserIdWithSource = () => {
+        const tg = getTelegramWebApp();
+        const unsafeId = tg?.initDataUnsafe?.user?.id;
+        if (unsafeId !== undefined && unsafeId !== null) {
+          return { id: String(unsafeId), source: 'tg.initDataUnsafe.user.id' };
+        }
         const telegramId = getTelegramUser()?.id;
         if (telegramId !== undefined && telegramId !== null) {
-          return String(telegramId);
+          return { id: String(telegramId), source: 'parsed.initData.user.id' };
         }
         const urlId = new URLSearchParams(window.location.search).get('user_id');
-        return urlId ? urlId.trim() : null;
+        if (urlId) {
+          return { id: urlId.trim(), source: 'url.user_id' };
+        }
+        return { id: null, source: 'not-found' };
       };
+
+      const getUserId = () => getUserIdWithSource().id;
 
       const formatUserIdStatus = (userId) => {
         const normalizedId = normalizeId(userId) || '—';
@@ -1128,8 +1140,8 @@
         }
         const superAdmins = getSuperAdminsList(data);
         const matchesNormalizedId = (entry) => {
-          const entryId = normalizeId(getUserIdValue(entry));
-          return Boolean(entryId && entryId === normalizedId);
+          const entryId = getUserIdValue(entry);
+          return isSameId(entryId, normalizedId) || isSameId(entryId, userId);
         };
 
         const superAdmin = superAdmins.find((admin) => matchesNormalizedId(admin));

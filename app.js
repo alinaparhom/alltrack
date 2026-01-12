@@ -383,8 +383,8 @@ const findUserAccess = (userId, data) => {
   }
   const superAdmins = getSuperAdminsList(data);
   const matchesNormalizedId = (entry) => {
-    const entryId = normalizeId(getUserIdValue(entry));
-    return Boolean(entryId && entryId === normalizedId);
+    const entryId = getUserIdValue(entry);
+    return isSameId(entryId, normalizedId) || isSameId(entryId, userId);
   };
 
   const superAdmin = superAdmins.find((admin) => matchesNormalizedId(admin));

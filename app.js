@@ -16,6 +16,7 @@ const accessPanel = document.getElementById('accessPanel');
 const accessName = document.getElementById('accessName');
 const accessRole = document.getElementById('accessRole');
 const accessMeta = document.getElementById('accessMeta');
+const accessId = document.getElementById('accessId');
 const accessBadge = document.getElementById('accessBadge');
 const accessAvatar = document.getElementById('accessAvatar');
 const accessMessage = document.getElementById('accessMessage');
@@ -300,7 +301,7 @@ const lockAccess = (message) => {
   }
 };
 
-const unlockAccess = ({ user, organization, scope }) => {
+const unlockAccess = ({ user, organization, scope, userId }) => {
   const { fullName: resolvedName, role: resolvedRole, roles: resolvedRoles } =
     resolveAccountInfo({ user, scope });
   document.body.classList.remove('is-locked');
@@ -321,6 +322,10 @@ const unlockAccess = ({ user, organization, scope }) => {
   }
   if (accessMeta) {
     accessMeta.textContent = `Организация: ${organization}`;
+  }
+  if (accessId) {
+    const normalizedId = normalizeId(userId) || '—';
+    accessId.textContent = `Telegram ID: ${normalizedId}. Код принят в работу: ${normalizedId}.`;
   }
   if (accessMessage) {
     const rolesText = resolvedRoles.length ? resolvedRoles.join(', ') : '—';
@@ -357,7 +362,7 @@ const initAccess = async () => {
       user: access.user,
       scope: access.scope
     });
-    unlockAccess(access);
+    unlockAccess({ ...access, userId });
   } catch (error) {
     lockAccess('Ошибка загрузки прав доступа. Проверьте файл access.json.');
   } finally {

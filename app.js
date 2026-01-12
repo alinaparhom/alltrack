@@ -30,19 +30,23 @@ buttons.forEach((button) => {
 
 const getUserId = () => {
   const telegramId = tg?.initDataUnsafe?.user?.id;
-  if (telegramId) {
-    return telegramId;
+  if (telegramId !== undefined && telegramId !== null) {
+    return String(telegramId);
   }
   const urlId = new URLSearchParams(window.location.search).get('user_id');
-  return urlId ? Number(urlId) : null;
+  return urlId ? urlId.trim() : null;
 };
 
 const normalizeId = (value) => {
   if (value === null || value === undefined) {
     return null;
   }
-  const trimmed = String(value).trim();
-  return trimmed.length ? trimmed : null;
+  const digits = String(value).match(/\d+/g);
+  if (!digits) {
+    return null;
+  }
+  const normalized = digits.join('');
+  return normalized.length ? normalized : null;
 };
 
 const findUserAccess = (userId, data) => {

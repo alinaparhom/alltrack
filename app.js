@@ -18,6 +18,7 @@ const accessRole = document.getElementById('accessRole');
 const accessMeta = document.getElementById('accessMeta');
 const accessBadge = document.getElementById('accessBadge');
 const accessAvatar = document.getElementById('accessAvatar');
+const accessMessage = document.getElementById('accessMessage');
 const accessOverlay = document.getElementById('accessOverlay');
 const accessOverlayText = document.getElementById('accessOverlayText');
 const checkingOverlay = document.getElementById('checkingOverlay');
@@ -197,7 +198,25 @@ const normalizeRoleValue = (value) => {
   return String(value);
 };
 
-const getUserRole = (user) => {
+const collectRoleValues = (value, collector) => {
+  if (!value) {
+    return;
+  }
+  if (Array.isArray(value)) {
+    value.forEach((item) => collectRoleValues(item, collector));
+    return;
+  }
+  if (typeof value === 'object') {
+    collectRoleValues(value.name || value.title || value.role || value.label, collector);
+    return;
+  }
+  const normalized = normalizeRoleValue(value).trim();
+  if (normalized) {
+    collector.push(normalized);
+  }
+};
+
+const getUserRolesList = (user, scope) => {
   const roleValue =
     user?.role ||
     user?.role_name ||
@@ -212,7 +231,12 @@ const getUserRole = (user) => {
     user?.access ||
     user?.title ||
     user?.roles;
-  return normalizeRoleValue(roleValue).trim();
+  const roles = [];
+  collectRoleValues(roleValue, roles);
+  if (scope === 'super') {
+    roles.push('Супер‑администратор');
+  }
+  return Array.from(new Set(roles));
 };
 
 const getInitials = (fullName = '') => {
@@ -226,10 +250,12 @@ const getInitials = (fullName = '') => {
 
 const resolveAccountInfo = ({ user, scope } = {}) => {
   const fullName = getUserFullName(user, getTelegramDisplayName(getTelegramUser()));
-  const role = getUserRole(user) || (scope === 'super' ? 'Супер‑администратор' : '');
+  const roles = getUserRolesList(user, scope);
+  const role = roles.join(', ');
   return {
     fullName,
-    role
+    role,
+    roles
   };
 };
 
@@ -275,7 +301,8 @@ const lockAccess = (message) => {
 };
 
 const unlockAccess = ({ user, organization, scope }) => {
-  const { fullName: resolvedName, role: resolvedRole } = resolveAccountInfo({ user, scope });
+  const { fullName: resolvedName, role: resolvedRole, roles: resolvedRoles } =
+    resolveAccountInfo({ user, scope });
   document.body.classList.remove('is-locked');
   document.body.classList.remove('is-checking');
   document.body.dataset.accessScope = scope;
@@ -294,6 +321,10 @@ const unlockAccess = ({ user, organization, scope }) => {
   }
   if (accessMeta) {
     accessMeta.textContent = `Организация: ${organization}`;
+  }
+  if (accessMessage) {
+    const rolesText = resolvedRoles.length ? resolvedRoles.join(', ') : '—';
+    accessMessage.textContent = `Вошёл(а): ${resolvedName || '—'}. Доступные роли: ${rolesText}.`;
   }
   if (accessAvatar) {
     accessAvatar.textContent = getInitials(resolvedName);

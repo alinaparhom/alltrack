@@ -380,6 +380,14 @@ const updateCheckingAccount = ({ user, scope } = {}) => {
   }
 };
 
+const setCheckingOverlayVisibility = (visible) => {
+  if (!checkingOverlay) {
+    return;
+  }
+  checkingOverlay.hidden = !visible;
+  checkingOverlay.style.display = visible ? '' : 'none';
+};
+
 const waitForTelegramUser = async ({ timeoutMs = 4000, intervalMs = 150 } = {}) => {
   if (getUserId()) {
     return true;
@@ -429,6 +437,7 @@ const unlockAccess = ({ user, organization, scope, userId }) => {
   if (accessOverlay) {
     accessOverlay.hidden = true;
   }
+  setCheckingOverlayVisibility(false);
   if (accessPanel) {
     accessPanel.hidden = effectiveScope === 'super';
   }
@@ -498,9 +507,7 @@ const initAccess = async () => {
     }
     if (access.scope === 'super') {
       document.body.classList.remove('is-checking');
-      if (checkingOverlay) {
-        checkingOverlay.hidden = true;
-      }
+      setCheckingOverlayVisibility(false);
       unlockAccess({ ...access, userId });
       return;
     }
@@ -512,9 +519,7 @@ const initAccess = async () => {
   } catch (error) {
     lockAccess('Ошибка загрузки прав доступа. Проверьте файл access.json.');
   } finally {
-    if (checkingOverlay) {
-      checkingOverlay.hidden = true;
-    }
+    setCheckingOverlayVisibility(false);
   }
 };
 

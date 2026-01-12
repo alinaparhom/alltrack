@@ -981,6 +981,14 @@
         }
       };
 
+      const setCheckingOverlayVisibility = (visible) => {
+        if (!checkingOverlay) {
+          return;
+        }
+        checkingOverlay.hidden = !visible;
+        checkingOverlay.style.display = visible ? '' : 'none';
+      };
+
       const getUserId = () => {
         const telegramId = getTelegramUser()?.id;
         if (telegramId !== undefined && telegramId !== null) {
@@ -1089,6 +1097,7 @@
         if (accessOverlay) {
           accessOverlay.hidden = true;
         }
+        setCheckingOverlayVisibility(false);
         if (userBar) {
           userBar.hidden = false;
         }
@@ -1111,6 +1120,7 @@
           isSuperAdminRole(resolvedRole) ||
           isSuperAdminRole(getUserRoleValue(user));
         const effectiveScope = isRoleSuper ? 'super' : scope;
+        document.body.dataset.accessScope = effectiveScope;
         showScreenForAccess({ user, scope: effectiveScope });
       };
 
@@ -1154,9 +1164,7 @@
         } catch (error) {
           lockAccess('Ошибка загрузки прав доступа. Проверьте файл access.json.');
         } finally {
-          if (checkingOverlay) {
-            checkingOverlay.hidden = true;
-          }
+          setCheckingOverlayVisibility(false);
         }
       };
 

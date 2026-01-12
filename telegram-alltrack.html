@@ -110,6 +110,31 @@
         font-size: 14px;
       }
 
+      .user-info {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .user-meta {
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      .user-role {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 4px;
+      }
+
+      .user-role__label {
+        font-size: 10px;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+      }
+
       .user-badge {
         padding: 6px 12px;
         border-radius: 999px;
@@ -369,11 +394,14 @@
           <div class="pill">Сегодня: 12 операций</div>
         </div>
         <div class="user-bar" id="userBar" hidden>
-          <div>
+          <div class="user-info">
             <strong id="userName">—</strong>
-            <span id="userMeta">—</span>
+            <span class="user-meta" id="userMeta">—</span>
           </div>
-          <span class="user-badge" id="userBadge">—</span>
+          <div class="user-role">
+            <span class="user-role__label">Роль</span>
+            <span class="user-badge" id="userBadge">—</span>
+          </div>
         </div>
         <label class="search">
           🔎
@@ -683,6 +711,16 @@
 
       document.body.classList.add('is-checking');
 
+      const formatAccountName = (user, tgUser) => {
+        const telegramName = [tgUser?.last_name, tgUser?.first_name].filter(Boolean).join(' ');
+        const sourceName = user?.fullName || telegramName || tgUser?.first_name || '—';
+        const parts = sourceName.split(' ').filter(Boolean);
+        if (parts.length >= 2) {
+          return `${parts[0]} ${parts[1]}`;
+        }
+        return sourceName;
+      };
+
       const getUserId = () => {
         const telegramId = tg?.initDataUnsafe?.user?.id;
         if (telegramId) {
@@ -772,13 +810,13 @@
           userBar.hidden = false;
         }
         if (userName) {
-          userName.textContent = user.fullName;
+          userName.textContent = formatAccountName(user, tg?.initDataUnsafe?.user);
         }
         if (userMeta) {
-          userMeta.textContent = `${organization} · ${user.role}`;
+          userMeta.textContent = `Организация: ${organization}`;
         }
         if (userBadge) {
-          userBadge.textContent = scope === 'super' ? 'Супер‑админ' : organization;
+          userBadge.textContent = user.role || (scope === 'super' ? 'Супер‑администратор' : 'Роль не задана');
         }
         showScreenForAccess({ user, scope });
       };

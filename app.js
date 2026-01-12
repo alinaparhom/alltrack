@@ -10,6 +10,7 @@ const accessName = document.getElementById('accessName');
 const accessRole = document.getElementById('accessRole');
 const accessMeta = document.getElementById('accessMeta');
 const accessBadge = document.getElementById('accessBadge');
+const accessAvatar = document.getElementById('accessAvatar');
 const accessOverlay = document.getElementById('accessOverlay');
 const accessOverlayText = document.getElementById('accessOverlayText');
 const checkingOverlay = document.getElementById('checkingOverlay');
@@ -59,6 +60,23 @@ const findUserAccess = (userId, data) => {
   return null;
 };
 
+const getShortName = (fullName = '') => {
+  const parts = fullName.trim().split(/\s+/).filter(Boolean);
+  if (parts.length >= 2) {
+    return `${parts[0]} ${parts[1]}`;
+  }
+  return fullName || '—';
+};
+
+const getInitials = (fullName = '') => {
+  const parts = fullName.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) {
+    return '—';
+  }
+  const initials = parts.slice(0, 2).map((part) => part[0]?.toUpperCase()).join('');
+  return initials || '—';
+};
+
 const lockAccess = (message) => {
   document.body.classList.add('is-locked');
   document.body.classList.remove('is-checking');
@@ -87,13 +105,16 @@ const unlockAccess = ({ user, organization, scope }) => {
     accessPanel.hidden = false;
   }
   if (accessName) {
-    accessName.textContent = user.fullName;
+    accessName.textContent = getShortName(user.fullName);
   }
   if (accessRole) {
     accessRole.textContent = `Роль: ${user.role}`;
   }
   if (accessMeta) {
     accessMeta.textContent = `Организация: ${organization}`;
+  }
+  if (accessAvatar) {
+    accessAvatar.textContent = getInitials(user.fullName);
   }
   if (accessBadge) {
     accessBadge.textContent = scope === 'super' ? 'Супер‑админ' : organization;

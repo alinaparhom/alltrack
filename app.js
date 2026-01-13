@@ -110,7 +110,7 @@ const appendLogToNodeFile = async (entry) => {
 };
 
 const appendLogToStores = async (entry) => {
-  await Promise.all([appendLogToFile(entry), appendLogToNodeFile(entry)]);
+  await Promise.allSettled([appendLogToFile(entry), appendLogToNodeFile(entry)]);
 };
 
 const logEvent = (level, message, payload = null) => {
@@ -148,6 +148,97 @@ window.addEventListener('unhandledrejection', (event) => {
   });
 });
 
+const getElementLabel = (element) => {
+  if (!element) {
+    return '';
+  }
+  const ariaLabel = element.getAttribute?.('aria-label');
+  if (ariaLabel) {
+    return ariaLabel.trim();
+  }
+  const text = element.textContent?.replace(/\s+/g, ' ').trim();
+  if (!text) {
+    return '';
+  }
+  return text.length > 80 ? `${text.slice(0, 77)}...` : text;
+};
+
+const getElementInfo = (element) => {
+  if (!element) {
+    return null;
+  }
+  const tag = element.tagName ? element.tagName.toLowerCase() : 'unknown';
+  const id = element.id ? `#${element.id}` : '';
+  const className =
+    typeof element.className === 'string' && element.className.trim()
+      ? `.${element.className.trim().replace(/\s+/g, '.')}`
+      : '';
+  const name = element.getAttribute?.('name') || '';
+  const type = element.getAttribute?.('type') || '';
+  const role = element.getAttribute?.('role') || '';
+  const label = getElementLabel(element);
+  return {
+    selector: `${tag}${id}${className}`,
+    name,
+    type,
+    role,
+    label
+  };
+};
+
+const getElementValueSummary = (element) => {
+  if (!element) {
+    return null;
+  }
+  if (element instanceof HTMLInputElement) {
+    if (element.type === 'password') {
+      return '[скрыто]';
+    }
+    if (element.type === 'checkbox' || element.type === 'radio') {
+      return element.checked ? 'checked' : 'unchecked';
+    }
+    return element.value ? element.value.slice(0, 120) : '';
+  }
+  if (element instanceof HTMLTextAreaElement) {
+    return element.value ? element.value.slice(0, 120) : '';
+  }
+  if (element instanceof HTMLSelectElement) {
+    return element.value;
+  }
+  return null;
+};
+
+const logUserAction = (event) => {
+  const target = event.target;
+  if (!(target instanceof Element)) {
+    return;
+  }
+  const info = getElementInfo(target);
+  if (!info) {
+    return;
+  }
+  const payload = {
+    event: event.type,
+    target: info
+  };
+  const valueSummary = getElementValueSummary(target);
+  if (valueSummary !== null) {
+    payload.value = valueSummary;
+  }
+  logEvent('info', 'Действие пользователя', payload);
+};
+
+const initUserActionLogging = () => {
+  document.addEventListener('click', logUserAction, true);
+  document.addEventListener('change', logUserAction, true);
+  document.addEventListener('submit', logUserAction, true);
+  window.addEventListener('visibilitychange', () => {
+    logEvent('info', 'Смена видимости вкладки', {
+      state: document.visibilityState
+    });
+  });
+};
+
 const ensureTelegramReady = () => {
   const tg = getTelegramWebApp();
   if (tg && !telegramReady) {
@@ -158,6 +249,8 @@ const ensureTelegramReady = () => {
 };
 
 ensureTelegramReady();
+logEvent('info', 'Приложение загружено');
+initUserActionLogging();
 
 const accessPanel = document.getElementById('accessPanel');
 const accessName = document.getElementById('accessName');

@@ -409,14 +409,17 @@ const buildAccessResult = ({
 };
 
 const findUserAccess = (userId, data) => {
-  const normalizedId = normalizeId(userId);
-  if (!normalizedId) {
+  if (userId === null || userId === undefined || String(userId).trim() === '') {
     return null;
   }
+  const normalizedId = normalizeId(userId);
   const superAdmins = getSuperAdminsList(data);
   const matchesNormalizedId = (entry) => {
     const entryId = getUserIdValue(entry);
-    return isSameId(entryId, normalizedId) || isSameId(entryId, userId);
+    if (normalizedId) {
+      return isSameId(entryId, normalizedId) || isSameId(entryId, userId);
+    }
+    return isSameId(entryId, userId);
   };
 
   const superAdmin = superAdmins.find((admin) => matchesNormalizedId(admin));

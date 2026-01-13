@@ -291,6 +291,8 @@ const accessMessage = document.getElementById('accessMessage');
 const accessOverlay = document.getElementById('accessOverlay');
 const accessOverlayText = document.getElementById('accessOverlayText');
 const accessOverlayId = document.getElementById('accessOverlayId');
+const accessOverlayName = document.getElementById('accessOverlayName');
+const accessOverlayRole = document.getElementById('accessOverlayRole');
 const checkingOverlay = document.getElementById('checkingOverlay');
 const checkingName = document.getElementById('checkingName');
 const checkingRole = document.getElementById('checkingRole');
@@ -919,6 +921,16 @@ const updateCheckingAccount = ({ user, scope } = {}) => {
   }
 };
 
+const updateAccessOverlayAccount = ({ user, scope } = {}) => {
+  const { fullName, role } = resolveAccountInfo({ user, scope });
+  if (accessOverlayName) {
+    accessOverlayName.textContent = fullName || '—';
+  }
+  if (accessOverlayRole) {
+    accessOverlayRole.textContent = `Роль: ${role || 'не определена'}`;
+  }
+};
+
 const setCheckingOverlayVisibility = (visible) => {
   if (!checkingOverlay) {
     return;
@@ -942,12 +954,13 @@ const waitForTelegramUser = async ({ timeoutMs = 4000, intervalMs = 150 } = {}) 
   return false;
 };
 
-const lockAccess = (message) => {
+const lockAccess = (message, { user, scope } = {}) => {
   document.body.classList.add('is-locked');
   document.body.classList.remove('is-checking');
   document.body.classList.remove('is-super-admin');
   delete document.body.dataset.accessScope;
   delete document.body.dataset.userRole;
+  updateAccessOverlayAccount({ user, scope });
   if (accessOverlayText) {
     accessOverlayText.textContent = message;
   }
@@ -1042,7 +1055,9 @@ const initAccess = async () => {
     const { id: userId, source: userIdSource } = getUserIdWithSource();
     if (!userId) {
       logEvent('warn', 'Не удалось получить Telegram ID пользователя', { source: userIdSource });
-      lockAccess('Не удалось определить ID пользователя. Откройте приложение через Telegram.');
+      lockAccess('Не удалось определить ID пользователя. Откройте приложение через Telegram.', {
+        user: getTelegramUser()
+      });
       return;
     }
     const normalizedUserId = normalizeId(userId) || userId;
@@ -1070,7 +1085,9 @@ const initAccess = async () => {
       logEvent('warn', 'ID пользователя не найден в списке прав', {
         userId: normalizedUserId
       });
-      lockAccess('Ваш ID не найден в списке прав. Обратитесь к супер‑администратору.');
+      lockAccess('Ваш ID не найден в списке прав. Обратитесь к супер‑администратору.', {
+        user: getTelegramUser()
+      });
       return;
     }
     logEvent('info', 'Доступ найден', {
@@ -1090,7 +1107,9 @@ const initAccess = async () => {
     unlockAccess({ ...access, userId: normalizedUserId });
   } catch (error) {
     logEvent('error', 'Ошибка загрузки прав доступа', { message: error?.message || error });
-    lockAccess('Ошибка загрузки прав доступа. Проверьте файл access.json.');
+    lockAccess('Ошибка загрузки прав доступа. Проверьте файл access.json.', {
+      user: getTelegramUser()
+    });
   } finally {
     setCheckingOverlayVisibility(false);
   }

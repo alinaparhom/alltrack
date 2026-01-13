@@ -4,6 +4,7 @@ const LOG_STORAGE_KEY = 'alltrack.logs';
 const LOG_LIMIT = 250;
 const LOG_FILE_NAME = '1alltrack.log';
 let logFileHandlePromise = null;
+let nodeFileWritePromise = null;
 
 const safeJsonParse = (value, fallback) => {
   if (!value) {
@@ -77,6 +78,41 @@ const appendLogToFile = async (entry) => {
   await writable.close();
 };
 
+const getNodeFileWriter = () => {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+  const nodeRequire =
+    window.require || (typeof globalThis !== 'undefined' ? globalThis.require : undefined);
+  const nodeProcess = window.process;
+  if (!nodeRequire || !nodeProcess?.versions?.node) {
+    return null;
+  }
+  if (!nodeFileWritePromise) {
+    nodeFileWritePromise = Promise.resolve().then(() => {
+      const fs = nodeRequire('fs');
+      const path = nodeRequire('path');
+      const cwd = typeof nodeProcess.cwd === 'function' ? nodeProcess.cwd() : '.';
+      return {
+        appendLine: (line) => fs.promises.appendFile(path.join(cwd, LOG_FILE_NAME), line, 'utf8')
+      };
+    });
+  }
+  return nodeFileWritePromise;
+};
+
+const appendLogToNodeFile = async (entry) => {
+  const writer = await getNodeFileWriter();
+  if (!writer) {
+    return;
+  }
+  await writer.appendLine(buildLogLine(entry));
+};
+
+const appendLogToStores = async (entry) => {
+  await Promise.all([appendLogToFile(entry), appendLogToNodeFile(entry)]);
+};
+
 const logEvent = (level, message, payload = null) => {
   const timestamp = new Date().toISOString();
   const entry = {
@@ -89,13 +125,28 @@ const logEvent = (level, message, payload = null) => {
   logs.push(entry);
   const trimmedLogs = logs.slice(-LOG_LIMIT);
   writeLogs(trimmedLogs);
-  appendLogToFile(entry).catch(() => {});
+  appendLogToStores(entry).catch(() => {});
   const consoleMethod =
     level === 'error' ? console.error : level === 'warn' ? console.warn : console.info;
   consoleMethod(`[${timestamp}] ${message}`, payload || '');
 };
 
 window.getAlltrackLogs = () => readLogs();
+
+window.addEventListener('error', (event) => {
+  logEvent('error', 'Глобальная ошибка', {
+    message: event.message,
+    filename: event.filename,
+    lineno: event.lineno,
+    colno: event.colno
+  });
+});
+
+window.addEventListener('unhandledrejection', (event) => {
+  logEvent('error', 'Необработанное отклонение промиса', {
+    reason: formatLogPayload(event.reason)
+  });
+});
 
 const ensureTelegramReady = () => {
   const tg = getTelegramWebApp();
@@ -533,9 +584,13 @@ const findUserAccess = (userId, data) => {
   const superAdmins = getSuperAdminsList(data);
   const matchesNormalizedId = (entry) => {
     const entryId = getUserIdValue(entry);
+    const entryNormalizedId = normalizeId(entryId);
     const entryVariants = buildIdVariants(entryId);
     if (!entryVariants.length || !userIdVariants.length) {
       return false;
+    }
+    if (normalizedId && entryNormalizedId && normalizedId === entryNormalizedId) {
+      return true;
     }
     if (normalizedId && isSameId(entryId, normalizedId)) {
       return true;
@@ -879,8 +934,15 @@ const initAccess = async () => {
       userId: normalizedUserId,
       source: userIdSource
     });
+    logEvent('info', 'Контрольные данные доступа', {
+      userIdVariants: buildIdVariants(normalizedUserId),
+      superAdmins: getSuperAdminsList(data).map((admin) => ({
+        id: normalizeId(getUserIdValue(admin)),
+        name: getUserNameValue(admin)
+      }))
+    });
     updateUserIdIndicators(normalizedUserId);
-    const access = findUserAccess(normalizedUserId, data);
+    const access = findUserAccess(userId, data);
     if (!access) {
       logEvent('warn', 'ID пользователя не найден в списке прав', {
         userId: normalizedUserId

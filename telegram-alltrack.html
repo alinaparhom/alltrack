@@ -28,6 +28,10 @@
         font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
       }
 
+      [hidden] {
+        display: none !important;
+      }
+
       body {
         background: radial-gradient(circle at top, #ffffff 0%, #eef3ff 45%, #e7efff 100%);
         color: var(--text);
@@ -1494,12 +1498,33 @@
         }
       };
 
+      const setAccessOverlayVisibility = (visible, reason = '') => {
+        if (!accessOverlay) {
+          return;
+        }
+        const wasHidden = accessOverlay.hidden;
+        accessOverlay.hidden = !visible;
+        accessOverlay.style.display = visible ? '' : 'none';
+        if (wasHidden !== accessOverlay.hidden) {
+          logEvent('info', 'Состояние экрана доступа изменено', {
+            visible,
+            reason: reason || null
+          });
+        }
+      };
+
       const setCheckingOverlayVisibility = (visible) => {
         if (!checkingOverlay) {
           return;
         }
+        const wasHidden = checkingOverlay.hidden;
         checkingOverlay.hidden = !visible;
         checkingOverlay.style.display = visible ? '' : 'none';
+        if (wasHidden !== checkingOverlay.hidden) {
+          logEvent('info', 'Состояние экрана проверки изменено', {
+            visible
+          });
+        }
       };
 
       const getUserIdWithSource = () => {
@@ -1737,9 +1762,7 @@
         if (accessOverlayText) {
           accessOverlayText.textContent = message;
         }
-        if (accessOverlay) {
-          accessOverlay.hidden = false;
-        }
+        setAccessOverlayVisibility(true, 'lockAccess');
         if (userBar) {
           userBar.hidden = true;
         }
@@ -1748,9 +1771,7 @@
       const unlockAccess = ({ user, organization, scope }) => {
         document.body.classList.remove('is-locked');
         document.body.classList.remove('is-checking');
-        if (accessOverlay) {
-          accessOverlay.hidden = true;
-        }
+        setAccessOverlayVisibility(false, 'unlockAccess');
         setCheckingOverlayVisibility(false);
         const { effectiveScope, isRoleSuper, roleText } = resolveEffectiveScope({ user, scope });
         if (userBar) {

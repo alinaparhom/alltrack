@@ -378,21 +378,6 @@ const normalizeId = (value) => {
   return normalized.length ? normalized : null;
 };
 
-const isSameId = (leftValue, rightValue) => {
-  if (leftValue === null || leftValue === undefined) {
-    return false;
-  }
-  if (rightValue === null || rightValue === undefined) {
-    return false;
-  }
-  const leftNormalized = normalizeId(leftValue);
-  const rightNormalized = normalizeId(rightValue);
-  if (leftNormalized && rightNormalized) {
-    return leftNormalized === rightNormalized;
-  }
-  return String(leftValue).trim() === String(rightValue).trim();
-};
-
 const buildIdVariants = (value) => {
   if (value === null || value === undefined) {
     return [];
@@ -401,16 +386,35 @@ const buildIdVariants = (value) => {
   const raw = String(value).trim();
   if (raw) {
     variants.add(raw);
+    const compact = raw.replace(/\s+/g, '');
+    if (compact) {
+      variants.add(compact);
+    }
   }
   const normalized = normalizeId(value);
   if (normalized) {
     variants.add(normalized);
-  }
-  const numeric = Number(raw);
-  if (!Number.isNaN(numeric)) {
-    variants.add(String(numeric));
+    const numeric = Number(normalized);
+    if (!Number.isNaN(numeric)) {
+      variants.add(String(numeric));
+    }
   }
   return Array.from(variants);
+};
+
+const isSameId = (leftValue, rightValue) => {
+  if (leftValue === null || leftValue === undefined) {
+    return false;
+  }
+  if (rightValue === null || rightValue === undefined) {
+    return false;
+  }
+  const leftVariants = buildIdVariants(leftValue);
+  const rightVariants = buildIdVariants(rightValue);
+  if (!leftVariants.length || !rightVariants.length) {
+    return false;
+  }
+  return leftVariants.some((leftVariant) => rightVariants.includes(leftVariant));
 };
 
 const normalizePersonName = (value) => {
@@ -700,28 +704,10 @@ const findUserAccess = (userId, data) => {
   if (userId === null || userId === undefined || String(userId).trim() === '') {
     return null;
   }
-  const normalizedId = normalizeId(userId);
-  const userIdVariants = buildIdVariants(userId);
   const superAdmins = getSuperAdminsList(data);
   const matchesNormalizedId = (entry) => {
     const entryId = getUserIdValue(entry);
-    const entryNormalizedId = normalizeId(entryId);
-    const entryVariants = buildIdVariants(entryId);
-    if (!entryVariants.length || !userIdVariants.length) {
-      return false;
-    }
-    if (normalizedId && entryNormalizedId && normalizedId === entryNormalizedId) {
-      return true;
-    }
-    if (normalizedId && isSameId(entryId, normalizedId)) {
-      return true;
-    }
-    if (isSameId(entryId, userId)) {
-      return true;
-    }
-    return entryVariants.some((variant) =>
-      userIdVariants.some((userVariant) => variant === userVariant)
-    );
+    return isSameId(entryId, userId);
   };
 
   const superAdmin = superAdmins.find((admin) => matchesNormalizedId(admin));

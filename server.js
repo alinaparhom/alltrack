@@ -4,6 +4,10 @@ const path = require('path');
 
 const PORT = process.env.PORT || 3000;
 const ROOT_DIR = __dirname;
+const DATA_DIR = path.join(ROOT_DIR, 'data');
+const ORGANIZATIONS_FILE = path.join(DATA_DIR, 'organizations.json');
+const ORGANIZATIONS_DIR = path.join(DATA_DIR, 'organizations');
+const ACCESS_FILE = path.join(ROOT_DIR, 'access.json');
 const LOG_FILE = path.join(ROOT_DIR, '1alltrack.log');
 
 const MIME_TYPES = {
@@ -29,6 +33,86 @@ const appendLogLine = (line, callback) => {
   const text = line.endsWith('\n') ? line : `${line}\n`;
   fs.appendFile(LOG_FILE, text, 'utf8', callback);
 };
+
+const ORGANIZATION_DATABASE_FILES = [
+  'Объекты.json',
+  'Пользователи.json',
+  'Штрафы.json',
+  'Инструменты.json',
+  'Перемещения.json',
+  'Списания.json',
+  'Поломки.json',
+  'Ремонт.json',
+  'Настройки.json'
+];
+
+const ORGANIZATION_MEDIA_FOLDERS = [
+  'Фото инструментов',
+  'Фото поломок',
+  'Фото отказов',
+  'Акты ремонтов',
+  'Акты списаний'
+];
+
+const ensureDir = (dirPath) => {
+  fs.mkdirSync(dirPath, { recursive: true });
+};
+
+const sanitizeOrganizationName = (name) => name.replace(/[\\/]/g, '-').trim();
+
+const ensureJsonFile = (filePath, defaultValue) => {
+  if (!fs.existsSync(filePath)) {
+    fs.writeFileSync(filePath, JSON.stringify(defaultValue, null, 2), 'utf8');
+  }
+};
+
+const ensureOrganizationsStorage = () => {
+  if (!fs.existsSync(ACCESS_FILE)) {
+    return;
+  }
+
+  const accessRaw = fs.readFileSync(ACCESS_FILE, 'utf8');
+  const accessData = JSON.parse(accessRaw);
+  const organizations = Object.keys(accessData.organizations || {});
+
+  ensureDir(DATA_DIR);
+  ensureDir(ORGANIZATIONS_DIR);
+
+  const organizationRecords = organizations.map((name) => {
+    const folderName = sanitizeOrganizationName(name);
+    const organizationPath = path.join(ORGANIZATIONS_DIR, folderName);
+    ensureDir(organizationPath);
+
+    ORGANIZATION_DATABASE_FILES.forEach((fileName) => {
+      ensureJsonFile(path.join(organizationPath, fileName), []);
+    });
+
+    ORGANIZATION_MEDIA_FOLDERS.forEach((folder) => {
+      ensureDir(path.join(organizationPath, folder));
+    });
+
+    return {
+      name,
+      directory: path.relative(ROOT_DIR, organizationPath),
+      databases: ORGANIZATION_DATABASE_FILES,
+      mediaFolders: ORGANIZATION_MEDIA_FOLDERS
+    };
+  });
+
+  const organizationsPayload = {
+    organizations: organizationRecords
+  };
+  const nextContent = JSON.stringify(organizationsPayload, null, 2);
+  const currentContent = fs.existsSync(ORGANIZATIONS_FILE)
+    ? fs.readFileSync(ORGANIZATIONS_FILE, 'utf8')
+    : '';
+
+  if (currentContent.trim() !== nextContent.trim()) {
+    fs.writeFileSync(ORGANIZATIONS_FILE, nextContent, 'utf8');
+  }
+};
+
+ensureOrganizationsStorage();
 
 const handleLog = (req, res) => {
   let body = '';

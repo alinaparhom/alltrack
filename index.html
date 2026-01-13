@@ -47,23 +47,19 @@
 
       <div class="super-admin__section">
         <div class="super-admin__section-head">
-          <h3>Организации</h3>
-          <span class="super-admin__count" id="superAdminCount">0</span>
+          <div class="super-admin__section-title">
+            <h3>Организации</h3>
+            <span class="super-admin__count" id="superAdminCount">0</span>
+          </div>
+          <button
+            class="super-admin__button super-admin__button--ghost super-admin__button--wide"
+            type="button"
+            id="superAdminOpenCreate"
+          >
+            Новая организация
+          </button>
         </div>
         <div class="super-admin__list" id="superAdminOrgs"></div>
-      </div>
-
-      <div class="super-admin__create">
-        <div class="super-admin__create-head">
-          <h3>Новая организация</h3>
-          <span class="super-admin__hint">Черновик</span>
-        </div>
-        <p class="super-admin__create-text">
-          Добавьте организацию и назначьте администратора — всё в отдельном окне.
-        </p>
-        <button class="super-admin__button super-admin__button--ghost" type="button" id="superAdminOpenCreate">
-          Добавить организацию
-        </button>
       </div>
 
       <div class="super-admin__modal" id="superAdminCreateModal" hidden>

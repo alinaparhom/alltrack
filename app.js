@@ -704,12 +704,20 @@ const buildAccessResult = ({
 
 const findUserAccess = (userId, data) => {
   if (userId === null || userId === undefined || String(userId).trim() === '') {
+    logEvent('warn', 'Поиск доступа: пустой ID пользователя', { userId });
     return null;
   }
   const resolvedUserId = String(userId).trim();
   const normalizedId = normalizeId(resolvedUserId);
   const userIdVariants = buildIdVariants(resolvedUserId);
   const superAdmins = getSuperAdminsList(data);
+  logEvent('info', 'Поиск доступа: входные данные', {
+    userId: resolvedUserId,
+    normalizedId,
+    userIdVariants,
+    superAdmins: superAdmins.length,
+    organizations: Object.keys(data?.organizations || {}).length
+  });
   const matchesNormalizedId = (entry) => {
     const entryId = getUserIdValue(entry);
     const entryVariants = buildIdVariants(entryId);
@@ -731,6 +739,11 @@ const findUserAccess = (userId, data) => {
 
   const superAdmin = superAdmins.find((admin) => matchesNormalizedId(admin));
   if (superAdmin) {
+    logEvent('info', 'Поиск доступа: найден супер‑администратор по ID', {
+      userId: resolvedUserId,
+      entryId: normalizeId(getUserIdValue(superAdmin)),
+      name: getUserNameValue(superAdmin)
+    });
     return buildAccessResult({
       user: superAdmin,
       organization: 'Все организации',
@@ -745,6 +758,11 @@ const findUserAccess = (userId, data) => {
       isMatchingByNameOrUsername(admin, telegramCandidates)
     );
     if (superAdminByName) {
+      logEvent('info', 'Поиск доступа: найден супер‑администратор по имени/username', {
+        userId: resolvedUserId,
+        name: getUserNameValue(superAdminByName),
+        candidates: telegramCandidates
+      });
       return buildAccessResult({
         user: superAdminByName,
         organization: 'Все организации',
@@ -762,6 +780,12 @@ const findUserAccess = (userId, data) => {
     }
     const matched = list.find((user) => matchesNormalizedId(user));
     if (matched) {
+      logEvent('info', 'Поиск доступа: найден пользователь по ID в организации', {
+        userId: resolvedUserId,
+        organization,
+        entryId: normalizeId(getUserIdValue(matched)),
+        role: normalizeRoleText(getUserRoleValue(matched))
+      });
       return buildAccessResult({
         user: matched,
         organization,
@@ -773,6 +797,13 @@ const findUserAccess = (userId, data) => {
         isMatchingByNameOrUsername(user, telegramCandidates)
       );
       if (matchedByName) {
+        logEvent('info', 'Поиск доступа: найден пользователь по имени/username', {
+          userId: resolvedUserId,
+          organization,
+          name: getUserNameValue(matchedByName),
+          candidates: telegramCandidates,
+          role: normalizeRoleText(getUserRoleValue(matchedByName))
+        });
         return buildAccessResult({
           user: matchedByName,
           organization,
@@ -782,6 +813,11 @@ const findUserAccess = (userId, data) => {
     }
   }
 
+  logEvent('warn', 'Поиск доступа: совпадений не найдено', {
+    userId: resolvedUserId,
+    normalizedId,
+    userIdVariants
+  });
   return null;
 };
 

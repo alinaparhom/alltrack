@@ -1510,11 +1510,19 @@
 
       const findUserAccess = (userId, data) => {
         if (userId === null || userId === undefined || String(userId).trim() === '') {
+          logEvent('warn', 'Поиск доступа: пустой ID пользователя', { userId });
           return null;
         }
         const normalizedId = normalizeId(userId);
         const userIdVariants = buildIdVariants(userId);
         const superAdmins = getSuperAdminsList(data);
+        logEvent('info', 'Поиск доступа: входные данные', {
+          userId,
+          normalizedId,
+          userIdVariants,
+          superAdmins: superAdmins.length,
+          organizations: Object.keys(data?.organizations || {}).length
+        });
         const matchesNormalizedId = (entry) => {
           const entryId = getUserIdValue(entry);
           const entryVariants = buildIdVariants(entryId);
@@ -1538,6 +1546,11 @@
 
         const superAdmin = superAdmins.find((admin) => matchesNormalizedId(admin));
         if (superAdmin) {
+          logEvent('info', 'Поиск доступа: найден супер‑администратор по ID', {
+            userId,
+            entryId: normalizeId(getUserIdValue(superAdmin)),
+            name: getUserFullName(superAdmin)
+          });
           return {
             user: superAdmin,
             scope: 'super',
@@ -1551,6 +1564,11 @@
             isMatchingByNameOrUsername(admin, telegramCandidates)
           );
           if (superAdminByName) {
+            logEvent('info', 'Поиск доступа: найден супер‑администратор по имени/username', {
+              userId,
+              name: getUserFullName(superAdminByName),
+              candidates: telegramCandidates
+            });
             return {
               user: superAdminByName,
               scope: 'super',
@@ -1567,6 +1585,12 @@
           }
           const matched = list.find((user) => matchesNormalizedId(user));
           if (matched) {
+            logEvent('info', 'Поиск доступа: найден пользователь по ID в организации', {
+              userId,
+              organization,
+              entryId: normalizeId(getUserIdValue(matched)),
+              role: normalizeRoleText(getUserRoleValue(matched))
+            });
             if (isSuperAdminRole(getUserRoleValue(matched))) {
               return {
                 user: matched,
@@ -1585,6 +1609,13 @@
               isMatchingByNameOrUsername(user, telegramCandidates)
             );
             if (matchedByName) {
+              logEvent('info', 'Поиск доступа: найден пользователь по имени/username', {
+                userId,
+                organization,
+                name: getUserFullName(matchedByName),
+                candidates: telegramCandidates,
+                role: normalizeRoleText(getUserRoleValue(matchedByName))
+              });
               if (isSuperAdminRole(getUserRoleValue(matchedByName))) {
                 return {
                   user: matchedByName,
@@ -1601,6 +1632,11 @@
           }
         }
 
+        logEvent('warn', 'Поиск доступа: совпадений не найдено', {
+          userId,
+          normalizedId,
+          userIdVariants
+        });
         return null;
       };
 
@@ -1739,6 +1775,15 @@
               userId: normalizedUserId
             });
             return;
+          }
+          const roleValue = getUserRoleValue(access.user);
+          if (isSuperAdminRole(roleValue)) {
+            access.scope = 'super';
+            access.organization = 'Все организации';
+            logEvent('info', 'Роль супер‑администратора подтверждена', {
+              userId: normalizedUserId,
+              role: normalizeRoleText(roleValue)
+            });
           }
           logEvent('info', 'Доступ найден', {
             scope: access.scope,

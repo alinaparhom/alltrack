@@ -1062,7 +1062,10 @@ const initAccess = async () => {
       }))
     });
     updateUserIdIndicators(normalizedUserId);
-    const access = findUserAccess(userId, data);
+    const access =
+      findUserAccess(userId, data) ||
+      (normalizedUserId ? findUserAccess(normalizedUserId, data) : null) ||
+      (normalizedUserId ? findUserAccess(Number(normalizedUserId), data) : null);
     if (!access) {
       logEvent('warn', 'ID пользователя не найден в списке прав', {
         userId: normalizedUserId

@@ -25,6 +25,10 @@ body {
   padding-bottom: 84px;
 }
 
+body.logs-page {
+  padding-bottom: 40px;
+}
+
 body.is-super-admin .hero,
 body.is-super-admin .app__default,
 body.is-super-admin .access {
@@ -85,6 +89,113 @@ body.is-super-admin .access {
 
 .hero__cta:active {
   transform: scale(0.98);
+}
+
+.logs-hero {
+  display: grid;
+  gap: 14px;
+}
+
+.logs-hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.logs-panel {
+  display: grid;
+  gap: 16px;
+}
+
+.logs-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.logs-panel__header h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.logs-panel__hint {
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.logs-panel__list {
+  display: grid;
+  gap: 12px;
+}
+
+.logs-panel__empty {
+  text-align: center;
+  padding: 24px;
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 16px;
+}
+
+.logs-panel__empty h3 {
+  margin: 0 0 8px;
+}
+
+.logs-panel__empty p {
+  margin: 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.logs-card {
+  display: grid;
+  gap: 8px;
+  padding: 16px;
+}
+
+.logs-card__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.logs-card__level {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 10px;
+  background: rgba(107, 123, 255, 0.15);
+  color: var(--accent-strong);
+}
+
+.logs-card__level--warn {
+  background: rgba(255, 187, 73, 0.2);
+  color: #a86205;
+}
+
+.logs-card__level--error {
+  background: rgba(255, 107, 107, 0.18);
+  color: #b01919;
+}
+
+.logs-card h3 {
+  margin: 0;
+  font-size: 15px;
+}
+
+.logs-card pre {
+  margin: 0;
+  font-size: 12px;
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.8);
+  padding: 10px;
+  border-radius: 12px;
+  overflow-x: auto;
 }
 
 .access {
@@ -678,5 +789,10 @@ body.is-locked .bottom-nav {
 
   .super-admin__stats {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .logs-hero {
+    grid-template-columns: 1.4fr auto;
+    align-items: center;
   }
 }

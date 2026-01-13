@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AllTrack — логи</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body class="logs-page">
+  <div class="app">
+    <header class="glass logs-hero">
+      <div>
+        <p class="hero__badge">AllTrack · Logs</p>
+        <h1 class="hero__title">Логи приложения</h1>
+        <p class="hero__subtitle">
+          Здесь фиксируются события доступа, чтобы быстрее находить и исправлять ошибки.
+        </p>
+      </div>
+      <div class="logs-hero__actions">
+        <button class="hero__cta" type="button" id="downloadLogs">Скачать лог</button>
+        <button class="link" type="button" id="clearLogs">Очистить</button>
+      </div>
+    </header>
+
+    <section class="glass logs-panel">
+      <div class="logs-panel__header">
+        <div>
+          <h2>События</h2>
+          <p class="logs-panel__hint">Данные хранятся локально в браузере.</p>
+        </div>
+        <span class="super-admin__count" id="logsCount">0</span>
+      </div>
+      <div class="logs-panel__list" id="logsList"></div>
+    </section>
+  </div>
+
+  <script src="logs.js"></script>
+</body>
+</html>

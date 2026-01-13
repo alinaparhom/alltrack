@@ -1,5 +1,51 @@
 const getTelegramWebApp = () => (window.Telegram ? window.Telegram.WebApp : null);
 let telegramReady = false;
+const LOG_STORAGE_KEY = 'alltrack.logs';
+const LOG_LIMIT = 250;
+
+const safeJsonParse = (value, fallback) => {
+  if (!value) {
+    return fallback;
+  }
+  try {
+    return JSON.parse(value);
+  } catch (error) {
+    return fallback;
+  }
+};
+
+const readLogs = () => {
+  if (typeof window === 'undefined' || !window.localStorage) {
+    return [];
+  }
+  return safeJsonParse(window.localStorage.getItem(LOG_STORAGE_KEY), []);
+};
+
+const writeLogs = (logs) => {
+  if (typeof window === 'undefined' || !window.localStorage) {
+    return;
+  }
+  window.localStorage.setItem(LOG_STORAGE_KEY, JSON.stringify(logs));
+};
+
+const logEvent = (level, message, payload = null) => {
+  const timestamp = new Date().toISOString();
+  const entry = {
+    timestamp,
+    level,
+    message,
+    payload
+  };
+  const logs = readLogs();
+  logs.push(entry);
+  const trimmedLogs = logs.slice(-LOG_LIMIT);
+  writeLogs(trimmedLogs);
+  const consoleMethod =
+    level === 'error' ? console.error : level === 'warn' ? console.warn : console.info;
+  consoleMethod(`[${timestamp}] ${message}`, payload || '');
+};
+
+window.getAlltrackLogs = () => readLogs();
 
 const ensureTelegramReady = () => {
   const tg = getTelegramWebApp();
@@ -123,6 +169,26 @@ const isSameId = (leftValue, rightValue) => {
     return leftNormalized === rightNormalized;
   }
   return String(leftValue).trim() === String(rightValue).trim();
+};
+
+const buildIdVariants = (value) => {
+  if (value === null || value === undefined) {
+    return [];
+  }
+  const variants = new Set();
+  const raw = String(value).trim();
+  if (raw) {
+    variants.add(raw);
+  }
+  const normalized = normalizeId(value);
+  if (normalized) {
+    variants.add(normalized);
+  }
+  const numeric = Number(raw);
+  if (!Number.isNaN(numeric)) {
+    variants.add(String(numeric));
+  }
+  return Array.from(variants);
 };
 
 const normalizePersonName = (value) => {
@@ -413,13 +479,23 @@ const findUserAccess = (userId, data) => {
     return null;
   }
   const normalizedId = normalizeId(userId);
+  const userIdVariants = buildIdVariants(userId);
   const superAdmins = getSuperAdminsList(data);
   const matchesNormalizedId = (entry) => {
     const entryId = getUserIdValue(entry);
-    if (normalizedId) {
-      return isSameId(entryId, normalizedId) || isSameId(entryId, userId);
+    const entryVariants = buildIdVariants(entryId);
+    if (!entryVariants.length || !userIdVariants.length) {
+      return false;
     }
-    return isSameId(entryId, userId);
+    if (normalizedId && isSameId(entryId, normalizedId)) {
+      return true;
+    }
+    if (isSameId(entryId, userId)) {
+      return true;
+    }
+    return entryVariants.some((variant) =>
+      userIdVariants.some((userVariant) => variant === userVariant)
+    );
   };
 
   const superAdmin = superAdmins.find((admin) => matchesNormalizedId(admin));
@@ -725,6 +801,7 @@ const unlockAccess = ({ user, organization, scope, userId }) => {
 
 const initAccess = async () => {
   try {
+    logEvent('info', 'Старт проверки доступа');
     updateCheckingAccount();
     const response = await fetch('access.json', { cache: 'no-store' });
     if (!response.ok) {
@@ -732,9 +809,14 @@ const initAccess = async () => {
     }
     const data = await response.json();
     accessDataCache = data;
+    logEvent('info', 'Файл access.json загружен', {
+      superAdmins: getSuperAdminsList(data).length,
+      organizations: Object.keys(data?.organizations || {}).length
+    });
     await waitForTelegramUser();
     const { id: userId, source: userIdSource } = getUserIdWithSource();
     if (!userId) {
+      logEvent('warn', 'Не удалось получить Telegram ID пользователя', { source: userIdSource });
       lockAccess('Не удалось определить ID пользователя. Откройте приложение через Telegram.');
       return;
     }
@@ -742,12 +824,23 @@ const initAccess = async () => {
     console.info(
       `ID пользователя принят в работу: ${normalizedUserId}. Источник: ${userIdSource}`
     );
+    logEvent('info', 'ID пользователя получен', {
+      userId: normalizedUserId,
+      source: userIdSource
+    });
     updateUserIdIndicators(normalizedUserId);
     const access = findUserAccess(normalizedUserId, data);
     if (!access) {
+      logEvent('warn', 'ID пользователя не найден в списке прав', {
+        userId: normalizedUserId
+      });
       lockAccess('Ваш ID не найден в списке прав. Обратитесь к супер‑администратору.');
       return;
     }
+    logEvent('info', 'Доступ найден', {
+      scope: access.scope,
+      organization: access.organization || null
+    });
     if (access.scope === 'super') {
       document.body.classList.remove('is-checking');
       setCheckingOverlayVisibility(false);
@@ -760,6 +853,7 @@ const initAccess = async () => {
     });
     unlockAccess({ ...access, userId: normalizedUserId });
   } catch (error) {
+    logEvent('error', 'Ошибка загрузки прав доступа', { message: error?.message || error });
     lockAccess('Ошибка загрузки прав доступа. Проверьте файл access.json.');
   } finally {
     setCheckingOverlayVisibility(false);

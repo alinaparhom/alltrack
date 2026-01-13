@@ -234,8 +234,22 @@ const getAccessList = (value) => {
       return [value];
     }
     const values = Object.values(value);
-    if (values.length && values.every((item) => item && typeof item === 'object')) {
-      return values;
+    if (values.length) {
+      const flattened = values.flatMap((item) => {
+        if (!item) {
+          return [];
+        }
+        if (Array.isArray(item)) {
+          return item;
+        }
+        if (typeof item === 'object') {
+          return [item];
+        }
+        return [];
+      });
+      if (flattened.length && flattened.every((item) => item && typeof item === 'object')) {
+        return flattened;
+      }
     }
   }
   return [];

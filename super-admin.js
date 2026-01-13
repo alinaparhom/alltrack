@@ -97,37 +97,29 @@
 
   const initCreateButton = () => {
     const openButton = document.getElementById('superAdminOpenCreate');
-    const modal = document.getElementById('superAdminCreateModal');
+    const panel = document.getElementById('superAdminCreatePanel');
     const closeButton = document.getElementById('superAdminCreateClose');
     const button = document.getElementById('superAdminCreateButton');
     const note = document.getElementById('superAdminCreateNote');
 
-    if (!openButton || !modal || !closeButton || !button || !note) {
+    if (!openButton || !panel || !closeButton || !button || !note) {
       return;
     }
 
-    const openModal = () => {
-      modal.hidden = false;
-      document.body.classList.add('is-modal-open');
+    const setPanelState = (isOpen) => {
+      panel.hidden = !isOpen;
+      openButton.setAttribute('aria-expanded', String(isOpen));
       note.hidden = true;
-    };
-
-    const closeModal = () => {
-      modal.hidden = true;
-      document.body.classList.remove('is-modal-open');
-    };
-
-    openButton.addEventListener('click', openModal);
-    closeButton.addEventListener('click', closeModal);
-    modal.addEventListener('click', (event) => {
-      if (event.target === modal) {
-        closeModal();
+      if (isOpen) {
+        panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
+    };
+
+    openButton.addEventListener('click', () => {
+      setPanelState(panel.hidden);
     });
-    document.addEventListener('keydown', (event) => {
-      if (!modal.hidden && event.key === 'Escape') {
-        closeModal();
-      }
+    closeButton.addEventListener('click', () => {
+      setPanelState(false);
     });
 
     button.addEventListener('click', () => {

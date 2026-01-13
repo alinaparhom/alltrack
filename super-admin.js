@@ -96,11 +96,40 @@
   };
 
   const initCreateButton = () => {
+    const openButton = document.getElementById('superAdminOpenCreate');
+    const modal = document.getElementById('superAdminCreateModal');
+    const closeButton = document.getElementById('superAdminCreateClose');
     const button = document.getElementById('superAdminCreateButton');
     const note = document.getElementById('superAdminCreateNote');
-    if (!button || !note) {
+
+    if (!openButton || !modal || !closeButton || !button || !note) {
       return;
     }
+
+    const openModal = () => {
+      modal.hidden = false;
+      document.body.classList.add('is-modal-open');
+      note.hidden = true;
+    };
+
+    const closeModal = () => {
+      modal.hidden = true;
+      document.body.classList.remove('is-modal-open');
+    };
+
+    openButton.addEventListener('click', openModal);
+    closeButton.addEventListener('click', closeModal);
+    modal.addEventListener('click', (event) => {
+      if (event.target === modal) {
+        closeModal();
+      }
+    });
+    document.addEventListener('keydown', (event) => {
+      if (!modal.hidden && event.key === 'Escape') {
+        closeModal();
+      }
+    });
+
     button.addEventListener('click', () => {
       note.hidden = false;
       note.textContent = 'Функция в разработке. Скоро будет доступна.';

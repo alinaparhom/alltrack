@@ -1027,12 +1027,33 @@ const updateAccessOverlayAccount = ({ user, scope } = {}) => {
   }
 };
 
+const setAccessOverlayVisibility = (visible, reason = '') => {
+  if (!accessOverlay) {
+    return;
+  }
+  const wasHidden = accessOverlay.hidden;
+  accessOverlay.hidden = !visible;
+  accessOverlay.style.display = visible ? '' : 'none';
+  if (wasHidden !== accessOverlay.hidden) {
+    logEvent('info', 'Состояние экрана доступа изменено', {
+      visible,
+      reason: reason || null
+    });
+  }
+};
+
 const setCheckingOverlayVisibility = (visible) => {
   if (!checkingOverlay) {
     return;
   }
+  const wasHidden = checkingOverlay.hidden;
   checkingOverlay.hidden = !visible;
   checkingOverlay.style.display = visible ? '' : 'none';
+  if (wasHidden !== checkingOverlay.hidden) {
+    logEvent('info', 'Состояние экрана проверки изменено', {
+      visible
+    });
+  }
 };
 
 const waitForTelegramUser = async ({ timeoutMs = 4000, intervalMs = 150 } = {}) => {
@@ -1070,9 +1091,7 @@ const lockAccess = (message, { user, scope } = {}) => {
   if (accessOverlayText) {
     accessOverlayText.textContent = message;
   }
-  if (accessOverlay) {
-    accessOverlay.hidden = false;
-  }
+  setAccessOverlayVisibility(true, 'lockAccess');
   if (accessPanel) {
     accessPanel.hidden = true;
   }
@@ -1098,9 +1117,7 @@ const unlockAccess = ({ user, organization, scope, userId }) => {
   document.body.classList.toggle('is-super-admin', effectiveScope === 'super');
   document.body.dataset.accessScope = effectiveScope;
   document.body.dataset.userRole = resolvedRole;
-  if (accessOverlay) {
-    accessOverlay.hidden = true;
-  }
+  setAccessOverlayVisibility(false, 'unlockAccess');
   setCheckingOverlayVisibility(false);
   if (accessPanel) {
     accessPanel.hidden = effectiveScope === 'super';

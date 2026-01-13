@@ -704,10 +704,23 @@ const findUserAccess = (userId, data) => {
   if (userId === null || userId === undefined || String(userId).trim() === '') {
     return null;
   }
+  const resolvedUserId = String(userId).trim();
+  const normalizedId = normalizeId(resolvedUserId);
+  const userIdVariants = buildIdVariants(resolvedUserId);
   const superAdmins = getSuperAdminsList(data);
   const matchesNormalizedId = (entry) => {
     const entryId = getUserIdValue(entry);
-    return isSameId(entryId, userId);
+    const entryVariants = buildIdVariants(entryId);
+    if (!entryVariants.length || !userIdVariants.length) {
+      return false;
+    }
+    if (normalizedId && isSameId(entryId, normalizedId)) {
+      return true;
+    }
+    if (isSameId(entryId, resolvedUserId)) {
+      return true;
+    }
+    return entryVariants.some((variant) => userIdVariants.includes(variant));
   };
 
   const superAdmin = superAdmins.find((admin) => matchesNormalizedId(admin));

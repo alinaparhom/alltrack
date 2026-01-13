@@ -1098,6 +1098,11 @@ const initAccess = async () => {
       });
       return;
     }
+    const roleValue = getUserRoleValue(access.user);
+    if (isSuperAdminRole(roleValue)) {
+      access.scope = 'super';
+      access.organization = 'Все организации';
+    }
     logEvent('info', 'Доступ найден', {
       scope: access.scope,
       organization: access.organization || null

@@ -251,6 +251,23 @@ const getAccessList = (value) => {
         return flattened;
       }
     }
+    const mappedEntries = Object.entries(value)
+      .map(([key, item]) => {
+        if (item && typeof item === 'object') {
+          if (hasIdField(item)) {
+            return item;
+          }
+          return { id: key, ...item };
+        }
+        if (item !== null && item !== undefined) {
+          return { id: key, role: item };
+        }
+        return null;
+      })
+      .filter(Boolean);
+    if (mappedEntries.length) {
+      return mappedEntries;
+    }
   }
   return [];
 };

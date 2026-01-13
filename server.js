@@ -23,13 +23,22 @@ const send = (res, statusCode, body, headers = {}) => {
   res.end(body);
 };
 
+const formatTimestamp = () => new Date().toISOString();
+
+const appendLogLine = (line, callback) => {
+  const text = line.endsWith('\n') ? line : `${line}\n`;
+  fs.appendFile(LOG_FILE, text, 'utf8', callback);
+};
+
 const handleLog = (req, res) => {
   let body = '';
   req.on('data', (chunk) => {
     body += chunk;
   });
   req.on('end', () => {
-    fs.appendFile(LOG_FILE, body, 'utf8', (error) => {
+    const trimmed = body.trim();
+    const logLine = `${formatTimestamp()} CLIENT_LOG ${trimmed || '[empty]'}`;
+    appendLogLine(logLine, (error) => {
       if (error) {
         send(res, 500, 'Ошибка записи лога');
         return;
@@ -47,6 +56,20 @@ const resolveFilePath = (urlPath) => {
 };
 
 const server = http.createServer((req, res) => {
+  const startedAt = Date.now();
+  res.on('finish', () => {
+    const durationMs = Date.now() - startedAt;
+    const url = req.url || '-';
+    const method = req.method || '-';
+    const status = res.statusCode;
+    const logLine = `${formatTimestamp()} REQUEST ${method} ${url} ${status} ${durationMs}ms`;
+    appendLogLine(logLine, (error) => {
+      if (error) {
+        console.error('Ошибка записи лога:', error);
+      }
+    });
+  });
+
   if (!req.url) {
     send(res, 400, 'Некорректный запрос');
     return;

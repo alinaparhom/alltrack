@@ -994,10 +994,25 @@
           tg.ready();
           tg.expand();
           telegramReady = true;
+          logEvent('info', 'Telegram WebApp готов', {
+            platform: tg.platform || 'unknown',
+            version: tg.version || 'unknown'
+          });
         }
       };
 
+      const logTelegramContext = () => {
+        const tg = getTelegramWebApp();
+        logEvent('info', 'Контекст Telegram WebApp', {
+          hasWebApp: Boolean(tg),
+          hasInitDataUnsafe: Boolean(tg?.initDataUnsafe),
+          initDataLength: tg?.initData ? tg.initData.length : 0,
+          platform: tg?.platform || 'unknown'
+        });
+      };
+
       ensureTelegramReady();
+      logTelegramContext();
       logEvent('info', 'Приложение загружено');
       initUserActionLogging();
 
@@ -1395,6 +1410,18 @@
         };
       };
 
+      const resolveEffectiveScope = ({ user, scope } = {}) => {
+        const roleValue = getUserRoleValue(user);
+        const roleText = normalizeRoleText(roleValue || getUserRole(user));
+        const isRoleSuper =
+          scope === 'super' || isSuperAdminRole(roleValue) || isSuperAdminRole(roleText);
+        return {
+          effectiveScope: isRoleSuper ? 'super' : scope,
+          isRoleSuper,
+          roleText
+        };
+      };
+
       const getShortName = (fullName = '') => {
         const parts = fullName.trim().split(/\s+/).filter(Boolean);
         if (parts.length >= 2) {
@@ -1671,12 +1698,22 @@
         if (target) {
           target.hidden = false;
         }
+        logEvent('info', 'Выбор экрана по роли', {
+          scope,
+          role: getUserRole(user) || null,
+          target: target?.dataset?.scope || target?.dataset?.role || 'default'
+        });
       };
 
       const lockAccess = (message, { user, scope, userId } = {}) => {
         document.body.classList.add('is-locked');
         document.body.classList.remove('is-checking');
         hideAllScreens();
+        logEvent('warn', 'Доступ заблокирован', {
+          message,
+          scope: scope || 'unknown',
+          userId: userId || getUserId()
+        });
         updateUserIdIndicators({ userId: userId || getUserId(), user, scope });
         if (accessOverlayText) {
           accessOverlayText.textContent = message;
@@ -1696,6 +1733,7 @@
           accessOverlay.hidden = true;
         }
         setCheckingOverlayVisibility(false);
+        const { effectiveScope, isRoleSuper, roleText } = resolveEffectiveScope({ user, scope });
         if (userBar) {
           userBar.hidden = false;
         }
@@ -1703,27 +1741,27 @@
           userName.textContent = formatAccountName(user, getTelegramUser(), scope);
         }
         if (userMeta) {
-          const metaOrganization =
-            scope === 'super' || isSuperAdminRole(getUserRoleValue(user))
-              ? 'Все организации'
-              : organization;
+          const metaOrganization = effectiveScope === 'super' ? 'Все организации' : organization;
           userMeta.textContent = `Организация: ${metaOrganization}`;
         }
         const { role: resolvedRole } = resolveAccountInfo({ user, scope });
         if (userBadge) {
           userBadge.textContent = resolvedRole || 'Роль не задана';
         }
-        const isRoleSuper =
-          scope === 'super' ||
-          isSuperAdminRole(resolvedRole) ||
-          isSuperAdminRole(getUserRoleValue(user));
-        const effectiveScope = isRoleSuper ? 'super' : scope;
         document.body.dataset.accessScope = effectiveScope;
+        logEvent('info', 'Доступ открыт', {
+          scope,
+          effectiveScope,
+          organization: isRoleSuper ? 'Все организации' : organization,
+          role: roleText || resolvedRole || null
+        });
         showScreenForAccess({ user, scope: effectiveScope });
       };
 
       const waitForTelegramUser = async ({ timeoutMs = 4000, intervalMs = 150 } = {}) => {
+        logEvent('info', 'Ожидание Telegram ID', { timeoutMs, intervalMs });
         if (getUserId()) {
+          logEvent('info', 'Telegram ID уже доступен');
           return true;
         }
         const startedAt = Date.now();
@@ -1731,9 +1769,11 @@
           await new Promise((resolve) => setTimeout(resolve, intervalMs));
           ensureTelegramReady();
           if (getUserId()) {
+            logEvent('info', 'Telegram ID получен в процессе ожидания');
             return true;
           }
         }
+        logEvent('warn', 'Не удалось дождаться Telegram ID', { timeoutMs });
         return false;
       };
 
@@ -1751,16 +1791,21 @@
             organizations: Object.keys(data?.organizations || {}).length
           });
           await waitForTelegramUser();
-          const userId = getUserId();
+          const { id: userId, source: userIdSource } = getUserIdWithSource();
           if (!userId) {
-            logEvent('warn', 'Не удалось получить Telegram ID пользователя');
+            logEvent('warn', 'Не удалось получить Telegram ID пользователя', {
+              source: userIdSource
+            });
             lockAccess('Не удалось определить ID пользователя. Откройте приложение через Telegram.', {
               user: getTelegramUser()
             });
             return;
           }
           const normalizedUserId = normalizeId(userId) || userId;
-          logEvent('info', 'ID пользователя принят в работу', { userId: normalizedUserId });
+          logEvent('info', 'ID пользователя принят в работу', {
+            userId: normalizedUserId,
+            source: userIdSource
+          });
           updateUserIdIndicators({ userId: normalizedUserId, user: getTelegramUser() });
           const access =
             findUserAccess(userId, data) ||
@@ -1776,13 +1821,16 @@
             });
             return;
           }
-          const roleValue = getUserRoleValue(access.user);
-          if (isSuperAdminRole(roleValue)) {
-            access.scope = 'super';
+          const { effectiveScope, roleText } = resolveEffectiveScope({
+            user: access.user,
+            scope: access.scope
+          });
+          access.scope = effectiveScope;
+          if (effectiveScope === 'super') {
             access.organization = 'Все организации';
             logEvent('info', 'Роль супер‑администратора подтверждена', {
               userId: normalizedUserId,
-              role: normalizeRoleText(roleValue)
+              role: roleText || 'Супер‑администратор'
             });
           }
           logEvent('info', 'Доступ найден', {

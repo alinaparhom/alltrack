@@ -2,6 +2,8 @@ const getTelegramWebApp = () => (window.Telegram ? window.Telegram.WebApp : null
 let telegramReady = false;
 const LOG_STORAGE_KEY = 'alltrack.logs';
 const LOG_LIMIT = 250;
+const LOG_FILE_NAME = '1alltrack.log';
+let logFileHandlePromise = null;
 
 const safeJsonParse = (value, fallback) => {
   if (!value) {
@@ -28,6 +30,53 @@ const writeLogs = (logs) => {
   window.localStorage.setItem(LOG_STORAGE_KEY, JSON.stringify(logs));
 };
 
+const formatLogPayload = (payload) => {
+  if (payload === null || payload === undefined || payload === '') {
+    return '';
+  }
+  if (typeof payload === 'string') {
+    return payload;
+  }
+  try {
+    return JSON.stringify(payload);
+  } catch (error) {
+    return String(payload);
+  }
+};
+
+const buildLogLine = (entry) => {
+  const payload = formatLogPayload(entry.payload);
+  const payloadSegment = payload ? ` | ${payload}` : '';
+  return `${entry.timestamp} [${entry.level}] ${entry.message}${payloadSegment}\n`;
+};
+
+const getLogFileHandle = async () => {
+  if (typeof navigator === 'undefined' || !navigator.storage?.getDirectory) {
+    return null;
+  }
+  if (!logFileHandlePromise) {
+    logFileHandlePromise = navigator.storage
+      .getDirectory()
+      .then((directoryHandle) =>
+        directoryHandle.getFileHandle(LOG_FILE_NAME, { create: true })
+      )
+      .catch(() => null);
+  }
+  return logFileHandlePromise;
+};
+
+const appendLogToFile = async (entry) => {
+  const handle = await getLogFileHandle();
+  if (!handle) {
+    return;
+  }
+  const writable = await handle.createWritable({ keepExistingData: true });
+  const file = await handle.getFile();
+  await writable.seek(file.size);
+  await writable.write(buildLogLine(entry));
+  await writable.close();
+};
+
 const logEvent = (level, message, payload = null) => {
   const timestamp = new Date().toISOString();
   const entry = {
@@ -40,6 +89,7 @@ const logEvent = (level, message, payload = null) => {
   logs.push(entry);
   const trimmedLogs = logs.slice(-LOG_LIMIT);
   writeLogs(trimmedLogs);
+  appendLogToFile(entry).catch(() => {});
   const consoleMethod =
     level === 'error' ? console.error : level === 'warn' ? console.warn : console.info;
   consoleMethod(`[${timestamp}] ${message}`, payload || '');

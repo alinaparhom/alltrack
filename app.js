@@ -3,6 +3,7 @@ let telegramReady = false;
 const LOG_STORAGE_KEY = 'alltrack.logs';
 const LOG_LIMIT = 250;
 const LOG_FILE_NAME = '1alltrack.log';
+const LOG_ENDPOINT = '/log';
 let logFileHandlePromise = null;
 let nodeFileWritePromise = null;
 
@@ -109,8 +110,35 @@ const appendLogToNodeFile = async (entry) => {
   await writer.appendLine(buildLogLine(entry));
 };
 
+const appendLogToServer = async (entry) => {
+  if (typeof window === 'undefined' || !window.navigator) {
+    return;
+  }
+  if (!/^https?:$/.test(window.location?.protocol || '')) {
+    return;
+  }
+  const logLine = buildLogLine(entry);
+  if (window.navigator.sendBeacon) {
+    const payload = new Blob([logLine], { type: 'text/plain' });
+    const sent = window.navigator.sendBeacon(LOG_ENDPOINT, payload);
+    if (sent) {
+      return;
+    }
+  }
+  await fetch(LOG_ENDPOINT, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain' },
+    body: logLine,
+    keepalive: true
+  });
+};
+
 const appendLogToStores = async (entry) => {
-  await Promise.allSettled([appendLogToFile(entry), appendLogToNodeFile(entry)]);
+  await Promise.allSettled([
+    appendLogToFile(entry),
+    appendLogToNodeFile(entry),
+    appendLogToServer(entry)
+  ]);
 };
 
 const logEvent = (level, message, payload = null) => {

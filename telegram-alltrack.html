@@ -713,7 +713,7 @@
         <span class="access-overlay__icon">🔒</span>
         <h2>Доступ закрыт</h2>
         <p id="accessOverlayText">Ваш ID не найден в списке прав. Обратитесь к супер‑администратору.</p>
-        <p class="access-overlay__id" id="accessOverlayId">ID: —. Код принят в работу: —.</p>
+        <p class="access-overlay__id" id="accessOverlayId">ID: —. Пользователь: —. Роль: —. Код принят в работу: —.</p>
       </div>
     </div>
 
@@ -725,7 +725,7 @@
         <div class="access-overlay__account">
           <span class="access-overlay__label">Аккаунт</span>
           <strong id="checkingName">—</strong>
-          <span class="access-overlay__id" id="checkingId">ID: —</span>
+          <span class="access-overlay__id" id="checkingId">ID: —. Пользователь: —. Роль: —.</span>
           <span class="access-overlay__role" id="checkingRole">Роль: —</span>
         </div>
       </div>
@@ -1454,7 +1454,7 @@
         if (checkingName) {
           checkingName.textContent = formatAccountName(user, getTelegramUser(), scope);
         }
-        updateUserIdIndicators(userId);
+        updateUserIdIndicators({ userId, user, scope });
         if (checkingRole) {
           checkingRole.textContent = `Роль: ${role || '—'}`;
         }
@@ -1487,16 +1487,19 @@
 
       const getUserId = () => getUserIdWithSource().id;
 
-      const formatUserIdStatus = (userId) => {
+      const formatUserIdStatus = ({ userId, user, scope } = {}) => {
         const normalizedId = normalizeId(userId) || '—';
+        const { fullName, role } = resolveAccountInfo({ user, scope });
+        const safeName = fullName || '—';
+        const safeRole = role || '—';
         return {
-          inline: `ID: ${normalizedId}`,
-          overlay: `ID: ${normalizedId}. Код принят в работу: ${normalizedId}.`
+          inline: `ID: ${normalizedId}. Пользователь: ${safeName}. Роль: ${safeRole}.`,
+          overlay: `ID: ${normalizedId}. Пользователь: ${safeName}. Роль: ${safeRole}. Код принят в работу: ${normalizedId}.`
         };
       };
 
-      const updateUserIdIndicators = (userId) => {
-        const status = formatUserIdStatus(userId);
+      const updateUserIdIndicators = ({ userId, user, scope } = {}) => {
+        const status = formatUserIdStatus({ userId, user, scope });
         if (checkingId) {
           checkingId.textContent = status.inline;
         }
@@ -1515,8 +1518,12 @@
         const matchesNormalizedId = (entry) => {
           const entryId = getUserIdValue(entry);
           const entryVariants = buildIdVariants(entryId);
+          const normalizedEntryId = normalizeId(entryId);
           if (!entryVariants.length || !userIdVariants.length) {
             return false;
+          }
+          if (normalizedId && normalizedEntryId && normalizedEntryId === normalizedId) {
+            return true;
           }
           if (normalizedId && isSameId(entryId, normalizedId)) {
             return true;
@@ -1630,10 +1637,11 @@
         }
       };
 
-      const lockAccess = (message) => {
+      const lockAccess = (message, { user, scope, userId } = {}) => {
         document.body.classList.add('is-locked');
         document.body.classList.remove('is-checking');
         hideAllScreens();
+        updateUserIdIndicators({ userId: userId || getUserId(), user, scope });
         if (accessOverlayText) {
           accessOverlayText.textContent = message;
         }
@@ -1710,12 +1718,14 @@
           const userId = getUserId();
           if (!userId) {
             logEvent('warn', 'Не удалось получить Telegram ID пользователя');
-            lockAccess('Не удалось определить ID пользователя. Откройте приложение через Telegram.');
+            lockAccess('Не удалось определить ID пользователя. Откройте приложение через Telegram.', {
+              user: getTelegramUser()
+            });
             return;
           }
           const normalizedUserId = normalizeId(userId) || userId;
           logEvent('info', 'ID пользователя принят в работу', { userId: normalizedUserId });
-          updateUserIdIndicators(normalizedUserId);
+          updateUserIdIndicators({ userId: normalizedUserId, user: getTelegramUser() });
           const access =
             findUserAccess(userId, data) ||
             (normalizedUserId ? findUserAccess(normalizedUserId, data) : null) ||
@@ -1724,7 +1734,10 @@
             logEvent('warn', 'ID пользователя не найден в списке прав', {
               userId: normalizedUserId
             });
-            lockAccess('Ваш ID не найден в списке прав. Обратитесь к супер‑администратору.');
+            lockAccess('Ваш ID не найден в списке прав. Обратитесь к супер‑администратору.', {
+              user: getTelegramUser(),
+              userId: normalizedUserId
+            });
             return;
           }
           logEvent('info', 'Доступ найден', {
@@ -1735,7 +1748,9 @@
           unlockAccess(access);
         } catch (error) {
           logEvent('error', 'Ошибка загрузки прав доступа', { message: error?.message || error });
-          lockAccess('Ошибка загрузки прав доступа. Проверьте файл access.json.');
+          lockAccess('Ошибка загрузки прав доступа. Проверьте файл access.json.', {
+            user: getTelegramUser()
+          });
         } finally {
           setCheckingOverlayVisibility(false);
         }

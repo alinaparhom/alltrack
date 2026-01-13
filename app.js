@@ -713,8 +713,12 @@ const findUserAccess = (userId, data) => {
   const matchesNormalizedId = (entry) => {
     const entryId = getUserIdValue(entry);
     const entryVariants = buildIdVariants(entryId);
+    const normalizedEntryId = normalizeId(entryId);
     if (!entryVariants.length || !userIdVariants.length) {
       return false;
+    }
+    if (normalizedId && normalizedEntryId && normalizedEntryId === normalizedId) {
+      return true;
     }
     if (normalizedId && isSameId(entryId, normalizedId)) {
       return true;
@@ -897,7 +901,7 @@ const formatUserIdStatus = ({ userId, user, scope } = {}) => {
   const { fullName, role } = resolveAccountInfo({ user, scope });
   const safeName = fullName || '—';
   const safeRole = role || '—';
-  return `Telegram ID: ${normalizedId}. ${safeName}. Роль: ${safeRole}. Код принят в работу: ${normalizedId}.`;
+  return `ID: ${normalizedId}. Пользователь: ${safeName}. Роль: ${safeRole}. Код принят в работу: ${normalizedId}.`;
 };
 
 const updateUserIdIndicators = ({ userId, user, scope } = {}) => {

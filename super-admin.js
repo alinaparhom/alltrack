@@ -100,8 +100,9 @@
     const panel = document.getElementById('superAdminCreatePanel');
     const button = document.getElementById('superAdminCreateButton');
     const note = document.getElementById('superAdminCreateNote');
+    const label = document.getElementById('superAdminCreateLabel');
 
-    if (!openButton || !panel || !button || !note) {
+    if (!openButton || !panel || !button || !note || !label) {
       return;
     }
 
@@ -109,11 +110,13 @@
       panel.hidden = !isOpen;
       openButton.setAttribute('aria-expanded', String(isOpen));
       note.hidden = true;
-      openButton.textContent = isOpen ? 'Свернуть создание' : 'Добавить организацию';
+      label.textContent = isOpen ? 'Свернуть создание' : 'Добавить организацию';
       if (isOpen) {
         panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
     };
+
+    setPanelState(false);
 
     openButton.addEventListener('click', () => {
       setPanelState(panel.hidden);

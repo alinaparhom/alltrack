@@ -881,24 +881,6 @@ const getInitials = (fullName = '') => {
   return initials || '—';
 };
 
-const formatUserIdStatus = (userId) => {
-  const normalizedId = normalizeId(userId) || '—';
-  return `Telegram ID: ${normalizedId}. Код принят в работу: ${normalizedId}.`;
-};
-
-const updateUserIdIndicators = (userId) => {
-  const message = formatUserIdStatus(userId);
-  if (accessId) {
-    accessId.textContent = message;
-  }
-  if (checkingIdStatus) {
-    checkingIdStatus.textContent = message;
-  }
-  if (accessOverlayId) {
-    accessOverlayId.textContent = message;
-  }
-};
-
 const resolveAccountInfo = ({ user, scope } = {}) => {
   const fullName = getUserFullName(user, getTelegramDisplayName(getTelegramUser()));
   const roles = getUserRolesList(user, scope);
@@ -908,6 +890,27 @@ const resolveAccountInfo = ({ user, scope } = {}) => {
     role,
     roles
   };
+};
+
+const formatUserIdStatus = ({ userId, user, scope } = {}) => {
+  const normalizedId = normalizeId(userId) || '—';
+  const { fullName, role } = resolveAccountInfo({ user, scope });
+  const safeName = fullName || '—';
+  const safeRole = role || '—';
+  return `Telegram ID: ${normalizedId}. ${safeName}. Роль: ${safeRole}. Код принят в работу: ${normalizedId}.`;
+};
+
+const updateUserIdIndicators = ({ userId, user, scope } = {}) => {
+  const message = formatUserIdStatus({ userId, user, scope });
+  if (accessId) {
+    accessId.textContent = message;
+  }
+  if (checkingIdStatus) {
+    checkingIdStatus.textContent = message;
+  }
+  if (accessOverlayId) {
+    accessOverlayId.textContent = message;
+  }
 };
 
 const updateCheckingAccount = ({ user, scope } = {}) => {
@@ -961,6 +964,7 @@ const lockAccess = (message, { user, scope } = {}) => {
   delete document.body.dataset.accessScope;
   delete document.body.dataset.userRole;
   updateAccessOverlayAccount({ user, scope });
+  updateUserIdIndicators({ userId: getUserId(), user, scope });
   if (accessOverlayText) {
     accessOverlayText.textContent = message;
   }
@@ -1002,7 +1006,7 @@ const unlockAccess = ({ user, organization, scope, userId }) => {
   if (accessMeta) {
     accessMeta.textContent = `Организация: ${effectiveOrganization}`;
   }
-  updateUserIdIndicators(userId);
+  updateUserIdIndicators({ userId, user, scope });
   if (accessMessage) {
     const rolesText = resolvedRoles.length ? resolvedRoles.join(', ') : '—';
     accessMessage.textContent = `Вошёл(а): ${resolvedName || '—'}. Доступные роли: ${rolesText}.`;
@@ -1076,7 +1080,7 @@ const initAccess = async () => {
         name: getUserNameValue(admin)
       }))
     });
-    updateUserIdIndicators(normalizedUserId);
+    updateUserIdIndicators({ userId: normalizedUserId, user: getTelegramUser() });
     const access =
       findUserAccess(userId, data) ||
       (normalizedUserId ? findUserAccess(normalizedUserId, data) : null) ||

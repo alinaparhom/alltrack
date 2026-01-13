@@ -541,7 +541,9 @@ const getAccessList = (value) => {
         }
         return [];
       });
-      if (flattened.length && flattened.every((item) => item && typeof item === 'object')) {
+      const allObjects =
+        flattened.length && flattened.every((item) => item && typeof item === 'object');
+      if (allObjects && flattened.every((item) => hasIdField(item))) {
         return flattened;
       }
     }
@@ -1091,10 +1093,25 @@ const initAccess = async () => {
     }
     const data = await response.json();
     accessDataCache = data;
+    const superAdmins = getSuperAdminsList(data);
     logEvent('info', 'Файл access.json загружен', {
-      superAdmins: getSuperAdminsList(data).length,
+      superAdmins: superAdmins.length,
       organizations: Object.keys(data?.organizations || {}).length
     });
+    if (superAdmins.length) {
+      const superAdminSummary = superAdmins.map((admin) => ({
+        id: getUserIdValue(admin),
+        normalizedId: normalizeId(getUserIdValue(admin)),
+        name: getUserNameValue(admin),
+        role: normalizeRoleText(getUserRoleValue(admin))
+      }));
+      const missingIdCount = superAdminSummary.filter((admin) => !admin.normalizedId).length;
+      logEvent('info', 'Список супер‑администраторов (диагностика)', {
+        count: superAdmins.length,
+        missingIdCount,
+        items: superAdminSummary
+      });
+    }
     await waitForTelegramUser();
     const { id: userId, source: userIdSource } = getUserIdWithSource();
     if (!userId) {

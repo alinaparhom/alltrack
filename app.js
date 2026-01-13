@@ -871,9 +871,10 @@ const initAccess = async () => {
       return;
     }
     const normalizedUserId = normalizeId(userId) || userId;
-    console.info(
-      `ID пользователя принят в работу: ${normalizedUserId}. Источник: ${userIdSource}`
-    );
+    logEvent('info', 'ID пользователя принят в работу', {
+      userId: normalizedUserId,
+      source: userIdSource
+    });
     logEvent('info', 'ID пользователя получен', {
       userId: normalizedUserId,
       source: userIdSource

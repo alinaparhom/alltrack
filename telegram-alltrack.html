@@ -735,6 +735,102 @@
     <script>
       const getTelegramWebApp = () => (window.Telegram ? window.Telegram.WebApp : null);
       let telegramReady = false;
+      const LOG_STORAGE_KEY = 'alltrack.logs';
+      const LOG_LIMIT = 250;
+      const LOG_FILE_NAME = '1alltrack.log';
+      let logFileHandlePromise = null;
+
+      const safeJsonParse = (value, fallback) => {
+        if (!value) {
+          return fallback;
+        }
+        try {
+          return JSON.parse(value);
+        } catch (error) {
+          return fallback;
+        }
+      };
+
+      const readLogs = () => {
+        if (typeof window === 'undefined' || !window.localStorage) {
+          return [];
+        }
+        return safeJsonParse(window.localStorage.getItem(LOG_STORAGE_KEY), []);
+      };
+
+      const writeLogs = (logs) => {
+        if (typeof window === 'undefined' || !window.localStorage) {
+          return;
+        }
+        window.localStorage.setItem(LOG_STORAGE_KEY, JSON.stringify(logs));
+      };
+
+      const formatLogPayload = (payload) => {
+        if (payload === null || payload === undefined || payload === '') {
+          return '';
+        }
+        if (typeof payload === 'string') {
+          return payload;
+        }
+        try {
+          return JSON.stringify(payload);
+        } catch (error) {
+          return String(payload);
+        }
+      };
+
+      const buildLogLine = (entry) => {
+        const payload = formatLogPayload(entry.payload);
+        const payloadSegment = payload ? ` | ${payload}` : '';
+        return `${entry.timestamp} [${entry.level}] ${entry.message}${payloadSegment}\n`;
+      };
+
+      const getLogFileHandle = async () => {
+        if (typeof navigator === 'undefined' || !navigator.storage?.getDirectory) {
+          return null;
+        }
+        if (!logFileHandlePromise) {
+          logFileHandlePromise = navigator.storage
+            .getDirectory()
+            .then((directoryHandle) =>
+              directoryHandle.getFileHandle(LOG_FILE_NAME, { create: true })
+            )
+            .catch(() => null);
+        }
+        return logFileHandlePromise;
+      };
+
+      const appendLogToFile = async (entry) => {
+        const handle = await getLogFileHandle();
+        if (!handle) {
+          return;
+        }
+        const writable = await handle.createWritable({ keepExistingData: true });
+        const file = await handle.getFile();
+        await writable.seek(file.size);
+        await writable.write(buildLogLine(entry));
+        await writable.close();
+      };
+
+      const logEvent = (level, message, payload = null) => {
+        const timestamp = new Date().toISOString();
+        const entry = {
+          timestamp,
+          level,
+          message,
+          payload
+        };
+        const logs = readLogs();
+        logs.push(entry);
+        const trimmedLogs = logs.slice(-LOG_LIMIT);
+        writeLogs(trimmedLogs);
+        appendLogToFile(entry).catch(() => {});
+        const consoleMethod =
+          level === 'error' ? console.error : level === 'warn' ? console.warn : console.info;
+        consoleMethod(`[${timestamp}] ${message}`, payload || '');
+      };
+
+      window.getAlltrackLogs = () => readLogs();
 
       const ensureTelegramReady = () => {
         const tg = getTelegramWebApp();
@@ -789,6 +885,26 @@
         return String(leftValue).trim() === String(rightValue).trim();
       };
 
+      const buildIdVariants = (value) => {
+        if (value === null || value === undefined) {
+          return [];
+        }
+        const variants = new Set();
+        const raw = String(value).trim();
+        if (raw) {
+          variants.add(raw);
+        }
+        const normalized = normalizeId(value);
+        if (normalized) {
+          variants.add(normalized);
+        }
+        const numeric = Number(raw);
+        if (!Number.isNaN(numeric)) {
+          variants.add(String(numeric));
+        }
+        return Array.from(variants);
+      };
+
       const normalizePersonName = (value) => {
         if (!value) {
           return '';
@@ -829,6 +945,65 @@
           user.firstName || user.first_name || user.given_name || user.name_first || '';
         const middleName = user.middleName || user.middle_name || user.patronymic || '';
         return [lastName, firstName, middleName].filter(Boolean).join(' ').trim();
+      };
+
+      const getUserUsernameValue = (user) => {
+        if (!user || typeof user !== 'object') {
+          return '';
+        }
+        return (
+          user.username ||
+          user.userName ||
+          user.telegramUsername ||
+          user.telegram_username ||
+          user.tgUsername ||
+          user.tg_username ||
+          ''
+        );
+      };
+
+      const buildTelegramNameCandidates = (telegramUser) => {
+        if (!telegramUser) {
+          return [];
+        }
+        const firstName = telegramUser.first_name || '';
+        const lastName = telegramUser.last_name || '';
+        const candidates = [];
+        if (lastName || firstName) {
+          const lastFirst = [lastName, firstName].filter(Boolean).join(' ');
+          const firstLast = [firstName, lastName].filter(Boolean).join(' ');
+          if (lastFirst) {
+            candidates.push(lastFirst);
+          }
+          if (firstLast) {
+            candidates.push(firstLast);
+          }
+        }
+        if (telegramUser.username) {
+          candidates.push(`@${telegramUser.username}`);
+          candidates.push(telegramUser.username);
+        }
+        return Array.from(new Set(candidates.filter(Boolean)));
+      };
+
+      const isMatchingByNameOrUsername = (user, candidates) => {
+        if (!candidates.length) {
+          return false;
+        }
+        const normalizedCandidates = candidates.map((candidate) => String(candidate).trim()).filter(Boolean);
+        if (!normalizedCandidates.length) {
+          return false;
+        }
+        const userName = getUserNameValue(user);
+        const userUsername = getUserUsernameValue(user);
+        const normalizedUserUsername = userUsername.replace(/^@/, '').toLowerCase();
+        return normalizedCandidates.some((candidate) => {
+          if (userName && isSamePersonName(userName, candidate)) {
+            return true;
+          }
+          const normalizedCandidate = candidate.replace(/^@/, '').toLowerCase();
+          return normalizedUserUsername && normalizedCandidate === normalizedUserUsername;
+        });
       };
 
       const hasIdField = (value) => {
@@ -1169,13 +1344,23 @@
           return null;
         }
         const normalizedId = normalizeId(userId);
+        const userIdVariants = buildIdVariants(userId);
         const superAdmins = getSuperAdminsList(data);
         const matchesNormalizedId = (entry) => {
           const entryId = getUserIdValue(entry);
-          if (normalizedId) {
-            return isSameId(entryId, normalizedId) || isSameId(entryId, userId);
+          const entryVariants = buildIdVariants(entryId);
+          if (!entryVariants.length || !userIdVariants.length) {
+            return false;
           }
-          return isSameId(entryId, userId);
+          if (normalizedId && isSameId(entryId, normalizedId)) {
+            return true;
+          }
+          if (isSameId(entryId, userId)) {
+            return true;
+          }
+          return entryVariants.some((variant) =>
+            userIdVariants.some((userVariant) => variant === userVariant)
+          );
         };
 
         const superAdmin = superAdmins.find((admin) => matchesNormalizedId(admin));
@@ -1187,12 +1372,10 @@
           };
         }
         const telegramUser = getTelegramUser();
-        const telegramName =
-          [telegramUser?.last_name, telegramUser?.first_name].filter(Boolean).join(' ') ||
-          (telegramUser?.username ? `@${telegramUser.username}` : '');
-        if (telegramName) {
+        const telegramCandidates = buildTelegramNameCandidates(telegramUser);
+        if (telegramCandidates.length) {
           const superAdminByName = superAdmins.find((admin) =>
-            isSamePersonName(getUserNameValue(admin), telegramName)
+            isMatchingByNameOrUsername(admin, telegramCandidates)
           );
           if (superAdminByName) {
             return {
@@ -1223,6 +1406,25 @@
               scope: 'organization',
               organization
             };
+          }
+          if (telegramCandidates.length) {
+            const matchedByName = list.find((user) =>
+              isMatchingByNameOrUsername(user, telegramCandidates)
+            );
+            if (matchedByName) {
+              if (isSuperAdminRole(getUserRoleValue(matchedByName))) {
+                return {
+                  user: matchedByName,
+                  scope: 'super',
+                  organization: 'Все организации'
+                };
+              }
+              return {
+                user: matchedByName,
+                scope: 'organization',
+                organization
+              };
+            }
           }
         }
 
@@ -1327,29 +1529,43 @@
 
       const initAccess = async () => {
         try {
+          logEvent('info', 'Старт проверки доступа');
           updateCheckingAccount();
           const response = await fetch('access.json', { cache: 'no-store' });
           if (!response.ok) {
             throw new Error('Не удалось загрузить список доступов');
           }
           const data = await response.json();
+          logEvent('info', 'Файл access.json загружен', {
+            superAdmins: getSuperAdminsList(data).length,
+            organizations: Object.keys(data?.organizations || {}).length
+          });
           await waitForTelegramUser();
           const userId = getUserId();
           if (!userId) {
+            logEvent('warn', 'Не удалось получить Telegram ID пользователя');
             lockAccess('Не удалось определить ID пользователя. Откройте приложение через Telegram.');
             return;
           }
           const normalizedUserId = normalizeId(userId) || userId;
-          console.info(`ID пользователя принят в работу: ${normalizedUserId}`);
+          logEvent('info', 'ID пользователя принят в работу', { userId: normalizedUserId });
           updateUserIdIndicators(normalizedUserId);
           const access = findUserAccess(normalizedUserId, data);
           if (!access) {
+            logEvent('warn', 'ID пользователя не найден в списке прав', {
+              userId: normalizedUserId
+            });
             lockAccess('Ваш ID не найден в списке прав. Обратитесь к супер‑администратору.');
             return;
           }
+          logEvent('info', 'Доступ найден', {
+            scope: access.scope,
+            organization: access.organization || null
+          });
           updateCheckingAccount(access.user, access.scope, normalizedUserId);
           unlockAccess(access);
         } catch (error) {
+          logEvent('error', 'Ошибка загрузки прав доступа', { message: error?.message || error });
           lockAccess('Ошибка загрузки прав доступа. Проверьте файл access.json.');
         } finally {
           setCheckingOverlayVisibility(false);

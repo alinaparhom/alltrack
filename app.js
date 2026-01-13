@@ -714,7 +714,7 @@ const findUserAccess = (userId, data) => {
     const entryId = getUserIdValue(entry);
     const entryVariants = buildIdVariants(entryId);
     const normalizedEntryId = normalizeId(entryId);
-    if (!entryVariants.length || !userIdVariants.length) {
+    if (!userIdVariants.length) {
       return false;
     }
     if (normalizedId && normalizedEntryId && normalizedEntryId === normalizedId) {

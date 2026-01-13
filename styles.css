@@ -207,6 +207,12 @@ body.is-super-admin .access {
   font-size: 20px;
 }
 
+.super-admin__subtitle {
+  margin: 6px 0 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+
 .super-admin__chip {
   padding: 6px 12px;
   border-radius: 999px;
@@ -219,6 +225,32 @@ body.is-super-admin .access {
 .super-admin__list {
   display: grid;
   gap: 12px;
+}
+
+.super-admin__section {
+  display: grid;
+  gap: 12px;
+}
+
+.super-admin__section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.super-admin__section-head h3 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.super-admin__count {
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent-strong);
+  background: var(--accent-soft);
 }
 
 .super-admin__card {
@@ -334,11 +366,16 @@ body.is-super-admin .access {
   font-weight: 600;
   color: #fff;
   background: linear-gradient(135deg, var(--accent) 0%, var(--accent-strong) 100%);
-  opacity: 0.6;
 }
 
-.super-admin__button:disabled {
-  cursor: not-allowed;
+.super-admin__button:active {
+  transform: scale(0.98);
+}
+
+.super-admin__note {
+  margin: 0;
+  font-size: 12px;
+  color: var(--muted);
 }
 
 .stats {

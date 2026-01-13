@@ -40,16 +40,23 @@
         <div>
           <p class="super-admin__label">Супер‑администратор</p>
           <h2 class="super-admin__name" id="superAdminName">—</h2>
+          <p class="super-admin__subtitle" id="superAdminShortName">Фамилия Имя</p>
         </div>
         <span class="super-admin__chip">Все организации</span>
       </div>
 
-      <div class="super-admin__list" id="superAdminOrgs"></div>
+      <div class="super-admin__section">
+        <div class="super-admin__section-head">
+          <h3>Организации</h3>
+          <span class="super-admin__count" id="superAdminCount">0</span>
+        </div>
+        <div class="super-admin__list" id="superAdminOrgs"></div>
+      </div>
 
       <div class="super-admin__create">
         <div class="super-admin__create-head">
           <h3>Новая организация</h3>
-          <span class="super-admin__hint">Скоро</span>
+          <span class="super-admin__hint">Черновик</span>
         </div>
         <div class="super-admin__form">
           <label class="super-admin__field">
@@ -60,7 +67,12 @@
             <span>Администратор</span>
             <input type="text" placeholder="Фамилия Имя" />
           </label>
-          <button class="super-admin__button" type="button" disabled>Создать</button>
+          <button class="super-admin__button" type="button" id="superAdminCreateButton">
+            Создать организацию
+          </button>
+          <p class="super-admin__note" id="superAdminCreateNote" hidden>
+            Функция в разработке. Скоро будет доступна.
+          </p>
         </div>
       </div>
     </section>

@@ -29,6 +29,7 @@ const checkingRole = document.getElementById('checkingRole');
 const checkingIdStatus = document.getElementById('checkingIdStatus');
 const superAdminPanel = document.getElementById('superAdminPanel');
 const defaultWorkspace = document.getElementById('defaultWorkspace');
+let accessDataCache = null;
 
 document.body.classList.add('is-checking');
 
@@ -673,7 +674,7 @@ const unlockAccess = ({ user, organization, scope, userId }) => {
       defaultWorkspace.hidden = true;
     }
     if (window.initSuperAdminWorkspace) {
-      window.initSuperAdminWorkspace({ fullName: resolvedName });
+      window.initSuperAdminWorkspace({ fullName: resolvedName, accessData: accessDataCache });
     }
   } else {
     if (superAdminPanel) {
@@ -696,6 +697,7 @@ const initAccess = async () => {
       throw new Error('Не удалось загрузить список доступов');
     }
     const data = await response.json();
+    accessDataCache = data;
     await waitForTelegramUser();
     const { id: userId, source: userIdSource } = getUserIdWithSource();
     if (!userId) {

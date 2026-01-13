@@ -1013,8 +1013,15 @@
 
       ensureTelegramReady();
       logTelegramContext();
+      logEvent('info', 'Старт скрипта проверки доступа', {
+        documentReady: document.readyState
+      });
       logEvent('info', 'Приложение загружено');
       initUserActionLogging();
+
+      document.addEventListener('DOMContentLoaded', () => {
+        logEvent('info', 'DOM готов');
+      });
 
       const accessOverlay = document.getElementById('accessOverlay');
       const accessOverlayText = document.getElementById('accessOverlayText');
@@ -1572,6 +1579,18 @@
         };
 
         const superAdmin = superAdmins.find((admin) => matchesNormalizedId(admin));
+        if (superAdmins.length) {
+          const checks = superAdmins.map((admin) => ({
+            entryId: normalizeId(getUserIdValue(admin)),
+            name: getUserFullName(admin),
+            role: normalizeRoleText(getUserRoleValue(admin)),
+            matches: matchesNormalizedId(admin)
+          }));
+          logEvent('info', 'Проверка супер‑администраторов по ID', {
+            userId,
+            checks
+          });
+        }
         if (superAdmin) {
           logEvent('info', 'Поиск доступа: найден супер‑администратор по ID', {
             userId,
@@ -1821,12 +1840,19 @@
             });
             return;
           }
-          const { effectiveScope, roleText } = resolveEffectiveScope({
+          const { effectiveScope, isRoleSuper, roleText } = resolveEffectiveScope({
             user: access.user,
             scope: access.scope
           });
+          if (isRoleSuper && access.scope !== 'super') {
+            logEvent('warn', 'Роль определена как супер‑администратор, форсируем доступ', {
+              userId: normalizedUserId,
+              role: roleText || null,
+              scopeBefore: access.scope
+            });
+          }
           access.scope = effectiveScope;
-          if (effectiveScope === 'super') {
+          if (access.scope === 'super') {
             access.organization = 'Все организации';
             logEvent('info', 'Роль супер‑администратора подтверждена', {
               userId: normalizedUserId,

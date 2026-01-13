@@ -292,8 +292,15 @@ const logTelegramContext = () => {
 
 ensureTelegramReady();
 logTelegramContext();
+logEvent('info', 'Старт скрипта проверки доступа', {
+  documentReady: document.readyState
+});
 logEvent('info', 'Приложение загружено');
 initUserActionLogging();
+
+document.addEventListener('DOMContentLoaded', () => {
+  logEvent('info', 'DOM готов');
+});
 
 const accessPanel = document.getElementById('accessPanel');
 const accessName = document.getElementById('accessName');
@@ -755,6 +762,18 @@ const findUserAccess = (userId, data) => {
   };
 
   const superAdmin = superAdmins.find((admin) => matchesNormalizedId(admin));
+  if (superAdmins.length) {
+    const checks = superAdmins.map((admin) => ({
+      entryId: normalizeId(getUserIdValue(admin)),
+      name: getUserNameValue(admin),
+      role: normalizeRoleText(getUserRoleValue(admin)),
+      matches: matchesNormalizedId(admin)
+    }));
+    logEvent('info', 'Проверка супер‑администраторов по ID', {
+      userId: resolvedUserId,
+      checks
+    });
+  }
   if (superAdmin) {
     logEvent('info', 'Поиск доступа: найден супер‑администратор по ID', {
       userId: resolvedUserId,
@@ -1201,9 +1220,20 @@ const initAccess = async () => {
       });
       return;
     }
-    const { effectiveScope } = resolveEffectiveScope({ user: access.user, scope: access.scope });
+    const { effectiveScope, isRoleSuper, roleText, rolesList } = resolveEffectiveScope({
+      user: access.user,
+      scope: access.scope
+    });
+    if (isRoleSuper && access.scope !== 'super') {
+      logEvent('warn', 'Роль определена как супер‑администратор, форсируем доступ', {
+        userId: normalizedUserId,
+        role: roleText || null,
+        roles: rolesList,
+        scopeBefore: access.scope
+      });
+    }
     access.scope = effectiveScope;
-    if (effectiveScope === 'super') {
+    if (access.scope === 'super') {
       access.organization = 'Все организации';
     }
     logEvent('info', 'Доступ найден', {

@@ -51,43 +51,42 @@
             <h3>Организации</h3>
             <span class="super-admin__count" id="superAdminCount">0</span>
           </div>
-          <button
-            class="super-admin__button super-admin__button--ghost super-admin__button--wide"
-            type="button"
-            id="superAdminOpenCreate"
-            aria-expanded="false"
-          >
-            Добавить организацию
-          </button>
         </div>
         <div class="super-admin__list" id="superAdminOrgs"></div>
       </div>
 
-      <div class="super-admin__create-panel glass" id="superAdminCreatePanel" hidden>
-        <div class="super-admin__create-head">
-          <div>
-            <h3>Создание организации</h3>
-            <p>Заполните данные и подтвердите добавление.</p>
+      <div class="super-admin__create glass">
+        <button
+          class="super-admin__button super-admin__button--ghost super-admin__button--wide super-admin__create-toggle"
+          type="button"
+          id="superAdminOpenCreate"
+          aria-expanded="false"
+        >
+          Добавить организацию
+        </button>
+        <div class="super-admin__create-panel" id="superAdminCreatePanel" hidden>
+          <div class="super-admin__create-head">
+            <div>
+              <h3>Создание организации</h3>
+              <p>Заполните данные и подтвердите добавление.</p>
+            </div>
           </div>
-          <button class="super-admin__create-close" type="button" id="superAdminCreateClose">
-            ✕
-          </button>
-        </div>
-        <div class="super-admin__form">
-          <label class="super-admin__field">
-            <span>Название</span>
-            <input type="text" placeholder="Например, Северный склад" />
-          </label>
-          <label class="super-admin__field">
-            <span>Администратор</span>
-            <input type="text" placeholder="Фамилия Имя" />
-          </label>
-          <button class="super-admin__button" type="button" id="superAdminCreateButton">
-            Создать организацию
-          </button>
-          <p class="super-admin__note" id="superAdminCreateNote" hidden>
-            Функция в разработке. Скоро будет доступна.
-          </p>
+          <div class="super-admin__form">
+            <label class="super-admin__field">
+              <span>Название</span>
+              <input type="text" placeholder="Например, Северный склад" />
+            </label>
+            <label class="super-admin__field">
+              <span>Администратор</span>
+              <input type="text" placeholder="Фамилия Имя" />
+            </label>
+            <button class="super-admin__button" type="button" id="superAdminCreateButton">
+              Создать организацию
+            </button>
+            <p class="super-admin__note" id="superAdminCreateNote" hidden>
+              Функция в разработке. Скоро будет доступна.
+            </p>
+          </div>
         </div>
       </div>
     </section>

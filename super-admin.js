@@ -1,5 +1,6 @@
 (() => {
   const formatNumber = (value) => new Intl.NumberFormat('ru-RU').format(value);
+  let createButtonInitialized = false;
 
   const buildStat = (label, value) =>
     `<div class="super-admin__stat"><span>${label}</span><strong>${value}</strong></div>`;
@@ -108,9 +109,10 @@
     const inviteLink = document.getElementById('superAdminInviteLink');
     const copyButton = document.getElementById('superAdminCopyLink');
 
-    if (!openButton || !panel || !button || !note || !label) {
+    if (createButtonInitialized || !openButton || !panel || !button || !note || !label) {
       return;
     }
+    createButtonInitialized = true;
 
     const setPanelState = (isOpen) => {
       panel.hidden = !isOpen;
@@ -149,6 +151,18 @@
       copyButton.hidden = !available;
     };
 
+    const setCreateEnabled = (enabled) => {
+      button.disabled = !enabled;
+      button.setAttribute('aria-disabled', String(!enabled));
+      button.classList.toggle('is-disabled', !enabled);
+    };
+
+    const updateCreateState = () => {
+      const organizationName = orgNameInput?.value.trim();
+      const energyFullName = energyNameInput?.value.trim();
+      setCreateEnabled(Boolean(organizationName && energyFullName));
+    };
+
     setPanelState(false);
 
     if (status) {
@@ -157,6 +171,7 @@
     }
     setInviteLink('');
     setCopyAvailable(false);
+    updateCreateState();
 
     openButton.addEventListener('click', () => {
       setPanelState(panel.hidden);
@@ -173,9 +188,10 @@
         setStatus('Заполните название организации и ФИО энергетика.', 'error');
         setInviteLink('');
         setCopyAvailable(false);
+        updateCreateState();
         return;
       }
-      button.disabled = true;
+      setCreateEnabled(false);
       button.textContent = 'Создаём...';
       setStatus('Создаём организацию и ссылку приглашения...', 'success');
       setInviteLink('');
@@ -197,7 +213,7 @@
       } catch (error) {
         setStatus(error?.message || 'Не удалось создать организацию.', 'error');
       } finally {
-        button.disabled = false;
+        updateCreateState();
         button.textContent = 'Создать организацию';
       }
     };
@@ -212,6 +228,14 @@
     button.addEventListener('click', handleSubmit);
     if (form) {
       form.addEventListener('submit', handleSubmit);
+    }
+    if (orgNameInput) {
+      orgNameInput.addEventListener('input', updateCreateState);
+      orgNameInput.addEventListener('blur', updateCreateState);
+    }
+    if (energyNameInput) {
+      energyNameInput.addEventListener('input', updateCreateState);
+      energyNameInput.addEventListener('blur', updateCreateState);
     }
 
     if (copyButton) {
@@ -275,4 +299,10 @@
       defaultWorkspace.hidden = false;
     }
   };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initCreateButton);
+  } else {
+    initCreateButton();
+  }
 })();

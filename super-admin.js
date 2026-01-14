@@ -324,18 +324,23 @@
       return trimmed;
     };
 
-    const formatCreateError = ({ status, statusText, body, details }) => {
+    const formatCreateError = ({ status, statusText, body, details, endpoint }) => {
       const baseLabel = status
         ? `Ошибка сервиса (HTTP ${status}${statusText ? ` ${statusText}` : ''})`
         : 'Ошибка сервиса';
+      const endpointLabel = endpoint ? ` Путь запроса: ${endpoint}.` : '';
+      const hint =
+        status === 404
+          ? `Маршрут создания организации не найден${endpoint ? ` по ${endpoint}` : ''}. Проверьте настройки сервера.`
+          : '';
       const normalizedBody = parseErrorText(body);
       if (details) {
-        return `${baseLabel}: ${details}`;
+        return `${baseLabel}: ${details}${endpointLabel}`;
       }
       if (!normalizedBody) {
-        return `${baseLabel}: нет подробностей ответа.`;
+        return `${baseLabel}: нет подробностей ответа.${endpointLabel} ${hint}`.trim();
       }
-      return `${baseLabel}: ${normalizedBody}`;
+      return `${baseLabel}: ${normalizedBody}.${endpointLabel} ${hint}`.trim();
     };
 
     const getCreateOrganizationResponse = async (payload) => {
@@ -352,7 +357,8 @@
           });
         } catch (error) {
           lastError = formatCreateError({
-            details: `не удалось подключиться (${error?.message || error}).`
+            details: `не удалось подключиться (${error?.message || error}).`,
+            endpoint: apiUrl
           });
           if (endpoint === endpoints[endpoints.length - 1]) {
             throw new Error(lastError);
@@ -366,7 +372,8 @@
         lastError = formatCreateError({
           status: response.status,
           statusText: response.statusText,
-          body: errorText
+          body: errorText,
+          endpoint: apiUrl
         });
         if (response.status === 404) {
           continue;

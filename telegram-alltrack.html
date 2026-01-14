@@ -173,6 +173,38 @@
         gap: 12px;
       }
 
+      .admin-create__toggle {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+        padding: 14px 18px;
+        border-radius: 20px;
+        border: 1px solid rgba(210, 220, 250, 0.7);
+        background: rgba(255, 255, 255, 0.85);
+        box-shadow: var(--shadow);
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--text);
+        gap: 12px;
+      }
+
+      .admin-create__toggle-icon {
+        width: 28px;
+        height: 28px;
+        border-radius: 12px;
+        display: grid;
+        place-items: center;
+        background: rgba(83, 96, 255, 0.12);
+        color: var(--accent);
+        font-size: 18px;
+        flex-shrink: 0;
+      }
+
+      .admin-create__panel[hidden] {
+        display: none;
+      }
+
       .admin-create__form {
         display: grid;
         gap: 12px;
@@ -523,26 +555,32 @@
           </button>
         </section>
         <section class="admin-create">
-          <div class="card">
-            <h3 class="role-title">Добавление новой организации</h3>
-            <span class="role-subtitle">Заполните карточку, чтобы создать новую организацию.</span>
-          </div>
-          <div class="card admin-create__form">
-            <label class="form-field">
-              <span>Название организации</span>
-              <input type="text" placeholder="Например, Северный склад" />
-            </label>
-            <label class="form-field">
-              <span>Администратор</span>
-              <input type="text" placeholder="Фамилия Имя" />
-            </label>
-            <label class="form-field">
-              <span>Комментарий</span>
-              <textarea rows="3" placeholder="Коротко о доступах или структуре"></textarea>
-            </label>
-            <div class="form-actions">
-              <button class="primary-btn" type="button">Создать организацию</button>
-              <button class="secondary-btn" type="button">Сохранить как черновик</button>
+          <button class="admin-create__toggle" type="button" id="adminCreateToggle" aria-expanded="false">
+            <span class="admin-create__toggle-icon">＋</span>
+            <span id="adminCreateLabel">Добавить организацию</span>
+          </button>
+          <div class="admin-create__panel" id="adminCreatePanel" hidden>
+            <div class="card">
+              <h3 class="role-title">Добавление новой организации</h3>
+              <span class="role-subtitle">Заполните карточку, чтобы создать новую организацию.</span>
+            </div>
+            <div class="card admin-create__form">
+              <label class="form-field">
+                <span>Название организации</span>
+                <input type="text" placeholder="Например, Северный склад" />
+              </label>
+              <label class="form-field">
+                <span>Администратор</span>
+                <input type="text" placeholder="Фамилия Имя" />
+              </label>
+              <label class="form-field">
+                <span>Комментарий</span>
+                <textarea rows="3" placeholder="Коротко о доступах или структуре"></textarea>
+              </label>
+              <div class="form-actions">
+                <button class="primary-btn" type="button">Создать организацию</button>
+                <button class="secondary-btn" type="button">Сохранить как черновик</button>
+              </div>
             </div>
           </div>
         </section>
@@ -1080,6 +1118,7 @@
 
       document.addEventListener('DOMContentLoaded', () => {
         logEvent('info', 'DOM готов');
+        initAdminCreateToggle();
       });
 
       const accessOverlay = document.getElementById('accessOverlay');
@@ -1095,6 +1134,30 @@
       const userMeta = document.getElementById('userMeta');
       const userBadge = document.getElementById('userBadge');
       const roleScreens = document.querySelectorAll('.role-screen');
+      const adminCreateToggle = document.getElementById('adminCreateToggle');
+      const adminCreatePanel = document.getElementById('adminCreatePanel');
+      const adminCreateLabel = document.getElementById('adminCreateLabel');
+
+      const initAdminCreateToggle = () => {
+        if (!adminCreateToggle || !adminCreatePanel || !adminCreateLabel) {
+          return;
+        }
+
+        const setOpenState = (isOpen) => {
+          adminCreatePanel.hidden = !isOpen;
+          adminCreateToggle.setAttribute('aria-expanded', String(isOpen));
+          adminCreateLabel.textContent = isOpen ? 'Свернуть создание' : 'Добавить организацию';
+          if (isOpen) {
+            adminCreatePanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        };
+
+        setOpenState(false);
+
+        adminCreateToggle.addEventListener('click', () => {
+          setOpenState(adminCreatePanel.hidden);
+        });
+      };
 
       document.body.classList.add('is-checking');
 

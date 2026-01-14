@@ -98,6 +98,7 @@
   const initCreateButton = () => {
     const openButton = document.getElementById('superAdminOpenCreate');
     const panel = document.getElementById('superAdminCreatePanel');
+    const form = document.getElementById('superAdminCreateForm');
     const button = document.getElementById('superAdminCreateButton');
     const note = document.getElementById('superAdminCreateNote');
     const label = document.getElementById('superAdminCreateLabel');
@@ -201,9 +202,17 @@
       }
     };
 
-    button.addEventListener('click', () => {
+    const handleSubmit = (event) => {
+      if (event) {
+        event.preventDefault();
+      }
       createOrganization();
-    });
+    };
+
+    button.addEventListener('click', handleSubmit);
+    if (form) {
+      form.addEventListener('submit', handleSubmit);
+    }
 
     if (copyButton) {
       copyButton.addEventListener('click', async () => {

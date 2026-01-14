@@ -66,7 +66,7 @@
           <span class="super-admin__button-label" id="superAdminCreateLabel">Добавить организацию</span>
         </button>
         <div class="super-admin__create-panel" id="superAdminCreatePanel" hidden>
-          <div class="super-admin__form">
+          <form class="super-admin__form" id="superAdminCreateForm">
             <label class="super-admin__field">
               <span>Название</span>
               <input
@@ -104,7 +104,7 @@
             </div>
             <button
               class="super-admin__button super-admin__button--dark-text"
-              type="button"
+              type="submit"
               id="superAdminCreateButton"
             >
               Создать организацию
@@ -154,7 +154,7 @@
                 </li>
               </ol>
             </div>
-          </div>
+          </form>
         </div>
       </div>
     </section>

@@ -306,17 +306,23 @@
         const parsed = JSON.parse(trimmed);
         const message = parsed?.message ? String(parsed.message) : '';
         const details = parsed?.details ? String(parsed.details) : '';
-        if (message && details) {
-          return `${message} (${details})`;
+        const error = parsed?.error ? String(parsed.error) : '';
+        const reason = parsed?.reason ? String(parsed.reason) : '';
+        const step = parsed?.step ? String(parsed.step) : '';
+        const code = parsed?.code ? String(parsed.code) : '';
+        const path = parsed?.path ? String(parsed.path) : '';
+        const combined = [message, details, error, reason].filter(Boolean).join(' · ');
+        const meta = [step && `этап: ${step}`, code && `код: ${code}`, path && `путь: ${path}`]
+          .filter(Boolean)
+          .join(', ');
+        if (combined && meta) {
+          return `${combined} (${meta})`;
         }
-        if (message) {
-          return message;
+        if (combined) {
+          return combined;
         }
-        if (parsed?.error) {
-          return String(parsed.error);
-        }
-        if (details) {
-          return details;
+        if (meta) {
+          return meta;
         }
       } catch (error) {
         return trimmed;
@@ -344,13 +350,18 @@
       const hint =
         status === 404
           ? `Причина: маршрут создания организации не найден. Проверьте настройки сервера и прокси (nginx), а также совпадение путей.`
-          : '';
+          : status === 405
+            ? 'Причина: метод запроса запрещён. Проверьте, что сервер принимает POST.'
+            : status === 401 || status === 403
+              ? 'Причина: нет доступа. Проверьте авторизацию и права супер-администратора.'
+              : '';
       const normalizedBody = parseErrorText(body);
       const detailMessage = details || normalizedBody;
       const detailLine = detailMessage
         ? `Подробности: ${detailMessage}.`
         : 'Подробности: нет ответа от сервера.';
-      return `${baseLabel}. ${detailLine} ${requestLine} ${routesLine} ${hint}`.trim();
+      const stageLine = 'Этап: создание организации и получение ссылки.';
+      return `${baseLabel}. ${detailLine} ${stageLine} ${requestLine} ${routesLine} ${hint}`.trim();
     };
 
     const getCreateOrganizationResponse = async (payload) => {

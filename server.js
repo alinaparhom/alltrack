@@ -34,10 +34,17 @@ const sendJson = (res, statusCode, payload) => {
   });
 };
 
-const buildErrorPayload = (message, details) => ({
+const buildErrorPayload = (message, details, meta = {}) => ({
   message,
-  details
+  details,
+  ...meta
 });
+
+const buildStepError = ({ message, details, step, code }) => {
+  const error = new Error(message);
+  error.payload = buildErrorPayload(message, details, { step, code });
+  return error;
+};
 
 const formatTimestamp = () => new Date().toISOString();
 
@@ -332,33 +339,80 @@ const handleCreateOrganization = (req, res) => {
       }
 
       logAction('create_org_start', { organizationName, energyFullName });
-      ensureOrganizationAssets(organizationName);
-      const nextOrganizations = [...organizations, organizationName];
-      saveOrganizationsList(nextOrganizations);
 
-      const accessData = readJsonFile(ACCESS_FILE, { superAdmins: [], organizations: {} });
-      if (!accessData.organizations || typeof accessData.organizations !== 'object') {
-        accessData.organizations = {};
+      try {
+        const accessData = readJsonFile(ACCESS_FILE, { superAdmins: [], organizations: {} });
+        if (!accessData.organizations || typeof accessData.organizations !== 'object') {
+          accessData.organizations = {};
+        }
+        const existingMembers = Array.isArray(accessData.organizations[organizationName])
+          ? accessData.organizations[organizationName]
+          : [];
+        accessData.organizations[organizationName] = addPlaceholderMember(
+          existingMembers,
+          energyFullName
+        );
+        writeJsonFile(ACCESS_FILE, accessData);
+      } catch (error) {
+        throw buildStepError({
+          message: 'Не удалось создать организацию.',
+          details: `Шаг 1.1 (access.json: организация и первый пользователь) завершился ошибкой: ${
+            error?.message || error
+          }`,
+          step: '1.1',
+          code: 'create_org_access'
+        });
       }
-      const existingMembers = Array.isArray(accessData.organizations[organizationName])
-        ? accessData.organizations[organizationName]
-        : [];
-      accessData.organizations[organizationName] = addPlaceholderMember(
-        existingMembers,
-        energyFullName
-      );
-      writeJsonFile(ACCESS_FILE, accessData);
 
-      const invitesData = readJsonFile(INVITES_FILE, { invites: [] });
-      const invites = Array.isArray(invitesData.invites) ? invitesData.invites : [];
-      const inviteId = generateInviteId();
-      invites.push({
-        id: inviteId,
-        organizationName,
-        energyFullName,
-        createdAt: formatTimestamp()
-      });
-      writeJsonFile(INVITES_FILE, { invites });
+      try {
+        const nextOrganizations = [...organizations, organizationName];
+        saveOrganizationsList(nextOrganizations);
+      } catch (error) {
+        throw buildStepError({
+          message: 'Не удалось создать организацию.',
+          details: `Шаг 1.2 (data/organizations.json: список организаций) завершился ошибкой: ${
+            error?.message || error
+          }`,
+          step: '1.2',
+          code: 'create_org_list'
+        });
+      }
+
+      try {
+        ensureOrganizationAssets(organizationName);
+      } catch (error) {
+        throw buildStepError({
+          message: 'Не удалось создать организацию.',
+          details: `Шаг 1.3 (data/organizations/<имя>: папка и файлы) завершился ошибкой: ${
+            error?.message || error
+          }`,
+          step: '1.3',
+          code: 'create_org_assets'
+        });
+      }
+
+      let inviteId;
+      try {
+        const invitesData = readJsonFile(INVITES_FILE, { invites: [] });
+        const invites = Array.isArray(invitesData.invites) ? invitesData.invites : [];
+        inviteId = generateInviteId();
+        invites.push({
+          id: inviteId,
+          organizationName,
+          energyFullName,
+          createdAt: formatTimestamp()
+        });
+        writeJsonFile(INVITES_FILE, { invites });
+      } catch (error) {
+        throw buildStepError({
+          message: 'Не удалось создать организацию.',
+          details: `Шаг 1.4 (data/invites.json: сохранение приглашения) завершился ошибкой: ${
+            error?.message || error
+          }`,
+          step: '1.4',
+          code: 'create_org_invite'
+        });
+      }
 
       const inviteLink = buildInviteLink(req, inviteId);
       logAction('create_org_success', {
@@ -369,18 +423,18 @@ const handleCreateOrganization = (req, res) => {
       });
       sendJson(res, 200, { inviteId, inviteLink });
     } catch (createError) {
-      logAction('create_org_failed', {
-        message: createError?.message || createError,
-        stack: createError?.stack
-      });
-      sendJson(
-        res,
-        500,
+      const errorPayload =
+        createError?.payload ||
         buildErrorPayload(
           'Ошибка сервиса создания организации.',
           createError?.message || 'Неизвестная ошибка.'
-        )
-      );
+        );
+      logAction('create_org_failed', {
+        message: createError?.message || createError,
+        stack: createError?.stack,
+        payload: createError?.payload
+      });
+      sendJson(res, 500, errorPayload);
     }
   });
 };

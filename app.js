@@ -159,6 +159,8 @@ const logEvent = (level, message, payload = null) => {
   consoleMethod(`[${timestamp}] ${message}`, payload || '');
 };
 
+window.logEvent = logEvent;
+
 window.getAlltrackLogs = () => readLogs();
 
 window.addEventListener('error', (event) => {

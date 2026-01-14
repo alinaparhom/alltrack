@@ -35,6 +35,26 @@ const appendLogLine = (line, callback) => {
   fs.appendFile(LOG_FILE, text, 'utf8', callback);
 };
 
+const safeStringify = (value) => {
+  if (value === undefined) {
+    return '';
+  }
+  try {
+    return JSON.stringify(value);
+  } catch (error) {
+    return '"[unserializable]"';
+  }
+};
+
+const logAction = (action, payload = null) => {
+  const details = payload ? ` ${safeStringify(payload)}` : '';
+  appendLogLine(`${formatTimestamp()} ACTION ${action}${details}`, (error) => {
+    if (error) {
+      console.error('Ошибка записи лога:', error);
+    }
+  });
+};
+
 const ORGANIZATION_DATABASE_FILES = [
   'Объекты.json',
   'Пользователи.json',
@@ -201,21 +221,25 @@ const parseJsonBody = (req, callback) => {
 const handleCreateOrganization = (req, res) => {
   parseJsonBody(req, (error, payload) => {
     if (error) {
+      logAction('create_org_invalid_payload');
       send(res, 400, 'Некорректные данные');
       return;
     }
     const organizationName = String(payload.organizationName || '').trim();
     const energyFullName = String(payload.energyFullName || '').trim();
     if (!organizationName || !energyFullName) {
+      logAction('create_org_missing_fields', { organizationName, energyFullName });
       send(res, 400, 'Заполните название организации и ФИО энергетика.');
       return;
     }
     const organizations = getOrganizationsList();
     if (organizations.includes(organizationName)) {
+      logAction('create_org_duplicate', { organizationName, energyFullName });
       send(res, 409, 'Такая организация уже существует.');
       return;
     }
 
+    logAction('create_org_start', { organizationName, energyFullName });
     ensureOrganizationAssets(organizationName);
     const nextOrganizations = [...organizations, organizationName];
     saveOrganizationsList(nextOrganizations);
@@ -232,6 +256,12 @@ const handleCreateOrganization = (req, res) => {
     writeJsonFile(INVITES_FILE, { invites });
 
     const inviteLink = buildInviteLink(req, inviteId);
+    logAction('create_org_success', {
+      organizationName,
+      energyFullName,
+      inviteId,
+      inviteLink
+    });
     send(res, 200, JSON.stringify({ inviteId, inviteLink }), {
       'Content-Type': 'application/json; charset=utf-8'
     });
@@ -253,12 +283,14 @@ const normalizeIdValue = (value) => {
 const handleAcceptInvite = (req, res) => {
   parseJsonBody(req, (error, payload) => {
     if (error) {
+      logAction('accept_invite_invalid_payload');
       send(res, 400, 'Некорректные данные');
       return;
     }
     const inviteId = String(payload.inviteId || '').trim();
     const userId = normalizeIdValue(payload.userId);
     if (!inviteId || userId === undefined || userId === null || userId === '') {
+      logAction('accept_invite_missing_fields', { inviteId, userId });
       send(res, 400, 'Не хватает данных для подтверждения приглашения.');
       return;
     }
@@ -266,10 +298,16 @@ const handleAcceptInvite = (req, res) => {
     const invites = Array.isArray(invitesData.invites) ? invitesData.invites : [];
     const inviteIndex = invites.findIndex((invite) => invite.id === inviteId);
     if (inviteIndex === -1) {
+      logAction('accept_invite_not_found', { inviteId, userId });
       send(res, 404, 'Приглашение не найдено.');
       return;
     }
     const invite = invites[inviteIndex];
+    logAction('accept_invite_start', {
+      inviteId,
+      userId,
+      organizationName: invite.organizationName
+    });
     const accessData = readJsonFile(ACCESS_FILE, { superAdmins: [], organizations: {} });
     if (!accessData.organizations || typeof accessData.organizations !== 'object') {
       accessData.organizations = {};
@@ -299,6 +337,11 @@ const handleAcceptInvite = (req, res) => {
     invites.splice(inviteIndex, 1);
     writeJsonFile(INVITES_FILE, { invites });
 
+    logAction('accept_invite_success', {
+      inviteId,
+      userId,
+      organizationName: invite.organizationName
+    });
     send(
       res,
       200,

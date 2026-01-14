@@ -341,7 +341,8 @@ const clearInviteFromUrl = () => {
 };
 
 const acceptInvite = async ({ inviteId, userId }) => {
-  const response = await fetch('/accept-invite', {
+  const apiUrl = new URL('./accept-invite', window.location.href).toString();
+  const response = await fetch(apiUrl, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ inviteId, userId })

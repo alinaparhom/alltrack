@@ -324,23 +324,33 @@
       return trimmed;
     };
 
-    const formatCreateError = ({ status, statusText, body, details, endpoint, method }) => {
+    const formatCreateError = ({
+      status,
+      statusText,
+      body,
+      details,
+      endpoint,
+      method,
+      endpoints
+    }) => {
       const baseLabel = status
         ? `Ошибка сервиса (HTTP ${status}${statusText ? ` ${statusText}` : ''})`
         : 'Ошибка сервиса';
       const requestLine = endpoint ? `Запрос: ${method || 'POST'} ${endpoint}.` : '';
+      const routesLine =
+        Array.isArray(endpoints) && endpoints.length
+          ? `Проверенные маршруты: ${endpoints.join(', ')}.`
+          : '';
       const hint =
         status === 404
-          ? `Причина: маршрут создания организации не найден. Проверьте настройки сервера и прокси.`
+          ? `Причина: маршрут создания организации не найден. Проверьте настройки сервера и прокси (nginx), а также совпадение путей.`
           : '';
       const normalizedBody = parseErrorText(body);
-      if (details) {
-        return `${baseLabel}: ${details}. ${requestLine} ${hint}`.trim();
-      }
-      if (!normalizedBody) {
-        return `${baseLabel}: нет подробностей ответа. ${requestLine} ${hint}`.trim();
-      }
-      return `${baseLabel}: ${normalizedBody}. ${requestLine} ${hint}`.trim();
+      const detailMessage = details || normalizedBody;
+      const detailLine = detailMessage
+        ? `Подробности: ${detailMessage}.`
+        : 'Подробности: нет ответа от сервера.';
+      return `${baseLabel}. ${detailLine} ${requestLine} ${routesLine} ${hint}`.trim();
     };
 
     const getCreateOrganizationResponse = async (payload) => {
@@ -359,7 +369,8 @@
           lastError = formatCreateError({
             details: `не удалось подключиться (${error?.message || error}).`,
             endpoint: apiUrl,
-            method: 'POST'
+            method: 'POST',
+            endpoints
           });
           if (endpoint === endpoints[endpoints.length - 1]) {
             throw new Error(lastError);
@@ -375,7 +386,8 @@
           statusText: response.statusText,
           body: errorText,
           endpoint: apiUrl,
-          method: 'POST'
+          method: 'POST',
+          endpoints
         });
         if (response.status === 404) {
           continue;

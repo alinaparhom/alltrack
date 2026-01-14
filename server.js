@@ -30,8 +30,15 @@ const send = (res, statusCode, body, headers = {}) => {
 
 const formatTimestamp = () => new Date().toISOString();
 
+const ensureLogFile = () => {
+  if (!fs.existsSync(LOG_FILE)) {
+    fs.writeFileSync(LOG_FILE, '', 'utf8');
+  }
+};
+
 const appendLogLine = (line, callback) => {
   const text = line.endsWith('\n') ? line : `${line}\n`;
+  ensureLogFile();
   fs.appendFile(LOG_FILE, text, 'utf8', callback);
 };
 

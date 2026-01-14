@@ -526,11 +526,41 @@ body.is-super-admin .access {
   font-size: 12px;
   color: var(--muted);
   word-break: break-word;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .super-admin__note-link a {
   color: var(--accent-strong);
   text-decoration: none;
+}
+
+.super-admin__icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  min-height: 32px;
+  padding: 0 8px;
+  border-radius: 12px;
+  border: none;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 8px 20px rgba(15, 20, 60, 0.08);
+  color: #10131f;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.super-admin__icon-button:focus-visible {
+  outline: 2px solid rgba(83, 96, 255, 0.45);
+  outline-offset: 2px;
+}
+
+.super-admin__icon-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 24px rgba(15, 20, 60, 0.12);
 }
 
 .super-admin__note-list {

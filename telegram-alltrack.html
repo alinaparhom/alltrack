@@ -255,6 +255,11 @@
         color: #10131f;
       }
 
+      .primary-btn.is-disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+
       .secondary-btn {
         border: 1px solid rgba(150, 163, 196, 0.4);
         border-radius: 16px;
@@ -272,6 +277,59 @@
         border-radius: 18px;
         background: rgba(255, 255, 255, 0.75);
         box-shadow: inset 0 0 0 1px rgba(227, 232, 246, 0.9);
+      }
+
+      .admin-create__status {
+        display: grid;
+        gap: 8px;
+        padding: 12px;
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.85);
+        box-shadow: inset 0 0 0 1px rgba(227, 232, 246, 0.9);
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      .admin-create__status-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+      }
+
+      .admin-create__status-title {
+        margin: 0;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text);
+      }
+
+      .admin-create__status-text {
+        margin: 0;
+      }
+
+      .admin-create__status-text[data-state='success'] {
+        color: #1d5f2a;
+      }
+
+      .admin-create__status-text[data-state='error'] {
+        color: #b23333;
+      }
+
+      .admin-create__status-link {
+        margin: 0;
+        word-break: break-word;
+      }
+
+      .admin-create__status-link a {
+        color: var(--accent-strong);
+        text-decoration: none;
+      }
+
+      .admin-create__copy {
+        padding: 8px 10px;
+        font-size: 12px;
+        border-radius: 12px;
       }
 
       .number-switch__label {
@@ -613,14 +671,14 @@
             <span id="adminCreateLabel">Добавить организацию</span>
           </button>
           <div class="admin-create__panel" id="adminCreatePanel" hidden>
-            <div class="card admin-create__form">
+            <form class="card admin-create__form" id="adminCreateForm">
               <label class="form-field">
                 <span>Название организации</span>
-                <input type="text" placeholder="Например, Северный склад" />
+                <input type="text" id="adminCreateOrgName" placeholder="Например, Северный склад" />
               </label>
               <label class="form-field">
                 <span>Энергетик</span>
-                <input type="text" placeholder="Фамилия Имя" />
+                <input type="text" id="adminCreateEnergyName" placeholder="Фамилия Имя" />
               </label>
               <div class="number-switch">
                 <span class="number-switch__label">Номер организации</span>
@@ -636,9 +694,31 @@
                 </div>
               </div>
               <div class="form-actions">
-                <button class="primary-btn primary-btn--dark" type="button">Создать организацию</button>
+                <button class="primary-btn primary-btn--dark" type="submit" id="adminCreateButton">
+                  Создать организацию
+                </button>
               </div>
-            </div>
+              <div class="admin-create__status" id="adminCreateStatusBlock">
+                <div class="admin-create__status-head">
+                  <p class="admin-create__status-title">Статус создания</p>
+                  <button
+                    class="secondary-btn admin-create__copy"
+                    type="button"
+                    id="adminCreateCopy"
+                    hidden
+                  >
+                    Скопировать ссылку
+                  </button>
+                </div>
+                <p class="admin-create__status-text" id="adminCreateStatusText">
+                  Заполните данные и нажмите «Создать организацию».
+                </p>
+                <p class="admin-create__status-link">
+                  Ссылка для энергетика:
+                  <a id="adminCreateInviteLink" href="#" target="_blank" rel="noopener">—</a>
+                </p>
+              </div>
+            </form>
           </div>
         </section>
       </section>
@@ -1176,6 +1256,7 @@
       document.addEventListener('DOMContentLoaded', () => {
         logEvent('info', 'DOM готов');
         initAdminCreateToggle();
+        initAdminCreateForm();
       });
 
       const accessOverlay = document.getElementById('accessOverlay');
@@ -1194,6 +1275,13 @@
       const adminCreateToggle = document.getElementById('adminCreateToggle');
       const adminCreatePanel = document.getElementById('adminCreatePanel');
       const adminCreateLabel = document.getElementById('adminCreateLabel');
+      const adminCreateForm = document.getElementById('adminCreateForm');
+      const adminCreateButton = document.getElementById('adminCreateButton');
+      const adminCreateOrgName = document.getElementById('adminCreateOrgName');
+      const adminCreateEnergyName = document.getElementById('adminCreateEnergyName');
+      const adminCreateStatusText = document.getElementById('adminCreateStatusText');
+      const adminCreateInviteLink = document.getElementById('adminCreateInviteLink');
+      const adminCreateCopy = document.getElementById('adminCreateCopy');
 
       const initAdminCreateToggle = () => {
         if (!adminCreateToggle || !adminCreatePanel || !adminCreateLabel) {
@@ -1214,6 +1302,114 @@
         adminCreateToggle.addEventListener('click', () => {
           setOpenState(adminCreatePanel.hidden);
         });
+      };
+
+      const initAdminCreateForm = () => {
+        if (
+          !adminCreateForm ||
+          !adminCreateButton ||
+          !adminCreateOrgName ||
+          !adminCreateEnergyName ||
+          !adminCreateStatusText ||
+          !adminCreateInviteLink ||
+          !adminCreateCopy
+        ) {
+          return;
+        }
+
+        let isCreating = false;
+
+        const setStatus = (message, state) => {
+          adminCreateStatusText.textContent = message;
+          if (state) {
+            adminCreateStatusText.dataset.state = state;
+          } else {
+            delete adminCreateStatusText.dataset.state;
+          }
+        };
+
+        const setInviteLink = (value) => {
+          adminCreateInviteLink.textContent = value || '—';
+          adminCreateInviteLink.href = value || '#';
+          adminCreateCopy.hidden = !value;
+        };
+
+        const setCreateEnabled = (enabled) => {
+          const isDisabled = !enabled || isCreating;
+          adminCreateButton.disabled = isDisabled;
+          adminCreateButton.setAttribute('aria-disabled', String(isDisabled));
+          adminCreateButton.classList.toggle('is-disabled', isDisabled);
+        };
+
+        const updateCreateState = () => {
+          const organizationName = adminCreateOrgName.value.trim();
+          const energyFullName = adminCreateEnergyName.value.trim();
+          setCreateEnabled(Boolean(organizationName && energyFullName));
+        };
+
+        const createOrganization = async () => {
+          const organizationName = adminCreateOrgName.value.trim();
+          const energyFullName = adminCreateEnergyName.value.trim();
+          if (!organizationName || !energyFullName) {
+            setStatus('Заполните название организации и ФИО энергетика.', 'error');
+            setInviteLink('');
+            updateCreateState();
+            return;
+          }
+          isCreating = true;
+          setCreateEnabled(false);
+          adminCreateButton.textContent = 'Создаём...';
+          setStatus('Создаём организацию и ссылку приглашения...', 'success');
+          setInviteLink('');
+          try {
+            const response = await fetch('/create-organization', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ organizationName, energyFullName })
+            });
+            if (!response.ok) {
+              const errorText = await response.text();
+              throw new Error(errorText || 'Ошибка создания организации');
+            }
+            const result = await response.json();
+            setInviteLink(result.inviteLink || '');
+            setStatus('Ссылка готова — отправьте её энергетику.', 'success');
+          } catch (error) {
+            setStatus(error?.message || 'Не удалось создать организацию.', 'error');
+            setInviteLink('');
+          } finally {
+            isCreating = false;
+            adminCreateButton.textContent = 'Создать организацию';
+            updateCreateState();
+          }
+        };
+
+        const handleSubmit = (event) => {
+          if (event) {
+            event.preventDefault();
+          }
+          createOrganization();
+        };
+
+        adminCreateForm.addEventListener('submit', handleSubmit);
+        adminCreateForm.addEventListener('input', updateCreateState);
+        adminCreateForm.addEventListener('change', updateCreateState);
+        adminCreateOrgName.addEventListener('blur', updateCreateState);
+        adminCreateEnergyName.addEventListener('blur', updateCreateState);
+        adminCreateButton.addEventListener('click', handleSubmit);
+        adminCreateCopy.addEventListener('click', async () => {
+          if (adminCreateInviteLink.textContent === '—') {
+            return;
+          }
+          try {
+            await navigator.clipboard.writeText(adminCreateInviteLink.textContent);
+            setStatus('Ссылка скопирована. Можно отправлять энергетику.', 'success');
+          } catch (error) {
+            setStatus('Не удалось скопировать ссылку. Скопируйте вручную.', 'error');
+          }
+        });
+
+        updateCreateState();
       };
 
       document.body.classList.add('is-checking');

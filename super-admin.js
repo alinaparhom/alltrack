@@ -182,10 +182,10 @@
     });
 
     const getCreateOrganizationResponse = async (payload) => {
-      const endpoints = ['/create-organization', '/api/create-organization'];
+      const endpoints = ['./create-organization', './api/create-organization'];
       let lastErrorText = '';
       for (const endpoint of endpoints) {
-        const apiUrl = new URL(endpoint, window.location.origin).toString();
+        const apiUrl = new URL(endpoint, window.location.href).toString();
         const response = await fetch(apiUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

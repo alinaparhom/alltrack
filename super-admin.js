@@ -324,23 +324,23 @@
       return trimmed;
     };
 
-    const formatCreateError = ({ status, statusText, body, details, endpoint }) => {
+    const formatCreateError = ({ status, statusText, body, details, endpoint, method }) => {
       const baseLabel = status
         ? `Ошибка сервиса (HTTP ${status}${statusText ? ` ${statusText}` : ''})`
         : 'Ошибка сервиса';
-      const endpointLabel = endpoint ? ` Путь запроса: ${endpoint}.` : '';
+      const requestLine = endpoint ? `Запрос: ${method || 'POST'} ${endpoint}.` : '';
       const hint =
         status === 404
-          ? `Маршрут создания организации не найден${endpoint ? ` по ${endpoint}` : ''}. Проверьте настройки сервера.`
+          ? `Причина: маршрут создания организации не найден. Проверьте настройки сервера и прокси.`
           : '';
       const normalizedBody = parseErrorText(body);
       if (details) {
-        return `${baseLabel}: ${details}${endpointLabel}`;
+        return `${baseLabel}: ${details}. ${requestLine} ${hint}`.trim();
       }
       if (!normalizedBody) {
-        return `${baseLabel}: нет подробностей ответа.${endpointLabel} ${hint}`.trim();
+        return `${baseLabel}: нет подробностей ответа. ${requestLine} ${hint}`.trim();
       }
-      return `${baseLabel}: ${normalizedBody}.${endpointLabel} ${hint}`.trim();
+      return `${baseLabel}: ${normalizedBody}. ${requestLine} ${hint}`.trim();
     };
 
     const getCreateOrganizationResponse = async (payload) => {
@@ -358,7 +358,8 @@
         } catch (error) {
           lastError = formatCreateError({
             details: `не удалось подключиться (${error?.message || error}).`,
-            endpoint: apiUrl
+            endpoint: apiUrl,
+            method: 'POST'
           });
           if (endpoint === endpoints[endpoints.length - 1]) {
             throw new Error(lastError);
@@ -373,7 +374,8 @@
           status: response.status,
           statusText: response.statusText,
           body: errorText,
-          endpoint: apiUrl
+          endpoint: apiUrl,
+          method: 'POST'
         });
         if (response.status === 404) {
           continue;
@@ -418,7 +420,8 @@
             status: response?.status,
             statusText: response?.statusText,
             body: rawText,
-            details: 'ответ не является JSON.'
+            details: 'ответ не является JSON.',
+            method: 'POST'
           })
         );
       }

@@ -110,6 +110,46 @@ const writeJsonFile = (filePath, payload) => {
   fs.writeFileSync(filePath, JSON.stringify(payload, null, 2), 'utf8');
 };
 
+const normalizeFullName = (value) =>
+  String(value || '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
+
+const isEmptyId = (value) => value === '' || value === null || value === undefined;
+
+const addPlaceholderMember = (members, fullName) => {
+  const normalizedName = normalizeFullName(fullName);
+  const existingIndex = members.findIndex(
+    (member) => normalizeFullName(member?.fullName) === normalizedName
+  );
+  if (existingIndex !== -1) {
+    if (isEmptyId(members[existingIndex]?.id)) {
+      members[existingIndex].id = '';
+    }
+    return members;
+  }
+  members.push({
+    id: '',
+    fullName,
+    role: 'Энергетик'
+  });
+  return members;
+};
+
+const assignMemberId = (members, fullName, userId) => {
+  const normalizedName = normalizeFullName(fullName);
+  const matchIndex = members.findIndex(
+    (member) =>
+      normalizeFullName(member?.fullName) === normalizedName && isEmptyId(member?.id)
+  );
+  if (matchIndex !== -1) {
+    members[matchIndex].id = userId;
+    return { members, updated: true };
+  }
+  return { members, updated: false };
+};
+
 const ensureOrganizationsStorage = () => {
   if (!fs.existsSync(ACCESS_FILE)) {
     return;
@@ -266,6 +306,19 @@ const handleCreateOrganization = (req, res) => {
     const nextOrganizations = [...organizations, organizationName];
     saveOrganizationsList(nextOrganizations);
 
+    const accessData = readJsonFile(ACCESS_FILE, { superAdmins: [], organizations: {} });
+    if (!accessData.organizations || typeof accessData.organizations !== 'object') {
+      accessData.organizations = {};
+    }
+    const existingMembers = Array.isArray(accessData.organizations[organizationName])
+      ? accessData.organizations[organizationName]
+      : [];
+    accessData.organizations[organizationName] = addPlaceholderMember(
+      existingMembers,
+      energyFullName
+    );
+    writeJsonFile(ACCESS_FILE, accessData);
+
     const invitesData = readJsonFile(INVITES_FILE, { invites: [] });
     const invites = Array.isArray(invitesData.invites) ? invitesData.invites : [];
     const inviteId = generateInviteId();
@@ -340,7 +393,12 @@ const handleAcceptInvite = (req, res) => {
     const alreadyExists = existingMembers.some(
       (member) => normalizeIdValue(member?.id) === userId
     );
+    let didUpdate = false;
     if (!alreadyExists) {
+      const updateResult = assignMemberId(existingMembers, invite.energyFullName, userId);
+      didUpdate = updateResult.updated;
+    }
+    if (!alreadyExists && !didUpdate) {
       existingMembers.push({
         id: userId,
         fullName: invite.energyFullName,
@@ -414,7 +472,12 @@ const handleAcceptDirectInvite = (req, res) => {
     const alreadyExists = existingMembers.some(
       (member) => normalizeIdValue(member?.id) === userId
     );
+    let didUpdate = false;
     if (!alreadyExists) {
+      const updateResult = assignMemberId(existingMembers, energyFullName, userId);
+      didUpdate = updateResult.updated;
+    }
+    if (!alreadyExists && !didUpdate) {
       existingMembers.push({
         id: userId,
         fullName: energyFullName,

@@ -5,8 +5,9 @@ const path = require('path');
 const PORT = process.env.PORT || 3000;
 const ROOT_DIR = __dirname;
 const DATA_DIR = path.join(ROOT_DIR, 'data');
-const ORGANIZATIONS_FILE = path.join(DATA_DIR, 'organizations.json');
 const ORGANIZATIONS_DIR = path.join(DATA_DIR, 'organizations');
+const ORGANIZATIONS_FILE = path.join(ORGANIZATIONS_DIR, 'organizations.json');
+const LEGACY_ORGANIZATIONS_FILE = path.join(DATA_DIR, 'organizations.json');
 const ACCESS_FILE = path.join(ROOT_DIR, 'access.json');
 const LOG_FILE = path.join(ROOT_DIR, '1alltrack.log');
 const INVITES_FILE = path.join(DATA_DIR, 'invites.json');
@@ -172,6 +173,28 @@ const assignMemberId = (members, fullName, userId) => {
   return { members, updated: false };
 };
 
+const writeIfChanged = (filePath, payload) => {
+  const nextContent = JSON.stringify(payload, null, 2);
+  const currentContent = fs.existsSync(filePath) ? fs.readFileSync(filePath, 'utf8') : '';
+  if (currentContent.trim() !== nextContent.trim()) {
+    writeJsonFile(filePath, payload);
+  }
+};
+
+const parseOrganizationsPayload = (stored) => {
+  if (!stored) {
+    return [];
+  }
+  const rawList = Array.isArray(stored)
+    ? stored
+    : Array.isArray(stored.organizations)
+      ? stored.organizations
+      : [];
+  return rawList
+    .map((entry) => (typeof entry === 'string' ? entry : entry?.name))
+    .filter((entry) => typeof entry === 'string' && entry.trim().length);
+};
+
 const ensureOrganizationsStorage = () => {
   if (!fs.existsSync(ACCESS_FILE)) {
     return;
@@ -200,13 +223,9 @@ const ensureOrganizationsStorage = () => {
   const organizationsPayload = {
     organizations
   };
-  const nextContent = JSON.stringify(organizationsPayload, null, 2);
-  const currentContent = fs.existsSync(ORGANIZATIONS_FILE)
-    ? fs.readFileSync(ORGANIZATIONS_FILE, 'utf8')
-    : '';
-
-  if (currentContent.trim() !== nextContent.trim()) {
-    fs.writeFileSync(ORGANIZATIONS_FILE, nextContent, 'utf8');
+  writeIfChanged(ORGANIZATIONS_FILE, organizationsPayload);
+  if (fs.existsSync(LEGACY_ORGANIZATIONS_FILE)) {
+    writeIfChanged(LEGACY_ORGANIZATIONS_FILE, organizationsPayload);
   }
 };
 
@@ -229,19 +248,25 @@ const ensureOrganizationAssets = (name) => {
 };
 
 const getOrganizationsList = () => {
-  const stored = readJsonFile(ORGANIZATIONS_FILE, { organizations: [] });
-  const rawList = Array.isArray(stored)
-    ? stored
-    : Array.isArray(stored.organizations)
-      ? stored.organizations
-      : [];
-  return rawList
-    .map((entry) => (typeof entry === 'string' ? entry : entry?.name))
-    .filter((entry) => typeof entry === 'string' && entry.trim().length);
+  const primaryList = parseOrganizationsPayload(
+    readJsonFile(ORGANIZATIONS_FILE, null)
+  );
+  if (primaryList.length) {
+    return primaryList;
+  }
+  const legacyList = parseOrganizationsPayload(
+    readJsonFile(LEGACY_ORGANIZATIONS_FILE, null)
+  );
+  if (legacyList.length) {
+    saveOrganizationsList(legacyList);
+  }
+  return legacyList;
 };
 
 const saveOrganizationsList = (list) => {
-  writeJsonFile(ORGANIZATIONS_FILE, { organizations: list });
+  const payload = { organizations: list };
+  writeJsonFile(ORGANIZATIONS_FILE, payload);
+  writeJsonFile(LEGACY_ORGANIZATIONS_FILE, payload);
 };
 
 const generateInviteId = () =>
@@ -375,12 +400,12 @@ const handleCreateOrganization = (req, res) => {
       } catch (error) {
         throw buildStepError({
           message: 'Не удалось создать организацию.',
-          details: `Шаг 1.2 (data/organizations.json: список организаций) завершился ошибкой: ${
+          details: `Шаг 1.2 (data/organizations/organizations.json: список организаций) завершился ошибкой: ${
             error?.message || error
           }`,
           step: '1.2',
           code: 'create_org_list',
-          path: 'data/organizations.json'
+          path: 'data/organizations/organizations.json'
         });
       }
 

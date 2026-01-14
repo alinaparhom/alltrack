@@ -319,11 +319,46 @@
       .admin-create__status-link {
         margin: 0;
         word-break: break-word;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
       }
 
       .admin-create__status-link a {
         color: var(--accent-strong);
         text-decoration: none;
+      }
+
+      .admin-create__share {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 32px;
+        min-height: 32px;
+        padding: 0 8px;
+        border-radius: 12px;
+        border: none;
+        background: rgba(255, 255, 255, 0.9);
+        box-shadow: 0 8px 20px rgba(15, 20, 60, 0.08);
+        color: #10131f;
+        cursor: pointer;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      .admin-create__share:focus-visible {
+        outline: 2px solid rgba(83, 96, 255, 0.45);
+        outline-offset: 2px;
+      }
+
+      .admin-create__share:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 10px 24px rgba(15, 20, 60, 0.12);
+      }
+
+      .admin-create__share-icon {
+        width: 18px;
+        height: 18px;
       }
 
       .admin-create__copy {
@@ -716,6 +751,26 @@
                 <p class="admin-create__status-link">
                   Ссылка для энергетика:
                   <a id="adminCreateInviteLink" href="#" target="_blank" rel="noopener">—</a>
+                  <button
+                    class="admin-create__share"
+                    type="button"
+                    id="adminCreateShare"
+                    aria-label="Отправить ссылку энергетику в Telegram"
+                    title="Отправить ссылку в Telegram"
+                    hidden
+                  >
+                    <svg
+                      class="admin-create__share-icon"
+                      viewBox="0 0 24 24"
+                      aria-hidden="true"
+                      focusable="false"
+                    >
+                      <path
+                        d="M4.5 12.5l14.1-8.05a.7.7 0 0 1 1.02.78l-2.5 11.44a.7.7 0 0 1-1.07.43l-4.22-2.52-3.2 3.26a.7.7 0 0 1-1.2-.48v-3.88l7.1-6.12-8.53 5.14a.7.7 0 0 1-.78-.12.7.7 0 0 1 .27-1.27Z"
+                        fill="currentColor"
+                      />
+                    </svg>
+                  </button>
                 </p>
               </div>
             </form>
@@ -1282,6 +1337,7 @@
       const adminCreateStatusText = document.getElementById('adminCreateStatusText');
       const adminCreateInviteLink = document.getElementById('adminCreateInviteLink');
       const adminCreateCopy = document.getElementById('adminCreateCopy');
+      const adminCreateShare = document.getElementById('adminCreateShare');
 
       const initAdminCreateToggle = () => {
         if (!adminCreateToggle || !adminCreatePanel || !adminCreateLabel) {
@@ -1312,7 +1368,8 @@
           !adminCreateEnergyName ||
           !adminCreateStatusText ||
           !adminCreateInviteLink ||
-          !adminCreateCopy
+          !adminCreateCopy ||
+          !adminCreateShare
         ) {
           return;
         }
@@ -1332,6 +1389,7 @@
           adminCreateInviteLink.textContent = value || '—';
           adminCreateInviteLink.href = value || '#';
           adminCreateCopy.hidden = !value;
+          adminCreateShare.hidden = !value;
         };
 
         const setCreateEnabled = (enabled) => {
@@ -1347,14 +1405,51 @@
           setCreateEnabled(Boolean(organizationName && energyFullName));
         };
 
-        const formatCreateError = (errorText) => {
-          if (!errorText) {
-            return 'Не удалось создать организацию.';
+        const parseErrorText = (rawText) => {
+          if (!rawText) {
+            return '';
           }
-          if (/<html/i.test(errorText)) {
-            return 'Сервис создания организации недоступен. Попробуйте позже.';
+          const trimmed = String(rawText).trim();
+          if (!trimmed) {
+            return '';
           }
-          return errorText;
+          try {
+            const parsed = JSON.parse(trimmed);
+            const message = parsed?.message ? String(parsed.message) : '';
+            const details = parsed?.details ? String(parsed.details) : '';
+            if (message && details) {
+              return `${message} (${details})`;
+            }
+            if (message) {
+              return message;
+            }
+            if (parsed?.error) {
+              return String(parsed.error);
+            }
+            if (details) {
+              return details;
+            }
+          } catch (error) {
+            return trimmed;
+          }
+          return trimmed;
+        };
+
+        const formatCreateError = ({ status, statusText, body, details }) => {
+          const baseLabel = status
+            ? `Ошибка сервиса (HTTP ${status}${statusText ? ` ${statusText}` : ''})`
+            : 'Ошибка сервиса';
+          const normalizedBody = parseErrorText(body);
+          if (details) {
+            return `${baseLabel}: ${details}`;
+          }
+          if (!normalizedBody) {
+            return `${baseLabel}: нет подробностей ответа.`;
+          }
+          if (/<html/i.test(normalizedBody)) {
+            return `${baseLabel}: получен HTML-ответ сервиса.`;
+          }
+          return `${baseLabel}: ${normalizedBody}`;
         };
 
         const getCreateOrganizationResponse = async (payload) => {
@@ -1362,11 +1457,22 @@
           let lastErrorText = '';
           for (const endpoint of endpoints) {
             const apiUrl = new URL(endpoint, window.location.origin).toString();
-            const response = await fetch(apiUrl, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(payload)
-            });
+            let response;
+            try {
+              response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+              });
+            } catch (error) {
+              lastErrorText = formatCreateError({
+                details: `не удалось подключиться (${error?.message || error}).`
+              });
+              if (endpoint === endpoints[endpoints.length - 1]) {
+                throw new Error(lastErrorText);
+              }
+              continue;
+            }
             if (response.ok) {
               return response;
             }
@@ -1374,9 +1480,31 @@
             if (response.status === 404) {
               continue;
             }
-            throw new Error(formatCreateError(lastErrorText));
+            throw new Error(
+              formatCreateError({
+                status: response.status,
+                statusText: response.statusText,
+                body: lastErrorText
+              })
+            );
           }
-          throw new Error(formatCreateError(lastErrorText));
+          throw new Error(formatCreateError({ body: lastErrorText }));
+        };
+
+        const readCreateOrganizationResult = async (response) => {
+          const rawText = await response.text();
+          try {
+            return JSON.parse(rawText);
+          } catch (error) {
+            throw new Error(
+              formatCreateError({
+                status: response?.status,
+                statusText: response?.statusText,
+                body: rawText,
+                details: 'ответ не является JSON.'
+              })
+            );
+          }
         };
 
         const createOrganization = async () => {
@@ -1398,7 +1526,7 @@
               organizationName,
               energyFullName
             });
-            const result = await response.json();
+            const result = await readCreateOrganizationResult(response);
             setInviteLink(result.inviteLink || '');
             setStatus('Ссылка готова — отправьте её энергетику.', 'success');
           } catch (error) {
@@ -1433,6 +1561,39 @@
             setStatus('Ссылка скопирована. Можно отправлять энергетику.', 'success');
           } catch (error) {
             setStatus('Не удалось скопировать ссылку. Скопируйте вручную.', 'error');
+          }
+        });
+
+        adminCreateShare.addEventListener('click', async () => {
+          if (adminCreateInviteLink.textContent === '—') {
+            return;
+          }
+          const linkToShare = adminCreateInviteLink.textContent;
+          const shareMessage = `Откройте ссылку, чтобы подключиться к организации: ${linkToShare}`;
+          const telegramUrl = `https://t.me/share/url?url=${encodeURIComponent(
+            linkToShare
+          )}&text=${encodeURIComponent(shareMessage)}`;
+          const shareData = {
+            title: 'Ссылка для энергетика',
+            text: shareMessage,
+            url: linkToShare
+          };
+          try {
+            const tgWebApp = window.Telegram?.WebApp;
+            if (tgWebApp?.openTelegramLink) {
+              tgWebApp.openTelegramLink(telegramUrl);
+              setStatus('Открылся Telegram для выбора контакта и отправки ссылки.', 'success');
+              return;
+            }
+            if (navigator.share) {
+              await navigator.share(shareData);
+              setStatus('Открылся выбор контакта или приложения (Telegram).', 'success');
+              return;
+            }
+            window.open(telegramUrl, '_blank', 'noopener,noreferrer');
+            setStatus('Открылся Telegram для отправки ссылки.', 'success');
+          } catch (error) {
+            setStatus('Не удалось открыть Telegram. Скопируйте ссылку вручную.', 'error');
           }
         });
 

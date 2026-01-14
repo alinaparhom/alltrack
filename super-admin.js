@@ -106,6 +106,8 @@
     const orgNameInput = document.getElementById('superAdminOrgName');
     const energyNameInput = document.getElementById('superAdminEnergyName');
     const status = document.getElementById('superAdminCreateStatus');
+    const details = document.getElementById('superAdminCreateDetails');
+    const detailsText = document.getElementById('superAdminCreateDetailsText');
     const inviteLink = document.getElementById('superAdminInviteLink');
     const copyButton = document.getElementById('superAdminCopyLink');
     const shareButton = document.getElementById('superAdminShareLink');
@@ -198,6 +200,21 @@
       }
     };
 
+    const setDetails = (message) => {
+      if (!details || !detailsText) {
+        return;
+      }
+      const normalized = String(message || '').trim();
+      if (!normalized) {
+        details.hidden = true;
+        details.removeAttribute('open');
+        detailsText.textContent = '';
+        return;
+      }
+      details.hidden = false;
+      detailsText.textContent = normalized;
+    };
+
     const setInviteLink = (value) => {
       if (!inviteLink) {
         return;
@@ -252,6 +269,7 @@
       status.textContent = 'Заполните данные и нажмите кнопку, чтобы получить ссылку.';
       delete status.dataset.state;
     }
+    setDetails('');
     setInviteLink('');
     setCopyAvailable(false);
     setShareAvailable(false);
@@ -364,6 +382,30 @@
       return `${baseLabel}. ${detailLine} ${stageLine} ${requestLine} ${routesLine} ${hint}`.trim();
     };
 
+    const formatCreateErrorDetails = ({
+      status,
+      statusText,
+      body,
+      endpoint,
+      method,
+      endpoints
+    }) => {
+      const lines = [];
+      if (status) {
+        lines.push(`HTTP статус: ${status}${statusText ? ` ${statusText}` : ''}`);
+      }
+      if (endpoint) {
+        lines.push(`Запрос: ${method || 'POST'} ${endpoint}`);
+      }
+      if (Array.isArray(endpoints) && endpoints.length) {
+        lines.push(`Проверенные маршруты: ${endpoints.join(', ')}`);
+      }
+      if (body) {
+        lines.push(`Ответ сервера: ${parseErrorText(body) || String(body).trim()}`);
+      }
+      return lines.join('\n');
+    };
+
     const getCreateOrganizationResponse = async (payload) => {
       const endpoints = ['./create-organization', './api/create-organization'];
       let lastError = '';
@@ -383,8 +425,15 @@
             method: 'POST',
             endpoints
           });
+          const enrichedError = new Error(lastError);
+          enrichedError.details = formatCreateErrorDetails({
+            body: error?.message || error,
+            endpoint: apiUrl,
+            method: 'POST',
+            endpoints
+          });
           if (endpoint === endpoints[endpoints.length - 1]) {
-            throw new Error(lastError);
+            throw enrichedError;
           }
           continue;
         }
@@ -400,12 +449,26 @@
           method: 'POST',
           endpoints
         });
+        const enrichedError = new Error(lastError);
+        enrichedError.details = formatCreateErrorDetails({
+          status: response.status,
+          statusText: response.statusText,
+          body: errorText,
+          endpoint: apiUrl,
+          method: 'POST',
+          endpoints
+        });
         if (response.status === 404) {
           continue;
         }
-        throw new Error(lastError);
+        throw enrichedError;
       }
-      throw new Error(lastError || 'Сервис создания организации недоступен.');
+      const fallbackError = new Error(lastError || 'Сервис создания организации недоступен.');
+      fallbackError.details = formatCreateErrorDetails({
+        body: lastError || 'Сервис создания организации недоступен.',
+        endpoints
+      });
+      throw fallbackError;
     };
 
     const encodeInvitePayload = (payload) => {
@@ -438,15 +501,21 @@
       try {
         return JSON.parse(rawText);
       } catch (error) {
-        throw new Error(
-          formatCreateError({
-            status: response?.status,
-            statusText: response?.statusText,
-            body: rawText,
-            details: 'ответ не является JSON.',
-            method: 'POST'
-          })
-        );
+        const message = formatCreateError({
+          status: response?.status,
+          statusText: response?.statusText,
+          body: rawText,
+          details: 'ответ не является JSON.',
+          method: 'POST'
+        });
+        const enrichedError = new Error(message);
+        enrichedError.details = formatCreateErrorDetails({
+          status: response?.status,
+          statusText: response?.statusText,
+          body: rawText,
+          method: 'POST'
+        });
+        throw enrichedError;
       }
     };
 
@@ -480,6 +549,7 @@
       setStatus('Создаём организацию и ссылку приглашения...', 'success');
       setInviteLink('');
       setCopyAvailable(false);
+      setDetails('');
       await loadBotUsername();
       logAction('info', 'Запрос создания организации отправлен', {
         organizationName,
@@ -499,6 +569,7 @@
         setCopyAvailable(Boolean(inviteUrl));
         if (!result.inviteId && !result.inviteLink) {
           setStatus('Ссылка готова локально — отправьте её энергетику.', 'success');
+          setDetails('');
           logAction('warn', 'Ответ сервиса без данных, ссылка создана локально', {
             organizationName,
             energyFullName,
@@ -507,6 +578,7 @@
           });
         } else {
           setStatus('Ссылка готова — отправьте её энергетику.', 'success');
+          setDetails('');
         }
         logAction('info', 'Организация создана, ссылка готова', {
           organizationName,
@@ -515,6 +587,7 @@
         });
       } catch (error) {
         const errorMessage = error?.message || 'Не удалось создать организацию.';
+        const errorDetails = error?.details || '';
         if (shouldFallbackToLocalInvite(errorMessage)) {
           setInviteLink(localInvite.inviteLink);
           setCopyAvailable(Boolean(localInvite.inviteLink));
@@ -522,19 +595,23 @@
             `Сервис недоступен (${errorMessage}). Ссылка готова локально — отправьте её энергетику.`,
             'success'
           );
+          setDetails(errorDetails || errorMessage);
           logAction('warn', 'Ссылка создана локально из-за сбоя сервиса', {
             organizationName,
             energyFullName,
             inviteId: localInvite.inviteId,
             inviteLink: localInvite.inviteLink,
-            message: errorMessage
+            message: errorMessage,
+            details: errorDetails
           });
         } else {
           setStatus(errorMessage, 'error');
+          setDetails(errorDetails || errorMessage);
           logAction('error', 'Ошибка создания организации', {
             organizationName,
             energyFullName,
-            message: errorMessage
+            message: errorMessage,
+            details: errorDetails
           });
         }
       } finally {

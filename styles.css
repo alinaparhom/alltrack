@@ -521,6 +521,33 @@ body.is-super-admin .access {
   color: #b23333;
 }
 
+.super-admin__note-details {
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.85);
+  box-shadow: inset 0 0 0 1px rgba(227, 232, 246, 0.9);
+  padding: 8px 10px;
+  color: #10131f;
+}
+
+.super-admin__note-details[open] {
+  box-shadow: inset 0 0 0 1px rgba(83, 96, 255, 0.35);
+}
+
+.super-admin__note-details summary {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 12px;
+  color: #10131f;
+}
+
+.super-admin__note-details-text {
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: var(--muted);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
 .super-admin__note-link {
   margin: 0;
   font-size: 12px;

@@ -262,26 +262,79 @@
       updateCreateState();
     });
 
+    const parseErrorText = (rawText) => {
+      if (!rawText) {
+        return '';
+      }
+      const trimmed = String(rawText).trim();
+      if (!trimmed) {
+        return '';
+      }
+      try {
+        const parsed = JSON.parse(trimmed);
+        if (parsed?.message) {
+          return String(parsed.message);
+        }
+        if (parsed?.error) {
+          return String(parsed.error);
+        }
+      } catch (error) {
+        return trimmed;
+      }
+      return trimmed;
+    };
+
+    const formatCreateError = ({ status, statusText, body, details }) => {
+      const baseLabel = status ? `Ошибка сервиса (HTTP ${status}${statusText ? ` ${statusText}` : ''})` : 'Ошибка сервиса';
+      const normalizedBody = parseErrorText(body);
+      if (details) {
+        return `${baseLabel}: ${details}`;
+      }
+      if (!normalizedBody) {
+        return `${baseLabel}: нет подробностей ответа.`;
+      }
+      if (/<html/i.test(normalizedBody)) {
+        return `${baseLabel}: получен HTML-ответ сервиса.`;
+      }
+      return `${baseLabel}: ${normalizedBody}`;
+    };
+
     const getCreateOrganizationResponse = async (payload) => {
       const endpoints = ['./create-organization', './api/create-organization'];
-      let lastErrorText = '';
+      let lastError = '';
       for (const endpoint of endpoints) {
         const apiUrl = new URL(endpoint, window.location.origin).toString();
-        const response = await fetch(apiUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
+        let response;
+        try {
+          response = await fetch(apiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+        } catch (error) {
+          lastError = formatCreateError({
+            details: `не удалось подключиться (${error?.message || error}).`
+          });
+          if (endpoint === endpoints[endpoints.length - 1]) {
+            throw new Error(lastError);
+          }
+          continue;
+        }
         if (response.ok) {
           return response;
         }
-        lastErrorText = await response.text();
+        const errorText = await response.text();
+        lastError = formatCreateError({
+          status: response.status,
+          statusText: response.statusText,
+          body: errorText
+        });
         if (response.status === 404) {
           continue;
         }
-        throw new Error(formatCreateError(lastErrorText));
+        throw new Error(lastError);
       }
-      throw new Error(formatCreateError(lastErrorText));
+      throw new Error(lastError || 'Сервис создания организации недоступен.');
     };
 
     const encodeInvitePayload = (payload) => {
@@ -309,22 +362,19 @@
       return { inviteId, inviteLink: buildInviteLink(inviteId) };
     };
 
-    const formatCreateError = (errorText) => {
-      if (!errorText) {
-        return 'Сервис создания организации недоступен. Попробуйте позже.';
-      }
-      if (/<html/i.test(errorText)) {
-        return 'Сервис создания организации недоступен. Попробуйте позже.';
-      }
-      return errorText;
-    };
-
     const readCreateOrganizationResult = async (response) => {
       const rawText = await response.text();
       try {
         return JSON.parse(rawText);
       } catch (error) {
-        throw new Error(formatCreateError(rawText));
+        throw new Error(
+          formatCreateError({
+            status: response?.status,
+            statusText: response?.statusText,
+            body: rawText,
+            details: 'ответ не является JSON.'
+          })
+        );
       }
     };
 
@@ -397,7 +447,7 @@
           setInviteLink(localInvite.inviteLink);
           setCopyAvailable(Boolean(localInvite.inviteLink));
           setStatus(
-            'Сервис временно недоступен, но ссылка готова. Отправьте её энергетику.',
+            `Сервис недоступен (${errorMessage}). Ссылка готова локально — отправьте её энергетику.`,
             'success'
           );
           logAction('warn', 'Ссылка создана локально из-за сбоя сервиса', {
@@ -476,6 +526,16 @@
           url: linkToShare
         };
         try {
+          const telegramUrl = buildTelegramShareLink(linkToShare);
+          const tgWebApp = window.Telegram?.WebApp;
+          if (tgWebApp?.openTelegramLink) {
+            tgWebApp.openTelegramLink(telegramUrl);
+            setStatus('Открылся Telegram для выбора контакта и отправки ссылки.', 'success');
+            logAction('info', 'Открыт Telegram WebApp share', {
+              inviteLink: linkToShare
+            });
+            return;
+          }
           if (navigator.share) {
             await navigator.share(shareData);
             setStatus('Открылся выбор контакта или приложения (Telegram).', 'success');
@@ -484,7 +544,6 @@
             });
             return;
           }
-          const telegramUrl = buildTelegramShareLink(linkToShare);
           window.open(telegramUrl, '_blank', 'noopener,noreferrer');
           setStatus('Открылся Telegram для отправки ссылки.', 'success');
           logAction('info', 'Открыт Telegram share для ссылки', {

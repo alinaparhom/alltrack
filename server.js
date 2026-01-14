@@ -356,6 +356,77 @@ const handleAcceptInvite = (req, res) => {
   });
 };
 
+const handleAcceptDirectInvite = (req, res) => {
+  parseJsonBody(req, (error, payload) => {
+    if (error) {
+      logAction('accept_direct_invalid_payload');
+      send(res, 400, 'Некорректные данные');
+      return;
+    }
+    const organizationName = String(payload.organizationName || '').trim();
+    const energyFullName = String(payload.energyFullName || '').trim();
+    const userId = normalizeIdValue(payload.userId);
+    const inviteId = String(payload.inviteId || '').trim();
+    if (!organizationName || !energyFullName || userId === undefined || userId === null || userId === '') {
+      logAction('accept_direct_missing_fields', {
+        organizationName,
+        energyFullName,
+        userId,
+        inviteId
+      });
+      send(res, 400, 'Не хватает данных для подтверждения приглашения.');
+      return;
+    }
+    logAction('accept_direct_start', {
+      inviteId,
+      userId,
+      organizationName
+    });
+    const accessData = readJsonFile(ACCESS_FILE, { superAdmins: [], organizations: {} });
+    if (!accessData.organizations || typeof accessData.organizations !== 'object') {
+      accessData.organizations = {};
+    }
+    const existingMembers = Array.isArray(accessData.organizations[organizationName])
+      ? accessData.organizations[organizationName]
+      : [];
+    const alreadyExists = existingMembers.some(
+      (member) => normalizeIdValue(member?.id) === userId
+    );
+    if (!alreadyExists) {
+      existingMembers.push({
+        id: userId,
+        fullName: energyFullName,
+        role: 'Энергетик'
+      });
+    }
+    accessData.organizations[organizationName] = existingMembers;
+    writeJsonFile(ACCESS_FILE, accessData);
+
+    const organizations = getOrganizationsList();
+    if (!organizations.includes(organizationName)) {
+      saveOrganizationsList([...organizations, organizationName]);
+      ensureOrganizationAssets(organizationName);
+    }
+
+    logAction('accept_direct_success', {
+      inviteId,
+      userId,
+      organizationName
+    });
+    send(
+      res,
+      200,
+      JSON.stringify({
+        organizationName,
+        fullName: energyFullName
+      }),
+      {
+        'Content-Type': 'application/json; charset=utf-8'
+      }
+    );
+  });
+};
+
 ensureOrganizationsStorage();
 
 const handleLog = (req, res) => {
@@ -421,6 +492,14 @@ const server = http.createServer((req, res) => {
     (req.url === '/accept-invite' || req.url === '/api/accept-invite')
   ) {
     handleAcceptInvite(req, res);
+    return;
+  }
+
+  if (
+    req.method === 'POST' &&
+    (req.url === '/accept-direct-invite' || req.url === '/api/accept-direct-invite')
+  ) {
+    handleAcceptDirectInvite(req, res);
     return;
   }
 

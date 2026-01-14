@@ -211,6 +211,35 @@
       throw new Error(formatCreateError(lastErrorText));
     };
 
+    const encodeInvitePayload = (payload) => {
+      const json = JSON.stringify(payload);
+      if (typeof TextEncoder !== 'undefined') {
+        const bytes = new TextEncoder().encode(json);
+        let binary = '';
+        bytes.forEach((byte) => {
+          binary += String.fromCharCode(byte);
+        });
+        return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+      }
+      return btoa(unescape(encodeURIComponent(json)))
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_');
+    };
+
+    const buildLocalInviteLink = ({ organizationName, energyFullName }) => {
+      const payload = {
+        organizationName,
+        energyFullName,
+        createdAt: new Date().toISOString()
+      };
+      const inviteId = `direct-${encodeInvitePayload(payload)}`;
+      const inviteUrl = new URL(window.location.href);
+      inviteUrl.searchParams.set('invite', inviteId);
+      inviteUrl.searchParams.delete('startapp');
+      inviteUrl.searchParams.delete('start_param');
+      return { inviteId, inviteLink: inviteUrl.toString() };
+    };
+
     const formatCreateError = (errorText) => {
       if (!errorText) {
         return 'Не удалось создать организацию.';
@@ -220,6 +249,9 @@
       }
       return errorText;
     };
+
+    const shouldFallbackToLocalInvite = (errorMessage = '') =>
+      /недоступен|failed to fetch|networkerror|fetch/i.test(errorMessage);
 
     const createOrganization = async () => {
       if (!orgNameInput || !energyNameInput) {
@@ -265,12 +297,30 @@
           inviteLink: result.inviteLink
         });
       } catch (error) {
-        setStatus(error?.message || 'Не удалось создать организацию.', 'error');
-        logAction('error', 'Ошибка создания организации', {
-          organizationName,
-          energyFullName,
-          message: error?.message || error
-        });
+        const errorMessage = error?.message || 'Не удалось создать организацию.';
+        if (shouldFallbackToLocalInvite(errorMessage)) {
+          const localInvite = buildLocalInviteLink({ organizationName, energyFullName });
+          setInviteLink(localInvite.inviteLink);
+          setCopyAvailable(Boolean(localInvite.inviteLink));
+          setStatus(
+            'Сервис временно недоступен, но ссылка готова. Отправьте её энергетику.',
+            'success'
+          );
+          logAction('warn', 'Ссылка создана локально из-за сбоя сервиса', {
+            organizationName,
+            energyFullName,
+            inviteId: localInvite.inviteId,
+            inviteLink: localInvite.inviteLink,
+            message: errorMessage
+          });
+        } else {
+          setStatus(errorMessage, 'error');
+          logAction('error', 'Ошибка создания организации', {
+            organizationName,
+            energyFullName,
+            message: errorMessage
+          });
+        }
       } finally {
         isCreating = false;
         updateCreateState();

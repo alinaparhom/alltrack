@@ -340,6 +340,26 @@ const getInviteIdFromUrl = () => {
   return typeof startParam === 'string' ? startParam.trim() : '';
 };
 
+const decodeInvitePayload = (inviteId) => {
+  if (!inviteId || !inviteId.startsWith('direct-')) {
+    return null;
+  }
+  const encoded = inviteId.slice('direct-'.length);
+  const normalized = encoded.replace(/-/g, '+').replace(/_/g, '/');
+  const padding = normalized.length % 4 === 0 ? '' : '='.repeat(4 - (normalized.length % 4));
+  try {
+    const binary = atob(`${normalized}${padding}`);
+    const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
+    const json =
+      typeof TextDecoder !== 'undefined'
+        ? new TextDecoder('utf-8').decode(bytes)
+        : decodeURIComponent(escape(binary));
+    return JSON.parse(json);
+  } catch (error) {
+    return null;
+  }
+};
+
 const clearInviteFromUrl = () => {
   if (typeof window === 'undefined' || !window.history?.replaceState) {
     return;
@@ -357,6 +377,20 @@ const acceptInvite = async ({ inviteId, userId }) => {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ inviteId, userId })
+  });
+  if (!response.ok) {
+    const message = await response.text();
+    throw new Error(message || 'Не удалось принять приглашение');
+  }
+  return response.json();
+};
+
+const acceptDirectInvite = async ({ inviteId, organizationName, energyFullName, userId }) => {
+  const apiUrl = new URL('./accept-direct-invite', window.location.href).toString();
+  const response = await fetch(apiUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ inviteId, organizationName, energyFullName, userId })
   });
   if (!response.ok) {
     const message = await response.text();
@@ -1274,8 +1308,22 @@ const initAccess = async () => {
       const inviteId = getInviteIdFromUrl();
       if (inviteId) {
         try {
-          logEvent('info', 'Найдено приглашение, пробуем принять', { inviteId });
-          await acceptInvite({ inviteId, userId: normalizedUserId });
+          const invitePayload = decodeInvitePayload(inviteId);
+          if (invitePayload?.organizationName && invitePayload?.energyFullName) {
+            logEvent('info', 'Найдено локальное приглашение, пробуем принять', {
+              inviteId,
+              organizationName: invitePayload.organizationName
+            });
+            await acceptDirectInvite({
+              inviteId,
+              organizationName: invitePayload.organizationName,
+              energyFullName: invitePayload.energyFullName,
+              userId: normalizedUserId
+            });
+          } else {
+            logEvent('info', 'Найдено приглашение, пробуем принять', { inviteId });
+            await acceptInvite({ inviteId, userId: normalizedUserId });
+          }
           const refreshedResponse = await fetch('access.json', { cache: 'no-store' });
           if (refreshedResponse.ok) {
             accessDataCache = await refreshedResponse.json();

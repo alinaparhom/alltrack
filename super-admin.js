@@ -262,6 +262,34 @@
       updateCreateState();
     });
 
+    const normalizeWhitespace = (value = '') => value.replace(/\s+/g, ' ').trim();
+
+    const truncateText = (value = '', maxLength = 220) => {
+      if (!value) {
+        return '';
+      }
+      if (value.length <= maxLength) {
+        return value;
+      }
+      return `${value.slice(0, maxLength).trim()}…`;
+    };
+
+    const extractHtmlError = (rawText) => {
+      if (!/<html/i.test(rawText)) {
+        return '';
+      }
+      try {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(rawText, 'text/html');
+        const title = doc.querySelector('title')?.textContent || '';
+        const bodyText = doc.body?.textContent || '';
+        const merged = normalizeWhitespace([title, bodyText].filter(Boolean).join(' — '));
+        return truncateText(merged);
+      } catch (error) {
+        return truncateText(normalizeWhitespace(String(rawText).replace(/<[^>]+>/g, ' ')));
+      }
+    };
+
     const parseErrorText = (rawText) => {
       if (!rawText) {
         return '';
@@ -269,6 +297,10 @@
       const trimmed = String(rawText).trim();
       if (!trimmed) {
         return '';
+      }
+      const htmlDetails = extractHtmlError(trimmed);
+      if (htmlDetails) {
+        return htmlDetails;
       }
       try {
         const parsed = JSON.parse(trimmed);
@@ -293,16 +325,15 @@
     };
 
     const formatCreateError = ({ status, statusText, body, details }) => {
-      const baseLabel = status ? `Ошибка сервиса (HTTP ${status}${statusText ? ` ${statusText}` : ''})` : 'Ошибка сервиса';
+      const baseLabel = status
+        ? `Ошибка сервиса (HTTP ${status}${statusText ? ` ${statusText}` : ''})`
+        : 'Ошибка сервиса';
       const normalizedBody = parseErrorText(body);
       if (details) {
         return `${baseLabel}: ${details}`;
       }
       if (!normalizedBody) {
         return `${baseLabel}: нет подробностей ответа.`;
-      }
-      if (/<html/i.test(normalizedBody)) {
-        return `${baseLabel}: получен HTML-ответ сервиса.`;
       }
       return `${baseLabel}: ${normalizedBody}`;
     };

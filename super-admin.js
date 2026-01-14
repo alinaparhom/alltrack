@@ -291,12 +291,21 @@
 
     const formatCreateError = (errorText) => {
       if (!errorText) {
-        return 'Не удалось создать организацию.';
+        return 'Сервис создания организации недоступен. Попробуйте позже.';
       }
       if (/<html/i.test(errorText)) {
         return 'Сервис создания организации недоступен. Попробуйте позже.';
       }
       return errorText;
+    };
+
+    const readCreateOrganizationResult = async (response) => {
+      const rawText = await response.text();
+      try {
+        return JSON.parse(rawText);
+      } catch (error) {
+        throw new Error(formatCreateError(rawText));
+      }
     };
 
     const shouldFallbackToLocalInvite = (errorMessage = '') =>
@@ -336,7 +345,7 @@
           organizationName,
           energyFullName
         });
-        const result = await response.json();
+        const result = await readCreateOrganizationResult(response);
         const inviteUrl = result.inviteLink || buildInviteLink(result.inviteId);
         setInviteLink(inviteUrl || '');
         setCopyAvailable(Boolean(inviteUrl));

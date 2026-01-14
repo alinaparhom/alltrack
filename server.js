@@ -203,6 +203,21 @@ const buildInviteLink = (req, inviteId) => {
   return `${getBaseUrl(req)}/?invite=${encodeURIComponent(inviteId)}`;
 };
 
+const handleConfig = (req, res) => {
+  const botUsername = getTelegramBotUsername();
+  logAction('get_config', { hasBotUsername: Boolean(botUsername) });
+  send(
+    res,
+    200,
+    JSON.stringify({
+      botUsername
+    }),
+    {
+      'Content-Type': 'application/json; charset=utf-8'
+    }
+  );
+};
+
 const parseJsonBody = (req, callback) => {
   let body = '';
   req.on('data', (chunk) => {
@@ -500,6 +515,11 @@ const server = http.createServer((req, res) => {
     (req.url === '/accept-direct-invite' || req.url === '/api/accept-direct-invite')
   ) {
     handleAcceptDirectInvite(req, res);
+    return;
+  }
+
+  if (req.method === 'GET' && req.url === '/config') {
+    handleConfig(req, res);
     return;
   }
 

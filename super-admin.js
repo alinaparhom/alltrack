@@ -108,6 +108,10 @@
     const status = document.getElementById('superAdminCreateStatus');
     const inviteLink = document.getElementById('superAdminInviteLink');
     const copyButton = document.getElementById('superAdminCopyLink');
+    const botUsernameState = {
+      value: '',
+      loaded: false
+    };
 
     if (createButtonInitialized || !openButton || !panel || !button || !note || !label) {
       return;
@@ -119,6 +123,55 @@
         return;
       }
       window.logEvent(level, message, payload);
+    };
+
+    const getBotUsername = () => {
+      if (botUsernameState.value) {
+        return botUsernameState.value;
+      }
+      const rawUsername =
+        window.ALLTRACK_BOT_USERNAME ||
+        document.body?.dataset?.botUsername ||
+        window.Telegram?.WebApp?.initDataUnsafe?.receiver?.username ||
+        window.Telegram?.WebApp?.initDataUnsafe?.chat?.username ||
+        '';
+      return String(rawUsername).replace(/^@/, '').trim();
+    };
+
+    const loadBotUsername = async () => {
+      if (botUsernameState.loaded) {
+        return;
+      }
+      botUsernameState.loaded = true;
+      try {
+        const response = await fetch('./config');
+        if (!response.ok) {
+          throw new Error('config request failed');
+        }
+        const data = await response.json();
+        if (data?.botUsername) {
+          botUsernameState.value = String(data.botUsername).replace(/^@/, '').trim();
+        }
+        logAction('info', 'Конфигурация бота загружена', {
+          hasBotUsername: Boolean(botUsernameState.value)
+        });
+      } catch (error) {
+        logAction('warn', 'Не удалось загрузить конфигурацию бота', {
+          message: error?.message || error
+        });
+      }
+    };
+
+    const buildInviteLink = (inviteId) => {
+      const botUsername = getBotUsername();
+      if (botUsername) {
+        return `https://t.me/${botUsername}?startapp=${encodeURIComponent(inviteId)}`;
+      }
+      const inviteUrl = new URL(window.location.href);
+      inviteUrl.searchParams.set('invite', inviteId);
+      inviteUrl.searchParams.delete('startapp');
+      inviteUrl.searchParams.delete('start_param');
+      return inviteUrl.toString();
     };
 
     const setPanelState = (isOpen) => {
@@ -183,7 +236,7 @@
     setInviteLink('');
     setCopyAvailable(false);
     updateCreateState();
-
+    loadBotUsername();
     openButton.addEventListener('click', () => {
       setPanelState(panel.hidden);
       updateCreateState();
@@ -233,11 +286,7 @@
         createdAt: new Date().toISOString()
       };
       const inviteId = `direct-${encodeInvitePayload(payload)}`;
-      const inviteUrl = new URL(window.location.href);
-      inviteUrl.searchParams.set('invite', inviteId);
-      inviteUrl.searchParams.delete('startapp');
-      inviteUrl.searchParams.delete('start_param');
-      return { inviteId, inviteLink: inviteUrl.toString() };
+      return { inviteId, inviteLink: buildInviteLink(inviteId) };
     };
 
     const formatCreateError = (errorText) => {
@@ -288,13 +337,14 @@
           energyFullName
         });
         const result = await response.json();
-        setInviteLink(result.inviteLink || '');
-        setCopyAvailable(Boolean(result.inviteLink));
+        const inviteUrl = result.inviteLink || buildInviteLink(result.inviteId);
+        setInviteLink(inviteUrl || '');
+        setCopyAvailable(Boolean(inviteUrl));
         setStatus('Ссылка готова — отправьте её энергетику.', 'success');
         logAction('info', 'Организация создана, ссылка готова', {
           organizationName,
           inviteId: result.inviteId,
-          inviteLink: result.inviteLink
+          inviteLink: inviteUrl
         });
       } catch (error) {
         const errorMessage = error?.message || 'Не удалось создать организацию.';

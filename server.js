@@ -40,9 +40,13 @@ const buildErrorPayload = (message, details, meta = {}) => ({
   ...meta
 });
 
-const buildStepError = ({ message, details, step, code }) => {
+const buildStepError = ({ message, details, step, code, path: targetPath }) => {
   const error = new Error(message);
-  error.payload = buildErrorPayload(message, details, { step, code });
+  error.payload = buildErrorPayload(message, details, {
+    step,
+    code,
+    path: targetPath
+  });
   return error;
 };
 
@@ -360,7 +364,8 @@ const handleCreateOrganization = (req, res) => {
             error?.message || error
           }`,
           step: '1.1',
-          code: 'create_org_access'
+          code: 'create_org_access',
+          path: 'access.json'
         });
       }
 
@@ -374,7 +379,8 @@ const handleCreateOrganization = (req, res) => {
             error?.message || error
           }`,
           step: '1.2',
-          code: 'create_org_list'
+          code: 'create_org_list',
+          path: 'data/organizations.json'
         });
       }
 
@@ -387,7 +393,8 @@ const handleCreateOrganization = (req, res) => {
             error?.message || error
           }`,
           step: '1.3',
-          code: 'create_org_assets'
+          code: 'create_org_assets',
+          path: `data/organizations/${sanitizeOrganizationName(organizationName)}`
         });
       }
 
@@ -410,7 +417,8 @@ const handleCreateOrganization = (req, res) => {
             error?.message || error
           }`,
           step: '1.4',
-          code: 'create_org_invite'
+          code: 'create_org_invite',
+          path: 'data/invites.json'
         });
       }
 

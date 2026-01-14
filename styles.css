@@ -424,6 +424,11 @@ body.is-super-admin .access {
   transform: scale(0.98);
 }
 
+.super-admin__button.is-disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .super-admin__switch {
   display: grid;
   gap: 8px;

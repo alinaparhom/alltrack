@@ -66,22 +66,37 @@
           <span class="super-admin__button-label" id="superAdminCreateLabel">Добавить организацию</span>
         </button>
         <div class="super-admin__create-panel" id="superAdminCreatePanel" hidden>
-          <div class="super-admin__create-head">
-            <div>
-              <h3>Добавление новой организации</h3>
-              <p>Заполните карточку, чтобы создать новую организацию.</p>
-            </div>
-          </div>
           <div class="super-admin__form">
             <label class="super-admin__field">
               <span>Название</span>
               <input type="text" placeholder="Например, Северный склад" />
             </label>
             <label class="super-admin__field">
-              <span>Администратор</span>
+              <span>Энергетик</span>
               <input type="text" placeholder="Фамилия Имя" />
             </label>
-            <button class="super-admin__button" type="button" id="superAdminCreateButton">
+            <div class="super-admin__switch">
+              <p class="super-admin__switch-label">Номер организации</p>
+              <div
+                class="super-admin__switch-control"
+                role="radiogroup"
+                aria-label="Способ назначения номера"
+              >
+                <label class="super-admin__switch-option">
+                  <input type="radio" name="orgNumberMode" checked />
+                  <span class="super-admin__switch-text">Номер задается ботом</span>
+                </label>
+                <label class="super-admin__switch-option">
+                  <input type="radio" name="orgNumberMode" />
+                  <span class="super-admin__switch-text">Бухгалтерский номер</span>
+                </label>
+              </div>
+            </div>
+            <button
+              class="super-admin__button super-admin__button--dark-text"
+              type="button"
+              id="superAdminCreateButton"
+            >
               Создать организацию
             </button>
             <p class="super-admin__note" id="superAdminCreateNote" hidden>

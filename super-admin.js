@@ -155,7 +155,7 @@
 
     const setCreateEnabled = (enabled) => {
       const isDisabled = !enabled || isCreating;
-      button.disabled = isCreating;
+      button.disabled = isDisabled;
       button.setAttribute('aria-disabled', String(isDisabled));
       button.classList.toggle('is-disabled', isDisabled);
     };
@@ -178,6 +178,7 @@
 
     openButton.addEventListener('click', () => {
       setPanelState(panel.hidden);
+      updateCreateState();
     });
 
     const createOrganization = async () => {
@@ -233,6 +234,8 @@
     button.addEventListener('click', handleSubmit);
     if (form) {
       form.addEventListener('submit', handleSubmit);
+      form.addEventListener('input', updateCreateState);
+      form.addEventListener('change', updateCreateState);
     }
     if (orgNameInput) {
       orgNameInput.addEventListener('input', updateCreateState);

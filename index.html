@@ -69,11 +69,21 @@
           <div class="super-admin__form">
             <label class="super-admin__field">
               <span>Название</span>
-              <input type="text" placeholder="Например, Северный склад" />
+              <input
+                type="text"
+                id="superAdminOrgName"
+                placeholder="Например, Северный склад"
+                autocomplete="organization"
+              />
             </label>
             <label class="super-admin__field">
               <span>Энергетик</span>
-              <input type="text" placeholder="Фамилия Имя" />
+              <input
+                type="text"
+                id="superAdminEnergyName"
+                placeholder="Фамилия Имя Отчество"
+                autocomplete="name"
+              />
             </label>
             <div class="super-admin__switch">
               <p class="super-admin__switch-label">Номер организации</p>
@@ -99,9 +109,45 @@
             >
               Создать организацию
             </button>
-            <p class="super-admin__note" id="superAdminCreateNote" hidden>
-              Функция в разработке. Скоро будет доступна.
-            </p>
+            <div class="super-admin__note" id="superAdminCreateNote">
+              <div class="super-admin__note-head">
+                <p class="super-admin__note-title">Что произойдет дальше</p>
+                <button
+                  class="super-admin__button super-admin__button--ghost super-admin__button--mini"
+                  type="button"
+                  id="superAdminCopyLink"
+                  hidden
+                >
+                  Скопировать ссылку
+                </button>
+              </div>
+              <p class="super-admin__note-status" id="superAdminCreateStatus">—</p>
+              <p class="super-admin__note-link">
+                Ссылка для энергетика:
+                <a id="superAdminInviteLink" href="#" target="_blank" rel="noopener">—</a>
+              </p>
+              <ol class="super-admin__note-list">
+                <li>Супер‑администратор заполняет все данные и нажимает «Создать организацию».</li>
+                <li>Система формирует персональную ссылку для энергетика.</li>
+                <li>
+                  Энергетик открывает ссылку в Telegram, и его ID привязывается к этой
+                  организации.
+                </li>
+                <li>
+                  В файле <code>access.json</code> в разделе <code>organizations</code>
+                  добавляется организация и первый пользователь с <code>id</code>,
+                  <code>fullName</code> и ролью «Энергетик».
+                </li>
+                <li>
+                  В файле <code>data/organizations.json</code> появляется название новой
+                  организации.
+                </li>
+                <li>
+                  В папке <code>data/organizations</code> создается папка с названием
+                  организации и всеми нужными файлами.
+                </li>
+              </ol>
+            </div>
           </div>
         </div>
       </div>

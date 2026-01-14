@@ -308,8 +308,20 @@
       }
     };
 
-    const shouldFallbackToLocalInvite = (errorMessage = '') =>
-      /недоступен|failed to fetch|networkerror|fetch/i.test(errorMessage);
+    const isValidationError = (errorMessage = '') =>
+      /уже существует|заполните|некорректн/i.test(errorMessage);
+
+    const shouldFallbackToLocalInvite = (errorMessage = '') => {
+      if (isValidationError(errorMessage)) {
+        return false;
+      }
+      if (!errorMessage) {
+        return true;
+      }
+      return /недоступен|failed to fetch|networkerror|fetch|timeout|503|502|504/i.test(
+        errorMessage
+      );
+    };
 
     const createOrganization = async () => {
       if (!orgNameInput || !energyNameInput) {
@@ -336,6 +348,7 @@
       setStatus('Создаём организацию и ссылку приглашения...', 'success');
       setInviteLink('');
       setCopyAvailable(false);
+      await loadBotUsername();
       logAction('info', 'Запрос создания организации отправлен', {
         organizationName,
         energyFullName

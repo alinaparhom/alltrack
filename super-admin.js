@@ -311,17 +311,7 @@
     const isValidationError = (errorMessage = '') =>
       /уже существует|заполните|некорректн/i.test(errorMessage);
 
-    const shouldFallbackToLocalInvite = (errorMessage = '') => {
-      if (isValidationError(errorMessage)) {
-        return false;
-      }
-      if (!errorMessage) {
-        return true;
-      }
-      return /недоступен|failed to fetch|networkerror|fetch|timeout|503|502|504/i.test(
-        errorMessage
-      );
-    };
+    const shouldFallbackToLocalInvite = (errorMessage = '') => !isValidationError(errorMessage);
 
     const createOrganization = async () => {
       if (!orgNameInput || !energyNameInput) {
@@ -353,16 +343,29 @@
         organizationName,
         energyFullName
       });
+      const localInvite = buildLocalInviteLink({ organizationName, energyFullName });
       try {
         const response = await getCreateOrganizationResponse({
           organizationName,
           energyFullName
         });
         const result = await readCreateOrganizationResult(response);
-        const inviteUrl = result.inviteLink || buildInviteLink(result.inviteId);
+        const inviteUrl =
+          result.inviteLink ||
+          (result.inviteId ? buildInviteLink(result.inviteId) : localInvite.inviteLink);
         setInviteLink(inviteUrl || '');
         setCopyAvailable(Boolean(inviteUrl));
-        setStatus('Ссылка готова — отправьте её энергетику.', 'success');
+        if (!result.inviteId && !result.inviteLink) {
+          setStatus('Ссылка готова локально — отправьте её энергетику.', 'success');
+          logAction('warn', 'Ответ сервиса без данных, ссылка создана локально', {
+            organizationName,
+            energyFullName,
+            inviteId: localInvite.inviteId,
+            inviteLink: localInvite.inviteLink
+          });
+        } else {
+          setStatus('Ссылка готова — отправьте её энергетику.', 'success');
+        }
         logAction('info', 'Организация создана, ссылка готова', {
           organizationName,
           inviteId: result.inviteId,
@@ -371,7 +374,6 @@
       } catch (error) {
         const errorMessage = error?.message || 'Не удалось создать организацию.';
         if (shouldFallbackToLocalInvite(errorMessage)) {
-          const localInvite = buildLocalInviteLink({ organizationName, energyFullName });
           setInviteLink(localInvite.inviteLink);
           setCopyAvailable(Boolean(localInvite.inviteLink));
           setStatus(

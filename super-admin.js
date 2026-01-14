@@ -272,11 +272,19 @@
       }
       try {
         const parsed = JSON.parse(trimmed);
-        if (parsed?.message) {
-          return String(parsed.message);
+        const message = parsed?.message ? String(parsed.message) : '';
+        const details = parsed?.details ? String(parsed.details) : '';
+        if (message && details) {
+          return `${message} (${details})`;
+        }
+        if (message) {
+          return message;
         }
         if (parsed?.error) {
           return String(parsed.error);
+        }
+        if (details) {
+          return details;
         }
       } catch (error) {
         return trimmed;

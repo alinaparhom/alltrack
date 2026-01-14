@@ -28,6 +28,17 @@ const send = (res, statusCode, body, headers = {}) => {
   res.end(body);
 };
 
+const sendJson = (res, statusCode, payload) => {
+  send(res, statusCode, JSON.stringify(payload), {
+    'Content-Type': 'application/json; charset=utf-8'
+  });
+};
+
+const buildErrorPayload = (message, details) => ({
+  message,
+  details
+});
+
 const formatTimestamp = () => new Date().toISOString();
 
 const ensureLogFile = () => {
@@ -284,62 +295,93 @@ const handleCreateOrganization = (req, res) => {
   parseJsonBody(req, (error, payload) => {
     if (error) {
       logAction('create_org_invalid_payload');
-      send(res, 400, 'Некорректные данные');
+      sendJson(
+        res,
+        400,
+        buildErrorPayload('Некорректные данные', error?.message || 'JSON не распознан.')
+      );
       return;
     }
-    const organizationName = String(payload.organizationName || '').trim();
-    const energyFullName = String(payload.energyFullName || '').trim();
-    if (!organizationName || !energyFullName) {
-      logAction('create_org_missing_fields', { organizationName, energyFullName });
-      send(res, 400, 'Заполните название организации и ФИО энергетика.');
-      return;
+    try {
+      const organizationName = String(payload.organizationName || '').trim();
+      const energyFullName = String(payload.energyFullName || '').trim();
+      if (!organizationName || !energyFullName) {
+        logAction('create_org_missing_fields', { organizationName, energyFullName });
+        sendJson(
+          res,
+          400,
+          buildErrorPayload(
+            'Заполните название организации и ФИО энергетика.',
+            'Одно или несколько полей пустые.'
+          )
+        );
+        return;
+      }
+      const organizations = getOrganizationsList();
+      if (organizations.includes(organizationName)) {
+        logAction('create_org_duplicate', { organizationName, energyFullName });
+        sendJson(
+          res,
+          409,
+          buildErrorPayload(
+            'Такая организация уже существует.',
+            'Попробуйте другое название.'
+          )
+        );
+        return;
+      }
+
+      logAction('create_org_start', { organizationName, energyFullName });
+      ensureOrganizationAssets(organizationName);
+      const nextOrganizations = [...organizations, organizationName];
+      saveOrganizationsList(nextOrganizations);
+
+      const accessData = readJsonFile(ACCESS_FILE, { superAdmins: [], organizations: {} });
+      if (!accessData.organizations || typeof accessData.organizations !== 'object') {
+        accessData.organizations = {};
+      }
+      const existingMembers = Array.isArray(accessData.organizations[organizationName])
+        ? accessData.organizations[organizationName]
+        : [];
+      accessData.organizations[organizationName] = addPlaceholderMember(
+        existingMembers,
+        energyFullName
+      );
+      writeJsonFile(ACCESS_FILE, accessData);
+
+      const invitesData = readJsonFile(INVITES_FILE, { invites: [] });
+      const invites = Array.isArray(invitesData.invites) ? invitesData.invites : [];
+      const inviteId = generateInviteId();
+      invites.push({
+        id: inviteId,
+        organizationName,
+        energyFullName,
+        createdAt: formatTimestamp()
+      });
+      writeJsonFile(INVITES_FILE, { invites });
+
+      const inviteLink = buildInviteLink(req, inviteId);
+      logAction('create_org_success', {
+        organizationName,
+        energyFullName,
+        inviteId,
+        inviteLink
+      });
+      sendJson(res, 200, { inviteId, inviteLink });
+    } catch (createError) {
+      logAction('create_org_failed', {
+        message: createError?.message || createError,
+        stack: createError?.stack
+      });
+      sendJson(
+        res,
+        500,
+        buildErrorPayload(
+          'Ошибка сервиса создания организации.',
+          createError?.message || 'Неизвестная ошибка.'
+        )
+      );
     }
-    const organizations = getOrganizationsList();
-    if (organizations.includes(organizationName)) {
-      logAction('create_org_duplicate', { organizationName, energyFullName });
-      send(res, 409, 'Такая организация уже существует.');
-      return;
-    }
-
-    logAction('create_org_start', { organizationName, energyFullName });
-    ensureOrganizationAssets(organizationName);
-    const nextOrganizations = [...organizations, organizationName];
-    saveOrganizationsList(nextOrganizations);
-
-    const accessData = readJsonFile(ACCESS_FILE, { superAdmins: [], organizations: {} });
-    if (!accessData.organizations || typeof accessData.organizations !== 'object') {
-      accessData.organizations = {};
-    }
-    const existingMembers = Array.isArray(accessData.organizations[organizationName])
-      ? accessData.organizations[organizationName]
-      : [];
-    accessData.organizations[organizationName] = addPlaceholderMember(
-      existingMembers,
-      energyFullName
-    );
-    writeJsonFile(ACCESS_FILE, accessData);
-
-    const invitesData = readJsonFile(INVITES_FILE, { invites: [] });
-    const invites = Array.isArray(invitesData.invites) ? invitesData.invites : [];
-    const inviteId = generateInviteId();
-    invites.push({
-      id: inviteId,
-      organizationName,
-      energyFullName,
-      createdAt: formatTimestamp()
-    });
-    writeJsonFile(INVITES_FILE, { invites });
-
-    const inviteLink = buildInviteLink(req, inviteId);
-    logAction('create_org_success', {
-      organizationName,
-      energyFullName,
-      inviteId,
-      inviteLink
-    });
-    send(res, 200, JSON.stringify({ inviteId, inviteLink }), {
-      'Content-Type': 'application/json; charset=utf-8'
-    });
   });
 };
 

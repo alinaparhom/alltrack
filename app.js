@@ -323,6 +323,36 @@ const superAdminPanel = document.getElementById('superAdminPanel');
 const defaultWorkspace = document.getElementById('defaultWorkspace');
 let accessDataCache = null;
 
+const getInviteIdFromUrl = () => {
+  if (typeof window === 'undefined' || !window.location?.search) {
+    return '';
+  }
+  const params = new URLSearchParams(window.location.search);
+  return params.get('invite') || '';
+};
+
+const clearInviteFromUrl = () => {
+  if (typeof window === 'undefined' || !window.history?.replaceState) {
+    return;
+  }
+  const url = new URL(window.location.href);
+  url.searchParams.delete('invite');
+  window.history.replaceState({}, document.title, url.toString());
+};
+
+const acceptInvite = async ({ inviteId, userId }) => {
+  const response = await fetch('/accept-invite', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ inviteId, userId })
+  });
+  if (!response.ok) {
+    const message = await response.text();
+    throw new Error(message || 'Не удалось принять приглашение');
+  }
+  return response.json();
+};
+
 document.body.classList.add('is-checking');
 
 const buttons = document.querySelectorAll('button');
@@ -1224,10 +1254,41 @@ const initAccess = async () => {
       }))
     });
     updateUserIdIndicators({ userId: normalizedUserId, user: getTelegramUser() });
-    const access =
+    let access =
       findUserAccess(userId, data) ||
       (normalizedUserId ? findUserAccess(normalizedUserId, data) : null) ||
       (normalizedUserId ? findUserAccess(Number(normalizedUserId), data) : null);
+    if (!access) {
+      const inviteId = getInviteIdFromUrl();
+      if (inviteId) {
+        try {
+          logEvent('info', 'Найдено приглашение, пробуем принять', { inviteId });
+          await acceptInvite({ inviteId, userId: normalizedUserId });
+          const refreshedResponse = await fetch('access.json', { cache: 'no-store' });
+          if (refreshedResponse.ok) {
+            accessDataCache = await refreshedResponse.json();
+            access =
+              findUserAccess(userId, accessDataCache) ||
+              (normalizedUserId ? findUserAccess(normalizedUserId, accessDataCache) : null) ||
+              (normalizedUserId
+                ? findUserAccess(Number(normalizedUserId), accessDataCache)
+                : null);
+            if (access) {
+              clearInviteFromUrl();
+              logEvent('info', 'Приглашение принято, доступ обновлен', {
+                inviteId,
+                userId: normalizedUserId
+              });
+            }
+          }
+        } catch (error) {
+          logEvent('warn', 'Не удалось принять приглашение', {
+            inviteId,
+            message: error?.message || error
+          });
+        }
+      }
+    }
     if (!access) {
       logEvent('warn', 'ID пользователя не найден в списке прав', {
         userId: normalizedUserId

@@ -101,6 +101,11 @@
     const button = document.getElementById('superAdminCreateButton');
     const note = document.getElementById('superAdminCreateNote');
     const label = document.getElementById('superAdminCreateLabel');
+    const orgNameInput = document.getElementById('superAdminOrgName');
+    const energyNameInput = document.getElementById('superAdminEnergyName');
+    const status = document.getElementById('superAdminCreateStatus');
+    const inviteLink = document.getElementById('superAdminInviteLink');
+    const copyButton = document.getElementById('superAdminCopyLink');
 
     if (!openButton || !panel || !button || !note || !label) {
       return;
@@ -109,23 +114,110 @@
     const setPanelState = (isOpen) => {
       panel.hidden = !isOpen;
       openButton.setAttribute('aria-expanded', String(isOpen));
-      note.hidden = true;
       label.textContent = isOpen ? 'Свернуть создание' : 'Добавить организацию';
       if (isOpen) {
         panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
     };
 
+    const setStatus = (message, state) => {
+      if (!note || !status) {
+        return;
+      }
+      note.hidden = false;
+      status.textContent = message;
+      if (state) {
+        status.dataset.state = state;
+      } else {
+        delete status.dataset.state;
+      }
+    };
+
+    const setInviteLink = (value) => {
+      if (!inviteLink) {
+        return;
+      }
+      inviteLink.textContent = value || '—';
+      inviteLink.href = value || '#';
+    };
+
+    const setCopyAvailable = (available) => {
+      if (!copyButton) {
+        return;
+      }
+      copyButton.hidden = !available;
+    };
+
     setPanelState(false);
+
+    if (status) {
+      status.textContent = 'Заполните данные и нажмите кнопку, чтобы получить ссылку.';
+      delete status.dataset.state;
+    }
+    setInviteLink('');
+    setCopyAvailable(false);
 
     openButton.addEventListener('click', () => {
       setPanelState(panel.hidden);
     });
 
+    const createOrganization = async () => {
+      if (!orgNameInput || !energyNameInput) {
+        setStatus('Не удалось найти поля формы. Обновите страницу.', 'error');
+        return;
+      }
+      const organizationName = orgNameInput.value.trim();
+      const energyFullName = energyNameInput.value.trim();
+      if (!organizationName || !energyFullName) {
+        setStatus('Заполните название организации и ФИО энергетика.', 'error');
+        setInviteLink('');
+        setCopyAvailable(false);
+        return;
+      }
+      button.disabled = true;
+      button.textContent = 'Создаём...';
+      setStatus('Создаём организацию и ссылку приглашения...', 'success');
+      setInviteLink('');
+      setCopyAvailable(false);
+      try {
+        const response = await fetch('/create-organization', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ organizationName, energyFullName })
+        });
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(errorText || 'Ошибка создания организации');
+        }
+        const result = await response.json();
+        setInviteLink(result.inviteLink || '');
+        setCopyAvailable(Boolean(result.inviteLink));
+        setStatus('Ссылка готова — отправьте её энергетику.', 'success');
+      } catch (error) {
+        setStatus(error?.message || 'Не удалось создать организацию.', 'error');
+      } finally {
+        button.disabled = false;
+        button.textContent = 'Создать организацию';
+      }
+    };
+
     button.addEventListener('click', () => {
-      note.hidden = false;
-      note.textContent = 'Функция в разработке. Скоро будет доступна.';
+      createOrganization();
     });
+
+    if (copyButton) {
+      copyButton.addEventListener('click', async () => {
+        if (!inviteLink || inviteLink.textContent === '—') {
+          return;
+        }
+        try {
+          await navigator.clipboard.writeText(inviteLink.textContent);
+          setStatus('Ссылка скопирована. Можно отправлять энергетику.', 'success');
+        } catch (error) {
+          setStatus('Не удалось скопировать ссылку. Скопируйте вручную.', 'error');
+        }
+      });
+    }
   };
 
   window.initSuperAdminWorkspace = ({ fullName, accessData } = {}) => {

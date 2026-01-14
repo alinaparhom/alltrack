@@ -390,6 +390,10 @@ body.is-super-admin .access {
   background: linear-gradient(135deg, var(--accent) 0%, var(--accent-strong) 100%);
 }
 
+.super-admin__button--dark-text {
+  color: #10131f;
+}
+
 .super-admin__button--ghost {
   color: var(--accent-strong);
   background: rgba(255, 255, 255, 0.9);
@@ -418,6 +422,56 @@ body.is-super-admin .access {
 
 .super-admin__button:active {
   transform: scale(0.98);
+}
+
+.super-admin__switch {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.7);
+  box-shadow: inset 0 0 0 1px rgba(227, 232, 246, 0.9);
+}
+
+.super-admin__switch-label {
+  margin: 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.super-admin__switch-control {
+  display: grid;
+  gap: 8px;
+}
+
+.super-admin__switch-option {
+  position: relative;
+  cursor: pointer;
+}
+
+.super-admin__switch-option input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.super-admin__switch-text {
+  display: block;
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 12px;
+  font-size: 13px;
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.8);
+  box-shadow: inset 0 0 0 1px rgba(227, 232, 246, 0.9);
+  transition: 0.2s ease;
+}
+
+.super-admin__switch-option input:checked + .super-admin__switch-text {
+  color: #10131f;
+  font-weight: 600;
+  background: rgba(83, 96, 255, 0.12);
+  box-shadow: inset 0 0 0 1px rgba(83, 96, 255, 0.35);
 }
 
 .super-admin__note {

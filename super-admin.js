@@ -114,6 +114,13 @@
     }
     createButtonInitialized = true;
 
+    const logAction = (level, message, payload = null) => {
+      if (typeof window === 'undefined' || typeof window.logEvent !== 'function') {
+        return;
+      }
+      window.logEvent(level, message, payload);
+    };
+
     const setPanelState = (isOpen) => {
       panel.hidden = !isOpen;
       openButton.setAttribute('aria-expanded', String(isOpen));
@@ -121,6 +128,7 @@
       if (isOpen) {
         panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
+      logAction('info', 'Панель создания организации переключена', { isOpen });
     };
 
     const setStatus = (message, state) => {
@@ -185,7 +193,7 @@
       const endpoints = ['./create-organization', './api/create-organization'];
       let lastErrorText = '';
       for (const endpoint of endpoints) {
-        const apiUrl = new URL(endpoint, window.location.href).toString();
+        const apiUrl = new URL(endpoint, window.location.origin).toString();
         const response = await fetch(apiUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -216,6 +224,7 @@
     const createOrganization = async () => {
       if (!orgNameInput || !energyNameInput) {
         setStatus('Не удалось найти поля формы. Обновите страницу.', 'error');
+        logAction('error', 'Форма создания организации не найдена');
         return;
       }
       const organizationName = orgNameInput.value.trim();
@@ -225,6 +234,10 @@
         setInviteLink('');
         setCopyAvailable(false);
         updateCreateState();
+        logAction('warn', 'Попытка создать организацию с пустыми данными', {
+          organizationName,
+          energyFullName
+        });
         return;
       }
       isCreating = true;
@@ -233,6 +246,10 @@
       setStatus('Создаём организацию и ссылку приглашения...', 'success');
       setInviteLink('');
       setCopyAvailable(false);
+      logAction('info', 'Запрос создания организации отправлен', {
+        organizationName,
+        energyFullName
+      });
       try {
         const response = await getCreateOrganizationResponse({
           organizationName,
@@ -242,8 +259,18 @@
         setInviteLink(result.inviteLink || '');
         setCopyAvailable(Boolean(result.inviteLink));
         setStatus('Ссылка готова — отправьте её энергетику.', 'success');
+        logAction('info', 'Организация создана, ссылка готова', {
+          organizationName,
+          inviteId: result.inviteId,
+          inviteLink: result.inviteLink
+        });
       } catch (error) {
         setStatus(error?.message || 'Не удалось создать организацию.', 'error');
+        logAction('error', 'Ошибка создания организации', {
+          organizationName,
+          energyFullName,
+          message: error?.message || error
+        });
       } finally {
         isCreating = false;
         updateCreateState();
@@ -281,8 +308,14 @@
         try {
           await navigator.clipboard.writeText(inviteLink.textContent);
           setStatus('Ссылка скопирована. Можно отправлять энергетику.', 'success');
+          logAction('info', 'Ссылка приглашения скопирована', {
+            inviteLink: inviteLink.textContent
+          });
         } catch (error) {
           setStatus('Не удалось скопировать ссылку. Скопируйте вручную.', 'error');
+          logAction('error', 'Ошибка копирования ссылки приглашения', {
+            message: error?.message || error
+          });
         }
       });
     }

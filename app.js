@@ -324,11 +324,18 @@ const defaultWorkspace = document.getElementById('defaultWorkspace');
 let accessDataCache = null;
 
 const getInviteIdFromUrl = () => {
-  if (typeof window === 'undefined' || !window.location?.search) {
+  if (typeof window === 'undefined') {
     return '';
   }
-  const params = new URLSearchParams(window.location.search);
-  return params.get('invite') || '';
+  const params = new URLSearchParams(window.location?.search || '');
+  const inviteParam =
+    params.get('invite') || params.get('startapp') || params.get('start_param') || '';
+  if (inviteParam) {
+    return inviteParam;
+  }
+  const tg = getTelegramWebApp();
+  const startParam = tg?.initDataUnsafe?.start_param;
+  return typeof startParam === 'string' ? startParam.trim() : '';
 };
 
 const clearInviteFromUrl = () => {
@@ -337,6 +344,8 @@ const clearInviteFromUrl = () => {
   }
   const url = new URL(window.location.href);
   url.searchParams.delete('invite');
+  url.searchParams.delete('startapp');
+  url.searchParams.delete('start_param');
   window.history.replaceState({}, document.title, url.toString());
 };
 

@@ -158,11 +158,29 @@ const saveOrganizationsList = (list) => {
 const generateInviteId = () =>
   `invite-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 
+const normalizeBotUsername = (value) => {
+  if (!value) {
+    return '';
+  }
+  return String(value).replace(/^@/, '').trim();
+};
+
+const getTelegramBotUsername = () =>
+  normalizeBotUsername(process.env.TELEGRAM_BOT_USERNAME || process.env.BOT_USERNAME);
+
 const getBaseUrl = (req) => {
   const protoHeader = req.headers['x-forwarded-proto'];
   const protocol = Array.isArray(protoHeader) ? protoHeader[0] : protoHeader || 'http';
   const host = req.headers.host || 'localhost';
   return `${protocol}://${host}`;
+};
+
+const buildInviteLink = (req, inviteId) => {
+  const botUsername = getTelegramBotUsername();
+  if (botUsername) {
+    return `https://t.me/${botUsername}?startapp=${encodeURIComponent(inviteId)}`;
+  }
+  return `${getBaseUrl(req)}/?invite=${encodeURIComponent(inviteId)}`;
 };
 
 const parseJsonBody = (req, callback) => {
@@ -213,7 +231,7 @@ const handleCreateOrganization = (req, res) => {
     });
     writeJsonFile(INVITES_FILE, { invites });
 
-    const inviteLink = `${getBaseUrl(req)}/?invite=${encodeURIComponent(inviteId)}`;
+    const inviteLink = buildInviteLink(req, inviteId);
     send(res, 200, JSON.stringify({ inviteId, inviteLink }), {
       'Content-Type': 'application/json; charset=utf-8'
     });
@@ -347,12 +365,18 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  if (req.method === 'POST' && req.url === '/create-organization') {
+  if (
+    req.method === 'POST' &&
+    (req.url === '/create-organization' || req.url === '/api/create-organization')
+  ) {
     handleCreateOrganization(req, res);
     return;
   }
 
-  if (req.method === 'POST' && req.url === '/accept-invite') {
+  if (
+    req.method === 'POST' &&
+    (req.url === '/accept-invite' || req.url === '/api/accept-invite')
+  ) {
     handleAcceptInvite(req, res);
     return;
   }

@@ -181,6 +181,38 @@
       updateCreateState();
     });
 
+    const getCreateOrganizationResponse = async (payload) => {
+      const endpoints = ['/create-organization', '/api/create-organization'];
+      let lastErrorText = '';
+      for (const endpoint of endpoints) {
+        const apiUrl = new URL(endpoint, window.location.origin).toString();
+        const response = await fetch(apiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        if (response.ok) {
+          return response;
+        }
+        lastErrorText = await response.text();
+        if (response.status === 404) {
+          continue;
+        }
+        throw new Error(formatCreateError(lastErrorText));
+      }
+      throw new Error(formatCreateError(lastErrorText));
+    };
+
+    const formatCreateError = (errorText) => {
+      if (!errorText) {
+        return 'Не удалось создать организацию.';
+      }
+      if (/<html/i.test(errorText)) {
+        return 'Сервис создания организации недоступен. Попробуйте позже.';
+      }
+      return errorText;
+    };
+
     const createOrganization = async () => {
       if (!orgNameInput || !energyNameInput) {
         setStatus('Не удалось найти поля формы. Обновите страницу.', 'error');
@@ -202,16 +234,10 @@
       setInviteLink('');
       setCopyAvailable(false);
       try {
-        const apiUrl = new URL('/create-organization', window.location.origin).toString();
-        const response = await fetch(apiUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ organizationName, energyFullName })
+        const response = await getCreateOrganizationResponse({
+          organizationName,
+          energyFullName
         });
-        if (!response.ok) {
-          const errorText = await response.text();
-          throw new Error(errorText || 'Ошибка создания организации');
-        }
         const result = await response.json();
         setInviteLink(result.inviteLink || '');
         setCopyAvailable(Boolean(result.inviteLink));

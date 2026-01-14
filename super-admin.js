@@ -202,7 +202,7 @@
       setInviteLink('');
       setCopyAvailable(false);
       try {
-        const apiUrl = new URL('./create-organization', window.location.href).toString();
+        const apiUrl = new URL('/create-organization', window.location.origin).toString();
         const response = await fetch(apiUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

@@ -1512,21 +1512,20 @@
             if (response.ok) {
               return response;
             }
-            lastErrorText = await response.text();
+            const errorText = await response.text();
+            lastErrorText = formatCreateError({
+              status: response.status,
+              statusText: response.statusText,
+              body: errorText,
+              endpoint: apiUrl,
+              method: 'POST'
+            });
             if (response.status === 404) {
               continue;
             }
-            throw new Error(
-              formatCreateError({
-                status: response.status,
-                statusText: response.statusText,
-                body: lastErrorText,
-                endpoint: apiUrl,
-                method: 'POST'
-              })
-            );
+            throw new Error(lastErrorText);
           }
-          throw new Error(formatCreateError({ body: lastErrorText, method: 'POST' }));
+          throw new Error(lastErrorText || formatCreateError({ method: 'POST' }));
         };
 
         const readCreateOrganizationResult = async (response) => {

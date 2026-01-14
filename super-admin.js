@@ -221,6 +221,44 @@
       shareButton.hidden = !available;
     };
 
+    const buildShareMessage = (linkToShare) =>
+      `Откройте ссылку, чтобы подключиться к организации: ${linkToShare}`;
+
+    const openContactPicker = async (linkToShare) => {
+      if (!navigator?.contacts?.select) {
+        return false;
+      }
+      try {
+        const contacts = await navigator.contacts.select(['name', 'tel', 'email'], {
+          multiple: false
+        });
+        const contact = Array.isArray(contacts) ? contacts[0] : null;
+        if (!contact) {
+          return false;
+        }
+        const message = buildShareMessage(linkToShare);
+        if (contact.tel && contact.tel[0]) {
+          const phone = String(contact.tel[0]).replace(/\s+/g, '');
+          window.location.href = `sms:${phone}?body=${encodeURIComponent(message)}`;
+          return true;
+        }
+        if (contact.email && contact.email[0]) {
+          const email = String(contact.email[0]).trim();
+          const subject = 'Ссылка для энергетика';
+          window.location.href = `mailto:${email}?subject=${encodeURIComponent(
+            subject
+          )}&body=${encodeURIComponent(message)}`;
+          return true;
+        }
+        return false;
+      } catch (error) {
+        logAction('warn', 'Не удалось открыть выбор контакта', {
+          message: error?.message || error
+        });
+        return false;
+      }
+    };
+
     let isCreating = false;
 
     const setCreateEnabled = (enabled) => {
@@ -462,20 +500,28 @@
         const linkToShare = inviteLink.textContent;
         const shareData = {
           title: 'Ссылка для энергетика',
-          text: 'Откройте ссылку, чтобы подключиться к организации.',
+          text: buildShareMessage(linkToShare),
           url: linkToShare
         };
         try {
           if (navigator.share) {
             await navigator.share(shareData);
-            setStatus('Ссылка готова к отправке через контакты или мессенджер.', 'success');
+            setStatus('Открылся выбор контакта или приложения для отправки ссылки.', 'success');
             logAction('info', 'Открыт системный выбор контакта для ссылки', {
               inviteLink: linkToShare
             });
             return;
           }
+          const contactShareOpened = await openContactPicker(linkToShare);
+          if (contactShareOpened) {
+            setStatus('Открылся выбор контакта для отправки ссылки.', 'success');
+            logAction('info', 'Открыт контактный список через Contact Picker', {
+              inviteLink: linkToShare
+            });
+            return;
+          }
           setStatus('Не удалось открыть список контактов. Скопируйте ссылку вручную.', 'error');
-          logAction('warn', 'Системный шаринг недоступен', {
+          logAction('warn', 'Системный шаринг и контакты недоступны', {
             inviteLink: linkToShare
           });
         } catch (error) {

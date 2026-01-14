@@ -151,10 +151,13 @@
       copyButton.hidden = !available;
     };
 
+    let isCreating = false;
+
     const setCreateEnabled = (enabled) => {
-      button.disabled = !enabled;
-      button.setAttribute('aria-disabled', String(!enabled));
-      button.classList.toggle('is-disabled', !enabled);
+      const isDisabled = !enabled || isCreating;
+      button.disabled = isCreating;
+      button.setAttribute('aria-disabled', String(isDisabled));
+      button.classList.toggle('is-disabled', isDisabled);
     };
 
     const updateCreateState = () => {
@@ -191,6 +194,7 @@
         updateCreateState();
         return;
       }
+      isCreating = true;
       setCreateEnabled(false);
       button.textContent = 'Создаём...';
       setStatus('Создаём организацию и ссылку приглашения...', 'success');
@@ -213,6 +217,7 @@
       } catch (error) {
         setStatus(error?.message || 'Не удалось создать организацию.', 'error');
       } finally {
+        isCreating = false;
         updateCreateState();
         button.textContent = 'Создать организацию';
       }

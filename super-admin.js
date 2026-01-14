@@ -108,6 +108,7 @@
     const status = document.getElementById('superAdminCreateStatus');
     const inviteLink = document.getElementById('superAdminInviteLink');
     const copyButton = document.getElementById('superAdminCopyLink');
+    const shareButton = document.getElementById('superAdminShareLink');
     const botUsernameState = {
       value: '',
       loaded: false
@@ -203,6 +204,7 @@
       }
       inviteLink.textContent = value || '—';
       inviteLink.href = value || '#';
+      setShareAvailable(Boolean(value));
     };
 
     const setCopyAvailable = (available) => {
@@ -210,6 +212,13 @@
         return;
       }
       copyButton.hidden = !available;
+    };
+
+    const setShareAvailable = (available) => {
+      if (!shareButton) {
+        return;
+      }
+      shareButton.hidden = !available;
     };
 
     let isCreating = false;
@@ -235,6 +244,7 @@
     }
     setInviteLink('');
     setCopyAvailable(false);
+    setShareAvailable(false);
     updateCreateState();
     loadBotUsername();
     openButton.addEventListener('click', () => {
@@ -439,6 +449,40 @@
           setStatus('Не удалось скопировать ссылку. Скопируйте вручную.', 'error');
           logAction('error', 'Ошибка копирования ссылки приглашения', {
             message: error?.message || error
+          });
+        }
+      });
+    }
+
+    if (shareButton) {
+      shareButton.addEventListener('click', async () => {
+        if (!inviteLink || inviteLink.textContent === '—') {
+          return;
+        }
+        const linkToShare = inviteLink.textContent;
+        const shareData = {
+          title: 'Ссылка для энергетика',
+          text: 'Откройте ссылку, чтобы подключиться к организации.',
+          url: linkToShare
+        };
+        try {
+          if (navigator.share) {
+            await navigator.share(shareData);
+            setStatus('Ссылка готова к отправке через контакты или мессенджер.', 'success');
+            logAction('info', 'Открыт системный выбор контакта для ссылки', {
+              inviteLink: linkToShare
+            });
+            return;
+          }
+          setStatus('Не удалось открыть список контактов. Скопируйте ссылку вручную.', 'error');
+          logAction('warn', 'Системный шаринг недоступен', {
+            inviteLink: linkToShare
+          });
+        } catch (error) {
+          setStatus('Не удалось открыть список контактов. Скопируйте ссылку вручную.', 'error');
+          logAction('error', 'Ошибка при попытке отправить ссылку', {
+            message: error?.message || error,
+            inviteLink: linkToShare
           });
         }
       });

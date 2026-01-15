@@ -47,6 +47,7 @@ const sendJson = (req, res, statusCode, payload) => {
 const buildErrorPayload = (message, details, meta = {}) => ({
   message,
   details,
+  serverTime: formatTimestamp(),
   ...meta
 });
 
@@ -477,24 +478,29 @@ const parseJsonBody = (req, callback) => {
   req.on('end', () => {
     try {
       const data = body ? JSON.parse(body) : {};
-      callback(null, data);
+      callback(null, data, body);
     } catch (error) {
-      callback(error);
+      callback(error, null, body);
     }
   });
 };
 
 const handleCreateOrganization = (req, res) => {
-  parseJsonBody(req, (error, payload) => {
+  parseJsonBody(req, (error, payload, rawBody) => {
     if (error) {
       logAction('create_org_invalid_payload', {
         ...getRequestMeta(req),
-        error: error?.message || error
+        error: error?.message || error,
+        rawBody: truncateLogText(rawBody, 1200)
       });
       const errorPayload = buildErrorPayload(
         'Некорректные данные',
         error?.message || 'JSON не распознан.',
-        { requestId: req.requestId }
+        {
+          requestId: req.requestId,
+          url: req.url,
+          hint: 'Проверьте, что запрос содержит валидный JSON.'
+        }
       );
       logApiResponse('create_org', 400, errorPayload);
       sendJson(req, res, 400, errorPayload);
@@ -513,6 +519,13 @@ const handleCreateOrganization = (req, res) => {
           payload
         });
       }
+      logAction('create_org_payload_received', {
+        ...getRequestMeta(req),
+        organizationName,
+        energyFullName,
+        payloadKeys: Object.keys(payload || {}),
+        rawBodySize: rawBody ? rawBody.length : 0
+      });
       if (!organizationName || !energyFullName) {
         logAction('create_org_missing_fields', {
           ...getRequestMeta(req),
@@ -523,7 +536,12 @@ const handleCreateOrganization = (req, res) => {
         const errorPayload = buildErrorPayload(
           'Заполните название организации и ФИО энергетика.',
           'Одно или несколько полей пустые.',
-          { requestId: req.requestId }
+          {
+            requestId: req.requestId,
+            organizationName,
+            energyFullName,
+            url: req.url
+          }
         );
         logApiResponse('create_org', 400, errorPayload);
         sendJson(req, res, 400, errorPayload);
@@ -539,7 +557,10 @@ const handleCreateOrganization = (req, res) => {
         const errorPayload = buildErrorPayload(
           'Такая организация уже существует.',
           'Попробуйте другое название.',
-          { requestId: req.requestId }
+          {
+            requestId: req.requestId,
+            organizationName
+          }
         );
         logApiResponse('create_org', 409, errorPayload);
         sendJson(req, res, 409, errorPayload);
@@ -568,6 +589,12 @@ const handleCreateOrganization = (req, res) => {
         const existingMembers = Array.isArray(accessData.organizations[organizationName])
           ? accessData.organizations[organizationName]
           : [];
+        logAction('create_org_step_snapshot', {
+          ...getRequestMeta(req),
+          step: '1.1',
+          organizationName,
+          existingMembersCount: existingMembers.length
+        });
         accessData.organizations[organizationName] = addPlaceholderMember(
           existingMembers,
           energyFullName
@@ -615,7 +642,8 @@ const handleCreateOrganization = (req, res) => {
           step: '1.2',
           file: 'data/organizations/organizations.json',
           organizationName,
-          totalOrganizations: nextOrganizations.length
+          totalOrganizations: nextOrganizations.length,
+          previousOrganizations: organizations.length
         });
       } catch (error) {
         logAction('create_org_step_error', {
@@ -650,7 +678,9 @@ const handleCreateOrganization = (req, res) => {
           ...getRequestMeta(req),
           step: '1.3',
           path: `data/organizations/${sanitizeOrganizationName(organizationName)}`,
-          organizationName
+          organizationName,
+          files: ORGANIZATION_DATABASE_FILES,
+          folders: ORGANIZATION_MEDIA_FOLDERS
         });
       } catch (error) {
         logAction('create_org_step_error', {
@@ -734,7 +764,12 @@ const handleCreateOrganization = (req, res) => {
         createError?.payload ||
         buildErrorPayload(
           'Ошибка сервиса создания организации.',
-          createError?.message || 'Неизвестная ошибка.'
+          createError?.message || 'Неизвестная ошибка.',
+          {
+            organizationName,
+            energyFullName,
+            url: req.url
+          }
         );
       const errorPayload = {
         ...basePayload,
@@ -1141,7 +1176,17 @@ const server = http.createServer((req, res) => {
         'user-agent': req.headers['user-agent']
       }
     });
-    send(req, res, 404, 'Маршрут не найден');
+    const errorPayload = buildErrorPayload(
+      'Маршрут не найден.',
+      'Проверьте путь и настройки nginx/proxy.',
+      {
+        requestId: req.requestId,
+        url: req.url,
+        normalizedPath
+      }
+    );
+    logApiResponse('api_route_missing', 404, errorPayload);
+    sendJson(req, res, 404, errorPayload);
     return;
   }
 
@@ -1150,7 +1195,17 @@ const server = http.createServer((req, res) => {
       ...getRequestMeta(req),
       normalizedPath
     });
-    send(req, res, 405, 'Метод не поддерживается');
+    const errorPayload = buildErrorPayload(
+      'Метод не поддерживается.',
+      'Используйте корректный HTTP-метод.',
+      {
+        requestId: req.requestId,
+        url: req.url,
+        normalizedPath
+      }
+    );
+    logApiResponse('method_not_allowed', 405, errorPayload);
+    sendJson(req, res, 405, errorPayload);
     return;
   }
 

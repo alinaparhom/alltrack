@@ -41,12 +41,13 @@ const buildErrorPayload = (message, details, meta = {}) => ({
   ...meta
 });
 
-const buildStepError = ({ message, details, step, code, path: targetPath }) => {
+const buildStepError = ({ message, details, step, code, path: targetPath, systemCode }) => {
   const error = new Error(message);
   error.payload = buildErrorPayload(message, details, {
     step,
     code,
-    path: targetPath
+    path: targetPath,
+    systemCode
   });
   return error;
 };
@@ -264,6 +265,8 @@ const getOrganizationsList = () => {
 };
 
 const saveOrganizationsList = (list) => {
+  ensureDir(DATA_DIR);
+  ensureDir(ORGANIZATIONS_DIR);
   const payload = { organizations: list };
   writeJsonFile(ORGANIZATIONS_FILE, payload);
   writeJsonFile(LEGACY_ORGANIZATIONS_FILE, payload);
@@ -390,7 +393,8 @@ const handleCreateOrganization = (req, res) => {
           }`,
           step: '1.1',
           code: 'create_org_access',
-          path: 'access.json'
+          path: 'access.json',
+          systemCode: error?.code
         });
       }
 
@@ -405,7 +409,8 @@ const handleCreateOrganization = (req, res) => {
           }`,
           step: '1.2',
           code: 'create_org_list',
-          path: 'data/organizations/organizations.json'
+          path: 'data/organizations/organizations.json',
+          systemCode: error?.code
         });
       }
 
@@ -419,7 +424,8 @@ const handleCreateOrganization = (req, res) => {
           }`,
           step: '1.3',
           code: 'create_org_assets',
-          path: `data/organizations/${sanitizeOrganizationName(organizationName)}`
+          path: `data/organizations/${sanitizeOrganizationName(organizationName)}`,
+          systemCode: error?.code
         });
       }
 
@@ -443,7 +449,8 @@ const handleCreateOrganization = (req, res) => {
           }`,
           step: '1.4',
           code: 'create_org_invite',
-          path: 'data/invites.json'
+          path: 'data/invites.json',
+          systemCode: error?.code
         });
       }
 
@@ -688,14 +695,18 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  if (req.method === 'POST' && req.url.startsWith('/log')) {
+  const urlPath = req.url.split('?')[0];
+  const normalizedPath =
+    urlPath.length > 1 && urlPath.endsWith('/') ? urlPath.slice(0, -1) : urlPath;
+
+  if (req.method === 'POST' && normalizedPath.startsWith('/log')) {
     handleLog(req, res);
     return;
   }
 
   if (
     req.method === 'POST' &&
-    (req.url === '/create-organization' || req.url === '/api/create-organization')
+    (normalizedPath === '/create-organization' || normalizedPath === '/api/create-organization')
   ) {
     handleCreateOrganization(req, res);
     return;
@@ -703,7 +714,7 @@ const server = http.createServer((req, res) => {
 
   if (
     req.method === 'POST' &&
-    (req.url === '/accept-invite' || req.url === '/api/accept-invite')
+    (normalizedPath === '/accept-invite' || normalizedPath === '/api/accept-invite')
   ) {
     handleAcceptInvite(req, res);
     return;
@@ -711,13 +722,13 @@ const server = http.createServer((req, res) => {
 
   if (
     req.method === 'POST' &&
-    (req.url === '/accept-direct-invite' || req.url === '/api/accept-direct-invite')
+    (normalizedPath === '/accept-direct-invite' || normalizedPath === '/api/accept-direct-invite')
   ) {
     handleAcceptDirectInvite(req, res);
     return;
   }
 
-  if (req.method === 'GET' && req.url === '/config') {
+  if (req.method === 'GET' && normalizedPath === '/config') {
     handleConfig(req, res);
     return;
   }

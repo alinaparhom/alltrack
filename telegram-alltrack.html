@@ -1449,17 +1449,29 @@
             const parsed = JSON.parse(trimmed);
             const message = parsed?.message ? String(parsed.message) : '';
             const details = parsed?.details ? String(parsed.details) : '';
-            if (message && details) {
-              return `${message} (${details})`;
+            const step = parsed?.step ? String(parsed.step) : '';
+            const code = parsed?.code ? String(parsed.code) : '';
+            const path = parsed?.path ? String(parsed.path) : '';
+            const systemCode = parsed?.systemCode ? String(parsed.systemCode) : '';
+            const combined = [message, details, parsed?.error, parsed?.reason]
+              .filter(Boolean)
+              .join(' · ');
+            const meta = [
+              step && `этап: ${step}`,
+              code && `код: ${code}`,
+              systemCode && `системный код: ${systemCode}`,
+              path && `путь: ${path}`
+            ]
+              .filter(Boolean)
+              .join(', ');
+            if (combined && meta) {
+              return `${combined} (${meta})`;
             }
-            if (message) {
-              return message;
+            if (combined) {
+              return combined;
             }
-            if (parsed?.error) {
-              return String(parsed.error);
-            }
-            if (details) {
-              return details;
+            if (meta) {
+              return meta;
             }
           } catch (error) {
             return trimmed;

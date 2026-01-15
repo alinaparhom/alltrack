@@ -141,6 +141,76 @@ const appendLogToStores = async (entry) => {
   ]);
 };
 
+const truncateLogText = (text, limit = 500) => {
+  if (!text) {
+    return '';
+  }
+  const normalized = String(text);
+  if (normalized.length <= limit) {
+    return normalized;
+  }
+  return `${normalized.slice(0, limit)}...`;
+};
+
+const summarizeRequestBody = (body) => {
+  if (!body) {
+    return null;
+  }
+  if (typeof body === 'string') {
+    return truncateLogText(body);
+  }
+  if (body instanceof URLSearchParams) {
+    return truncateLogText(body.toString());
+  }
+  if (body instanceof FormData) {
+    return '[form-data]';
+  }
+  if (body instanceof Blob) {
+    return `[blob ${body.type || 'unknown'}]`;
+  }
+  return truncateLogText(formatLogPayload(body));
+};
+
+const fetchWithLogging = async (label, url, options = {}) => {
+  const method = (options.method || 'GET').toUpperCase();
+  const payloadSummary = summarizeRequestBody(options.body);
+  logEvent('info', 'API запрос', {
+    label,
+    method,
+    url,
+    payload: payloadSummary
+  });
+  const startedAt = typeof performance !== 'undefined' ? performance.now() : Date.now();
+  try {
+    const response = await fetch(url, options);
+    const endedAt = typeof performance !== 'undefined' ? performance.now() : Date.now();
+    let bodyText = '';
+    try {
+      bodyText = await response.clone().text();
+    } catch (error) {
+      bodyText = '[не удалось прочитать тело ответа]';
+    }
+    logEvent(response.ok ? 'info' : 'warn', 'API ответ', {
+      label,
+      method,
+      url,
+      status: response.status,
+      ok: response.ok,
+      durationMs: Math.round(endedAt - startedAt),
+      body: truncateLogText(bodyText)
+    });
+    return response;
+  } catch (error) {
+    logEvent('error', 'Ошибка API запроса', {
+      label,
+      method,
+      url,
+      message: error?.message || String(error)
+    });
+    throw error;
+  }
+};
+
 const logEvent = (level, message, payload = null) => {
   const timestamp = new Date().toISOString();
   const entry = {
@@ -373,7 +443,7 @@ const clearInviteFromUrl = () => {
 
 const acceptInvite = async ({ inviteId, userId }) => {
   const apiUrl = new URL('./accept-invite', window.location.href).toString();
-  const response = await fetch(apiUrl, {
+  const response = await fetchWithLogging('accept-invite', apiUrl, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ inviteId, userId })
@@ -387,7 +457,7 @@ const acceptInvite = async ({ inviteId, userId }) => {
 
 const acceptDirectInvite = async ({ inviteId, organizationName, energyFullName, userId }) => {
   const apiUrl = new URL('./accept-direct-invite', window.location.href).toString();
-  const response = await fetch(apiUrl, {
+  const response = await fetchWithLogging('accept-direct-invite', apiUrl, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ inviteId, organizationName, energyFullName, userId })
@@ -1249,7 +1319,9 @@ const initAccess = async () => {
   try {
     logEvent('info', 'Старт проверки доступа');
     updateCheckingAccount();
-    const response = await fetch('access.json', { cache: 'no-store' });
+    const response = await fetchWithLogging('load-access', 'access.json', {
+      cache: 'no-store'
+    });
     if (!response.ok) {
       throw new Error('Не удалось загрузить список доступов');
     }
@@ -1324,7 +1396,9 @@ const initAccess = async () => {
             logEvent('info', 'Найдено приглашение, пробуем принять', { inviteId });
             await acceptInvite({ inviteId, userId: normalizedUserId });
           }
-          const refreshedResponse = await fetch('access.json', { cache: 'no-store' });
+          const refreshedResponse = await fetchWithLogging('refresh-access', 'access.json', {
+            cache: 'no-store'
+          });
           if (refreshedResponse.ok) {
             accessDataCache = await refreshedResponse.json();
             access =

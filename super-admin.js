@@ -481,6 +481,57 @@
       return lines.join('\n');
     };
 
+    const seedAccessOrganization = async (payload) => {
+      const endpoints = [
+        './create-organization-step-1',
+        './api/create-organization-step-1'
+      ];
+      let lastError = '';
+      for (const endpoint of endpoints) {
+        const apiUrl = new URL(endpoint, window.location.origin).toString();
+        let response;
+        logAction('info', 'Пробуем обновить access.json (шаг 1.1)', {
+          endpoint: apiUrl,
+          organizationName: payload?.organizationName,
+          energyFullName: payload?.energyFullName
+        });
+        try {
+          response = await fetch(apiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+        } catch (error) {
+          lastError = `не удалось подключиться (${error?.message || error}).`;
+          logAction('warn', 'Не удалось выполнить запрос шага 1.1', {
+            endpoint: apiUrl,
+            message: error?.message || error
+          });
+          continue;
+        }
+        if (response.ok) {
+          logAction('info', 'access.json обновлён через сервер (шаг 1.1)', {
+            endpoint: apiUrl,
+            status: response.status
+          });
+          return { ok: true, source: 'server', endpoint: apiUrl };
+        }
+        const errorText = await response.text();
+        lastError = parseErrorText(errorText) || errorText || `HTTP ${response.status}`;
+        logAction('warn', 'Сервер шага 1.1 вернул ошибку', {
+          endpoint: apiUrl,
+          status: response.status,
+          statusText: response.statusText,
+          body: errorText
+        });
+        if (response.status === 404) {
+          continue;
+        }
+        return { ok: false, source: 'server', endpoint: apiUrl, reason: lastError };
+      }
+      return { ok: false, source: 'server', reason: lastError || 'Маршрут шага 1.1 недоступен.' };
+    };
+
     const getCreateOrganizationResponse = async (payload) => {
       const endpoints = [
         './create-organizations',
@@ -643,18 +694,27 @@
         });
         return;
       }
-      const accessResult = updateAccessJsonLocally({ organizationName, energyFullName });
-      if (accessResult.ok) {
-        logAction('info', 'Организация добавлена в access.json (шаг 1.1)', {
-          organizationName,
-          energyFullName
-        });
-      } else {
-        logAction('warn', 'Не удалось обновить access.json (шаг 1.1)', {
-          organizationName,
-          energyFullName,
-          reason: accessResult.reason
-        });
+      let accessResult = await seedAccessOrganization({ organizationName, energyFullName });
+      if (!accessResult.ok) {
+        const localResult = updateAccessJsonLocally({ organizationName, energyFullName });
+        if (localResult.ok) {
+          accessResult = { ok: true, source: 'local' };
+          logAction('info', 'Организация добавлена в access.json локально (шаг 1.1)', {
+            organizationName,
+            energyFullName
+          });
+        } else {
+          accessResult = {
+            ok: false,
+            source: 'local',
+            reason: localResult.reason || accessResult.reason
+          };
+          logAction('warn', 'Не удалось обновить access.json (шаг 1.1)', {
+            organizationName,
+            energyFullName,
+            reason: accessResult.reason
+          });
+        }
       }
       isCreating = true;
       setCreateEnabled(false);

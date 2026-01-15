@@ -671,7 +671,11 @@ const handleCreateOrganization = (req, res) => {
           fileStatus: buildFileSystemStatus(ACCESS_FILE)
         });
         const accessData = readJsonFile(ACCESS_FILE, { superAdmins: [], organizations: {} });
-        if (!accessData.organizations || typeof accessData.organizations !== 'object') {
+        if (
+          !accessData.organizations ||
+          typeof accessData.organizations !== 'object' ||
+          Array.isArray(accessData.organizations)
+        ) {
           accessData.organizations = {};
         }
         const existingMembers = Array.isArray(accessData.organizations[organizationName])

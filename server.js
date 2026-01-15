@@ -11,7 +11,8 @@ const LEGACY_ORGANIZATIONS_FILE = path.join(DATA_DIR, 'organizations.json');
 const ACCESS_FILE = path.join(ROOT_DIR, 'access.json');
 const LOG_FILE = path.join(ROOT_DIR, '1alltrack.log');
 const DOCKS_LOG_FILE = path.join(ROOT_DIR, '1docks.log');
-const LOG_FILES = [LOG_FILE, DOCKS_LOG_FILE];
+const MINI_APPS_LOG_FILE = path.join(ROOT_DIR, '1miniapps.log');
+const LOG_FILES = [LOG_FILE, DOCKS_LOG_FILE, MINI_APPS_LOG_FILE];
 const INVITES_FILE = path.join(DATA_DIR, 'invites.json');
 
 const MIME_TYPES = {

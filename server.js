@@ -384,6 +384,31 @@ const addPlaceholderMember = (members, fullName) => {
   return members;
 };
 
+const seedOrganizationAccess = ({ organizationName, energyFullName }) => {
+  const accessData = readJsonFile(ACCESS_FILE, { superAdmins: [], organizations: {} });
+  if (
+    !accessData.organizations ||
+    typeof accessData.organizations !== 'object' ||
+    Array.isArray(accessData.organizations)
+  ) {
+    accessData.organizations = {};
+  }
+  const existingMembers = Array.isArray(accessData.organizations[organizationName])
+    ? accessData.organizations[organizationName]
+    : [];
+  const membersBefore = existingMembers.length;
+  accessData.organizations[organizationName] = addPlaceholderMember(
+    existingMembers,
+    energyFullName
+  );
+  writeJsonFile(ACCESS_FILE, accessData);
+  return {
+    accessData,
+    membersBefore,
+    membersAfter: accessData.organizations[organizationName]?.length || 0
+  };
+};
+
 const assignMemberId = (members, fullName, userId) => {
   const normalizedName = normalizeFullName(fullName);
   const matchIndex = members.findIndex(
@@ -670,34 +695,19 @@ const handleCreateOrganization = (req, res) => {
           energyFullName,
           fileStatus: buildFileSystemStatus(ACCESS_FILE)
         });
-        const accessData = readJsonFile(ACCESS_FILE, { superAdmins: [], organizations: {} });
-        if (
-          !accessData.organizations ||
-          typeof accessData.organizations !== 'object' ||
-          Array.isArray(accessData.organizations)
-        ) {
-          accessData.organizations = {};
-        }
-        const existingMembers = Array.isArray(accessData.organizations[organizationName])
-          ? accessData.organizations[organizationName]
-          : [];
+        const seedResult = seedOrganizationAccess({ organizationName, energyFullName });
         logAction('create_org_step_snapshot', {
           ...getRequestMeta(req),
           step: '1.1',
           organizationName,
-          existingMembersCount: existingMembers.length
+          existingMembersCount: seedResult.membersBefore
         });
-        accessData.organizations[organizationName] = addPlaceholderMember(
-          existingMembers,
-          energyFullName
-        );
-        writeJsonFile(ACCESS_FILE, accessData);
         logAction('create_org_step_success', {
           ...getRequestMeta(req),
           step: '1.1',
           file: 'access.json',
           organizationName,
-          membersCount: accessData.organizations[organizationName]?.length || 0,
+          membersCount: seedResult.membersAfter,
           fileStatus: buildFileSystemStatus(ACCESS_FILE)
         });
       } catch (error) {
@@ -906,6 +916,107 @@ const handleCreateOrganization = (req, res) => {
         payload: createError?.payload
       });
       logApiResponse('create_org', 500, errorPayload);
+      sendJson(req, res, 500, errorPayload);
+    }
+  });
+};
+
+const handleSeedAccessOrganization = (req, res) => {
+  parseJsonBody(req, (error, payload, rawBody) => {
+    if (error) {
+      logAction('seed_access_invalid_payload', {
+        ...getRequestMeta(req),
+        error: error?.message || error,
+        rawBody: truncateLogText(rawBody, 1200)
+      });
+      const errorPayload = buildErrorPayload(
+        'Некорректные данные',
+        error?.message || 'JSON не распознан.',
+        {
+          requestId: req.requestId,
+          url: req.url,
+          contentType: req.headers['content-type'],
+          contentLength: req.headers['content-length'],
+          rawBodySize: rawBody ? rawBody.length : 0,
+          hint: 'Проверьте, что запрос содержит валидный JSON.',
+          expectedPayload: buildCreateOrgExpectedPayload()
+        }
+      );
+      logApiResponse('seed_access', 400, errorPayload);
+      sendJson(req, res, 400, errorPayload);
+      return;
+    }
+    try {
+      const rawOrganizationName =
+        payload.organizationName ?? payload.organization ?? payload.organizations;
+      const organizationName =
+        typeof rawOrganizationName === 'string' ? rawOrganizationName.trim() : '';
+      const energyFullName = String(payload.energyFullName || '').trim();
+      logAction('seed_access_payload_received', {
+        ...getRequestMeta(req),
+        organizationName,
+        energyFullName,
+        payloadKeys: Object.keys(payload || {}),
+        rawBodySize: rawBody ? rawBody.length : 0
+      });
+      if (!organizationName || !energyFullName) {
+        logAction('seed_access_missing_fields', {
+          ...getRequestMeta(req),
+          organizationName,
+          energyFullName,
+          payload
+        });
+        const errorPayload = buildErrorPayload(
+          'Заполните название организации и ФИО энергетика.',
+          'Одно или несколько полей пустые.',
+          {
+            requestId: req.requestId,
+            organizationName,
+            energyFullName,
+            url: req.url,
+            expectedPayload: buildCreateOrgExpectedPayload()
+          }
+        );
+        logApiResponse('seed_access', 400, errorPayload);
+        sendJson(req, res, 400, errorPayload);
+        return;
+      }
+      logAction('seed_access_start', {
+        ...getRequestMeta(req),
+        organizationName,
+        energyFullName,
+        fileStatus: buildFileSystemStatus(ACCESS_FILE)
+      });
+      const seedResult = seedOrganizationAccess({ organizationName, energyFullName });
+      logAction('seed_access_success', {
+        ...getRequestMeta(req),
+        organizationName,
+        membersBefore: seedResult.membersBefore,
+        membersAfter: seedResult.membersAfter,
+        fileStatus: buildFileSystemStatus(ACCESS_FILE)
+      });
+      const responsePayload = {
+        ok: true,
+        organizationName,
+        membersCount: seedResult.membersAfter
+      };
+      logApiResponse('seed_access', 200, responsePayload);
+      sendJson(req, res, 200, responsePayload);
+    } catch (seedError) {
+      logAction('seed_access_failed', {
+        ...getRequestMeta(req),
+        message: seedError?.message || seedError,
+        stack: seedError?.stack
+      });
+      const errorPayload = buildErrorPayload(
+        'Не удалось обновить access.json.',
+        seedError?.message || 'Неизвестная ошибка.',
+        {
+          requestId: req.requestId,
+          url: req.url
+        }
+      );
+      logApiResponse('seed_access', 500, errorPayload);
       sendJson(req, res, 500, errorPayload);
     }
   });
@@ -1258,6 +1369,15 @@ const server = http.createServer((req, res) => {
       normalizedPath === '/api/create-organizations')
   ) {
     handleCreateOrganization(req, res);
+    return;
+  }
+
+  if (
+    req.method === 'POST' &&
+    (normalizedPath === '/create-organization-step-1' ||
+      normalizedPath === '/api/create-organization-step-1')
+  ) {
+    handleSeedAccessOrganization(req, res);
     return;
   }
 

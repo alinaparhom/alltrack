@@ -1031,7 +1031,10 @@ const server = http.createServer((req, res) => {
 
   if (
     req.method === 'POST' &&
-    (normalizedPath === '/create-organization' || normalizedPath === '/api/create-organization')
+    (normalizedPath === '/create-organization' ||
+      normalizedPath === '/api/create-organization' ||
+      normalizedPath === '/create-organizations' ||
+      normalizedPath === '/api/create-organizations')
   ) {
     handleCreateOrganization(req, res);
     return;

@@ -329,8 +329,14 @@
         const step = parsed?.step ? String(parsed.step) : '';
         const code = parsed?.code ? String(parsed.code) : '';
         const path = parsed?.path ? String(parsed.path) : '';
+        const systemCode = parsed?.systemCode ? String(parsed.systemCode) : '';
         const combined = [message, details, error, reason].filter(Boolean).join(' · ');
-        const meta = [step && `этап: ${step}`, code && `код: ${code}`, path && `путь: ${path}`]
+        const meta = [
+          step && `этап: ${step}`,
+          code && `код: ${code}`,
+          systemCode && `системный код: ${systemCode}`,
+          path && `путь: ${path}`
+        ]
           .filter(Boolean)
           .join(', ');
         if (combined && meta) {

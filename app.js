@@ -331,7 +331,9 @@ const logUserAction = (event) => {
 const initUserActionLogging = () => {
   document.addEventListener('click', logUserAction, true);
   document.addEventListener('change', logUserAction, true);
+  document.addEventListener('input', logUserAction, true);
   document.addEventListener('submit', logUserAction, true);
+  document.addEventListener('touchstart', logUserAction, true);
   window.addEventListener('visibilitychange', () => {
     logEvent('info', 'Смена видимости вкладки', {
       state: document.visibilityState

@@ -800,9 +800,25 @@ const handleLog = (req, res) => {
   });
   req.on('end', () => {
     const trimmed = body.trim();
-    const logLine = `${formatTimestamp()} CLIENT_LOG ${trimmed || '[empty]'}`;
+    const logLinePayload = trimmed || '[empty]';
+    const logLine = `${formatTimestamp()} CLIENT_LOG ${req.requestId || 'unknown'} ${getClientIp(
+      req
+    )} ${truncateLogText(req.headers['user-agent'] || '', 200)} ${truncateLogText(
+      logLinePayload,
+      2000
+    )}`;
+    logAction('client_log_received', {
+      ...getRequestMeta(req),
+      ip: getClientIp(req),
+      userAgent: req.headers['user-agent'],
+      payload: truncateLogText(logLinePayload, 2000)
+    });
     appendLogLine(logLine, (error) => {
       if (error) {
+        logAction('client_log_write_failed', {
+          ...getRequestMeta(req),
+          error: error?.message || error
+        });
         send(req, res, 500, 'Ошибка записи лога');
         return;
       }

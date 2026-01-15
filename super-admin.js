@@ -718,6 +718,19 @@
           });
         }
       }
+      if (!accessResult.ok) {
+        const reason =
+          accessResult.reason ||
+          'Не удалось добавить организацию в access.json. Проверьте доступ к файлу.';
+        setStatus(`Ошибка шага 1.1: ${reason}`, 'error');
+        setDetails(reason);
+        logAction('error', 'Шаг 1.1 (access.json) завершился ошибкой', {
+          organizationName,
+          energyFullName,
+          reason
+        });
+        return;
+      }
       isCreating = true;
       setCreateEnabled(false);
       button.textContent = 'Создаём...';

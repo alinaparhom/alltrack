@@ -86,6 +86,30 @@ const logAction = (action, payload = null) => {
   });
 };
 
+const logApiResponse = (action, statusCode, payload) => {
+  logAction(`${action}_response`, {
+    statusCode,
+    payload
+  });
+};
+
+const logServerError = (event, error) => {
+  logAction('server_error', {
+    event,
+    message: error?.message || String(error),
+    stack: error?.stack,
+    code: error?.code
+  });
+};
+
+process.on('uncaughtException', (error) => {
+  logServerError('uncaughtException', error);
+});
+
+process.on('unhandledRejection', (error) => {
+  logServerError('unhandledRejection', error);
+});
+
 const ORGANIZATION_DATABASE_FILES = [
   'Объекты.json',
   'Пользователи.json',
@@ -303,6 +327,7 @@ const buildInviteLink = (req, inviteId) => {
 const handleConfig = (req, res) => {
   const botUsername = getTelegramBotUsername();
   logAction('get_config', { hasBotUsername: Boolean(botUsername) });
+  logApiResponse('get_config', 200, { botUsername });
   send(
     res,
     200,
@@ -334,11 +359,12 @@ const handleCreateOrganization = (req, res) => {
   parseJsonBody(req, (error, payload) => {
     if (error) {
       logAction('create_org_invalid_payload');
-      sendJson(
-        res,
-        400,
-        buildErrorPayload('Некорректные данные', error?.message || 'JSON не распознан.')
+      const errorPayload = buildErrorPayload(
+        'Некорректные данные',
+        error?.message || 'JSON не распознан.'
       );
+      logApiResponse('create_org', 400, errorPayload);
+      sendJson(res, 400, errorPayload);
       return;
     }
     try {
@@ -346,27 +372,23 @@ const handleCreateOrganization = (req, res) => {
       const energyFullName = String(payload.energyFullName || '').trim();
       if (!organizationName || !energyFullName) {
         logAction('create_org_missing_fields', { organizationName, energyFullName });
-        sendJson(
-          res,
-          400,
-          buildErrorPayload(
-            'Заполните название организации и ФИО энергетика.',
-            'Одно или несколько полей пустые.'
-          )
+        const errorPayload = buildErrorPayload(
+          'Заполните название организации и ФИО энергетика.',
+          'Одно или несколько полей пустые.'
         );
+        logApiResponse('create_org', 400, errorPayload);
+        sendJson(res, 400, errorPayload);
         return;
       }
       const organizations = getOrganizationsList();
       if (organizations.includes(organizationName)) {
         logAction('create_org_duplicate', { organizationName, energyFullName });
-        sendJson(
-          res,
-          409,
-          buildErrorPayload(
-            'Такая организация уже существует.',
-            'Попробуйте другое название.'
-          )
+        const errorPayload = buildErrorPayload(
+          'Такая организация уже существует.',
+          'Попробуйте другое название.'
         );
+        logApiResponse('create_org', 409, errorPayload);
+        sendJson(res, 409, errorPayload);
         return;
       }
 
@@ -461,6 +483,7 @@ const handleCreateOrganization = (req, res) => {
         inviteId,
         inviteLink
       });
+      logApiResponse('create_org', 200, { inviteId, inviteLink });
       sendJson(res, 200, { inviteId, inviteLink });
     } catch (createError) {
       const errorPayload =
@@ -474,6 +497,7 @@ const handleCreateOrganization = (req, res) => {
         stack: createError?.stack,
         payload: createError?.payload
       });
+      logApiResponse('create_org', 500, errorPayload);
       sendJson(res, 500, errorPayload);
     }
   });
@@ -495,6 +519,7 @@ const handleAcceptInvite = (req, res) => {
   parseJsonBody(req, (error, payload) => {
     if (error) {
       logAction('accept_invite_invalid_payload');
+      logApiResponse('accept_invite', 400, { message: 'Некорректные данные' });
       send(res, 400, 'Некорректные данные');
       return;
     }
@@ -502,6 +527,9 @@ const handleAcceptInvite = (req, res) => {
     const userId = normalizeIdValue(payload.userId);
     if (!inviteId || userId === undefined || userId === null || userId === '') {
       logAction('accept_invite_missing_fields', { inviteId, userId });
+      logApiResponse('accept_invite', 400, {
+        message: 'Не хватает данных для подтверждения приглашения.'
+      });
       send(res, 400, 'Не хватает данных для подтверждения приглашения.');
       return;
     }
@@ -510,6 +538,7 @@ const handleAcceptInvite = (req, res) => {
     const inviteIndex = invites.findIndex((invite) => invite.id === inviteId);
     if (inviteIndex === -1) {
       logAction('accept_invite_not_found', { inviteId, userId });
+      logApiResponse('accept_invite', 404, { message: 'Приглашение не найдено.' });
       send(res, 404, 'Приглашение не найдено.');
       return;
     }
@@ -558,6 +587,10 @@ const handleAcceptInvite = (req, res) => {
       userId,
       organizationName: invite.organizationName
     });
+    logApiResponse('accept_invite', 200, {
+      organizationName: invite.organizationName,
+      fullName: invite.energyFullName
+    });
     send(
       res,
       200,
@@ -576,6 +609,7 @@ const handleAcceptDirectInvite = (req, res) => {
   parseJsonBody(req, (error, payload) => {
     if (error) {
       logAction('accept_direct_invalid_payload');
+      logApiResponse('accept_direct', 400, { message: 'Некорректные данные' });
       send(res, 400, 'Некорректные данные');
       return;
     }
@@ -589,6 +623,9 @@ const handleAcceptDirectInvite = (req, res) => {
         energyFullName,
         userId,
         inviteId
+      });
+      logApiResponse('accept_direct', 400, {
+        message: 'Не хватает данных для подтверждения приглашения.'
       });
       send(res, 400, 'Не хватает данных для подтверждения приглашения.');
       return;
@@ -633,6 +670,10 @@ const handleAcceptDirectInvite = (req, res) => {
       inviteId,
       userId,
       organizationName
+    });
+    logApiResponse('accept_direct', 200, {
+      organizationName,
+      fullName: energyFullName
     });
     send(
       res,

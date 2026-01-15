@@ -24,10 +24,9 @@ const MIME_TYPES = {
   '.ico': 'image/x-icon'
 };
 
-const send = (req, res, statusCode, body, headers = {}, logPayload = body) => {
+const send = (req, res, statusCode, body, headers = {}) => {
   res.writeHead(statusCode, headers);
   res.end(body);
-  logHttpResponse(req, statusCode, headers, logPayload);
 };
 
 const sendJson = (req, res, statusCode, payload) => {
@@ -129,20 +128,6 @@ const summarizeLogPayload = (payload) => {
     return truncateLogText(payload);
   }
   return truncateLogText(safeStringify(payload));
-};
-
-const logHttpResponse = (req, statusCode, headers, payload) => {
-  if (!req) {
-    return;
-  }
-  logAction('http_response', {
-    requestId: req.requestId,
-    method: req.method,
-    url: req.url,
-    statusCode,
-    headers,
-    payload: summarizeLogPayload(payload)
-  });
 };
 
 const buildRequestId = () =>
@@ -838,6 +823,58 @@ const server = http.createServer((req, res) => {
   req.requestId = buildRequestId();
   logRequestStart(req);
   attachRequestBodyLogger(req);
+  const responseCapture = {
+    size: 0,
+    text: '',
+    truncated: false
+  };
+  const MAX_RESPONSE_LOG_BYTES = 4000;
+  const originalWrite = res.write.bind(res);
+  const originalEnd = res.end.bind(res);
+
+  const shouldCaptureResponse = () => {
+    const contentType = res.getHeader('Content-Type');
+    if (!contentType) {
+      return true;
+    }
+    const type = String(contentType).toLowerCase();
+    return (
+      type.startsWith('text/') ||
+      type.includes('application/json') ||
+      type.includes('application/javascript') ||
+      type.includes('application/xml') ||
+      type.includes('application/x-www-form-urlencoded')
+    );
+  };
+
+  const captureResponseChunk = (chunk, encoding) => {
+    if (!chunk || responseCapture.truncated || !shouldCaptureResponse()) {
+      return;
+    }
+    const buffer = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk, encoding);
+    const remaining = MAX_RESPONSE_LOG_BYTES - responseCapture.size;
+    if (remaining <= 0) {
+      responseCapture.truncated = true;
+      return;
+    }
+    const slice = buffer.slice(0, remaining);
+    responseCapture.size += slice.length;
+    responseCapture.text += slice.toString('utf8');
+    if (responseCapture.size >= MAX_RESPONSE_LOG_BYTES) {
+      responseCapture.truncated = true;
+    }
+  };
+
+  res.write = (chunk, encoding, callback) => {
+    captureResponseChunk(chunk, encoding);
+    return originalWrite(chunk, encoding, callback);
+  };
+
+  res.end = (chunk, encoding, callback) => {
+    captureResponseChunk(chunk, encoding);
+    return originalEnd(chunk, encoding, callback);
+  };
+
   res.on('finish', () => {
     const durationMs = Date.now() - startedAt;
     const url = req.url || '-';
@@ -848,6 +885,19 @@ const server = http.createServer((req, res) => {
       if (error) {
         console.error('Ошибка записи лога:', error);
       }
+    });
+    logAction('http_response', {
+      requestId: req.requestId,
+      method,
+      url,
+      statusCode: status,
+      durationMs,
+      headers: res.getHeaders(),
+      payload: summarizeLogPayload(
+        responseCapture.truncated
+          ? `${responseCapture.text}...[truncated]`
+          : responseCapture.text
+      )
     });
   });
 

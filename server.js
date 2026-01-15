@@ -157,6 +157,21 @@ const getRequestMeta = (req) => ({
   url: req.url
 });
 
+const CREATE_ORG_ENDPOINTS = [
+  '/create-organization',
+  '/api/create-organization',
+  '/create-organizations',
+  '/api/create-organizations'
+];
+
+const buildCreateOrgExpectedPayload = () => ({
+  required: ['organizationName', 'energyFullName'],
+  example: {
+    organizationName: 'ООО "Пример"',
+    energyFullName: 'Иванов Иван Иванович'
+  }
+});
+
 const getClientIp = (req) => {
   const forwarded = req.headers['x-forwarded-for'];
   if (Array.isArray(forwarded)) {
@@ -499,7 +514,11 @@ const handleCreateOrganization = (req, res) => {
         {
           requestId: req.requestId,
           url: req.url,
-          hint: 'Проверьте, что запрос содержит валидный JSON.'
+          contentType: req.headers['content-type'],
+          contentLength: req.headers['content-length'],
+          rawBodySize: rawBody ? rawBody.length : 0,
+          hint: 'Проверьте, что запрос содержит валидный JSON.',
+          expectedPayload: buildCreateOrgExpectedPayload()
         }
       );
       logApiResponse('create_org', 400, errorPayload);
@@ -540,7 +559,8 @@ const handleCreateOrganization = (req, res) => {
             requestId: req.requestId,
             organizationName,
             energyFullName,
-            url: req.url
+            url: req.url,
+            expectedPayload: buildCreateOrgExpectedPayload()
           }
         );
         logApiResponse('create_org', 400, errorPayload);
@@ -1182,7 +1202,17 @@ const server = http.createServer((req, res) => {
       {
         requestId: req.requestId,
         url: req.url,
-        normalizedPath
+        normalizedPath,
+        method: req.method,
+        host: req.headers.host,
+        forwarded: {
+          proto: req.headers['x-forwarded-proto'],
+          host: req.headers['x-forwarded-host'],
+          for: req.headers['x-forwarded-for']
+        },
+        knownCreateOrganizationRoutes: CREATE_ORG_ENDPOINTS,
+        hint:
+          'Если используется nginx, проверьте, что location проксирует запросы на backend и не удаляет /api.'
       }
     );
     logApiResponse('api_route_missing', 404, errorPayload);

@@ -485,6 +485,8 @@
 
     const seedAccessOrganization = async (payload) => {
       const endpoints = [
+        '/create-organization-step-1',
+        '/api/create-organization-step-1',
         './create-organization-step-1',
         './api/create-organization-step-1'
       ];
@@ -536,6 +538,10 @@
 
     const getCreateOrganizationResponse = async (payload) => {
       const endpoints = [
+        '/create-organizations',
+        '/api/create-organizations',
+        '/create-organization',
+        '/api/create-organization',
         './create-organizations',
         './api/create-organizations',
         './create-organization',

@@ -1265,6 +1265,12 @@ const resolveFilePath = (urlPath) => {
   return path.join(ROOT_DIR, target);
 };
 
+const isLogEndpoint = (normalizedPath) =>
+  normalizedPath === '/log' ||
+  normalizedPath === '/api/log' ||
+  normalizedPath.startsWith('/log/') ||
+  normalizedPath.startsWith('/api/log/');
+
 const server = http.createServer((req, res) => {
   const startedAt = Date.now();
   req.requestId = buildRequestId();
@@ -1357,7 +1363,7 @@ const server = http.createServer((req, res) => {
   const normalizedPath =
     urlPath.length > 1 && urlPath.endsWith('/') ? urlPath.slice(0, -1) : urlPath;
 
-  if (req.method === 'POST' && normalizedPath.startsWith('/log')) {
+  if (req.method === 'POST' && isLogEndpoint(normalizedPath)) {
     handleLog(req, res);
     return;
   }

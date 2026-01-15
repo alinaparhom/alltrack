@@ -171,11 +171,18 @@ const logRequestStart = (req) => {
   logAction('http_request', {
     ...getRequestMeta(req),
     ip: getClientIp(req),
+    host: req.headers.host,
+    forwarded: {
+      proto: req.headers['x-forwarded-proto'],
+      host: req.headers['x-forwarded-host'],
+      for: req.headers['x-forwarded-for']
+    },
     headers: {
       'user-agent': req.headers['user-agent'],
       'content-type': req.headers['content-type'],
       'content-length': req.headers['content-length'],
-      referer: req.headers.referer
+      referer: req.headers.referer,
+      origin: req.headers.origin
     }
   });
 };
@@ -489,13 +496,24 @@ const handleCreateOrganization = (req, res) => {
       return;
     }
     try {
-      const organizationName = String(payload.organizationName || '').trim();
+      const rawOrganizationName =
+        payload.organizationName ?? payload.organization ?? payload.organizations;
+      const organizationName =
+        typeof rawOrganizationName === 'string' ? rawOrganizationName.trim() : '';
       const energyFullName = String(payload.energyFullName || '').trim();
+      if (!payload.organizationName && (payload.organization || payload.organizations)) {
+        logAction('create_org_payload_alias', {
+          ...getRequestMeta(req),
+          organizationName,
+          payload
+        });
+      }
       if (!organizationName || !energyFullName) {
         logAction('create_org_missing_fields', {
           ...getRequestMeta(req),
           organizationName,
-          energyFullName
+          energyFullName,
+          payload
         });
         const errorPayload = buildErrorPayload(
           'Заполните название организации и ФИО энергетика.',
@@ -526,7 +544,8 @@ const handleCreateOrganization = (req, res) => {
       logAction('create_org_start', {
         ...getRequestMeta(req),
         organizationName,
-        energyFullName
+        energyFullName,
+        payload
       });
 
       try {
@@ -1042,7 +1061,20 @@ const server = http.createServer((req, res) => {
   if (req.method === 'POST') {
     logAction('api_route_missing', {
       ...getRequestMeta(req),
-      normalizedPath
+      normalizedPath,
+      host: req.headers.host,
+      forwarded: {
+        proto: req.headers['x-forwarded-proto'],
+        host: req.headers['x-forwarded-host'],
+        for: req.headers['x-forwarded-for']
+      },
+      headers: {
+        'content-type': req.headers['content-type'],
+        'content-length': req.headers['content-length'],
+        referer: req.headers.referer,
+        origin: req.headers.origin,
+        'user-agent': req.headers['user-agent']
+      }
     });
     send(req, res, 404, 'Маршрут не найден');
     return;

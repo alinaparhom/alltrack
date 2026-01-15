@@ -418,6 +418,11 @@
       for (const endpoint of endpoints) {
         const apiUrl = new URL(endpoint, window.location.origin).toString();
         let response;
+        logAction('info', 'Пробуем создать организацию', {
+          endpoint: apiUrl,
+          organizationName: payload?.organizationName,
+          energyFullName: payload?.energyFullName
+        });
         try {
           response = await fetch(apiUrl, {
             method: 'POST',
@@ -430,6 +435,10 @@
             endpoint: apiUrl,
             method: 'POST',
             endpoints
+          });
+          logAction('error', 'Не удалось выполнить запрос создания организации', {
+            endpoint: apiUrl,
+            message: error?.message || error
           });
           const enrichedError = new Error(lastError);
           enrichedError.details = formatCreateErrorDetails({
@@ -444,6 +453,11 @@
           continue;
         }
         if (response.ok) {
+          logAction('info', 'Ответ сервиса создания организации', {
+            endpoint: apiUrl,
+            status: response.status,
+            statusText: response.statusText
+          });
           return response;
         }
         const errorText = await response.text();
@@ -454,6 +468,12 @@
           endpoint: apiUrl,
           method: 'POST',
           endpoints
+        });
+        logAction('warn', 'Сервис создания организации вернул ошибку', {
+          endpoint: apiUrl,
+          status: response.status,
+          statusText: response.statusText,
+          body: errorText
         });
         const enrichedError = new Error(lastError);
         enrichedError.details = formatCreateErrorDetails({

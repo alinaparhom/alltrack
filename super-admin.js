@@ -481,6 +481,8 @@
       return lines.join('\n');
     };
 
+    const buildApiUrl = (endpoint) => new URL(endpoint, window.location.href).toString();
+
     const seedAccessOrganization = async (payload) => {
       const endpoints = [
         './create-organization-step-1',
@@ -488,7 +490,7 @@
       ];
       let lastError = '';
       for (const endpoint of endpoints) {
-        const apiUrl = new URL(endpoint, window.location.origin).toString();
+        const apiUrl = buildApiUrl(endpoint);
         let response;
         logAction('info', 'Пробуем обновить access.json (шаг 1.1)', {
           endpoint: apiUrl,
@@ -541,7 +543,7 @@
       ];
       let lastError = '';
       for (const endpoint of endpoints) {
-        const apiUrl = new URL(endpoint, window.location.origin).toString();
+        const apiUrl = buildApiUrl(endpoint);
         let response;
         logAction('info', 'Пробуем создать организацию', {
           endpoint: apiUrl,

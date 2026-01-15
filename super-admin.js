@@ -643,6 +643,19 @@
         });
         return;
       }
+      const accessResult = updateAccessJsonLocally({ organizationName, energyFullName });
+      if (accessResult.ok) {
+        logAction('info', 'Организация добавлена в access.json (шаг 1.1)', {
+          organizationName,
+          energyFullName
+        });
+      } else {
+        logAction('warn', 'Не удалось обновить access.json (шаг 1.1)', {
+          organizationName,
+          energyFullName,
+          reason: accessResult.reason
+        });
+      }
       isCreating = true;
       setCreateEnabled(false);
       button.textContent = 'Создаём...';
@@ -690,10 +703,6 @@
         const errorMessage = error?.message || 'Не удалось создать организацию.';
         const errorDetails = error?.details || '';
         if (shouldFallbackToLocalInvite(errorMessage)) {
-          const accessResult = updateAccessJsonLocally({
-            organizationName,
-            energyFullName
-          });
           setInviteLink(localInvite.inviteLink);
           setCopyAvailable(Boolean(localInvite.inviteLink));
           const accessNote = accessResult.ok

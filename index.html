@@ -66,121 +66,15 @@
           <span class="super-admin__button-label" id="superAdminCreateLabel">Добавить организацию</span>
         </button>
         <div class="super-admin__create-panel" id="superAdminCreatePanel" hidden>
-          <form class="super-admin__form" id="superAdminCreateForm">
-            <label class="super-admin__field">
-              <span>Название</span>
-              <input
-                type="text"
-                id="superAdminOrgName"
-                placeholder="Например, Северный склад"
-                autocomplete="organization"
-              />
-            </label>
-            <label class="super-admin__field">
-              <span>Энергетик</span>
-              <input
-                type="text"
-                id="superAdminEnergyName"
-                placeholder="Фамилия Имя Отчество"
-                autocomplete="name"
-              />
-            </label>
-            <div class="super-admin__switch">
-              <p class="super-admin__switch-label">Номер организации</p>
-              <div
-                class="super-admin__switch-control"
-                role="radiogroup"
-                aria-label="Способ назначения номера"
-              >
-                <label class="super-admin__switch-option">
-                  <input type="radio" name="orgNumberMode" checked />
-                  <span class="super-admin__switch-text">Номер задается ботом</span>
-                </label>
-                <label class="super-admin__switch-option">
-                  <input type="radio" name="orgNumberMode" />
-                  <span class="super-admin__switch-text">Бухгалтерский номер</span>
-                </label>
-              </div>
+          <div class="super-admin__note" id="superAdminCreateNote">
+            <div class="super-admin__note-head">
+              <p class="super-admin__note-title">Создание организаций</p>
             </div>
-            <button
-              class="super-admin__button super-admin__button--dark-text"
-              type="submit"
-              id="superAdminCreateButton"
-            >
-              Создать организацию
-            </button>
-            <div class="super-admin__note" id="superAdminCreateNote">
-              <div class="super-admin__note-head">
-                <p class="super-admin__note-title">Что произойдет дальше</p>
-                <button
-                  class="super-admin__button super-admin__button--ghost super-admin__button--mini"
-                  type="button"
-                  id="superAdminCopyLink"
-                  hidden
-                >
-                  Скопировать ссылку
-                </button>
-              </div>
-              <p class="super-admin__note-status" id="superAdminCreateStatus">—</p>
-              <details class="super-admin__note-details" id="superAdminCreateDetails" hidden>
-                <summary>Технические детали</summary>
-                <pre class="super-admin__note-details-text" id="superAdminCreateDetailsText"></pre>
-              </details>
-              <p class="super-admin__note-link">
-                Ссылка для энергетика:
-                <a id="superAdminInviteLink" href="#" target="_blank" rel="noopener">—</a>
-                <button
-                  class="super-admin__icon-button"
-                  type="button"
-                  id="superAdminShareLink"
-                  aria-label="Отправить ссылку энергетику в Telegram"
-                  title="Отправить ссылку в Telegram"
-                  hidden
-                >
-                  <svg
-                    class="super-admin__icon"
-                    viewBox="0 0 24 24"
-                    aria-hidden="true"
-                    focusable="false"
-                  >
-                    <path
-                      d="M4.5 12.5l14.1-8.05a.7.7 0 0 1 1.02.78l-2.5 11.44a.7.7 0 0 1-1.07.43l-4.22-2.52-3.2 3.26a.7.7 0 0 1-1.2-.48v-3.88l7.1-6.12-8.53 5.14a.7.7 0 0 1-.78-.12.7.7 0 0 1 .27-1.27Z"
-                      fill="currentColor"
-                    />
-                  </svg>
-                </button>
-              </p>
-              <ol class="super-admin__note-list">
-                <li>
-                  Супер‑администратор заполняет все данные и нажимает «Создать
-                  организацию».
-                </li>
-                <li>
-                  Формируется ссылка, которую супер‑администратор отправляет энергетику в
-                  Telegram.
-                </li>
-                <li>
-                  Энергетик открывает ссылку в приложении, и его ID приписывается этой
-                  организации.
-                </li>
-                <li>
-                  В файле <code>access.json</code> в разделе <code>organizations</code>
-                  добавляется организация и первый пользователь с пустым <code>id</code>,
-                  <code>fullName</code> (Фамилия Имя Отчество, которые ввел
-                  супер‑администратор в пункте 1) и ролью «Энергетик».
-                  После перехода по ссылке его <code>id</code> обновляется из Telegram.
-                </li>
-                <li>
-                  В файле <code>data/organizations/organizations.json</code> в разделе
-                  <code>organizations</code> добавляется название новой организации.
-                </li>
-                <li>
-                  В <code>data/organizations</code> добавляется папка с названием данной
-                  организации и всеми нужными файлами.
-                </li>
-              </ol>
-            </div>
-          </form>
+            <p class="super-admin__note-status" id="superAdminCreateStatus" data-state="error">
+              Создание организаций временно отключено. Чтобы добавить новую организацию,
+              обратитесь к администратору системы.
+            </p>
+          </div>
         </div>
       </div>
     </section>

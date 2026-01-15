@@ -413,7 +413,12 @@
     };
 
     const getCreateOrganizationResponse = async (payload) => {
-      const endpoints = ['./create-organization', './api/create-organization'];
+      const endpoints = [
+        './create-organizations',
+        './api/create-organizations',
+        './create-organization',
+        './api/create-organization'
+      ];
       let lastError = '';
       for (const endpoint of endpoints) {
         const apiUrl = new URL(endpoint, window.location.origin).toString();
@@ -585,6 +590,7 @@
       try {
         const response = await getCreateOrganizationResponse({
           organizationName,
+          organizations: organizationName,
           energyFullName
         });
         const result = await readCreateOrganizationResult(response);

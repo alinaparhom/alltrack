@@ -15,6 +15,75 @@
 
   const isAdminRole = (value) => normalizeRole(value).includes('администратор');
 
+  const normalizeFullName = (value = '') =>
+    String(value)
+      .replace(/\s+/g, ' ')
+      .trim()
+      .toLowerCase();
+
+  const getNodeAccessStore = () => {
+    if (typeof window === 'undefined') {
+      return null;
+    }
+    const nodeRequire =
+      window.require || (typeof globalThis !== 'undefined' ? globalThis.require : undefined);
+    const nodeProcess = window.process;
+    if (!nodeRequire || !nodeProcess?.versions?.node) {
+      return null;
+    }
+    const fs = nodeRequire('fs');
+    const path = nodeRequire('path');
+    const cwd = typeof nodeProcess.cwd === 'function' ? nodeProcess.cwd() : '.';
+    return {
+      fs,
+      accessPath: path.join(cwd, 'access.json')
+    };
+  };
+
+  const updateAccessJsonLocally = ({ organizationName, energyFullName }) => {
+    const store = getNodeAccessStore();
+    if (!store) {
+      return { ok: false, reason: 'node-not-available' };
+    }
+    const { fs, accessPath } = store;
+    const fallback = { superAdmins: [], organizations: {} };
+    let accessData = fallback;
+    if (fs.existsSync(accessPath)) {
+      try {
+        const raw = fs.readFileSync(accessPath, 'utf8');
+        accessData = raw ? JSON.parse(raw) : fallback;
+      } catch (error) {
+        accessData = fallback;
+      }
+    }
+    if (
+      !accessData.organizations ||
+      typeof accessData.organizations !== 'object' ||
+      Array.isArray(accessData.organizations)
+    ) {
+      accessData.organizations = {};
+    }
+    const members = Array.isArray(accessData.organizations[organizationName])
+      ? accessData.organizations[organizationName]
+      : [];
+    const normalizedTarget = normalizeFullName(energyFullName);
+    const existingIndex = members.findIndex(
+      (member) => normalizeFullName(member?.fullName) === normalizedTarget
+    );
+    if (existingIndex === -1) {
+      members.push({ id: '', fullName: energyFullName, role: 'Энергетик' });
+    } else if (members[existingIndex]?.id === undefined || members[existingIndex]?.id === null) {
+      members[existingIndex].id = '';
+    }
+    accessData.organizations[organizationName] = members;
+    try {
+      fs.writeFileSync(accessPath, JSON.stringify(accessData, null, 2), 'utf8');
+      return { ok: true };
+    } catch (error) {
+      return { ok: false, reason: error?.message || error };
+    }
+  };
+
   const buildOrganizationStats = (orgName, users = [], adminName, index) => {
     const userCount = users.length;
     const toolsTotal = Math.max(120, userCount * 24 + index * 31);
@@ -621,20 +690,32 @@
         const errorMessage = error?.message || 'Не удалось создать организацию.';
         const errorDetails = error?.details || '';
         if (shouldFallbackToLocalInvite(errorMessage)) {
+          const accessResult = updateAccessJsonLocally({
+            organizationName,
+            energyFullName
+          });
           setInviteLink(localInvite.inviteLink);
           setCopyAvailable(Boolean(localInvite.inviteLink));
+          const accessNote = accessResult.ok
+            ? 'Организация записана в access.json.'
+            : 'Не удалось записать организацию в access.json.';
           setStatus(
-            `Сервис недоступен (${errorMessage}). Ссылка готова локально — отправьте её энергетику.`,
+            `Сервис недоступен (${errorMessage}). ${accessNote} Ссылка готова локально — отправьте её энергетику.`,
             'success'
           );
-          setDetails(errorDetails || errorMessage);
+          const details = [errorDetails || errorMessage];
+          if (!accessResult.ok && accessResult.reason) {
+            details.push(`Причина записи access.json: ${accessResult.reason}`);
+          }
+          setDetails(details.filter(Boolean).join('\n'));
           logAction('warn', 'Ссылка создана локально из-за сбоя сервиса', {
             organizationName,
             energyFullName,
             inviteId: localInvite.inviteId,
             inviteLink: localInvite.inviteLink,
             message: errorMessage,
-            details: errorDetails
+            details: errorDetails,
+            accessJson: accessResult
           });
         } else {
           setStatus(errorMessage, 'error');

@@ -4,10 +4,10 @@ const LOG_STORAGE_KEY = 'alltrack.logs';
 const LOG_PENDING_KEY = 'alltrack.logs.pending';
 const LOG_LIMIT = 250;
 const LOG_PENDING_LIMIT = 500;
-const LOG_FILE_NAME = '1alltrack.log';
+const LOG_FILE_NAMES = ['1alltrack.log', '1docks.log'];
 const LOG_ENDPOINT = '/log';
 const LOG_FLUSH_INTERVAL_MS = 15000;
-let logFileHandlePromise = null;
+const logFileHandlePromises = new Map();
 let nodeFileWritePromise = null;
 let logFlushTimer = null;
 let isFlushingLogs = false;
@@ -71,31 +71,34 @@ const buildLogLine = (entry) => {
   return `${entry.timestamp} [${entry.level}] ${entry.message}${payloadSegment}\n`;
 };
 
-const getLogFileHandle = async () => {
+const getLogFileHandle = async (fileName) => {
   if (typeof navigator === 'undefined' || !navigator.storage?.getDirectory) {
     return null;
   }
-  if (!logFileHandlePromise) {
-    logFileHandlePromise = navigator.storage
+  if (!logFileHandlePromises.has(fileName)) {
+    const promise = navigator.storage
       .getDirectory()
-      .then((directoryHandle) =>
-        directoryHandle.getFileHandle(LOG_FILE_NAME, { create: true })
-      )
+      .then((directoryHandle) => directoryHandle.getFileHandle(fileName, { create: true }))
       .catch(() => null);
+    logFileHandlePromises.set(fileName, promise);
   }
-  return logFileHandlePromise;
+  return logFileHandlePromises.get(fileName);
 };
 
 const appendLogToFile = async (entry) => {
-  const handle = await getLogFileHandle();
-  if (!handle) {
-    return;
-  }
-  const writable = await handle.createWritable({ keepExistingData: true });
-  const file = await handle.getFile();
-  await writable.seek(file.size);
-  await writable.write(buildLogLine(entry));
-  await writable.close();
+  await Promise.all(
+    LOG_FILE_NAMES.map(async (fileName) => {
+      const handle = await getLogFileHandle(fileName);
+      if (!handle) {
+        return;
+      }
+      const writable = await handle.createWritable({ keepExistingData: true });
+      const file = await handle.getFile();
+      await writable.seek(file.size);
+      await writable.write(buildLogLine(entry));
+      await writable.close();
+    })
+  );
 };
 
 const getNodeFileWriter = () => {
@@ -114,7 +117,8 @@ const getNodeFileWriter = () => {
       const path = nodeRequire('path');
       const cwd = typeof nodeProcess.cwd === 'function' ? nodeProcess.cwd() : '.';
       return {
-        appendLine: (line) => fs.promises.appendFile(path.join(cwd, LOG_FILE_NAME), line, 'utf8')
+        appendLine: (fileName, line) =>
+          fs.promises.appendFile(path.join(cwd, fileName), line, 'utf8')
       };
     });
   }
@@ -126,7 +130,9 @@ const appendLogToNodeFile = async (entry) => {
   if (!writer) {
     return;
   }
-  await writer.appendLine(buildLogLine(entry));
+  await Promise.all(
+    LOG_FILE_NAMES.map((fileName) => writer.appendLine(fileName, buildLogLine(entry)))
+  );
 };
 
 const appendLogToServer = async () => {

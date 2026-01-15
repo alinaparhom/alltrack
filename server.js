@@ -10,6 +10,8 @@ const ORGANIZATIONS_FILE = path.join(ORGANIZATIONS_DIR, 'organizations.json');
 const LEGACY_ORGANIZATIONS_FILE = path.join(DATA_DIR, 'organizations.json');
 const ACCESS_FILE = path.join(ROOT_DIR, 'access.json');
 const LOG_FILE = path.join(ROOT_DIR, '1alltrack.log');
+const DOCKS_LOG_FILE = path.join(ROOT_DIR, '1docks.log');
+const LOG_FILES = [LOG_FILE, DOCKS_LOG_FILE];
 const INVITES_FILE = path.join(DATA_DIR, 'invites.json');
 
 const MIME_TYPES = {
@@ -62,15 +64,30 @@ const buildStepError = ({ message, details, step, code, path: targetPath, system
 const formatTimestamp = () => new Date().toISOString();
 
 const ensureLogFile = () => {
-  if (!fs.existsSync(LOG_FILE)) {
-    fs.writeFileSync(LOG_FILE, '', 'utf8');
-  }
+  LOG_FILES.forEach((filePath) => {
+    if (!fs.existsSync(filePath)) {
+      fs.writeFileSync(filePath, '', 'utf8');
+    }
+  });
 };
 
 const appendLogLine = (line, callback) => {
   const text = line.endsWith('\n') ? line : `${line}\n`;
   ensureLogFile();
-  fs.appendFile(LOG_FILE, text, 'utf8', callback);
+  let pending = LOG_FILES.length;
+  let lastError = null;
+  LOG_FILES.forEach((filePath) => {
+    fs.appendFile(filePath, text, 'utf8', (error) => {
+      if (error) {
+        lastError = error;
+        console.error(`Ошибка записи лога (${filePath}):`, error);
+      }
+      pending -= 1;
+      if (pending === 0 && callback) {
+        callback(lastError);
+      }
+    });
+  });
 };
 
 const safeStringify = (value) => {
@@ -458,10 +475,14 @@ const parseJsonBody = (req, callback) => {
 const handleCreateOrganization = (req, res) => {
   parseJsonBody(req, (error, payload) => {
     if (error) {
-      logAction('create_org_invalid_payload');
+      logAction('create_org_invalid_payload', {
+        ...getRequestMeta(req),
+        error: error?.message || error
+      });
       const errorPayload = buildErrorPayload(
         'Некорректные данные',
-        error?.message || 'JSON не распознан.'
+        error?.message || 'JSON не распознан.',
+        { requestId: req.requestId }
       );
       logApiResponse('create_org', 400, errorPayload);
       sendJson(req, res, 400, errorPayload);
@@ -471,10 +492,15 @@ const handleCreateOrganization = (req, res) => {
       const organizationName = String(payload.organizationName || '').trim();
       const energyFullName = String(payload.energyFullName || '').trim();
       if (!organizationName || !energyFullName) {
-        logAction('create_org_missing_fields', { organizationName, energyFullName });
+        logAction('create_org_missing_fields', {
+          ...getRequestMeta(req),
+          organizationName,
+          energyFullName
+        });
         const errorPayload = buildErrorPayload(
           'Заполните название организации и ФИО энергетика.',
-          'Одно или несколько полей пустые.'
+          'Одно или несколько полей пустые.',
+          { requestId: req.requestId }
         );
         logApiResponse('create_org', 400, errorPayload);
         sendJson(req, res, 400, errorPayload);
@@ -482,17 +508,26 @@ const handleCreateOrganization = (req, res) => {
       }
       const organizations = getOrganizationsList();
       if (organizations.includes(organizationName)) {
-        logAction('create_org_duplicate', { organizationName, energyFullName });
+        logAction('create_org_duplicate', {
+          ...getRequestMeta(req),
+          organizationName,
+          energyFullName
+        });
         const errorPayload = buildErrorPayload(
           'Такая организация уже существует.',
-          'Попробуйте другое название.'
+          'Попробуйте другое название.',
+          { requestId: req.requestId }
         );
         logApiResponse('create_org', 409, errorPayload);
         sendJson(req, res, 409, errorPayload);
         return;
       }
 
-      logAction('create_org_start', { organizationName, energyFullName });
+      logAction('create_org_start', {
+        ...getRequestMeta(req),
+        organizationName,
+        energyFullName
+      });
 
       try {
         const accessData = readJsonFile(ACCESS_FILE, { superAdmins: [], organizations: {} });
@@ -507,6 +542,13 @@ const handleCreateOrganization = (req, res) => {
           energyFullName
         );
         writeJsonFile(ACCESS_FILE, accessData);
+        logAction('create_org_step_success', {
+          ...getRequestMeta(req),
+          step: '1.1',
+          file: 'access.json',
+          organizationName,
+          membersCount: accessData.organizations[organizationName]?.length || 0
+        });
       } catch (error) {
         throw buildStepError({
           message: 'Не удалось создать организацию.',
@@ -523,6 +565,13 @@ const handleCreateOrganization = (req, res) => {
       try {
         const nextOrganizations = [...organizations, organizationName];
         saveOrganizationsList(nextOrganizations);
+        logAction('create_org_step_success', {
+          ...getRequestMeta(req),
+          step: '1.2',
+          file: 'data/organizations/organizations.json',
+          organizationName,
+          totalOrganizations: nextOrganizations.length
+        });
       } catch (error) {
         throw buildStepError({
           message: 'Не удалось создать организацию.',
@@ -538,6 +587,12 @@ const handleCreateOrganization = (req, res) => {
 
       try {
         ensureOrganizationAssets(organizationName);
+        logAction('create_org_step_success', {
+          ...getRequestMeta(req),
+          step: '1.3',
+          path: `data/organizations/${sanitizeOrganizationName(organizationName)}`,
+          organizationName
+        });
       } catch (error) {
         throw buildStepError({
           message: 'Не удалось создать организацию.',
@@ -563,6 +618,13 @@ const handleCreateOrganization = (req, res) => {
           createdAt: formatTimestamp()
         });
         writeJsonFile(INVITES_FILE, { invites });
+        logAction('create_org_step_success', {
+          ...getRequestMeta(req),
+          step: '1.4',
+          file: 'data/invites.json',
+          inviteId,
+          organizationName
+        });
       } catch (error) {
         throw buildStepError({
           message: 'Не удалось создать организацию.',
@@ -578,6 +640,7 @@ const handleCreateOrganization = (req, res) => {
 
       const inviteLink = buildInviteLink(req, inviteId);
       logAction('create_org_success', {
+        ...getRequestMeta(req),
         organizationName,
         energyFullName,
         inviteId,
@@ -586,13 +649,18 @@ const handleCreateOrganization = (req, res) => {
       logApiResponse('create_org', 200, { inviteId, inviteLink });
       sendJson(req, res, 200, { inviteId, inviteLink });
     } catch (createError) {
-      const errorPayload =
+      const basePayload =
         createError?.payload ||
         buildErrorPayload(
           'Ошибка сервиса создания организации.',
           createError?.message || 'Неизвестная ошибка.'
         );
+      const errorPayload = {
+        ...basePayload,
+        requestId: req.requestId
+      };
       logAction('create_org_failed', {
+        ...getRequestMeta(req),
         message: createError?.message || createError,
         stack: createError?.stack,
         payload: createError?.payload
@@ -971,7 +1039,20 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  if (req.method === 'POST') {
+    logAction('api_route_missing', {
+      ...getRequestMeta(req),
+      normalizedPath
+    });
+    send(req, res, 404, 'Маршрут не найден');
+    return;
+  }
+
   if (req.method !== 'GET' && req.method !== 'HEAD') {
+    logAction('method_not_allowed', {
+      ...getRequestMeta(req),
+      normalizedPath
+    });
     send(req, res, 405, 'Метод не поддерживается');
     return;
   }

@@ -1,11 +1,16 @@
 const getTelegramWebApp = () => (window.Telegram ? window.Telegram.WebApp : null);
 let telegramReady = false;
 const LOG_STORAGE_KEY = 'alltrack.logs';
+const LOG_PENDING_KEY = 'alltrack.logs.pending';
 const LOG_LIMIT = 250;
+const LOG_PENDING_LIMIT = 500;
 const LOG_FILE_NAME = '1alltrack.log';
 const LOG_ENDPOINT = '/log';
+const LOG_FLUSH_INTERVAL_MS = 15000;
 let logFileHandlePromise = null;
 let nodeFileWritePromise = null;
+let logFlushTimer = null;
+let isFlushingLogs = false;
 
 const safeJsonParse = (value, fallback) => {
   if (!value) {
@@ -25,11 +30,25 @@ const readLogs = () => {
   return safeJsonParse(window.localStorage.getItem(LOG_STORAGE_KEY), []);
 };
 
+const readPendingLogs = () => {
+  if (typeof window === 'undefined' || !window.localStorage) {
+    return [];
+  }
+  return safeJsonParse(window.localStorage.getItem(LOG_PENDING_KEY), []);
+};
+
 const writeLogs = (logs) => {
   if (typeof window === 'undefined' || !window.localStorage) {
     return;
   }
   window.localStorage.setItem(LOG_STORAGE_KEY, JSON.stringify(logs));
+};
+
+const writePendingLogs = (logs) => {
+  if (typeof window === 'undefined' || !window.localStorage) {
+    return;
+  }
+  window.localStorage.setItem(LOG_PENDING_KEY, JSON.stringify(logs));
 };
 
 const formatLogPayload = (payload) => {
@@ -110,27 +129,89 @@ const appendLogToNodeFile = async (entry) => {
   await writer.appendLine(buildLogLine(entry));
 };
 
-const appendLogToServer = async (entry) => {
+const appendLogToServer = async () => {
+  await flushPendingLogs();
+};
+
+const sendLogPayload = async (payload) => {
   if (typeof window === 'undefined' || !window.navigator) {
-    return;
+    return false;
   }
   if (!/^https?:$/.test(window.location?.protocol || '')) {
+    return false;
+  }
+  try {
+    if (window.navigator.sendBeacon) {
+      const blob = new Blob([payload], { type: 'text/plain' });
+      const sent = window.navigator.sendBeacon(LOG_ENDPOINT, blob);
+      if (sent) {
+        return true;
+      }
+    }
+    const response = await fetch(LOG_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: payload,
+      keepalive: true
+    });
+    return response.ok;
+  } catch (error) {
+    return false;
+  }
+};
+
+const buildLogBatch = (entries, limit = 8000, maxLines = 40) => {
+  let size = 0;
+  const lines = [];
+  for (const entry of entries) {
+    const line = buildLogLine(entry);
+    if (lines.length >= maxLines) {
+      break;
+    }
+    if (size + line.length > limit && lines.length > 0) {
+      break;
+    }
+    lines.push(line);
+    size += line.length;
+  }
+  return { payload: lines.join(''), count: lines.length };
+};
+
+const flushPendingLogs = async () => {
+  if (isFlushingLogs) {
     return;
   }
-  const logLine = buildLogLine(entry);
-  if (window.navigator.sendBeacon) {
-    const payload = new Blob([logLine], { type: 'text/plain' });
-    const sent = window.navigator.sendBeacon(LOG_ENDPOINT, payload);
-    if (sent) {
-      return;
-    }
+  const pending = readPendingLogs();
+  if (!pending.length) {
+    return;
   }
-  await fetch(LOG_ENDPOINT, {
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain' },
-    body: logLine,
-    keepalive: true
-  });
+  isFlushingLogs = true;
+  try {
+    let queue = pending.slice();
+    while (queue.length) {
+      const { payload, count } = buildLogBatch(queue);
+      if (!count) {
+        break;
+      }
+      const sent = await sendLogPayload(payload);
+      if (!sent) {
+        break;
+      }
+      queue = queue.slice(count);
+      writePendingLogs(queue);
+    }
+  } finally {
+    isFlushingLogs = false;
+  }
+};
+
+const scheduleLogFlush = () => {
+  if (logFlushTimer || typeof window === 'undefined') {
+    return;
+  }
+  logFlushTimer = window.setInterval(() => {
+    flushPendingLogs().catch(() => {});
+  }, LOG_FLUSH_INTERVAL_MS);
 };
 
 const appendLogToStores = async (entry) => {
@@ -223,7 +304,11 @@ const logEvent = (level, message, payload = null) => {
   logs.push(entry);
   const trimmedLogs = logs.slice(-LOG_LIMIT);
   writeLogs(trimmedLogs);
+  const pending = readPendingLogs();
+  pending.push(entry);
+  writePendingLogs(pending.slice(-LOG_PENDING_LIMIT));
   appendLogToStores(entry).catch(() => {});
+  scheduleLogFlush();
   const consoleMethod =
     level === 'error' ? console.error : level === 'warn' ? console.warn : console.info;
   consoleMethod(`[${timestamp}] ${message}`, payload || '');
@@ -338,6 +423,9 @@ const initUserActionLogging = () => {
     logEvent('info', 'Смена видимости вкладки', {
       state: document.visibilityState
     });
+    if (document.visibilityState === 'hidden') {
+      flushPendingLogs().catch(() => {});
+    }
   });
 };
 

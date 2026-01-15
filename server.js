@@ -800,30 +800,41 @@ const handleLog = (req, res) => {
   });
   req.on('end', () => {
     const trimmed = body.trim();
-    const logLinePayload = trimmed || '[empty]';
-    const logLine = `${formatTimestamp()} CLIENT_LOG ${req.requestId || 'unknown'} ${getClientIp(
-      req
-    )} ${truncateLogText(req.headers['user-agent'] || '', 200)} ${truncateLogText(
-      logLinePayload,
-      2000
-    )}`;
+    const rawLines = trimmed
+      ? body.split(/\r?\n/).map((line) => line.trim()).filter(Boolean)
+      : [];
+    const lines = rawLines.length ? rawLines : ['[empty]'];
     logAction('client_log_received', {
       ...getRequestMeta(req),
       ip: getClientIp(req),
       userAgent: req.headers['user-agent'],
-      payload: truncateLogText(logLinePayload, 2000)
+      lineCount: lines.length,
+      payload: truncateLogText(lines[0] || '[empty]', 2000)
     });
-    appendLogLine(logLine, (error) => {
-      if (error) {
-        logAction('client_log_write_failed', {
-          ...getRequestMeta(req),
-          error: error?.message || error
-        });
-        send(req, res, 500, 'Ошибка записи лога');
+    let index = 0;
+    const writeNext = () => {
+      if (index >= lines.length) {
+        send(req, res, 204, '');
         return;
       }
-      send(req, res, 204, '');
-    });
+      const logLinePayload = truncateLogText(lines[index], 2000);
+      const logLine = `${formatTimestamp()} CLIENT_LOG ${req.requestId || 'unknown'} ${getClientIp(
+        req
+      )} ${truncateLogText(req.headers['user-agent'] || '', 200)} ${logLinePayload}`;
+      appendLogLine(logLine, (error) => {
+        if (error) {
+          logAction('client_log_write_failed', {
+            ...getRequestMeta(req),
+            error: error?.message || error
+          });
+          send(req, res, 500, 'Ошибка записи лога');
+          return;
+        }
+        index += 1;
+        writeNext();
+      });
+    };
+    writeNext();
   });
 };
 

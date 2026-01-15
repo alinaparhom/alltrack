@@ -24,15 +24,23 @@ const MIME_TYPES = {
   '.ico': 'image/x-icon'
 };
 
-const send = (res, statusCode, body, headers = {}) => {
+const send = (req, res, statusCode, body, headers = {}, logPayload = body) => {
   res.writeHead(statusCode, headers);
   res.end(body);
+  logHttpResponse(req, statusCode, headers, logPayload);
 };
 
-const sendJson = (res, statusCode, payload) => {
-  send(res, statusCode, JSON.stringify(payload), {
-    'Content-Type': 'application/json; charset=utf-8'
-  });
+const sendJson = (req, res, statusCode, payload) => {
+  send(
+    req,
+    res,
+    statusCode,
+    JSON.stringify(payload),
+    {
+      'Content-Type': 'application/json; charset=utf-8'
+    },
+    payload
+  );
 };
 
 const buildErrorPayload = (message, details, meta = {}) => ({
@@ -77,6 +85,17 @@ const safeStringify = (value) => {
   }
 };
 
+const truncateLogText = (text, limit = 1200) => {
+  if (!text) {
+    return '';
+  }
+  const normalized = String(text);
+  if (normalized.length <= limit) {
+    return normalized;
+  }
+  return `${normalized.slice(0, limit)}...`;
+};
+
 const logAction = (action, payload = null) => {
   const details = payload ? ` ${safeStringify(payload)}` : '';
   appendLogLine(`${formatTimestamp()} ACTION ${action}${details}`, (error) => {
@@ -99,6 +118,101 @@ const logServerError = (event, error) => {
     message: error?.message || String(error),
     stack: error?.stack,
     code: error?.code
+  });
+};
+
+const summarizeLogPayload = (payload) => {
+  if (payload === null || payload === undefined) {
+    return '';
+  }
+  if (typeof payload === 'string') {
+    return truncateLogText(payload);
+  }
+  return truncateLogText(safeStringify(payload));
+};
+
+const logHttpResponse = (req, statusCode, headers, payload) => {
+  if (!req) {
+    return;
+  }
+  logAction('http_response', {
+    requestId: req.requestId,
+    method: req.method,
+    url: req.url,
+    statusCode,
+    headers,
+    payload: summarizeLogPayload(payload)
+  });
+};
+
+const buildRequestId = () =>
+  `req-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+
+const getRequestMeta = (req) => ({
+  requestId: req.requestId,
+  method: req.method,
+  url: req.url
+});
+
+const getClientIp = (req) => {
+  const forwarded = req.headers['x-forwarded-for'];
+  if (Array.isArray(forwarded)) {
+    return forwarded[0];
+  }
+  if (typeof forwarded === 'string' && forwarded.trim()) {
+    return forwarded.split(',')[0].trim();
+  }
+  return req.socket?.remoteAddress || '';
+};
+
+const logRequestStart = (req) => {
+  logAction('http_request', {
+    ...getRequestMeta(req),
+    ip: getClientIp(req),
+    headers: {
+      'user-agent': req.headers['user-agent'],
+      'content-type': req.headers['content-type'],
+      'content-length': req.headers['content-length'],
+      referer: req.headers.referer
+    }
+  });
+};
+
+const attachRequestBodyLogger = (req, limit = 2000) => {
+  const method = (req.method || '').toUpperCase();
+  if (!['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
+    return;
+  }
+  let body = '';
+  let truncated = false;
+  req.on('data', (chunk) => {
+    if (truncated) {
+      return;
+    }
+    const text = chunk.toString('utf8');
+    if (body.length + text.length > limit) {
+      const remaining = limit - body.length;
+      if (remaining > 0) {
+        body += text.slice(0, remaining);
+      }
+      truncated = true;
+      return;
+    }
+    body += text;
+  });
+  req.on('end', () => {
+    if (!body && !truncated) {
+      logAction('http_request_body', {
+        ...getRequestMeta(req),
+        body: '[empty]'
+      });
+      return;
+    }
+    const suffix = truncated ? '...[truncated]' : '';
+    logAction('http_request_body', {
+      ...getRequestMeta(req),
+      body: `${truncateLogText(body, limit)}${suffix}`
+    });
   });
 };
 
@@ -329,6 +443,7 @@ const handleConfig = (req, res) => {
   logAction('get_config', { hasBotUsername: Boolean(botUsername) });
   logApiResponse('get_config', 200, { botUsername });
   send(
+    req,
     res,
     200,
     JSON.stringify({
@@ -364,7 +479,7 @@ const handleCreateOrganization = (req, res) => {
         error?.message || 'JSON не распознан.'
       );
       logApiResponse('create_org', 400, errorPayload);
-      sendJson(res, 400, errorPayload);
+      sendJson(req, res, 400, errorPayload);
       return;
     }
     try {
@@ -377,7 +492,7 @@ const handleCreateOrganization = (req, res) => {
           'Одно или несколько полей пустые.'
         );
         logApiResponse('create_org', 400, errorPayload);
-        sendJson(res, 400, errorPayload);
+        sendJson(req, res, 400, errorPayload);
         return;
       }
       const organizations = getOrganizationsList();
@@ -388,7 +503,7 @@ const handleCreateOrganization = (req, res) => {
           'Попробуйте другое название.'
         );
         logApiResponse('create_org', 409, errorPayload);
-        sendJson(res, 409, errorPayload);
+        sendJson(req, res, 409, errorPayload);
         return;
       }
 
@@ -484,7 +599,7 @@ const handleCreateOrganization = (req, res) => {
         inviteLink
       });
       logApiResponse('create_org', 200, { inviteId, inviteLink });
-      sendJson(res, 200, { inviteId, inviteLink });
+      sendJson(req, res, 200, { inviteId, inviteLink });
     } catch (createError) {
       const errorPayload =
         createError?.payload ||
@@ -498,7 +613,7 @@ const handleCreateOrganization = (req, res) => {
         payload: createError?.payload
       });
       logApiResponse('create_org', 500, errorPayload);
-      sendJson(res, 500, errorPayload);
+      sendJson(req, res, 500, errorPayload);
     }
   });
 };
@@ -520,7 +635,7 @@ const handleAcceptInvite = (req, res) => {
     if (error) {
       logAction('accept_invite_invalid_payload');
       logApiResponse('accept_invite', 400, { message: 'Некорректные данные' });
-      send(res, 400, 'Некорректные данные');
+      send(req, res, 400, 'Некорректные данные');
       return;
     }
     const inviteId = String(payload.inviteId || '').trim();
@@ -530,7 +645,7 @@ const handleAcceptInvite = (req, res) => {
       logApiResponse('accept_invite', 400, {
         message: 'Не хватает данных для подтверждения приглашения.'
       });
-      send(res, 400, 'Не хватает данных для подтверждения приглашения.');
+      send(req, res, 400, 'Не хватает данных для подтверждения приглашения.');
       return;
     }
     const invitesData = readJsonFile(INVITES_FILE, { invites: [] });
@@ -539,7 +654,7 @@ const handleAcceptInvite = (req, res) => {
     if (inviteIndex === -1) {
       logAction('accept_invite_not_found', { inviteId, userId });
       logApiResponse('accept_invite', 404, { message: 'Приглашение не найдено.' });
-      send(res, 404, 'Приглашение не найдено.');
+      send(req, res, 404, 'Приглашение не найдено.');
       return;
     }
     const invite = invites[inviteIndex];
@@ -592,6 +707,7 @@ const handleAcceptInvite = (req, res) => {
       fullName: invite.energyFullName
     });
     send(
+      req,
       res,
       200,
       JSON.stringify({
@@ -610,7 +726,7 @@ const handleAcceptDirectInvite = (req, res) => {
     if (error) {
       logAction('accept_direct_invalid_payload');
       logApiResponse('accept_direct', 400, { message: 'Некорректные данные' });
-      send(res, 400, 'Некорректные данные');
+      send(req, res, 400, 'Некорректные данные');
       return;
     }
     const organizationName = String(payload.organizationName || '').trim();
@@ -627,7 +743,7 @@ const handleAcceptDirectInvite = (req, res) => {
       logApiResponse('accept_direct', 400, {
         message: 'Не хватает данных для подтверждения приглашения.'
       });
-      send(res, 400, 'Не хватает данных для подтверждения приглашения.');
+      send(req, res, 400, 'Не хватает данных для подтверждения приглашения.');
       return;
     }
     logAction('accept_direct_start', {
@@ -676,6 +792,7 @@ const handleAcceptDirectInvite = (req, res) => {
       fullName: energyFullName
     });
     send(
+      req,
       res,
       200,
       JSON.stringify({
@@ -701,10 +818,10 @@ const handleLog = (req, res) => {
     const logLine = `${formatTimestamp()} CLIENT_LOG ${trimmed || '[empty]'}`;
     appendLogLine(logLine, (error) => {
       if (error) {
-        send(res, 500, 'Ошибка записи лога');
+        send(req, res, 500, 'Ошибка записи лога');
         return;
       }
-      send(res, 204, '');
+      send(req, res, 204, '');
     });
   });
 };
@@ -718,12 +835,15 @@ const resolveFilePath = (urlPath) => {
 
 const server = http.createServer((req, res) => {
   const startedAt = Date.now();
+  req.requestId = buildRequestId();
+  logRequestStart(req);
+  attachRequestBodyLogger(req);
   res.on('finish', () => {
     const durationMs = Date.now() - startedAt;
     const url = req.url || '-';
     const method = req.method || '-';
     const status = res.statusCode;
-    const logLine = `${formatTimestamp()} REQUEST ${method} ${url} ${status} ${durationMs}ms`;
+    const logLine = `${formatTimestamp()} REQUEST ${req.requestId} ${method} ${url} ${status} ${durationMs}ms`;
     appendLogLine(logLine, (error) => {
       if (error) {
         console.error('Ошибка записи лога:', error);
@@ -732,7 +852,7 @@ const server = http.createServer((req, res) => {
   });
 
   if (!req.url) {
-    send(res, 400, 'Некорректный запрос');
+    send(req, res, 400, 'Некорректный запрос');
     return;
   }
 
@@ -775,14 +895,19 @@ const server = http.createServer((req, res) => {
   }
 
   if (req.method !== 'GET' && req.method !== 'HEAD') {
-    send(res, 405, 'Метод не поддерживается');
+    send(req, res, 405, 'Метод не поддерживается');
     return;
   }
 
   const filePath = resolveFilePath(req.url);
   fs.stat(filePath, (error, stats) => {
     if (error || !stats.isFile()) {
-      send(res, 404, 'Файл не найден');
+      logAction('static_file_missing', {
+        ...getRequestMeta(req),
+        path: filePath,
+        error: error?.message || error
+      });
+      send(req, res, 404, 'Файл не найден');
       return;
     }
 
@@ -793,7 +918,20 @@ const server = http.createServer((req, res) => {
       res.end();
       return;
     }
-    fs.createReadStream(filePath).pipe(res);
+    const stream = fs.createReadStream(filePath);
+    stream.on('error', (streamError) => {
+      logAction('static_file_error', {
+        ...getRequestMeta(req),
+        path: filePath,
+        error: streamError?.message || streamError
+      });
+      if (!res.headersSent) {
+        send(req, res, 500, 'Ошибка чтения файла');
+      } else {
+        res.end();
+      }
+    });
+    stream.pipe(res);
   });
 });
 

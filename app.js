@@ -5,7 +5,7 @@ const LOG_PENDING_KEY = 'alltrack.logs.pending';
 const LOG_LIMIT = 250;
 const LOG_PENDING_LIMIT = 500;
 const LOG_FILE_NAMES = ['1alltrack.log', '1docks.log', '1miniapps.log'];
-const LOG_ENDPOINT = '/log';
+const LOG_ENDPOINTS = ['/api/log', '/log'];
 const LOG_FLUSH_INTERVAL_MS = 15000;
 const logFileHandlePromises = new Map();
 let nodeFileWritePromise = null;
@@ -147,20 +147,31 @@ const sendLogPayload = async (payload) => {
     return false;
   }
   try {
-    if (window.navigator.sendBeacon) {
-      const blob = new Blob([payload], { type: 'text/plain' });
-      const sent = window.navigator.sendBeacon(LOG_ENDPOINT, blob);
-      if (sent) {
-        return true;
+    for (const endpoint of LOG_ENDPOINTS) {
+      try {
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain' },
+          body: payload,
+          keepalive: true
+        });
+        if (response.ok) {
+          return true;
+        }
+      } catch (error) {
+        continue;
       }
     }
-    const response = await fetch(LOG_ENDPOINT, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain' },
-      body: payload,
-      keepalive: true
-    });
-    return response.ok;
+    if (window.navigator.sendBeacon) {
+      const blob = new Blob([payload], { type: 'text/plain' });
+      for (const endpoint of LOG_ENDPOINTS) {
+        const sent = window.navigator.sendBeacon(endpoint, blob);
+        if (sent) {
+          return true;
+        }
+      }
+    }
+    return false;
   } catch (error) {
     return false;
   }

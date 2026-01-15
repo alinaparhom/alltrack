@@ -81,15 +81,17 @@
                 name="organizationName"
                 placeholder="Например, ЭнергоСервис"
                 autocomplete="organization"
+                required
               />
             </label>
             <label class="super-admin__field" for="superAdminOrgIndustry">
-              Отрасль
+              Энергетика
               <input
                 type="text"
                 id="superAdminOrgIndustry"
                 name="organizationIndustry"
-                placeholder="Энергетика"
+                placeholder="Например, Энергетика"
+                required
               />
             </label>
             <div class="super-admin__switch">
@@ -105,8 +107,8 @@
                 </label>
               </div>
             </div>
-            <button class="super-admin__button super-admin__button--wide" type="button">
-              Сохранить организацию
+            <button class="super-admin__button super-admin__button--wide" type="submit">
+              Добавить организацию
             </button>
             <p class="super-admin__note">
               Проверьте название и отрасль — так проще настроить справочники и отчёты.

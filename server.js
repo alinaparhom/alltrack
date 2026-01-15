@@ -51,13 +51,22 @@ const buildErrorPayload = (message, details, meta = {}) => ({
   ...meta
 });
 
-const buildStepError = ({ message, details, step, code, path: targetPath, systemCode }) => {
+const buildStepError = ({
+  message,
+  details,
+  step,
+  code,
+  path: targetPath,
+  systemCode,
+  debug
+}) => {
   const error = new Error(message);
   error.payload = buildErrorPayload(message, details, {
     step,
     code,
     path: targetPath,
-    systemCode
+    systemCode,
+    debug
   });
   return error;
 };
@@ -111,6 +120,52 @@ const truncateLogText = (text, limit = 1200) => {
     return normalized;
   }
   return `${normalized.slice(0, limit)}...`;
+};
+
+const buildFileSystemStatus = (targetPath) => {
+  const status = {
+    path: targetPath,
+    exists: false,
+    type: 'missing',
+    readable: false,
+    writable: false
+  };
+  try {
+    if (!fs.existsSync(targetPath)) {
+      return status;
+    }
+    status.exists = true;
+    const stats = fs.statSync(targetPath);
+    status.type = stats.isDirectory() ? 'directory' : stats.isFile() ? 'file' : 'other';
+    try {
+      fs.accessSync(targetPath, fs.constants.R_OK);
+      status.readable = true;
+    } catch (error) {
+      status.readable = false;
+    }
+    try {
+      fs.accessSync(targetPath, fs.constants.W_OK);
+      status.writable = true;
+    } catch (error) {
+      status.writable = false;
+    }
+    if (stats.isFile()) {
+      status.size = stats.size;
+    }
+    if (stats.isDirectory()) {
+      try {
+        status.entries = fs.readdirSync(targetPath).slice(0, 50);
+      } catch (error) {
+        status.entries = ['[не удалось прочитать содержимое папки]'];
+      }
+    }
+    return status;
+  } catch (error) {
+    return {
+      ...status,
+      error: error?.message || String(error)
+    };
+  }
 };
 
 const logAction = (action, payload = null) => {
@@ -401,6 +456,17 @@ const ensureOrganizationsStorage = () => {
 const buildOrganizationPath = (name) =>
   path.join(ORGANIZATIONS_DIR, sanitizeOrganizationName(name));
 
+const buildCreateOrgDebugSnapshot = (organizationName) => ({
+  accessFile: buildFileSystemStatus(ACCESS_FILE),
+  organizationsFile: buildFileSystemStatus(ORGANIZATIONS_FILE),
+  legacyOrganizationsFile: buildFileSystemStatus(LEGACY_ORGANIZATIONS_FILE),
+  dataDir: buildFileSystemStatus(DATA_DIR),
+  organizationsDir: buildFileSystemStatus(ORGANIZATIONS_DIR),
+  organizationDir: organizationName
+    ? buildFileSystemStatus(buildOrganizationPath(organizationName))
+    : null
+});
+
 const ensureOrganizationAssets = (name) => {
   ensureDir(DATA_DIR);
   ensureDir(ORGANIZATIONS_DIR);
@@ -591,7 +657,8 @@ const handleCreateOrganization = (req, res) => {
         ...getRequestMeta(req),
         organizationName,
         energyFullName,
-        payload
+        payload,
+        storageSnapshot: buildCreateOrgDebugSnapshot(organizationName)
       });
 
       try {
@@ -600,7 +667,8 @@ const handleCreateOrganization = (req, res) => {
           step: '1.1',
           file: 'access.json',
           organizationName,
-          energyFullName
+          energyFullName,
+          fileStatus: buildFileSystemStatus(ACCESS_FILE)
         });
         const accessData = readJsonFile(ACCESS_FILE, { superAdmins: [], organizations: {} });
         if (!accessData.organizations || typeof accessData.organizations !== 'object') {
@@ -625,7 +693,8 @@ const handleCreateOrganization = (req, res) => {
           step: '1.1',
           file: 'access.json',
           organizationName,
-          membersCount: accessData.organizations[organizationName]?.length || 0
+          membersCount: accessData.organizations[organizationName]?.length || 0,
+          fileStatus: buildFileSystemStatus(ACCESS_FILE)
         });
       } catch (error) {
         logAction('create_org_step_error', {
@@ -634,7 +703,8 @@ const handleCreateOrganization = (req, res) => {
           file: 'access.json',
           organizationName,
           message: error?.message || error,
-          stack: error?.stack
+          stack: error?.stack,
+          fileStatus: buildFileSystemStatus(ACCESS_FILE)
         });
         throw buildStepError({
           message: 'Не удалось создать организацию.',
@@ -644,7 +714,8 @@ const handleCreateOrganization = (req, res) => {
           step: '1.1',
           code: 'create_org_access',
           path: 'access.json',
-          systemCode: error?.code
+          systemCode: error?.code,
+          debug: buildCreateOrgDebugSnapshot(organizationName)
         });
       }
 
@@ -653,7 +724,9 @@ const handleCreateOrganization = (req, res) => {
           ...getRequestMeta(req),
           step: '1.2',
           file: 'data/organizations/organizations.json',
-          organizationName
+          organizationName,
+          fileStatus: buildFileSystemStatus(ORGANIZATIONS_FILE),
+          legacyFileStatus: buildFileSystemStatus(LEGACY_ORGANIZATIONS_FILE)
         });
         const nextOrganizations = [...organizations, organizationName];
         saveOrganizationsList(nextOrganizations);
@@ -663,7 +736,9 @@ const handleCreateOrganization = (req, res) => {
           file: 'data/organizations/organizations.json',
           organizationName,
           totalOrganizations: nextOrganizations.length,
-          previousOrganizations: organizations.length
+          previousOrganizations: organizations.length,
+          fileStatus: buildFileSystemStatus(ORGANIZATIONS_FILE),
+          legacyFileStatus: buildFileSystemStatus(LEGACY_ORGANIZATIONS_FILE)
         });
       } catch (error) {
         logAction('create_org_step_error', {
@@ -672,7 +747,9 @@ const handleCreateOrganization = (req, res) => {
           file: 'data/organizations/organizations.json',
           organizationName,
           message: error?.message || error,
-          stack: error?.stack
+          stack: error?.stack,
+          fileStatus: buildFileSystemStatus(ORGANIZATIONS_FILE),
+          legacyFileStatus: buildFileSystemStatus(LEGACY_ORGANIZATIONS_FILE)
         });
         throw buildStepError({
           message: 'Не удалось создать организацию.',
@@ -682,25 +759,39 @@ const handleCreateOrganization = (req, res) => {
           step: '1.2',
           code: 'create_org_list',
           path: 'data/organizations/organizations.json',
-          systemCode: error?.code
+          systemCode: error?.code,
+          debug: buildCreateOrgDebugSnapshot(organizationName)
         });
       }
 
       try {
+        const organizationPath = buildOrganizationPath(organizationName);
         logAction('create_org_step_start', {
           ...getRequestMeta(req),
           step: '1.3',
           path: `data/organizations/${sanitizeOrganizationName(organizationName)}`,
-          organizationName
+          organizationName,
+          folderStatus: buildFileSystemStatus(organizationPath)
         });
         ensureOrganizationAssets(organizationName);
+        const filesStatus = ORGANIZATION_DATABASE_FILES.map((fileName) => ({
+          name: fileName,
+          exists: fs.existsSync(path.join(organizationPath, fileName))
+        }));
+        const foldersStatus = ORGANIZATION_MEDIA_FOLDERS.map((folder) => ({
+          name: folder,
+          exists: fs.existsSync(path.join(organizationPath, folder))
+        }));
         logAction('create_org_step_success', {
           ...getRequestMeta(req),
           step: '1.3',
           path: `data/organizations/${sanitizeOrganizationName(organizationName)}`,
           organizationName,
           files: ORGANIZATION_DATABASE_FILES,
-          folders: ORGANIZATION_MEDIA_FOLDERS
+          folders: ORGANIZATION_MEDIA_FOLDERS,
+          folderStatus: buildFileSystemStatus(organizationPath),
+          filesStatus,
+          foldersStatus
         });
       } catch (error) {
         logAction('create_org_step_error', {
@@ -709,7 +800,10 @@ const handleCreateOrganization = (req, res) => {
           path: `data/organizations/${sanitizeOrganizationName(organizationName)}`,
           organizationName,
           message: error?.message || error,
-          stack: error?.stack
+          stack: error?.stack,
+          folderStatus: buildFileSystemStatus(
+            buildOrganizationPath(organizationName)
+          )
         });
         throw buildStepError({
           message: 'Не удалось создать организацию.',
@@ -719,7 +813,8 @@ const handleCreateOrganization = (req, res) => {
           step: '1.3',
           code: 'create_org_assets',
           path: `data/organizations/${sanitizeOrganizationName(organizationName)}`,
-          systemCode: error?.code
+          systemCode: error?.code,
+          debug: buildCreateOrgDebugSnapshot(organizationName)
         });
       }
 
@@ -729,7 +824,8 @@ const handleCreateOrganization = (req, res) => {
           ...getRequestMeta(req),
           step: '1.4',
           file: 'data/invites.json',
-          organizationName
+          organizationName,
+          fileStatus: buildFileSystemStatus(INVITES_FILE)
         });
         const invitesData = readJsonFile(INVITES_FILE, { invites: [] });
         const invites = Array.isArray(invitesData.invites) ? invitesData.invites : [];
@@ -746,7 +842,8 @@ const handleCreateOrganization = (req, res) => {
           step: '1.4',
           file: 'data/invites.json',
           inviteId,
-          organizationName
+          organizationName,
+          fileStatus: buildFileSystemStatus(INVITES_FILE)
         });
       } catch (error) {
         logAction('create_org_step_error', {
@@ -755,7 +852,8 @@ const handleCreateOrganization = (req, res) => {
           file: 'data/invites.json',
           organizationName,
           message: error?.message || error,
-          stack: error?.stack
+          stack: error?.stack,
+          fileStatus: buildFileSystemStatus(INVITES_FILE)
         });
         throw buildStepError({
           message: 'Не удалось создать организацию.',
@@ -765,7 +863,8 @@ const handleCreateOrganization = (req, res) => {
           step: '1.4',
           code: 'create_org_invite',
           path: 'data/invites.json',
-          systemCode: error?.code
+          systemCode: error?.code,
+          debug: buildCreateOrgDebugSnapshot(organizationName)
         });
       }
 
@@ -793,7 +892,8 @@ const handleCreateOrganization = (req, res) => {
         );
       const errorPayload = {
         ...basePayload,
-        requestId: req.requestId
+        requestId: req.requestId,
+        debug: basePayload?.debug || buildCreateOrgDebugSnapshot(organizationName)
       };
       logAction('create_org_failed', {
         ...getRequestMeta(req),

@@ -23,32 +23,57 @@ const safeJsonParse = (value, fallback) => {
   }
 };
 
-const readLogs = () => {
+const memoryLogs = [];
+const memoryPendingLogs = [];
+
+const getSafeStorage = () => {
   if (typeof window === 'undefined' || !window.localStorage) {
-    return [];
+    return null;
   }
-  return safeJsonParse(window.localStorage.getItem(LOG_STORAGE_KEY), []);
+  try {
+    const testKey = '__alltrack_log_test__';
+    window.localStorage.setItem(testKey, '1');
+    window.localStorage.removeItem(testKey);
+    return window.localStorage;
+  } catch (error) {
+    return null;
+  }
+};
+
+const readLogs = () => {
+  const storage = getSafeStorage();
+  if (!storage) {
+    return memoryLogs.slice();
+  }
+  return safeJsonParse(storage.getItem(LOG_STORAGE_KEY), []);
 };
 
 const readPendingLogs = () => {
-  if (typeof window === 'undefined' || !window.localStorage) {
-    return [];
+  const storage = getSafeStorage();
+  if (!storage) {
+    return memoryPendingLogs.slice();
   }
-  return safeJsonParse(window.localStorage.getItem(LOG_PENDING_KEY), []);
+  return safeJsonParse(storage.getItem(LOG_PENDING_KEY), []);
 };
 
 const writeLogs = (logs) => {
-  if (typeof window === 'undefined' || !window.localStorage) {
+  const storage = getSafeStorage();
+  if (!storage) {
+    memoryLogs.length = 0;
+    memoryLogs.push(...logs);
     return;
   }
-  window.localStorage.setItem(LOG_STORAGE_KEY, JSON.stringify(logs));
+  storage.setItem(LOG_STORAGE_KEY, JSON.stringify(logs));
 };
 
 const writePendingLogs = (logs) => {
-  if (typeof window === 'undefined' || !window.localStorage) {
+  const storage = getSafeStorage();
+  if (!storage) {
+    memoryPendingLogs.length = 0;
+    memoryPendingLogs.push(...logs);
     return;
   }
-  window.localStorage.setItem(LOG_PENDING_KEY, JSON.stringify(logs));
+  storage.setItem(LOG_PENDING_KEY, JSON.stringify(logs));
 };
 
 const formatLogPayload = (payload) => {

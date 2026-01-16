@@ -196,6 +196,67 @@
     return data || { ok: true };
   };
 
+  const fetchAccessSnapshot = async () => {
+    const url = buildApiUrl('./access.json');
+    const fetchWithLogging =
+      typeof window !== 'undefined' && typeof window.fetchWithLogging === 'function'
+        ? window.fetchWithLogging
+        : null;
+    const response = fetchWithLogging
+      ? await fetchWithLogging('load-access-snapshot', url, { cache: 'no-store' })
+      : await fetch(url, { cache: 'no-store' });
+    const rawText = await response.text();
+    let data = null;
+    try {
+      data = rawText ? JSON.parse(rawText) : null;
+    } catch (error) {
+      data = rawText;
+    }
+    if (!response.ok || typeof data !== 'object' || !data) {
+      const message =
+        typeof data === 'string'
+          ? data
+          : data?.message || `Ошибка загрузки access.json (${response.status})`;
+      const error = new Error(message);
+      error.details = typeof data === 'string' ? null : data;
+      error.status = response.status;
+      throw error;
+    }
+    return data;
+  };
+
+  const verifyAccessSaved = async ({ organizationName, shortName, energyFullName }) => {
+    const accessData = await fetchAccessSnapshot();
+    const entry = accessData.organizations?.[organizationName];
+    if (!entry) {
+      const error = new Error('Организация не найдена в access.json.');
+      error.details = { organizationName };
+      throw error;
+    }
+    const members = getOrganizationMembers(entry);
+    const normalizedEnergy = normalizeFullName(energyFullName);
+    const hasEnergy = members.some(
+      (member) =>
+        normalizeFullName(member?.fullName) === normalizedEnergy &&
+        normalizeRole(member?.role).includes('энергетик') &&
+        member?.id === ''
+    );
+    const storedShortName = entry.shortName || entry.short_name || '';
+    const shortNameOk = shortName ? storedShortName === shortName : Boolean(storedShortName);
+    if (!hasEnergy || !shortNameOk) {
+      const error = new Error('Запись access.json не совпадает с введёнными данными.');
+      error.details = {
+        organizationName,
+        energyFullName,
+        storedShortName,
+        expectedShortName: shortName,
+        membersCount: members.length
+      };
+      throw error;
+    }
+    return entry;
+  };
+
   const buildCreatePreview = ({ fullName, shortName, energyLead, schemeLabel }) => {
     if (!fullName && !shortName && !energyLead) {
       return 'Здесь появится краткая карточка новой организации.';
@@ -388,9 +449,14 @@
           error.details = response;
           throw error;
         }
+        const verifiedEntry = await verifyAccessSaved({
+          organizationName: fullName,
+          shortName,
+          energyFullName: energyLead
+        });
         const newOrg = buildOrganizationStats(
           fullName,
-          [],
+          getOrganizationMembers(verifiedEntry),
           energyLead,
           currentOrganizations.length
         );

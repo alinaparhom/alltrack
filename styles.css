@@ -40,7 +40,7 @@ body.is-super-admin .access {
   flex-direction: column;
   gap: 20px;
   padding: 20px 18px 40px;
-  max-width: 900px;
+  max-width: 420px;
   margin: 0 auto;
 }
 
@@ -903,34 +903,6 @@ body.is-locked .bottom-nav {
 
 @media (min-width: 720px) {
   .app {
-    padding: 32px 24px 60px;
+    padding: 24px 20px 50px;
   }
-
-  .hero {
-    grid-template-columns: 1.4fr auto;
-    align-items: center;
-  }
-
-  .actions {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .assets {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
-  .asset__meta {
-    flex-direction: row;
-    justify-content: space-between;
-  }
-
-  .super-admin__stats {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
-  .super-admin__button--wide {
-    width: auto;
-    padding-inline: 18px;
-  }
-
 }

@@ -221,8 +221,8 @@ const CREATE_ORG_ENDPOINTS = [
 ];
 
 const buildCreateOrgExpectedPayload = () => ({
-  required: ['organizationName', 'energyFullName'],
-  optional: ['shortName'],
+  required: ['organizationName', 'shortName', 'energyFullName'],
+  optional: [],
   example: {
     organizationName: 'ООО "Пример"',
     shortName: 'Пример',
@@ -438,6 +438,13 @@ const addPlaceholderMember = (members, fullName) => {
 };
 
 const seedOrganizationAccess = ({ organizationName, energyFullName, shortName }) => {
+  const accessStatus = buildFileSystemStatus(ACCESS_FILE);
+  if (accessStatus.exists && !accessStatus.writable) {
+    const error = new Error('Файл access.json недоступен для записи.');
+    error.code = 'access_write_denied';
+    error.details = accessStatus;
+    throw error;
+  }
   const accessData = readJsonFile(ACCESS_FILE, { superAdmins: [], organizations: {} });
   if (
     !accessData.organizations ||
@@ -1102,7 +1109,7 @@ const handleSeedAccessOrganization = (req, res) => {
         payloadKeys: Object.keys(payload || {}),
         rawBodySize: rawBody ? rawBody.length : 0
       });
-      if (!organizationName || !energyFullName) {
+      if (!organizationName || !energyFullName || !shortName) {
         logAction('seed_access_missing_fields', {
           ...getRequestMeta(req),
           organizationName,
@@ -1111,12 +1118,13 @@ const handleSeedAccessOrganization = (req, res) => {
           payload
         });
         const errorPayload = buildErrorPayload(
-          'Заполните название организации и ФИО энергетика.',
+          'Заполните название организации, краткое название и ФИО энергетика.',
           'Одно или несколько полей пустые.',
           {
             requestId: req.requestId,
             organizationName,
             energyFullName,
+            shortName,
             url: req.url,
             expectedPayload: buildCreateOrgExpectedPayload()
           }
@@ -1159,7 +1167,9 @@ const handleSeedAccessOrganization = (req, res) => {
       logAction('seed_access_failed', {
         ...getRequestMeta(req),
         message: seedError?.message || seedError,
-        stack: seedError?.stack
+        stack: seedError?.stack,
+        fileStatus: buildFileSystemStatus(ACCESS_FILE),
+        details: seedError?.details || null
       });
       const errorPayload = buildErrorPayload(
         'Не удалось обновить access.json.',

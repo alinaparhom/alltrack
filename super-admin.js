@@ -14,6 +14,12 @@
       .replace(/\s+/g, ' ')
       .trim();
 
+  const normalizeFullName = (value = '') =>
+    String(value)
+      .replace(/\s+/g, ' ')
+      .trim()
+      .toLowerCase();
+
   const isAdminRole = (value) => normalizeRole(value).includes('администратор');
 
   const getOrganizationMembers = (entry) => {
@@ -356,6 +362,19 @@
           shortName,
           energyFullName: energyLead
         });
+        const accessMembers = getOrganizationMembers(response?.accessEntry);
+        const expectedMember = accessMembers.some(
+          (member) =>
+            normalizeFullName(member?.fullName) === normalizeFullName(energyLead) &&
+            normalizeRole(member?.role).includes('энергетик')
+        );
+        if (!response?.ok || !expectedMember) {
+          const error = new Error(
+            'Не удалось подтвердить запись организации в access.json. Попробуйте ещё раз.'
+          );
+          error.details = response;
+          throw error;
+        }
         const newOrg = buildOrganizationStats(
           fullName,
           [],

@@ -1209,15 +1209,7 @@
         }
         const endpoints = buildLogEndpoints();
         try {
-          if (window.navigator.sendBeacon) {
-            const blob = new Blob([payload], { type: 'text/plain' });
-            for (const endpoint of endpoints) {
-              const sent = window.navigator.sendBeacon(endpoint, blob);
-              if (sent) {
-                return true;
-              }
-            }
-          }
+          let receivedResponse = false;
           for (const endpoint of endpoints) {
             try {
               const response = await fetch(endpoint, {
@@ -1226,11 +1218,21 @@
                 body: payload,
                 keepalive: true
               });
+              receivedResponse = true;
               if (response.ok) {
                 return true;
               }
             } catch (error) {
               continue;
+            }
+          }
+          if (!receivedResponse && window.navigator.sendBeacon) {
+            const blob = new Blob([payload], { type: 'text/plain' });
+            for (const endpoint of endpoints) {
+              const sent = window.navigator.sendBeacon(endpoint, blob);
+              if (sent) {
+                return true;
+              }
             }
           }
           return false;

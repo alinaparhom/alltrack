@@ -362,6 +362,13 @@
           shortName,
           energyFullName: energyLead
         });
+        if (!response || response.ok !== true) {
+          const error = new Error(
+            'Сервер не подтвердил сохранение организации. Попробуйте ещё раз.'
+          );
+          error.details = response;
+          throw error;
+        }
         const accessMembers = getOrganizationMembers(response?.accessEntry);
         const expectedMember = accessMembers.some(
           (member) =>

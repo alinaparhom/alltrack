@@ -373,6 +373,14 @@ const normalizeFullName = (value) =>
     .trim()
     .toLowerCase();
 
+const normalizeRole = (value) =>
+  String(value || '')
+    .toLowerCase()
+    .replace(/ё/g, 'е')
+    .replace(/[‑–—]/g, '-')
+    .replace(/\s+/g, ' ')
+    .trim();
+
 const getOrganizationFullName = (entry, fallback) => {
   const fullName = normalizeOrganizationName(
     entry?.fullName || entry?.full_name || entry?.name || entry?.organization
@@ -465,6 +473,36 @@ const seedOrganizationAccess = ({ organizationName, energyFullName, shortName })
   });
   writeJsonFile(ACCESS_FILE, accessData);
   const accessEntry = accessData.organizations[organizationName];
+  const verifiedData = readJsonFile(ACCESS_FILE, { superAdmins: [], organizations: {} });
+  const verifiedEntry = verifiedData.organizations?.[organizationName];
+  const verifiedMembers = getOrganizationMembers(verifiedEntry);
+  const normalizedEnergyName = normalizeFullName(energyFullName);
+  const energyMember = verifiedMembers.find(
+    (member) =>
+      normalizeFullName(member?.fullName) === normalizedEnergyName &&
+      normalizeRole(member?.role).includes('энергетик')
+  );
+  const verifiedShortName = normalizeOrganizationName(
+    verifiedEntry?.shortName || verifiedEntry?.short_name || ''
+  );
+  const expectedShortName = normalizeOrganizationName(shortName);
+  const shortNameOk = expectedShortName ? verifiedShortName === expectedShortName : true;
+  const energyMemberOk = Boolean(energyMember && isEmptyId(energyMember?.id));
+  if (!verifiedEntry || !energyMemberOk || !shortNameOk) {
+    const error = new Error('Запись access.json не подтверждена после сохранения.');
+    error.code = 'access_verify_failed';
+    error.details = {
+      organizationName,
+      expectedShortName,
+      verifiedShortName,
+      energyFullName,
+      energyMember,
+      membersCount: verifiedMembers.length,
+      shortNameOk,
+      energyMemberOk
+    };
+    throw error;
+  }
   return {
     accessData,
     accessEntry,

@@ -90,6 +90,61 @@ const formatLogPayload = (payload) => {
   }
 };
 
+const buildLogContext = () => {
+  const tg = getTelegramWebApp();
+  return {
+    page: typeof window !== 'undefined' ? window.location.href : '',
+    visibility: typeof document !== 'undefined' ? document.visibilityState : 'unknown',
+    online:
+      typeof navigator !== 'undefined' && typeof navigator.onLine === 'boolean'
+        ? navigator.onLine
+        : null,
+    viewport:
+      typeof window !== 'undefined'
+        ? {
+            width: window.innerWidth,
+            height: window.innerHeight,
+            pixelRatio: window.devicePixelRatio || 1
+          }
+        : null,
+    userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : '',
+    telegram: {
+      hasWebApp: Boolean(tg),
+      platform: tg?.platform || '',
+      version: tg?.version || '',
+      initDataLength: tg?.initData ? tg.initData.length : 0
+    }
+  };
+};
+
+const normalizeLogPayload = (payload, level) => {
+  const context = buildLogContext();
+  if (payload instanceof Error) {
+    return {
+      error: {
+        name: payload.name,
+        message: payload.message,
+        stack: payload.stack || ''
+      },
+      level,
+      context
+    };
+  }
+  if (payload && typeof payload === 'object' && !Array.isArray(payload)) {
+    return {
+      ...payload,
+      context
+    };
+  }
+  if (payload) {
+    return {
+      details: payload,
+      context
+    };
+  }
+  return { context };
+};
+
 const buildLogLine = (entry) => {
   const payload = formatLogPayload(entry.payload);
   const payloadSegment = payload ? ` | ${payload}` : '';
@@ -348,11 +403,12 @@ const fetchWithLogging = async (label, url, options = {}) => {
 
 const logEvent = (level, message, payload = null) => {
   const timestamp = new Date().toISOString();
+  const enrichedPayload = normalizeLogPayload(payload, level);
   const entry = {
     timestamp,
     level,
     message,
-    payload
+    payload: enrichedPayload
   };
   const logs = readLogs();
   logs.push(entry);

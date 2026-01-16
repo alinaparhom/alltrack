@@ -166,7 +166,10 @@
         typeof data === 'string'
           ? data
           : data?.message || `Ошибка сохранения (${response.status})`;
-      throw new Error(message);
+      const error = new Error(message);
+      error.details = typeof data === 'string' ? null : data;
+      error.status = response.status;
+      throw error;
     }
     return data;
   };
@@ -327,6 +330,12 @@
         submitButton.classList.add('is-disabled');
       }
       try {
+        safeLogEvent('info', 'Супер-админ: отправлена форма создания организации', {
+          fullName,
+          shortName,
+          energyLead,
+          scheme: form.querySelector('input[name="numberingScheme"]:checked')?.value || ''
+        });
         const response = await postCreateOrganization({
           organizationName: fullName,
           shortName,
@@ -364,12 +373,16 @@
         }
       } catch (error) {
         updateFormState();
+        const errorMessage =
+          error?.message || 'Не удалось создать организацию. Проверьте данные.';
         if (status) {
-          status.textContent = 'Не удалось создать организацию';
+          status.textContent = errorMessage;
           status.dataset.state = 'error';
         }
         safeLogEvent('error', 'Супер-админ: ошибка создания организации', {
-          message: error?.message || String(error),
+          message: errorMessage,
+          status: error?.status,
+          details: error?.details || null,
           fullName,
           shortName,
           energyLead

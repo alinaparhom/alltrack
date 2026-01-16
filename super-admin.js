@@ -16,6 +16,24 @@
 
   const isAdminRole = (value) => normalizeRole(value).includes('администратор');
 
+  const getOrganizationMembers = (entry) => {
+    if (Array.isArray(entry)) {
+      return entry;
+    }
+    if (entry && typeof entry === 'object') {
+      if (Array.isArray(entry.users)) {
+        return entry.users;
+      }
+      if (Array.isArray(entry.members)) {
+        return entry.members;
+      }
+      if (Array.isArray(entry.list)) {
+        return entry.list;
+      }
+    }
+    return [];
+  };
+
   const buildOrganizationStats = (orgName, users = [], adminName, index) => {
     const userCount = users.length;
     const toolsTotal = Math.max(120, userCount * 24 + index * 31);
@@ -38,7 +56,7 @@
   const buildOrganizationsFromAccess = (accessData = {}) => {
     const organizations = accessData.organizations || {};
     return Object.entries(organizations).map(([name, users], index) => {
-      const list = Array.isArray(users) ? users : [];
+      const list = getOrganizationMembers(users);
       const admin = list.find((member) => isAdminRole(member?.role));
       const adminName = admin?.fullName || admin?.full_name || admin?.name || admin?.fio || '';
       return buildOrganizationStats(name, list, adminName, index);

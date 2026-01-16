@@ -222,8 +222,10 @@ const CREATE_ORG_ENDPOINTS = [
 
 const buildCreateOrgExpectedPayload = () => ({
   required: ['organizationName', 'energyFullName'],
+  optional: ['shortName'],
   example: {
     organizationName: 'ООО "Пример"',
+    shortName: 'Пример',
     energyFullName: 'Иванов Иван Иванович'
   }
 });
@@ -358,11 +360,61 @@ const writeJsonFile = (filePath, payload) => {
   fs.writeFileSync(filePath, JSON.stringify(payload, null, 2), 'utf8');
 };
 
+const normalizeOrganizationName = (value) => {
+  if (typeof value !== 'string') {
+    return '';
+  }
+  return value.trim();
+};
+
 const normalizeFullName = (value) =>
   String(value || '')
     .replace(/\s+/g, ' ')
     .trim()
     .toLowerCase();
+
+const getOrganizationFullName = (entry, fallback) => {
+  const fullName = normalizeOrganizationName(
+    entry?.fullName || entry?.full_name || entry?.name || entry?.organization
+  );
+  return fullName || normalizeOrganizationName(fallback);
+};
+
+const getOrganizationShortName = (entry, fallback) => {
+  const shortName = normalizeOrganizationName(
+    entry?.shortName || entry?.short_name || entry?.short || entry?.abbr
+  );
+  return shortName || normalizeOrganizationName(fallback);
+};
+
+const getOrganizationMembers = (entry) => {
+  if (Array.isArray(entry)) {
+    return entry;
+  }
+  if (entry && typeof entry === 'object') {
+    if (Array.isArray(entry.users)) {
+      return entry.users;
+    }
+    if (Array.isArray(entry.members)) {
+      return entry.members;
+    }
+    if (Array.isArray(entry.list)) {
+      return entry.list;
+    }
+  }
+  return [];
+};
+
+const buildOrganizationAccessEntry = ({ organizationName, entry, shortName, members }) => {
+  const fullName = getOrganizationFullName(entry, organizationName);
+  const resolvedShortName =
+    normalizeOrganizationName(shortName) || getOrganizationShortName(entry, fullName);
+  return {
+    fullName: fullName || organizationName,
+    shortName: resolvedShortName || fullName || organizationName,
+    users: members
+  };
+};
 
 const isEmptyId = (value) => value === '' || value === null || value === undefined;
 
@@ -385,7 +437,7 @@ const addPlaceholderMember = (members, fullName) => {
   return members;
 };
 
-const seedOrganizationAccess = ({ organizationName, energyFullName }) => {
+const seedOrganizationAccess = ({ organizationName, energyFullName, shortName }) => {
   const accessData = readJsonFile(ACCESS_FILE, { superAdmins: [], organizations: {} });
   if (
     !accessData.organizations ||
@@ -394,19 +446,21 @@ const seedOrganizationAccess = ({ organizationName, energyFullName }) => {
   ) {
     accessData.organizations = {};
   }
-  const existingMembers = Array.isArray(accessData.organizations[organizationName])
-    ? accessData.organizations[organizationName]
-    : [];
+  const existingEntry = accessData.organizations[organizationName];
+  const existingMembers = getOrganizationMembers(existingEntry);
   const membersBefore = existingMembers.length;
-  accessData.organizations[organizationName] = addPlaceholderMember(
-    existingMembers,
-    energyFullName
-  );
+  const updatedMembers = addPlaceholderMember(existingMembers, energyFullName);
+  accessData.organizations[organizationName] = buildOrganizationAccessEntry({
+    organizationName,
+    entry: existingEntry,
+    shortName,
+    members: updatedMembers
+  });
   writeJsonFile(ACCESS_FILE, accessData);
   return {
     accessData,
     membersBefore,
-    membersAfter: accessData.organizations[organizationName]?.length || 0
+    membersAfter: accessData.organizations[organizationName]?.users?.length || 0
   };
 };
 
@@ -441,7 +495,9 @@ const parseOrganizationsPayload = (stored) => {
       ? stored.organizations
       : [];
   return rawList
-    .map((entry) => (typeof entry === 'string' ? entry : entry?.name))
+    .map((entry) =>
+      typeof entry === 'string' ? entry : entry?.fullName || entry?.name
+    )
     .filter((entry) => typeof entry === 'string' && entry.trim().length);
 };
 
@@ -451,13 +507,22 @@ const ensureOrganizationsStorage = () => {
   }
 
   const accessData = readJsonFile(ACCESS_FILE, {});
-  const organizations = Object.keys(accessData.organizations || {});
+  const organizations = Object.entries(accessData.organizations || {}).map(
+    ([name, entry]) => ({
+      fullName: getOrganizationFullName(entry, name),
+      shortName: getOrganizationShortName(entry, name)
+    })
+  );
 
   ensureDir(DATA_DIR);
   ensureDir(ORGANIZATIONS_DIR);
 
-  organizations.forEach((name) => {
-    const folderName = sanitizeOrganizationName(name);
+  organizations.forEach((org) => {
+    const fullName = org.fullName || '';
+    if (!fullName) {
+      return;
+    }
+    const folderName = sanitizeOrganizationName(fullName);
     const organizationPath = path.join(ORGANIZATIONS_DIR, folderName);
     ensureDir(organizationPath);
 
@@ -524,10 +589,70 @@ const getOrganizationsList = () => {
   return legacyList;
 };
 
+const normalizeOrganizationRecord = (entry, fallbackName) => {
+  if (typeof entry === 'string') {
+    const trimmed = normalizeOrganizationName(entry);
+    if (!trimmed) {
+      return null;
+    }
+    return {
+      fullName: trimmed,
+      shortName: trimmed
+    };
+  }
+  if (entry && typeof entry === 'object') {
+    const fullName = getOrganizationFullName(entry, fallbackName);
+    if (!fullName) {
+      return null;
+    }
+    const shortName = getOrganizationShortName(entry, fullName) || fullName;
+    return {
+      fullName,
+      shortName
+    };
+  }
+  return null;
+};
+
+const buildOrganizationsPayload = (list) => {
+  const existing = readJsonFile(ORGANIZATIONS_FILE, null);
+  const existingEntries = Array.isArray(existing?.organizations)
+    ? existing.organizations
+    : [];
+  const existingMap = new Map(
+    existingEntries
+      .map((entry) => normalizeOrganizationRecord(entry, ''))
+      .filter(Boolean)
+      .map((entry) => [entry.fullName, entry])
+  );
+  return (list || [])
+    .map((entry) => {
+      const normalized = normalizeOrganizationRecord(
+        entry,
+        typeof entry === 'string' ? entry : ''
+      );
+      if (!normalized) {
+        return null;
+      }
+      const existingRecord = existingMap.get(normalized.fullName);
+      if (
+        existingRecord &&
+        (!normalized.shortName || normalized.shortName === normalized.fullName)
+      ) {
+        return {
+          ...normalized,
+          shortName: existingRecord.shortName || normalized.shortName
+        };
+      }
+      return normalized;
+    })
+    .filter(Boolean);
+};
+
 const saveOrganizationsList = (list) => {
   ensureDir(DATA_DIR);
   ensureDir(ORGANIZATIONS_DIR);
-  const payload = { organizations: list };
+  const payload = { organizations: buildOrganizationsPayload(list) };
   writeJsonFile(ORGANIZATIONS_FILE, payload);
   writeJsonFile(LEGACY_ORGANIZATIONS_FILE, payload);
 };
@@ -622,6 +747,9 @@ const handleCreateOrganization = (req, res) => {
         payload.organizationName ?? payload.organization ?? payload.organizations;
       const organizationName =
         typeof rawOrganizationName === 'string' ? rawOrganizationName.trim() : '';
+      const shortName = String(
+        payload.shortName || payload.short_name || payload.organizationShortName || ''
+      ).trim();
       const energyFullName = String(payload.energyFullName || '').trim();
       if (!payload.organizationName && (payload.organization || payload.organizations)) {
         logAction('create_org_payload_alias', {
@@ -633,6 +761,7 @@ const handleCreateOrganization = (req, res) => {
       logAction('create_org_payload_received', {
         ...getRequestMeta(req),
         organizationName,
+        shortName,
         energyFullName,
         payloadKeys: Object.keys(payload || {}),
         rawBodySize: rawBody ? rawBody.length : 0
@@ -696,7 +825,11 @@ const handleCreateOrganization = (req, res) => {
           energyFullName,
           fileStatus: buildFileSystemStatus(ACCESS_FILE)
         });
-        const seedResult = seedOrganizationAccess({ organizationName, energyFullName });
+        const seedResult = seedOrganizationAccess({
+          organizationName,
+          energyFullName,
+          shortName
+        });
         logAction('create_org_step_snapshot', {
           ...getRequestMeta(req),
           step: '1.1',
@@ -743,7 +876,10 @@ const handleCreateOrganization = (req, res) => {
           fileStatus: buildFileSystemStatus(ORGANIZATIONS_FILE),
           legacyFileStatus: buildFileSystemStatus(LEGACY_ORGANIZATIONS_FILE)
         });
-        const nextOrganizations = [...organizations, organizationName];
+        const newEntry = shortName
+          ? { fullName: organizationName, shortName }
+          : organizationName;
+        const nextOrganizations = [...organizations, newEntry];
         saveOrganizationsList(nextOrganizations);
         logAction('create_org_step_success', {
           ...getRequestMeta(req),
@@ -1072,9 +1208,8 @@ const handleAcceptInvite = (req, res) => {
     if (!accessData.organizations || typeof accessData.organizations !== 'object') {
       accessData.organizations = {};
     }
-    const existingMembers = Array.isArray(accessData.organizations[invite.organizationName])
-      ? accessData.organizations[invite.organizationName]
-      : [];
+    const existingEntry = accessData.organizations[invite.organizationName];
+    const existingMembers = getOrganizationMembers(existingEntry);
     const alreadyExists = existingMembers.some(
       (member) => normalizeIdValue(member?.id) === userId
     );
@@ -1090,7 +1225,11 @@ const handleAcceptInvite = (req, res) => {
         role: 'Энергетик'
       });
     }
-    accessData.organizations[invite.organizationName] = existingMembers;
+    accessData.organizations[invite.organizationName] = buildOrganizationAccessEntry({
+      organizationName: invite.organizationName,
+      entry: existingEntry,
+      members: existingMembers
+    });
     writeJsonFile(ACCESS_FILE, accessData);
 
     const organizations = getOrganizationsList();
@@ -1160,9 +1299,8 @@ const handleAcceptDirectInvite = (req, res) => {
     if (!accessData.organizations || typeof accessData.organizations !== 'object') {
       accessData.organizations = {};
     }
-    const existingMembers = Array.isArray(accessData.organizations[organizationName])
-      ? accessData.organizations[organizationName]
-      : [];
+    const existingEntry = accessData.organizations[organizationName];
+    const existingMembers = getOrganizationMembers(existingEntry);
     const alreadyExists = existingMembers.some(
       (member) => normalizeIdValue(member?.id) === userId
     );
@@ -1178,7 +1316,11 @@ const handleAcceptDirectInvite = (req, res) => {
         role: 'Энергетик'
       });
     }
-    accessData.organizations[organizationName] = existingMembers;
+    accessData.organizations[organizationName] = buildOrganizationAccessEntry({
+      organizationName,
+      entry: existingEntry,
+      members: existingMembers
+    });
     writeJsonFile(ACCESS_FILE, accessData);
 
     const organizations = getOrganizationsList();

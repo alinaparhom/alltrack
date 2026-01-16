@@ -1,6 +1,12 @@
 {
   "organizations": [
-    "Валиос",
-    "МСУ-23"
+    {
+      "fullName": "Валиос",
+      "shortName": "Валиос"
+    },
+    {
+      "fullName": "МСУ-23",
+      "shortName": "МСУ-23"
+    }
   ]
 }

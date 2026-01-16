@@ -74,20 +74,20 @@ const buildStepError = ({
 
 const formatTimestamp = () => new Date().toISOString();
 
-const ensureLogFile = () => {
-  LOG_FILES.forEach((filePath) => {
+const ensureLogFile = (filePaths = LOG_FILES) => {
+  filePaths.forEach((filePath) => {
     if (!fs.existsSync(filePath)) {
       fs.writeFileSync(filePath, '', 'utf8');
     }
   });
 };
 
-const appendLogLine = (line, callback) => {
+const appendLogLine = (line, callback, filePaths = LOG_FILES) => {
   const text = line.endsWith('\n') ? line : `${line}\n`;
-  ensureLogFile();
-  let pending = LOG_FILES.length;
+  ensureLogFile(filePaths);
+  let pending = filePaths.length;
   let lastError = null;
-  LOG_FILES.forEach((filePath) => {
+  filePaths.forEach((filePath) => {
     fs.appendFile(filePath, text, 'utf8', (error) => {
       if (error) {
         lastError = error;
@@ -1252,7 +1252,7 @@ const handleLog = (req, res) => {
         }
         index += 1;
         writeNext();
-      });
+      }, [MINI_APPS_LOG_FILE]);
     };
     writeNext();
   });

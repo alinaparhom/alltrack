@@ -1263,6 +1263,24 @@ const resolveAccountInfo = ({ user, scope } = {}) => {
   };
 };
 
+const logResolvedAccess = ({ userId, access }) => {
+  if (!access) {
+    return;
+  }
+  const { fullName, role, roles } = resolveAccountInfo({
+    user: access.user,
+    scope: access.scope
+  });
+  logEvent('info', 'Данные пользователя из access.json', {
+    userId: normalizeId(userId) || userId || null,
+    fullName: fullName || null,
+    organization: access.organization || null,
+    role: role || null,
+    roles,
+    scope: access.scope || null
+  });
+};
+
 const formatUserIdStatus = ({ userId, user, scope } = {}) => {
   const normalizedId = normalizeId(userId) || '—';
   const { fullName, role } = resolveAccountInfo({ user, scope });
@@ -1593,6 +1611,7 @@ const initAccess = async () => {
       scope: access.scope,
       organization: access.organization || null
     });
+    logResolvedAccess({ userId: normalizedUserId, access });
     if (access.scope === 'super') {
       document.body.classList.remove('is-checking');
       setCheckingOverlayVisibility(false);

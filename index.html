@@ -65,6 +65,57 @@
           <span class="super-admin__button-icon">＋</span>
           <span class="super-admin__button-label" id="superAdminCreateLabel">Добавить организацию</span>
         </button>
+        <div class="super-admin__create-panel" id="superAdminCreatePanel" hidden>
+          <div class="super-admin__create-head">
+            <div>
+              <h3>Новая организация</h3>
+              <p>Карточка создаётся сразу в Mini App, без лишних шагов.</p>
+            </div>
+            <button class="super-admin__icon-button" type="button" id="superAdminCloseCreate" aria-label="Скрыть форму добавления">
+              ✕
+            </button>
+          </div>
+          <form class="super-admin__form" id="superAdminCreateForm" autocomplete="off">
+            <label class="super-admin__field">
+              <span>Наименование организации</span>
+              <input type="text" name="fullName" id="superAdminOrgFullName" placeholder="ООО «СеверЭнерго»" required />
+            </label>
+            <label class="super-admin__field">
+              <span>Краткое название</span>
+              <input type="text" name="shortName" id="superAdminOrgShortName" placeholder="СеверЭнерго" required />
+            </label>
+            <label class="super-admin__field">
+              <span>ФИО энергетика</span>
+              <input type="text" name="energyLead" id="superAdminOrgEnergyLead" placeholder="Фамилия Имя Отчество" required />
+            </label>
+            <div class="super-admin__switch" role="group" aria-label="Схема нумерации">
+              <p class="super-admin__switch-label">Схема работы с номерами</p>
+              <div class="super-admin__switch-control">
+                <label class="super-admin__switch-option">
+                  <input type="radio" name="numberingScheme" value="app" checked />
+                  <span class="super-admin__switch-text">Номер задаётся приложением</span>
+                </label>
+                <label class="super-admin__switch-option">
+                  <input type="radio" name="numberingScheme" value="accounting" />
+                  <span class="super-admin__switch-text">По бухгалтерскому номеру</span>
+                </label>
+              </div>
+            </div>
+            <div class="super-admin__note" id="superAdminCreateSummary">
+              <div class="super-admin__note-head">
+                <p class="super-admin__note-title">Проверка данных</p>
+                <p class="super-admin__note-status" id="superAdminCreateStatus" data-state="success">Заполните поля</p>
+              </div>
+              <p class="super-admin__note-text" id="superAdminCreatePreview">
+                Здесь появится краткая карточка новой организации.
+              </p>
+            </div>
+            <button class="super-admin__button super-admin__button--wide is-disabled" type="submit" id="superAdminCreateSubmit" disabled>
+              Сохранить организацию
+            </button>
+            <p class="super-admin__hint">Подсказка: короткое название используется в списках и быстрых фильтрах.</p>
+          </form>
+        </div>
       </div>
     </section>
 

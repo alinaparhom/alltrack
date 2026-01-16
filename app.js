@@ -239,8 +239,22 @@ const buildLogEndpoints = () => {
   });
 };
 
+const canSendLogsToServer = () => {
+  if (typeof window === 'undefined' || !window.location) {
+    return false;
+  }
+  const { protocol, origin } = window.location;
+  if (!protocol || protocol === 'file:') {
+    return false;
+  }
+  if (!origin || origin === 'null') {
+    return false;
+  }
+  return true;
+};
+
 const sendLogPayload = async (payload) => {
-  if (typeof window === 'undefined' || !window.navigator) {
+  if (typeof window === 'undefined' || !window.navigator || !canSendLogsToServer()) {
     return false;
   }
   const endpoints = buildLogEndpoints();

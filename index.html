@@ -35,14 +35,70 @@
       <div class="access__badge" id="accessBadge">—</div>
     </section>
 
-    <section class="glass super-admin" id="superAdminPanel" hidden>
-      <div class="super-admin__header">
-        <div>
-          <p class="super-admin__label">Супер‑администратор</p>
-          <h2 class="super-admin__name" id="superAdminName">—</h2>
-          <p class="super-admin__subtitle" id="superAdminShortName">Фамилия Имя</p>
+    <section class="glass super-admin super-admin--dashboard" id="superAdminPanel" hidden>
+      <div class="super-admin__brand">
+        <div class="super-admin__brand-info">
+          <div class="super-admin__logo">АТ</div>
+          <div>
+            <p class="super-admin__brand-title">AllTrack</p>
+            <p class="super-admin__brand-subtitle">Сегодня: 12 операций</p>
+          </div>
         </div>
-        <span class="super-admin__chip">Все организации</span>
+      </div>
+
+      <div class="super-admin__profile glass">
+        <div>
+          <h2 class="super-admin__name" id="superAdminName">—</h2>
+          <p class="super-admin__subtitle">
+            Организация: <span id="superAdminShortName">Все организации</span>
+          </p>
+        </div>
+        <div class="super-admin__role">
+          <span class="super-admin__role-label">Роль</span>
+          <span class="super-admin__chip">Супер‑администратор</span>
+        </div>
+      </div>
+
+      <div class="super-admin__stats-grid">
+        <div class="super-admin__stat-card">
+          <p>Организаций</p>
+          <strong id="superAdminOrgTotal">0</strong>
+          <span>в едином реестре</span>
+        </div>
+        <div class="super-admin__stat-card">
+          <p>Пользователей</p>
+          <strong id="superAdminUserTotal">0</strong>
+          <span>активных</span>
+        </div>
+        <div class="super-admin__stat-card">
+          <p>Обратная связь</p>
+          <strong id="superAdminFeedbackTotal">0</strong>
+          <span>вопросов без ответа</span>
+        </div>
+        <div class="super-admin__stat-card">
+          <p>Инцидентов</p>
+          <strong id="superAdminIncidentTotal">0</strong>
+          <span>в работе</span>
+        </div>
+      </div>
+
+      <div class="super-admin__actions-grid">
+        <button class="super-admin__action super-admin__action--primary" type="button">
+          <span class="super-admin__action-icon">🧭</span>
+          Карта организаций
+        </button>
+        <button class="super-admin__action super-admin__action--success" type="button">
+          <span class="super-admin__action-icon">🧑‍💼</span>
+          Роли и доступы
+        </button>
+        <button class="super-admin__action super-admin__action--warning" type="button">
+          <span class="super-admin__action-icon">📊</span>
+          Сводный отчёт
+        </button>
+        <button class="super-admin__action" type="button">
+          <span class="super-admin__action-icon">⚙️</span>
+          Настройки системы
+        </button>
       </div>
 
       <div class="super-admin__section">

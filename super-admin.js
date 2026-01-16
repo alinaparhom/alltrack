@@ -257,6 +257,25 @@
     return entry;
   };
 
+  const getReadableErrorDetails = (error) => {
+    if (!error) {
+      return '';
+    }
+    const directDetails = error?.details;
+    if (typeof directDetails === 'string') {
+      return directDetails;
+    }
+    if (directDetails && typeof directDetails === 'object') {
+      const knownKeys = ['details', 'message', 'error', 'description', 'info'];
+      for (const key of knownKeys) {
+        if (typeof directDetails[key] === 'string' && directDetails[key].trim()) {
+          return directDetails[key].trim();
+        }
+      }
+    }
+    return '';
+  };
+
   const buildCreatePreview = ({ fullName, shortName, energyLead, schemeLabel }) => {
     if (!fullName && !shortName && !energyLead) {
       return 'Здесь появится краткая карточка новой организации.';
@@ -481,23 +500,21 @@
         shortNameTouched = false;
         updateFormState();
         if (status) {
-          status.textContent = 'Организация создана';
+          status.textContent = 'Организация успешно добавлена.';
           status.dataset.state = 'success';
         }
       } catch (error) {
         updateFormState();
-        const errorDetails =
-          error?.details?.details ||
-          error?.details?.message ||
-          error?.details?.error ||
-          null;
+        const errorDetails = getReadableErrorDetails(error);
         const errorMessage =
           error?.message ||
           'Не удалось создать организацию. Проверьте подключение и данные.';
+        const statusCode = error?.status ? `Код: ${error.status}` : '';
+        const combinedDetails = [errorDetails, statusCode].filter(Boolean).join(' · ');
         if (status) {
-          status.textContent = errorDetails
-            ? `${errorMessage} (${errorDetails})`
-            : errorMessage;
+          status.textContent = combinedDetails
+            ? `Ошибка сохранения: ${errorMessage} (${combinedDetails})`
+            : `Ошибка сохранения: ${errorMessage}`;
           status.dataset.state = 'error';
         }
         if (typeof console !== 'undefined' && console.error) {

@@ -1,6 +1,7 @@
 (() => {
   const formatNumber = (value) => new Intl.NumberFormat('ru-RU').format(value);
   let currentOrganizations = [];
+  let createPanelInitialized = false;
 
   const buildStat = (label, value) =>
     `<div class="super-admin__stat"><span>${label}</span><strong>${value}</strong></div>`;
@@ -96,6 +97,189 @@
     container.innerHTML = organizations.map(renderOrganizationCard).join('');
   };
 
+  const safeLogEvent = (level, message, payload = null) => {
+    if (typeof window !== 'undefined' && typeof window.logEvent === 'function') {
+      window.logEvent(level, message, payload);
+    }
+  };
+
+  const buildCreatePreview = ({ fullName, shortName, energyLead, schemeLabel }) => {
+    if (!fullName && !shortName && !energyLead) {
+      return 'Здесь появится краткая карточка новой организации.';
+    }
+    const nameLine = fullName ? `«${fullName}»` : 'Название не указано';
+    const shortLine = shortName ? `Коротко: ${shortName}` : 'Короткое название не указано';
+    const energyLine = energyLead ? `Энергетик: ${energyLead}` : 'Энергетик не указан';
+    const schemeLine = schemeLabel ? `Схема: ${schemeLabel}` : 'Схема не выбрана';
+    return [nameLine, shortLine, energyLine, schemeLine].join(' · ');
+  };
+
+  const setupCreatePanel = (panel) => {
+    const toggle = document.getElementById('superAdminOpenCreate');
+    const label = document.getElementById('superAdminCreateLabel');
+    const createPanel = document.getElementById('superAdminCreatePanel');
+    const closeButton = document.getElementById('superAdminCloseCreate');
+    const form = document.getElementById('superAdminCreateForm');
+    const fullNameInput = document.getElementById('superAdminOrgFullName');
+    const shortNameInput = document.getElementById('superAdminOrgShortName');
+    const energyLeadInput = document.getElementById('superAdminOrgEnergyLead');
+    const submitButton = document.getElementById('superAdminCreateSubmit');
+    const preview = document.getElementById('superAdminCreatePreview');
+    const status = document.getElementById('superAdminCreateStatus');
+
+    if (!toggle || !label || !createPanel || !form || !submitButton) {
+      return;
+    }
+
+    let shortNameTouched = false;
+
+    const updatePreview = () => {
+      const schemeInput = form.querySelector('input[name="numberingScheme"]:checked');
+      const schemeLabel =
+        schemeInput?.value === 'accounting'
+          ? 'Бухгалтерский номер'
+          : schemeInput
+          ? 'Номер приложения'
+          : '';
+      const payload = {
+        fullName: fullNameInput?.value.trim() || '',
+        shortName: shortNameInput?.value.trim() || '',
+        energyLead: energyLeadInput?.value.trim() || '',
+        schemeLabel
+      };
+      if (preview) {
+        preview.textContent = buildCreatePreview(payload);
+      }
+    };
+
+    const updateFormState = () => {
+      const isValid =
+        fullNameInput?.value.trim() &&
+        shortNameInput?.value.trim() &&
+        energyLeadInput?.value.trim();
+      if (submitButton) {
+        submitButton.disabled = !isValid;
+        submitButton.classList.toggle('is-disabled', !isValid);
+      }
+      if (status) {
+        status.textContent = isValid ? 'Готово к сохранению' : 'Заполните поля';
+        status.dataset.state = isValid ? 'success' : 'error';
+      }
+      updatePreview();
+    };
+
+    const togglePanel = (isOpen) => {
+      createPanel.hidden = !isOpen;
+      toggle.setAttribute('aria-expanded', String(isOpen));
+      label.textContent = isOpen ? 'Скрыть форму' : 'Добавить организацию';
+      safeLogEvent('info', 'Супер-админ: переключение формы добавления организации', {
+        isOpen
+      });
+    };
+
+    toggle.addEventListener('click', () => {
+      togglePanel(createPanel.hidden);
+    });
+
+    if (closeButton) {
+      closeButton.addEventListener('click', () => {
+        togglePanel(false);
+      });
+    }
+
+    if (fullNameInput) {
+      fullNameInput.addEventListener('input', () => {
+        if (!shortNameTouched && shortNameInput) {
+          shortNameInput.value = getShortName(fullNameInput.value.trim());
+        }
+        updateFormState();
+      });
+      fullNameInput.addEventListener('change', () => {
+        safeLogEvent('info', 'Супер-админ: заполнено наименование организации', {
+          value: fullNameInput.value.trim()
+        });
+      });
+    }
+
+    if (shortNameInput) {
+      shortNameInput.addEventListener('input', () => {
+        shortNameTouched = true;
+        updateFormState();
+      });
+      shortNameInput.addEventListener('change', () => {
+        safeLogEvent('info', 'Супер-админ: заполнено короткое название организации', {
+          value: shortNameInput.value.trim()
+        });
+      });
+    }
+
+    if (energyLeadInput) {
+      energyLeadInput.addEventListener('input', updateFormState);
+      energyLeadInput.addEventListener('change', () => {
+        safeLogEvent('info', 'Супер-админ: заполнено ФИО энергетика', {
+          value: energyLeadInput.value.trim()
+        });
+      });
+    }
+
+    form.addEventListener('change', (event) => {
+      if (event.target?.name === 'numberingScheme') {
+        const schemeLabel =
+          event.target.value === 'accounting'
+            ? 'Бухгалтерский номер'
+            : 'Номер приложения';
+        safeLogEvent('info', 'Супер-админ: выбрана схема нумерации', {
+          scheme: event.target.value,
+          label: schemeLabel
+        });
+        updateFormState();
+      }
+    });
+
+    form.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const fullName = fullNameInput?.value.trim();
+      const shortName = shortNameInput?.value.trim();
+      const energyLead = energyLeadInput?.value.trim();
+      if (!fullName || !shortName || !energyLead) {
+        updateFormState();
+        return;
+      }
+      const newOrg = buildOrganizationStats(
+        fullName,
+        [],
+        energyLead,
+        currentOrganizations.length
+      );
+      newOrg.shortName = shortName;
+      currentOrganizations = [newOrg, ...currentOrganizations];
+      const list = document.getElementById('superAdminOrgs');
+      const count = document.getElementById('superAdminCount');
+      if (list) {
+        renderOrganizations(list, currentOrganizations);
+      }
+      if (count) {
+        count.textContent = formatNumber(currentOrganizations.length);
+      }
+      safeLogEvent('info', 'Супер-админ: добавлена организация', {
+        fullName,
+        shortName,
+        energyLead,
+        scheme: form.querySelector('input[name="numberingScheme"]:checked')?.value || ''
+      });
+      form.reset();
+      shortNameTouched = false;
+      if (status) {
+        status.textContent = 'Организация добавлена';
+        status.dataset.state = 'success';
+      }
+      updateFormState();
+    });
+
+    updateFormState();
+    safeLogEvent('info', 'Супер-админ: форма добавления организации инициализирована');
+  };
+
   window.initSuperAdminWorkspace = ({ fullName, accessData } = {}) => {
     const panel = document.getElementById('superAdminPanel');
     const nameField = document.getElementById('superAdminName');
@@ -126,6 +310,11 @@
 
     if (defaultWorkspace) {
       defaultWorkspace.hidden = true;
+    }
+
+    if (!createPanelInitialized) {
+      setupCreatePanel(panel);
+      createPanelInitialized = true;
     }
   };
 

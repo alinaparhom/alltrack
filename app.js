@@ -164,15 +164,36 @@ const appendLogToServer = async () => {
   await flushPendingLogs();
 };
 
+const buildLogEndpoints = () => {
+  if (typeof window === 'undefined' || !window.location) {
+    return LOG_ENDPOINTS;
+  }
+  const origin = window.location.origin || '';
+  return LOG_ENDPOINTS.map((endpoint) => {
+    try {
+      return new URL(endpoint, origin || window.location.href).toString();
+    } catch (error) {
+      return endpoint;
+    }
+  });
+};
+
 const sendLogPayload = async (payload) => {
   if (typeof window === 'undefined' || !window.navigator) {
     return false;
   }
-  if (!/^https?:$/.test(window.location?.protocol || '')) {
-    return false;
-  }
+  const endpoints = buildLogEndpoints();
   try {
-    for (const endpoint of LOG_ENDPOINTS) {
+    if (window.navigator.sendBeacon) {
+      const blob = new Blob([payload], { type: 'text/plain' });
+      for (const endpoint of endpoints) {
+        const sent = window.navigator.sendBeacon(endpoint, blob);
+        if (sent) {
+          return true;
+        }
+      }
+    }
+    for (const endpoint of endpoints) {
       try {
         const response = await fetch(endpoint, {
           method: 'POST',
@@ -185,15 +206,6 @@ const sendLogPayload = async (payload) => {
         }
       } catch (error) {
         continue;
-      }
-    }
-    if (window.navigator.sendBeacon) {
-      const blob = new Blob([payload], { type: 'text/plain' });
-      for (const endpoint of LOG_ENDPOINTS) {
-        const sent = window.navigator.sendBeacon(endpoint, blob);
-        if (sent) {
-          return true;
-        }
       }
     }
     return false;
@@ -469,6 +481,14 @@ const initUserActionLogging = () => {
       flushPendingLogs().catch(() => {});
     }
   });
+  window.addEventListener('pagehide', () => {
+    logEvent('info', 'Страница скрыта, сохраняем логи');
+    flushPendingLogs().catch(() => {});
+  });
+  window.addEventListener('beforeunload', () => {
+    logEvent('info', 'Страница закрывается, сохраняем логи');
+    flushPendingLogs().catch(() => {});
+  });
 };
 
 const ensureTelegramReady = () => {
@@ -500,6 +520,11 @@ logEvent('info', 'Старт скрипта проверки доступа', {
   documentReady: document.readyState
 });
 logEvent('info', 'Приложение загружено');
+logEvent('info', 'Mini Apps открыто', {
+  url: typeof window !== 'undefined' ? window.location?.href || '' : '',
+  referrer: typeof document !== 'undefined' ? document.referrer || '' : '',
+  userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : ''
+});
 initUserActionLogging();
 
 document.addEventListener('DOMContentLoaded', () => {

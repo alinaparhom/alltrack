@@ -968,7 +968,7 @@
       const LOG_LIMIT = 250;
       const LOG_PENDING_LIMIT = 500;
       const LOG_FILE_NAMES = ['1alltrack.log', '1docks.log', '1miniapps.log'];
-      const LOG_ENDPOINT = '/log';
+      const LOG_ENDPOINTS = ['/api/log', '/log'];
       const LOG_FLUSH_INTERVAL_MS = 15000;
       const logFileHandlePromises = new Map();
       let nodeFileWritePromise = null;
@@ -1123,28 +1123,51 @@
         );
       };
 
+      const buildLogEndpoints = () => {
+        if (typeof window === 'undefined' || !window.location) {
+          return LOG_ENDPOINTS;
+        }
+        const origin = window.location.origin || '';
+        return LOG_ENDPOINTS.map((endpoint) => {
+          try {
+            return new URL(endpoint, origin || window.location.href).toString();
+          } catch (error) {
+            return endpoint;
+          }
+        });
+      };
+
       const sendLogPayload = async (payload) => {
         if (typeof window === 'undefined' || !window.navigator) {
           return false;
         }
-        if (!/^https?:$/.test(window.location?.protocol || '')) {
-          return false;
-        }
+        const endpoints = buildLogEndpoints();
         try {
           if (window.navigator.sendBeacon) {
             const blob = new Blob([payload], { type: 'text/plain' });
-            const sent = window.navigator.sendBeacon(LOG_ENDPOINT, blob);
-            if (sent) {
-              return true;
+            for (const endpoint of endpoints) {
+              const sent = window.navigator.sendBeacon(endpoint, blob);
+              if (sent) {
+                return true;
+              }
             }
           }
-          const response = await fetch(LOG_ENDPOINT, {
-            method: 'POST',
-            headers: { 'Content-Type': 'text/plain' },
-            body: payload,
-            keepalive: true
-          });
-          return response.ok;
+          for (const endpoint of endpoints) {
+            try {
+              const response = await fetch(endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain' },
+                body: payload,
+                keepalive: true
+              });
+              if (response.ok) {
+                return true;
+              }
+            } catch (error) {
+              continue;
+            }
+          }
+          return false;
         } catch (error) {
           return false;
         }
@@ -1421,6 +1444,14 @@
             flushPendingLogs().catch(() => {});
           }
         });
+        window.addEventListener('pagehide', () => {
+          logEvent('info', 'Страница скрыта, сохраняем логи');
+          flushPendingLogs().catch(() => {});
+        });
+        window.addEventListener('beforeunload', () => {
+          logEvent('info', 'Страница закрывается, сохраняем логи');
+          flushPendingLogs().catch(() => {});
+        });
       };
 
       const ensureTelegramReady = () => {
@@ -1452,6 +1483,11 @@
         documentReady: document.readyState
       });
       logEvent('info', 'Приложение загружено');
+      logEvent('info', 'Mini Apps открыто', {
+        url: typeof window !== 'undefined' ? window.location?.href || '' : '',
+        referrer: typeof document !== 'undefined' ? document.referrer || '' : '',
+        userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : ''
+      });
       initUserActionLogging();
 
       document.addEventListener('DOMContentLoaded', () => {

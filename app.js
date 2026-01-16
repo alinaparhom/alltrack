@@ -401,7 +401,8 @@ const fetchWithLogging = async (label, url, options = {}) => {
       label,
       method,
       url,
-      message: error?.message || String(error)
+      message: error?.message || String(error),
+      stack: error?.stack
     });
     throw error;
   }
@@ -428,7 +429,7 @@ const logEvent = (level, message, payload = null) => {
   const consoleMethod =
     level === 'error' ? baseConsole.error : level === 'warn' ? baseConsole.warn : baseConsole.info;
   consoleMethod(`[${timestamp}] ${message}`, payload || '');
-  if (level === 'error') {
+  if (level === 'error' || level === 'warn') {
     flushPendingLogs().catch(() => {});
   }
 };

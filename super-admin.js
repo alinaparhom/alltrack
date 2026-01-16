@@ -145,7 +145,11 @@
       typeof window !== 'undefined' && typeof window.fetchWithLogging === 'function'
         ? window.fetchWithLogging
         : null;
+    const requestId = `super-admin-create-${Date.now()}-${Math.random()
+      .toString(36)
+      .slice(2, 8)}`;
     safeLogEvent('info', 'Супер-админ: отправка запроса на создание организации', {
+      requestId,
       url,
       payload
     });
@@ -177,6 +181,7 @@
       error.status = response.status;
       safeLogEvent('warn', 'Супер-админ: ошибка ответа сервера при создании организации', {
         status: response.status,
+        requestId,
         url,
         response: data
       });
@@ -184,10 +189,11 @@
     }
     safeLogEvent('info', 'Супер-админ: ответ сервера при создании организации', {
       status: response.status,
+      requestId,
       url,
-      response: data
+      response: data || rawText
     });
-    return data;
+    return data || { ok: true };
   };
 
   const buildCreatePreview = ({ fullName, shortName, energyLead, schemeLabel }) => {
@@ -419,16 +425,22 @@
           error?.details?.message ||
           error?.details?.error ||
           null;
-        const errorMessage = error?.message || 'Не удалось создать организацию. Проверьте данные.';
+        const errorMessage =
+          error?.message ||
+          'Не удалось создать организацию. Проверьте подключение и данные.';
         if (status) {
           status.textContent = errorDetails
             ? `${errorMessage} (${errorDetails})`
             : errorMessage;
           status.dataset.state = 'error';
         }
+        if (typeof console !== 'undefined' && console.error) {
+          console.error('Ошибка создания организации:', error);
+        }
         safeLogEvent('error', 'Супер-админ: ошибка создания организации', {
           message: errorMessage,
           details: errorDetails,
+          stack: error?.stack,
           status: error?.status,
           response: error?.details || null,
           fullName,

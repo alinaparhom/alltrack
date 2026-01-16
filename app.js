@@ -422,6 +422,9 @@ const logEvent = (level, message, payload = null) => {
   const consoleMethod =
     level === 'error' ? console.error : level === 'warn' ? console.warn : console.info;
   consoleMethod(`[${timestamp}] ${message}`, payload || '');
+  if (level === 'error') {
+    flushPendingLogs().catch(() => {});
+  }
 };
 
 window.logEvent = logEvent;

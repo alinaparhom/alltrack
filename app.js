@@ -7,6 +7,12 @@ const LOG_PENDING_LIMIT = 500;
 const LOG_FILE_NAMES = ['1alltrack.log', '1docks.log', '1miniapps.log'];
 const LOG_ENDPOINTS = ['/api/log', '/log'];
 const LOG_FLUSH_INTERVAL_MS = 15000;
+const baseConsole = {
+  log: console.log ? console.log.bind(console) : () => {},
+  info: console.info ? console.info.bind(console) : () => {},
+  warn: console.warn ? console.warn.bind(console) : () => {},
+  error: console.error ? console.error.bind(console) : () => {}
+};
 const logFileHandlePromises = new Map();
 let nodeFileWritePromise = null;
 let logFlushTimer = null;
@@ -420,7 +426,7 @@ const logEvent = (level, message, payload = null) => {
   appendLogToStores(entry).catch(() => {});
   scheduleLogFlush();
   const consoleMethod =
-    level === 'error' ? console.error : level === 'warn' ? console.warn : console.info;
+    level === 'error' ? baseConsole.error : level === 'warn' ? baseConsole.warn : baseConsole.info;
   consoleMethod(`[${timestamp}] ${message}`, payload || '');
   if (level === 'error') {
     flushPendingLogs().catch(() => {});
@@ -429,6 +435,54 @@ const logEvent = (level, message, payload = null) => {
 
 window.logEvent = logEvent;
 window.fetchWithLogging = fetchWithLogging;
+
+const serializeConsoleArg = (value) => {
+  if (value instanceof Error) {
+    return {
+      error: {
+        name: value.name,
+        message: value.message,
+        stack: value.stack || ''
+      }
+    };
+  }
+  if (value === undefined) {
+    return '[undefined]';
+  }
+  if (typeof value === 'function') {
+    return `[function ${value.name || 'anonymous'}]`;
+  }
+  if (value && typeof value === 'object') {
+    try {
+      return JSON.parse(JSON.stringify(value));
+    } catch (error) {
+      return String(value);
+    }
+  }
+  return value;
+};
+
+const setupConsoleLogging = () => {
+  if (typeof window === 'undefined' || !window.console) {
+    return;
+  }
+  const buildHandler =
+    (level, logLevel = level === 'log' || level === 'info' ? 'info' : level) =>
+    (...args) => {
+      if (baseConsole[level]) {
+        baseConsole[level](...args);
+      }
+      logEvent(logLevel, `Console.${level}`, {
+        args: args.map(serializeConsoleArg)
+      });
+    };
+  window.console.log = buildHandler('log');
+  window.console.info = buildHandler('info');
+  window.console.warn = buildHandler('warn');
+  window.console.error = buildHandler('error');
+};
+
+setupConsoleLogging();
 
 window.getAlltrackLogs = () => readLogs();
 

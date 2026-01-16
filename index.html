@@ -65,56 +65,6 @@
           <span class="super-admin__button-icon">＋</span>
           <span class="super-admin__button-label" id="superAdminCreateLabel">Добавить организацию</span>
         </button>
-        <div class="super-admin__create-panel" id="superAdminCreatePanel" hidden>
-          <div class="super-admin__create-head">
-            <div>
-              <h3>Новая организация</h3>
-              <p>Заполните карточку и выберите способ нумерации.</p>
-            </div>
-          </div>
-          <form class="super-admin__form" id="superAdminCreateForm">
-            <label class="super-admin__field" for="superAdminOrgName">
-              Название организации
-              <input
-                type="text"
-                id="superAdminOrgName"
-                name="organizationName"
-                placeholder="Например, ЭнергоСервис"
-                autocomplete="organization"
-                required
-              />
-            </label>
-            <label class="super-admin__field" for="superAdminOrgIndustry">
-              Энергетика
-              <input
-                type="text"
-                id="superAdminOrgIndustry"
-                name="organizationIndustry"
-                placeholder="Например, Энергетика"
-                required
-              />
-            </label>
-            <div class="super-admin__switch">
-              <p class="super-admin__switch-label">Нумерация оборудования</p>
-              <div class="super-admin__switch-control">
-                <label class="super-admin__switch-option">
-                  <input type="radio" name="orgNumbering" value="app" checked />
-                  <span class="super-admin__switch-text">Номера назначает приложение</span>
-                </label>
-                <label class="super-admin__switch-option">
-                  <input type="radio" name="orgNumbering" value="accounting" />
-                  <span class="super-admin__switch-text">Через бухгалтерский номер</span>
-                </label>
-              </div>
-            </div>
-            <button class="super-admin__button super-admin__button--wide" type="submit">
-              Добавить организацию
-            </button>
-            <p class="super-admin__note">
-              Проверьте название и отрасль — так проще настроить справочники и отчёты.
-            </p>
-          </form>
-        </div>
       </div>
     </section>
 

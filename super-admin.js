@@ -1,6 +1,5 @@
 (() => {
   const formatNumber = (value) => new Intl.NumberFormat('ru-RU').format(value);
-  let createButtonInitialized = false;
   let currentOrganizations = [];
 
   const buildStat = (label, value) =>
@@ -97,95 +96,6 @@
     container.innerHTML = organizations.map(renderOrganizationCard).join('');
   };
 
-  const addOrganizationCard = ({
-    name,
-    industry,
-    numbering,
-    list,
-    count
-  }) => {
-    const index = currentOrganizations.length;
-    const adminName = 'Не назначен';
-    const orgStats = buildOrganizationStats(name, [], adminName, index);
-    currentOrganizations = [...currentOrganizations, { ...orgStats, industry, numbering }];
-    if (list) {
-      list.innerHTML = currentOrganizations.map(renderOrganizationCard).join('');
-    }
-    if (count) {
-      count.textContent = formatNumber(currentOrganizations.length);
-    }
-  };
-
-  const initCreateButton = () => {
-    const openButton = document.getElementById('superAdminOpenCreate');
-    const panel = document.getElementById('superAdminCreatePanel');
-    const label = document.getElementById('superAdminCreateLabel');
-    const form = document.getElementById('superAdminCreateForm');
-    const list = document.getElementById('superAdminOrgs');
-    const count = document.getElementById('superAdminCount');
-    const nameInput = document.getElementById('superAdminOrgName');
-    const industryInput = document.getElementById('superAdminOrgIndustry');
-
-    if (createButtonInitialized || !openButton || !panel || !label) {
-      return;
-    }
-    createButtonInitialized = true;
-
-    const setPanelState = (isOpen) => {
-      panel.hidden = !isOpen;
-      openButton.setAttribute('aria-expanded', String(isOpen));
-      label.textContent = isOpen ? 'Свернуть создание' : 'Добавить организацию';
-      if (isOpen) {
-        if (nameInput) {
-          nameInput.focus();
-        }
-        panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
-    };
-
-    setPanelState(false);
-    openButton.addEventListener('click', () => {
-      setPanelState(panel.hidden);
-    });
-
-    if (form) {
-      form.addEventListener('submit', (event) => {
-        event.preventDefault();
-
-        const name = nameInput?.value?.trim();
-        const industry = industryInput?.value?.trim();
-        const numbering =
-          form.querySelector('input[name="orgNumbering"]:checked')?.value || 'app';
-
-        if (!name || !industry) {
-          if (form.reportValidity) {
-            form.reportValidity();
-          } else if (nameInput && !name) {
-            nameInput.focus();
-          } else if (industryInput) {
-            industryInput.focus();
-          }
-          return;
-        }
-
-        addOrganizationCard({
-          name,
-          industry,
-          numbering,
-          list,
-          count
-        });
-
-        form.reset();
-        const defaultNumbering = form.querySelector('input[name="orgNumbering"][value="app"]');
-        if (defaultNumbering) {
-          defaultNumbering.checked = true;
-        }
-        setPanelState(false);
-      });
-    }
-  };
-
   window.initSuperAdminWorkspace = ({ fullName, accessData } = {}) => {
     const panel = document.getElementById('superAdminPanel');
     const nameField = document.getElementById('superAdminName');
@@ -214,8 +124,6 @@
     renderOrganizations(list, currentOrganizations);
     panel.hidden = false;
 
-    initCreateButton();
-
     if (defaultWorkspace) {
       defaultWorkspace.hidden = true;
     }
@@ -233,9 +141,4 @@
     }
   };
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initCreateButton);
-  } else {
-    initCreateButton();
-  }
 })();

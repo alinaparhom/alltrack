@@ -169,8 +169,18 @@
       const error = new Error(message);
       error.details = typeof data === 'string' ? null : data;
       error.status = response.status;
+      safeLogEvent('warn', 'Супер-админ: ошибка ответа сервера при создании организации', {
+        status: response.status,
+        url,
+        response: data
+      });
       throw error;
     }
+    safeLogEvent('info', 'Супер-админ: ответ сервера при создании организации', {
+      status: response.status,
+      url,
+      response: data
+    });
     return data;
   };
 
@@ -317,6 +327,11 @@
       const shortName = shortNameInput?.value.trim();
       const energyLead = energyLeadInput?.value.trim();
       if (!fullName || !shortName || !energyLead) {
+        safeLogEvent('warn', 'Супер-админ: попытка сохранить организацию без всех полей', {
+          fullName,
+          shortName,
+          energyLead
+        });
         updateFormState();
         return;
       }
@@ -373,16 +388,23 @@
         }
       } catch (error) {
         updateFormState();
-        const errorMessage =
-          error?.message || 'Не удалось создать организацию. Проверьте данные.';
+        const errorDetails =
+          error?.details?.details ||
+          error?.details?.message ||
+          error?.details?.error ||
+          null;
+        const errorMessage = error?.message || 'Не удалось создать организацию. Проверьте данные.';
         if (status) {
-          status.textContent = errorMessage;
+          status.textContent = errorDetails
+            ? `${errorMessage} (${errorDetails})`
+            : errorMessage;
           status.dataset.state = 'error';
         }
         safeLogEvent('error', 'Супер-админ: ошибка создания организации', {
           message: errorMessage,
+          details: errorDetails,
           status: error?.status,
-          details: error?.details || null,
+          response: error?.details || null,
           fullName,
           shortName,
           energyLead

@@ -457,8 +457,10 @@ const seedOrganizationAccess = ({ organizationName, energyFullName, shortName })
     members: updatedMembers
   });
   writeJsonFile(ACCESS_FILE, accessData);
+  const accessEntry = accessData.organizations[organizationName];
   return {
     accessData,
+    accessEntry,
     membersBefore,
     membersAfter: accessData.organizations[organizationName]?.users?.length || 0
   };
@@ -1141,13 +1143,15 @@ const handleSeedAccessOrganization = (req, res) => {
         membersBefore: seedResult.membersBefore,
         membersAfter: seedResult.membersAfter,
         shortName,
+        accessEntry: seedResult.accessEntry,
         fileStatus: buildFileSystemStatus(ACCESS_FILE)
       });
       const responsePayload = {
         ok: true,
         organizationName,
         shortName,
-        membersCount: seedResult.membersAfter
+        membersCount: seedResult.membersAfter,
+        accessEntry: seedResult.accessEntry
       };
       logApiResponse('seed_access', 200, responsePayload);
       sendJson(req, res, 200, responsePayload);

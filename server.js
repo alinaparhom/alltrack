@@ -1089,10 +1089,14 @@ const handleSeedAccessOrganization = (req, res) => {
       const organizationName =
         typeof rawOrganizationName === 'string' ? rawOrganizationName.trim() : '';
       const energyFullName = String(payload.energyFullName || '').trim();
+      const shortName = String(
+        payload.shortName || payload.short_name || payload.organizationShortName || ''
+      ).trim();
       logAction('seed_access_payload_received', {
         ...getRequestMeta(req),
         organizationName,
         energyFullName,
+        shortName,
         payloadKeys: Object.keys(payload || {}),
         rawBodySize: rawBody ? rawBody.length : 0
       });
@@ -1101,6 +1105,7 @@ const handleSeedAccessOrganization = (req, res) => {
           ...getRequestMeta(req),
           organizationName,
           energyFullName,
+          shortName,
           payload
         });
         const errorPayload = buildErrorPayload(
@@ -1122,19 +1127,26 @@ const handleSeedAccessOrganization = (req, res) => {
         ...getRequestMeta(req),
         organizationName,
         energyFullName,
+        shortName,
         fileStatus: buildFileSystemStatus(ACCESS_FILE)
       });
-      const seedResult = seedOrganizationAccess({ organizationName, energyFullName });
+      const seedResult = seedOrganizationAccess({
+        organizationName,
+        energyFullName,
+        shortName
+      });
       logAction('seed_access_success', {
         ...getRequestMeta(req),
         organizationName,
         membersBefore: seedResult.membersBefore,
         membersAfter: seedResult.membersAfter,
+        shortName,
         fileStatus: buildFileSystemStatus(ACCESS_FILE)
       });
       const responsePayload = {
         ok: true,
         organizationName,
+        shortName,
         membersCount: seedResult.membersAfter
       };
       logApiResponse('seed_access', 200, responsePayload);

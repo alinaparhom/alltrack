@@ -369,6 +369,7 @@ const logEvent = (level, message, payload = null) => {
 };
 
 window.logEvent = logEvent;
+window.fetchWithLogging = fetchWithLogging;
 
 window.getAlltrackLogs = () => readLogs();
 

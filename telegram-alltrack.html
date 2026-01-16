@@ -205,6 +205,11 @@
         display: none;
       }
 
+      .admin-create__panel {
+        display: grid;
+        gap: 12px;
+      }
+
       .admin-create__form {
         display: grid;
         gap: 12px;
@@ -288,6 +293,10 @@
         box-shadow: inset 0 0 0 1px rgba(227, 232, 246, 0.9);
         font-size: 12px;
         color: var(--muted);
+      }
+
+      .admin-create__submit {
+        width: 100%;
       }
 
       .admin-create__status-head {
@@ -706,13 +715,77 @@
             <span id="adminCreateLabel">Добавить организацию</span>
           </button>
           <div class="admin-create__panel" id="adminCreatePanel" hidden>
-            <div class="card admin-create__note">
-              <p class="admin-create__note-title">Создание организаций</p>
-              <p class="admin-create__note-text">
-                Заполнение и сохранение данных временно отключены. Для добавления новой
-                организации обратитесь к администратору системы.
-              </p>
+            <div class="card">
+              <h3>Новая организация</h3>
+              <span>Создайте карточку сразу в Mini App — без лишних шагов.</span>
             </div>
+            <form class="admin-create__form" id="adminCreateForm" autocomplete="off">
+              <label class="form-field">
+                <span>Наименование организации</span>
+                <input
+                  type="text"
+                  name="fullName"
+                  id="adminCreateOrgFullName"
+                  placeholder="ООО «СеверЭнерго»"
+                  required
+                />
+              </label>
+              <label class="form-field">
+                <span>Краткое название организации</span>
+                <input
+                  type="text"
+                  name="shortName"
+                  id="adminCreateOrgShortName"
+                  placeholder="СеверЭнерго"
+                  required
+                />
+              </label>
+              <label class="form-field">
+                <span>Фамилия Имя Отчество энергетика</span>
+                <input
+                  type="text"
+                  name="energyLead"
+                  id="adminCreateOrgEnergyLead"
+                  placeholder="Фамилия Имя Отчество"
+                  required
+                />
+              </label>
+              <div class="number-switch" role="group" aria-label="Схема нумерации">
+                <p class="number-switch__label">По какой схеме работает организация</p>
+                <div class="number-switch__options">
+                  <label class="number-switch__option">
+                    <input type="radio" name="adminNumberScheme" value="app" checked />
+                    <span class="number-switch__text">Номер задаётся приложением</span>
+                  </label>
+                  <label class="number-switch__option">
+                    <input type="radio" name="adminNumberScheme" value="accounting" />
+                    <span class="number-switch__text">По бухгалтерскому номеру</span>
+                  </label>
+                </div>
+              </div>
+              <div class="admin-create__status" id="adminCreateStatusBlock">
+                <div class="admin-create__status-head">
+                  <p class="admin-create__status-title">Проверка данных</p>
+                  <p class="admin-create__status-text" id="adminCreateStatusText" data-state="error">
+                    Заполните поля
+                  </p>
+                </div>
+                <p class="admin-create__status-text" id="adminCreatePreview">
+                  Здесь появится краткая карточка новой организации.
+                </p>
+              </div>
+              <button
+                class="primary-btn primary-btn--dark admin-create__submit is-disabled"
+                type="submit"
+                id="adminCreateSubmit"
+                disabled
+              >
+                Сохранить организацию
+              </button>
+              <p class="admin-create__status-text">
+                Подсказка: короткое название будет видно в списках и быстрых фильтрах.
+              </p>
+            </form>
           </div>
         </section>
       </section>
@@ -1511,11 +1584,69 @@
       const adminCreateToggle = document.getElementById('adminCreateToggle');
       const adminCreatePanel = document.getElementById('adminCreatePanel');
       const adminCreateLabel = document.getElementById('adminCreateLabel');
+      const adminCreateForm = document.getElementById('adminCreateForm');
+      const adminCreateFullName = document.getElementById('adminCreateOrgFullName');
+      const adminCreateShortName = document.getElementById('adminCreateOrgShortName');
+      const adminCreateEnergyLead = document.getElementById('adminCreateOrgEnergyLead');
+      const adminCreateSubmit = document.getElementById('adminCreateSubmit');
+      const adminCreatePreview = document.getElementById('adminCreatePreview');
+      const adminCreateStatusText = document.getElementById('adminCreateStatusText');
 
       const initAdminCreateToggle = () => {
         if (!adminCreateToggle || !adminCreatePanel || !adminCreateLabel) {
           return;
         }
+
+        let shortNameTouched = false;
+
+        const buildAdminCreatePreview = ({ fullName, shortName, energyLead, schemeLabel }) => {
+          if (!fullName && !shortName && !energyLead) {
+            return 'Здесь появится краткая карточка новой организации.';
+          }
+          const nameLine = fullName ? `«${fullName}»` : 'Название не указано';
+          const shortLine = shortName ? `Коротко: ${shortName}` : 'Короткое название не указано';
+          const energyLine = energyLead ? `Энергетик: ${energyLead}` : 'Энергетик не указан';
+          const schemeLine = schemeLabel ? `Схема: ${schemeLabel}` : 'Схема не выбрана';
+          return [nameLine, shortLine, energyLine, schemeLine].join(' · ');
+        };
+
+        const updateAdminCreatePreview = () => {
+          if (!adminCreateForm || !adminCreatePreview) {
+            return;
+          }
+          const schemeInput = adminCreateForm.querySelector(
+            'input[name="adminNumberScheme"]:checked'
+          );
+          const schemeLabel =
+            schemeInput?.value === 'accounting'
+              ? 'Бухгалтерский номер'
+              : schemeInput
+              ? 'Номер приложения'
+              : '';
+          const payload = {
+            fullName: adminCreateFullName?.value.trim() || '',
+            shortName: adminCreateShortName?.value.trim() || '',
+            energyLead: adminCreateEnergyLead?.value.trim() || '',
+            schemeLabel
+          };
+          adminCreatePreview.textContent = buildAdminCreatePreview(payload);
+        };
+
+        const updateAdminCreateState = () => {
+          const isValid =
+            adminCreateFullName?.value.trim() &&
+            adminCreateShortName?.value.trim() &&
+            adminCreateEnergyLead?.value.trim();
+          if (adminCreateSubmit) {
+            adminCreateSubmit.disabled = !isValid;
+            adminCreateSubmit.classList.toggle('is-disabled', !isValid);
+          }
+          if (adminCreateStatusText) {
+            adminCreateStatusText.textContent = isValid ? 'Готово к сохранению' : 'Заполните поля';
+            adminCreateStatusText.dataset.state = isValid ? 'success' : 'error';
+          }
+          updateAdminCreatePreview();
+        };
 
         const setOpenState = (isOpen) => {
           adminCreatePanel.hidden = !isOpen;
@@ -1524,13 +1655,91 @@
           if (isOpen) {
             adminCreatePanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
           }
+          logEvent('info', 'Супер‑админ: переключение формы добавления организации', { isOpen });
         };
 
         setOpenState(false);
+        updateAdminCreateState();
 
         adminCreateToggle.addEventListener('click', () => {
           setOpenState(adminCreatePanel.hidden);
         });
+
+        if (adminCreateFullName) {
+          adminCreateFullName.addEventListener('input', () => {
+            if (!shortNameTouched && adminCreateShortName) {
+              adminCreateShortName.value = getShortName(adminCreateFullName.value.trim());
+            }
+            updateAdminCreateState();
+          });
+          adminCreateFullName.addEventListener('change', () => {
+            logEvent('info', 'Супер‑админ: заполнено наименование организации', {
+              value: adminCreateFullName.value.trim()
+            });
+          });
+        }
+
+        if (adminCreateShortName) {
+          adminCreateShortName.addEventListener('input', () => {
+            shortNameTouched = true;
+            updateAdminCreateState();
+          });
+          adminCreateShortName.addEventListener('change', () => {
+            logEvent('info', 'Супер‑админ: заполнено короткое название организации', {
+              value: adminCreateShortName.value.trim()
+            });
+          });
+        }
+
+        if (adminCreateEnergyLead) {
+          adminCreateEnergyLead.addEventListener('input', updateAdminCreateState);
+          adminCreateEnergyLead.addEventListener('change', () => {
+            logEvent('info', 'Супер‑админ: заполнено ФИО энергетика', {
+              value: adminCreateEnergyLead.value.trim()
+            });
+          });
+        }
+
+        if (adminCreateForm) {
+          adminCreateForm.addEventListener('change', (event) => {
+            if (event.target?.name === 'adminNumberScheme') {
+              const schemeLabel =
+                event.target.value === 'accounting'
+                  ? 'Бухгалтерский номер'
+                  : 'Номер приложения';
+              logEvent('info', 'Супер‑админ: выбрана схема нумерации', {
+                scheme: event.target.value,
+                label: schemeLabel
+              });
+              updateAdminCreateState();
+            }
+          });
+          adminCreateForm.addEventListener('submit', (event) => {
+            event.preventDefault();
+            const fullName = adminCreateFullName?.value.trim();
+            const shortName = adminCreateShortName?.value.trim();
+            const energyLead = adminCreateEnergyLead?.value.trim();
+            if (!fullName || !shortName || !energyLead) {
+              updateAdminCreateState();
+              return;
+            }
+            logEvent('info', 'Супер‑админ: отправлена форма добавления организации', {
+              fullName,
+              shortName,
+              energyLead,
+              scheme:
+                adminCreateForm.querySelector('input[name="adminNumberScheme"]:checked')?.value ||
+                ''
+            });
+            adminCreateForm.reset();
+            shortNameTouched = false;
+            if (adminCreateStatusText) {
+              adminCreateStatusText.textContent = 'Организация добавлена';
+              adminCreateStatusText.dataset.state = 'success';
+            }
+            updateAdminCreateState();
+          });
+        }
       };
 
       document.body.classList.add('is-checking');

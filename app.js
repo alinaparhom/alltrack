@@ -1580,6 +1580,15 @@ const initAccess = async () => {
     if (access.scope === 'super') {
       access.organization = 'Все организации';
     }
+    const accountInfo = resolveAccountInfo({ user: access.user, scope: access.scope });
+    logEvent('info', 'Данные пользователя из access.json', {
+      userId: normalizedUserId,
+      fullName: accountInfo.fullName || null,
+      organization: access.organization || null,
+      role: accountInfo.role || null,
+      roles: accountInfo.roles,
+      scope: access.scope
+    });
     logEvent('info', 'Доступ найден', {
       scope: access.scope,
       organization: access.organization || null

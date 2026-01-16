@@ -121,6 +121,56 @@
     }
   };
 
+  const buildApiUrl = (path) => {
+    if (typeof window === 'undefined' || !window.location) {
+      return path;
+    }
+    try {
+      return new URL(path, window.location.href).toString();
+    } catch (error) {
+      return path;
+    }
+  };
+
+  const postCreateOrganization = async (payload) => {
+    const url = buildApiUrl('./create-organization-step-1');
+    const body = JSON.stringify(payload);
+    const fetchWithLogging =
+      typeof window !== 'undefined' && typeof window.fetchWithLogging === 'function'
+        ? window.fetchWithLogging
+        : null;
+    safeLogEvent('info', 'Супер-админ: отправка запроса на создание организации', {
+      url,
+      payload
+    });
+    const response = fetchWithLogging
+      ? await fetchWithLogging('create-organization-step-1', url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body
+        })
+      : await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body
+        });
+    const rawText = await response.text();
+    let data = null;
+    try {
+      data = rawText ? JSON.parse(rawText) : null;
+    } catch (error) {
+      data = rawText;
+    }
+    if (!response.ok) {
+      const message =
+        typeof data === 'string'
+          ? data
+          : data?.message || `Ошибка сохранения (${response.status})`;
+      throw new Error(message);
+    }
+    return data;
+  };
+
   const buildCreatePreview = ({ fullName, shortName, energyLead, schemeLabel }) => {
     if (!fullName && !shortName && !energyLead) {
       return 'Здесь появится краткая карточка новой организации.';
@@ -150,6 +200,7 @@
     }
 
     let shortNameTouched = false;
+    let isSubmitting = false;
 
     const updatePreview = () => {
       const schemeInput = form.querySelector('input[name="numberingScheme"]:checked');
@@ -179,7 +230,7 @@
         submitButton.disabled = !isValid;
         submitButton.classList.toggle('is-disabled', !isValid);
       }
-      if (status) {
+      if (status && !isSubmitting) {
         status.textContent = isValid ? 'Готово к сохранению' : 'Заполните поля';
         status.dataset.state = isValid ? 'success' : 'error';
       }
@@ -254,8 +305,11 @@
       }
     });
 
-    form.addEventListener('submit', (event) => {
+    form.addEventListener('submit', async (event) => {
       event.preventDefault();
+      if (isSubmitting) {
+        return;
+      }
       const fullName = fullNameInput?.value.trim();
       const shortName = shortNameInput?.value.trim();
       const energyLead = energyLeadInput?.value.trim();
@@ -263,35 +317,66 @@
         updateFormState();
         return;
       }
-      const newOrg = buildOrganizationStats(
-        fullName,
-        [],
-        energyLead,
-        currentOrganizations.length
-      );
-      newOrg.shortName = shortName;
-      currentOrganizations = [newOrg, ...currentOrganizations];
-      const list = document.getElementById('superAdminOrgs');
-      const count = document.getElementById('superAdminCount');
-      if (list) {
-        renderOrganizations(list, currentOrganizations);
-      }
-      if (count) {
-        count.textContent = formatNumber(currentOrganizations.length);
-      }
-      safeLogEvent('info', 'Супер-админ: добавлена организация', {
-        fullName,
-        shortName,
-        energyLead,
-        scheme: form.querySelector('input[name="numberingScheme"]:checked')?.value || ''
-      });
-      form.reset();
-      shortNameTouched = false;
+      isSubmitting = true;
       if (status) {
-        status.textContent = 'Организация добавлена';
+        status.textContent = 'Сохраняем организацию...';
         status.dataset.state = 'success';
       }
-      updateFormState();
+      if (submitButton) {
+        submitButton.disabled = true;
+        submitButton.classList.add('is-disabled');
+      }
+      try {
+        const response = await postCreateOrganization({
+          organizationName: fullName,
+          shortName,
+          energyFullName: energyLead
+        });
+        const newOrg = buildOrganizationStats(
+          fullName,
+          [],
+          energyLead,
+          currentOrganizations.length
+        );
+        newOrg.shortName = shortName;
+        currentOrganizations = [newOrg, ...currentOrganizations];
+        const list = document.getElementById('superAdminOrgs');
+        const count = document.getElementById('superAdminCount');
+        if (list) {
+          renderOrganizations(list, currentOrganizations);
+        }
+        if (count) {
+          count.textContent = formatNumber(currentOrganizations.length);
+        }
+        safeLogEvent('info', 'Супер-админ: организация сохранена в access.json', {
+          fullName,
+          shortName,
+          energyLead,
+          response,
+          scheme: form.querySelector('input[name="numberingScheme"]:checked')?.value || ''
+        });
+        form.reset();
+        shortNameTouched = false;
+        updateFormState();
+        if (status) {
+          status.textContent = 'Организация создана';
+          status.dataset.state = 'success';
+        }
+      } catch (error) {
+        updateFormState();
+        if (status) {
+          status.textContent = 'Не удалось создать организацию';
+          status.dataset.state = 'error';
+        }
+        safeLogEvent('error', 'Супер-админ: ошибка создания организации', {
+          message: error?.message || String(error),
+          fullName,
+          shortName,
+          energyLead
+        });
+      } finally {
+        isSubmitting = false;
+      }
     });
 
     updateFormState();

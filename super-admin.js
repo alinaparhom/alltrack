@@ -121,6 +121,35 @@
     container.innerHTML = organizations.map(renderOrganizationCard).join('');
   };
 
+  const updateDashboardCounters = (organizations = []) => {
+    const orgTotal = organizations.length;
+    const userTotal = organizations.reduce((sum, org) => sum + (org.users || 0), 0);
+    const feedbackPending = organizations.reduce((sum, org) => {
+      const total = org.feedbackTotal || 0;
+      const done = org.feedbackDone || 0;
+      return sum + Math.max(0, total - done);
+    }, 0);
+    const incidentTotal = Math.max(0, Math.round(userTotal / 90));
+
+    const orgTotalField = document.getElementById('superAdminOrgTotal');
+    const userTotalField = document.getElementById('superAdminUserTotal');
+    const feedbackTotalField = document.getElementById('superAdminFeedbackTotal');
+    const incidentTotalField = document.getElementById('superAdminIncidentTotal');
+
+    if (orgTotalField) {
+      orgTotalField.textContent = formatNumber(orgTotal);
+    }
+    if (userTotalField) {
+      userTotalField.textContent = formatNumber(userTotal);
+    }
+    if (feedbackTotalField) {
+      feedbackTotalField.textContent = formatNumber(feedbackPending);
+    }
+    if (incidentTotalField) {
+      incidentTotalField.textContent = formatNumber(incidentTotal);
+    }
+  };
+
   const safeLogEvent = (level, message, payload = null) => {
     if (typeof window !== 'undefined' && typeof window.logEvent === 'function') {
       window.logEvent(level, message, payload);
@@ -489,6 +518,7 @@
         if (count) {
           count.textContent = formatNumber(currentOrganizations.length);
         }
+        updateDashboardCounters(currentOrganizations);
         safeLogEvent('info', 'Супер-админ: организация сохранена в access.json', {
           fullName,
           shortName,
@@ -565,6 +595,7 @@
     }
 
     renderOrganizations(list, currentOrganizations);
+    updateDashboardCounters(currentOrganizations);
     panel.hidden = false;
 
     if (defaultWorkspace) {

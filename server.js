@@ -1508,4 +1508,9 @@ const server = http.createServer((req, res) => {
 
 server.listen(PORT, () => {
   console.log(`AllTrack доступен на http://localhost:${PORT}`);
+  appendLogLine(
+    `${formatTimestamp()} MINI_APPS_LOG_READY server_start port=${PORT}`,
+    null,
+    [MINI_APPS_LOG_FILE]
+  );
 });

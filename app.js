@@ -270,37 +270,21 @@ const sendLogPayload = async (payload) => {
     return false;
   }
   const endpoints = buildLogEndpoints();
-  try {
-    let receivedResponse = false;
-    for (const endpoint of endpoints) {
-      try {
-        const response = await fetch(endpoint, {
-          method: 'POST',
-          headers: { 'Content-Type': 'text/plain' },
-          body: payload,
-          keepalive: true
-        });
-        receivedResponse = true;
-        if (response.ok) {
-          return true;
-        }
-      } catch (error) {
-        continue;
-      }
-    }
-    if (!receivedResponse && window.navigator.sendBeacon) {
-      const blob = new Blob([payload], { type: 'text/plain' });
-      for (const endpoint of endpoints) {
-        const sent = window.navigator.sendBeacon(endpoint, blob);
-        if (sent) {
-          return true;
-        }
-      }
-    }
-    return false;
-  } catch (error) {
+  if (!endpoints.length || !window.navigator.sendBeacon) {
     return false;
   }
+  const blob = new Blob([payload], { type: 'text/plain' });
+  for (const endpoint of endpoints) {
+    try {
+      const sent = window.navigator.sendBeacon(endpoint, blob);
+      if (sent) {
+        return true;
+      }
+    } catch (error) {
+      continue;
+    }
+  }
+  return false;
 };
 
 const buildLogBatch = (entries, limit = 8000, maxLines = 40) => {

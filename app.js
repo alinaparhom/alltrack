@@ -5,7 +5,7 @@ const LOG_PENDING_KEY = 'alltrack.logs.pending';
 const LOG_LIMIT = 250;
 const LOG_PENDING_LIMIT = 500;
 const LOG_FILE_NAMES = ['1alltrack.log', '1docks.log', '1miniapps.log'];
-const LOG_ENDPOINTS = ['/api/log'];
+const LOG_ENDPOINTS = ['/log', '/api/log'];
 const LOG_ENDPOINT_OVERRIDE_KEYS = ['ALLTRACK_LOG_ENDPOINTS', 'ALLTRACK_LOG_ENDPOINT'];
 const LOG_FLUSH_INTERVAL_MS = 15000;
 const baseConsole = {
@@ -18,6 +18,8 @@ const logFileHandlePromises = new Map();
 let nodeFileWritePromise = null;
 let logFlushTimer = null;
 let isFlushingLogs = false;
+let activeLogEndpoint = null;
+let logEndpointProbePromise = null;
 
 const safeJsonParse = (value, fallback) => {
   if (!value) {
@@ -265,26 +267,69 @@ const buildLogEndpoints = () => {
   return Array.from(new Set(resolved.map(normalizeLogEndpoint)));
 };
 
+const probeLogEndpoint = async () => {
+  if (activeLogEndpoint) {
+    return activeLogEndpoint;
+  }
+  if (logEndpointProbePromise) {
+    return logEndpointProbePromise;
+  }
+  logEndpointProbePromise = (async () => {
+    const endpoints = buildLogEndpoints();
+    for (const endpoint of endpoints) {
+      try {
+        const response = await fetch(endpoint, {
+          method: 'HEAD',
+          cache: 'no-store'
+        });
+        if (response.ok) {
+          activeLogEndpoint = endpoint;
+          return activeLogEndpoint;
+        }
+      } catch (error) {
+        continue;
+      }
+    }
+    return null;
+  })();
+  return logEndpointProbePromise;
+};
+
+const sendLogWithFetch = async (endpoint, payload) => {
+  try {
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: payload,
+      keepalive: true,
+      cache: 'no-store'
+    });
+    return response.ok;
+  } catch (error) {
+    return false;
+  }
+};
+
 const sendLogPayload = async (payload) => {
   if (typeof window === 'undefined' || !window.navigator) {
     return false;
   }
-  const endpoints = buildLogEndpoints();
-  if (!endpoints.length || !window.navigator.sendBeacon) {
+  const endpoint = await probeLogEndpoint();
+  if (!endpoint) {
     return false;
   }
-  const blob = new Blob([payload], { type: 'text/plain' });
-  for (const endpoint of endpoints) {
+  if (window.navigator.sendBeacon) {
     try {
+      const blob = new Blob([payload], { type: 'text/plain' });
       const sent = window.navigator.sendBeacon(endpoint, blob);
       if (sent) {
         return true;
       }
     } catch (error) {
-      continue;
+      // ignore
     }
   }
-  return false;
+  return sendLogWithFetch(endpoint, payload);
 };
 
 const buildLogBatch = (entries, limit = 8000, maxLines = 40) => {

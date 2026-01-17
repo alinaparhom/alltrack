@@ -5,7 +5,7 @@ const LOG_PENDING_KEY = 'alltrack.logs.pending';
 const LOG_LIMIT = 250;
 const LOG_PENDING_LIMIT = 500;
 const LOG_FILE_NAMES = ['1alltrack.log', '1docks.log', '1miniapps.log'];
-const LOG_ENDPOINTS = ['/log', '/api/log'];
+const LOG_ENDPOINTS = ['/log', '/api/log', 'log', 'api/log'];
 const LOG_ENDPOINT_OVERRIDE_KEYS = ['ALLTRACK_LOG_ENDPOINTS', 'ALLTRACK_LOG_ENDPOINT'];
 const LOG_FLUSH_INTERVAL_MS = 15000;
 const baseConsole = {
@@ -40,9 +40,9 @@ const buildApiUrl = (path) => {
     if (/^https?:\/\//i.test(path)) {
       return path;
     }
-    const base = window.location.origin || window.location.href;
-    const normalizedPath = path.startsWith('/') ? path : `/${path.replace(/^\.?\//, '')}`;
-    return new URL(normalizedPath, base).toString();
+    const base = window.location.href;
+    const normalizedPath = path.replace(/^\.?\//, '');
+    return new URL(path.startsWith('/') ? path : normalizedPath, base).toString();
   } catch (error) {
     return path;
   }
@@ -269,13 +269,13 @@ const buildLogEndpoints = () => {
   if (typeof window === 'undefined' || !window.location) {
     return LOG_ENDPOINTS.map(normalizeLogEndpoint);
   }
-  const origin = window.location.origin || '';
+  const base = window.location.href;
   const endpoints = getLogEndpointOverrides().length
     ? getLogEndpointOverrides()
     : LOG_ENDPOINTS;
   const resolved = endpoints.map((endpoint) => {
     try {
-      return new URL(endpoint, origin || window.location.href).toString();
+      return new URL(endpoint, base).toString();
     } catch (error) {
       return endpoint;
     }

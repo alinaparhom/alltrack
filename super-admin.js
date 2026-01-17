@@ -164,21 +164,26 @@
       if (/^https?:\/\//i.test(path)) {
         return path;
       }
-      const base = window.location.origin || window.location.href;
-      const normalizedPath =
-        path.startsWith('/') ? path : `/${path.replace(/^\.?\//, '')}`;
-      return new URL(normalizedPath, base).toString();
+      const base = window.location.href;
+      const normalizedPath = path.replace(/^\.?\//, '');
+      return new URL(path.startsWith('/') ? path : normalizedPath, base).toString();
     } catch (error) {
       return path;
     }
   };
 
-  const CREATE_ORG_ENDPOINTS = [
-    '/api/create-organization',
-    '/create-organization',
-    '/api/create-organizations',
-    '/create-organizations'
-  ];
+  const CREATE_ORG_ENDPOINTS = Array.from(
+    new Set([
+      '/api/create-organization',
+      '/create-organization',
+      '/api/create-organizations',
+      '/create-organizations',
+      'api/create-organization',
+      'create-organization',
+      'api/create-organizations',
+      'create-organizations'
+    ])
+  );
 
   const postCreateOrganization = async (payload) => {
     const body = JSON.stringify(payload);

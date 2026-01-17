@@ -173,9 +173,14 @@
     }
   };
 
+  const CREATE_ORG_ENDPOINTS = [
+    '/api/create-organization',
+    '/create-organization',
+    '/api/create-organizations',
+    '/create-organizations'
+  ];
+
   const postCreateOrganization = async (payload) => {
-    const endpointLabel = 'create-organization';
-    const url = buildApiUrl('/api/create-organization');
     const body = JSON.stringify(payload);
     const fetchWithLogging =
       typeof window !== 'undefined' && typeof window.fetchWithLogging === 'function'
@@ -184,52 +189,73 @@
     const requestId = `super-admin-create-${Date.now()}-${Math.random()
       .toString(36)
       .slice(2, 8)}`;
-    safeLogEvent('info', 'Супер-админ: отправка запроса на создание организации', {
-      requestId,
-      url,
-      payload
-    });
-    const response = fetchWithLogging
-      ? await fetchWithLogging(endpointLabel, url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body
-        })
-      : await fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body
-        });
-    const rawText = await response.text();
-    let data = null;
-    try {
-      data = rawText ? JSON.parse(rawText) : null;
-    } catch (error) {
-      data = rawText;
-    }
-    if (!response.ok) {
-      const message =
-        typeof data === 'string'
-          ? data
-          : data?.message || `Ошибка сохранения (${response.status})`;
-      const error = new Error(message);
-      error.details = typeof data === 'string' ? null : data;
-      error.status = response.status;
-      safeLogEvent('warn', 'Супер-админ: ошибка ответа сервера при создании организации', {
+    const endpoints = CREATE_ORG_ENDPOINTS.map(buildApiUrl);
+    let lastError = null;
+
+    for (const endpoint of endpoints) {
+      const endpointLabel = `create-organization:${endpoint}`;
+      safeLogEvent('info', 'Супер-админ: отправка запроса на создание организации', {
+        requestId,
+        url: endpoint,
+        payload
+      });
+      const response = fetchWithLogging
+        ? await fetchWithLogging(endpointLabel, endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body
+          })
+        : await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body
+          });
+      const rawText = await response.text();
+      let data = null;
+      try {
+        data = rawText ? JSON.parse(rawText) : null;
+      } catch (error) {
+        data = rawText;
+      }
+      if (!response.ok) {
+        const message =
+          typeof data === 'string'
+            ? data
+            : data?.message || `Ошибка сохранения (${response.status})`;
+        const error = new Error(message);
+        error.details = typeof data === 'string' ? null : data;
+        error.status = response.status;
+        safeLogEvent(
+          'warn',
+          'Супер-админ: ошибка ответа сервера при создании организации',
+          {
+            status: response.status,
+            requestId,
+            url: endpoint,
+            response: data
+          }
+        );
+        lastError = error;
+        if (![404, 405].includes(response.status)) {
+          throw error;
+        }
+        continue;
+      }
+      safeLogEvent('info', 'Супер-админ: ответ сервера при создании организации', {
         status: response.status,
         requestId,
-        url,
-        response: data
+        url: endpoint,
+        response: data || rawText
       });
-      throw error;
+      return data || { ok: true };
     }
-    safeLogEvent('info', 'Супер-админ: ответ сервера при создании организации', {
-      status: response.status,
-      requestId,
-      url,
-      response: data || rawText
-    });
-    return data || { ok: true };
+
+    if (lastError) {
+      throw lastError;
+    }
+    const fallbackError = new Error('Не удалось обратиться к серверу создания организации.');
+    fallbackError.status = 404;
+    throw fallbackError;
   };
 
   const fetchAccessSnapshot = async () => {

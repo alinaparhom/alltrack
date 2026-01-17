@@ -32,6 +32,22 @@ const safeJsonParse = (value, fallback) => {
   }
 };
 
+const buildApiUrl = (path) => {
+  if (typeof window === 'undefined' || !window.location) {
+    return path;
+  }
+  try {
+    if (/^https?:\/\//i.test(path)) {
+      return path;
+    }
+    const base = window.location.origin || window.location.href;
+    const normalizedPath = path.startsWith('/') ? path : `/${path.replace(/^\.?\//, '')}`;
+    return new URL(normalizedPath, base).toString();
+  } catch (error) {
+    return path;
+  }
+};
+
 const memoryLogs = [];
 const memoryPendingLogs = [];
 
@@ -771,7 +787,7 @@ const clearInviteFromUrl = () => {
 };
 
 const acceptInvite = async ({ inviteId, userId }) => {
-  const apiUrl = new URL('./accept-invite', window.location.href).toString();
+  const apiUrl = buildApiUrl('/accept-invite');
   const response = await fetchWithLogging('accept-invite', apiUrl, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -785,7 +801,7 @@ const acceptInvite = async ({ inviteId, userId }) => {
 };
 
 const acceptDirectInvite = async ({ inviteId, organizationName, energyFullName, userId }) => {
-  const apiUrl = new URL('./accept-direct-invite', window.location.href).toString();
+  const apiUrl = buildApiUrl('/accept-direct-invite');
   const response = await fetchWithLogging('accept-direct-invite', apiUrl, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

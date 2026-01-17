@@ -174,8 +174,8 @@
   };
 
   const postCreateOrganization = async (payload) => {
-    const endpointLabel = 'create-organization-step-1';
-    const url = buildApiUrl('/api/create-organization-step-1');
+    const endpointLabel = 'create-organization';
+    const url = buildApiUrl('/api/create-organization');
     const body = JSON.stringify(payload);
     const fetchWithLogging =
       typeof window !== 'undefined' && typeof window.fetchWithLogging === 'function'
@@ -484,7 +484,13 @@
           shortName,
           energyFullName: energyLead
         });
-        if (!response || response.ok !== true) {
+        const responseOk =
+          response &&
+          (response.ok === true ||
+            Boolean(response.inviteId) ||
+            Boolean(response.inviteLink) ||
+            Boolean(response.accessEntry));
+        if (!responseOk) {
           const error = new Error(
             'Сервер не подтвердил сохранение организации. Попробуйте ещё раз.'
           );

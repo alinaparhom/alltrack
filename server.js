@@ -863,6 +863,7 @@ const handleCreateOrganization = (req, res) => {
         storageSnapshot: buildCreateOrgDebugSnapshot(organizationName)
       });
 
+      let seedResult;
       try {
         logAction('create_org_step_start', {
           ...getRequestMeta(req),
@@ -872,7 +873,7 @@ const handleCreateOrganization = (req, res) => {
           energyFullName,
           fileStatus: buildFileSystemStatus(ACCESS_FILE)
         });
-        const seedResult = seedOrganizationAccess({
+        seedResult = seedOrganizationAccess({
           organizationName,
           energyFullName,
           shortName
@@ -1067,6 +1068,7 @@ const handleCreateOrganization = (req, res) => {
       }
 
       const inviteLink = buildInviteLink(req, inviteId);
+      const accessEntry = seedResult?.accessEntry || null;
       logAction('create_org_success', {
         ...getRequestMeta(req),
         organizationName,
@@ -1075,7 +1077,14 @@ const handleCreateOrganization = (req, res) => {
         inviteLink
       });
       logApiResponse('create_org', 200, { inviteId, inviteLink });
-      sendJson(req, res, 200, { inviteId, inviteLink });
+      sendJson(req, res, 200, {
+        ok: true,
+        inviteId,
+        inviteLink,
+        organizationName,
+        shortName,
+        accessEntry
+      });
     } catch (createError) {
       const basePayload =
         createError?.payload ||

@@ -269,16 +269,20 @@ const buildLogEndpoints = () => {
   if (typeof window === 'undefined' || !window.location) {
     return LOG_ENDPOINTS.map(normalizeLogEndpoint);
   }
-  const base = window.location.href;
   const endpoints = getLogEndpointOverrides().length
     ? getLogEndpointOverrides()
     : LOG_ENDPOINTS;
-  const resolved = endpoints.map((endpoint) => {
-    try {
-      return new URL(endpoint, base).toString();
-    } catch (error) {
-      return endpoint;
+  const originBase = window.location.origin || window.location.href;
+  const resolved = endpoints.flatMap((endpoint) => {
+    if (/^https?:\/\//i.test(endpoint)) {
+      return [endpoint];
     }
+    const normalized = endpoint.replace(/^\.?\//, '');
+    const candidates = [
+      new URL(`/${normalized}`, originBase).toString(),
+      new URL(endpoint, window.location.href).toString()
+    ];
+    return candidates;
   });
   return Array.from(new Set(resolved.map(normalizeLogEndpoint)));
 };

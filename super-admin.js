@@ -161,14 +161,20 @@
       return path;
     }
     try {
-      return new URL(path, window.location.href).toString();
+      if (/^https?:\/\//i.test(path)) {
+        return path;
+      }
+      const base = window.location.origin || window.location.href;
+      const normalizedPath =
+        path.startsWith('/') ? path : `/${path.replace(/^\.?\//, '')}`;
+      return new URL(normalizedPath, base).toString();
     } catch (error) {
       return path;
     }
   };
 
   const postCreateOrganization = async (payload) => {
-    const url = buildApiUrl('./create-organization-step-1');
+    const url = buildApiUrl('/create-organization-step-1');
     const body = JSON.stringify(payload);
     const fetchWithLogging =
       typeof window !== 'undefined' && typeof window.fetchWithLogging === 'function'
@@ -226,7 +232,7 @@
   };
 
   const fetchAccessSnapshot = async () => {
-    const url = buildApiUrl('./access.json');
+    const url = buildApiUrl('/access.json');
     const fetchWithLogging =
       typeof window !== 'undefined' && typeof window.fetchWithLogging === 'function'
         ? window.fetchWithLogging

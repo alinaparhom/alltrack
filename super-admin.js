@@ -174,7 +174,8 @@
   };
 
   const postCreateOrganization = async (payload) => {
-    const url = buildApiUrl('/create-organization-step-1');
+    const endpointLabel = 'create-organization-step-1';
+    const url = buildApiUrl('/api/create-organization-step-1');
     const body = JSON.stringify(payload);
     const fetchWithLogging =
       typeof window !== 'undefined' && typeof window.fetchWithLogging === 'function'
@@ -189,7 +190,7 @@
       payload
     });
     const response = fetchWithLogging
-      ? await fetchWithLogging('create-organization-step-1', url, {
+      ? await fetchWithLogging(endpointLabel, url, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body

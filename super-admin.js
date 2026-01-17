@@ -172,6 +172,17 @@
     }
   };
 
+  const buildEndpointVariants = (path) => {
+    if (typeof window === 'undefined' || !window.location || /^https?:\/\//i.test(path)) {
+      return [path];
+    }
+    const normalizedPath = path.replace(/^\.?\//, '');
+    const originBase = window.location.origin || window.location.href;
+    const originUrl = new URL(`/${normalizedPath}`, originBase).toString();
+    const currentUrl = buildApiUrl(path);
+    return Array.from(new Set([originUrl, currentUrl]));
+  };
+
   const CREATE_ORG_ENDPOINTS = Array.from(
     new Set([
       '/api/create-organization',
@@ -194,7 +205,9 @@
     const requestId = `super-admin-create-${Date.now()}-${Math.random()
       .toString(36)
       .slice(2, 8)}`;
-    const endpoints = CREATE_ORG_ENDPOINTS.map(buildApiUrl);
+    const endpoints = Array.from(
+      new Set(CREATE_ORG_ENDPOINTS.flatMap((endpoint) => buildEndpointVariants(endpoint)))
+    );
     let lastError = null;
 
     for (const endpoint of endpoints) {

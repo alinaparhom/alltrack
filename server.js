@@ -1419,6 +1419,13 @@ const handleAcceptDirectInvite = (req, res) => {
 
 ensureOrganizationsStorage();
 
+const buildLogResponseHeaders = (req) => ({
+  'Access-Control-Allow-Origin': req.headers.origin || '*',
+  'Access-Control-Allow-Methods': 'POST, GET, OPTIONS, HEAD',
+  'Access-Control-Allow-Headers': 'Content-Type',
+  'Access-Control-Max-Age': '86400'
+});
+
 const handleLog = (req, res) => {
   let body = '';
   req.on('data', (chunk) => {
@@ -1440,7 +1447,7 @@ const handleLog = (req, res) => {
     let index = 0;
     const writeNext = () => {
       if (index >= lines.length) {
-        send(req, res, 204, '');
+        send(req, res, 204, '', buildLogResponseHeaders(req));
         return;
       }
       const logLinePayload = truncateLogText(lines[index], 2000);
@@ -1453,7 +1460,7 @@ const handleLog = (req, res) => {
             ...getRequestMeta(req),
             error: error?.message || error
           });
-          send(req, res, 500, 'Ошибка записи лога');
+          send(req, res, 500, 'Ошибка записи лога', buildLogResponseHeaders(req));
           return;
         }
         index += 1;
@@ -1569,9 +1576,23 @@ const server = http.createServer((req, res) => {
   const normalizedPath =
     urlPath.length > 1 && urlPath.endsWith('/') ? urlPath.slice(0, -1) : urlPath;
 
-  if (req.method === 'POST' && isLogEndpoint(normalizedPath)) {
-    handleLog(req, res);
-    return;
+  if (isLogEndpoint(normalizedPath)) {
+    if (req.method === 'POST') {
+      handleLog(req, res);
+      return;
+    }
+    if (req.method === 'OPTIONS') {
+      send(req, res, 204, '', buildLogResponseHeaders(req));
+      return;
+    }
+    if (req.method === 'GET' || req.method === 'HEAD') {
+      logAction('client_log_probe', {
+        ...getRequestMeta(req),
+        ip: getClientIp(req)
+      });
+      send(req, res, 204, '', buildLogResponseHeaders(req));
+      return;
+    }
   }
 
   if (

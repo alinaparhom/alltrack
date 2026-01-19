@@ -21,6 +21,8 @@
         --text: #1a1f2e;
         --muted: #5f6b85;
         --radius: 24px;
+        --radius-sm: 18px;
+        --space: 16px;
         --shadow: 0 24px 60px rgba(26, 31, 46, 0.08);
       }
 
@@ -134,12 +136,12 @@
 
       .dashboard {
         display: grid;
-        gap: 20px;
+        gap: var(--space);
       }
 
       .dashboard-header {
         display: grid;
-        gap: 10px;
+        gap: var(--space);
       }
 
       .dashboard-subtitle {
@@ -149,12 +151,17 @@
 
       .dashboard-stats {
         display: grid;
-        gap: 12px;
+        gap: var(--space);
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .dashboard-stats .stat-card:nth-child(3) {
+        grid-column: span 2;
       }
 
       .stat-card {
-        padding: 16px;
-        border-radius: 18px;
+        padding: var(--space);
+        border-radius: var(--radius-sm);
         background: rgba(255, 255, 255, 0.88);
         border: 1px solid rgba(226, 232, 240, 0.9);
         box-shadow: 0 12px 30px rgba(26, 31, 46, 0.08);
@@ -211,18 +218,20 @@
 
       .action-grid {
         display: grid;
-        gap: 12px;
+        gap: var(--space);
+        grid-template-columns: repeat(2, minmax(0, 1fr));
       }
 
       .action-card {
         text-align: left;
-        padding: 16px;
-        border-radius: 18px;
+        padding: var(--space);
+        border-radius: var(--radius-sm);
         border: 1px solid rgba(226, 232, 240, 0.9);
         background: rgba(255, 255, 255, 0.82);
         box-shadow: 0 12px 30px rgba(26, 31, 46, 0.08);
-        display: grid;
-        gap: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
         cursor: pointer;
         transition: transform 0.2s ease, box-shadow 0.2s ease;
       }
@@ -237,19 +246,72 @@
         font-weight: 600;
       }
 
-      .action-description {
+      .statistics-card {
+        padding: var(--space);
+        border-radius: var(--radius-sm);
+        border: 1px solid rgba(226, 232, 240, 0.9);
+        background: rgba(255, 255, 255, 0.82);
+        box-shadow: 0 12px 30px rgba(26, 31, 46, 0.08);
+        display: grid;
+        gap: var(--space);
+      }
+
+      .statistics-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--space);
+      }
+
+      .statistics-title {
+        font-size: 16px;
+        font-weight: 600;
+      }
+
+      .statistics-subtitle {
         font-size: 13px;
         color: var(--muted);
       }
 
-      .action-note {
+      .statistics-pill {
+        padding: 6px 12px;
+        border-radius: 999px;
+        background: rgba(59, 125, 255, 0.12);
+        color: var(--accent);
         font-size: 12px;
+        font-weight: 600;
+        white-space: nowrap;
+      }
+
+      .statistics-grid {
+        display: grid;
+        gap: var(--space);
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .statistics-item {
+        padding: var(--space);
+        border-radius: var(--radius-sm);
+        background: rgba(255, 255, 255, 0.9);
+        border: 1px solid rgba(226, 232, 240, 0.9);
+        display: grid;
+        gap: 6px;
+      }
+
+      .statistics-label {
+        font-size: 13px;
         color: var(--muted);
       }
 
+      .statistics-value {
+        font-size: 20px;
+        font-weight: 700;
+        color: var(--text);
+      }
+
       .role-tile {
-        padding: 16px;
-        border-radius: 18px;
+        padding: var(--space);
+        border-radius: var(--radius-sm);
         background: rgba(255, 255, 255, 0.85);
         border: 1px solid rgba(226, 232, 240, 0.9);
         box-shadow: 0 10px 30px rgba(26, 31, 46, 0.08);
@@ -267,8 +329,8 @@
 
       .role-user {
         font-size: 14px;
-        padding: 12px 16px;
-        border-radius: 16px;
+        padding: 12px var(--space);
+        border-radius: var(--radius-sm);
         background: rgba(59, 125, 255, 0.08);
         color: var(--text);
       }
@@ -284,6 +346,14 @@
 
         h1 {
           font-size: 22px;
+        }
+      }
+
+      @media (max-width: 360px) {
+        .action-grid,
+        .dashboard-stats,
+        .statistics-grid {
+          grid-template-columns: 1fr;
         }
       }
     </style>

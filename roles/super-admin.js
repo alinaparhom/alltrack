@@ -134,14 +134,10 @@ export function renderRole(user) {
                 required
               />
             </div>
-            <p class="form-hint">
-              После сохранения организация появится в реестре, а пользователь будет создан с
-              <strong>telegram_id: 0</strong>.
-            </p>
             <div class="form-actions">
               <button class="action-primary" type="submit">Сохранить</button>
               <button class="button-secondary" type="button" data-back-dashboard>
-                Назад к дашборду
+                Отменить
               </button>
             </div>
             <div class="form-message" role="status" data-form-message></div>

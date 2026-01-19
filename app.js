@@ -19,6 +19,7 @@ const userNameEl = document.querySelector("[data-user-name]");
 const userOrgEl = document.querySelector("[data-user-org]");
 const orgFilePath = "./organizations.json";
 const usersFilePath = "./users.json";
+const saveEndpoint = "./save.php";
 
 function getTelegramId() {
   const webApp = window.Telegram?.WebApp;
@@ -57,12 +58,27 @@ async function loadJson(path) {
 }
 
 async function saveJson(path, data) {
-  const response = await fetch(path, {
+  const payload = JSON.stringify({ path, data });
+
+  try {
+    const response = await fetch(saveEndpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: payload,
+    });
+    if (response.ok) {
+      return;
+    }
+  } catch (error) {
+    console.warn("Save endpoint недоступен, пробуем сохранить напрямую.", error);
+  }
+
+  const fallbackResponse = await fetch(path, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data, null, 2),
   });
-  if (!response.ok) {
+  if (!fallbackResponse.ok) {
     throw new Error(`Не удалось сохранить ${path}`);
   }
 }

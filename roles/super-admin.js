@@ -10,10 +10,36 @@ export function renderRole(user) {
       <div class="dashboard">
         <div class="dashboard-header">
           <p class="role-description">
-            Быстрый доступ к ключевым метрикам и действиям. Детали открываются при
-            нажатии на блок.
+            Быстрый доступ к ключевым метрикам и действиям системы.
           </p>
           <div class="dashboard-subtitle">Сегодня · обновлено 2 минуты назад</div>
+        </div>
+        <div class="statistics-card">
+          <div class="statistics-header">
+            <div>
+              <div class="statistics-title">Статистика</div>
+              <div class="statistics-subtitle">Сводка за неделю</div>
+            </div>
+            <span class="statistics-pill">Онлайн</span>
+          </div>
+          <div class="statistics-grid">
+            <div class="statistics-item">
+              <div class="statistics-label">Операции</div>
+              <div class="statistics-value">1 248</div>
+            </div>
+            <div class="statistics-item">
+              <div class="statistics-label">Инциденты</div>
+              <div class="statistics-value">18</div>
+            </div>
+            <div class="statistics-item">
+              <div class="statistics-label">Новые заявки</div>
+              <div class="statistics-value">34</div>
+            </div>
+            <div class="statistics-item">
+              <div class="statistics-label">В работе</div>
+              <div class="statistics-value">7</div>
+            </div>
+          </div>
         </div>
         <div class="dashboard-stats">
           <div class="stat-card">
@@ -51,38 +77,18 @@ export function renderRole(user) {
         <div class="action-grid">
           <button class="action-card" type="button">
             <div class="action-title">Оплаты</div>
-            <div class="action-description">
-              Контролируйте статусы платежей и задолженности.
-            </div>
-            <div class="action-note">Нажмите для детализации</div>
           </button>
           <button class="action-card" type="button">
             <div class="action-title">Настройки</div>
-            <div class="action-description">
-              Управляйте правами, тарифами и параметрами платформы.
-            </div>
-            <div class="action-note">Нажмите для детализации</div>
           </button>
           <button class="action-card" type="button">
             <div class="action-title">Добавить организацию</div>
-            <div class="action-description">
-              Быстрое подключение новой организации к AllTrack.
-            </div>
-            <div class="action-note">Откроется форма создания</div>
           </button>
           <button class="action-card" type="button">
             <div class="action-title">Добавить пользователя</div>
-            <div class="action-description">
-              Пригласите сотрудника и назначьте роль.
-            </div>
-            <div class="action-note">Откроется форма добавления</div>
           </button>
           <button class="action-card" type="button">
             <div class="action-title">Выгрузить данные</div>
-            <div class="action-description">
-              Экспортируйте отчёты по организациям и оплатам.
-            </div>
-            <div class="action-note">Выберите формат выгрузки</div>
           </button>
         </div>
       </div>

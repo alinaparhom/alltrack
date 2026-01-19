@@ -13,7 +13,7 @@ if (!is_array($payload)) {
 $path = $payload["path"] ?? "";
 $data = $payload["data"] ?? null;
 $fileName = basename($path);
-$allowedFiles = ["organizations.json", "users.json"];
+$allowedFiles = ["organizations.json", "users.json", "pending-registrations.json"];
 function sanitizeFolderName(string $name): string {
   $trimmed = trim($name);
   $clean = preg_replace('/[\/\\\\:\*\?"<>\|]+/', "_", $trimmed);

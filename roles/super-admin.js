@@ -144,8 +144,8 @@ export function renderRole(user) {
             <div class="registration-box is-hidden" data-registration-box>
               <div class="registration-title">Ссылка для регистрации энергетика</div>
               <p class="registration-hint">
-                Отправьте ссылку в Telegram. Она откроется прямо в приложении Telegram и закрепит
-                пользователя за этой организацией.
+                Отправьте ссылку в Telegram. При открытии в приложении Telegram ID пользователя
+                сразу сохранится в базе, и он попадёт на страницу своей роли.
               </p>
               <div class="registration-actions">
                 <div class="registration-links">
@@ -178,9 +178,14 @@ export function renderRole(user) {
                     />
                   </div>
                 </div>
-                <button class="button-secondary" type="button" data-copy-registration>
-                  Скопировать ссылку
-                </button>
+                <div class="registration-buttons">
+                  <button class="action-primary button-telegram" type="button" data-open-telegram>
+                    Открыть в Telegram
+                  </button>
+                  <button class="button-secondary" type="button" data-copy-registration>
+                    Скопировать ссылку
+                  </button>
+                </div>
               </div>
             </div>
           </form>

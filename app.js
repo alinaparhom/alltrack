@@ -121,6 +121,16 @@ function createRegistrationToken() {
   return `${Date.now().toString(36)}-${randomPart}`;
 }
 
+function buildTelegramRegistrationLinks(botUsername, token) {
+  if (!botUsername || !token) return null;
+  const webLink = new URL(`https://t.me/${botUsername}`);
+  webLink.searchParams.set("startapp", token);
+  const appLink = new URL("tg://resolve");
+  appLink.searchParams.set("domain", botUsername);
+  appLink.searchParams.set("startapp", token);
+  return { webLink: webLink.href, appLink: appLink.href };
+}
+
 async function loadRegistrations() {
   try {
     return await loadJson(pendingRegistrationsFilePath);
@@ -154,6 +164,7 @@ function setupSuperAdmin() {
   const registrationWebLinkEl = contentEl.querySelector(
     "[data-registration-web-link]"
   );
+  const openTelegramButton = contentEl.querySelector("[data-open-telegram]");
   const shareTelegramButton = contentEl.querySelector("[data-share-telegram]");
   const copyRegistrationButton = contentEl.querySelector(
     "[data-copy-registration]"
@@ -172,9 +183,12 @@ function setupSuperAdmin() {
     if (registrationBox) {
       registrationBox.classList.add("is-hidden");
       delete registrationBox.dataset.shareText;
+      delete registrationBox.dataset.telegramLink;
+      delete registrationBox.dataset.telegramAppLink;
     }
     if (messageEl) messageEl.textContent = "";
     if (shareTelegramButton) shareTelegramButton.disabled = true;
+    if (openTelegramButton) openTelegramButton.disabled = true;
   };
 
   const updateStats = async () => {
@@ -206,6 +220,16 @@ function setupSuperAdmin() {
       window.Telegram.WebApp.openTelegramLink(telegramShareUrl.href);
     } else {
       window.open(telegramShareUrl.href, "_blank", "noopener");
+    }
+  });
+  openTelegramButton?.addEventListener("click", () => {
+    const webLink = registrationBox?.dataset.telegramLink?.trim();
+    const appLink = registrationBox?.dataset.telegramAppLink?.trim();
+    if (!webLink && !appLink) return;
+    if (window.Telegram?.WebApp?.openTelegramLink && webLink) {
+      window.Telegram.WebApp.openTelegramLink(webLink);
+    } else {
+      window.location.href = appLink || webLink;
     }
   });
   copyRegistrationButton?.addEventListener("click", async () => {
@@ -273,11 +297,8 @@ function setupSuperAdmin() {
       );
       registrationLink.searchParams.set("registration", registrationToken);
       const botUsername = getTelegramBotUsername();
-      const telegramRegistrationLink = botUsername
-        ? new URL(`https://t.me/${botUsername}`)
-        : null;
-      telegramRegistrationLink?.searchParams.set(
-        "startapp",
+      const telegramLinks = buildTelegramRegistrationLinks(
+        botUsername,
         registrationToken
       );
 
@@ -309,16 +330,31 @@ function setupSuperAdmin() {
       }
       if (registrationLinkEl) {
         registrationLinkEl.value =
-          telegramRegistrationLink?.href ?? registrationLink.href;
+          telegramLinks?.webLink ?? registrationLink.href;
       }
       if (registrationWebLinkEl) {
         registrationWebLinkEl.value = registrationLink.href;
       }
       if (registrationBox) {
         registrationBox.dataset.shareText = `Контакт энергетика: ${energyFullName}. Организация: ${fullName}.`;
+        if (telegramLinks?.webLink) {
+          registrationBox.dataset.telegramLink = telegramLinks.webLink;
+        }
+        if (telegramLinks?.appLink) {
+          registrationBox.dataset.telegramAppLink = telegramLinks.appLink;
+        }
         registrationBox.classList.remove("is-hidden");
       }
-      if (shareTelegramButton) shareTelegramButton.disabled = false;
+      if (shareTelegramButton) {
+        shareTelegramButton.disabled = !telegramLinks?.webLink;
+      }
+      if (openTelegramButton) {
+        openTelegramButton.disabled = !telegramLinks?.webLink;
+      }
+      if (!telegramLinks?.webLink && messageEl) {
+        messageEl.textContent =
+          "Ссылка для Telegram недоступна. Укажите имя бота в настройках Telegram.";
+      }
       await updateStats();
     } catch (error) {
       console.error(error);

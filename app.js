@@ -14,8 +14,9 @@ const roleMap = new Map([
   [energyRole, renderEnergy],
 ]);
 
-const statusEl = document.querySelector("[data-status]");
 const contentEl = document.querySelector("[data-content]");
+const userNameEl = document.querySelector("[data-user-name]");
+const userOrgEl = document.querySelector("[data-user-org]");
 
 function getTelegramId() {
   const webApp = window.Telegram?.WebApp;
@@ -46,12 +47,11 @@ function renderError(message) {
 }
 
 async function loadUser() {
-  statusEl.textContent = "Определяем пользователя...";
-
   const telegramId = getTelegramId();
   if (!telegramId) {
     renderError("Telegram ID не получен. Откройте приложение из Telegram.");
-    statusEl.textContent = "ID не получен";
+    if (userNameEl) userNameEl.textContent = "Гость";
+    if (userOrgEl) userOrgEl.textContent = "Откройте приложение из Telegram";
     return;
   }
 
@@ -66,14 +66,16 @@ async function loadUser() {
 
     if (!user) {
       renderError("Пользователь с таким ID не найден в базе.");
-      statusEl.textContent = "Пользователь не найден";
+      if (userNameEl) userNameEl.textContent = "Гость";
+      if (userOrgEl) userOrgEl.textContent = "Нет доступа к организации";
       return;
     }
 
     const renderRole = roleMap.get(user.role);
     if (!renderRole) {
       renderError("Для вашей роли ещё не создана страница.");
-      statusEl.textContent = "Роль не настроена";
+      if (userNameEl) userNameEl.textContent = formatShortName(user.full_name);
+      if (userOrgEl) userOrgEl.textContent = user.organization ?? "Организация";
       return;
     }
 
@@ -81,10 +83,12 @@ async function loadUser() {
     const userLabel = `Вы вошли как <strong>${userName}</strong>`;
 
     contentEl.innerHTML = renderRole(userLabel);
-    statusEl.textContent = `Роль: ${user.role}`;
+    if (userNameEl) userNameEl.textContent = userName;
+    if (userOrgEl) userOrgEl.textContent = user.organization ?? "Организация";
   } catch (error) {
     renderError("Возникла ошибка при загрузке данных.");
-    statusEl.textContent = "Ошибка загрузки";
+    if (userNameEl) userNameEl.textContent = "Гость";
+    if (userOrgEl) userOrgEl.textContent = "Проверьте соединение";
     console.error(error);
   }
 }

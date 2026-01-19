@@ -3,14 +3,7 @@ export const roleId = "Супер-администратор";
 export function renderRole(user) {
   return `
     <section class="role-card">
-      <div class="role-header">
-        <span class="role-pill">${roleId}</span>
-        <h1>Главный обзор системы</h1>
-      </div>
       <div class="dashboard">
-        <div class="dashboard-header">
-          <div class="dashboard-subtitle">Сегодня: 12 операций</div>
-        </div>
         <div class="section-pill"><span class="section-icon">📊</span>Статистика</div>
         <div class="dashboard-stats">
           <div class="stat-card">
@@ -77,7 +70,6 @@ export function renderRole(user) {
           Добавить организацию
         </button>
       </div>
-      <div class="role-user">${user}</div>
     </section>
   `;
 }

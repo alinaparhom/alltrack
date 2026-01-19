@@ -3,7 +3,7 @@ export const roleId = "Супер-администратор";
 export function renderRole(user) {
   return `
     <section class="role-card">
-      <div class="dashboard">
+      <div class="dashboard" data-super-admin-dashboard>
         <div class="section-pill"><span class="section-icon">📊</span>Статистика</div>
         <div class="dashboard-stats">
           <div class="stat-card">
@@ -12,7 +12,7 @@ export function renderRole(user) {
               <div class="stat-label">Организаций</div>
             </div>
             <div class="stat-row">
-              <span class="stat-value">12</span>
+              <span class="stat-value" data-org-count>—</span>
               <span class="stat-pill">в реестре</span>
             </div>
           </div>
@@ -22,7 +22,7 @@ export function renderRole(user) {
               <div class="stat-label">Пользователей</div>
             </div>
             <div class="stat-row">
-              <span class="stat-value">284</span>
+              <span class="stat-value" data-user-count>—</span>
               <span class="stat-pill">активных</span>
             </div>
           </div>
@@ -65,10 +65,88 @@ export function renderRole(user) {
             <div class="action-title">Выгрузить данные</div>
           </button>
         </div>
-        <button class="action-primary" type="button">
+        <button class="action-primary" type="button" data-open-add-org>
           <span class="action-icon">➕</span>
           Добавить организацию
         </button>
+      </div>
+      <div class="dashboard is-hidden" data-add-org-section>
+        <div class="section-pill"><span class="section-icon">🏢</span>Добавить организацию</div>
+        <div class="form-card">
+          <form class="form-grid" data-add-org-form>
+            <div class="form-field">
+              <label class="form-label" for="org-full-name">Наименование организации</label>
+              <input
+                class="form-input"
+                type="text"
+                id="org-full-name"
+                name="org-full-name"
+                autocomplete="organization"
+                placeholder="ООО «Пример»"
+                required
+              />
+            </div>
+            <div class="form-field">
+              <label class="form-label" for="org-short-name">Краткое название организации</label>
+              <input
+                class="form-input"
+                type="text"
+                id="org-short-name"
+                name="org-short-name"
+                autocomplete="organization"
+                placeholder="Пример"
+                required
+              />
+            </div>
+            <div class="form-field">
+              <label class="form-label" for="energy-last-name">Фамилия энергетика</label>
+              <input
+                class="form-input"
+                type="text"
+                id="energy-last-name"
+                name="energy-last-name"
+                autocomplete="family-name"
+                placeholder="Иванов"
+                required
+              />
+            </div>
+            <div class="form-field">
+              <label class="form-label" for="energy-first-name">Имя энергетика</label>
+              <input
+                class="form-input"
+                type="text"
+                id="energy-first-name"
+                name="energy-first-name"
+                autocomplete="given-name"
+                placeholder="Иван"
+                required
+              />
+            </div>
+            <div class="form-field">
+              <label class="form-label" for="energy-middle-name">Отчество энергетика</label>
+              <input
+                class="form-input"
+                type="text"
+                id="energy-middle-name"
+                name="energy-middle-name"
+                autocomplete="additional-name"
+                placeholder="Иванович"
+                required
+              />
+            </div>
+            <p class="form-hint">
+              После сохранения организация появится в реестре, а пользователь будет создан с
+              <strong>telegram_id: 0</strong>.
+            </p>
+            <div class="form-actions">
+              <button class="action-primary" type="submit">Сохранить</button>
+              <button class="button-secondary" type="button" data-back-dashboard>
+                Назад к дашборду
+              </button>
+            </div>
+            <div class="form-message" role="status" data-form-message></div>
+          </form>
+        </div>
       </div>
     </section>
   `;

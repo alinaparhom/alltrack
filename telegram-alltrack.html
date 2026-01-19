@@ -162,8 +162,14 @@
         border: 1px solid rgba(226, 232, 240, 0.9);
         box-shadow: 0 12px 30px rgba(26, 31, 46, 0.08);
         display: grid;
-        gap: 8px;
+        gap: 12px;
         min-height: 112px;
+      }
+
+      .stat-card-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
       }
 
       .stat-row {
@@ -171,6 +177,21 @@
         align-items: center;
         justify-content: space-between;
         gap: 12px;
+      }
+
+      .stat-icon,
+      .action-icon,
+      .section-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 14px;
+        background: rgba(59, 125, 255, 0.12);
+        color: var(--accent);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        flex-shrink: 0;
       }
 
       .stat-label {
@@ -213,7 +234,7 @@
         box-shadow: 0 12px 30px rgba(26, 31, 46, 0.08);
         display: flex;
         align-items: center;
-        justify-content: space-between;
+        gap: 12px;
         min-height: 72px;
         cursor: pointer;
         transition: transform 0.2s ease, box-shadow 0.2s ease;
@@ -233,6 +254,7 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
+        gap: 8px;
         padding: 8px 16px;
         border-radius: 999px;
         background: rgba(59, 125, 255, 0.12);
@@ -240,6 +262,27 @@
         font-size: 13px;
         font-weight: 600;
         width: fit-content;
+      }
+
+      .action-primary {
+        border: none;
+        background: rgba(59, 125, 255, 0.16);
+        color: var(--accent);
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        padding: 16px var(--space);
+        border-radius: var(--radius-sm);
+        box-shadow: 0 12px 30px rgba(26, 31, 46, 0.08);
+        cursor: pointer;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      .action-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 16px 40px rgba(26, 31, 46, 0.12);
       }
 
       .role-tile {

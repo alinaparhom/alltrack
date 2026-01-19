@@ -9,71 +9,73 @@ export function renderRole(user) {
       </div>
       <div class="dashboard">
         <div class="dashboard-header">
-          <p class="role-description">
-            Быстрый доступ к ключевым метрикам и действиям системы.
-          </p>
-          <div class="dashboard-subtitle">Сегодня · обновлено 2 минуты назад</div>
+          <div class="dashboard-subtitle">Сегодня: 12 операций</div>
         </div>
-        <div class="section-pill">Статистика</div>
+        <div class="section-pill"><span class="section-icon">📊</span>Статистика</div>
         <div class="dashboard-stats">
           <div class="stat-card">
-            <div class="stat-row">
-              <span class="stat-label">Организаций</span>
-              <span class="stat-pill">в реестре</span>
+            <div class="stat-card-header">
+              <span class="stat-icon">🏢</span>
+              <div class="stat-label">Организаций</div>
             </div>
             <div class="stat-row">
               <span class="stat-value">12</span>
-              <span class="stat-meta">+2 за неделю</span>
+              <span class="stat-pill">в реестре</span>
             </div>
           </div>
           <div class="stat-card">
-            <div class="stat-row">
-              <span class="stat-label">Пользователей</span>
-              <span class="stat-pill">активных</span>
+            <div class="stat-card-header">
+              <span class="stat-icon">👥</span>
+              <div class="stat-label">Пользователей</div>
             </div>
             <div class="stat-row">
               <span class="stat-value">284</span>
-              <span class="stat-meta">+18 за неделю</span>
+              <span class="stat-pill">активных</span>
             </div>
           </div>
           <div class="stat-card">
-            <div class="stat-row">
-              <span class="stat-label">Обратная связь</span>
-              <span class="stat-pill">в работе</span>
+            <div class="stat-card-header">
+              <span class="stat-icon">💬</span>
+              <div class="stat-label">Обратная связь</div>
             </div>
             <div class="stat-row">
               <span class="stat-value">9</span>
-              <span class="stat-meta">3 без ответа</span>
+              <span class="stat-pill">в работе</span>
             </div>
           </div>
           <div class="stat-card">
-            <div class="stat-row">
-              <span class="stat-label">Инцидентов</span>
-              <span class="stat-pill">в работе</span>
+            <div class="stat-card-header">
+              <span class="stat-icon">🛡️</span>
+              <div class="stat-label">Инцидентов</div>
             </div>
             <div class="stat-row">
               <span class="stat-value">3</span>
-              <span class="stat-meta">1 новый</span>
+              <span class="stat-pill">в работе</span>
             </div>
           </div>
         </div>
         <div class="action-grid">
           <button class="action-card" type="button">
+            <span class="action-icon">💳</span>
             <div class="action-title">Оплаты</div>
           </button>
           <button class="action-card" type="button">
+            <span class="action-icon">⚙️</span>
             <div class="action-title">Настройки</div>
           </button>
           <button class="action-card" type="button">
-            <div class="action-title">Добавить организацию</div>
-          </button>
-          <button class="action-card" type="button">
+            <span class="action-icon">👤</span>
             <div class="action-title">Добавить пользователя</div>
           </button>
           <button class="action-card" type="button">
+            <span class="action-icon">📤</span>
             <div class="action-title">Выгрузить данные</div>
           </button>
         </div>
+        <button class="action-primary" type="button">
+          <span class="action-icon">➕</span>
+          Добавить организацию
+        </button>
       </div>
       <div class="role-user">${user}</div>
     </section>

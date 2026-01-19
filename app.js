@@ -180,7 +180,10 @@ function setupSuperAdmin() {
       ]);
 
       formEl.reset();
-      if (messageEl) messageEl.textContent = "Организация добавлена.";
+      if (messageEl) {
+        messageEl.textContent =
+          "Организация добавлена. Созданы папка и базы для работы.";
+      }
       await updateStats();
       showDashboard();
     } catch (error) {

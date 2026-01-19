@@ -147,6 +147,9 @@ export function renderRole(user) {
                 Отправьте ссылку в Telegram. При открытии в приложении Telegram ID пользователя
                 сразу сохранится в базе, и он попадёт на страницу своей роли.
               </p>
+              <p class="registration-note" data-telegram-note>
+                Если бот ещё не настроен, используйте веб-ссылку ниже или копирование.
+              </p>
               <div class="registration-actions">
                 <div class="registration-links">
                   <div class="registration-link-row">

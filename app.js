@@ -75,8 +75,19 @@ async function loadJson(path) {
   return response.json();
 }
 
-async function saveJson(path, data) {
-  const payload = JSON.stringify({ path, data });
+async function saveJsonFallback(path, data) {
+  const fallbackResponse = await fetch(path, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data, null, 2),
+  });
+  if (!fallbackResponse.ok) {
+    throw new Error(`Не удалось сохранить ${path}`);
+  }
+}
+
+async function saveEntries(entries) {
+  const payload = JSON.stringify({ entries });
 
   try {
     const response = await fetch(saveEndpoint, {
@@ -87,18 +98,19 @@ async function saveJson(path, data) {
     if (response.ok) {
       return;
     }
+    const errorText = await response.text();
+    console.warn("Save endpoint вернул ошибку.", errorText);
   } catch (error) {
     console.warn("Save endpoint недоступен, пробуем сохранить напрямую.", error);
   }
 
-  const fallbackResponse = await fetch(path, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data, null, 2),
-  });
-  if (!fallbackResponse.ok) {
-    throw new Error(`Не удалось сохранить ${path}`);
+  for (const { path, data } of entries) {
+    await saveJsonFallback(path, data);
   }
+}
+
+async function saveJson(path, data) {
+  return saveEntries([{ path, data }]);
 }
 
 function createRegistrationToken() {
@@ -284,10 +296,10 @@ function setupSuperAdmin() {
         ],
       };
 
-      await Promise.all([
-        saveJson(orgFilePath, nextOrgData),
-        saveJson(usersFilePath, nextUsersData),
-        saveJson(pendingRegistrationsFilePath, nextRegistrationsData),
+      await saveEntries([
+        { path: orgFilePath, data: nextOrgData },
+        { path: usersFilePath, data: nextUsersData },
+        { path: pendingRegistrationsFilePath, data: nextRegistrationsData },
       ]);
 
       formEl.reset();
@@ -366,9 +378,9 @@ async function applyRegistrationToken(telegramId, token) {
     registrations: registrations.filter((item) => item.token !== token),
   };
 
-  await Promise.all([
-    saveJson(usersFilePath, usersData),
-    saveJson(pendingRegistrationsFilePath, nextRegistrationsData),
+  await saveEntries([
+    { path: usersFilePath, data: usersData },
+    { path: pendingRegistrationsFilePath, data: nextRegistrationsData },
   ]);
 
   return resolvedUser;

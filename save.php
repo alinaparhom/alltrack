@@ -10,10 +10,17 @@ if (!is_array($payload)) {
   exit;
 }
 
-$path = $payload["path"] ?? "";
-$data = $payload["data"] ?? null;
-$fileName = basename($path);
 $allowedFiles = ["organizations.json", "users.json", "pending-registrations.json"];
+
+function buildEntries(array $payload): array {
+  $entries = $payload["entries"] ?? null;
+  if (is_array($entries)) {
+    return $entries;
+  }
+  $path = $payload["path"] ?? "";
+  $data = $payload["data"] ?? null;
+  return [["path" => $path, "data" => $data]];
+}
 function sanitizeFolderName(string $name): string {
   $trimmed = trim($name);
   $clean = preg_replace('/[\/\\\\:\*\?"<>\|]+/', "_", $trimmed);
@@ -39,23 +46,7 @@ function writeJsonIfMissing(string $path, $data): bool {
   return file_put_contents($path, $encoded . PHP_EOL, LOCK_EX) !== false;
 }
 
-if (!in_array($fileName, $allowedFiles, true)) {
-  http_response_code(403);
-  echo json_encode(["error" => "Доступ запрещен."]);
-  exit;
-}
-
-$targetPath = __DIR__ . DIRECTORY_SEPARATOR . $fileName;
-$encoded = json_encode($data, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
-
-if ($encoded === false) {
-  http_response_code(400);
-  echo json_encode(["error" => "Не удалось сериализовать данные."]);
-  exit;
-}
-
-$newOrganizations = [];
-if ($fileName === "organizations.json") {
+function getNewOrganizations(string $targetPath, $data): array {
   $existingContent = [];
   if (file_exists($targetPath)) {
     $existingRaw = file_get_contents($targetPath);
@@ -69,23 +60,17 @@ if ($fileName === "organizations.json") {
     }
   }
   $incomingOrganizations = is_array($data) ? ($data["organizations"] ?? []) : [];
+  $newOrganizations = [];
   foreach ($incomingOrganizations as $org) {
     $shortName = $org["short_name"] ?? "";
     if ($shortName && !in_array($shortName, $existingShortNames, true)) {
       $newOrganizations[] = $shortName;
     }
   }
+  return $newOrganizations;
 }
 
-$written = file_put_contents($targetPath, $encoded . PHP_EOL, LOCK_EX);
-
-if ($written === false) {
-  http_response_code(500);
-  echo json_encode(["error" => "Не удалось сохранить файл."]);
-  exit;
-}
-
-if (!empty($newOrganizations)) {
+function createOrganizationFolders(array $newOrganizations): void {
   $jsonFiles = [
     "База с инструментами.json" => [],
     "Перемещения.json" => [],
@@ -132,6 +117,53 @@ if (!empty($newOrganizations)) {
       }
     }
   }
+}
+
+function saveEntry(array $entry, array $allowedFiles): void {
+  $path = $entry["path"] ?? "";
+  $data = $entry["data"] ?? null;
+  $fileName = basename((string) $path);
+
+  if (!in_array($fileName, $allowedFiles, true)) {
+    http_response_code(403);
+    echo json_encode(["error" => "Доступ запрещен."]);
+    exit;
+  }
+
+  $targetPath = __DIR__ . DIRECTORY_SEPARATOR . $fileName;
+  $encoded = json_encode($data, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+
+  if ($encoded === false) {
+    http_response_code(400);
+    echo json_encode(["error" => "Не удалось сериализовать данные."]);
+    exit;
+  }
+
+  $newOrganizations = [];
+  if ($fileName === "organizations.json") {
+    $newOrganizations = getNewOrganizations($targetPath, $data);
+  }
+
+  $written = file_put_contents($targetPath, $encoded . PHP_EOL, LOCK_EX);
+  if ($written === false) {
+    http_response_code(500);
+    echo json_encode(["error" => "Не удалось сохранить файл."]);
+    exit;
+  }
+
+  if (!empty($newOrganizations)) {
+    createOrganizationFolders($newOrganizations);
+  }
+}
+
+$entries = buildEntries($payload);
+foreach ($entries as $entry) {
+  if (!is_array($entry)) {
+    http_response_code(400);
+    echo json_encode(["error" => "Некорректные данные запроса."]);
+    exit;
+  }
+  saveEntry($entry, $allowedFiles);
 }
 
 echo json_encode(["success" => true]);

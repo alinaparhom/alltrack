@@ -148,13 +148,24 @@ export function renderRole(user) {
                 организацией.
               </p>
               <div class="registration-actions">
-                <input
-                  class="form-input"
-                  type="text"
-                  readonly
-                  aria-label="Ссылка для регистрации"
-                  data-registration-link
-                />
+                <div class="registration-link-row">
+                  <input
+                    class="form-input"
+                    type="text"
+                    readonly
+                    aria-label="Ссылка для регистрации"
+                    data-registration-link
+                  />
+                  <button
+                    class="button-icon"
+                    type="button"
+                    data-share-telegram
+                    aria-label="Отправить контакт в Telegram"
+                    title="Отправить контакт в Telegram"
+                  >
+                    <span class="button-icon-emoji">✈️</span>
+                  </button>
+                </div>
                 <button class="button-secondary" type="button" data-copy-registration>
                   Скопировать ссылку
                 </button>

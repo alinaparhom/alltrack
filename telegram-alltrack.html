@@ -417,6 +417,42 @@
         gap: 10px;
       }
 
+      .registration-link-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 8px;
+        align-items: center;
+      }
+
+      .button-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 16px;
+        border: 1px solid rgba(59, 125, 255, 0.2);
+        background: rgba(255, 255, 255, 0.8);
+        color: var(--accent);
+        display: grid;
+        place-items: center;
+        cursor: pointer;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      .button-icon:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 10px 20px rgba(26, 31, 46, 0.08);
+      }
+
+      .button-icon:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        box-shadow: none;
+        transform: none;
+      }
+
+      .button-icon-emoji {
+        font-size: 18px;
+      }
+
       .role-tile {
         padding: var(--space);
         border-radius: var(--radius-card);

@@ -99,6 +99,34 @@ export function renderRole(user) {
               />
             </div>
             <div class="form-field">
+              <span class="form-label">Тип номера организации</span>
+              <div class="toggle-group" role="radiogroup" aria-label="Тип номера организации">
+                <input
+                  class="toggle-input"
+                  type="radio"
+                  id="org-number-application"
+                  name="org-number-type"
+                  value="Номер приложения"
+                  checked
+                  required
+                />
+                <label class="toggle-option" for="org-number-application">
+                  Номер приложения
+                </label>
+                <input
+                  class="toggle-input"
+                  type="radio"
+                  id="org-number-accounting"
+                  name="org-number-type"
+                  value="Бухгалтерский номер"
+                  required
+                />
+                <label class="toggle-option" for="org-number-accounting">
+                  Бухгалтерский номер
+                </label>
+              </div>
+            </div>
+            <div class="form-field">
               <label class="form-label" for="energy-last-name">Фамилия энергетика</label>
               <input
                 class="form-input"

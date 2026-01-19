@@ -456,6 +456,49 @@
         gap: 10px;
       }
 
+      .toggle-group {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        padding: 6px;
+        border-radius: 16px;
+        border: 1px solid rgba(226, 232, 240, 0.9);
+        background: rgba(255, 255, 255, 0.7);
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.4);
+      }
+
+      .toggle-input {
+        position: absolute;
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      .toggle-option {
+        flex: 1 1 140px;
+        text-align: center;
+        padding: 10px 14px;
+        border-radius: 14px;
+        font-size: var(--text-sm);
+        font-weight: 600;
+        color: var(--muted);
+        background: rgba(255, 255, 255, 0.72);
+        cursor: pointer;
+        transition: 0.2s ease;
+        border: 1px solid transparent;
+      }
+
+      .toggle-input:focus-visible + .toggle-option {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
+      }
+
+      .toggle-input:checked + .toggle-option {
+        color: var(--text);
+        background: rgba(59, 125, 255, 0.16);
+        border-color: rgba(59, 125, 255, 0.3);
+        box-shadow: 0 10px 20px rgba(59, 125, 255, 0.2);
+      }
+
       .button-telegram {
         width: 100%;
       }

@@ -283,11 +283,19 @@ function setupSuperAdmin() {
     const formData = new FormData(formEl);
     const fullName = String(formData.get("org-full-name") ?? "").trim();
     const shortName = String(formData.get("org-short-name") ?? "").trim();
+    const numberType = String(formData.get("org-number-type") ?? "").trim();
     const lastName = String(formData.get("energy-last-name") ?? "").trim();
     const firstName = String(formData.get("energy-first-name") ?? "").trim();
     const middleName = String(formData.get("energy-middle-name") ?? "").trim();
 
-    if (!fullName || !shortName || !lastName || !firstName || !middleName) {
+    if (
+      !fullName ||
+      !shortName ||
+      !numberType ||
+      !lastName ||
+      !firstName ||
+      !middleName
+    ) {
       if (messageEl) messageEl.textContent = "Заполните все поля.";
       return;
     }
@@ -306,6 +314,7 @@ function setupSuperAdmin() {
           {
             full_name: fullName,
             short_name: shortName,
+            number_type: numberType,
             launch_date: getToday(),
           },
         ],

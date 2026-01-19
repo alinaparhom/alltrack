@@ -89,39 +89,77 @@
         color: var(--muted);
       }
 
-      .info {
-        margin-top: 20px;
-        display: grid;
-        gap: 12px;
-      }
-
-      .card {
+      .status {
         display: flex;
         align-items: center;
-        gap: 12px;
-        padding: 14px 16px;
-        border-radius: 18px;
-        background: rgba(255, 255, 255, 0.8);
-        border: 1px solid rgba(226, 232, 240, 0.8);
-      }
-
-      .dot {
-        width: 12px;
-        height: 12px;
-        border-radius: 50%;
-        background: var(--accent);
-        box-shadow: 0 0 0 6px rgba(59, 125, 255, 0.15);
-        flex-shrink: 0;
-      }
-
-      .footer {
-        margin-top: 24px;
+        gap: 8px;
         font-size: 13px;
         color: var(--muted);
       }
 
-      .footer strong {
+      .role-card {
+        margin-top: 20px;
+        display: grid;
+        gap: 18px;
+      }
+
+      .role-header h1 {
+        margin-top: 12px;
+        font-size: 24px;
+        line-height: 1.3;
+      }
+
+      .role-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 14px;
+        border-radius: 999px;
+        background: rgba(59, 125, 255, 0.12);
+        color: var(--accent);
+        font-size: 12px;
+        font-weight: 600;
+      }
+
+      .role-description {
+        font-size: 15px;
+        line-height: 1.6;
+        color: var(--muted);
+      }
+
+      .role-grid {
+        display: grid;
+        gap: 12px;
+      }
+
+      .role-tile {
+        padding: 16px;
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.85);
+        border: 1px solid rgba(226, 232, 240, 0.9);
+        box-shadow: 0 10px 30px rgba(26, 31, 46, 0.08);
+      }
+
+      .role-tile h3 {
+        font-size: 16px;
+        margin-bottom: 6px;
+      }
+
+      .role-tile p {
+        font-size: 14px;
+        color: var(--muted);
+      }
+
+      .role-user {
+        font-size: 14px;
+        padding: 12px 16px;
+        border-radius: 16px;
+        background: rgba(59, 125, 255, 0.08);
         color: var(--text);
+      }
+
+      .role-user strong {
+        color: var(--accent);
       }
 
       @media (max-width: 420px) {
@@ -138,42 +176,11 @@
   <body>
     <main class="screen" role="main">
       <div class="badge">Mini App · AllTrack</div>
-      <h1>Добро пожаловать в AllTrack</h1>
-      <p>
-        Это приветственная страница Mini App для Telegram. Приложение одинаково
-        удобно работает на Android, iOS, в веб-версии и на компьютере.
-      </p>
-
-      <section class="info">
-        <div class="card">
-          <span class="dot" aria-hidden="true"></span>
-          <div>
-            <strong>Минималистичный интерфейс</strong>
-            <p>Прозрачные карточки и лёгкая навигация.</p>
-          </div>
-        </div>
-        <div class="card">
-          <span class="dot" aria-hidden="true"></span>
-          <div>
-            <strong>Готово для Telegram WebApp</strong>
-            <p>Страница расширяется на всю высоту экрана.</p>
-          </div>
-        </div>
-      </section>
-
-      <div class="footer">
-        Запуск: <strong>AllTrack</strong> · Статус: готово к подключению функций.
-      </div>
+      <div class="status" data-status>Загрузка...</div>
+      <div data-content></div>
     </main>
 
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script>
-      if (window.Telegram?.WebApp) {
-        Telegram.WebApp.ready();
-        Telegram.WebApp.expand();
-        Telegram.WebApp.setHeaderColor("#f5f7ff");
-        Telegram.WebApp.setBackgroundColor("#f5f7ff");
-      }
-    </script>
+    <script type="module" src="./app.js"></script>
   </body>
 </html>

@@ -27,6 +27,15 @@ function getTelegramId() {
   return webApp?.initDataUnsafe?.user?.id ?? null;
 }
 
+function getTelegramBotUsername() {
+  const webApp = window.Telegram?.WebApp;
+  return (
+    webApp?.initDataUnsafe?.receiver?.username ??
+    webApp?.initDataUnsafe?.chat?.username ??
+    null
+  );
+}
+
 function getRegistrationToken() {
   const url = new URL(window.location.href);
   const urlToken =
@@ -129,6 +138,9 @@ function setupSuperAdmin() {
   const registrationBox = contentEl.querySelector("[data-registration-box]");
   const registrationLinkEl = contentEl.querySelector(
     "[data-registration-link]"
+  );
+  const registrationWebLinkEl = contentEl.querySelector(
+    "[data-registration-web-link]"
   );
   const shareTelegramButton = contentEl.querySelector("[data-share-telegram]");
   const copyRegistrationButton = contentEl.querySelector(
@@ -248,6 +260,14 @@ function setupSuperAdmin() {
         `${window.location.origin}${window.location.pathname}`
       );
       registrationLink.searchParams.set("registration", registrationToken);
+      const botUsername = getTelegramBotUsername();
+      const telegramRegistrationLink = botUsername
+        ? new URL(`https://t.me/${botUsername}`)
+        : null;
+      telegramRegistrationLink?.searchParams.set(
+        "startapp",
+        registrationToken
+      );
 
       const nextRegistrationsData = {
         registrations: [
@@ -275,7 +295,13 @@ function setupSuperAdmin() {
         messageEl.textContent =
           "Организация добавлена. Ссылка для регистрации готова.";
       }
-      if (registrationLinkEl) registrationLinkEl.value = registrationLink.href;
+      if (registrationLinkEl) {
+        registrationLinkEl.value =
+          telegramRegistrationLink?.href ?? registrationLink.href;
+      }
+      if (registrationWebLinkEl) {
+        registrationWebLinkEl.value = registrationLink.href;
+      }
       if (registrationBox) {
         registrationBox.dataset.shareText = `Контакт энергетика: ${energyFullName}. Организация: ${fullName}.`;
         registrationBox.classList.remove("is-hidden");

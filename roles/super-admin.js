@@ -144,27 +144,39 @@ export function renderRole(user) {
             <div class="registration-box is-hidden" data-registration-box>
               <div class="registration-title">Ссылка для регистрации энергетика</div>
               <p class="registration-hint">
-                Отправьте ссылку в Telegram. После открытия она закрепит пользователя за этой
-                организацией.
+                Отправьте ссылку в Telegram. Она откроется прямо в приложении Telegram и закрепит
+                пользователя за этой организацией.
               </p>
               <div class="registration-actions">
-                <div class="registration-link-row">
-                  <input
-                    class="form-input"
-                    type="text"
-                    readonly
-                    aria-label="Ссылка для регистрации"
-                    data-registration-link
-                  />
-                  <button
-                    class="button-icon"
-                    type="button"
-                    data-share-telegram
-                    aria-label="Отправить контакт в Telegram"
-                    title="Отправить контакт в Telegram"
-                  >
-                    <span class="button-icon-emoji">✈️</span>
-                  </button>
+                <div class="registration-links">
+                  <div class="registration-link-row">
+                    <input
+                      class="form-input"
+                      type="text"
+                      readonly
+                      aria-label="Ссылка для открытия в Telegram"
+                      data-registration-link
+                    />
+                    <button
+                      class="button-icon"
+                      type="button"
+                      data-share-telegram
+                      aria-label="Отправить контакт в Telegram"
+                      title="Отправить контакт в Telegram"
+                    >
+                      <span class="button-icon-emoji">✈️</span>
+                    </button>
+                  </div>
+                  <div class="registration-link-secondary">
+                    <span class="registration-link-label">Запасная веб-ссылка</span>
+                    <input
+                      class="form-input"
+                      type="text"
+                      readonly
+                      aria-label="Веб-ссылка для регистрации"
+                      data-registration-web-link
+                    />
+                  </div>
                 </div>
                 <button class="button-secondary" type="button" data-copy-registration>
                   Скопировать ссылку

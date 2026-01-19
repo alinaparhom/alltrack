@@ -14,64 +14,47 @@ export function renderRole(user) {
           </p>
           <div class="dashboard-subtitle">Сегодня · обновлено 2 минуты назад</div>
         </div>
-        <div class="statistics-card">
-          <div class="statistics-header">
-            <div>
-              <div class="statistics-title">Статистика</div>
-              <div class="statistics-subtitle">Сводка за неделю</div>
-            </div>
-            <span class="statistics-pill">Онлайн</span>
-          </div>
-          <div class="statistics-grid">
-            <div class="statistics-item">
-              <div class="statistics-label">Операции</div>
-              <div class="statistics-value">1 248</div>
-            </div>
-            <div class="statistics-item">
-              <div class="statistics-label">Инциденты</div>
-              <div class="statistics-value">18</div>
-            </div>
-            <div class="statistics-item">
-              <div class="statistics-label">Новые заявки</div>
-              <div class="statistics-value">34</div>
-            </div>
-            <div class="statistics-item">
-              <div class="statistics-label">В работе</div>
-              <div class="statistics-value">7</div>
-            </div>
-          </div>
-        </div>
+        <div class="section-pill">Статистика</div>
         <div class="dashboard-stats">
           <div class="stat-card">
             <div class="stat-row">
-              <span class="stat-label">Подключено организаций</span>
-              <span class="stat-pill">активные</span>
+              <span class="stat-label">Организаций</span>
+              <span class="stat-pill">в реестре</span>
             </div>
             <div class="stat-row">
-              <span class="stat-value">128</span>
-              <span class="stat-meta">+6 за неделю</span>
+              <span class="stat-value">12</span>
+              <span class="stat-meta">+2 за неделю</span>
             </div>
           </div>
           <div class="stat-card">
             <div class="stat-row">
-              <span class="stat-label">Пользователи приложения</span>
-              <span class="stat-pill">всего</span>
+              <span class="stat-label">Пользователей</span>
+              <span class="stat-pill">активных</span>
             </div>
             <div class="stat-row">
-              <span class="stat-value">2 845</span>
-              <span class="stat-meta">из них 1 932 активны</span>
+              <span class="stat-value">284</span>
+              <span class="stat-meta">+18 за неделю</span>
             </div>
           </div>
           <div class="stat-card">
             <div class="stat-row">
               <span class="stat-label">Обратная связь</span>
-              <span class="stat-pill">важно</span>
+              <span class="stat-pill">в работе</span>
             </div>
             <div class="stat-row">
-              <span class="stat-value">42</span>
-              <span class="stat-meta">27 отработано</span>
+              <span class="stat-value">9</span>
+              <span class="stat-meta">3 без ответа</span>
             </div>
-            <div class="progress"><span></span></div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-row">
+              <span class="stat-label">Инцидентов</span>
+              <span class="stat-pill">в работе</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-value">3</span>
+              <span class="stat-meta">1 новый</span>
+            </div>
           </div>
         </div>
         <div class="action-grid">

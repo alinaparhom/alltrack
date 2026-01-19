@@ -155,10 +155,6 @@
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }
 
-      .dashboard-stats .stat-card:nth-child(3) {
-        grid-column: span 2;
-      }
-
       .stat-card {
         padding: var(--space);
         border-radius: var(--radius-sm);
@@ -167,6 +163,7 @@
         box-shadow: 0 12px 30px rgba(26, 31, 46, 0.08);
         display: grid;
         gap: 8px;
+        min-height: 112px;
       }
 
       .stat-row {
@@ -201,21 +198,6 @@
         color: var(--muted);
       }
 
-      .progress {
-        height: 8px;
-        border-radius: 999px;
-        background: rgba(59, 125, 255, 0.12);
-        overflow: hidden;
-      }
-
-      .progress span {
-        display: block;
-        height: 100%;
-        width: 64%;
-        background: var(--accent);
-        border-radius: 999px;
-      }
-
       .action-grid {
         display: grid;
         gap: var(--space);
@@ -232,6 +214,7 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
+        min-height: 72px;
         cursor: pointer;
         transition: transform 0.2s ease, box-shadow 0.2s ease;
       }
@@ -246,67 +229,17 @@
         font-weight: 600;
       }
 
-      .statistics-card {
-        padding: var(--space);
-        border-radius: var(--radius-sm);
-        border: 1px solid rgba(226, 232, 240, 0.9);
-        background: rgba(255, 255, 255, 0.82);
-        box-shadow: 0 12px 30px rgba(26, 31, 46, 0.08);
-        display: grid;
-        gap: var(--space);
-      }
-
-      .statistics-header {
-        display: flex;
+      .section-pill {
+        display: inline-flex;
         align-items: center;
-        justify-content: space-between;
-        gap: var(--space);
-      }
-
-      .statistics-title {
-        font-size: 16px;
-        font-weight: 600;
-      }
-
-      .statistics-subtitle {
-        font-size: 13px;
-        color: var(--muted);
-      }
-
-      .statistics-pill {
-        padding: 6px 12px;
+        justify-content: center;
+        padding: 8px 16px;
         border-radius: 999px;
         background: rgba(59, 125, 255, 0.12);
         color: var(--accent);
-        font-size: 12px;
-        font-weight: 600;
-        white-space: nowrap;
-      }
-
-      .statistics-grid {
-        display: grid;
-        gap: var(--space);
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
-
-      .statistics-item {
-        padding: var(--space);
-        border-radius: var(--radius-sm);
-        background: rgba(255, 255, 255, 0.9);
-        border: 1px solid rgba(226, 232, 240, 0.9);
-        display: grid;
-        gap: 6px;
-      }
-
-      .statistics-label {
         font-size: 13px;
-        color: var(--muted);
-      }
-
-      .statistics-value {
-        font-size: 20px;
-        font-weight: 700;
-        color: var(--text);
+        font-weight: 600;
+        width: fit-content;
       }
 
       .role-tile {

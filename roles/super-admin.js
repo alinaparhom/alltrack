@@ -148,7 +148,7 @@ export function renderRole(user) {
                 сразу сохранится в базе, и он попадёт на страницу своей роли.
               </p>
               <p class="registration-note" data-telegram-note>
-                Если бот ещё не настроен, используйте веб-ссылку ниже или копирование.
+                Если бот ещё не настроен, используйте копирование ссылки.
               </p>
               <ul class="registration-steps">
                 <li><strong>1.</strong> Откройте ссылку в Telegram.</li>
@@ -174,24 +174,20 @@ export function renderRole(user) {
                     >
                       <span class="button-icon-emoji">✈️</span>
                     </button>
-                  </div>
-                  <div class="registration-link-secondary">
-                    <span class="registration-link-label">Запасная веб-ссылка</span>
-                    <input
-                      class="form-input"
-                      type="text"
-                      readonly
-                      aria-label="Веб-ссылка для регистрации"
-                      data-registration-web-link
-                    />
+                    <button
+                      class="button-icon"
+                      type="button"
+                      data-copy-registration
+                      aria-label="Скопировать ссылку"
+                      title="Скопировать ссылку"
+                    >
+                      <span class="button-icon-emoji">📋</span>
+                    </button>
                   </div>
                 </div>
                 <div class="registration-buttons">
                   <button class="action-primary button-telegram" type="button" data-open-telegram>
                     Открыть в Telegram
-                  </button>
-                  <button class="button-secondary" type="button" data-copy-registration>
-                    Скопировать ссылку
                   </button>
                 </div>
               </div>

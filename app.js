@@ -189,9 +189,6 @@ function setupSuperAdmin() {
   const registrationLinkEl = contentEl.querySelector(
     "[data-registration-link]"
   );
-  const registrationWebLinkEl = contentEl.querySelector(
-    "[data-registration-web-link]"
-  );
   const openTelegramButton = contentEl.querySelector("[data-open-telegram]");
   const shareTelegramButton = contentEl.querySelector("[data-share-telegram]");
   const copyRegistrationButton = contentEl.querySelector(
@@ -218,6 +215,7 @@ function setupSuperAdmin() {
     if (messageEl) messageEl.textContent = "";
     if (shareTelegramButton) shareTelegramButton.disabled = true;
     if (openTelegramButton) openTelegramButton.disabled = true;
+    if (copyRegistrationButton) copyRegistrationButton.disabled = true;
     if (openTelegramButton) openTelegramButton.textContent = "Открыть в Telegram";
     if (telegramNoteEl) {
       telegramNoteEl.textContent =
@@ -361,13 +359,10 @@ function setupSuperAdmin() {
       if (messageEl) {
         messageEl.textContent = telegramLinks?.webLink
           ? "Организация добавлена. Ссылка готова — откройте её в Telegram, чтобы ID записался автоматически."
-          : "Организация добавлена. Бот не указан — используйте веб-ссылку или копирование.";
+          : "Организация добавлена. Бот не указан — используйте копирование ссылки.";
       }
       if (registrationLinkEl) {
         registrationLinkEl.value = telegramLinks?.webLink ?? registrationLink.href;
-      }
-      if (registrationWebLinkEl) {
-        registrationWebLinkEl.value = registrationLink.href;
       }
       if (registrationBox) {
         registrationBox.dataset.shareText = `Контакт энергетика: ${energyFullName}. Организация: ${fullName}.`;
@@ -381,6 +376,9 @@ function setupSuperAdmin() {
       if (shareTelegramButton) {
         shareTelegramButton.disabled = !registrationLinkEl?.value;
       }
+      if (copyRegistrationButton) {
+        copyRegistrationButton.disabled = !registrationLinkEl?.value;
+      }
       if (openTelegramButton) {
         openTelegramButton.disabled = !registrationLinkEl?.value;
         openTelegramButton.textContent = telegramLinks?.webLink
@@ -390,7 +388,7 @@ function setupSuperAdmin() {
       if (telegramNoteEl) {
         telegramNoteEl.textContent = telegramLinks?.webLink
           ? "При открытии в Telegram ID сохранится автоматически и энергетик сразу увидит свою страницу."
-          : "Бот ещё не указан. Отправьте веб-ссылку в чат или скопируйте её вручную.";
+          : "Бот ещё не указан. Скопируйте ссылку и отправьте её вручную.";
       }
       await updateStats();
     } catch (error) {

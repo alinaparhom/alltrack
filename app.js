@@ -169,6 +169,7 @@ function setupSuperAdmin() {
   const copyRegistrationButton = contentEl.querySelector(
     "[data-copy-registration]"
   );
+  const telegramNoteEl = contentEl.querySelector("[data-telegram-note]");
 
   if (!dashboardEl || !addOrgSection || !formEl) return;
 
@@ -189,6 +190,11 @@ function setupSuperAdmin() {
     if (messageEl) messageEl.textContent = "";
     if (shareTelegramButton) shareTelegramButton.disabled = true;
     if (openTelegramButton) openTelegramButton.disabled = true;
+    if (openTelegramButton) openTelegramButton.textContent = "Открыть в Telegram";
+    if (telegramNoteEl) {
+      telegramNoteEl.textContent =
+        "Если бот ещё не настроен, используйте веб-ссылку ниже или копирование.";
+    }
   };
 
   const updateStats = async () => {
@@ -329,31 +335,38 @@ function setupSuperAdmin() {
           "Организация добавлена. Ссылка для регистрации готова.";
       }
       if (registrationLinkEl) {
-        registrationLinkEl.value =
-          telegramLinks?.webLink ?? registrationLink.href;
+        registrationLinkEl.value = telegramLinks?.webLink ?? registrationLink.href;
       }
       if (registrationWebLinkEl) {
         registrationWebLinkEl.value = registrationLink.href;
       }
       if (registrationBox) {
         registrationBox.dataset.shareText = `Контакт энергетика: ${energyFullName}. Организация: ${fullName}.`;
-        if (telegramLinks?.webLink) {
-          registrationBox.dataset.telegramLink = telegramLinks.webLink;
-        }
+        const fallbackLink = telegramLinks?.webLink ?? registrationLink.href;
+        registrationBox.dataset.telegramLink = fallbackLink;
         if (telegramLinks?.appLink) {
           registrationBox.dataset.telegramAppLink = telegramLinks.appLink;
         }
         registrationBox.classList.remove("is-hidden");
       }
       if (shareTelegramButton) {
-        shareTelegramButton.disabled = !telegramLinks?.webLink;
+        shareTelegramButton.disabled = !registrationLinkEl?.value;
       }
       if (openTelegramButton) {
-        openTelegramButton.disabled = !telegramLinks?.webLink;
+        openTelegramButton.disabled = !registrationLinkEl?.value;
+        openTelegramButton.textContent = telegramLinks?.webLink
+          ? "Открыть в Telegram"
+          : "Открыть ссылку";
       }
-      if (!telegramLinks?.webLink && messageEl) {
-        messageEl.textContent =
-          "Ссылка для Telegram недоступна. Укажите имя бота в настройках Telegram.";
+      if (!telegramLinks?.webLink) {
+        if (messageEl) {
+          messageEl.textContent =
+            "Организация добавлена. Бот не указан — используйте веб-ссылку или копирование.";
+        }
+        if (telegramNoteEl) {
+          telegramNoteEl.textContent =
+            "Бот ещё не указан. Отправьте веб-ссылку в чат или скопируйте её вручную.";
+        }
       }
       await updateStats();
     } catch (error) {

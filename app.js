@@ -17,6 +17,9 @@ const roleMap = new Map([
 const contentEl = document.querySelector("[data-content]");
 const userNameEl = document.querySelector("[data-user-name]");
 const userOrgEl = document.querySelector("[data-user-org]");
+const userInitialsEl = document.querySelector("[data-user-initials]");
+const appUserEl = document.querySelector("[data-app-user]");
+const superAdminStatEl = document.querySelector("[data-super-admin-stat]");
 const orgFilePath = "./organizations.json";
 const usersFilePath = "./users.json";
 const pendingRegistrationsFilePath = "./pending-registrations.json";
@@ -78,6 +81,15 @@ function formatShortName(fullName = "") {
     return "Пользователь";
   }
   return parts.slice(0, 2).join(" ");
+}
+
+function getInitials(fullName = "") {
+  const parts = fullName.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "??";
+  if (parts.length === 1) {
+    return parts[0].slice(0, 2).toUpperCase();
+  }
+  return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
 }
 
 function renderError(message) {
@@ -472,6 +484,7 @@ async function loadUser() {
     renderError("Telegram ID не получен. Откройте приложение из Telegram.");
     if (userNameEl) userNameEl.textContent = "Гость";
     if (userOrgEl) userOrgEl.textContent = "Откройте приложение из Telegram";
+    if (userInitialsEl) userInitialsEl.textContent = "??";
     return;
   }
 
@@ -518,6 +531,13 @@ async function loadUser() {
     contentEl.innerHTML = renderRole(userLabel);
     if (userNameEl) userNameEl.textContent = userName;
     if (userOrgEl) userOrgEl.textContent = user.organization ?? "Организация";
+    if (userInitialsEl) userInitialsEl.textContent = getInitials(user.full_name ?? "");
+    if (appUserEl) {
+      appUserEl.classList.toggle("is-hidden", user.role === superAdminRole);
+    }
+    if (superAdminStatEl) {
+      superAdminStatEl.classList.toggle("is-hidden", user.role !== superAdminRole);
+    }
     if (user.role === superAdminRole) {
       setupSuperAdmin();
     }
@@ -525,6 +545,7 @@ async function loadUser() {
     renderError("Возникла ошибка при загрузке данных.");
     if (userNameEl) userNameEl.textContent = "Гость";
     if (userOrgEl) userOrgEl.textContent = "Проверьте соединение";
+    if (userInitialsEl) userInitialsEl.textContent = "??";
     console.error(error);
   }
 }

@@ -4,7 +4,6 @@ export function renderRole(user) {
   return `
     <section class="role-card">
       <div class="dashboard" data-super-admin-dashboard>
-        <div class="section-pill"><span class="section-icon">📊</span>Статистика</div>
         <div class="dashboard-stats">
           <div class="stat-card">
             <div class="stat-card-header">

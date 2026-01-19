@@ -130,6 +130,7 @@ function setupSuperAdmin() {
   const registrationLinkEl = contentEl.querySelector(
     "[data-registration-link]"
   );
+  const shareTelegramButton = contentEl.querySelector("[data-share-telegram]");
   const copyRegistrationButton = contentEl.querySelector(
     "[data-copy-registration]"
   );
@@ -144,8 +145,12 @@ function setupSuperAdmin() {
   const showForm = () => {
     dashboardEl.classList.add("is-hidden");
     addOrgSection.classList.remove("is-hidden");
-    if (registrationBox) registrationBox.classList.add("is-hidden");
+    if (registrationBox) {
+      registrationBox.classList.add("is-hidden");
+      delete registrationBox.dataset.shareText;
+    }
     if (messageEl) messageEl.textContent = "";
+    if (shareTelegramButton) shareTelegramButton.disabled = true;
   };
 
   const updateStats = async () => {
@@ -163,6 +168,22 @@ function setupSuperAdmin() {
 
   openAddOrgButton?.addEventListener("click", showForm);
   backButton?.addEventListener("click", showDashboard);
+  if (shareTelegramButton) shareTelegramButton.disabled = true;
+  shareTelegramButton?.addEventListener("click", () => {
+    const link = registrationLinkEl?.value?.trim();
+    if (!link) return;
+    const shareText =
+      registrationBox?.dataset.shareText ??
+      "Контакт энергетика. Отправляю ссылку для регистрации.";
+    const telegramShareUrl = new URL("https://t.me/share/url");
+    telegramShareUrl.searchParams.set("url", link);
+    telegramShareUrl.searchParams.set("text", shareText);
+    if (window.Telegram?.WebApp?.openTelegramLink) {
+      window.Telegram.WebApp.openTelegramLink(telegramShareUrl.href);
+    } else {
+      window.open(telegramShareUrl.href, "_blank", "noopener");
+    }
+  });
   copyRegistrationButton?.addEventListener("click", async () => {
     if (!registrationLinkEl?.value) return;
     try {
@@ -255,7 +276,11 @@ function setupSuperAdmin() {
           "Организация добавлена. Ссылка для регистрации готова.";
       }
       if (registrationLinkEl) registrationLinkEl.value = registrationLink.href;
-      if (registrationBox) registrationBox.classList.remove("is-hidden");
+      if (registrationBox) {
+        registrationBox.dataset.shareText = `Контакт энергетика: ${energyFullName}. Организация: ${fullName}.`;
+        registrationBox.classList.remove("is-hidden");
+      }
+      if (shareTelegramButton) shareTelegramButton.disabled = false;
       await updateStats();
     } catch (error) {
       console.error(error);

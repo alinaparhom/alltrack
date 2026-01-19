@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#f5f7ff" />
+    <title>AllTrack — Mini App</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f3f6ff;
+        --glass: rgba(255, 255, 255, 0.7);
+        --accent: #3b7dff;
+        --accent-soft: rgba(59, 125, 255, 0.18);
+        --text: #1a1f2e;
+        --muted: #5f6b85;
+        --radius: 24px;
+        --shadow: 0 24px 60px rgba(26, 31, 46, 0.08);
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        font-family: "Inter", system-ui, -apple-system, sans-serif;
+        background: radial-gradient(circle at top, #ffffff, var(--bg) 60%);
+        color: var(--text);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+      }
+
+      .screen {
+        width: min(420px, 100%);
+        background: var(--glass);
+        backdrop-filter: blur(24px);
+        border: 1px solid rgba(255, 255, 255, 0.6);
+        border-radius: var(--radius);
+        padding: 28px;
+        box-shadow: var(--shadow);
+        position: relative;
+        overflow: hidden;
+      }
+
+      .screen::before {
+        content: "";
+        position: absolute;
+        inset: -40% 40% auto auto;
+        width: 160px;
+        height: 160px;
+        background: var(--accent-soft);
+        filter: blur(0px);
+        border-radius: 50%;
+      }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--accent);
+        background: rgba(59, 125, 255, 0.12);
+        padding: 6px 12px;
+        border-radius: 999px;
+        margin-bottom: 18px;
+      }
+
+      h1 {
+        font-size: 26px;
+        line-height: 1.2;
+        margin-bottom: 12px;
+      }
+
+      p {
+        font-size: 15px;
+        line-height: 1.6;
+        color: var(--muted);
+      }
+
+      .info {
+        margin-top: 20px;
+        display: grid;
+        gap: 12px;
+      }
+
+      .card {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 14px 16px;
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.8);
+        border: 1px solid rgba(226, 232, 240, 0.8);
+      }
+
+      .dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: var(--accent);
+        box-shadow: 0 0 0 6px rgba(59, 125, 255, 0.15);
+        flex-shrink: 0;
+      }
+
+      .footer {
+        margin-top: 24px;
+        font-size: 13px;
+        color: var(--muted);
+      }
+
+      .footer strong {
+        color: var(--text);
+      }
+
+      @media (max-width: 420px) {
+        .screen {
+          padding: 22px;
+        }
+
+        h1 {
+          font-size: 22px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="screen" role="main">
+      <div class="badge">Mini App · AllTrack</div>
+      <h1>Добро пожаловать в AllTrack</h1>
+      <p>
+        Это приветственная страница Mini App для Telegram. Приложение одинаково
+        удобно работает на Android, iOS, в веб-версии и на компьютере.
+      </p>
+
+      <section class="info">
+        <div class="card">
+          <span class="dot" aria-hidden="true"></span>
+          <div>
+            <strong>Минималистичный интерфейс</strong>
+            <p>Прозрачные карточки и лёгкая навигация.</p>
+          </div>
+        </div>
+        <div class="card">
+          <span class="dot" aria-hidden="true"></span>
+          <div>
+            <strong>Готово для Telegram WebApp</strong>
+            <p>Страница расширяется на всю высоту экрана.</p>
+          </div>
+        </div>
+      </section>
+
+      <div class="footer">
+        Запуск: <strong>AllTrack</strong> · Статус: готово к подключению функций.
+      </div>
+    </main>
+
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script>
+      if (window.Telegram?.WebApp) {
+        Telegram.WebApp.ready();
+        Telegram.WebApp.expand();
+        Telegram.WebApp.setHeaderColor("#f5f7ff");
+        Telegram.WebApp.setBackgroundColor("#f5f7ff");
+      }
+    </script>
+  </body>
+</html>

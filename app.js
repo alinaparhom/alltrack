@@ -19,11 +19,20 @@ const userNameEl = document.querySelector("[data-user-name]");
 const userOrgEl = document.querySelector("[data-user-org]");
 const orgFilePath = "./organizations.json";
 const usersFilePath = "./users.json";
+const pendingRegistrationsFilePath = "./pending-registrations.json";
 const saveEndpoint = "./save.php";
 
 function getTelegramId() {
   const webApp = window.Telegram?.WebApp;
   return webApp?.initDataUnsafe?.user?.id ?? null;
+}
+
+function getRegistrationToken() {
+  const url = new URL(window.location.href);
+  const urlToken =
+    url.searchParams.get("registration") || url.searchParams.get("reg");
+  const startToken = window.Telegram?.WebApp?.initDataUnsafe?.start_param;
+  return urlToken || startToken || null;
 }
 
 function formatShortName(fullName = "") {
@@ -83,6 +92,23 @@ async function saveJson(path, data) {
   }
 }
 
+function createRegistrationToken() {
+  if (typeof crypto !== "undefined" && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  const randomPart = Math.random().toString(36).slice(2, 10);
+  return `${Date.now().toString(36)}-${randomPart}`;
+}
+
+async function loadRegistrations() {
+  try {
+    return await loadJson(pendingRegistrationsFilePath);
+  } catch (error) {
+    console.warn("Не удалось загрузить временные регистрации.", error);
+    return { registrations: [] };
+  }
+}
+
 function getToday() {
   const now = new Date();
   const day = String(now.getDate()).padStart(2, "0");
@@ -100,6 +126,13 @@ function setupSuperAdmin() {
   const messageEl = contentEl.querySelector("[data-form-message]");
   const orgCountEl = contentEl.querySelector("[data-org-count]");
   const userCountEl = contentEl.querySelector("[data-user-count]");
+  const registrationBox = contentEl.querySelector("[data-registration-box]");
+  const registrationLinkEl = contentEl.querySelector(
+    "[data-registration-link]"
+  );
+  const copyRegistrationButton = contentEl.querySelector(
+    "[data-copy-registration]"
+  );
 
   if (!dashboardEl || !addOrgSection || !formEl) return;
 
@@ -111,6 +144,8 @@ function setupSuperAdmin() {
   const showForm = () => {
     dashboardEl.classList.add("is-hidden");
     addOrgSection.classList.remove("is-hidden");
+    if (registrationBox) registrationBox.classList.add("is-hidden");
+    if (messageEl) messageEl.textContent = "";
   };
 
   const updateStats = async () => {
@@ -128,6 +163,17 @@ function setupSuperAdmin() {
 
   openAddOrgButton?.addEventListener("click", showForm);
   backButton?.addEventListener("click", showDashboard);
+  copyRegistrationButton?.addEventListener("click", async () => {
+    if (!registrationLinkEl?.value) return;
+    try {
+      await navigator.clipboard.writeText(registrationLinkEl.value);
+      if (messageEl) messageEl.textContent = "Ссылка скопирована в буфер.";
+    } catch (error) {
+      registrationLinkEl.select();
+      document.execCommand("copy");
+      if (messageEl) messageEl.textContent = "Ссылка выделена для копирования.";
+    }
+  });
 
   formEl.addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -146,11 +192,13 @@ function setupSuperAdmin() {
     }
 
     try {
-      const [orgData, usersData] = await Promise.all([
+      const [orgData, usersData, registrationsData] = await Promise.all([
         loadJson(orgFilePath),
         loadJson(usersFilePath),
+        loadRegistrations(),
       ]);
 
+      const energyFullName = `${lastName} ${firstName} ${middleName}`;
       const nextOrgData = {
         organizations: [
           ...(orgData.organizations ?? []),
@@ -167,9 +215,30 @@ function setupSuperAdmin() {
           ...(usersData.users ?? []),
           {
             telegram_id: 0,
-            full_name: `${lastName} ${firstName} ${middleName}`,
+            full_name: energyFullName,
             organization: fullName,
             role: "Энергетик",
+          },
+        ],
+      };
+
+      const registrationToken = createRegistrationToken();
+      const registrationLink = new URL(
+        `${window.location.origin}${window.location.pathname}`
+      );
+      registrationLink.searchParams.set("registration", registrationToken);
+
+      const nextRegistrationsData = {
+        registrations: [
+          ...(registrationsData.registrations ?? []),
+          {
+            token: registrationToken,
+            created_at: new Date().toISOString(),
+            user: {
+              full_name: energyFullName,
+              organization: fullName,
+              role: "Энергетик",
+            },
           },
         ],
       };
@@ -177,15 +246,17 @@ function setupSuperAdmin() {
       await Promise.all([
         saveJson(orgFilePath, nextOrgData),
         saveJson(usersFilePath, nextUsersData),
+        saveJson(pendingRegistrationsFilePath, nextRegistrationsData),
       ]);
 
       formEl.reset();
       if (messageEl) {
         messageEl.textContent =
-          "Организация добавлена. Созданы папка и базы для работы.";
+          "Организация добавлена. Ссылка для регистрации готова.";
       }
+      if (registrationLinkEl) registrationLinkEl.value = registrationLink.href;
+      if (registrationBox) registrationBox.classList.remove("is-hidden");
       await updateStats();
-      showDashboard();
     } catch (error) {
       console.error(error);
       if (messageEl) {
@@ -195,6 +266,61 @@ function setupSuperAdmin() {
   });
 
   updateStats();
+}
+
+function buildAuthorizedLabel(user) {
+  const fullName = user.full_name?.trim() || "Пользователь";
+  const roleTitle = user.role ?? "роль";
+  return `Вы авторизованы в базе как <strong>${fullName}</strong> (${roleTitle}).`;
+}
+
+async function applyRegistrationToken(telegramId, token) {
+  const registrationsData = await loadRegistrations();
+  const registrations = registrationsData.registrations ?? [];
+  const registration = registrations.find((item) => item.token === token);
+
+  if (!registration) {
+    return null;
+  }
+
+  const usersData = await loadJson(usersFilePath);
+  const existingUser = usersData.users?.find(
+    (item) => item.telegram_id === telegramId
+  );
+
+  let resolvedUser = existingUser;
+  if (!resolvedUser) {
+    resolvedUser = usersData.users?.find(
+      (item) =>
+        item.telegram_id === 0 &&
+        item.full_name === registration.user?.full_name &&
+        item.organization === registration.user?.organization &&
+        item.role === registration.user?.role
+    );
+  }
+
+  if (!resolvedUser) {
+    resolvedUser = {
+      telegram_id: telegramId,
+      full_name: registration.user?.full_name ?? "Пользователь",
+      organization: registration.user?.organization ?? "Организация",
+      role: registration.user?.role ?? "Энергетик",
+    };
+    usersData.users = [...(usersData.users ?? []), resolvedUser];
+  } else {
+    resolvedUser.telegram_id = telegramId;
+  }
+
+  const nextRegistrationsData = {
+    registrations: registrations.filter((item) => item.token !== token),
+  };
+
+  await Promise.all([
+    saveJson(usersFilePath, usersData),
+    saveJson(pendingRegistrationsFilePath, nextRegistrationsData),
+  ]);
+
+  return resolvedUser;
 }
 
 async function loadUser() {
@@ -207,8 +333,24 @@ async function loadUser() {
   }
 
   try {
-    const data = await loadJson(usersFilePath);
-    const user = data.users?.find((item) => item.telegram_id === telegramId);
+    const registrationToken = getRegistrationToken();
+    let user = null;
+    let userLabel = "";
+
+    if (registrationToken) {
+      user = await applyRegistrationToken(telegramId, registrationToken);
+      if (user) {
+        userLabel = buildAuthorizedLabel(user);
+      }
+    }
+
+    if (!user) {
+      const data = await loadJson(usersFilePath);
+      user = data.users?.find((item) => item.telegram_id === telegramId);
+      userLabel = `Вы вошли как <strong>${formatShortName(
+        user?.full_name ?? ""
+      )}</strong>`;
+    }
 
     if (!user) {
       renderError("Пользователь с таким ID не найден в базе.");
@@ -226,7 +368,9 @@ async function loadUser() {
     }
 
     const userName = formatShortName(user.full_name);
-    const userLabel = `Вы вошли как <strong>${userName}</strong>`;
+    if (!userLabel) {
+      userLabel = `Вы вошли как <strong>${userName}</strong>`;
+    }
 
     contentEl.innerHTML = renderRole(userLabel);
     if (userNameEl) userNameEl.textContent = userName;

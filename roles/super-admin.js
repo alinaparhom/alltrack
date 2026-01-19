@@ -141,6 +141,25 @@ export function renderRole(user) {
               </button>
             </div>
             <div class="form-message" role="status" data-form-message></div>
+            <div class="registration-box is-hidden" data-registration-box>
+              <div class="registration-title">Ссылка для регистрации энергетика</div>
+              <p class="registration-hint">
+                Отправьте ссылку в Telegram. После открытия она закрепит пользователя за этой
+                организацией.
+              </p>
+              <div class="registration-actions">
+                <input
+                  class="form-input"
+                  type="text"
+                  readonly
+                  aria-label="Ссылка для регистрации"
+                  data-registration-link
+                />
+                <button class="button-secondary" type="button" data-copy-registration>
+                  Скопировать ссылку
+                </button>
+              </div>
+            </div>
           </form>
         </div>
       </div>

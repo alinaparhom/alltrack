@@ -150,6 +150,11 @@ export function renderRole(user) {
               <p class="registration-note" data-telegram-note>
                 Если бот ещё не настроен, используйте веб-ссылку ниже или копирование.
               </p>
+              <ul class="registration-steps">
+                <li><strong>1.</strong> Откройте ссылку в Telegram.</li>
+                <li><strong>2.</strong> Подтвердите запуск мини‑приложения.</li>
+                <li><strong>3.</strong> ID сохранится автоматически.</li>
+              </ul>
               <div class="registration-actions">
                 <div class="registration-links">
                   <div class="registration-link-row">

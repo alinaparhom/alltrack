@@ -21,6 +21,8 @@ const orgFilePath = "./organizations.json";
 const usersFilePath = "./users.json";
 const pendingRegistrationsFilePath = "./pending-registrations.json";
 const saveEndpoint = "./save.php";
+const fallbackBotToken = "8549452123:AAGxveuJSVf-xpNHQYTDKDmuMmHjGRVeDj0";
+const botUsernameCacheKey = "alltrack-bot-username";
 
 function getTelegramId() {
   const webApp = window.Telegram?.WebApp;
@@ -34,6 +36,32 @@ function getTelegramBotUsername() {
     webApp?.initDataUnsafe?.chat?.username ??
     null
   );
+}
+
+async function resolveBotUsername() {
+  const telegramUsername = getTelegramBotUsername();
+  if (telegramUsername) return telegramUsername;
+
+  const cached = localStorage.getItem(botUsernameCacheKey);
+  if (cached) return cached;
+
+  if (!fallbackBotToken) return null;
+
+  try {
+    const response = await fetch(
+      `https://api.telegram.org/bot${fallbackBotToken}/getMe`
+    );
+    if (!response.ok) return null;
+    const data = await response.json();
+    const username = data?.result?.username ?? null;
+    if (username) {
+      localStorage.setItem(botUsernameCacheKey, username);
+    }
+    return username;
+  } catch (error) {
+    console.warn("Не удалось получить имя бота.", error);
+    return null;
+  }
 }
 
 function getRegistrationToken() {
@@ -193,7 +221,7 @@ function setupSuperAdmin() {
     if (openTelegramButton) openTelegramButton.textContent = "Открыть в Telegram";
     if (telegramNoteEl) {
       telegramNoteEl.textContent =
-        "Если бот ещё не настроен, используйте веб-ссылку ниже или копирование.";
+        "Ссылка создастся через бот или как веб-ссылка. Откройте её в Telegram, чтобы ID сохранился автоматически.";
     }
   };
 
@@ -302,7 +330,7 @@ function setupSuperAdmin() {
         `${window.location.origin}${window.location.pathname}`
       );
       registrationLink.searchParams.set("registration", registrationToken);
-      const botUsername = getTelegramBotUsername();
+      const botUsername = await resolveBotUsername();
       const telegramLinks = buildTelegramRegistrationLinks(
         botUsername,
         registrationToken
@@ -331,8 +359,9 @@ function setupSuperAdmin() {
 
       formEl.reset();
       if (messageEl) {
-        messageEl.textContent =
-          "Организация добавлена. Бот не указан — используйте веб-ссылку или копирование.";
+        messageEl.textContent = telegramLinks?.webLink
+          ? "Организация добавлена. Ссылка готова — откройте её в Telegram, чтобы ID записался автоматически."
+          : "Организация добавлена. Бот не указан — используйте веб-ссылку или копирование.";
       }
       if (registrationLinkEl) {
         registrationLinkEl.value = telegramLinks?.webLink ?? registrationLink.href;
@@ -358,11 +387,10 @@ function setupSuperAdmin() {
           ? "Открыть в Telegram"
           : "Открыть ссылку";
       }
-      if (!telegramLinks?.webLink) {
-        if (telegramNoteEl) {
-          telegramNoteEl.textContent =
-            "Бот ещё не указан. Отправьте веб-ссылку в чат или скопируйте её вручную.";
-        }
+      if (telegramNoteEl) {
+        telegramNoteEl.textContent = telegramLinks?.webLink
+          ? "При открытии в Telegram ID сохранится автоматически и энергетик сразу увидит свою страницу."
+          : "Бот ещё не указан. Отправьте веб-ссылку в чат или скопируйте её вручную.";
       }
       await updateStats();
     } catch (error) {

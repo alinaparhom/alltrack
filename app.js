@@ -17,6 +17,8 @@ const roleMap = new Map([
 const contentEl = document.querySelector("[data-content]");
 const userNameEl = document.querySelector("[data-user-name]");
 const userOrgEl = document.querySelector("[data-user-org]");
+const orgFilePath = "./organizations.json";
+const usersFilePath = "./users.json";
 
 function getTelegramId() {
   const webApp = window.Telegram?.WebApp;
@@ -46,6 +48,136 @@ function renderError(message) {
   `;
 }
 
+async function loadJson(path) {
+  const response = await fetch(path, { cache: "no-store" });
+  if (!response.ok) {
+    throw new Error(`Не удалось загрузить ${path}`);
+  }
+  return response.json();
+}
+
+async function saveJson(path, data) {
+  const response = await fetch(path, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data, null, 2),
+  });
+  if (!response.ok) {
+    throw new Error(`Не удалось сохранить ${path}`);
+  }
+}
+
+function getToday() {
+  const now = new Date();
+  const day = String(now.getDate()).padStart(2, "0");
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const year = now.getFullYear();
+  return `${day}.${month}.${year}`;
+}
+
+function setupSuperAdmin() {
+  const dashboardEl = contentEl.querySelector("[data-super-admin-dashboard]");
+  const addOrgSection = contentEl.querySelector("[data-add-org-section]");
+  const openAddOrgButton = contentEl.querySelector("[data-open-add-org]");
+  const backButton = contentEl.querySelector("[data-back-dashboard]");
+  const formEl = contentEl.querySelector("[data-add-org-form]");
+  const messageEl = contentEl.querySelector("[data-form-message]");
+  const orgCountEl = contentEl.querySelector("[data-org-count]");
+  const userCountEl = contentEl.querySelector("[data-user-count]");
+
+  if (!dashboardEl || !addOrgSection || !formEl) return;
+
+  const showDashboard = () => {
+    dashboardEl.classList.remove("is-hidden");
+    addOrgSection.classList.add("is-hidden");
+  };
+
+  const showForm = () => {
+    dashboardEl.classList.add("is-hidden");
+    addOrgSection.classList.remove("is-hidden");
+  };
+
+  const updateStats = async () => {
+    try {
+      const [orgData, usersData] = await Promise.all([
+        loadJson(orgFilePath),
+        loadJson(usersFilePath),
+      ]);
+      if (orgCountEl) orgCountEl.textContent = orgData.organizations?.length ?? 0;
+      if (userCountEl) userCountEl.textContent = usersData.users?.length ?? 0;
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  openAddOrgButton?.addEventListener("click", showForm);
+  backButton?.addEventListener("click", showDashboard);
+
+  formEl.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    if (messageEl) messageEl.textContent = "Сохраняем данные...";
+
+    const formData = new FormData(formEl);
+    const fullName = String(formData.get("org-full-name") ?? "").trim();
+    const shortName = String(formData.get("org-short-name") ?? "").trim();
+    const lastName = String(formData.get("energy-last-name") ?? "").trim();
+    const firstName = String(formData.get("energy-first-name") ?? "").trim();
+    const middleName = String(formData.get("energy-middle-name") ?? "").trim();
+
+    if (!fullName || !shortName || !lastName || !firstName || !middleName) {
+      if (messageEl) messageEl.textContent = "Заполните все поля.";
+      return;
+    }
+
+    try {
+      const [orgData, usersData] = await Promise.all([
+        loadJson(orgFilePath),
+        loadJson(usersFilePath),
+      ]);
+
+      const nextOrgData = {
+        organizations: [
+          ...(orgData.organizations ?? []),
+          {
+            full_name: fullName,
+            short_name: shortName,
+            launch_date: getToday(),
+          },
+        ],
+      };
+
+      const nextUsersData = {
+        users: [
+          ...(usersData.users ?? []),
+          {
+            telegram_id: 0,
+            full_name: `${lastName} ${firstName} ${middleName}`,
+            organization: fullName,
+            role: "Энергетик",
+          },
+        ],
+      };
+
+      await Promise.all([
+        saveJson(orgFilePath, nextOrgData),
+        saveJson(usersFilePath, nextUsersData),
+      ]);
+
+      formEl.reset();
+      if (messageEl) messageEl.textContent = "Организация добавлена.";
+      await updateStats();
+      showDashboard();
+    } catch (error) {
+      console.error(error);
+      if (messageEl) {
+        messageEl.textContent = "Не удалось сохранить данные. Проверьте сервер.";
+      }
+    }
+  });
+
+  updateStats();
+}
+
 async function loadUser() {
   const telegramId = getTelegramId();
   if (!telegramId) {
@@ -56,12 +188,7 @@ async function loadUser() {
   }
 
   try {
-    const response = await fetch("./users.json", { cache: "no-store" });
-    if (!response.ok) {
-      throw new Error("Не удалось загрузить список пользователей");
-    }
-
-    const data = await response.json();
+    const data = await loadJson(usersFilePath);
     const user = data.users?.find((item) => item.telegram_id === telegramId);
 
     if (!user) {
@@ -85,6 +212,9 @@ async function loadUser() {
     contentEl.innerHTML = renderRole(userLabel);
     if (userNameEl) userNameEl.textContent = userName;
     if (userOrgEl) userOrgEl.textContent = user.organization ?? "Организация";
+    if (user.role === superAdminRole) {
+      setupSuperAdmin();
+    }
   } catch (error) {
     renderError("Возникла ошибка при загрузке данных.");
     if (userNameEl) userNameEl.textContent = "Гость";

@@ -160,6 +160,10 @@
         gap: 12px;
       }
 
+      .is-hidden {
+        display: none !important;
+      }
+
       .dashboard {
         display: grid;
         gap: var(--space);
@@ -311,6 +315,80 @@
       .action-primary:hover {
         transform: translateY(-2px);
         box-shadow: 0 16px 40px rgba(26, 31, 46, 0.12);
+      }
+
+      .form-card {
+        padding: var(--space);
+        border-radius: var(--radius-card);
+        background: rgba(255, 255, 255, 0.9);
+        border: 1px solid rgba(226, 232, 240, 0.9);
+        box-shadow: 0 12px 32px rgba(26, 31, 46, 0.08);
+      }
+
+      .form-grid {
+        display: grid;
+        gap: 14px;
+      }
+
+      .form-field {
+        display: grid;
+        gap: 6px;
+      }
+
+      .form-label {
+        font-size: var(--text-sm);
+        color: var(--title-muted);
+        font-weight: 600;
+      }
+
+      .form-input {
+        width: 100%;
+        padding: 12px 14px;
+        border-radius: 14px;
+        border: 1px solid rgba(226, 232, 240, 0.95);
+        background: rgba(255, 255, 255, 0.95);
+        font-size: var(--text-md);
+        color: var(--text);
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      .form-input:focus {
+        outline: none;
+        border-color: rgba(59, 125, 255, 0.6);
+        box-shadow: 0 0 0 3px rgba(59, 125, 255, 0.15);
+      }
+
+      .form-hint {
+        font-size: var(--text-sm);
+        color: var(--muted);
+        line-height: 1.5;
+      }
+
+      .form-actions {
+        display: grid;
+        gap: 10px;
+      }
+
+      .button-secondary {
+        border: 1px solid rgba(226, 232, 240, 0.9);
+        background: rgba(255, 255, 255, 0.7);
+        color: var(--title-muted);
+        font-weight: 600;
+        padding: 14px var(--space);
+        border-radius: var(--radius-card);
+        cursor: pointer;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      .button-secondary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 24px rgba(26, 31, 46, 0.08);
+      }
+
+      .form-message {
+        font-size: var(--text-sm);
+        color: var(--accent);
+        min-height: 18px;
       }
 
       .role-tile {

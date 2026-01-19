@@ -332,7 +332,7 @@ function setupSuperAdmin() {
       formEl.reset();
       if (messageEl) {
         messageEl.textContent =
-          "Организация добавлена. Ссылка для регистрации готова.";
+          "Организация добавлена. Бот не указан — используйте веб-ссылку или копирование.";
       }
       if (registrationLinkEl) {
         registrationLinkEl.value = telegramLinks?.webLink ?? registrationLink.href;
@@ -359,10 +359,6 @@ function setupSuperAdmin() {
           : "Открыть ссылку";
       }
       if (!telegramLinks?.webLink) {
-        if (messageEl) {
-          messageEl.textContent =
-            "Организация добавлена. Бот не указан — используйте веб-ссылку или копирование.";
-        }
         if (telegramNoteEl) {
           telegramNoteEl.textContent =
             "Бот ещё не указан. Отправьте веб-ссылку в чат или скопируйте её вручную.";

@@ -35,6 +35,7 @@ const saveEndpoint = "./save.php";
 const fallbackBotToken = "8549452123:AAGxveuJSVf-xpNHQYTDKDmuMmHjGRVeDj0";
 const botUsernameCacheKey = "alltrack-bot-username";
 const initDataCacheKey = "alltrack-init-data";
+const initDataLocalCacheKey = "alltrack-init-data-local";
 
 function normalizeTelegramId(value) {
   if (value === null || value === undefined) {
@@ -42,12 +43,15 @@ function normalizeTelegramId(value) {
   }
   if (typeof value === "number") {
     if (!Number.isFinite(value)) return null;
-    return String(Math.trunc(value));
+    const numericValue = Math.trunc(value);
+    if (!numericValue) return null;
+    return String(numericValue);
   }
   const raw = String(value).trim();
   if (!raw) return null;
   const cleaned = raw.replace(/[^\d-]/g, "");
-  return cleaned || null;
+  if (!cleaned || cleaned === "0") return null;
+  return cleaned;
 }
 
 function parseInitDataUser(initData) {
@@ -83,13 +87,24 @@ function cacheInitData(value) {
   } catch (error) {
     console.warn("Не удалось сохранить initData в sessionStorage.", error);
   }
+  try {
+    localStorage.setItem(initDataLocalCacheKey, value);
+  } catch (error) {
+    console.warn("Не удалось сохранить initData в localStorage.", error);
+  }
 }
 
 function getCachedInitData() {
   try {
-    return sessionStorage.getItem(initDataCacheKey);
+    const cachedSession = sessionStorage.getItem(initDataCacheKey);
+    if (cachedSession) return cachedSession;
   } catch (error) {
     console.warn("Не удалось прочитать initData из sessionStorage.", error);
+  }
+  try {
+    return localStorage.getItem(initDataLocalCacheKey);
+  } catch (error) {
+    console.warn("Не удалось прочитать initData из localStorage.", error);
     return null;
   }
 }
@@ -139,7 +154,7 @@ function getTelegramId() {
   return normalizeTelegramId(rawId);
 }
 
-async function waitForTelegramId({ timeoutMs = 6000, intervalMs = 200 } = {}) {
+async function waitForTelegramId({ timeoutMs = 12000, intervalMs = 200 } = {}) {
   const startTime = typeof performance !== "undefined" ? performance.now() : Date.now();
   let telegramId = getTelegramId();
   while (!telegramId) {

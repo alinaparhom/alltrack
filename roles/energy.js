@@ -7,7 +7,7 @@ export const energyActions = [
   { id: "write-off", title: "Списать", icon: "🧾" },
   { id: "repair", title: "Ремонт", icon: "🛠️" },
   { id: "breakdowns", title: "Поломки", icon: "⚠️" },
-  { id: "move", title: "Переместить за других", icon: "✅" },
+  { id: "move", title: "Переместить за других", icon: "🚚" },
   { id: "info", title: "Информация", icon: "ℹ️" },
   { id: "upload", title: "Загрузить данные", icon: "📥" },
   { id: "download", title: "Выгрузить данные", icon: "📤" },
@@ -33,20 +33,6 @@ export function renderRole(user) {
     <section class="role-card">
       <div class="dashboard energy-dashboard">
         <div class="dashboard-header">
-          <div class="energy-group-panel is-hidden" data-energy-group-panel>
-            <div class="energy-group-info">
-              <div class="energy-group-count" data-energy-selected-count>0</div>
-              <div class="energy-group-text">Выберите минимум 2 плашки</div>
-            </div>
-            <div class="energy-group-actions">
-              <button class="action-primary" type="button" data-energy-create-group disabled>
-                Создать группу
-              </button>
-              <button class="action-secondary" type="button" data-energy-cancel-group>
-                Отмена
-              </button>
-            </div>
-          </div>
           <div class="energy-controls">
             <button
               class="action-primary energy-group-toggle"
@@ -61,6 +47,20 @@ export function renderRole(user) {
         </div>
         <div class="action-grid energy-grid" data-energy-grid>
           ${actionsMarkup}
+        </div>
+        <div class="energy-group-panel is-hidden" data-energy-group-panel>
+          <div class="energy-group-info">
+            <div class="energy-group-count" data-energy-selected-count>0</div>
+            <div class="energy-group-text">Выберите минимум 2 плашки</div>
+          </div>
+          <div class="energy-group-actions">
+            <button class="action-primary" type="button" data-energy-create-group disabled>
+              Создать группу
+            </button>
+            <button class="action-secondary" type="button" data-energy-cancel-group>
+              Отмена
+            </button>
+          </div>
         </div>
       </div>
     </section>

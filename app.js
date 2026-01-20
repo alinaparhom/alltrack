@@ -32,6 +32,8 @@ const orgFilePath = "./organizations.json";
 const usersFilePath = "./users.json";
 const pendingRegistrationsFilePath = "./pending-registrations.json";
 const saveEndpoint = "./save.php";
+const authLogFilePath = "./auth-log.json";
+const authLogLimit = 200;
 const fallbackBotToken = "8549452123:AAGxveuJSVf-xpNHQYTDKDmuMmHjGRVeDj0";
 const botUsernameCacheKey = "alltrack-bot-username";
 const initDataCacheKey = "alltrack-init-data";
@@ -78,6 +80,33 @@ function parseInitDataUser(initData) {
   }
 
   return null;
+}
+
+function collectTelegramContext() {
+  const webApp = window.Telegram?.WebApp ?? null;
+  const initData = webApp?.initData ?? null;
+  const unsafeUser = webApp?.initDataUnsafe?.user ?? null;
+  const urlInitData = getInitDataFromUrl();
+  const initDataUser = parseInitDataUser(initData);
+  const urlInitDataUser = parseInitDataUser(urlInitData);
+
+  const idFromUnsafe = normalizeTelegramId(unsafeUser?.id ?? null);
+  const idFromInitData = normalizeTelegramId(initDataUser?.id ?? null);
+  const idFromUrl = normalizeTelegramId(urlInitDataUser?.id ?? null);
+
+  return {
+    webAppAvailable: Boolean(webApp),
+    platform: webApp?.platform ?? null,
+    version: webApp?.version ?? null,
+    initDataLength: initData?.length ?? 0,
+    urlInitDataLength: urlInitData?.length ?? 0,
+    unsafeUserId: unsafeUser?.id ?? null,
+    parsedInitDataUserId: initDataUser?.id ?? null,
+    parsedUrlInitDataUserId: urlInitDataUser?.id ?? null,
+    resolvedId: idFromUnsafe ?? idFromInitData ?? idFromUrl ?? null,
+    userAgent: navigator.userAgent,
+    url: window.location.href,
+  };
 }
 
 function cacheInitData(value) {
@@ -147,11 +176,7 @@ function getTelegramId() {
   if (initData) {
     cacheInitData(initData);
   }
-  const unsafeId = webApp?.initDataUnsafe?.user?.id ?? null;
-  const initDataUser = parseInitDataUser(initData);
-  const urlInitDataUser = parseInitDataUser(getInitDataFromUrl());
-  const rawId = unsafeId ?? initDataUser?.id ?? urlInitDataUser?.id ?? null;
-  return normalizeTelegramId(rawId);
+  return collectTelegramContext().resolvedId;
 }
 
 async function waitForTelegramId({ timeoutMs = 12000, intervalMs = 200 } = {}) {
@@ -166,6 +191,23 @@ async function waitForTelegramId({ timeoutMs = 12000, intervalMs = 200 } = {}) {
     telegramId = getTelegramId();
   }
   return telegramId;
+}
+
+async function appendAuthLog(step, detail = {}) {
+  const entry = {
+    timestamp: new Date().toISOString(),
+    step,
+    detail,
+  };
+
+  try {
+    const current = await loadJson(authLogFilePath).catch(() => ({ entries: [] }));
+    const entries = Array.isArray(current.entries) ? current.entries : [];
+    const nextEntries = [...entries, entry].slice(-authLogLimit);
+    await saveEntries([{ path: authLogFilePath, data: { entries: nextEntries } }]);
+  } catch (error) {
+    console.warn("Не удалось сохранить лог авторизации.", error);
+  }
 }
 
 function getTelegramBotUsername() {
@@ -1164,12 +1206,16 @@ async function applyRegistrationToken(telegramId, token) {
 }
 
 async function loadUser() {
-  const telegramId = await waitForTelegramId();
+  const initialContext = collectTelegramContext();
+  void appendAuthLog("init", initialContext);
+
+  const telegramId = await waitForTelegramId({ timeoutMs: 20000, intervalMs: 250 });
   if (!telegramId) {
     renderError("Telegram ID не получен. Откройте приложение из Telegram.");
     if (userNameEl) userNameEl.textContent = "Гость";
     if (userOrgEl) userOrgEl.textContent = "Откройте приложение из Telegram";
     if (userInitialsEl) userInitialsEl.textContent = "??";
+    void appendAuthLog("telegram_id_missing", collectTelegramContext());
     return;
   }
 
@@ -1178,6 +1224,7 @@ async function loadUser() {
     let user = null;
     let userLabel = "";
     const telegramIdKey = normalizeTelegramId(telegramId);
+    void appendAuthLog("telegram_id_resolved", { telegramId: telegramIdKey });
 
     if (registrationToken) {
       user = await applyRegistrationToken(telegramId, registrationToken);
@@ -1200,6 +1247,10 @@ async function loadUser() {
       renderError("Пользователь с таким ID не найден в базе.");
       if (userNameEl) userNameEl.textContent = "Гость";
       if (userOrgEl) userOrgEl.textContent = "Нет доступа к организации";
+      void appendAuthLog("user_not_found", {
+        telegramId: telegramIdKey,
+        registrationToken: registrationToken ?? null,
+      });
       return;
     }
 
@@ -1208,6 +1259,10 @@ async function loadUser() {
       renderError("Для вашей роли ещё не создана страница.");
       if (userNameEl) userNameEl.textContent = formatShortName(user.full_name);
       if (userOrgEl) userOrgEl.textContent = user.organization ?? "Организация";
+      void appendAuthLog("role_missing", {
+        telegramId: telegramIdKey,
+        role: user.role ?? null,
+      });
       return;
     }
 
@@ -1235,12 +1290,19 @@ async function loadUser() {
     if (user.role === energyRole) {
       await setupEnergyDashboard(user);
     }
+    void appendAuthLog("role_rendered", {
+      telegramId: telegramIdKey,
+      role: user.role ?? null,
+    });
   } catch (error) {
     renderError("Возникла ошибка при загрузке данных.");
     if (userNameEl) userNameEl.textContent = "Гость";
     if (userOrgEl) userOrgEl.textContent = "Проверьте соединение";
     if (userInitialsEl) userInitialsEl.textContent = "??";
     console.error(error);
+    void appendAuthLog("load_error", {
+      message: error?.message ?? String(error),
+    });
   }
 }
 

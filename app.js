@@ -37,7 +37,15 @@ const botUsernameCacheKey = "alltrack-bot-username";
 
 function getTelegramId() {
   const webApp = window.Telegram?.WebApp;
-  return webApp?.initDataUnsafe?.user?.id ?? null;
+  const rawId = webApp?.initDataUnsafe?.user?.id ?? null;
+  if (rawId === null || rawId === undefined) {
+    return null;
+  }
+  const normalizedId = Number(rawId);
+  if (!Number.isFinite(normalizedId)) {
+    return null;
+  }
+  return normalizedId;
 }
 
 function getTelegramBotUsername() {

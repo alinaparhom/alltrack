@@ -33,17 +33,6 @@ export function renderRole(user) {
     <section class="role-card">
       <div class="dashboard energy-dashboard">
         <div class="dashboard-header">
-          <span class="section-pill">Энергетик · Плитки и группы</span>
-          <div class="energy-controls">
-            <button class="action-primary" type="button" data-energy-group-toggle>
-              <span aria-hidden="true">🧩</span>
-              <span class="energy-group-label">Группировать</span>
-            </button>
-          </div>
-          <p class="energy-hint">
-            Зажмите карточку, чтобы переместить. В режиме группировки выберите
-            несколько блоков и объедините их.
-          </p>
           <div class="energy-group-panel is-hidden" data-energy-group-panel>
             <div class="energy-group-info">
               <div class="energy-group-count" data-energy-selected-count>0</div>
@@ -57,6 +46,17 @@ export function renderRole(user) {
                 Отмена
               </button>
             </div>
+          </div>
+          <div class="energy-controls">
+            <button
+              class="action-primary energy-group-toggle"
+              type="button"
+              data-energy-group-toggle
+              aria-label="Группировать"
+              aria-pressed="false"
+            >
+              <span aria-hidden="true">🧩</span>
+            </button>
           </div>
         </div>
         <div class="action-grid energy-grid" data-energy-grid>

@@ -80,6 +80,20 @@ function getTelegramId() {
   return normalizeTelegramId(rawId);
 }
 
+async function waitForTelegramId({ timeoutMs = 2500, intervalMs = 200 } = {}) {
+  const startTime = typeof performance !== "undefined" ? performance.now() : Date.now();
+  let telegramId = getTelegramId();
+  while (!telegramId) {
+    const now = typeof performance !== "undefined" ? performance.now() : Date.now();
+    if (now - startTime >= timeoutMs) {
+      return null;
+    }
+    await new Promise((resolve) => setTimeout(resolve, intervalMs));
+    telegramId = getTelegramId();
+  }
+  return telegramId;
+}
+
 function getTelegramBotUsername() {
   const webApp = window.Telegram?.WebApp;
   return (
@@ -1076,7 +1090,7 @@ async function applyRegistrationToken(telegramId, token) {
 }
 
 async function loadUser() {
-  const telegramId = getTelegramId();
+  const telegramId = await waitForTelegramId();
   if (!telegramId) {
     renderError("Telegram ID не получен. Откройте приложение из Telegram.");
     if (userNameEl) userNameEl.textContent = "Гость";

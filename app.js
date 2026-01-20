@@ -550,12 +550,16 @@ async function setupEnergyDashboard(user) {
     const firstRects = new Map(
       items.map((item) => [item, item.getBoundingClientRect()])
     );
+    const draggedRect = dragState.item.getBoundingClientRect();
     const rect = target.getBoundingClientRect();
     const shouldInsertAfter = event.clientY > rect.top + rect.height / 2;
     gridEl.insertBefore(
       dragState.item,
       shouldInsertAfter ? target.nextSibling : target
     );
+    const updatedRect = dragState.item.getBoundingClientRect();
+    dragState.startX += updatedRect.left - draggedRect.left;
+    dragState.startY += updatedRect.top - draggedRect.top;
     animateEnergyReorder(firstRects);
   });
 

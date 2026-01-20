@@ -313,20 +313,34 @@ async function resolveOrganizationShortName(orgName) {
     String(value)
       .trim()
       .toLowerCase()
-      .replace(/[«»"']/g, "")
-      .replace(/\s+/g, " ");
+      .replace(/[«»"'`]/g, "")
+      .replace(/[^\p{L}\p{N}\s-]+/gu, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+  const normalizeFolder = (value = "") =>
+    sanitizeOrganizationFolderName(value).toLowerCase();
   const targetName = normalizeName(orgName);
+  const targetFolder = normalizeFolder(orgName);
   const match = orgData.organizations?.find((org) => {
     const fullName = normalizeName(org.full_name);
     const shortName = normalizeName(org.short_name);
-    if (fullName === targetName || shortName === targetName) {
+    const fullFolder = normalizeFolder(org.full_name);
+    const shortFolder = normalizeFolder(org.short_name);
+    if (
+      fullName === targetName ||
+      shortName === targetName ||
+      fullFolder === targetFolder ||
+      shortFolder === targetFolder
+    ) {
       return true;
     }
     return (
       (shortName && targetName.includes(shortName)) ||
       (fullName && targetName.includes(fullName)) ||
       (shortName && shortName.includes(targetName)) ||
-      (fullName && fullName.includes(targetName))
+      (fullName && fullName.includes(targetName)) ||
+      (shortFolder && targetFolder.includes(shortFolder)) ||
+      (fullFolder && targetFolder.includes(fullFolder))
     );
   });
   return match?.short_name ?? orgName;
@@ -352,7 +366,14 @@ async function setupEnergyDashboard(user) {
   const orgFolderName =
     sanitizeOrganizationFolderName(orgShortName) || "Организация";
   const settingsPath = `./${orgFolderName}/Настройки.json`;
-  const userKey = String(user.telegram_id ?? user.full_name ?? "user");
+  const userKey =
+    user.telegram_id && Number(user.telegram_id) > 0
+      ? `tg-${user.telegram_id}`
+      : [
+          user.full_name ?? "user",
+          user.organization ?? "",
+          user.role ?? "",
+        ].join("|");
 
   let settingsData = await loadJson(settingsPath).catch(() => ({ users: {} }));
   if (!settingsData || typeof settingsData !== "object") {

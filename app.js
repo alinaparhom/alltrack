@@ -442,8 +442,12 @@ async function setupEnergyDashboard(user) {
     pointerId: null,
     holdTimer: null,
     isDragging: false,
-    startX: 0,
-    startY: 0,
+    pointerStartX: 0,
+    pointerStartY: 0,
+    startLeft: 0,
+    startTop: 0,
+    offsetX: 0,
+    offsetY: 0,
     rafId: null,
   };
   const animateEnergyReorder = (firstRects) => {
@@ -499,8 +503,10 @@ async function setupEnergyDashboard(user) {
 
   const updateDragTransform = (event) => {
     if (!dragState.item) return;
-    const deltaX = event.clientX - dragState.startX;
-    const deltaY = event.clientY - dragState.startY;
+    const desiredLeft = event.clientX - dragState.offsetX;
+    const desiredTop = event.clientY - dragState.offsetY;
+    const deltaX = desiredLeft - dragState.startLeft;
+    const deltaY = desiredTop - dragState.startTop;
     dragState.item.style.setProperty("--drag-x", `${deltaX}px`);
     dragState.item.style.setProperty("--drag-y", `${deltaY}px`);
   };
@@ -509,10 +515,15 @@ async function setupEnergyDashboard(user) {
     if (isGrouping) return;
     const card = event.target.closest("[data-energy-item]");
     if (!card) return;
+    const rect = card.getBoundingClientRect();
     dragState.item = card;
     dragState.pointerId = event.pointerId;
-    dragState.startX = event.clientX;
-    dragState.startY = event.clientY;
+    dragState.pointerStartX = event.clientX;
+    dragState.pointerStartY = event.clientY;
+    dragState.startLeft = rect.left;
+    dragState.startTop = rect.top;
+    dragState.offsetX = rect.width / 2;
+    dragState.offsetY = rect.height / 2;
     dragState.holdTimer = window.setTimeout(() => {
       if (!dragState.item) return;
       dragState.isDragging = true;
@@ -527,8 +538,8 @@ async function setupEnergyDashboard(user) {
     if (!dragState.item) return;
     if (!dragState.isDragging) {
       const moved =
-        Math.abs(event.clientX - dragState.startX) > 8 ||
-        Math.abs(event.clientY - dragState.startY) > 8;
+        Math.abs(event.clientX - dragState.pointerStartX) > 8 ||
+        Math.abs(event.clientY - dragState.pointerStartY) > 8;
       if (moved && dragState.holdTimer) {
         window.clearTimeout(dragState.holdTimer);
         dragState.holdTimer = null;
@@ -558,8 +569,8 @@ async function setupEnergyDashboard(user) {
       shouldInsertAfter ? target.nextSibling : target
     );
     const updatedRect = dragState.item.getBoundingClientRect();
-    dragState.startX += updatedRect.left - draggedRect.left;
-    dragState.startY += updatedRect.top - draggedRect.top;
+    dragState.startLeft += updatedRect.left - draggedRect.left;
+    dragState.startTop += updatedRect.top - draggedRect.top;
     animateEnergyReorder(firstRects);
   });
 

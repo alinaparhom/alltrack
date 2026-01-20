@@ -27,26 +27,30 @@ function renderActionCard(action) {
   `;
 }
 
+function renderGroupToggleCard() {
+  return `
+    <button
+      class="action-card energy-group-toggle-card"
+      type="button"
+      data-energy-group-toggle
+      aria-label="Группировать"
+      aria-pressed="false"
+    >
+      <span class="action-icon">🧩</span>
+      <div class="action-title">Группировка</div>
+    </button>
+  `;
+}
+
 export function renderRole(user) {
   const actionsMarkup = energyActions.map(renderActionCard).join("");
+  const groupToggleMarkup = renderGroupToggleCard();
   return `
     <section class="role-card">
       <div class="dashboard energy-dashboard">
-        <div class="dashboard-header">
-          <div class="energy-controls">
-            <button
-              class="action-primary energy-group-toggle"
-              type="button"
-              data-energy-group-toggle
-              aria-label="Группировать"
-              aria-pressed="false"
-            >
-              <span aria-hidden="true">🧩</span>
-            </button>
-          </div>
-        </div>
         <div class="action-grid energy-grid" data-energy-grid>
           ${actionsMarkup}
+          ${groupToggleMarkup}
         </div>
         <div class="energy-group-panel is-hidden" data-energy-group-panel>
           <div class="energy-group-info">

@@ -161,6 +161,7 @@ function normalizeEnergyLayout(layout, actions) {
   const actionIds = new Set(actions.map((action) => action.id));
   const normalized = [];
   const usedIds = new Set();
+  let hasToggle = false;
 
   if (Array.isArray(layout)) {
     layout.forEach((item) => {
@@ -170,6 +171,13 @@ function normalizeEnergyLayout(layout, actions) {
         if (actionIds.has(actionId) && !usedIds.has(actionId)) {
           normalized.push({ type: "action", id: actionId });
           usedIds.add(actionId);
+        }
+        return;
+      }
+      if (item.type === "toggle") {
+        if (!hasToggle) {
+          normalized.push({ type: "toggle" });
+          hasToggle = true;
         }
         return;
       }
@@ -196,6 +204,10 @@ function normalizeEnergyLayout(layout, actions) {
       normalized.push({ type: "action", id: action.id });
     }
   });
+
+  if (!hasToggle) {
+    normalized.push({ type: "toggle" });
+  }
 
   return normalized;
 }
@@ -248,6 +260,22 @@ function createEnergyGroupCard(group, actionsMap) {
   return button;
 }
 
+function createEnergyGroupToggleCard() {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "action-card energy-group-toggle-card";
+  button.dataset.energyItem = "";
+  button.dataset.energyItemType = "toggle";
+  button.dataset.energyGroupToggle = "";
+  button.setAttribute("aria-label", "Группировать");
+  button.setAttribute("aria-pressed", "false");
+  button.innerHTML = `
+    <span class="action-icon">🧩</span>
+    <div class="action-title">Группировка</div>
+  `;
+  return button;
+}
+
 function buildEnergyLayoutFromDom(gridEl) {
   const layout = [];
   const items = Array.from(gridEl.querySelectorAll("[data-energy-item]"));
@@ -271,6 +299,8 @@ function buildEnergyLayoutFromDom(gridEl) {
         name: item.dataset.groupName ?? "Группа",
         items: Array.isArray(groupItems) ? groupItems : [],
       });
+    } else if (type === "toggle") {
+      layout.push({ type: "toggle" });
     }
   });
   return layout;
@@ -279,9 +309,14 @@ function buildEnergyLayoutFromDom(gridEl) {
 async function resolveOrganizationShortName(orgName) {
   if (!orgName) return "Организация";
   const orgData = await loadJson(orgFilePath);
-  const match = orgData.organizations?.find(
-    (org) => org.full_name === orgName || org.short_name === orgName
-  );
+  const normalizeName = (value = "") => String(value).trim().toLowerCase();
+  const targetName = normalizeName(orgName);
+  const match = orgData.organizations?.find((org) => {
+    return (
+      normalizeName(org.full_name) === targetName ||
+      normalizeName(org.short_name) === targetName
+    );
+  });
   return match?.short_name ?? orgName;
 }
 
@@ -295,7 +330,6 @@ async function setupEnergyDashboard(user) {
   const gridEl = contentEl.querySelector("[data-energy-grid]");
   if (!gridEl) return;
 
-  const groupToggle = contentEl.querySelector("[data-energy-group-toggle]");
   const groupPanel = contentEl.querySelector("[data-energy-group-panel]");
   const createGroupButton = contentEl.querySelector("[data-energy-create-group]");
   const cancelGroupButton = contentEl.querySelector("[data-energy-cancel-group]");
@@ -328,12 +362,16 @@ async function setupEnergyDashboard(user) {
       }
     } else if (item.type === "group") {
       gridEl.appendChild(createEnergyGroupCard(item, actionsMap));
+    } else if (item.type === "toggle") {
+      gridEl.appendChild(createEnergyGroupToggleCard());
     }
   });
 
+  const groupToggle = contentEl.querySelector("[data-energy-group-toggle]");
   let isGrouping = false;
   let blockClick = false;
   const selectedIds = new Set();
+  let saveTimer = null;
 
   const updateGroupPanel = () => {
     if (selectedCountEl) {
@@ -377,6 +415,17 @@ async function setupEnergyDashboard(user) {
       },
     };
     await saveJson(settingsPath, settingsData);
+  };
+
+  const scheduleLayoutSave = () => {
+    if (saveTimer) {
+      window.clearTimeout(saveTimer);
+    }
+    saveTimer = window.setTimeout(() => {
+      saveLayout().catch((error) => {
+        console.warn("Не удалось сохранить порядок плашек.", error);
+      });
+    }, 350);
   };
 
   if (groupToggle) {
@@ -581,6 +630,7 @@ async function setupEnergyDashboard(user) {
     dragState.startCenterX += updatedRect.left - draggedRect.left;
     dragState.startCenterY += updatedRect.top - draggedRect.top;
     animateEnergyReorder(firstRects);
+    scheduleLayoutSave();
   });
 
   gridEl.addEventListener("pointerup", () => {

@@ -32,6 +32,8 @@ function renderGroupToggleCard() {
     <button
       class="action-card energy-group-toggle-card"
       type="button"
+      data-energy-item
+      data-energy-item-type="toggle"
       data-energy-group-toggle
       aria-label="Группировать"
       aria-pressed="false"

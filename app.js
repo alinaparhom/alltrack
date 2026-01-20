@@ -444,6 +444,7 @@ async function setupEnergyDashboard(user) {
     isDragging: false,
     startX: 0,
     startY: 0,
+    rafId: null,
   };
   const animateEnergyReorder = (firstRects) => {
     const items = Array.from(gridEl.querySelectorAll("[data-energy-item]"));
@@ -474,8 +475,14 @@ async function setupEnergyDashboard(user) {
       window.clearTimeout(dragState.holdTimer);
       dragState.holdTimer = null;
     }
+    if (dragState.rafId) {
+      cancelAnimationFrame(dragState.rafId);
+      dragState.rafId = null;
+    }
     if (dragState.item) {
       dragState.item.classList.remove("is-dragging");
+      dragState.item.style.removeProperty("--drag-x");
+      dragState.item.style.removeProperty("--drag-y");
     }
     if (dragState.isDragging) {
       gridEl.classList.remove("is-dragging");
@@ -488,6 +495,14 @@ async function setupEnergyDashboard(user) {
     }
     dragState.item = null;
     dragState.pointerId = null;
+  };
+
+  const updateDragTransform = (event) => {
+    if (!dragState.item) return;
+    const deltaX = event.clientX - dragState.startX;
+    const deltaY = event.clientY - dragState.startY;
+    dragState.item.style.setProperty("--drag-x", `${deltaX}px`);
+    dragState.item.style.setProperty("--drag-y", `${deltaY}px`);
   };
 
   gridEl.addEventListener("pointerdown", (event) => {
@@ -504,6 +519,7 @@ async function setupEnergyDashboard(user) {
       dragState.item.classList.add("is-dragging");
       gridEl.classList.add("is-dragging");
       card.setPointerCapture(dragState.pointerId);
+      updateDragTransform(event);
     }, 200);
   });
 
@@ -519,9 +535,16 @@ async function setupEnergyDashboard(user) {
       }
       return;
     }
+    if (dragState.rafId) {
+      cancelAnimationFrame(dragState.rafId);
+    }
+    dragState.rafId = requestAnimationFrame(() => {
+      updateDragTransform(event);
+    });
     const target = document
-      .elementFromPoint(event.clientX, event.clientY)
-      ?.closest("[data-energy-item]");
+      .elementsFromPoint(event.clientX, event.clientY)
+      .map((element) => element.closest?.("[data-energy-item]"))
+      .find((element) => element && element !== dragState.item);
     if (!target || target === dragState.item) return;
     const items = Array.from(gridEl.querySelectorAll("[data-energy-item]"));
     const firstRects = new Map(

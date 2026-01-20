@@ -34,6 +34,7 @@ const pendingRegistrationsFilePath = "./pending-registrations.json";
 const saveEndpoint = "./save.php";
 const fallbackBotToken = "8549452123:AAGxveuJSVf-xpNHQYTDKDmuMmHjGRVeDj0";
 const botUsernameCacheKey = "alltrack-bot-username";
+const initDataCacheKey = "alltrack-init-data";
 
 function normalizeTelegramId(value) {
   if (value === null || value === undefined) {
@@ -75,31 +76,64 @@ function parseInitDataUser(initData) {
   return null;
 }
 
+function cacheInitData(value) {
+  if (!value) return;
+  try {
+    sessionStorage.setItem(initDataCacheKey, value);
+  } catch (error) {
+    console.warn("Не удалось сохранить initData в sessionStorage.", error);
+  }
+}
+
+function getCachedInitData() {
+  try {
+    return sessionStorage.getItem(initDataCacheKey);
+  } catch (error) {
+    console.warn("Не удалось прочитать initData из sessionStorage.", error);
+    return null;
+  }
+}
+
 function getInitDataFromUrl() {
   const url = new URL(window.location.href);
   const queryData = url.searchParams.get("tgWebAppData");
-  if (queryData) return queryData;
+  if (queryData) {
+    cacheInitData(queryData);
+    return queryData;
+  }
   if (!url.hash) return null;
   const rawHash = url.hash.replace(/^#/, "");
   const hashParams = new URLSearchParams(rawHash);
   const hashData = hashParams.get("tgWebAppData");
-  if (hashData) return hashData;
+  if (hashData) {
+    cacheInitData(hashData);
+    return hashData;
+  }
   try {
     const decodedHash = decodeURIComponent(rawHash);
     if (decodedHash !== rawHash) {
       const decodedParams = new URLSearchParams(decodedHash);
-      return decodedParams.get("tgWebAppData");
+      const decodedData = decodedParams.get("tgWebAppData");
+      if (decodedData) {
+        cacheInitData(decodedData);
+        return decodedData;
+      }
     }
   } catch (error) {
     console.warn("Не удалось декодировать параметры Telegram из hash.", error);
   }
-  return null;
+  const cached = getCachedInitData();
+  return cached || null;
 }
 
 function getTelegramId() {
   const webApp = window.Telegram?.WebApp;
+  const initData = webApp?.initData ?? null;
+  if (initData) {
+    cacheInitData(initData);
+  }
   const unsafeId = webApp?.initDataUnsafe?.user?.id ?? null;
-  const initDataUser = parseInitDataUser(webApp?.initData);
+  const initDataUser = parseInitDataUser(initData);
   const urlInitDataUser = parseInitDataUser(getInitDataFromUrl());
   const rawId = unsafeId ?? initDataUser?.id ?? urlInitDataUser?.id ?? null;
   return normalizeTelegramId(rawId);

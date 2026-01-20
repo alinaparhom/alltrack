@@ -343,10 +343,11 @@ async function setupEnergyDashboard(user) {
       groupPanel.classList.toggle("is-hidden", !enabled);
     }
     if (groupToggle) {
-      const labelEl = groupToggle.querySelector(".energy-group-label");
-      if (labelEl) {
-        labelEl.textContent = enabled ? "Завершить" : "Группировать";
-      }
+      groupToggle.setAttribute(
+        "aria-label",
+        enabled ? "Завершить группировку" : "Группировать"
+      );
+      groupToggle.setAttribute("aria-pressed", String(enabled));
     }
     if (!enabled) {
       selectedIds.clear();

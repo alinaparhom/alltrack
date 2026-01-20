@@ -280,7 +280,7 @@ async function resolveOrganizationShortName(orgName) {
   if (!orgName) return "Организация";
   const orgData = await loadJson(orgFilePath);
   const match = orgData.organizations?.find(
-    (org) => org.full_name === orgName
+    (org) => org.full_name === orgName || org.short_name === orgName
   );
   return match?.short_name ?? orgName;
 }

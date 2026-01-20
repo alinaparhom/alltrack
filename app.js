@@ -51,15 +51,28 @@ function normalizeTelegramId(value) {
 
 function parseInitDataUser(initData) {
   if (!initData) return null;
-  try {
-    const params = new URLSearchParams(initData);
+
+  const parseFromString = (value) => {
+    const params = new URLSearchParams(value);
     const userRaw = params.get("user");
     if (!userRaw) return null;
     return JSON.parse(userRaw);
+  };
+
+  try {
+    const directUser = parseFromString(initData);
+    if (directUser) return directUser;
+
+    const decoded = decodeURIComponent(initData);
+    if (decoded && decoded !== initData) {
+      return parseFromString(decoded);
+    }
   } catch (error) {
     console.warn("Не удалось разобрать initData пользователя.", error);
     return null;
   }
+
+  return null;
 }
 
 function getInitDataFromUrl() {

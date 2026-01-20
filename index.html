@@ -49,6 +49,7 @@
       const targetUrl = new URL("./telegram-alltrack.html", window.location.href);
       targetUrl.search = window.location.search;
       targetUrl.hash = window.location.hash;
+      targetUrl.searchParams.set("v", Date.now().toString());
 
       const link = document.querySelector("[data-redirect-link]");
       if (link) {

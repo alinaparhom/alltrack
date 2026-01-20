@@ -874,6 +874,33 @@
     </main>
 
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script type="module" src="./app.js"></script>
+    <script>
+      (function () {
+        const cacheBuster = Date.now().toString();
+        window.ALLTRACK_CACHE_BUSTER = cacheBuster;
+
+        const importMap = {
+          imports: {
+            "./app.js": `./app.js?v=${cacheBuster}`,
+            "./roles/super-admin.js": `./roles/super-admin.js?v=${cacheBuster}`,
+            "./roles/responsible.js": `./roles/responsible.js?v=${cacheBuster}`,
+            "./roles/chief-engineer.js": `./roles/chief-engineer.js?v=${cacheBuster}`,
+            "./roles/leader.js": `./roles/leader.js?v=${cacheBuster}`,
+            "./roles/accounting.js": `./roles/accounting.js?v=${cacheBuster}`,
+            "./roles/energy.js": `./roles/energy.js?v=${cacheBuster}`,
+          },
+        };
+
+        const mapScript = document.createElement("script");
+        mapScript.type = "importmap";
+        mapScript.textContent = JSON.stringify(importMap);
+        document.head.appendChild(mapScript);
+
+        const appScript = document.createElement("script");
+        appScript.type = "module";
+        appScript.textContent = 'import "./app.js";';
+        document.body.appendChild(appScript);
+      })();
+    </script>
   </body>
 </html>

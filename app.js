@@ -533,10 +533,7 @@ async function loadUser() {
     if (userOrgEl) userOrgEl.textContent = user.organization ?? "Организация";
     if (userInitialsEl) userInitialsEl.textContent = getInitials(user.full_name ?? "");
     if (appUserEl) {
-      appUserEl.classList.toggle(
-        "is-hidden",
-        user.role === superAdminRole || user.role === energyRole
-      );
+      appUserEl.classList.toggle("is-hidden", user.role === superAdminRole);
     }
     if (superAdminStatEl) {
       superAdminStatEl.classList.toggle("is-hidden", user.role !== superAdminRole);

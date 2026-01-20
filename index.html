@@ -3,7 +3,6 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta http-equiv="refresh" content="0; url=./telegram-alltrack.html" />
     <title>AllTrack — Mini App</title>
     <style>
       body {
@@ -27,10 +26,19 @@
   <body>
     <p>
       Если переход не сработал, откройте
-      <a href="./telegram-alltrack.html">AllTrack</a>.
+      <a href="./telegram-alltrack.html" data-redirect-link>AllTrack</a>.
     </p>
     <script>
-      window.location.replace("./telegram-alltrack.html");
+      const targetUrl = new URL("./telegram-alltrack.html", window.location.href);
+      targetUrl.search = window.location.search;
+      targetUrl.hash = window.location.hash;
+
+      const link = document.querySelector("[data-redirect-link]");
+      if (link) {
+        link.href = targetUrl.href;
+      }
+
+      window.location.replace(targetUrl.href);
     </script>
   </body>
 </html>

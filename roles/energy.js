@@ -1,70 +1,66 @@
 export const roleId = "Энергетик";
 
+export const energyActions = [
+  { id: "tools", title: "Мои инструменты", icon: "🧰" },
+  { id: "add-tool", title: "Добавить инструмент", icon: "➕" },
+  { id: "base", title: "База", icon: "🗂️" },
+  { id: "write-off", title: "Списать", icon: "🧾" },
+  { id: "repair", title: "Ремонт", icon: "🛠️" },
+  { id: "breakdowns", title: "Поломки", icon: "⚠️" },
+  { id: "move", title: "Переместить за других", icon: "✅" },
+  { id: "info", title: "Информация", icon: "ℹ️" },
+  { id: "upload", title: "Загрузить данные", icon: "📥" },
+  { id: "download", title: "Выгрузить данные", icon: "📤" },
+  { id: "add-photo", title: "Добавить фото", icon: "📷" },
+  { id: "remove-photo", title: "Удалить фото", icon: "🗑️" },
+  { id: "no-photo", title: "Без фото", icon: "🚫" },
+  { id: "fines", title: "Штрафы", icon: "💸" },
+  { id: "users", title: "Пользователи", icon: "👥" },
+];
+
+function renderActionCard(action) {
+  return `
+    <button class="action-card" type="button" data-energy-item data-energy-item-type="action" data-action-id="${action.id}">
+      <span class="action-icon">${action.icon}</span>
+      <div class="action-title">${action.title}</div>
+    </button>
+  `;
+}
+
 export function renderRole(user) {
+  const actionsMarkup = energyActions.map(renderActionCard).join("");
   return `
     <section class="role-card">
-      <div class="dashboard">
-        <div class="action-grid">
-          <button class="action-card" type="button">
-            <span class="action-icon">🧰</span>
-            <div class="action-title">Мои инструменты</div>
-          </button>
-          <button class="action-card" type="button">
-            <span class="action-icon">➕</span>
-            <div class="action-title">Добавить инструмент</div>
-          </button>
-          <button class="action-card" type="button">
-            <span class="action-icon">🗂️</span>
-            <div class="action-title">База</div>
-          </button>
-          <button class="action-card" type="button">
-            <span class="action-icon">🧾</span>
-            <div class="action-title">Списать</div>
-          </button>
-          <button class="action-card" type="button">
-            <span class="action-icon">🛠️</span>
-            <div class="action-title">Ремонт</div>
-          </button>
-          <button class="action-card" type="button">
-            <span class="action-icon">⚠️</span>
-            <div class="action-title">Поломки</div>
-          </button>
-          <button class="action-card" type="button">
-            <span class="action-icon">✅</span>
-            <div class="action-title">Переместить за других</div>
-          </button>
-          <button class="action-card" type="button">
-            <span class="action-icon">ℹ️</span>
-            <div class="action-title">Информация</div>
-          </button>
-          <button class="action-card" type="button">
-            <span class="action-icon">📥</span>
-            <div class="action-title">Загрузить данные</div>
-          </button>
-          <button class="action-card" type="button">
-            <span class="action-icon">📤</span>
-            <div class="action-title">Выгрузить данные</div>
-          </button>
-          <button class="action-card" type="button">
-            <span class="action-icon">📷</span>
-            <div class="action-title">Добавить фото</div>
-          </button>
-          <button class="action-card" type="button">
-            <span class="action-icon">🗑️</span>
-            <div class="action-title">Удалить фото</div>
-          </button>
-          <button class="action-card" type="button">
-            <span class="action-icon">🚫</span>
-            <div class="action-title">Без фото</div>
-          </button>
-          <button class="action-card" type="button">
-            <span class="action-icon">💸</span>
-            <div class="action-title">Штрафы</div>
-          </button>
-          <button class="action-card" type="button">
-            <span class="action-icon">👥</span>
-            <div class="action-title">Пользователи</div>
-          </button>
+      <div class="dashboard energy-dashboard">
+        <div class="dashboard-header">
+          <span class="section-pill">Энергетик · Плитки и группы</span>
+          <div class="energy-controls">
+            <button class="action-primary" type="button" data-energy-group-toggle>
+              <span aria-hidden="true">🧩</span>
+              <span class="energy-group-label">Группировать</span>
+            </button>
+          </div>
+          <p class="energy-hint">
+            Зажмите карточку, чтобы переместить. В режиме группировки выберите
+            несколько блоков и объедините их.
+          </p>
+          <div class="energy-group-panel is-hidden" data-energy-group-panel>
+            <div class="energy-group-info">
+              <div class="energy-group-count" data-energy-selected-count>0</div>
+              <div class="energy-group-text">Выберите минимум 2 плашки</div>
+            </div>
+            <div class="energy-group-actions">
+              <button class="action-primary" type="button" data-energy-create-group disabled>
+                Создать группу
+              </button>
+              <button class="action-secondary" type="button" data-energy-cancel-group>
+                Отмена
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="action-grid energy-grid" data-energy-grid>
+          ${actionsMarkup}
         </div>
       </div>
     </section>

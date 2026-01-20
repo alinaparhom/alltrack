@@ -3,7 +3,11 @@ import { roleId as responsibleRole, renderRole as renderResponsible } from "./ro
 import { roleId as chiefEngineerRole, renderRole as renderChiefEngineer } from "./roles/chief-engineer.js";
 import { roleId as leaderRole, renderRole as renderLeader } from "./roles/leader.js";
 import { roleId as accountingRole, renderRole as renderAccounting } from "./roles/accounting.js";
-import { roleId as energyRole, renderRole as renderEnergy } from "./roles/energy.js";
+import {
+  roleId as energyRole,
+  renderRole as renderEnergy,
+  energyActions,
+} from "./roles/energy.js";
 
 const roleMap = new Map([
   [superAdminRole, renderSuperAdmin],
@@ -151,6 +155,366 @@ async function saveEntries(entries) {
 
 async function saveJson(path, data) {
   return saveEntries([{ path, data }]);
+}
+
+function normalizeEnergyLayout(layout, actions) {
+  const actionIds = new Set(actions.map((action) => action.id));
+  const normalized = [];
+  const usedIds = new Set();
+
+  if (Array.isArray(layout)) {
+    layout.forEach((item) => {
+      if (!item || typeof item !== "object") return;
+      if (item.type === "action") {
+        const actionId = item.id;
+        if (actionIds.has(actionId) && !usedIds.has(actionId)) {
+          normalized.push({ type: "action", id: actionId });
+          usedIds.add(actionId);
+        }
+        return;
+      }
+      if (item.type === "group") {
+        const groupItems = Array.isArray(item.items) ? item.items : [];
+        const filteredItems = groupItems.filter(
+          (actionId) => actionIds.has(actionId) && !usedIds.has(actionId)
+        );
+        filteredItems.forEach((actionId) => usedIds.add(actionId));
+        if (filteredItems.length > 0) {
+          normalized.push({
+            type: "group",
+            id: item.id ?? `group-${Date.now()}`,
+            name: item.name ?? "Группа",
+            items: filteredItems,
+          });
+        }
+      }
+    });
+  }
+
+  actions.forEach((action) => {
+    if (!usedIds.has(action.id)) {
+      normalized.push({ type: "action", id: action.id });
+    }
+  });
+
+  return normalized;
+}
+
+function createEnergyActionCard(action) {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "action-card";
+  button.dataset.energyItem = "";
+  button.dataset.energyItemType = "action";
+  button.dataset.actionId = action.id;
+  button.innerHTML = `
+    <span class="action-icon">${action.icon}</span>
+    <div class="action-title">${action.title}</div>
+  `;
+  return button;
+}
+
+function createEnergyGroupCard(group, actionsMap) {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "action-card action-group";
+  button.dataset.energyItem = "";
+  button.dataset.energyItemType = "group";
+  button.dataset.groupId = group.id;
+  button.dataset.groupName = group.name;
+  button.dataset.groupItems = JSON.stringify(group.items);
+
+  const iconsMarkup = group.items
+    .map((actionId) => actionsMap.get(actionId))
+    .filter(Boolean)
+    .slice(0, 4)
+    .map((action) => `<span class="group-icon">${action.icon}</span>`)
+    .join("");
+  const extraCount = group.items.length - 4;
+  const extraMarkup =
+    extraCount > 0
+      ? `<span class="group-icon group-icon-more">+${extraCount}</span>`
+      : "";
+
+  button.innerHTML = `
+    <div class="group-icon-stack">
+      ${iconsMarkup}${extraMarkup}
+    </div>
+    <div class="action-title">
+      <div class="group-title">${group.name}</div>
+      <div class="group-subtitle">${group.items.length} блока</div>
+    </div>
+  `;
+  return button;
+}
+
+function buildEnergyLayoutFromDom(gridEl) {
+  const layout = [];
+  const items = Array.from(gridEl.querySelectorAll("[data-energy-item]"));
+  items.forEach((item) => {
+    const type = item.dataset.energyItemType;
+    if (type === "action") {
+      const actionId = item.dataset.actionId;
+      if (actionId) layout.push({ type: "action", id: actionId });
+    } else if (type === "group") {
+      let groupItems = [];
+      if (item.dataset.groupItems) {
+        try {
+          groupItems = JSON.parse(item.dataset.groupItems);
+        } catch (error) {
+          groupItems = [];
+        }
+      }
+      layout.push({
+        type: "group",
+        id: item.dataset.groupId ?? `group-${Date.now()}`,
+        name: item.dataset.groupName ?? "Группа",
+        items: Array.isArray(groupItems) ? groupItems : [],
+      });
+    }
+  });
+  return layout;
+}
+
+async function resolveOrganizationShortName(orgName) {
+  if (!orgName) return "Организация";
+  const orgData = await loadJson(orgFilePath);
+  const match = orgData.organizations?.find(
+    (org) => org.full_name === orgName
+  );
+  return match?.short_name ?? orgName;
+}
+
+async function setupEnergyDashboard(user) {
+  const gridEl = contentEl.querySelector("[data-energy-grid]");
+  if (!gridEl) return;
+
+  const groupToggle = contentEl.querySelector("[data-energy-group-toggle]");
+  const groupPanel = contentEl.querySelector("[data-energy-group-panel]");
+  const createGroupButton = contentEl.querySelector("[data-energy-create-group]");
+  const cancelGroupButton = contentEl.querySelector("[data-energy-cancel-group]");
+  const selectedCountEl = contentEl.querySelector("[data-energy-selected-count]");
+
+  const actionsMap = new Map(energyActions.map((action) => [action.id, action]));
+  const orgShortName = await resolveOrganizationShortName(user.organization);
+  const settingsPath = `./${orgShortName}/Настройки.json`;
+  const userKey = String(user.telegram_id ?? user.full_name ?? "user");
+
+  let settingsData = await loadJson(settingsPath).catch(() => ({ users: {} }));
+  if (!settingsData || typeof settingsData !== "object") {
+    settingsData = { users: {} };
+  }
+  if (!settingsData.users || typeof settingsData.users !== "object") {
+    settingsData.users = {};
+  }
+
+  const savedLayout = settingsData.users?.[userKey]?.energy?.layout;
+  const normalizedLayout = normalizeEnergyLayout(savedLayout, energyActions);
+
+  gridEl.innerHTML = "";
+  normalizedLayout.forEach((item) => {
+    if (item.type === "action") {
+      const action = actionsMap.get(item.id);
+      if (action) {
+        gridEl.appendChild(createEnergyActionCard(action));
+      }
+    } else if (item.type === "group") {
+      gridEl.appendChild(createEnergyGroupCard(item, actionsMap));
+    }
+  });
+
+  let isGrouping = false;
+  let blockClick = false;
+  const selectedIds = new Set();
+
+  const updateGroupPanel = () => {
+    if (selectedCountEl) {
+      selectedCountEl.textContent = selectedIds.size;
+    }
+    if (createGroupButton) {
+      createGroupButton.disabled = selectedIds.size < 2;
+    }
+  };
+
+  const setGroupingState = (enabled) => {
+    isGrouping = enabled;
+    gridEl.classList.toggle("is-grouping", enabled);
+    if (groupPanel) {
+      groupPanel.classList.toggle("is-hidden", !enabled);
+    }
+    if (groupToggle) {
+      const labelEl = groupToggle.querySelector(".energy-group-label");
+      if (labelEl) {
+        labelEl.textContent = enabled ? "Завершить" : "Группировать";
+      }
+    }
+    if (!enabled) {
+      selectedIds.clear();
+      gridEl
+        .querySelectorAll(".action-card.is-selected")
+        .forEach((card) => card.classList.remove("is-selected"));
+      updateGroupPanel();
+    }
+  };
+
+  const saveLayout = async () => {
+    const layout = buildEnergyLayoutFromDom(gridEl);
+    const userSettings = settingsData.users?.[userKey] ?? {};
+    settingsData.users[userKey] = {
+      ...userSettings,
+      energy: {
+        ...(userSettings.energy ?? {}),
+        layout,
+      },
+    };
+    await saveJson(settingsPath, settingsData);
+  };
+
+  if (groupToggle) {
+    groupToggle.addEventListener("click", () => {
+      setGroupingState(!isGrouping);
+    });
+  }
+
+  if (cancelGroupButton) {
+    cancelGroupButton.addEventListener("click", () => {
+      setGroupingState(false);
+    });
+  }
+
+  if (createGroupButton) {
+    createGroupButton.addEventListener("click", async () => {
+      if (selectedIds.size < 2) return;
+      const groupName = window
+        .prompt("Название группы", "Моя группа")
+        ?.trim();
+      if (!groupName) return;
+
+      const selectedCards = Array.from(
+        gridEl.querySelectorAll(".action-card.is-selected")
+      );
+      const selectedActionIds = selectedCards
+        .map((card) => card.dataset.actionId)
+        .filter(Boolean);
+      if (selectedActionIds.length < 2) return;
+
+      const groupId = `group-${Date.now()}`;
+      const groupItem = {
+        type: "group",
+        id: groupId,
+        name: groupName,
+        items: selectedActionIds,
+      };
+
+      const allItems = Array.from(gridEl.children);
+      const firstIndex = allItems.findIndex((item) =>
+        item.classList.contains("is-selected")
+      );
+      const groupCard = createEnergyGroupCard(groupItem, actionsMap);
+      if (firstIndex >= 0) {
+        gridEl.insertBefore(groupCard, allItems[firstIndex]);
+      } else {
+        gridEl.appendChild(groupCard);
+      }
+      selectedCards.forEach((card) => card.remove());
+      setGroupingState(false);
+      await saveLayout();
+    });
+  }
+
+  gridEl.addEventListener("click", (event) => {
+    if (blockClick || !isGrouping) return;
+    const card = event.target.closest("[data-energy-item]");
+    if (!card || card.dataset.energyItemType !== "action") return;
+    const actionId = card.dataset.actionId;
+    if (!actionId) return;
+    card.classList.toggle("is-selected");
+    if (card.classList.contains("is-selected")) {
+      selectedIds.add(actionId);
+    } else {
+      selectedIds.delete(actionId);
+    }
+    updateGroupPanel();
+  });
+
+  const dragState = {
+    item: null,
+    pointerId: null,
+    holdTimer: null,
+    isDragging: false,
+    startX: 0,
+    startY: 0,
+  };
+
+  const clearDrag = async () => {
+    if (dragState.holdTimer) {
+      window.clearTimeout(dragState.holdTimer);
+      dragState.holdTimer = null;
+    }
+    if (dragState.item) {
+      dragState.item.classList.remove("is-dragging");
+    }
+    if (dragState.isDragging) {
+      gridEl.classList.remove("is-dragging");
+      dragState.isDragging = false;
+      blockClick = true;
+      await saveLayout();
+      setTimeout(() => {
+        blockClick = false;
+      }, 0);
+    }
+    dragState.item = null;
+    dragState.pointerId = null;
+  };
+
+  gridEl.addEventListener("pointerdown", (event) => {
+    if (isGrouping) return;
+    const card = event.target.closest("[data-energy-item]");
+    if (!card) return;
+    dragState.item = card;
+    dragState.pointerId = event.pointerId;
+    dragState.startX = event.clientX;
+    dragState.startY = event.clientY;
+    dragState.holdTimer = window.setTimeout(() => {
+      if (!dragState.item) return;
+      dragState.isDragging = true;
+      dragState.item.classList.add("is-dragging");
+      gridEl.classList.add("is-dragging");
+      card.setPointerCapture(dragState.pointerId);
+    }, 200);
+  });
+
+  gridEl.addEventListener("pointermove", (event) => {
+    if (!dragState.item) return;
+    if (!dragState.isDragging) {
+      const moved =
+        Math.abs(event.clientX - dragState.startX) > 8 ||
+        Math.abs(event.clientY - dragState.startY) > 8;
+      if (moved && dragState.holdTimer) {
+        window.clearTimeout(dragState.holdTimer);
+        dragState.holdTimer = null;
+      }
+      return;
+    }
+    const target = document
+      .elementFromPoint(event.clientX, event.clientY)
+      ?.closest("[data-energy-item]");
+    if (!target || target === dragState.item) return;
+    const rect = target.getBoundingClientRect();
+    const shouldInsertAfter = event.clientY > rect.top + rect.height / 2;
+    gridEl.insertBefore(
+      dragState.item,
+      shouldInsertAfter ? target.nextSibling : target
+    );
+  });
+
+  gridEl.addEventListener("pointerup", () => {
+    clearDrag();
+  });
+
+  gridEl.addEventListener("pointercancel", () => {
+    clearDrag();
+  });
 }
 
 function createRegistrationToken() {
@@ -540,6 +904,9 @@ async function loadUser() {
     }
     if (user.role === superAdminRole) {
       setupSuperAdmin();
+    }
+    if (user.role === energyRole) {
+      await setupEnergyDashboard(user);
     }
   } catch (error) {
     renderError("Возникла ошибка при загрузке данных.");

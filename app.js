@@ -309,12 +309,24 @@ function buildEnergyLayoutFromDom(gridEl) {
 async function resolveOrganizationShortName(orgName) {
   if (!orgName) return "Организация";
   const orgData = await loadJson(orgFilePath);
-  const normalizeName = (value = "") => String(value).trim().toLowerCase();
+  const normalizeName = (value = "") =>
+    String(value)
+      .trim()
+      .toLowerCase()
+      .replace(/[«»"']/g, "")
+      .replace(/\s+/g, " ");
   const targetName = normalizeName(orgName);
   const match = orgData.organizations?.find((org) => {
+    const fullName = normalizeName(org.full_name);
+    const shortName = normalizeName(org.short_name);
+    if (fullName === targetName || shortName === targetName) {
+      return true;
+    }
     return (
-      normalizeName(org.full_name) === targetName ||
-      normalizeName(org.short_name) === targetName
+      (shortName && targetName.includes(shortName)) ||
+      (fullName && targetName.includes(fullName)) ||
+      (shortName && shortName.includes(targetName)) ||
+      (fullName && fullName.includes(targetName))
     );
   });
   return match?.short_name ?? orgName;

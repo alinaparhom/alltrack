@@ -49,17 +49,35 @@ function normalizeTelegramId(value) {
   return cleaned || null;
 }
 
+function parseInitDataUser(initData) {
+  if (!initData) return null;
+  try {
+    const params = new URLSearchParams(initData);
+    const userRaw = params.get("user");
+    if (!userRaw) return null;
+    return JSON.parse(userRaw);
+  } catch (error) {
+    console.warn("Не удалось разобрать initData пользователя.", error);
+    return null;
+  }
+}
+
+function getInitDataFromUrl() {
+  const url = new URL(window.location.href);
+  const queryData = url.searchParams.get("tgWebAppData");
+  if (queryData) return queryData;
+  if (!url.hash) return null;
+  const hashParams = new URLSearchParams(url.hash.replace(/^#/, ""));
+  return hashParams.get("tgWebAppData");
+}
+
 function getTelegramId() {
   const webApp = window.Telegram?.WebApp;
-  const rawId = webApp?.initDataUnsafe?.user?.id ?? null;
-  if (rawId === null || rawId === undefined) {
-    return null;
-  }
-  const normalizedId = Number(rawId);
-  if (!Number.isFinite(normalizedId)) {
-    return null;
-  }
-  return normalizedId;
+  const unsafeId = webApp?.initDataUnsafe?.user?.id ?? null;
+  const initDataUser = parseInitDataUser(webApp?.initData);
+  const urlInitDataUser = parseInitDataUser(getInitDataFromUrl());
+  const rawId = unsafeId ?? initDataUser?.id ?? urlInitDataUser?.id ?? null;
+  return normalizeTelegramId(rawId);
 }
 
 function getTelegramBotUsername() {

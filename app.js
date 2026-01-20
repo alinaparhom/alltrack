@@ -278,17 +278,11 @@ function buildEnergyLayoutFromDom(gridEl) {
 
 async function resolveOrganizationShortName(orgName) {
   if (!orgName) return "Организация";
-  const normalizedName = String(orgName).trim();
-  const orgData = await loadJson(orgFilePath).catch(() => null);
-  if (!orgData || !Array.isArray(orgData.organizations)) {
-    return normalizedName || "Организация";
-  }
-  const match = orgData.organizations.find(
-    (org) =>
-      String(org.full_name).trim() === normalizedName ||
-      String(org.short_name).trim() === normalizedName
+  const orgData = await loadJson(orgFilePath);
+  const match = orgData.organizations?.find(
+    (org) => org.full_name === orgName
   );
-  return match?.short_name ?? normalizedName || "Организация";
+  return match?.short_name ?? orgName;
 }
 
 async function setupEnergyDashboard(user) {

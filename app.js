@@ -38,6 +38,14 @@ const fallbackBotToken = "8549452123:AAGxveuJSVf-xpNHQYTDKDmuMmHjGRVeDj0";
 const botUsernameCacheKey = "alltrack-bot-username";
 const initDataCacheKey = "alltrack-init-data";
 const initDataLocalCacheKey = "alltrack-init-data-local";
+const cacheBuster =
+  window.ALLTRACK_CACHE_BUSTER || new Date().toISOString().replace(/\D/g, "");
+
+function withCacheBuster(path) {
+  if (!cacheBuster) return path;
+  const separator = path.includes("?") ? "&" : "?";
+  return `${path}${separator}v=${cacheBuster}`;
+}
 
 function normalizeTelegramId(value) {
   if (value === null || value === undefined) {
@@ -286,7 +294,7 @@ function renderError(message) {
 }
 
 async function loadJson(path) {
-  const response = await fetch(path, { cache: "no-store" });
+  const response = await fetch(withCacheBuster(path), { cache: "no-store" });
   if (!response.ok) {
     throw new Error(`Не удалось загрузить ${path}`);
   }

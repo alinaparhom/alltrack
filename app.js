@@ -444,10 +444,10 @@ async function setupEnergyDashboard(user) {
     isDragging: false,
     pointerStartX: 0,
     pointerStartY: 0,
-    startLeft: 0,
-    startTop: 0,
-    offsetX: 0,
-    offsetY: 0,
+    startCenterX: 0,
+    startCenterY: 0,
+    lastPointerX: 0,
+    lastPointerY: 0,
     rafId: null,
   };
   const animateEnergyReorder = (firstRects) => {
@@ -501,12 +501,10 @@ async function setupEnergyDashboard(user) {
     dragState.pointerId = null;
   };
 
-  const updateDragTransform = (event) => {
+  const updateDragTransform = (clientX, clientY) => {
     if (!dragState.item) return;
-    const desiredLeft = event.clientX - dragState.offsetX;
-    const desiredTop = event.clientY - dragState.offsetY;
-    const deltaX = desiredLeft - dragState.startLeft;
-    const deltaY = desiredTop - dragState.startTop;
+    const deltaX = clientX - dragState.startCenterX;
+    const deltaY = clientY - dragState.startCenterY;
     dragState.item.style.setProperty("--drag-x", `${deltaX}px`);
     dragState.item.style.setProperty("--drag-y", `${deltaY}px`);
   };
@@ -520,22 +518,24 @@ async function setupEnergyDashboard(user) {
     dragState.pointerId = event.pointerId;
     dragState.pointerStartX = event.clientX;
     dragState.pointerStartY = event.clientY;
-    dragState.startLeft = rect.left;
-    dragState.startTop = rect.top;
-    dragState.offsetX = rect.width / 2;
-    dragState.offsetY = rect.height / 2;
+    dragState.lastPointerX = event.clientX;
+    dragState.lastPointerY = event.clientY;
+    dragState.startCenterX = rect.left + rect.width / 2;
+    dragState.startCenterY = rect.top + rect.height / 2;
     dragState.holdTimer = window.setTimeout(() => {
       if (!dragState.item) return;
       dragState.isDragging = true;
       dragState.item.classList.add("is-dragging");
       gridEl.classList.add("is-dragging");
       card.setPointerCapture(dragState.pointerId);
-      updateDragTransform(event);
+      updateDragTransform(dragState.lastPointerX, dragState.lastPointerY);
     }, 200);
   });
 
   gridEl.addEventListener("pointermove", (event) => {
     if (!dragState.item) return;
+    dragState.lastPointerX = event.clientX;
+    dragState.lastPointerY = event.clientY;
     if (!dragState.isDragging) {
       const moved =
         Math.abs(event.clientX - dragState.pointerStartX) > 8 ||
@@ -550,7 +550,7 @@ async function setupEnergyDashboard(user) {
       cancelAnimationFrame(dragState.rafId);
     }
     dragState.rafId = requestAnimationFrame(() => {
-      updateDragTransform(event);
+      updateDragTransform(event.clientX, event.clientY);
     });
     const target = document
       .elementsFromPoint(event.clientX, event.clientY)
@@ -569,8 +569,8 @@ async function setupEnergyDashboard(user) {
       shouldInsertAfter ? target.nextSibling : target
     );
     const updatedRect = dragState.item.getBoundingClientRect();
-    dragState.startLeft += updatedRect.left - draggedRect.left;
-    dragState.startTop += updatedRect.top - draggedRect.top;
+    dragState.startCenterX += updatedRect.left - draggedRect.left;
+    dragState.startCenterY += updatedRect.top - draggedRect.top;
     animateEnergyReorder(firstRects);
   });
 

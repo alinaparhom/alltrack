@@ -4,9 +4,6 @@ export function renderRole(user) {
   return `
     <section class="role-card">
       <div class="dashboard">
-        <div class="dashboard-header">
-          <span class="role-pill">${roleId}</span>
-        </div>
         <div class="action-grid">
           <button class="action-card" type="button">
             <span class="action-icon">🧰</span>
@@ -34,7 +31,7 @@ export function renderRole(user) {
           </button>
           <button class="action-card" type="button">
             <span class="action-icon">✅</span>
-            <div class="action-title">Отметить за других</div>
+            <div class="action-title">Переместить за других</div>
           </button>
           <button class="action-card" type="button">
             <span class="action-icon">ℹ️</span>

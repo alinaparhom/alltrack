@@ -119,18 +119,55 @@ function createOrganizationFolders(array $newOrganizations): void {
   }
 }
 
-function saveEntry(array $entry, array $allowedFiles): void {
-  $path = $entry["path"] ?? "";
-  $data = $entry["data"] ?? null;
+function resolveTargetPath(string $path, array $allowedFiles): string {
   $fileName = basename((string) $path);
+  if (in_array($fileName, $allowedFiles, true)) {
+    return __DIR__ . DIRECTORY_SEPARATOR . $fileName;
+  }
 
-  if (!in_array($fileName, $allowedFiles, true)) {
+  if ($fileName !== "Настройки.json") {
     http_response_code(403);
     echo json_encode(["error" => "Доступ запрещен."]);
     exit;
   }
 
-  $targetPath = __DIR__ . DIRECTORY_SEPARATOR . $fileName;
+  $dirName = trim(dirname((string) $path), "/\\.");
+  if ($dirName === "" || strpos($dirName, "..") !== false) {
+    http_response_code(403);
+    echo json_encode(["error" => "Доступ запрещен."]);
+    exit;
+  }
+
+  $segments = preg_split('/[\/\\\\]+/', $dirName);
+  if (!$segments || count($segments) !== 1) {
+    http_response_code(403);
+    echo json_encode(["error" => "Доступ запрещен."]);
+    exit;
+  }
+
+  $orgFolder = sanitizeFolderName($segments[0]);
+  if ($orgFolder === "" || $orgFolder !== $segments[0]) {
+    http_response_code(403);
+    echo json_encode(["error" => "Доступ запрещен."]);
+    exit;
+  }
+
+  $orgPath = __DIR__ . DIRECTORY_SEPARATOR . $orgFolder;
+  if (!ensureDirectory($orgPath)) {
+    http_response_code(500);
+    echo json_encode(["error" => "Не удалось создать папку организации."]);
+    exit;
+  }
+
+  return $orgPath . DIRECTORY_SEPARATOR . $fileName;
+}
+
+function saveEntry(array $entry, array $allowedFiles): void {
+  $path = $entry["path"] ?? "";
+  $data = $entry["data"] ?? null;
+  $fileName = basename((string) $path);
+
+  $targetPath = resolveTargetPath($path, $allowedFiles);
   $encoded = json_encode($data, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 
   if ($encoded === false) {

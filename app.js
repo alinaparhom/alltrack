@@ -80,8 +80,20 @@ function getInitDataFromUrl() {
   const queryData = url.searchParams.get("tgWebAppData");
   if (queryData) return queryData;
   if (!url.hash) return null;
-  const hashParams = new URLSearchParams(url.hash.replace(/^#/, ""));
-  return hashParams.get("tgWebAppData");
+  const rawHash = url.hash.replace(/^#/, "");
+  const hashParams = new URLSearchParams(rawHash);
+  const hashData = hashParams.get("tgWebAppData");
+  if (hashData) return hashData;
+  try {
+    const decodedHash = decodeURIComponent(rawHash);
+    if (decodedHash !== rawHash) {
+      const decodedParams = new URLSearchParams(decodedHash);
+      return decodedParams.get("tgWebAppData");
+    }
+  } catch (error) {
+    console.warn("Не удалось декодировать параметры Telegram из hash.", error);
+  }
+  return null;
 }
 
 function getTelegramId() {
@@ -93,7 +105,7 @@ function getTelegramId() {
   return normalizeTelegramId(rawId);
 }
 
-async function waitForTelegramId({ timeoutMs = 2500, intervalMs = 200 } = {}) {
+async function waitForTelegramId({ timeoutMs = 6000, intervalMs = 200 } = {}) {
   const startTime = typeof performance !== "undefined" ? performance.now() : Date.now();
   let telegramId = getTelegramId();
   while (!telegramId) {

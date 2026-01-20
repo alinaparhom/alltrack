@@ -29,6 +29,23 @@
       <a href="./telegram-alltrack.html" data-redirect-link>AllTrack</a>.
     </p>
     <script>
+      const initDataKey = "alltrack-init-data";
+      const searchInitData = new URLSearchParams(window.location.search).get(
+        "tgWebAppData"
+      );
+      const rawHash = window.location.hash.replace(/^#/, "");
+      const hashInitData = rawHash
+        ? new URLSearchParams(rawHash).get("tgWebAppData")
+        : null;
+      const initDataToCache = searchInitData || hashInitData;
+      if (initDataToCache) {
+        try {
+          sessionStorage.setItem(initDataKey, initDataToCache);
+        } catch (error) {
+          console.warn("Не удалось сохранить initData.", error);
+        }
+      }
+
       const targetUrl = new URL("./telegram-alltrack.html", window.location.href);
       targetUrl.search = window.location.search;
       targetUrl.hash = window.location.hash;

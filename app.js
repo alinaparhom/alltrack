@@ -35,6 +35,20 @@ const saveEndpoint = "./save.php";
 const fallbackBotToken = "8549452123:AAGxveuJSVf-xpNHQYTDKDmuMmHjGRVeDj0";
 const botUsernameCacheKey = "alltrack-bot-username";
 
+function normalizeTelegramId(value) {
+  if (value === null || value === undefined) {
+    return null;
+  }
+  if (typeof value === "number") {
+    if (!Number.isFinite(value)) return null;
+    return String(Math.trunc(value));
+  }
+  const raw = String(value).trim();
+  if (!raw) return null;
+  const cleaned = raw.replace(/[^\d-]/g, "");
+  return cleaned || null;
+}
+
 function getTelegramId() {
   const webApp = window.Telegram?.WebApp;
   const rawId = webApp?.initDataUnsafe?.user?.id ?? null;
@@ -1003,8 +1017,9 @@ async function applyRegistrationToken(telegramId, token) {
   }
 
   const usersData = await loadJson(usersFilePath);
+  const telegramIdKey = normalizeTelegramId(telegramId);
   const existingUser = usersData.users?.find(
-    (item) => item.telegram_id === telegramId
+    (item) => normalizeTelegramId(item.telegram_id) === telegramIdKey
   );
 
   let resolvedUser = existingUser;
@@ -1056,6 +1071,7 @@ async function loadUser() {
     const registrationToken = getRegistrationToken();
     let user = null;
     let userLabel = "";
+    const telegramIdKey = normalizeTelegramId(telegramId);
 
     if (registrationToken) {
       user = await applyRegistrationToken(telegramId, registrationToken);
@@ -1066,7 +1082,9 @@ async function loadUser() {
 
     if (!user) {
       const data = await loadJson(usersFilePath);
-      user = data.users?.find((item) => item.telegram_id === telegramId);
+      user = data.users?.find(
+        (item) => normalizeTelegramId(item.telegram_id) === telegramIdKey
+      );
       userLabel = `Вы вошли как <strong>${formatShortName(
         user?.full_name ?? ""
       )}</strong>`;

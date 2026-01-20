@@ -285,6 +285,12 @@ async function resolveOrganizationShortName(orgName) {
   return match?.short_name ?? orgName;
 }
 
+function sanitizeOrganizationFolderName(name = "") {
+  const trimmed = String(name).trim();
+  const cleaned = trimmed.replace(/[\/\\:*?"<>|]+/g, "_");
+  return cleaned.replace(/\s+/g, " ").trim();
+}
+
 async function setupEnergyDashboard(user) {
   const gridEl = contentEl.querySelector("[data-energy-grid]");
   if (!gridEl) return;
@@ -297,7 +303,9 @@ async function setupEnergyDashboard(user) {
 
   const actionsMap = new Map(energyActions.map((action) => [action.id, action]));
   const orgShortName = await resolveOrganizationShortName(user.organization);
-  const settingsPath = `./${orgShortName}/Настройки.json`;
+  const orgFolderName =
+    sanitizeOrganizationFolderName(orgShortName) || "Организация";
+  const settingsPath = `./${orgFolderName}/Настройки.json`;
   const userKey = String(user.telegram_id ?? user.full_name ?? "user");
 
   let settingsData = await loadJson(settingsPath).catch(() => ({ users: {} }));

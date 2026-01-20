@@ -308,6 +308,7 @@
         min-height: 72px;
         cursor: pointer;
         transition: transform 0.2s ease, box-shadow 0.2s ease;
+        will-change: transform;
       }
 
       .action-card:hover {
@@ -406,6 +407,12 @@
 
       .energy-grid.is-dragging {
         touch-action: none;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .action-card {
+          transition: none;
+        }
       }
 
       .action-group {

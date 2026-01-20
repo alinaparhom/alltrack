@@ -445,6 +445,29 @@ async function setupEnergyDashboard(user) {
     startX: 0,
     startY: 0,
   };
+  const animateEnergyReorder = (firstRects) => {
+    const items = Array.from(gridEl.querySelectorAll("[data-energy-item]"));
+    items.forEach((item) => {
+      if (item === dragState.item) return;
+      const firstRect = firstRects.get(item);
+      if (!firstRect) return;
+      const lastRect = item.getBoundingClientRect();
+      const deltaX = firstRect.left - lastRect.left;
+      const deltaY = firstRect.top - lastRect.top;
+      if (deltaX || deltaY) {
+        item.animate(
+          [
+            { transform: `translate(${deltaX}px, ${deltaY}px)` },
+            { transform: "translate(0, 0)" },
+          ],
+          {
+            duration: 260,
+            easing: "cubic-bezier(0.2, 0.8, 0.2, 1)",
+          }
+        );
+      }
+    });
+  };
 
   const clearDrag = async () => {
     if (dragState.holdTimer) {
@@ -500,12 +523,17 @@ async function setupEnergyDashboard(user) {
       .elementFromPoint(event.clientX, event.clientY)
       ?.closest("[data-energy-item]");
     if (!target || target === dragState.item) return;
+    const items = Array.from(gridEl.querySelectorAll("[data-energy-item]"));
+    const firstRects = new Map(
+      items.map((item) => [item, item.getBoundingClientRect()])
+    );
     const rect = target.getBoundingClientRect();
     const shouldInsertAfter = event.clientY > rect.top + rect.height / 2;
     gridEl.insertBefore(
       dragState.item,
       shouldInsertAfter ? target.nextSibling : target
     );
+    animateEnergyReorder(firstRects);
   });
 
   gridEl.addEventListener("pointerup", () => {

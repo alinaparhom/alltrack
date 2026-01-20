@@ -24,6 +24,10 @@ const userOrgEl = document.querySelector("[data-user-org]");
 const userInitialsEl = document.querySelector("[data-user-initials]");
 const appUserEl = document.querySelector("[data-app-user]");
 const superAdminStatEl = document.querySelector("[data-super-admin-stat]");
+const energyPendingStatEl = document.querySelector("[data-energy-pending-stat]");
+const energyPendingIconEl = document.querySelector("[data-energy-pending-icon]");
+const energyPendingTextEl = document.querySelector("[data-energy-pending-text]");
+const energyPendingCountEl = document.querySelector("[data-energy-pending-count]");
 const orgFilePath = "./organizations.json";
 const usersFilePath = "./users.json";
 const pendingRegistrationsFilePath = "./pending-registrations.json";
@@ -212,6 +216,33 @@ function normalizeEnergyLayout(layout, actions) {
   return normalized;
 }
 
+function updateEnergyPendingStat(count = 0) {
+  if (!energyPendingStatEl) return;
+  const pendingCount = Number.isFinite(Number(count)) ? Math.max(0, Number(count)) : 0;
+  const isWaiting = pendingCount > 0;
+
+  energyPendingStatEl.classList.toggle("is-waiting", isWaiting);
+  energyPendingStatEl.setAttribute(
+    "aria-label",
+    isWaiting
+      ? `Ожидается ${pendingCount} ответов по перемещениям`
+      : "Ответов по перемещениям не требуется"
+  );
+
+  if (energyPendingIconEl) {
+    energyPendingIconEl.textContent = isWaiting ? "⏳" : "✅";
+  }
+  if (energyPendingTextEl) {
+    energyPendingTextEl.textContent = isWaiting
+      ? `Нужно ответить: ${pendingCount}`
+      : "Ответов не ждут";
+  }
+  if (energyPendingCountEl) {
+    energyPendingCountEl.textContent = String(pendingCount);
+    energyPendingCountEl.classList.toggle("is-hidden", !isWaiting);
+  }
+}
+
 function createEnergyActionCard(action) {
   const button = document.createElement("button");
   button.type = "button";
@@ -384,6 +415,7 @@ async function setupEnergyDashboard(user) {
   }
 
   const savedLayout = settingsData.users?.[userKey]?.energy?.layout;
+  const pendingMoves = settingsData.users?.[userKey]?.energy?.pendingMoves ?? 0;
   const normalizedLayout = normalizeEnergyLayout(savedLayout, energyActions);
 
   gridEl.innerHTML = "";
@@ -399,6 +431,8 @@ async function setupEnergyDashboard(user) {
       gridEl.appendChild(createEnergyGroupToggleCard());
     }
   });
+
+  updateEnergyPendingStat(pendingMoves);
 
   const groupToggle = contentEl.querySelector("[data-energy-group-toggle]");
   let isGrouping = false;
@@ -1059,6 +1093,9 @@ async function loadUser() {
     }
     if (superAdminStatEl) {
       superAdminStatEl.classList.toggle("is-hidden", user.role !== superAdminRole);
+    }
+    if (energyPendingStatEl) {
+      energyPendingStatEl.classList.toggle("is-hidden", user.role !== energyRole);
     }
     if (user.role === superAdminRole) {
       setupSuperAdmin();

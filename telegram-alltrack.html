@@ -96,6 +96,12 @@
         gap: 12px;
       }
 
+      .app-title-actions {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+      }
+
       .app-title {
         font-size: 20px;
         font-weight: 700;
@@ -142,6 +148,52 @@
         background: transparent;
         color: var(--accent);
         font-size: 18px;
+      }
+
+      .pending-stat {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 12px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.8);
+        border: 1px solid rgba(226, 232, 240, 0.9);
+        box-shadow: 0 12px 24px rgba(26, 31, 46, 0.08);
+        font-size: var(--text-sm);
+        color: var(--title-muted);
+        white-space: nowrap;
+      }
+
+      .pending-stat.is-waiting {
+        border-color: rgba(59, 125, 255, 0.45);
+        color: var(--accent);
+        background: rgba(59, 125, 255, 0.1);
+      }
+
+      .pending-icon {
+        font-size: 16px;
+      }
+
+      .pending-text {
+        font-weight: 600;
+        max-width: 160px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .pending-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 18px;
+        height: 18px;
+        padding: 0 6px;
+        border-radius: 999px;
+        background: var(--accent);
+        color: #fff;
+        font-size: 11px;
+        font-weight: 700;
+        box-shadow: 0 8px 16px rgba(59, 125, 255, 0.3);
       }
 
       .app-user {
@@ -801,8 +853,20 @@
             <span class="app-title-badge" data-user-initials>AA</span>
             <span class="app-title-text">AllTrack</span>
           </div>
-          <div class="app-stat is-hidden" data-super-admin-stat title="Статистика">
-            <span class="section-icon" aria-hidden="true">📊</span>
+          <div class="app-title-actions">
+            <div
+              class="pending-stat is-hidden"
+              data-energy-pending-stat
+              aria-live="polite"
+              title="Перемещения, ожидающие ответа"
+            >
+              <span class="pending-icon" data-energy-pending-icon aria-hidden="true">✅</span>
+              <span class="pending-text" data-energy-pending-text>Ответов не ждут</span>
+              <span class="pending-badge is-hidden" data-energy-pending-count>0</span>
+            </div>
+            <div class="app-stat is-hidden" data-super-admin-stat title="Статистика">
+              <span class="section-icon" aria-hidden="true">📊</span>
+            </div>
           </div>
         </div>
       </header>

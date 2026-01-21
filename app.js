@@ -1236,6 +1236,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
   gridEl.addEventListener("pointerdown", (event) => {
     if (isGrouping) return;
+    if (event.pointerType === "touch") return;
     const card = event.target.closest("[data-energy-item]");
     if (!card) return;
     const rect = card.getBoundingClientRect();

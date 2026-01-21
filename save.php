@@ -12,6 +12,18 @@ if (!is_array($payload)) {
 
 $allowedFiles = ["organizations.json", "users.json", "pending-registrations.json"];
 
+function readJsonFile(string $path, $default) {
+  if (!file_exists($path)) {
+    return $default;
+  }
+  $raw = file_get_contents($path);
+  if ($raw === false) {
+    return $default;
+  }
+  $decoded = json_decode($raw, true);
+  return is_array($decoded) ? $decoded : $default;
+}
+
 function buildEntries(array $payload): array {
   $entries = $payload["entries"] ?? null;
   if (is_array($entries)) {
@@ -26,6 +38,136 @@ function sanitizeFolderName(string $name): string {
   $clean = preg_replace('/[\/\\\\:\*\?"<>\|]+/', "_", $trimmed);
   $clean = preg_replace('/\s+/', " ", $clean);
   return trim($clean);
+}
+
+function normalizeOrganizationName(string $value): string {
+  $value = trim($value);
+  $value = mb_strtolower($value, "UTF-8");
+  $value = preg_replace('/[«»"\'`]+/u', "", $value);
+  $value = preg_replace('/[^\p{L}\p{N}\s-]+/u', " ", $value);
+  $value = preg_replace('/\s+/u', " ", $value);
+  return trim($value);
+}
+
+function normalizeOrganizationFolder(string $value): string {
+  return mb_strtolower(sanitizeFolderName($value), "UTF-8");
+}
+
+function normalizeTelegramId($value): ?string {
+  if ($value === null) {
+    return null;
+  }
+  if (is_numeric($value)) {
+    $numericValue = (int) $value;
+    if ($numericValue === 0) {
+      return null;
+    }
+    return (string) $numericValue;
+  }
+  $raw = trim((string) $value);
+  if ($raw === "") {
+    return null;
+  }
+  $cleaned = preg_replace('/[^\d-]+/', "", $raw);
+  if ($cleaned === "" || $cleaned === "0") {
+    return null;
+  }
+  return $cleaned;
+}
+
+function pickOrganizationShortName(array $orgData, string $orgName): string {
+  if ($orgName === "") {
+    return "Организация";
+  }
+  $targetName = normalizeOrganizationName($orgName);
+  $targetFolder = normalizeOrganizationFolder($orgName);
+  $organizations = $orgData["organizations"] ?? [];
+
+  $exactMatch = null;
+  foreach ($organizations as $org) {
+    $fullName = normalizeOrganizationName((string) ($org["full_name"] ?? ""));
+    $fullFolder = normalizeOrganizationFolder((string) ($org["full_name"] ?? ""));
+    if ($fullName === $targetName || $fullFolder === $targetFolder) {
+      $exactMatch = $org;
+      break;
+    }
+  }
+  if (!$exactMatch) {
+    foreach ($organizations as $org) {
+      $shortName = normalizeOrganizationName((string) ($org["short_name"] ?? ""));
+      $shortFolder = normalizeOrganizationFolder((string) ($org["short_name"] ?? ""));
+      if ($shortName === $targetName || $shortFolder === $targetFolder) {
+        $exactMatch = $org;
+        break;
+      }
+    }
+  }
+  if ($exactMatch && !empty($exactMatch["short_name"])) {
+    return (string) $exactMatch["short_name"];
+  }
+
+  foreach ($organizations as $org) {
+    $fullName = normalizeOrganizationName((string) ($org["full_name"] ?? ""));
+    $shortName = normalizeOrganizationName((string) ($org["short_name"] ?? ""));
+    $fullFolder = normalizeOrganizationFolder((string) ($org["full_name"] ?? ""));
+    $shortFolder = normalizeOrganizationFolder((string) ($org["short_name"] ?? ""));
+    if (
+      ($shortName && str_contains($targetName, $shortName)) ||
+      ($fullName && str_contains($targetName, $fullName)) ||
+      ($shortName && str_contains($shortName, $targetName)) ||
+      ($fullName && str_contains($fullName, $targetName)) ||
+      ($shortFolder && str_contains($targetFolder, $shortFolder)) ||
+      ($fullFolder && str_contains($targetFolder, $fullFolder))
+    ) {
+      return (string) ($org["short_name"] ?? $orgName);
+    }
+  }
+
+  return $orgName;
+}
+
+function resolveOrganizationFolderForEntry(array $entry): ?string {
+  $user = $entry["user"] ?? null;
+  if (!is_array($user)) {
+    return null;
+  }
+
+  $usersPath = __DIR__ . DIRECTORY_SEPARATOR . "users.json";
+  $orgsPath = __DIR__ . DIRECTORY_SEPARATOR . "organizations.json";
+  $usersData = readJsonFile($usersPath, ["users" => []]);
+  $orgsData = readJsonFile($orgsPath, ["organizations" => []]);
+
+  $telegramId = normalizeTelegramId($user["telegram_id"] ?? null);
+  $matchedUser = null;
+  if ($telegramId) {
+    foreach (($usersData["users"] ?? []) as $item) {
+      $itemId = normalizeTelegramId($item["telegram_id"] ?? null);
+      if ($itemId === $telegramId) {
+        $matchedUser = $item;
+        break;
+      }
+    }
+  }
+  if (!$matchedUser) {
+    foreach (($usersData["users"] ?? []) as $item) {
+      if (
+        ($item["full_name"] ?? null) === ($user["full_name"] ?? null) &&
+        ($item["organization"] ?? null) === ($user["organization"] ?? null) &&
+        ($item["role"] ?? null) === ($user["role"] ?? null)
+      ) {
+        $matchedUser = $item;
+        break;
+      }
+    }
+  }
+
+  $orgName = $matchedUser["organization"] ?? ($user["organization"] ?? "");
+  if (!$orgName) {
+    return null;
+  }
+  $shortName = pickOrganizationShortName($orgsData, (string) $orgName);
+  $folder = sanitizeFolderName($shortName ?: (string) $orgName);
+  return $folder !== "" ? $folder : null;
 }
 
 function ensureDirectory(string $path): bool {
@@ -119,7 +261,8 @@ function createOrganizationFolders(array $newOrganizations): void {
   }
 }
 
-function resolveTargetPath(string $path, array $allowedFiles): string {
+function resolveTargetPath(array $entry, array $allowedFiles): string {
+  $path = (string) ($entry["path"] ?? "");
   $fileName = basename((string) $path);
   if (in_array($fileName, $allowedFiles, true)) {
     return __DIR__ . DIRECTORY_SEPARATOR . $fileName;
@@ -132,6 +275,10 @@ function resolveTargetPath(string $path, array $allowedFiles): string {
   }
 
   $dirName = trim(dirname((string) $path), "/\\.");
+  $resolvedFolder = resolveOrganizationFolderForEntry($entry);
+  if ($resolvedFolder) {
+    $dirName = $resolvedFolder;
+  }
   if ($dirName === "" || strpos($dirName, "..") !== false) {
     http_response_code(403);
     echo json_encode(["error" => "Доступ запрещен."]);
@@ -167,7 +314,7 @@ function saveEntry(array $entry, array $allowedFiles): void {
   $data = $entry["data"] ?? null;
   $fileName = basename((string) $path);
 
-  $targetPath = resolveTargetPath($path, $allowedFiles);
+  $targetPath = resolveTargetPath($entry, $allowedFiles);
   $encoded = json_encode($data, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 
   if ($encoded === false) {

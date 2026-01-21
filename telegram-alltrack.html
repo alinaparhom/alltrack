@@ -456,6 +456,7 @@
         font-weight: 700;
         color: var(--title-muted);
         line-height: 1.2;
+        min-width: 0;
         overflow: hidden;
         display: -webkit-box;
         -webkit-line-clamp: 2;
@@ -465,6 +466,17 @@
         word-break: break-word;
         hyphens: auto;
         max-width: 100%;
+      }
+
+      .action-title--fit {
+        display: block;
+        white-space: nowrap;
+        text-wrap: nowrap;
+        word-break: keep-all;
+        overflow: hidden;
+        -webkit-line-clamp: unset;
+        line-clamp: unset;
+        -webkit-box-orient: initial;
       }
 
       @container (max-width: 150px) {

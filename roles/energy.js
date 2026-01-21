@@ -69,6 +69,45 @@ export function renderRole(user) {
             </button>
           </div>
         </div>
+        <div class="settings-modal is-hidden" data-energy-settings-modal>
+          <div class="settings-modal__backdrop" data-energy-settings-backdrop></div>
+          <div
+            class="settings-modal__panel"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Настройки организации"
+          >
+            <div class="settings-modal__header">
+              <div class="settings-modal__title">
+                <span class="role-pill">Настройки</span>
+                <h2>Настройки организации</h2>
+                <p>Управляйте доступами, группами и рассылками для всей команды.</p>
+              </div>
+              <button
+                class="icon-button"
+                type="button"
+                data-energy-settings-close
+                aria-label="Закрыть"
+              >
+                ✕
+              </button>
+            </div>
+            <form class="settings-modal__form" data-energy-settings-form>
+              <div class="settings-modal__body" data-energy-settings-body></div>
+              <div class="settings-modal__footer">
+                <button
+                  class="action-secondary"
+                  type="button"
+                  data-energy-settings-cancel
+                >
+                  Отмена
+                </button>
+                <button class="action-primary" type="submit">Сохранить</button>
+              </div>
+              <div class="form-message" data-energy-settings-message></div>
+            </form>
+          </div>
+        </div>
       </div>
     </section>
   `;

@@ -48,6 +48,36 @@ const defaultPreferences = {
   grouping: "free",
   theme: "telegram",
 };
+const energySettingsRoles = [
+  superAdminRole,
+  responsibleRole,
+  chiefEngineerRole,
+  leaderRole,
+  accountingRole,
+  energyRole,
+];
+const energyFineOptions = [
+  { id: "lateReply", title: "Поздний ответ", defaultDays: 3, defaultAmount: 0 },
+  { id: "noPhoto", title: "Нет фото", defaultDays: 1, defaultAmount: 0 },
+  {
+    id: "movedByEnergy",
+    title: "Перемещение энергетиком",
+    defaultDays: 0,
+    defaultAmount: 0,
+  },
+];
+const energyMailingOptions = [
+  { id: "awaitingReply", title: "Ожидают ответа", defaultDay: "Пн", defaultTime: "09:00" },
+  { id: "repairs", title: "Ремонты", defaultDay: "Вт", defaultTime: "10:00" },
+  { id: "noPhoto", title: "Без фото", defaultDay: "Ср", defaultTime: "11:00" },
+  {
+    id: "noAccountingNumber",
+    title: "Без бух.номера",
+    defaultDay: "Чт",
+    defaultTime: "12:00",
+  },
+];
+const energyWeekDays = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
 let currentUser = null;
 let currentUserLabel = "";
 let currentPreferences = { ...defaultPreferences };
@@ -906,7 +936,309 @@ function ensureSettingsData(raw) {
   if (!base.users || typeof base.users !== "object" || Array.isArray(base.users)) {
     base.users = {};
   }
+  if (
+    !base.organization ||
+    typeof base.organization !== "object" ||
+    Array.isArray(base.organization)
+  ) {
+    base.organization = {};
+  }
   return base;
+}
+
+function buildRoleKey(value = "") {
+  return String(value)
+    .trim()
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}]+/gu, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+function escapeHtml(value = "") {
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function buildEnergyOrganizationDefaults() {
+  const actionIds = energyActions.map((action) => action.id);
+  const access = {};
+  energySettingsRoles.forEach((role) => {
+    access[role] = [...actionIds];
+  });
+  const fines = {};
+  energyFineOptions.forEach((option) => {
+    fines[option.id] = {
+      enabled: true,
+      days: option.defaultDays,
+      amount: option.defaultAmount,
+    };
+  });
+  const mailings = {};
+  energyMailingOptions.forEach((option) => {
+    mailings[option.id] = {
+      enabled: true,
+      day: option.defaultDay,
+      time: option.defaultTime,
+    };
+  });
+  return {
+    access,
+    stcGroups: [],
+    fines,
+    mailings,
+  };
+}
+
+function normalizeNumber(value, fallback = 0) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed < 0) return fallback;
+  return parsed;
+}
+
+function normalizeDay(value, fallback) {
+  const normalized = String(value ?? "").trim();
+  if (energyWeekDays.includes(normalized)) {
+    return normalized;
+  }
+  return fallback;
+}
+
+function normalizeTime(value, fallback) {
+  const normalized = String(value ?? "").trim();
+  if (/^\d{2}:\d{2}$/.test(normalized)) {
+    return normalized;
+  }
+  return fallback;
+}
+
+function normalizeEnergyOrganizationSettings(raw) {
+  const defaults = buildEnergyOrganizationDefaults();
+  const source = raw && typeof raw === "object" && !Array.isArray(raw) ? raw : {};
+  const access = {};
+  energySettingsRoles.forEach((role) => {
+    const allowed = Array.isArray(source.access?.[role])
+      ? source.access[role]
+      : defaults.access[role];
+    access[role] = allowed.filter((actionId) =>
+      defaults.access[role].includes(actionId)
+    );
+  });
+  const stcGroups = Array.isArray(source.stcGroups)
+    ? source.stcGroups.map((item) => String(item).trim()).filter(Boolean)
+    : [];
+  const fines = {};
+  energyFineOptions.forEach((option) => {
+    const data = source.fines?.[option.id] ?? {};
+    fines[option.id] = {
+      enabled: Boolean(data.enabled ?? defaults.fines[option.id].enabled),
+      days: normalizeNumber(data.days, defaults.fines[option.id].days),
+      amount: normalizeNumber(data.amount, defaults.fines[option.id].amount),
+    };
+  });
+  const mailings = {};
+  energyMailingOptions.forEach((option) => {
+    const data = source.mailings?.[option.id] ?? {};
+    mailings[option.id] = {
+      enabled: Boolean(data.enabled ?? defaults.mailings[option.id].enabled),
+      day: normalizeDay(data.day, defaults.mailings[option.id].day),
+      time: normalizeTime(data.time, defaults.mailings[option.id].time),
+    };
+  });
+  return {
+    access,
+    stcGroups,
+    fines,
+    mailings,
+  };
+}
+
+function getEnergyOrganizationSettings(settingsData) {
+  const normalized = normalizeEnergyOrganizationSettings(settingsData.organization);
+  settingsData.organization = normalized;
+  return normalized;
+}
+
+function buildEnergySettingsMarkup(settings) {
+  const accessMarkup = energySettingsRoles
+    .map((role) => {
+      const roleKey = buildRoleKey(role);
+      const allowed = new Set(settings.access?.[role] ?? []);
+      const actionMarkup = energyActions
+        .map((action) => {
+          const isChecked = allowed.has(action.id);
+          return `
+            <label class="settings-tag">
+              <input
+                type="checkbox"
+                name="access-${roleKey}"
+                value="${action.id}"
+                ${isChecked ? "checked" : ""}
+              />
+              <span>${action.icon} ${escapeHtml(action.title)}</span>
+            </label>
+          `;
+        })
+        .join("");
+      return `
+        <div class="settings-row" data-access-role="${roleKey}">
+          <span class="settings-chip">${escapeHtml(role)}</span>
+          <div class="settings-tag-grid">${actionMarkup}</div>
+        </div>
+      `;
+    })
+    .join("");
+
+  const groupChips =
+    settings.stcGroups.length > 0
+      ? settings.stcGroups
+          .map(
+            (name) => `
+              <button
+                type="button"
+                class="settings-chip"
+                data-energy-group-chip
+                data-group-name="${escapeHtml(name)}"
+              >
+                <span>${escapeHtml(name)}</span>
+                <span aria-hidden="true">✕</span>
+              </button>
+            `
+          )
+          .join("")
+      : `<span class="settings-chip is-muted">Список пуст</span>`;
+
+  const finesMarkup = energyFineOptions
+    .map((option) => {
+      const fine = settings.fines?.[option.id] ?? {};
+      return `
+        <div class="settings-table__row">
+          <label class="settings-inline">
+            <input
+              type="checkbox"
+              name="fine-${option.id}-enabled"
+              ${fine.enabled ? "checked" : ""}
+            />
+            <span>${escapeHtml(option.title)}</span>
+          </label>
+          <input
+            class="form-input"
+            type="number"
+            min="0"
+            inputmode="numeric"
+            name="fine-${option.id}-days"
+            value="${escapeHtml(fine.days ?? 0)}"
+          />
+          <input
+            class="form-input"
+            type="number"
+            min="0"
+            inputmode="numeric"
+            name="fine-${option.id}-amount"
+            value="${escapeHtml(fine.amount ?? 0)}"
+          />
+        </div>
+      `;
+    })
+    .join("");
+
+  const mailingsMarkup = energyMailingOptions
+    .map((option) => {
+      const mailing = settings.mailings?.[option.id] ?? {};
+      const dayOptions = energyWeekDays
+        .map(
+          (day) => `
+            <option value="${day}" ${
+              mailing.day === day ? "selected" : ""
+            }>${day}</option>
+          `
+        )
+        .join("");
+      return `
+        <div class="settings-table__row">
+          <label class="settings-inline">
+            <input
+              type="checkbox"
+              name="mailing-${option.id}-enabled"
+              ${mailing.enabled ? "checked" : ""}
+            />
+            <span>${escapeHtml(option.title)}</span>
+          </label>
+          <select class="form-input" name="mailing-${option.id}-day">
+            ${dayOptions}
+          </select>
+          <input
+            class="form-input"
+            type="time"
+            name="mailing-${option.id}-time"
+            value="${escapeHtml(mailing.time ?? "")}"
+          />
+        </div>
+      `;
+    })
+    .join("");
+
+  return `
+    <div class="settings-block">
+      <div class="settings-block__title">Права доступа</div>
+      <div class="settings-block__hint">
+        Для каждой роли отметьте плашки, которые можно использовать.
+      </div>
+      <div class="settings-list">${accessMarkup}</div>
+    </div>
+    <div class="settings-block">
+      <div class="settings-block__title">Группы СТЦ</div>
+      <div class="settings-block__hint">
+        Укажите, на какие группы делятся МТЦ.
+      </div>
+      <div class="settings-row settings-row--columns">
+        <input
+          class="form-input"
+          type="text"
+          inputmode="text"
+          placeholder="Например, Склад, Цех, Вахта"
+          data-energy-group-input
+        />
+        <button class="action-secondary" type="button" data-energy-group-add>
+          Добавить
+        </button>
+      </div>
+      <div class="settings-inline" data-energy-group-list>
+        ${groupChips}
+      </div>
+    </div>
+    <div class="settings-block">
+      <div class="settings-block__title">Штрафы</div>
+      <div class="settings-block__hint">
+        Выберите виды штрафов, срок ответа и сумму.
+      </div>
+      <div class="settings-table">
+        <div class="settings-table__row settings-table__header">
+          <div>Вид штрафа</div>
+          <div>Дней на ответ</div>
+          <div>Размер</div>
+        </div>
+        ${finesMarkup}
+      </div>
+    </div>
+    <div class="settings-block">
+      <div class="settings-block__title">Рассылки</div>
+      <div class="settings-block__hint">
+        Настройте, какие рассылки активны, в какие дни и во сколько.
+      </div>
+      <div class="settings-table">
+        <div class="settings-table__row settings-table__header">
+          <div>Тип рассылки</div>
+          <div>День</div>
+          <div>Время</div>
+        </div>
+        ${mailingsMarkup}
+      </div>
+    </div>
+  `;
 }
 
 async function resolveUserSettingsContext(user) {
@@ -971,10 +1303,23 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const createGroupButton = contentEl.querySelector("[data-energy-create-group]");
   const cancelGroupButton = contentEl.querySelector("[data-energy-cancel-group]");
   const selectedCountEl = contentEl.querySelector("[data-energy-selected-count]");
+  const settingsModalEl = contentEl.querySelector("[data-energy-settings-modal]");
+  const settingsFormEl = contentEl.querySelector("[data-energy-settings-form]");
+  const settingsBodyEl = contentEl.querySelector("[data-energy-settings-body]");
+  const settingsMessageEl = contentEl.querySelector("[data-energy-settings-message]");
+  const settingsCloseButton = contentEl.querySelector("[data-energy-settings-close]");
+  const settingsCancelButton = contentEl.querySelector("[data-energy-settings-cancel]");
+  const settingsBackdropEl = contentEl.querySelector("[data-energy-settings-backdrop]");
 
-  const actionsMap = new Map(energyActions.map((action) => [action.id, action]));
   const context = contextOverride || (await resolveUserSettingsContext(user));
   const settingsData = context.settingsData;
+  const organizationSettings = getEnergyOrganizationSettings(settingsData);
+  const accessList = organizationSettings.access?.[user.role];
+  const hasAccessConfig = Array.isArray(accessList);
+  const availableActions = hasAccessConfig
+    ? energyActions.filter((action) => accessList.includes(action.id))
+    : energyActions;
+  const actionsMap = new Map(availableActions.map((action) => [action.id, action]));
   const savedLayout = settingsData.users?.[context.userKey]?.energy?.layout;
   const pendingMoves =
     settingsData.users?.[context.userKey]?.energy?.pendingMoves ?? 0;
@@ -982,12 +1327,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     settingsData.users?.[context.userKey]?.energy?.layoutCustomized ?? false;
   const normalizedPreferences = normalizePreferences(preferences);
   const groupingPreference = normalizedPreferences.grouping;
-  const normalizedLayout = normalizeEnergyLayout(savedLayout, energyActions, {
-    forceToggleLast: !layoutCustomized && isDefaultEnergyLayout(savedLayout, energyActions),
+  const normalizedLayout = normalizeEnergyLayout(savedLayout, availableActions, {
+    forceToggleLast:
+      !layoutCustomized && isDefaultEnergyLayout(savedLayout, availableActions),
   });
   const layoutToRender = applyGroupingPreference(
     normalizedLayout,
-    energyActions,
+    availableActions,
     groupingPreference
   );
 
@@ -1146,16 +1492,176 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     });
   }
 
+  let settingsGroups = [...(organizationSettings.stcGroups ?? [])];
+  const renderSettingsBody = () => {
+    if (!settingsBodyEl) return;
+    settingsBodyEl.innerHTML = buildEnergySettingsMarkup({
+      ...organizationSettings,
+      stcGroups: settingsGroups,
+    });
+    const groupInput = settingsBodyEl.querySelector("[data-energy-group-input]");
+    const groupAddButton = settingsBodyEl.querySelector(
+      "[data-energy-group-add]"
+    );
+    const groupList = settingsBodyEl.querySelector("[data-energy-group-list]");
+
+    const renderGroupList = () => {
+      if (!groupList) return;
+      const listMarkup =
+        settingsGroups.length > 0
+          ? settingsGroups
+              .map(
+                (name) => `
+                  <button
+                    type="button"
+                    class="settings-chip"
+                    data-energy-group-chip
+                    data-group-name="${escapeHtml(name)}"
+                  >
+                    <span>${escapeHtml(name)}</span>
+                    <span aria-hidden="true">✕</span>
+                  </button>
+                `
+              )
+              .join("")
+          : `<span class="settings-chip is-muted">Список пуст</span>`;
+      groupList.innerHTML = listMarkup;
+    };
+
+    const addGroup = () => {
+      const value = String(groupInput?.value ?? "").trim();
+      if (!value) return;
+      if (!settingsGroups.includes(value)) {
+        settingsGroups = [...settingsGroups, value];
+      }
+      if (groupInput) groupInput.value = "";
+      renderGroupList();
+    };
+
+    if (groupAddButton) {
+      groupAddButton.addEventListener("click", addGroup);
+    }
+    if (groupInput) {
+      groupInput.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          addGroup();
+        }
+      });
+    }
+    if (groupList) {
+      groupList.addEventListener("click", (event) => {
+        const chip = event.target.closest("[data-energy-group-chip]");
+        if (!chip) return;
+        const name = chip.dataset.groupName;
+        settingsGroups = settingsGroups.filter((item) => item !== name);
+        renderGroupList();
+      });
+    }
+  };
+
+  const openSettingsModal = () => {
+    if (!settingsModalEl) return;
+    settingsGroups = [...(organizationSettings.stcGroups ?? [])];
+    renderSettingsBody();
+    settingsModalEl.classList.remove("is-hidden");
+    document.body.style.overflow = "hidden";
+  };
+
+  const closeSettingsModal = () => {
+    if (!settingsModalEl) return;
+    settingsModalEl.classList.add("is-hidden");
+    document.body.style.overflow = "";
+    if (settingsMessageEl) settingsMessageEl.textContent = "";
+  };
+
+  settingsBackdropEl?.addEventListener("click", closeSettingsModal);
+  settingsCloseButton?.addEventListener("click", closeSettingsModal);
+  settingsCancelButton?.addEventListener("click", closeSettingsModal);
+  settingsModalEl?.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      closeSettingsModal();
+    }
+  });
+
+  settingsFormEl?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    if (!settingsFormEl) return;
+    if (settingsMessageEl) {
+      settingsMessageEl.textContent = "Сохраняем настройки...";
+    }
+    const formData = new FormData(settingsFormEl);
+    const nextAccess = {};
+    energySettingsRoles.forEach((role) => {
+      const roleKey = buildRoleKey(role);
+      const values = formData.getAll(`access-${roleKey}`).map(String);
+      nextAccess[role] = values;
+    });
+    const nextFines = {};
+    energyFineOptions.forEach((option) => {
+      const enabled = formData.get(`fine-${option.id}-enabled`) !== null;
+      nextFines[option.id] = {
+        enabled,
+        days: normalizeNumber(formData.get(`fine-${option.id}-days`), 0),
+        amount: normalizeNumber(formData.get(`fine-${option.id}-amount`), 0),
+      };
+    });
+    const nextMailings = {};
+    energyMailingOptions.forEach((option) => {
+      nextMailings[option.id] = {
+        enabled: formData.get(`mailing-${option.id}-enabled`) !== null,
+        day: normalizeDay(
+          formData.get(`mailing-${option.id}-day`),
+          option.defaultDay
+        ),
+        time: normalizeTime(
+          formData.get(`mailing-${option.id}-time`),
+          option.defaultTime
+        ),
+      };
+    });
+    settingsData.organization = normalizeEnergyOrganizationSettings({
+      access: nextAccess,
+      stcGroups: settingsGroups,
+      fines: nextFines,
+      mailings: nextMailings,
+    });
+    try {
+      await saveJson(context.settingsPath, settingsData, { user });
+      if (settingsMessageEl) {
+        settingsMessageEl.textContent = "Настройки сохранены для организации.";
+      }
+      closeSettingsModal();
+      await renderUserRoleView();
+    } catch (error) {
+      console.error(error);
+      if (settingsMessageEl) {
+        settingsMessageEl.textContent =
+          "Не удалось сохранить настройки. Проверьте сервер.";
+      }
+    }
+  });
+
   gridEl.addEventListener("click", (event) => {
+    if (blockClick) return;
+    const targetCard = event.target.closest("[data-energy-item]");
+    if (!targetCard) return;
+    if (
+      !isGrouping &&
+      targetCard.dataset.energyItemType === "action" &&
+      targetCard.dataset.actionId === "settings"
+    ) {
+      openSettingsModal();
+      return;
+    }
     if (blockClick || !isGrouping || !allowGrouping) return;
-    const card = event.target.closest("[data-energy-item]");
-    if (!card) return;
-    const itemType = card.dataset.energyItemType;
+    const card = targetCard;
+    const itemType = targetCard.dataset.energyItemType;
     if (itemType === "action") {
-      const actionId = card.dataset.actionId;
+      const actionId = targetCard.dataset.actionId;
       if (!actionId) return;
-      card.classList.toggle("is-selected");
-      if (card.classList.contains("is-selected")) {
+      targetCard.classList.toggle("is-selected");
+      if (targetCard.classList.contains("is-selected")) {
         selectedIds.add(actionId);
       } else {
         selectedIds.delete(actionId);

@@ -644,7 +644,7 @@ function createEnergyActionCard(action) {
   button.dataset.actionId = action.id;
   button.innerHTML = `
     <span class="action-icon">${action.icon}</span>
-    <div class="action-title">${action.title}</div>
+    <div class="action-title action-title--fit">${action.title}</div>
   `;
   return button;
 }
@@ -694,9 +694,41 @@ function createEnergyGroupToggleCard() {
   button.setAttribute("aria-pressed", "false");
   button.innerHTML = `
     <span class="action-icon">🧩</span>
-    <div class="action-title">Группировка</div>
+    <div class="action-title action-title--fit">Группировка</div>
   `;
   return button;
+}
+
+const ACTION_TITLE_MIN_FONT_SIZE = 9;
+const ACTION_TITLE_FIT_STEP = 0.5;
+
+function fitActionTitleElement(titleEl) {
+  if (!titleEl) return;
+  titleEl.style.removeProperty("font-size");
+  const computed = window.getComputedStyle(titleEl);
+  const baseSize = Number.parseFloat(computed.fontSize) || 14;
+
+  if (titleEl.scrollWidth <= titleEl.clientWidth) {
+    return;
+  }
+
+  let fontSize = baseSize;
+  const maxSteps = Math.ceil((baseSize - ACTION_TITLE_MIN_FONT_SIZE) / ACTION_TITLE_FIT_STEP);
+  for (let step = 0; step <= maxSteps; step += 1) {
+    fontSize = Math.max(
+      ACTION_TITLE_MIN_FONT_SIZE,
+      baseSize - ACTION_TITLE_FIT_STEP * (step + 1)
+    );
+    titleEl.style.fontSize = `${fontSize}px`;
+    if (titleEl.scrollWidth <= titleEl.clientWidth) {
+      break;
+    }
+  }
+}
+
+function fitActionTitleTexts(container = document) {
+  const titles = container.querySelectorAll(".action-title--fit");
+  titles.forEach((title) => fitActionTitleElement(title));
 }
 
 function buildEnergyLayoutFromDom(gridEl) {
@@ -936,6 +968,14 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   });
 
   updateEnergyPendingStat(pendingMoves);
+  fitActionTitleTexts(gridEl);
+  if (typeof ResizeObserver !== "undefined" && !gridEl.dataset.fitObserverAttached) {
+    const fitObserver = new ResizeObserver(() => {
+      fitActionTitleTexts(gridEl);
+    });
+    fitObserver.observe(gridEl);
+    gridEl.dataset.fitObserverAttached = "true";
+  }
 
   const groupToggle = contentEl.querySelector("[data-energy-group-toggle]");
   const allowGrouping = groupingPreference === "free";

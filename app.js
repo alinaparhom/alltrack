@@ -675,7 +675,7 @@ function createEnergyGroupCard(group, actionsMap) {
     <div class="group-icon-stack">
       ${iconsMarkup}${extraMarkup}
     </div>
-    <div class="action-title">
+    <div class="action-title action-title--fit">
       <div class="group-title">${group.name}</div>
       <div class="group-subtitle">${group.items.length} блока</div>
     </div>
@@ -708,7 +708,11 @@ function fitActionTitleElement(titleEl) {
   const computed = window.getComputedStyle(titleEl);
   const baseSize = Number.parseFloat(computed.fontSize) || 14;
 
-  if (titleEl.scrollWidth <= titleEl.clientWidth) {
+  const isOverflowing = () =>
+    titleEl.scrollWidth > titleEl.clientWidth + 1 ||
+    titleEl.scrollHeight > titleEl.clientHeight + 1;
+
+  if (!isOverflowing()) {
     return;
   }
 
@@ -720,7 +724,7 @@ function fitActionTitleElement(titleEl) {
       baseSize - ACTION_TITLE_FIT_STEP * (step + 1)
     );
     titleEl.style.fontSize = `${fontSize}px`;
-    if (titleEl.scrollWidth <= titleEl.clientWidth) {
+    if (!isOverflowing()) {
       break;
     }
   }

@@ -335,8 +335,8 @@ async function saveEntries(entries) {
   }
 }
 
-async function saveJson(path, data) {
-  return saveEntries([{ path, data }]);
+async function saveJson(path, data, meta = {}) {
+  return saveEntries([{ path, data, ...meta }]);
 }
 
 function normalizeEnergyLayout(layout, actions) {
@@ -740,7 +740,7 @@ async function setupEnergyDashboard(user) {
         layout,
       },
     };
-    await saveJson(settingsPath, settingsData);
+    await saveJson(settingsPath, settingsData, { user });
   };
 
   const queueLayoutSave = () => {

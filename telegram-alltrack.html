@@ -72,6 +72,10 @@
         overflow: hidden;
       }
 
+      body.is-telegram .screen {
+        padding-top: calc(28px + 36px + env(safe-area-inset-top, 0px));
+      }
+
       .screen::before {
         content: "";
         position: absolute;

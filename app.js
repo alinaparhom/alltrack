@@ -1511,7 +1511,7 @@ async function renderUserRoleView() {
     userInitialsEl.textContent = getInitials(currentUser.full_name ?? "");
   }
   if (appUserEl) {
-    appUserEl.classList.toggle("is-hidden", currentUser.role === superAdminRole);
+    appUserEl.classList.add("is-hidden");
   }
   if (superAdminStatEl) {
     superAdminStatEl.classList.toggle("is-hidden", currentUser.role !== superAdminRole);
@@ -1544,6 +1544,16 @@ async function showUserSettings() {
     ...savedPreferences,
   });
   applyUserPreferences(currentPreferences);
+
+  const userName = formatShortName(currentUser.full_name);
+  if (userNameEl) userNameEl.textContent = userName;
+  if (userOrgEl) userOrgEl.textContent = currentUser.organization ?? "Организация";
+  if (userInitialsEl) {
+    userInitialsEl.textContent = getInitials(currentUser.full_name ?? "");
+  }
+  if (appUserEl) {
+    appUserEl.classList.remove("is-hidden");
+  }
   contentEl.innerHTML = renderUserSettingsView(currentUser, currentPreferences);
 
   const backButton = contentEl.querySelector("[data-settings-back]");
@@ -1732,6 +1742,7 @@ if (window.Telegram?.WebApp) {
   Telegram.WebApp.expand();
   Telegram.WebApp.setHeaderColor("#f5f7ff");
   Telegram.WebApp.setBackgroundColor("#f5f7ff");
+  document.body?.classList.add("is-telegram");
 }
 
 userSettingsTriggerEl?.addEventListener("click", () => {

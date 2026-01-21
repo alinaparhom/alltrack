@@ -26,7 +26,6 @@ const appUserEl = document.querySelector("[data-app-user]");
 const superAdminStatEl = document.querySelector("[data-super-admin-stat]");
 const energyPendingStatEl = document.querySelector("[data-energy-pending-stat]");
 const energyPendingIconEl = document.querySelector("[data-energy-pending-icon]");
-const energyPendingTextEl = document.querySelector("[data-energy-pending-text]");
 const energyPendingCountEl = document.querySelector("[data-energy-pending-count]");
 const orgFilePath = "./organizations.json";
 const usersFilePath = "./users.json";
@@ -409,11 +408,6 @@ function updateEnergyPendingStat(count = 0) {
 
   if (energyPendingIconEl) {
     energyPendingIconEl.textContent = isWaiting ? "⏳" : "✅";
-  }
-  if (energyPendingTextEl) {
-    energyPendingTextEl.textContent = isWaiting
-      ? `Нужно ответить: ${pendingCount}`
-      : "Ответов не ждут";
   }
   if (energyPendingCountEl) {
     energyPendingCountEl.textContent = String(pendingCount);

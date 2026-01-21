@@ -120,8 +120,9 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        font-size: 14px;
+        font-size: 18px;
         font-weight: 700;
+        letter-spacing: 1px;
         color: var(--accent);
         background: rgba(255, 255, 255, 0.75);
         border: 1px solid rgba(226, 232, 240, 0.9);
@@ -151,17 +152,18 @@
       }
 
       .pending-stat {
+        position: relative;
         display: inline-flex;
         align-items: center;
-        gap: 8px;
-        padding: 6px 12px;
-        border-radius: 999px;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        border-radius: 14px;
         background: rgba(255, 255, 255, 0.8);
         border: 1px solid rgba(226, 232, 240, 0.9);
         box-shadow: 0 12px 24px rgba(26, 31, 46, 0.08);
-        font-size: var(--text-sm);
         color: var(--title-muted);
-        white-space: nowrap;
+        flex-shrink: 0;
       }
 
       .pending-stat.is-waiting {
@@ -172,13 +174,6 @@
 
       .pending-icon {
         font-size: 16px;
-      }
-
-      .pending-text {
-        font-weight: 600;
-        max-width: 160px;
-        overflow: hidden;
-        text-overflow: ellipsis;
       }
 
       .pending-badge {
@@ -194,6 +189,9 @@
         font-size: 11px;
         font-weight: 700;
         box-shadow: 0 8px 16px rgba(59, 125, 255, 0.3);
+        position: absolute;
+        top: -4px;
+        right: -4px;
       }
 
       .app-user {
@@ -870,7 +868,6 @@
               title="Перемещения, ожидающие ответа"
             >
               <span class="pending-icon" data-energy-pending-icon aria-hidden="true">✅</span>
-              <span class="pending-text" data-energy-pending-text>Ответов не ждут</span>
               <span class="pending-badge is-hidden" data-energy-pending-count>0</span>
             </div>
             <div class="app-stat is-hidden" data-super-admin-stat title="Статистика">

@@ -1182,12 +1182,12 @@ function buildEnergySettingsMarkup(settings) {
     .join("");
 
   return `
-    <div class="settings-accordion is-open" data-settings-accordion>
+    <div class="settings-accordion" data-settings-accordion>
       <button
         class="settings-accordion__header"
         type="button"
         data-settings-accordion-toggle
-        aria-expanded="true"
+        aria-expanded="false"
       >
         <span class="settings-accordion__title">Права доступа</span>
         <span class="settings-accordion__icon" aria-hidden="true">⌄</span>

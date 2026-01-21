@@ -544,7 +544,20 @@ async function saveJson(path, data, meta = {}) {
   return saveEntries([{ path, data, ...meta }]);
 }
 
-function normalizeEnergyLayout(layout, actions) {
+function isDefaultEnergyLayout(layout, actions) {
+  if (!Array.isArray(layout) || layout.length === 0) return true;
+  const hasGroup = layout.some((item) => item?.type === "group");
+  if (hasGroup) return false;
+  const defaultOrder = actions.map((action) => action.id);
+  const actionOrder = layout
+    .filter((item) => item?.type === "action")
+    .map((item) => item.id);
+  if (actionOrder.length === 0) return true;
+  return actionOrder.every((actionId, index) => actionId === defaultOrder[index]);
+}
+
+function normalizeEnergyLayout(layout, actions, options = {}) {
+  const { forceToggleLast = false } = options;
   const actionIds = new Set(actions.map((action) => action.id));
   const normalized = [];
   const usedIds = new Set();
@@ -594,6 +607,14 @@ function normalizeEnergyLayout(layout, actions) {
 
   if (!hasToggle) {
     normalized.push({ type: "toggle" });
+  }
+
+  if (forceToggleLast) {
+    const toggleIndex = normalized.findIndex((item) => item.type === "toggle");
+    if (toggleIndex !== -1 && toggleIndex !== normalized.length - 1) {
+      const [toggleItem] = normalized.splice(toggleIndex, 1);
+      normalized.push(toggleItem);
+    }
   }
 
   return normalized;
@@ -958,9 +979,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const savedLayout = settingsData.users?.[context.userKey]?.energy?.layout;
   const pendingMoves =
     settingsData.users?.[context.userKey]?.energy?.pendingMoves ?? 0;
+  const layoutCustomized =
+    settingsData.users?.[context.userKey]?.energy?.layoutCustomized ?? false;
   const normalizedPreferences = normalizePreferences(preferences);
   const groupingPreference = normalizedPreferences.grouping;
-  const normalizedLayout = normalizeEnergyLayout(savedLayout, energyActions);
+  const normalizedLayout = normalizeEnergyLayout(savedLayout, energyActions, {
+    forceToggleLast: !layoutCustomized && isDefaultEnergyLayout(savedLayout, energyActions),
+  });
   const layoutToRender = applyGroupingPreference(
     normalizedLayout,
     energyActions,
@@ -1047,6 +1072,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       energy: {
         ...(userSettings.energy ?? {}),
         layout,
+        layoutCustomized: true,
       },
     };
     await saveJson(context.settingsPath, settingsData, { user });

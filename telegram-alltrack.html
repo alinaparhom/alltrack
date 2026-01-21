@@ -18,6 +18,8 @@
         --glass: rgba(255, 255, 255, 0.7);
         --accent: #3b7dff;
         --accent-soft: rgba(59, 125, 255, 0.18);
+        --success: #2f9e67;
+        --success-soft: rgba(47, 158, 103, 0.16);
         --text: #1a1f2e;
         --muted: #5f6b85;
         --title-muted: #6b758c;
@@ -37,6 +39,8 @@
         --glass: rgba(16, 22, 36, 0.78);
         --accent: #6aa5ff;
         --accent-soft: rgba(106, 165, 255, 0.2);
+        --success: #4fd28a;
+        --success-soft: rgba(79, 210, 138, 0.22);
         --text: #f4f6ff;
         --muted: #9aa3b8;
         --title-muted: #c2cadb;
@@ -236,6 +240,12 @@
         border-color: rgba(59, 125, 255, 0.45);
         color: var(--accent);
         background: rgba(59, 125, 255, 0.1);
+      }
+
+      .pending-stat.is-ready {
+        border-color: var(--success);
+        color: var(--success);
+        background: var(--success-soft);
       }
 
       .pending-icon {
@@ -1123,10 +1133,10 @@
               class="pending-stat is-hidden"
               data-energy-pending-stat
               aria-live="polite"
-              title="Перемещения, ожидающие ответа"
+              title="По всем запросам ответ дан"
             >
               <span class="pending-icon" data-energy-pending-icon aria-hidden="true"
-                >←</span
+                >✅</span
               >
               <span class="pending-badge is-hidden" data-energy-pending-count>0</span>
             </div>

@@ -603,17 +603,25 @@ function updateEnergyPendingStat(count = 0) {
   if (!energyPendingStatEl) return;
   const pendingCount = Number.isFinite(Number(count)) ? Math.max(0, Number(count)) : 0;
   const isWaiting = pendingCount > 0;
+  const isReady = !isWaiting;
 
   energyPendingStatEl.classList.toggle("is-waiting", isWaiting);
+  energyPendingStatEl.classList.toggle("is-ready", isReady);
   energyPendingStatEl.setAttribute(
     "aria-label",
     isWaiting
-      ? `Ожидается ${pendingCount} ответов по перемещениям`
-      : "Ответов по перемещениям не требуется"
+      ? `На принятии ${pendingCount} инструментов`
+      : "По всем запросам ответ дан"
+  );
+  energyPendingStatEl.setAttribute(
+    "title",
+    isWaiting
+      ? `На принятии ${pendingCount} инструментов`
+      : "По всем запросам ответ дан"
   );
 
   if (energyPendingIconEl) {
-    energyPendingIconEl.textContent = "←";
+    energyPendingIconEl.textContent = isWaiting ? "⏳" : "✅";
   }
   if (energyPendingCountEl) {
     energyPendingCountEl.textContent = String(pendingCount);
@@ -692,12 +700,11 @@ function createEnergyGroupToggleCard() {
   button.className = "action-card energy-group-toggle-card";
   button.dataset.energyItem = "";
   button.dataset.energyItemType = "toggle";
-  button.dataset.energyGroupToggle = "";
-  button.setAttribute("aria-label", "Группировать");
-  button.setAttribute("aria-pressed", "false");
+  button.dataset.energyFeedback = "";
+  button.setAttribute("aria-label", "Обратная связь");
   button.innerHTML = `
-    <span class="action-icon">🧩</span>
-    <div class="action-title action-title--fit">Группировка</div>
+    <span class="action-icon">💬</span>
+    <div class="action-title action-title--fit">Обратная связь</div>
   `;
   return button;
 }

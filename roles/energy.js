@@ -79,12 +79,10 @@ export function renderRole(user) {
           >
             <div class="settings-modal__header">
               <div class="settings-modal__title">
-                <span class="role-pill">Настройки</span>
                 <h2>Настройки организации</h2>
-                <p>Управляйте доступами, группами и рассылками для всей команды.</p>
               </div>
               <button
-                class="icon-button"
+                class="icon-button icon-button--danger settings-modal__close"
                 type="button"
                 data-energy-settings-close
                 aria-label="Закрыть"

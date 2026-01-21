@@ -23,6 +23,7 @@ const userNameEl = document.querySelector("[data-user-name]");
 const userOrgEl = document.querySelector("[data-user-org]");
 const userInitialsEl = document.querySelector("[data-user-initials]");
 const appUserEl = document.querySelector("[data-app-user]");
+const userSettingsTriggerEl = document.querySelector("[data-user-settings-trigger]");
 const superAdminStatEl = document.querySelector("[data-super-admin-stat]");
 const energyPendingStatEl = document.querySelector("[data-energy-pending-stat]");
 const energyPendingIconEl = document.querySelector("[data-energy-pending-icon]");
@@ -39,6 +40,15 @@ const initDataCacheKey = "alltrack-init-data";
 const initDataLocalCacheKey = "alltrack-init-data-local";
 const cacheBuster =
   window.ALLTRACK_CACHE_BUSTER || new Date().toISOString().replace(/\D/g, "");
+const defaultPreferences = {
+  iconStyle: "icon-title",
+  grouping: "free",
+  theme: "telegram",
+};
+let currentUser = null;
+let currentUserLabel = "";
+let currentPreferences = { ...defaultPreferences };
+let currentSettingsContext = null;
 
 function withCacheBuster(path) {
   if (!cacheBuster) return path;
@@ -277,6 +287,63 @@ function getInitials(fullName = "") {
   return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
 }
 
+function normalizePreferences(preferences = {}) {
+  const iconStyleOptions = new Set(["icon-only", "icon-title", "icon-title-below"]);
+  const groupingOptions = new Set(["none", "free", "all-group"]);
+  const themeOptions = new Set(["light", "dark", "telegram"]);
+  return {
+    iconStyle: iconStyleOptions.has(preferences.iconStyle)
+      ? preferences.iconStyle
+      : defaultPreferences.iconStyle,
+    grouping: groupingOptions.has(preferences.grouping)
+      ? preferences.grouping
+      : defaultPreferences.grouping,
+    theme: themeOptions.has(preferences.theme) ? preferences.theme : defaultPreferences.theme,
+  };
+}
+
+function resolveThemePreference(themePreference) {
+  if (themePreference === "light" || themePreference === "dark") {
+    return themePreference;
+  }
+  const telegramScheme = window.Telegram?.WebApp?.colorScheme;
+  if (telegramScheme === "dark") return "dark";
+  if (telegramScheme === "light") return "light";
+  if (window.matchMedia?.("(prefers-color-scheme: dark)")?.matches) {
+    return "dark";
+  }
+  return "light";
+}
+
+function setThemeColorMeta(color) {
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) {
+    meta.setAttribute("content", color);
+  }
+}
+
+function applyUserPreferences(preferences) {
+  const normalized = normalizePreferences(preferences);
+  document.body?.setAttribute("data-icon-style", normalized.iconStyle);
+  const resolvedTheme = resolveThemePreference(normalized.theme);
+  document.body?.setAttribute("data-theme", resolvedTheme);
+  document.body?.setAttribute("data-theme-preference", normalized.theme);
+  if (resolvedTheme === "dark") {
+    setThemeColorMeta("#0f1422");
+    if (window.Telegram?.WebApp) {
+      Telegram.WebApp.setHeaderColor("#0f1422");
+      Telegram.WebApp.setBackgroundColor("#0f1422");
+    }
+  } else {
+    setThemeColorMeta("#f5f7ff");
+    if (window.Telegram?.WebApp) {
+      Telegram.WebApp.setHeaderColor("#f5f7ff");
+      Telegram.WebApp.setBackgroundColor("#f5f7ff");
+    }
+  }
+  return normalized;
+}
+
 function renderError(message) {
   contentEl.innerHTML = `
     <section class="role-card">
@@ -288,6 +355,142 @@ function renderError(message) {
         ${message}
       </p>
       <div class="role-user">Проверьте доступ у администратора.</div>
+    </section>
+  `;
+}
+
+function renderUserSettingsView(user, preferences) {
+  const fullName = user.full_name ?? "Пользователь";
+  const organization = user.organization ?? "Организация";
+  const initials = getInitials(fullName);
+  const normalized = normalizePreferences(preferences);
+  return `
+    <section class="role-card">
+      <div class="settings-header">
+        <button class="button-icon" type="button" data-settings-back>
+          <span class="button-icon-emoji" aria-hidden="true">←</span>
+        </button>
+        <div class="settings-title">
+          <span class="role-pill">Настройки</span>
+          <h1>Профиль и внешний вид</h1>
+          <p>Настройте отображение плашек и тему приложения под себя.</p>
+        </div>
+      </div>
+      <div class="settings-profile">
+        <div class="settings-avatar">${initials}</div>
+        <div>
+          <div class="settings-name">${fullName}</div>
+          <div class="settings-org">${organization}</div>
+        </div>
+      </div>
+      <form class="form-grid" data-settings-form>
+        <div class="settings-section">
+          <div class="settings-section-title">Вид значков на странице</div>
+          <div class="toggle-group">
+            <label>
+              <input
+                class="toggle-input"
+                type="radio"
+                name="icon-style"
+                value="icon-only"
+                ${normalized.iconStyle === "icon-only" ? "checked" : ""}
+              />
+              <span class="toggle-option">Только значок</span>
+            </label>
+            <label>
+              <input
+                class="toggle-input"
+                type="radio"
+                name="icon-style"
+                value="icon-title"
+                ${normalized.iconStyle === "icon-title" ? "checked" : ""}
+              />
+              <span class="toggle-option">Значок и название</span>
+            </label>
+            <label>
+              <input
+                class="toggle-input"
+                type="radio"
+                name="icon-style"
+                value="icon-title-below"
+                ${normalized.iconStyle === "icon-title-below" ? "checked" : ""}
+              />
+              <span class="toggle-option">Название под значком</span>
+            </label>
+          </div>
+        </div>
+        <div class="settings-section">
+          <div class="settings-section-title">Группировка плашек</div>
+          <div class="toggle-group">
+            <label>
+              <input
+                class="toggle-input"
+                type="radio"
+                name="grouping"
+                value="none"
+                ${normalized.grouping === "none" ? "checked" : ""}
+              />
+              <span class="toggle-option">Без группировки</span>
+            </label>
+            <label>
+              <input
+                class="toggle-input"
+                type="radio"
+                name="grouping"
+                value="free"
+                ${normalized.grouping === "free" ? "checked" : ""}
+              />
+              <span class="toggle-option">Группы и отдельные</span>
+            </label>
+            <label>
+              <input
+                class="toggle-input"
+                type="radio"
+                name="grouping"
+                value="all-group"
+                ${normalized.grouping === "all-group" ? "checked" : ""}
+              />
+              <span class="toggle-option">Все в одну группу</span>
+            </label>
+          </div>
+        </div>
+        <div class="settings-section">
+          <div class="settings-section-title">Тема</div>
+          <div class="toggle-group">
+            <label>
+              <input
+                class="toggle-input"
+                type="radio"
+                name="theme"
+                value="light"
+                ${normalized.theme === "light" ? "checked" : ""}
+              />
+              <span class="toggle-option">Светлая</span>
+            </label>
+            <label>
+              <input
+                class="toggle-input"
+                type="radio"
+                name="theme"
+                value="dark"
+                ${normalized.theme === "dark" ? "checked" : ""}
+              />
+              <span class="toggle-option">Тёмная</span>
+            </label>
+            <label>
+              <input
+                class="toggle-input"
+                type="radio"
+                name="theme"
+                value="telegram"
+                ${normalized.theme === "telegram" ? "checked" : ""}
+              />
+              <span class="toggle-option">Как в Telegram</span>
+            </label>
+          </div>
+        </div>
+        <div class="form-message" data-settings-message></div>
+      </form>
     </section>
   `;
 }
@@ -413,6 +616,23 @@ function updateEnergyPendingStat(count = 0) {
     energyPendingCountEl.textContent = String(pendingCount);
     energyPendingCountEl.classList.toggle("is-hidden", !isWaiting);
   }
+}
+
+function applyGroupingPreference(layout, actions, preference) {
+  if (preference === "none") {
+    return actions.map((action) => ({ type: "action", id: action.id }));
+  }
+  if (preference === "all-group") {
+    return [
+      {
+        type: "group",
+        id: "group-all",
+        name: "Все блоки",
+        items: actions.map((action) => action.id),
+      },
+    ];
+  }
+  return layout;
 }
 
 function createEnergyActionCard(action) {
@@ -609,6 +829,48 @@ function sanitizeOrganizationFolderName(name = "") {
   return cleaned.replace(/\s+/g, " ").trim();
 }
 
+function buildUserKey(user) {
+  return user.telegram_id && Number(user.telegram_id) > 0
+    ? `tg-${user.telegram_id}`
+    : [user.full_name ?? "user", user.organization ?? "", user.role ?? ""].join("|");
+}
+
+function ensureSettingsData(raw) {
+  const base = raw && typeof raw === "object" && !Array.isArray(raw) ? raw : {};
+  if (!base.users || typeof base.users !== "object" || Array.isArray(base.users)) {
+    base.users = {};
+  }
+  return base;
+}
+
+async function resolveUserSettingsContext(user) {
+  const orgShortName = await resolveUserOrganizationShortName(user);
+  const orgFolderName =
+    sanitizeOrganizationFolderName(orgShortName) || "Организация";
+  const settingsPath = `./${orgFolderName}/Настройки.json`;
+  const userKey = buildUserKey(user);
+  const settingsData = ensureSettingsData(
+    await loadJson(settingsPath).catch(() => ({ users: {} }))
+  );
+  return {
+    orgShortName,
+    orgFolderName,
+    settingsPath,
+    userKey,
+    settingsData,
+  };
+}
+
+async function saveUserPreferences(context, preferences) {
+  const normalized = normalizePreferences(preferences);
+  context.settingsData.users[context.userKey] = {
+    ...(context.settingsData.users[context.userKey] ?? {}),
+    preferences: normalized,
+  };
+  await saveJson(context.settingsPath, context.settingsData, { user: currentUser });
+  return normalized;
+}
+
 async function resolveUserOrganizationShortName(user) {
   const usersData = await loadJson(usersFilePath).catch(() => ({ users: [] }));
   const orgData = await loadJson(orgFilePath).catch(() => ({ organizations: [] }));
@@ -635,7 +897,7 @@ async function resolveUserOrganizationShortName(user) {
   return pickOrganizationShortName(orgData, organizationName);
 }
 
-async function setupEnergyDashboard(user) {
+async function setupEnergyDashboard(user, preferences, contextOverride) {
   const gridEl = contentEl.querySelector("[data-energy-grid]");
   if (!gridEl) return;
 
@@ -645,37 +907,22 @@ async function setupEnergyDashboard(user) {
   const selectedCountEl = contentEl.querySelector("[data-energy-selected-count]");
 
   const actionsMap = new Map(energyActions.map((action) => [action.id, action]));
-  const orgShortName = await resolveUserOrganizationShortName(user);
-  const orgFolderName =
-    sanitizeOrganizationFolderName(orgShortName) || "Организация";
-  const settingsPath = `./${orgFolderName}/Настройки.json`;
-  const userKey =
-    user.telegram_id && Number(user.telegram_id) > 0
-      ? `tg-${user.telegram_id}`
-      : [
-          user.full_name ?? "user",
-          user.organization ?? "",
-          user.role ?? "",
-        ].join("|");
-
-  let settingsData = await loadJson(settingsPath).catch(() => ({ users: {} }));
-  if (!settingsData || typeof settingsData !== "object" || Array.isArray(settingsData)) {
-    settingsData = { users: {} };
-  }
-  if (
-    !settingsData.users ||
-    typeof settingsData.users !== "object" ||
-    Array.isArray(settingsData.users)
-  ) {
-    settingsData.users = {};
-  }
-
-  const savedLayout = settingsData.users?.[userKey]?.energy?.layout;
-  const pendingMoves = settingsData.users?.[userKey]?.energy?.pendingMoves ?? 0;
+  const context = contextOverride || (await resolveUserSettingsContext(user));
+  const settingsData = context.settingsData;
+  const savedLayout = settingsData.users?.[context.userKey]?.energy?.layout;
+  const pendingMoves =
+    settingsData.users?.[context.userKey]?.energy?.pendingMoves ?? 0;
+  const normalizedPreferences = normalizePreferences(preferences);
+  const groupingPreference = normalizedPreferences.grouping;
   const normalizedLayout = normalizeEnergyLayout(savedLayout, energyActions);
+  const layoutToRender = applyGroupingPreference(
+    normalizedLayout,
+    energyActions,
+    groupingPreference
+  );
 
   gridEl.innerHTML = "";
-  normalizedLayout.forEach((item) => {
+  layoutToRender.forEach((item) => {
     if (item.type === "action") {
       const action = actionsMap.get(item.id);
       if (action) {
@@ -683,7 +930,7 @@ async function setupEnergyDashboard(user) {
       }
     } else if (item.type === "group") {
       gridEl.appendChild(createEnergyGroupCard(item, actionsMap));
-    } else if (item.type === "toggle") {
+    } else if (item.type === "toggle" && groupingPreference === "free") {
       gridEl.appendChild(createEnergyGroupToggleCard());
     }
   });
@@ -691,11 +938,16 @@ async function setupEnergyDashboard(user) {
   updateEnergyPendingStat(pendingMoves);
 
   const groupToggle = contentEl.querySelector("[data-energy-group-toggle]");
+  const allowGrouping = groupingPreference === "free";
   let isGrouping = false;
   let blockClick = false;
   const selectedIds = new Set();
   let saveChain = Promise.resolve();
   let saveRequested = false;
+
+  if (!allowGrouping && groupPanel) {
+    groupPanel.classList.add("is-hidden");
+  }
 
   const updateGroupPanel = () => {
     if (selectedCountEl) {
@@ -730,15 +982,15 @@ async function setupEnergyDashboard(user) {
 
   const saveLayout = async () => {
     const layout = buildEnergyLayoutFromDom(gridEl);
-    const userSettings = settingsData.users?.[userKey] ?? {};
-    settingsData.users[userKey] = {
+    const userSettings = settingsData.users?.[context.userKey] ?? {};
+    settingsData.users[context.userKey] = {
       ...userSettings,
       energy: {
         ...(userSettings.energy ?? {}),
         layout,
       },
     };
-    await saveJson(settingsPath, settingsData, { user });
+    await saveJson(context.settingsPath, settingsData, { user });
   };
 
   const queueLayoutSave = () => {
@@ -758,19 +1010,19 @@ async function setupEnergyDashboard(user) {
     queueLayoutSave();
   };
 
-  if (groupToggle) {
+  if (allowGrouping && groupToggle) {
     groupToggle.addEventListener("click", () => {
       setGroupingState(!isGrouping);
     });
   }
 
-  if (cancelGroupButton) {
+  if (allowGrouping && cancelGroupButton) {
     cancelGroupButton.addEventListener("click", () => {
       setGroupingState(false);
     });
   }
 
-  if (createGroupButton) {
+  if (allowGrouping && createGroupButton) {
     createGroupButton.addEventListener("click", async () => {
       if (selectedIds.size < 2) return;
       const groupName = window
@@ -811,7 +1063,7 @@ async function setupEnergyDashboard(user) {
   }
 
   gridEl.addEventListener("click", (event) => {
-    if (blockClick || !isGrouping) return;
+    if (blockClick || !isGrouping || !allowGrouping) return;
     const card = event.target.closest("[data-energy-item]");
     if (!card || card.dataset.energyItemType !== "action") return;
     const actionId = card.dataset.actionId;
@@ -1242,6 +1494,94 @@ function setupSuperAdmin() {
   updateStats();
 }
 
+async function renderUserRoleView() {
+  if (!currentUser) return;
+  const renderRole = roleMap.get(currentUser.role);
+  if (!renderRole) return;
+
+  const userName = formatShortName(currentUser.full_name);
+  if (!currentUserLabel) {
+    currentUserLabel = `Вы вошли как <strong>${userName}</strong>`;
+  }
+
+  contentEl.innerHTML = renderRole(currentUserLabel);
+  if (userNameEl) userNameEl.textContent = userName;
+  if (userOrgEl) userOrgEl.textContent = currentUser.organization ?? "Организация";
+  if (userInitialsEl) {
+    userInitialsEl.textContent = getInitials(currentUser.full_name ?? "");
+  }
+  if (appUserEl) {
+    appUserEl.classList.toggle("is-hidden", currentUser.role === superAdminRole);
+  }
+  if (superAdminStatEl) {
+    superAdminStatEl.classList.toggle("is-hidden", currentUser.role !== superAdminRole);
+  }
+  if (energyPendingStatEl) {
+    energyPendingStatEl.classList.toggle("is-hidden", currentUser.role !== energyRole);
+  }
+  document.body?.classList.toggle(
+    "is-energy-role",
+    currentUser.role === energyRole
+  );
+  if (currentUser.role === superAdminRole) {
+    setupSuperAdmin();
+  }
+  if (currentUser.role === energyRole) {
+    await setupEnergyDashboard(currentUser, currentPreferences, currentSettingsContext);
+  }
+}
+
+async function showUserSettings() {
+  if (!currentUser) return;
+  if (!currentSettingsContext) {
+    currentSettingsContext = await resolveUserSettingsContext(currentUser);
+  }
+  const savedPreferences =
+    currentSettingsContext.settingsData.users?.[currentSettingsContext.userKey]
+      ?.preferences ?? {};
+  currentPreferences = normalizePreferences({
+    ...currentPreferences,
+    ...savedPreferences,
+  });
+  applyUserPreferences(currentPreferences);
+  contentEl.innerHTML = renderUserSettingsView(currentUser, currentPreferences);
+
+  const backButton = contentEl.querySelector("[data-settings-back]");
+  const formEl = contentEl.querySelector("[data-settings-form]");
+  const messageEl = contentEl.querySelector("[data-settings-message]");
+  let messageTimer = null;
+
+  const updateMessage = (text) => {
+    if (!messageEl) return;
+    messageEl.textContent = text;
+    if (messageTimer) window.clearTimeout(messageTimer);
+    messageTimer = window.setTimeout(() => {
+      messageEl.textContent = "";
+    }, 2000);
+  };
+
+  const handleFormChange = async () => {
+    if (!formEl) return;
+    const formData = new FormData(formEl);
+    const nextPreferences = normalizePreferences({
+      iconStyle: formData.get("icon-style"),
+      grouping: formData.get("grouping"),
+      theme: formData.get("theme"),
+    });
+    currentPreferences = applyUserPreferences(nextPreferences);
+    currentPreferences = await saveUserPreferences(
+      currentSettingsContext,
+      currentPreferences
+    );
+    updateMessage("Сохранено");
+  };
+
+  backButton?.addEventListener("click", () => {
+    renderUserRoleView();
+  });
+  formEl?.addEventListener("change", handleFormChange);
+}
+
 function buildAuthorizedLabel(user) {
   const fullName = user.full_name?.trim() || "Пользователь";
   const roleTitle = user.role ?? "роль";
@@ -1359,31 +1699,18 @@ async function loadUser() {
       return;
     }
 
-    const userName = formatShortName(user.full_name);
-    if (!userLabel) {
-      userLabel = `Вы вошли как <strong>${userName}</strong>`;
-    }
+    currentUser = user;
+    currentUserLabel = userLabel;
+    currentSettingsContext = await resolveUserSettingsContext(user);
+    const savedPreferences =
+      currentSettingsContext.settingsData.users?.[currentSettingsContext.userKey]
+        ?.preferences ?? {};
+    currentPreferences = applyUserPreferences({
+      ...defaultPreferences,
+      ...savedPreferences,
+    });
 
-    contentEl.innerHTML = renderRole(userLabel);
-    if (userNameEl) userNameEl.textContent = userName;
-    if (userOrgEl) userOrgEl.textContent = user.organization ?? "Организация";
-    if (userInitialsEl) userInitialsEl.textContent = getInitials(user.full_name ?? "");
-    if (appUserEl) {
-      appUserEl.classList.toggle("is-hidden", user.role === superAdminRole);
-    }
-    if (superAdminStatEl) {
-      superAdminStatEl.classList.toggle("is-hidden", user.role !== superAdminRole);
-    }
-    if (energyPendingStatEl) {
-      energyPendingStatEl.classList.toggle("is-hidden", user.role !== energyRole);
-    }
-    document.body?.classList.toggle("is-energy-role", user.role === energyRole);
-    if (user.role === superAdminRole) {
-      setupSuperAdmin();
-    }
-    if (user.role === energyRole) {
-      await setupEnergyDashboard(user);
-    }
+    await renderUserRoleView();
     void appendAuthLog("role_rendered", {
       telegramId: telegramIdKey,
       role: user.role ?? null,
@@ -1406,5 +1733,9 @@ if (window.Telegram?.WebApp) {
   Telegram.WebApp.setHeaderColor("#f5f7ff");
   Telegram.WebApp.setBackgroundColor("#f5f7ff");
 }
+
+userSettingsTriggerEl?.addEventListener("click", () => {
+  showUserSettings();
+});
 
 loadUser();

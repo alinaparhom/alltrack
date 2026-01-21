@@ -28,6 +28,9 @@ const superAdminStatEl = document.querySelector("[data-super-admin-stat]");
 const energyPendingStatEl = document.querySelector("[data-energy-pending-stat]");
 const energyPendingIconEl = document.querySelector("[data-energy-pending-icon]");
 const energyPendingCountEl = document.querySelector("[data-energy-pending-count]");
+const settingsBackButtonEl = document.querySelector(
+  "[data-settings-back-header]"
+);
 const orgFilePath = "./organizations.json";
 const usersFilePath = "./users.json";
 const pendingRegistrationsFilePath = "./pending-registrations.json";
@@ -360,27 +363,12 @@ function renderError(message) {
 }
 
 function renderUserSettingsView(user, preferences) {
-  const fullName = user.full_name ?? "Пользователь";
-  const organization = user.organization ?? "Организация";
-  const initials = getInitials(fullName);
   const normalized = normalizePreferences(preferences);
   return `
     <section class="role-card">
       <div class="settings-header">
-        <button class="button-icon" type="button" data-settings-back>
-          <span class="button-icon-emoji" aria-hidden="true">←</span>
-        </button>
         <div class="settings-title">
           <span class="role-pill">Настройки</span>
-          <h1>Профиль и внешний вид</h1>
-          <p>Настройте отображение плашек и тему приложения под себя.</p>
-        </div>
-      </div>
-      <div class="settings-profile">
-        <div class="settings-avatar">${initials}</div>
-        <div>
-          <div class="settings-name">${fullName}</div>
-          <div class="settings-org">${organization}</div>
         </div>
       </div>
       <form class="form-grid" data-settings-form>
@@ -610,7 +598,7 @@ function updateEnergyPendingStat(count = 0) {
   );
 
   if (energyPendingIconEl) {
-    energyPendingIconEl.textContent = isWaiting ? "⏳" : "✅";
+    energyPendingIconEl.textContent = "←";
   }
   if (energyPendingCountEl) {
     energyPendingCountEl.textContent = String(pendingCount);
@@ -1557,6 +1545,9 @@ async function renderUserRoleView() {
   if (appUserEl) {
     appUserEl.classList.add("is-hidden");
   }
+  if (settingsBackButtonEl) {
+    settingsBackButtonEl.classList.add("is-hidden");
+  }
   if (superAdminStatEl) {
     superAdminStatEl.classList.toggle("is-hidden", currentUser.role !== superAdminRole);
   }
@@ -1598,6 +1589,12 @@ async function showUserSettings() {
   if (appUserEl) {
     appUserEl.classList.remove("is-hidden");
   }
+  if (energyPendingStatEl) {
+    energyPendingStatEl.classList.add("is-hidden");
+  }
+  if (settingsBackButtonEl) {
+    settingsBackButtonEl.classList.remove("is-hidden");
+  }
   contentEl.innerHTML = renderUserSettingsView(currentUser, currentPreferences);
 
   const backButton = contentEl.querySelector("[data-settings-back]");
@@ -1630,9 +1627,16 @@ async function showUserSettings() {
     updateMessage("Сохранено");
   };
 
-  backButton?.addEventListener("click", () => {
+  const handleBack = () => {
     renderUserRoleView();
-  });
+  };
+
+  if (settingsBackButtonEl) {
+    settingsBackButtonEl.onclick = handleBack;
+  }
+  if (backButton) {
+    backButton.onclick = handleBack;
+  }
   formEl?.addEventListener("change", handleFormChange);
 }
 

@@ -17,6 +17,7 @@ export const energyActions = [
   { id: "no-photo", title: "Без фото", icon: "🚫" },
   { id: "fines", title: "Штрафы", icon: "💸" },
   { id: "users", title: "Пользователи", icon: "👥" },
+  { id: "settings", title: "Настройки", icon: "⚙️" },
 ];
 
 function renderActionCard(action) {

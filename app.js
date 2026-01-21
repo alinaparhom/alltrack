@@ -665,10 +665,14 @@ async function setupEnergyDashboard(user) {
         ].join("|");
 
   let settingsData = await loadJson(settingsPath).catch(() => ({ users: {} }));
-  if (!settingsData || typeof settingsData !== "object") {
+  if (!settingsData || typeof settingsData !== "object" || Array.isArray(settingsData)) {
     settingsData = { users: {} };
   }
-  if (!settingsData.users || typeof settingsData.users !== "object") {
+  if (
+    !settingsData.users ||
+    typeof settingsData.users !== "object" ||
+    Array.isArray(settingsData.users)
+  ) {
     settingsData.users = {};
   }
 

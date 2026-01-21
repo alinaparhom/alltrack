@@ -221,7 +221,7 @@ function createOrganizationFolders(array $newOrganizations): void {
     "Списания.json" => [],
     "Ремонты.json" => [],
     "Поломки.json" => [],
-    "Настройки.json" => [],
+    "Настройки.json" => ["users" => []],
   ];
   $folders = [
     "Фото инструментов",

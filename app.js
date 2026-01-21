@@ -709,7 +709,6 @@ function createEnergyGroupCard(group, actionsMap) {
     </div>
     <div class="action-title action-title--fit">
       <div class="group-title">${group.name}</div>
-      <div class="group-subtitle">${group.items.length} блока</div>
     </div>
   `;
   return button;

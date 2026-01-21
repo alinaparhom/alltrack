@@ -641,7 +641,6 @@ async function setupEnergyDashboard(user) {
   let isGrouping = false;
   let blockClick = false;
   const selectedIds = new Set();
-  let saveTimer = null;
   let saveChain = Promise.resolve();
   let saveRequested = false;
 
@@ -704,12 +703,6 @@ async function setupEnergyDashboard(user) {
 
   const scheduleLayoutSave = () => {
     queueLayoutSave();
-    if (saveTimer) {
-      window.clearTimeout(saveTimer);
-    }
-    saveTimer = window.setTimeout(() => {
-      queueLayoutSave();
-    }, 300);
   };
 
   if (groupToggle) {

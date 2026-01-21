@@ -1377,6 +1377,7 @@ async function loadUser() {
     if (energyPendingStatEl) {
       energyPendingStatEl.classList.toggle("is-hidden", user.role !== energyRole);
     }
+    document.body?.classList.toggle("is-energy-role", user.role === energyRole);
     if (user.role === superAdminRole) {
       setupSuperAdmin();
     }

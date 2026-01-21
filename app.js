@@ -1545,6 +1545,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     accordionItems.forEach((accordion) => {
       const toggle = accordion.querySelector("[data-settings-accordion-toggle]");
       if (!toggle) return;
+      accordion.classList.remove("is-open");
+      toggle.setAttribute("aria-expanded", "false");
       toggle.addEventListener("click", () => {
         const nextState = !accordion.classList.contains("is-open");
         accordion.classList.toggle("is-open", nextState);

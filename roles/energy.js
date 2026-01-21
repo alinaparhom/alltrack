@@ -34,12 +34,11 @@ function renderGroupToggleCard() {
       type="button"
       data-energy-item
       data-energy-item-type="toggle"
-      data-energy-group-toggle
-      aria-label="Группировать"
-      aria-pressed="false"
+      data-energy-feedback
+      aria-label="Обратная связь"
     >
-      <span class="action-icon">🧩</span>
-      <div class="action-title">Группировка</div>
+      <span class="action-icon">💬</span>
+      <div class="action-title">Обратная связь</div>
     </button>
   `;
 }

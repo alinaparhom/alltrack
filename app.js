@@ -1149,16 +1149,52 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   gridEl.addEventListener("click", (event) => {
     if (blockClick || !isGrouping || !allowGrouping) return;
     const card = event.target.closest("[data-energy-item]");
-    if (!card || card.dataset.energyItemType !== "action") return;
-    const actionId = card.dataset.actionId;
-    if (!actionId) return;
-    card.classList.toggle("is-selected");
-    if (card.classList.contains("is-selected")) {
-      selectedIds.add(actionId);
-    } else {
-      selectedIds.delete(actionId);
+    if (!card) return;
+    const itemType = card.dataset.energyItemType;
+    if (itemType === "action") {
+      const actionId = card.dataset.actionId;
+      if (!actionId) return;
+      card.classList.toggle("is-selected");
+      if (card.classList.contains("is-selected")) {
+        selectedIds.add(actionId);
+      } else {
+        selectedIds.delete(actionId);
+      }
+      updateGroupPanel();
+      return;
     }
-    updateGroupPanel();
+    if (itemType !== "group") return;
+
+    const groupName = card.dataset.groupName ?? "Группа";
+    const confirmUngroup = window.confirm(`Разгруппировать «${groupName}»?`);
+    if (!confirmUngroup) return;
+
+    let groupItems = [];
+    if (card.dataset.groupItems) {
+      try {
+        groupItems = JSON.parse(card.dataset.groupItems);
+      } catch (error) {
+        groupItems = [];
+      }
+    }
+    if (!Array.isArray(groupItems) || groupItems.length === 0) return;
+
+    const parent = card.parentElement;
+    if (!parent) return;
+    const insertBeforeNode = card.nextSibling;
+    card.remove();
+    groupItems.forEach((actionId) => {
+      const action = actionsMap.get(actionId);
+      if (!action) return;
+      const actionCard = createEnergyActionCard(action);
+      if (insertBeforeNode) {
+        parent.insertBefore(actionCard, insertBeforeNode);
+      } else {
+        parent.appendChild(actionCard);
+      }
+    });
+    fitActionTitleTexts(gridEl);
+    scheduleLayoutSave();
   });
 
   const dragState = {

@@ -515,9 +515,63 @@ function buildEnergyLayoutFromDom(gridEl) {
   return layout;
 }
 
+const normalizeOrganizationName = (value = "") =>
+  String(value)
+    .trim()
+    .toLowerCase()
+    .replace(/[«»"'`]/g, "")
+    .replace(/[^\p{L}\p{N}\s-]+/gu, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+const normalizeOrganizationFolder = (value = "") =>
+  sanitizeOrganizationFolderName(value).toLowerCase();
+
+function pickOrganizationShortName(orgData, orgName) {
+  if (!orgName) return "Организация";
+  const targetName = normalizeOrganizationName(orgName);
+  const targetFolder = normalizeOrganizationFolder(orgName);
+  const organizations = orgData?.organizations ?? [];
+
+  const exactMatch =
+    organizations.find((org) => {
+      const fullName = normalizeOrganizationName(org.full_name);
+      const fullFolder = normalizeOrganizationFolder(org.full_name);
+      return fullName === targetName || fullFolder === targetFolder;
+    }) ??
+    organizations.find((org) => {
+      const shortName = normalizeOrganizationName(org.short_name);
+      const shortFolder = normalizeOrganizationFolder(org.short_name);
+      return shortName === targetName || shortFolder === targetFolder;
+    });
+
+  if (exactMatch?.short_name) {
+    return exactMatch.short_name;
+  }
+
+  const fuzzyMatch = organizations.find((org) => {
+    const fullName = normalizeOrganizationName(org.full_name);
+    const shortName = normalizeOrganizationName(org.short_name);
+    const fullFolder = normalizeOrganizationFolder(org.full_name);
+    const shortFolder = normalizeOrganizationFolder(org.short_name);
+    return (
+      (shortName && targetName.includes(shortName)) ||
+      (fullName && targetName.includes(fullName)) ||
+      (shortName && shortName.includes(targetName)) ||
+      (fullName && fullName.includes(targetName)) ||
+      (shortFolder && targetFolder.includes(shortFolder)) ||
+      (fullFolder && fullFolder.includes(targetFolder))
+    );
+  });
+
+  return fuzzyMatch?.short_name ?? orgName;
+}
+
 async function resolveOrganizationShortName(orgName) {
   if (!orgName) return "Организация";
-  const orgData = await loadJson(orgFilePath);
+  const orgData = await loadJson(orgFilePath).catch(() => ({ organizations: [] }));
+  return pickOrganizationShortName(orgData, orgName);
+  /*
   const normalizeName = (value = "") =>
     String(value)
       .trim()
@@ -552,7 +606,7 @@ async function resolveOrganizationShortName(orgName) {
       (fullFolder && targetFolder.includes(fullFolder))
     );
   });
-  return match?.short_name ?? orgName;
+  */
 }
 
 function sanitizeOrganizationFolderName(name = "") {
@@ -563,6 +617,7 @@ function sanitizeOrganizationFolderName(name = "") {
 
 async function resolveUserOrganizationShortName(user) {
   const usersData = await loadJson(usersFilePath).catch(() => ({ users: [] }));
+  const orgData = await loadJson(orgFilePath).catch(() => ({ organizations: [] }));
   const telegramIdKey = normalizeTelegramId(user?.telegram_id);
   let matchedUser = null;
 
@@ -583,7 +638,7 @@ async function resolveUserOrganizationShortName(user) {
 
   const organizationName =
     matchedUser?.organization ?? user?.organization ?? "Организация";
-  return resolveOrganizationShortName(organizationName);
+  return pickOrganizationShortName(orgData, organizationName);
 }
 
 async function setupEnergyDashboard(user) {

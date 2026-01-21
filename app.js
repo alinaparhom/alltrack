@@ -642,6 +642,8 @@ async function setupEnergyDashboard(user) {
   let blockClick = false;
   const selectedIds = new Set();
   let saveTimer = null;
+  let saveChain = Promise.resolve();
+  let saveRequested = false;
 
   const updateGroupPanel = () => {
     if (selectedCountEl) {
@@ -687,15 +689,27 @@ async function setupEnergyDashboard(user) {
     await saveJson(settingsPath, settingsData);
   };
 
+  const queueLayoutSave = () => {
+    saveRequested = true;
+    saveChain = saveChain
+      .then(async () => {
+        if (!saveRequested) return;
+        saveRequested = false;
+        await saveLayout();
+      })
+      .catch((error) => {
+        console.warn("Не удалось сохранить порядок плашек.", error);
+      });
+  };
+
   const scheduleLayoutSave = () => {
+    queueLayoutSave();
     if (saveTimer) {
       window.clearTimeout(saveTimer);
     }
     saveTimer = window.setTimeout(() => {
-      saveLayout().catch((error) => {
-        console.warn("Не удалось сохранить порядок плашек.", error);
-      });
-    }, 350);
+      queueLayoutSave();
+    }, 300);
   };
 
   if (groupToggle) {

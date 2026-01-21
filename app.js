@@ -1165,6 +1165,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const dragState = {
     item: null,
     pointerId: null,
+    pointerType: null,
     holdTimer: null,
     isDragging: false,
     pointerStartX: 0,
@@ -1224,6 +1225,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
     dragState.item = null;
     dragState.pointerId = null;
+    dragState.pointerType = null;
   };
 
   const updateDragTransform = (clientX, clientY) => {
@@ -1236,12 +1238,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
   gridEl.addEventListener("pointerdown", (event) => {
     if (isGrouping) return;
-    if (event.pointerType === "touch") return;
     const card = event.target.closest("[data-energy-item]");
     if (!card) return;
     const rect = card.getBoundingClientRect();
     dragState.item = card;
     dragState.pointerId = event.pointerId;
+    dragState.pointerType = event.pointerType;
     dragState.pointerStartX = event.clientX;
     dragState.pointerStartY = event.clientY;
     dragState.lastPointerX = event.clientX;
@@ -1255,7 +1257,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       gridEl.classList.add("is-dragging");
       card.setPointerCapture(dragState.pointerId);
       updateDragTransform(dragState.lastPointerX, dragState.lastPointerY);
-    }, 200);
+    }, event.pointerType === "touch" ? 280 : 200);
   });
 
   gridEl.addEventListener("pointermove", (event) => {
@@ -1271,6 +1273,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         dragState.holdTimer = null;
       }
       return;
+    }
+    if (event.cancelable && dragState.pointerType === "touch") {
+      event.preventDefault();
     }
     if (dragState.rafId) {
       cancelAnimationFrame(dragState.rafId);

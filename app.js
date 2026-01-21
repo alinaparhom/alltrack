@@ -52,6 +52,7 @@ let currentUser = null;
 let currentUserLabel = "";
 let currentPreferences = { ...defaultPreferences };
 let currentSettingsContext = null;
+let pendingGroupingStart = false;
 
 function withCacheBuster(path) {
   if (!cacheBuster) return path;
@@ -374,7 +375,7 @@ function renderUserSettingsView(user, preferences) {
       <form class="form-grid" data-settings-form>
         <div class="settings-section">
           <div class="settings-section-title">Вид значков на странице</div>
-          <div class="toggle-group">
+          <div class="toggle-group toggle-group--visual">
             <label>
               <input
                 class="toggle-input"
@@ -383,7 +384,20 @@ function renderUserSettingsView(user, preferences) {
                 value="icon-only"
                 ${normalized.iconStyle === "icon-only" ? "checked" : ""}
               />
-              <span class="toggle-option">Только значок</span>
+              <span class="toggle-option toggle-option--visual">
+                <span class="toggle-visual toggle-visual--icon-only">
+                  <span class="toggle-visual-tile">
+                    <span class="toggle-visual-icon"></span>
+                  </span>
+                  <span class="toggle-visual-tile">
+                    <span class="toggle-visual-icon"></span>
+                  </span>
+                  <span class="toggle-visual-tile">
+                    <span class="toggle-visual-icon"></span>
+                  </span>
+                </span>
+                <span class="toggle-label">Только значок</span>
+              </span>
             </label>
             <label>
               <input
@@ -393,7 +407,19 @@ function renderUserSettingsView(user, preferences) {
                 value="icon-title"
                 ${normalized.iconStyle === "icon-title" ? "checked" : ""}
               />
-              <span class="toggle-option">Значок и название</span>
+              <span class="toggle-option toggle-option--visual">
+                <span class="toggle-visual toggle-visual--icon-title">
+                  <span class="toggle-visual-tile">
+                    <span class="toggle-visual-icon"></span>
+                    <span class="toggle-visual-line"></span>
+                  </span>
+                  <span class="toggle-visual-tile">
+                    <span class="toggle-visual-icon"></span>
+                    <span class="toggle-visual-line"></span>
+                  </span>
+                </span>
+                <span class="toggle-label">Значок и название</span>
+              </span>
             </label>
             <label>
               <input
@@ -403,44 +429,33 @@ function renderUserSettingsView(user, preferences) {
                 value="icon-title-below"
                 ${normalized.iconStyle === "icon-title-below" ? "checked" : ""}
               />
-              <span class="toggle-option">Название под значком</span>
+              <span class="toggle-option toggle-option--visual">
+                <span class="toggle-visual toggle-visual--icon-title-below">
+                  <span class="toggle-visual-tile">
+                    <span class="toggle-visual-icon"></span>
+                    <span class="toggle-visual-line"></span>
+                  </span>
+                  <span class="toggle-visual-tile">
+                    <span class="toggle-visual-icon"></span>
+                    <span class="toggle-visual-line"></span>
+                  </span>
+                </span>
+                <span class="toggle-label">Название под значком</span>
+              </span>
             </label>
           </div>
         </div>
         <div class="settings-section">
-          <div class="settings-section-title">Группировка плашек</div>
-          <div class="toggle-group">
-            <label>
-              <input
-                class="toggle-input"
-                type="radio"
-                name="grouping"
-                value="none"
-                ${normalized.grouping === "none" ? "checked" : ""}
-              />
-              <span class="toggle-option">Без группировки</span>
-            </label>
-            <label>
-              <input
-                class="toggle-input"
-                type="radio"
-                name="grouping"
-                value="free"
-                ${normalized.grouping === "free" ? "checked" : ""}
-              />
-              <span class="toggle-option">Группы и отдельные</span>
-            </label>
-            <label>
-              <input
-                class="toggle-input"
-                type="radio"
-                name="grouping"
-                value="all-group"
-                ${normalized.grouping === "all-group" ? "checked" : ""}
-              />
-              <span class="toggle-option">Все в одну группу</span>
-            </label>
-          </div>
+          <div class="settings-section-title">Группировка функций</div>
+          <input type="hidden" name="grouping" value="free" />
+          <button
+            class="settings-group-button"
+            type="button"
+            data-settings-grouping
+          >
+            <span class="settings-group-icon" aria-hidden="true">🧩</span>
+            <span>Группировка</span>
+          </button>
         </div>
         <div class="settings-section">
           <div class="settings-section-title">Тема</div>
@@ -1011,6 +1026,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       updateGroupPanel();
     }
   };
+
+  if (allowGrouping && pendingGroupingStart) {
+    setGroupingState(true);
+    pendingGroupingStart = false;
+  }
 
   const saveLayout = async () => {
     const layout = buildEnergyLayoutFromDom(gridEl);
@@ -1600,6 +1620,8 @@ async function showUserSettings() {
   const backButton = contentEl.querySelector("[data-settings-back]");
   const formEl = contentEl.querySelector("[data-settings-form]");
   const messageEl = contentEl.querySelector("[data-settings-message]");
+  const groupingButton = contentEl.querySelector("[data-settings-grouping]");
+  const groupingInput = formEl?.querySelector("[name='grouping']");
   let messageTimer = null;
 
   const updateMessage = (text) => {
@@ -1631,11 +1653,23 @@ async function showUserSettings() {
     renderUserRoleView();
   };
 
+  const handleGroupingClick = async () => {
+    if (groupingInput) {
+      groupingInput.value = "free";
+    }
+    pendingGroupingStart = true;
+    await handleFormChange();
+    renderUserRoleView();
+  };
+
   if (settingsBackButtonEl) {
     settingsBackButtonEl.onclick = handleBack;
   }
   if (backButton) {
     backButton.onclick = handleBack;
+  }
+  if (groupingButton) {
+    groupingButton.onclick = handleGroupingClick;
   }
   formEl?.addEventListener("change", handleFormChange);
 }

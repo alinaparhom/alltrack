@@ -1182,60 +1182,100 @@ function buildEnergySettingsMarkup(settings) {
     .join("");
 
   return `
-    <div class="settings-block">
-      <div class="settings-block__title">Права доступа</div>
-      <div class="settings-block__hint">
-        Для каждой роли отметьте плашки, которые можно использовать.
-      </div>
-      <div class="settings-list">${accessMarkup}</div>
-    </div>
-    <div class="settings-block">
-      <div class="settings-block__title">Группы СТЦ</div>
-      <div class="settings-block__hint">
-        Укажите, на какие группы делятся МТЦ.
-      </div>
-      <div class="settings-row settings-row--columns">
-        <input
-          class="form-input"
-          type="text"
-          inputmode="text"
-          placeholder="Например, Склад, Цех, Вахта"
-          data-energy-group-input
-        />
-        <button class="action-secondary" type="button" data-energy-group-add>
-          Добавить
-        </button>
-      </div>
-      <div class="settings-inline" data-energy-group-list>
-        ${groupChips}
-      </div>
-    </div>
-    <div class="settings-block">
-      <div class="settings-block__title">Штрафы</div>
-      <div class="settings-block__hint">
-        Выберите виды штрафов, срок ответа и сумму.
-      </div>
-      <div class="settings-table">
-        <div class="settings-table__row settings-table__header">
-          <div>Вид штрафа</div>
-          <div>Дней на ответ</div>
-          <div>Размер</div>
+    <div class="settings-accordion is-open" data-settings-accordion>
+      <button
+        class="settings-accordion__header"
+        type="button"
+        data-settings-accordion-toggle
+        aria-expanded="true"
+      >
+        <span class="settings-accordion__title">Права доступа</span>
+        <span class="settings-accordion__icon" aria-hidden="true">⌄</span>
+      </button>
+      <div class="settings-accordion__content">
+        <div class="settings-accordion__hint">
+          Для каждой роли отметьте плашки, которые можно использовать.
         </div>
-        ${finesMarkup}
+        <div class="settings-list">${accessMarkup}</div>
       </div>
     </div>
-    <div class="settings-block">
-      <div class="settings-block__title">Рассылки</div>
-      <div class="settings-block__hint">
-        Настройте, какие рассылки активны, в какие дни и во сколько.
-      </div>
-      <div class="settings-table">
-        <div class="settings-table__row settings-table__header">
-          <div>Тип рассылки</div>
-          <div>День</div>
-          <div>Время</div>
+    <div class="settings-accordion" data-settings-accordion>
+      <button
+        class="settings-accordion__header"
+        type="button"
+        data-settings-accordion-toggle
+        aria-expanded="false"
+      >
+        <span class="settings-accordion__title">Группы МТЦ</span>
+        <span class="settings-accordion__icon" aria-hidden="true">⌄</span>
+      </button>
+      <div class="settings-accordion__content">
+        <div class="settings-accordion__hint">
+          Укажите, на какие группы делятся МТЦ.
         </div>
-        ${mailingsMarkup}
+        <div class="settings-row settings-row--columns">
+          <input
+            class="form-input"
+            type="text"
+            inputmode="text"
+            placeholder="Например, Склад, Цех, Вахта"
+            data-energy-group-input
+          />
+          <button class="action-secondary" type="button" data-energy-group-add>
+            Добавить
+          </button>
+        </div>
+        <div class="settings-inline" data-energy-group-list>
+          ${groupChips}
+        </div>
+      </div>
+    </div>
+    <div class="settings-accordion" data-settings-accordion>
+      <button
+        class="settings-accordion__header"
+        type="button"
+        data-settings-accordion-toggle
+        aria-expanded="false"
+      >
+        <span class="settings-accordion__title">Штрафы</span>
+        <span class="settings-accordion__icon" aria-hidden="true">⌄</span>
+      </button>
+      <div class="settings-accordion__content">
+        <div class="settings-accordion__hint">
+          Выберите виды штрафов, срок ответа и сумму.
+        </div>
+        <div class="settings-table">
+          <div class="settings-table__row settings-table__header">
+            <div>Вид штрафа</div>
+            <div>Дней на ответ</div>
+            <div>Размер</div>
+          </div>
+          ${finesMarkup}
+        </div>
+      </div>
+    </div>
+    <div class="settings-accordion" data-settings-accordion>
+      <button
+        class="settings-accordion__header"
+        type="button"
+        data-settings-accordion-toggle
+        aria-expanded="false"
+      >
+        <span class="settings-accordion__title">Рассылки</span>
+        <span class="settings-accordion__icon" aria-hidden="true">⌄</span>
+      </button>
+      <div class="settings-accordion__content">
+        <div class="settings-accordion__hint">
+          Настройте, какие рассылки активны, в какие дни и во сколько.
+        </div>
+        <div class="settings-table">
+          <div class="settings-table__row settings-table__header">
+            <div>Тип рассылки</div>
+            <div>День</div>
+            <div>Время</div>
+          </div>
+          ${mailingsMarkup}
+        </div>
       </div>
     </div>
   `;
@@ -1498,6 +1538,18 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     settingsBodyEl.innerHTML = buildEnergySettingsMarkup({
       ...organizationSettings,
       stcGroups: settingsGroups,
+    });
+    const accordionItems = settingsBodyEl.querySelectorAll(
+      "[data-settings-accordion]"
+    );
+    accordionItems.forEach((accordion) => {
+      const toggle = accordion.querySelector("[data-settings-accordion-toggle]");
+      if (!toggle) return;
+      toggle.addEventListener("click", () => {
+        const nextState = !accordion.classList.contains("is-open");
+        accordion.classList.toggle("is-open", nextState);
+        toggle.setAttribute("aria-expanded", String(nextState));
+      });
     });
     const groupInput = settingsBodyEl.querySelector("[data-energy-group-input]");
     const groupAddButton = settingsBodyEl.querySelector(

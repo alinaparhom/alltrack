@@ -76,6 +76,7 @@
       body[data-theme="dark"] .toggle-option,
       body[data-theme="dark"] .toggle-visual-tile,
       body[data-theme="dark"] .settings-group-button,
+      body[data-theme="dark"] .settings-accordion,
       body[data-theme="dark"] .button-icon,
       body[data-theme="dark"] .button-secondary,
       body[data-theme="dark"] .registration-note,
@@ -1087,7 +1088,7 @@
         inset: 0;
         display: grid;
         place-items: center;
-        padding: 18px;
+        padding: 0;
         z-index: 20;
       }
 
@@ -1100,10 +1101,11 @@
 
       .settings-modal__panel {
         position: relative;
-        width: min(100%, 620px);
-        max-height: 90vh;
+        width: 100%;
+        height: 100%;
+        max-height: 100%;
         overflow: hidden;
-        border-radius: 24px;
+        border-radius: 0;
         background: rgba(255, 255, 255, 0.9);
         border: 1px solid rgba(226, 232, 240, 0.9);
         box-shadow: 0 20px 60px rgba(15, 23, 42, 0.2);
@@ -1111,17 +1113,17 @@
       }
 
       .settings-modal__header {
-        display: flex;
-        align-items: flex-start;
-        justify-content: space-between;
-        gap: 16px;
-        padding: 20px 22px 12px;
+        position: relative;
+        display: grid;
+        gap: 8px;
+        padding: 28px 24px 16px;
         border-bottom: 1px solid rgba(226, 232, 240, 0.7);
       }
 
       .settings-modal__title h2 {
-        margin: 10px 0 6px;
-        font-size: var(--text-lg);
+        margin: 0;
+        font-size: var(--text-xl);
+        font-weight: 700;
         color: var(--text);
       }
 
@@ -1134,34 +1136,75 @@
 
       .settings-modal__form {
         display: grid;
+        grid-template-rows: 1fr auto auto;
         gap: 12px;
         padding: 16px 22px 20px;
+        min-height: 0;
       }
 
       .settings-modal__body {
         display: grid;
         gap: 16px;
         overflow-y: auto;
-        max-height: calc(90vh - 180px);
         padding-right: 6px;
+        min-height: 0;
       }
 
-      .settings-block {
-        padding: 14px;
+      .settings-accordion {
+        padding: 16px;
         border-radius: 18px;
         border: 1px solid rgba(226, 232, 240, 0.9);
         background: rgba(255, 255, 255, 0.75);
         display: grid;
+        gap: 12px;
+      }
+
+      .settings-accordion__header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        border: none;
+        background: transparent;
+        padding: 0;
+        text-align: left;
+        cursor: pointer;
+        color: inherit;
+        font: inherit;
+      }
+
+      .settings-accordion__title {
+        font-size: var(--text-md);
+        font-weight: 700;
+        color: var(--text);
+      }
+
+      .settings-accordion__icon {
+        width: 28px;
+        height: 28px;
+        border-radius: 10px;
+        background: var(--accent-soft);
+        color: var(--accent);
+        display: grid;
+        place-items: center;
+        font-size: 14px;
+        transition: transform 0.2s ease;
+      }
+
+      .settings-accordion.is-open .settings-accordion__icon {
+        transform: rotate(180deg);
+      }
+
+      .settings-accordion__content {
+        display: none;
         gap: 10px;
       }
 
-      .settings-block__title {
-        font-size: var(--text-md);
-        font-weight: 700;
-        color: var(--title-muted);
+      .settings-accordion.is-open .settings-accordion__content {
+        display: grid;
       }
 
-      .settings-block__hint {
+      .settings-accordion__hint {
         font-size: var(--text-sm);
         color: var(--muted);
         line-height: 1.5;
@@ -1261,9 +1304,21 @@
         flex-wrap: wrap;
       }
 
+      .icon-button--danger {
+        border-color: rgba(248, 113, 113, 0.4);
+        background: rgba(248, 113, 113, 0.12);
+        color: #e03a3a;
+      }
+
+      .settings-modal__close {
+        position: absolute;
+        top: 16px;
+        right: 16px;
+      }
+
       @media (max-width: 520px) {
         .settings-modal__panel {
-          border-radius: 20px;
+          border-radius: 0;
         }
 
         .settings-table__row {
@@ -1271,8 +1326,7 @@
         }
 
         .settings-modal__header {
-          flex-direction: column;
-          align-items: flex-start;
+          padding-top: 36px;
         }
 
         .settings-modal__footer {

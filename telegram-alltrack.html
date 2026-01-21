@@ -176,7 +176,7 @@
       }
 
       body[data-icon-style="icon-title-below"] .action-card .action-title {
-        font-size: var(--text-sm);
+        font-size: clamp(11px, 2.8vw, var(--text-sm));
         color: var(--title-muted);
       }
 
@@ -447,9 +447,17 @@
       }
 
       .action-title {
-        font-size: var(--text-md);
+        flex: 1;
+        min-width: 0;
+        font-size: clamp(12px, 2.7vw, var(--text-md));
         font-weight: 700;
         color: var(--title-muted);
+        line-height: 1.2;
+        word-break: break-word;
+        overflow: hidden;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
       }
 
       .energy-dashboard {
@@ -578,9 +586,14 @@
       }
 
       .group-title {
-        font-size: var(--text-md);
+        font-size: clamp(12px, 2.6vw, var(--text-md));
         font-weight: 700;
         color: var(--title-muted);
+        line-height: 1.2;
+        overflow: hidden;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
       }
 
       .group-subtitle {

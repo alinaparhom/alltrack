@@ -561,6 +561,31 @@ function sanitizeOrganizationFolderName(name = "") {
   return cleaned.replace(/\s+/g, " ").trim();
 }
 
+async function resolveUserOrganizationShortName(user) {
+  const usersData = await loadJson(usersFilePath).catch(() => ({ users: [] }));
+  const telegramIdKey = normalizeTelegramId(user?.telegram_id);
+  let matchedUser = null;
+
+  if (telegramIdKey) {
+    matchedUser = usersData.users?.find(
+      (item) => normalizeTelegramId(item.telegram_id) === telegramIdKey
+    );
+  }
+
+  if (!matchedUser) {
+    matchedUser = usersData.users?.find(
+      (item) =>
+        item.full_name === user?.full_name &&
+        item.organization === user?.organization &&
+        item.role === user?.role
+    );
+  }
+
+  const organizationName =
+    matchedUser?.organization ?? user?.organization ?? "Организация";
+  return resolveOrganizationShortName(organizationName);
+}
+
 async function setupEnergyDashboard(user) {
   const gridEl = contentEl.querySelector("[data-energy-grid]");
   if (!gridEl) return;
@@ -571,7 +596,7 @@ async function setupEnergyDashboard(user) {
   const selectedCountEl = contentEl.querySelector("[data-energy-selected-count]");
 
   const actionsMap = new Map(energyActions.map((action) => [action.id, action]));
-  const orgShortName = await resolveOrganizationShortName(user.organization);
+  const orgShortName = await resolveUserOrganizationShortName(user);
   const orgFolderName =
     sanitizeOrganizationFolderName(orgShortName) || "Организация";
   const settingsPath = `./${orgFolderName}/Настройки.json`;

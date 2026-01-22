@@ -96,7 +96,18 @@ let currentUserLabel = "";
 let currentPreferences = { ...defaultPreferences };
 let currentSettingsContext = null;
 let pendingGroupingStart = false;
-const energyDashboardRoles = new Set([energyRole, responsibleRole]);
+const energyDashboardRoles = new Set([
+  energyRole,
+  responsibleRole,
+  chiefEngineerRole,
+  leaderRole,
+  accountingRole,
+]);
+const energyResponsibleAccessRoles = new Set([
+  chiefEngineerRole,
+  leaderRole,
+  accountingRole,
+]);
 
 function withCacheBuster(path) {
   if (!cacheBuster) return path;
@@ -1379,6 +1390,13 @@ async function resolveUserOrganizationShortName(user) {
   return pickOrganizationShortName(orgData, organizationName);
 }
 
+function resolveEnergyAccessRole(role) {
+  if (energyResponsibleAccessRoles.has(role)) {
+    return responsibleRole;
+  }
+  return role;
+}
+
 async function setupEnergyDashboard(user, preferences, contextOverride) {
   const gridEl = contentEl.querySelector("[data-energy-grid]");
   if (!gridEl) return;
@@ -1398,7 +1416,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const context = contextOverride || (await resolveUserSettingsContext(user));
   const settingsData = context.settingsData;
   const organizationSettings = getEnergyOrganizationSettings(settingsData);
-  const accessList = organizationSettings.access?.[user.role];
+  const accessRole = resolveEnergyAccessRole(user.role);
+  const accessList = organizationSettings.access?.[accessRole];
   const hasAccessConfig = Array.isArray(accessList);
   const availableActions = hasAccessConfig
     ? energyActions.filter((action) => accessList.includes(action.id))

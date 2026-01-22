@@ -49,12 +49,10 @@ const defaultPreferences = {
   theme: "telegram",
 };
 const energySettingsRoles = [
-  superAdminRole,
   responsibleRole,
   chiefEngineerRole,
   leaderRole,
   accountingRole,
-  energyRole,
 ];
 const energyFineOptions = [
   { id: "lateReply", title: "Поздний ответ", defaultDays: 3, defaultAmount: 0 },
@@ -1084,9 +1082,19 @@ function buildEnergySettingsMarkup(settings) {
         })
         .join("");
       return `
-        <div class="settings-row" data-access-role="${roleKey}">
-          <span class="settings-chip">${escapeHtml(role)}</span>
-          <div class="settings-tag-grid">${actionMarkup}</div>
+        <div class="settings-role" data-access-role="${roleKey}">
+          <button
+            class="settings-role__header"
+            type="button"
+            data-access-role-toggle
+            aria-expanded="false"
+          >
+            <span class="settings-chip">${escapeHtml(role)}</span>
+            <span class="settings-role__icon" aria-hidden="true">⌄</span>
+          </button>
+          <div class="settings-role__content">
+            <div class="settings-tag-grid">${actionMarkup}</div>
+          </div>
         </div>
       `;
     })
@@ -1193,9 +1201,6 @@ function buildEnergySettingsMarkup(settings) {
         <span class="settings-accordion__icon" aria-hidden="true">⌄</span>
       </button>
       <div class="settings-accordion__content">
-        <div class="settings-accordion__hint">
-          Для каждой роли отметьте плашки, которые можно использовать.
-        </div>
         <div class="settings-list">${accessMarkup}</div>
       </div>
     </div>
@@ -1550,6 +1555,18 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       toggle.addEventListener("click", () => {
         const nextState = !accordion.classList.contains("is-open");
         accordion.classList.toggle("is-open", nextState);
+        toggle.setAttribute("aria-expanded", String(nextState));
+      });
+    });
+    const accessRoles = settingsBodyEl.querySelectorAll("[data-access-role]");
+    accessRoles.forEach((role) => {
+      const toggle = role.querySelector("[data-access-role-toggle]");
+      if (!toggle) return;
+      role.classList.remove("is-open");
+      toggle.setAttribute("aria-expanded", "false");
+      toggle.addEventListener("click", () => {
+        const nextState = !role.classList.contains("is-open");
+        role.classList.toggle("is-open", nextState);
         toggle.setAttribute("aria-expanded", String(nextState));
       });
     });

@@ -229,6 +229,8 @@ function createOrganizationFolders(array $newOrganizations): void {
     "Акты ремонтов",
     "Фото поломок",
     "Фото отказов",
+    "Накладные покупка",
+    "Накладные перемещения",
   ];
 
   foreach ($newOrganizations as $orgShortName) {

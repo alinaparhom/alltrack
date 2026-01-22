@@ -1115,8 +1115,8 @@
       .settings-modal__header {
         position: relative;
         display: grid;
-        gap: 6px;
-        padding: calc(80px + env(safe-area-inset-top)) 20px 10px;
+        gap: 4px;
+        padding: calc(56px + env(safe-area-inset-top)) 18px 6px;
         border-bottom: 1px solid rgba(226, 232, 240, 0.7);
       }
 
@@ -1137,26 +1137,26 @@
       .settings-modal__form {
         display: grid;
         grid-template-rows: 1fr auto auto;
-        gap: 8px;
-        padding: 10px 16px 12px;
+        gap: 6px;
+        padding: 6px 14px 10px;
         min-height: 0;
       }
 
       .settings-modal__body {
         display: grid;
-        gap: 8px;
+        gap: 4px;
         overflow-y: auto;
         padding-right: 2px;
         min-height: 0;
       }
 
       .settings-accordion {
-        padding: 8px 10px;
+        padding: 4px 8px;
         border-radius: 16px;
         border: 1px solid rgba(226, 232, 240, 0.9);
         background: rgba(255, 255, 255, 0.75);
         display: grid;
-        gap: 4px;
+        gap: 2px;
       }
 
       .settings-accordion__header {
@@ -1166,29 +1166,29 @@
         gap: 10px;
         border: none;
         background: transparent;
-        padding: 4px 0;
+        padding: 2px 0;
         text-align: left;
         cursor: pointer;
         color: inherit;
         font: inherit;
-        min-height: 36px;
+        min-height: 20px;
       }
 
       .settings-accordion__title {
-        font-size: 15px;
+        font-size: 14px;
         font-weight: 700;
         color: var(--text);
       }
 
       .settings-accordion__icon {
-        width: 28px;
-        height: 28px;
+        width: 20px;
+        height: 20px;
         border-radius: 10px;
         background: var(--accent-soft);
         color: var(--accent);
         display: grid;
         place-items: center;
-        font-size: 14px;
+        font-size: 12px;
         transition: transform 0.2s ease;
       }
 
@@ -1198,7 +1198,7 @@
 
       .settings-accordion__content {
         display: none;
-        gap: 8px;
+        gap: 6px;
       }
 
       .settings-accordion.is-open .settings-accordion__content {

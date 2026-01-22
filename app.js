@@ -2389,16 +2389,29 @@ function setupSuperAdmin() {
     }
   };
 
+  const getCollectionCount = (data, fallbackKey) => {
+    if (Array.isArray(data)) return data.length;
+    if (!data || typeof data !== "object") return 0;
+    const collection = data[fallbackKey];
+    return Array.isArray(collection) ? collection.length : 0;
+  };
+
   const updateStats = async () => {
     try {
       const [orgData, usersData] = await Promise.all([
         loadJson(orgFilePath),
         loadJson(usersFilePath),
       ]);
-      if (orgCountEl) orgCountEl.textContent = orgData.organizations?.length ?? 0;
-      if (userCountEl) userCountEl.textContent = usersData.users?.length ?? 0;
+      if (orgCountEl) {
+        orgCountEl.textContent = getCollectionCount(orgData, "organizations");
+      }
+      if (userCountEl) {
+        userCountEl.textContent = getCollectionCount(usersData, "users");
+      }
     } catch (error) {
       console.error(error);
+      if (orgCountEl) orgCountEl.textContent = "0";
+      if (userCountEl) userCountEl.textContent = "0";
     }
   };
 

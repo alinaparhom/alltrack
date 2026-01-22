@@ -1122,32 +1122,49 @@ function buildEnergySettingsMarkup(settings) {
   const finesMarkup = energyFineOptions
     .map((option) => {
       const fine = settings.fines?.[option.id] ?? {};
+      const hasDaysField = option.id !== "movedByEnergy";
       return `
-        <div class="settings-table__row">
-          <label class="settings-inline">
-            <input
-              type="checkbox"
-              name="fine-${option.id}-enabled"
-              ${fine.enabled ? "checked" : ""}
-            />
-            <span>${escapeHtml(option.title)}</span>
-          </label>
-          <input
-            class="form-input"
-            type="number"
-            min="0"
-            inputmode="numeric"
-            name="fine-${option.id}-days"
-            value="${escapeHtml(fine.days ?? 0)}"
-          />
-          <input
-            class="form-input"
-            type="number"
-            min="0"
-            inputmode="numeric"
-            name="fine-${option.id}-amount"
-            value="${escapeHtml(fine.amount ?? 0)}"
-          />
+        <div class="settings-fine-card">
+          <div class="settings-fine-card__header">
+            <label class="settings-inline">
+              <input
+                type="checkbox"
+                name="fine-${option.id}-enabled"
+                ${fine.enabled ? "checked" : ""}
+              />
+              <span>${escapeHtml(option.title)}</span>
+            </label>
+          </div>
+          <div class="settings-fine-card__fields">
+            ${
+              hasDaysField
+                ? `
+                  <label class="settings-fine-field">
+                    <span>Срок</span>
+                    <input
+                      class="form-input"
+                      type="number"
+                      min="0"
+                      inputmode="numeric"
+                      name="fine-${option.id}-days"
+                      value="${escapeHtml(fine.days ?? 0)}"
+                    />
+                  </label>
+                `
+                : ""
+            }
+            <label class="settings-fine-field">
+              <span>Размер</span>
+              <input
+                class="form-input"
+                type="number"
+                min="0"
+                inputmode="numeric"
+                name="fine-${option.id}-amount"
+                value="${escapeHtml(fine.amount ?? 0)}"
+              />
+            </label>
+          </div>
         </div>
       `;
     })
@@ -1246,17 +1263,7 @@ function buildEnergySettingsMarkup(settings) {
         <span class="settings-accordion__icon" aria-hidden="true">⌄</span>
       </button>
       <div class="settings-accordion__content">
-        <div class="settings-accordion__hint">
-          Выберите виды штрафов, срок ответа и сумму.
-        </div>
-        <div class="settings-table">
-          <div class="settings-table__row settings-table__header">
-            <div>Вид штрафа</div>
-            <div>Дней на ответ</div>
-            <div>Размер</div>
-          </div>
-          ${finesMarkup}
-        </div>
+        <div class="settings-fines">${finesMarkup}</div>
       </div>
     </div>
     <div class="settings-accordion" data-settings-accordion>

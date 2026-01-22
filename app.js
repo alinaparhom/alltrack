@@ -96,6 +96,7 @@ let currentUserLabel = "";
 let currentPreferences = { ...defaultPreferences };
 let currentSettingsContext = null;
 let pendingGroupingStart = false;
+const energyDashboardRoles = new Set([energyRole, responsibleRole]);
 
 function withCacheBuster(path) {
   if (!cacheBuster) return path;
@@ -2239,6 +2240,7 @@ async function renderUserRoleView() {
   if (!currentUser) return;
   const renderRole = roleMap.get(currentUser.role);
   if (!renderRole) return;
+  const isEnergyDashboardRole = energyDashboardRoles.has(currentUser.role);
 
   const userName = formatShortName(currentUser.full_name);
   if (!currentUserLabel) {
@@ -2261,16 +2263,16 @@ async function renderUserRoleView() {
     superAdminStatEl.classList.toggle("is-hidden", currentUser.role !== superAdminRole);
   }
   if (energyPendingStatEl) {
-    energyPendingStatEl.classList.toggle("is-hidden", currentUser.role !== energyRole);
+    energyPendingStatEl.classList.toggle("is-hidden", !isEnergyDashboardRole);
   }
   document.body?.classList.toggle(
     "is-energy-role",
-    currentUser.role === energyRole
+    isEnergyDashboardRole
   );
   if (currentUser.role === superAdminRole) {
     setupSuperAdmin();
   }
-  if (currentUser.role === energyRole) {
+  if (isEnergyDashboardRole) {
     await setupEnergyDashboard(currentUser, currentPreferences, currentSettingsContext);
   }
 }

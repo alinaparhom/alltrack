@@ -1378,28 +1378,50 @@
         justify-content: flex-end;
       }
 
+      .objects-modal__panel {
+        width: min(520px, calc(100% - 16px));
+        height: auto;
+        max-height: calc(100vh - 16px);
+        border-radius: 16px;
+        grid-template-rows: auto minmax(0, 1fr);
+      }
+
       .objects-modal__header {
         grid-template-columns: minmax(0, 1fr) auto;
         align-items: start;
-        gap: 10px;
-        padding-bottom: 0;
+        gap: 6px;
+        padding: calc(12px + env(safe-area-inset-top)) 12px 4px;
         border-bottom: none;
       }
 
+      .objects-modal__header .settings-modal__title h2 {
+        font-size: 16px;
+      }
+
+      .objects-modal__header .settings-modal__title p {
+        font-size: 12px;
+        line-height: 1.2;
+      }
+
       .objects-modal__close {
-        margin-top: 2px;
+        margin-top: 0;
       }
 
       .objects-modal__body {
-        padding: 0 14px 10px;
-        gap: 4px;
+        padding: 0 10px 8px;
+        gap: 2px;
+      }
+
+      .objects-modal__body .form-message {
+        min-height: 0;
+        font-size: 11px;
       }
 
       .objects-form {
         display: grid;
-        gap: 4px;
+        gap: 2px;
         padding: 0;
-        border-radius: 14px;
+        border-radius: 12px;
         background: transparent;
         border: none;
         box-shadow: none;
@@ -1407,24 +1429,27 @@
 
       .objects-form__input {
         display: flex;
-        align-items: stretch;
-        gap: 6px;
+        align-items: center;
+        gap: 4px;
       }
 
       .objects-form__input .form-input {
         flex: 1;
-        height: 100%;
+        height: auto;
+        padding: 6px 10px;
+        border-radius: 10px;
+        font-size: 13px;
       }
 
       .objects-form__submit {
         border: 1px solid rgba(226, 232, 240, 0.9);
         background: rgba(255, 255, 255, 0.8);
         color: var(--accent);
-        height: 100%;
-        aspect-ratio: 1 / 1;
+        width: 32px;
+        height: 32px;
         padding: 0;
-        border-radius: 12px;
-        font-size: 20px;
+        border-radius: 10px;
+        font-size: 16px;
         font-weight: 700;
         display: grid;
         place-items: center;
@@ -1444,64 +1469,70 @@
       .objects-form__actions {
         display: flex;
         flex-wrap: wrap;
-        gap: 6px;
+        gap: 4px;
         justify-content: flex-end;
+      }
+
+      .objects-form__actions .action-secondary {
+        padding: 6px 10px;
+        font-size: 12px;
+        border-radius: 10px;
       }
 
       .objects-list {
         display: grid;
-        gap: 6px;
+        gap: 4px;
       }
 
       .objects-list__header {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        gap: 8px;
+        gap: 6px;
       }
 
       .objects-list__title {
-        font-size: 14px;
+        font-size: 12px;
         font-weight: 700;
         color: var(--text);
       }
 
       .objects-count {
-        padding: 4px 10px;
+        padding: 2px 6px;
         border-radius: 999px;
         background: var(--accent-soft);
         color: var(--accent);
-        font-size: 12px;
+        font-size: 10px;
         font-weight: 700;
       }
 
       .objects-list__items {
         display: grid;
-        gap: 6px;
-        padding: 6px;
-        border-radius: 12px;
+        gap: 4px;
+        padding: 4px;
+        border-radius: 10px;
         border: 1px solid rgba(226, 232, 240, 0.9);
         background: rgba(255, 255, 255, 0.7);
       }
 
       .objects-list__grid {
         display: grid;
-        gap: 4px;
+        gap: 2px;
       }
 
       .objects-item {
-        padding: 4px 8px;
-        border-radius: 10px;
+        padding: 2px 6px;
+        border-radius: 8px;
         border: 1px solid rgba(226, 232, 240, 0.9);
         background: rgba(255, 255, 255, 0.9);
         display: flex;
         align-items: center;
         justify-content: space-between;
-        gap: 6px;
+        gap: 4px;
       }
 
       .objects-item__name {
-        font-size: 12px;
+        font-size: 11px;
         font-weight: 600;
         color: var(--text);
         flex: 1;
@@ -1511,17 +1542,17 @@
       .objects-item__actions {
         display: flex;
         align-items: center;
-        gap: 3px;
+        gap: 2px;
       }
 
       .objects-item__button {
         border: 1px solid rgba(226, 232, 240, 0.9);
         background: rgba(255, 255, 255, 0.75);
         color: var(--title-muted);
-        font-size: 11px;
+        font-size: 10px;
         font-weight: 600;
-        width: 20px;
-        height: 20px;
+        width: 18px;
+        height: 18px;
         border-radius: 6px;
         display: grid;
         place-items: center;
@@ -1541,11 +1572,11 @@
       }
 
       .objects-empty {
-        padding: 14px;
-        border-radius: 16px;
+        padding: 8px;
+        border-radius: 12px;
         border: 1px dashed rgba(226, 232, 240, 0.9);
         background: rgba(255, 255, 255, 0.6);
-        font-size: 13px;
+        font-size: 12px;
         color: var(--muted);
         text-align: center;
       }

@@ -21,8 +21,9 @@ export const energyActions = [
 ];
 
 function renderActionCard(action) {
+  const settingsClass = action.id === "settings" ? " action-card--settings" : "";
   return `
-    <button class="action-card" type="button" data-energy-item data-energy-item-type="action" data-action-id="${action.id}">
+    <button class="action-card${settingsClass}" type="button" data-energy-item data-energy-item-type="action" data-action-id="${action.id}">
       <span class="action-icon">${action.icon}</span>
       <div class="action-title">${action.title}</div>
     </button>

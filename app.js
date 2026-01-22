@@ -902,6 +902,46 @@ function pickOrganizationShortName(orgData, orgName) {
   return fuzzyMatch?.short_name ?? orgName;
 }
 
+function pickOrganizationFullName(orgData, orgName) {
+  if (!orgName) return "Организация";
+  const targetName = normalizeOrganizationName(orgName);
+  const targetFolder = normalizeOrganizationFolder(orgName);
+  const organizations = orgData?.organizations ?? [];
+
+  const exactMatch =
+    organizations.find((org) => {
+      const fullName = normalizeOrganizationName(org.full_name);
+      const fullFolder = normalizeOrganizationFolder(org.full_name);
+      return fullName === targetName || fullFolder === targetFolder;
+    }) ??
+    organizations.find((org) => {
+      const shortName = normalizeOrganizationName(org.short_name);
+      const shortFolder = normalizeOrganizationFolder(org.short_name);
+      return shortName === targetName || shortFolder === targetFolder;
+    });
+
+  if (exactMatch?.full_name) {
+    return exactMatch.full_name;
+  }
+
+  const fuzzyMatch = organizations.find((org) => {
+    const fullName = normalizeOrganizationName(org.full_name);
+    const shortName = normalizeOrganizationName(org.short_name);
+    const fullFolder = normalizeOrganizationFolder(org.full_name);
+    const shortFolder = normalizeOrganizationFolder(org.short_name);
+    return (
+      (shortName && targetName.includes(shortName)) ||
+      (fullName && targetName.includes(fullName)) ||
+      (shortName && shortName.includes(targetName)) ||
+      (fullName && fullName.includes(targetName)) ||
+      (shortFolder && targetFolder.includes(shortFolder)) ||
+      (fullFolder && targetFolder.includes(fullFolder))
+    );
+  });
+
+  return fuzzyMatch?.full_name ?? orgName;
+}
+
 async function resolveOrganizationShortName(orgName) {
   if (!orgName) return "Организация";
   const orgData = await loadJson(orgFilePath).catch(() => ({ organizations: [] }));
@@ -1376,6 +1416,7 @@ function buildEnergySettingsMarkup(settings) {
 
 async function resolveUserSettingsContext(user) {
   const orgShortName = await resolveUserOrganizationShortName(user);
+  const orgFullName = await resolveUserOrganizationFullName(user);
   const orgFolderName =
     sanitizeOrganizationFolderName(orgShortName) || "Организация";
   const settingsPath = `./${orgFolderName}/Настройки.json`;
@@ -1385,6 +1426,7 @@ async function resolveUserSettingsContext(user) {
     await loadJson(settingsPath).catch(() => ({ users: {} }))
   );
   return {
+    orgFullName,
     orgShortName,
     orgFolderName,
     settingsPath,
@@ -1404,9 +1446,7 @@ async function saveUserPreferences(context, preferences) {
   return normalized;
 }
 
-async function resolveUserOrganizationShortName(user) {
-  const usersData = await loadJson(usersFilePath).catch(() => ({ users: [] }));
-  const orgData = await loadJson(orgFilePath).catch(() => ({ organizations: [] }));
+function findUserOrganizationName(user, usersData) {
   const telegramIdKey = normalizeTelegramId(user?.telegram_id);
   let matchedUser = null;
 
@@ -1425,9 +1465,21 @@ async function resolveUserOrganizationShortName(user) {
     );
   }
 
-  const organizationName =
-    matchedUser?.organization ?? user?.organization ?? "Организация";
+  return matchedUser?.organization ?? user?.organization ?? "Организация";
+}
+
+async function resolveUserOrganizationShortName(user) {
+  const usersData = await loadJson(usersFilePath).catch(() => ({ users: [] }));
+  const orgData = await loadJson(orgFilePath).catch(() => ({ organizations: [] }));
+  const organizationName = findUserOrganizationName(user, usersData);
   return pickOrganizationShortName(orgData, organizationName);
+}
+
+async function resolveUserOrganizationFullName(user) {
+  const usersData = await loadJson(usersFilePath).catch(() => ({ users: [] }));
+  const orgData = await loadJson(orgFilePath).catch(() => ({ organizations: [] }));
+  const organizationName = findUserOrganizationName(user, usersData);
+  return pickOrganizationFullName(orgData, organizationName);
 }
 
 function resolveEnergyAccessRole(role) {
@@ -1537,8 +1589,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const objectsNameInput = objectsFormEl?.querySelector("[name='object-name']");
 
   if (objectsSubtitleEl) {
-    const orgLabel = context.orgShortName ?? context.orgFolderName ?? "Организация";
-    objectsSubtitleEl.textContent = `Организация: ${orgLabel}`;
+    const orgLabel =
+      context.orgFullName ?? context.orgShortName ?? context.orgFolderName ?? "";
+    objectsSubtitleEl.textContent = orgLabel;
   }
 
   const setObjectsMessage = (message = "") => {
@@ -1547,14 +1600,22 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
   };
 
+  const setObjectsSubmitButton = (mode = "add") => {
+    if (!objectsSubmitButton) return;
+    const isEdit = mode === "edit";
+    const label = isEdit ? "Сохранить изменения" : "Добавить объект";
+    objectsSubmitButton.dataset.mode = isEdit ? "edit" : "add";
+    objectsSubmitButton.textContent = isEdit ? "✓" : "+";
+    objectsSubmitButton.setAttribute("aria-label", label);
+    objectsSubmitButton.title = label;
+  };
+
   const resetObjectsForm = () => {
     if (objectsFormEl) {
       objectsFormEl.reset();
     }
     objectsState.editingId = null;
-    if (objectsSubmitButton) {
-      objectsSubmitButton.textContent = "Добавить объект";
-    }
+    setObjectsSubmitButton("add");
     if (objectsCancelButton) {
       objectsCancelButton.classList.add("is-hidden");
     }
@@ -1566,9 +1627,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       objectsNameInput.value = item.name;
       objectsNameInput.focus();
     }
-    if (objectsSubmitButton) {
-      objectsSubmitButton.textContent = "Сохранить изменения";
-    }
+    setObjectsSubmitButton("edit");
     if (objectsCancelButton) {
       objectsCancelButton.classList.remove("is-hidden");
     }
@@ -1599,13 +1658,17 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       editButton.className = "objects-item__button";
       editButton.type = "button";
       editButton.dataset.objectAction = "edit";
-      editButton.textContent = "Редактировать";
+      editButton.textContent = "✎";
+      editButton.setAttribute("aria-label", "Редактировать");
+      editButton.title = "Редактировать";
 
       const deleteButton = document.createElement("button");
       deleteButton.className = "objects-item__button objects-item__button--danger";
       deleteButton.type = "button";
       deleteButton.dataset.objectAction = "delete";
-      deleteButton.textContent = "Удалить";
+      deleteButton.textContent = "✕";
+      deleteButton.setAttribute("aria-label", "Удалить");
+      deleteButton.title = "Удалить";
 
       actionsEl.append(editButton, deleteButton);
       itemEl.append(nameEl, actionsEl);

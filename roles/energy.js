@@ -124,30 +124,26 @@ export function renderRole(user) {
             </div>
             <div class="settings-modal__body objects-modal__body">
               <form class="objects-form form-card" data-energy-objects-form>
-                <div class="form-field">
-                  <label class="form-label" for="objects-name-input">
-                    Название объекта
-                  </label>
+                <div class="form-field objects-form__input">
                   <input
                     class="form-input"
                     id="objects-name-input"
                     name="object-name"
-                    placeholder="Например, ТЦ Север"
+                    placeholder="Название объекта"
+                    aria-label="Название объекта"
                     autocomplete="off"
                     required
                   />
-                </div>
-                <p class="form-hint">
-                  Добавляйте, редактируйте и удаляйте объекты — изменения сохраняются сразу.
-                </p>
-                <div class="objects-form__actions">
                   <button
-                    class="action-primary"
+                    class="objects-form__submit"
                     type="submit"
                     data-energy-objects-submit
+                    aria-label="Добавить объект"
                   >
-                    Добавить объект
+                    +
                   </button>
+                </div>
+                <div class="objects-form__actions">
                   <button
                     class="action-secondary is-hidden"
                     type="button"
@@ -159,11 +155,13 @@ export function renderRole(user) {
                 <div class="form-message" data-energy-objects-message></div>
               </form>
               <div class="objects-list" data-energy-objects-list>
-                <div class="objects-list__header">
-                  <span class="objects-list__title">Список объектов</span>
-                  <span class="objects-count" data-energy-objects-count>0</span>
+                <div class="objects-list__items">
+                  <div class="objects-list__header">
+                    <span class="objects-list__title">Список объектов</span>
+                    <span class="objects-count" data-energy-objects-count>0</span>
+                  </div>
+                  <div class="objects-list__grid" data-energy-objects-items></div>
                 </div>
-                <div class="objects-list__items" data-energy-objects-items></div>
                 <div class="objects-empty is-hidden" data-energy-objects-empty>
                   Пока нет объектов. Добавьте первый объект выше.
                 </div>

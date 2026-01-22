@@ -1345,6 +1345,77 @@
         letter-spacing: 0.04em;
       }
 
+      .settings-mailings {
+        display: grid;
+        gap: 10px;
+      }
+
+      .settings-mailing-card {
+        display: grid;
+        gap: 10px;
+        padding: 10px 12px;
+        border-radius: 16px;
+        border: 1px solid rgba(226, 232, 240, 0.9);
+        background: rgba(255, 255, 255, 0.78);
+        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
+      }
+
+      .settings-mailing-card__header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        font-weight: 600;
+        color: var(--text);
+      }
+
+      .settings-mailing-card__fields {
+        display: grid;
+        gap: 10px;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      }
+
+      .settings-mailing-field {
+        display: grid;
+        gap: 6px;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+
+      .settings-mailing-field .form-input {
+        font-size: 13px;
+        font-weight: 500;
+        text-transform: none;
+        letter-spacing: normal;
+      }
+
+      .settings-day-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+
+      .settings-day-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 10px;
+        border-radius: 999px;
+        border: 1px solid rgba(226, 232, 240, 0.9);
+        background: rgba(255, 255, 255, 0.85);
+        font-size: 12px;
+        color: var(--title-muted);
+      }
+
+      .settings-day-chip input {
+        width: 16px;
+        height: 16px;
+        accent-color: var(--accent);
+      }
+
       .settings-fines {
         display: grid;
         gap: 10px;

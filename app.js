@@ -65,13 +65,28 @@ const energyFineOptions = [
   },
 ];
 const energyMailingOptions = [
-  { id: "awaitingReply", title: "Ожидают ответа", defaultDay: "Пн", defaultTime: "09:00" },
-  { id: "repairs", title: "Ремонты", defaultDay: "Вт", defaultTime: "10:00" },
-  { id: "noPhoto", title: "Без фото", defaultDay: "Ср", defaultTime: "11:00" },
+  {
+    id: "awaitingReply",
+    title: "Ожидают ответа",
+    defaultDays: ["Пн"],
+    defaultTime: "09:00",
+  },
+  {
+    id: "repairs",
+    title: "Ремонты",
+    defaultDays: ["Вт"],
+    defaultTime: "10:00",
+  },
+  {
+    id: "noPhoto",
+    title: "Без фото",
+    defaultDays: ["Ср"],
+    defaultTime: "11:00",
+  },
   {
     id: "noAccountingNumber",
     title: "Без бух.номера",
-    defaultDay: "Чт",
+    defaultDays: ["Чт"],
     defaultTime: "12:00",
   },
 ];
@@ -979,7 +994,7 @@ function buildEnergyOrganizationDefaults() {
   energyMailingOptions.forEach((option) => {
     mailings[option.id] = {
       enabled: true,
-      day: option.defaultDay,
+      days: option.defaultDays,
       time: option.defaultTime,
     };
   });
@@ -997,12 +1012,16 @@ function normalizeNumber(value, fallback = 0) {
   return parsed;
 }
 
-function normalizeDay(value, fallback) {
-  const normalized = String(value ?? "").trim();
-  if (energyWeekDays.includes(normalized)) {
-    return normalized;
-  }
-  return fallback;
+function normalizeDays(value, fallback = []) {
+  const fallbackDays = Array.isArray(fallback)
+    ? fallback.filter((day) => energyWeekDays.includes(day))
+    : [];
+  const rawValues = Array.isArray(value) ? value : [value];
+  const normalized = rawValues
+    .map((day) => String(day ?? "").trim())
+    .filter((day) => energyWeekDays.includes(day));
+  const unique = Array.from(new Set(normalized));
+  return unique.length ? unique : fallbackDays;
 }
 
 function normalizeTime(value, fallback) {
@@ -1042,7 +1061,10 @@ function normalizeEnergyOrganizationSettings(raw) {
     const data = source.mailings?.[option.id] ?? {};
     mailings[option.id] = {
       enabled: Boolean(data.enabled ?? defaults.mailings[option.id].enabled),
-      day: normalizeDay(data.day, defaults.mailings[option.id].day),
+      days: normalizeDays(
+        data.days ?? data.day,
+        defaults.mailings[option.id].days
+      ),
       time: normalizeTime(data.time, defaults.mailings[option.id].time),
     };
   });
@@ -1173,34 +1195,51 @@ function buildEnergySettingsMarkup(settings) {
   const mailingsMarkup = energyMailingOptions
     .map((option) => {
       const mailing = settings.mailings?.[option.id] ?? {};
+      const selectedDays = new Set(mailing.days ?? []);
       const dayOptions = energyWeekDays
         .map(
           (day) => `
-            <option value="${day}" ${
-              mailing.day === day ? "selected" : ""
-            }>${day}</option>
+            <label class="settings-day-chip">
+              <input
+                type="checkbox"
+                name="mailing-${option.id}-days"
+                value="${day}"
+                ${selectedDays.has(day) ? "checked" : ""}
+              />
+              <span>${day}</span>
+            </label>
           `
         )
         .join("");
       return `
-        <div class="settings-table__row">
-          <label class="settings-inline">
-            <input
-              type="checkbox"
-              name="mailing-${option.id}-enabled"
-              ${mailing.enabled ? "checked" : ""}
-            />
-            <span>${escapeHtml(option.title)}</span>
-          </label>
-          <select class="form-input" name="mailing-${option.id}-day">
-            ${dayOptions}
-          </select>
-          <input
-            class="form-input"
-            type="time"
-            name="mailing-${option.id}-time"
-            value="${escapeHtml(mailing.time ?? "")}"
-          />
+        <div class="settings-mailing-card">
+          <div class="settings-mailing-card__header">
+            <label class="settings-inline">
+              <input
+                type="checkbox"
+                name="mailing-${option.id}-enabled"
+                ${mailing.enabled ? "checked" : ""}
+              />
+              <span>${escapeHtml(option.title)}</span>
+            </label>
+          </div>
+          <div class="settings-mailing-card__fields">
+            <div class="settings-mailing-field">
+              <span>Дни недели</span>
+              <div class="settings-day-grid">
+                ${dayOptions}
+              </div>
+            </div>
+            <label class="settings-mailing-field">
+              <span>Время</span>
+              <input
+                class="form-input"
+                type="time"
+                name="mailing-${option.id}-time"
+                value="${escapeHtml(mailing.time ?? "")}"
+              />
+            </label>
+          </div>
         </div>
       `;
     })
@@ -1277,15 +1316,7 @@ function buildEnergySettingsMarkup(settings) {
         <span class="settings-accordion__icon" aria-hidden="true">⌄</span>
       </button>
       <div class="settings-accordion__content">
-        <div class="settings-accordion__hint">
-          Настройте, какие рассылки активны, в какие дни и во сколько.
-        </div>
-        <div class="settings-table">
-          <div class="settings-table__row settings-table__header">
-            <div>Тип рассылки</div>
-            <div>День</div>
-            <div>Время</div>
-          </div>
+        <div class="settings-mailings">
           ${mailingsMarkup}
         </div>
       </div>
@@ -1688,9 +1719,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     energyMailingOptions.forEach((option) => {
       nextMailings[option.id] = {
         enabled: formData.get(`mailing-${option.id}-enabled`) !== null,
-        day: normalizeDay(
-          formData.get(`mailing-${option.id}-day`),
-          option.defaultDay
+        days: normalizeDays(
+          formData.getAll(`mailing-${option.id}-days`),
+          option.defaultDays
         ),
         time: normalizeTime(
           formData.get(`mailing-${option.id}-time`),

@@ -8,6 +8,7 @@ export const energyActions = [
   { id: "repair", title: "Ремонт", icon: "🛠️" },
   { id: "breakdowns", title: "Поломки", icon: "⚠️" },
   { id: "demand", title: "Потребность", icon: "📌" },
+  { id: "objects", title: "Объекты", icon: "🏢" },
   { id: "move", title: "Переместить за других", icon: "🚚" },
   { id: "info", title: "Информация", icon: "ℹ️" },
   { id: "upload", title: "Загрузить данные", icon: "📥" },

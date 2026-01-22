@@ -201,6 +201,12 @@
         color: #ffb3b3;
       }
 
+      body[data-theme="dark"] .objects-form__submit {
+        background: rgba(18, 25, 42, 0.92);
+        border-color: rgba(148, 170, 210, 0.25);
+        color: var(--text);
+      }
+
       body[data-theme="dark"] .role-user {
         background: rgba(123, 178, 255, 0.18);
       }
@@ -1384,23 +1390,58 @@
 
       .objects-modal__body {
         padding: 8px 14px 18px;
-        gap: 14px;
+        gap: 10px;
       }
 
       .objects-form {
         display: grid;
-        gap: 12px;
+        gap: 10px;
+      }
+
+      .objects-form__input {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .objects-form__input .form-input {
+        flex: 1;
+      }
+
+      .objects-form__submit {
+        border: 1px solid rgba(226, 232, 240, 0.9);
+        background: rgba(255, 255, 255, 0.8);
+        color: var(--accent);
+        width: 40px;
+        height: 40px;
+        border-radius: 14px;
+        font-size: 20px;
+        font-weight: 700;
+        display: grid;
+        place-items: center;
+        cursor: pointer;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      .objects-form__submit[data-mode="edit"] {
+        color: var(--success);
+      }
+
+      .objects-form__submit:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 12px 22px rgba(26, 31, 46, 0.08);
       }
 
       .objects-form__actions {
         display: flex;
         flex-wrap: wrap;
         gap: 10px;
+        justify-content: flex-end;
       }
 
       .objects-list {
         display: grid;
-        gap: 12px;
+        gap: 10px;
       }
 
       .objects-list__header {
@@ -1428,10 +1469,15 @@
       .objects-list__items {
         display: grid;
         gap: 10px;
-        padding: 6px;
+        padding: 10px;
         border-radius: 18px;
         border: 1px solid rgba(226, 232, 240, 0.9);
         background: rgba(255, 255, 255, 0.7);
+      }
+
+      .objects-list__grid {
+        display: grid;
+        gap: 8px;
       }
 
       .objects-item {
@@ -1439,30 +1485,37 @@
         border-radius: 16px;
         border: 1px solid rgba(226, 232, 240, 0.9);
         background: rgba(255, 255, 255, 0.9);
-        display: grid;
-        gap: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
       }
 
       .objects-item__name {
         font-size: 15px;
         font-weight: 600;
         color: var(--text);
+        flex: 1;
+        min-width: 0;
       }
 
       .objects-item__actions {
         display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
+        align-items: center;
+        gap: 6px;
       }
 
       .objects-item__button {
         border: 1px solid rgba(226, 232, 240, 0.9);
         background: rgba(255, 255, 255, 0.75);
         color: var(--title-muted);
-        font-size: 12px;
+        font-size: 14px;
         font-weight: 600;
-        padding: 8px 12px;
-        border-radius: 12px;
+        width: 32px;
+        height: 32px;
+        border-radius: 10px;
+        display: grid;
+        place-items: center;
         cursor: pointer;
         transition: transform 0.2s ease, box-shadow 0.2s ease;
       }

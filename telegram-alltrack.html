@@ -1226,6 +1226,53 @@
         gap: 6px;
       }
 
+      .settings-role {
+        display: grid;
+        gap: 6px;
+        padding: 6px;
+        border-radius: 14px;
+        border: 1px solid rgba(226, 232, 240, 0.9);
+        background: rgba(255, 255, 255, 0.72);
+      }
+
+      .settings-role__header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        border: none;
+        background: transparent;
+        padding: 0;
+        cursor: pointer;
+        text-align: left;
+        font: inherit;
+        color: inherit;
+      }
+
+      .settings-role__icon {
+        width: 18px;
+        height: 18px;
+        border-radius: 9px;
+        background: var(--accent-soft);
+        color: var(--accent);
+        display: grid;
+        place-items: center;
+        font-size: 11px;
+        transition: transform 0.2s ease;
+      }
+
+      .settings-role__content {
+        display: none;
+      }
+
+      .settings-role.is-open .settings-role__content {
+        display: grid;
+      }
+
+      .settings-role.is-open .settings-role__icon {
+        transform: rotate(180deg);
+      }
+
       .settings-chip {
         display: inline-flex;
         align-items: center;

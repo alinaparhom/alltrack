@@ -971,6 +971,44 @@ function ensureSettingsData(raw) {
   return base;
 }
 
+function sanitizeObjectName(value = "") {
+  return String(value).trim().replace(/\s+/g, " ");
+}
+
+function buildObjectId() {
+  return `obj-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
+}
+
+function normalizeObjectsData(raw) {
+  const rawItems = Array.isArray(raw)
+    ? raw
+    : raw && typeof raw === "object"
+      ? raw.objects
+      : [];
+  if (!Array.isArray(rawItems)) return [];
+  const ids = new Set();
+  return rawItems
+    .map((item) => {
+      if (typeof item === "string") {
+        const name = sanitizeObjectName(item);
+        if (!name) return null;
+        const id = buildObjectId();
+        ids.add(id);
+        return { id, name };
+      }
+      if (!item || typeof item !== "object") return null;
+      const name = sanitizeObjectName(item.name ?? item.title ?? "");
+      if (!name) return null;
+      let id = String(item.id ?? "").trim();
+      if (!id || ids.has(id)) {
+        id = buildObjectId();
+      }
+      ids.add(id);
+      return { id, name };
+    })
+    .filter(Boolean);
+}
+
 function buildRoleKey(value = "") {
   return String(value)
     .trim()
@@ -1341,6 +1379,7 @@ async function resolveUserSettingsContext(user) {
   const orgFolderName =
     sanitizeOrganizationFolderName(orgShortName) || "Организация";
   const settingsPath = `./${orgFolderName}/Настройки.json`;
+  const objectsPath = `./${orgFolderName}/Объекты.json`;
   const userKey = buildUserKey(user);
   const settingsData = ensureSettingsData(
     await loadJson(settingsPath).catch(() => ({ users: {} }))
@@ -1349,6 +1388,7 @@ async function resolveUserSettingsContext(user) {
     orgShortName,
     orgFolderName,
     settingsPath,
+    objectsPath,
     userKey,
     settingsData,
   };
@@ -1412,6 +1452,18 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const settingsCloseButton = contentEl.querySelector("[data-energy-settings-close]");
   const settingsCancelButton = contentEl.querySelector("[data-energy-settings-cancel]");
   const settingsBackdropEl = contentEl.querySelector("[data-energy-settings-backdrop]");
+  const objectsModalEl = contentEl.querySelector("[data-energy-objects-modal]");
+  const objectsBackdropEl = contentEl.querySelector("[data-energy-objects-backdrop]");
+  const objectsCloseButton = contentEl.querySelector("[data-energy-objects-close]");
+  const objectsFormEl = contentEl.querySelector("[data-energy-objects-form]");
+  const objectsSubmitButton = contentEl.querySelector("[data-energy-objects-submit]");
+  const objectsCancelButton = contentEl.querySelector("[data-energy-objects-cancel]");
+  const objectsMessageEl = contentEl.querySelector("[data-energy-objects-message]");
+  const objectsListEl = contentEl.querySelector("[data-energy-objects-list]");
+  const objectsItemsEl = contentEl.querySelector("[data-energy-objects-items]");
+  const objectsEmptyEl = contentEl.querySelector("[data-energy-objects-empty]");
+  const objectsCountEl = contentEl.querySelector("[data-energy-objects-count]");
+  const objectsSubtitleEl = contentEl.querySelector("[data-energy-objects-subtitle]");
 
   const context = contextOverride || (await resolveUserSettingsContext(user));
   const settingsData = context.settingsData;
@@ -1474,6 +1526,205 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
   if (!allowGrouping && groupPanel) {
     groupPanel.classList.add("is-hidden");
+  }
+
+  const objectsState = {
+    items: [],
+    editingId: null,
+    isSaving: false,
+  };
+  const objectsPath = context.objectsPath ?? `./${context.orgFolderName}/Объекты.json`;
+  const objectsNameInput = objectsFormEl?.querySelector("[name='object-name']");
+
+  if (objectsSubtitleEl) {
+    const orgLabel = context.orgShortName ?? context.orgFolderName ?? "Организация";
+    objectsSubtitleEl.textContent = `Организация: ${orgLabel}`;
+  }
+
+  const setObjectsMessage = (message = "") => {
+    if (objectsMessageEl) {
+      objectsMessageEl.textContent = message;
+    }
+  };
+
+  const resetObjectsForm = () => {
+    if (objectsFormEl) {
+      objectsFormEl.reset();
+    }
+    objectsState.editingId = null;
+    if (objectsSubmitButton) {
+      objectsSubmitButton.textContent = "Добавить объект";
+    }
+    if (objectsCancelButton) {
+      objectsCancelButton.classList.add("is-hidden");
+    }
+  };
+
+  const startEditObject = (item) => {
+    objectsState.editingId = item.id;
+    if (objectsNameInput) {
+      objectsNameInput.value = item.name;
+      objectsNameInput.focus();
+    }
+    if (objectsSubmitButton) {
+      objectsSubmitButton.textContent = "Сохранить изменения";
+    }
+    if (objectsCancelButton) {
+      objectsCancelButton.classList.remove("is-hidden");
+    }
+  };
+
+  const renderObjectsList = () => {
+    if (!objectsItemsEl) return;
+    objectsItemsEl.innerHTML = "";
+    if (objectsCountEl) {
+      objectsCountEl.textContent = String(objectsState.items.length);
+    }
+    if (objectsEmptyEl) {
+      objectsEmptyEl.classList.toggle("is-hidden", objectsState.items.length > 0);
+    }
+    objectsState.items.forEach((item) => {
+      const itemEl = document.createElement("div");
+      itemEl.className = "objects-item";
+      itemEl.dataset.objectId = item.id;
+
+      const nameEl = document.createElement("div");
+      nameEl.className = "objects-item__name";
+      nameEl.textContent = item.name;
+
+      const actionsEl = document.createElement("div");
+      actionsEl.className = "objects-item__actions";
+
+      const editButton = document.createElement("button");
+      editButton.className = "objects-item__button";
+      editButton.type = "button";
+      editButton.dataset.objectAction = "edit";
+      editButton.textContent = "Редактировать";
+
+      const deleteButton = document.createElement("button");
+      deleteButton.className = "objects-item__button objects-item__button--danger";
+      deleteButton.type = "button";
+      deleteButton.dataset.objectAction = "delete";
+      deleteButton.textContent = "Удалить";
+
+      actionsEl.append(editButton, deleteButton);
+      itemEl.append(nameEl, actionsEl);
+      objectsItemsEl.appendChild(itemEl);
+    });
+  };
+
+  const loadObjects = async () => {
+    if (!objectsItemsEl) return;
+    setObjectsMessage("Загружаем список объектов...");
+    try {
+      const raw = await loadJson(objectsPath);
+      objectsState.items = normalizeObjectsData(raw);
+      setObjectsMessage("");
+    } catch (error) {
+      console.warn("Не удалось загрузить объекты.", error);
+      objectsState.items = [];
+      setObjectsMessage("Не удалось загрузить список объектов.");
+    }
+    renderObjectsList();
+  };
+
+  const saveObjects = async () => {
+    if (objectsState.isSaving) return;
+    objectsState.isSaving = true;
+    setObjectsMessage("Сохраняем изменения...");
+    try {
+      await saveJson(objectsPath, objectsState.items, { user });
+      setObjectsMessage("Список объектов сохранён.");
+    } catch (error) {
+      console.error(error);
+      setObjectsMessage("Не удалось сохранить объекты. Проверьте сервер.");
+    } finally {
+      objectsState.isSaving = false;
+    }
+  };
+
+  const openObjectsModal = async () => {
+    if (!objectsModalEl) return;
+    objectsModalEl.classList.remove("is-hidden");
+    resetObjectsForm();
+    await loadObjects();
+    if (objectsNameInput) {
+      objectsNameInput.focus();
+    }
+  };
+
+  const closeObjectsModal = () => {
+    if (!objectsModalEl) return;
+    objectsModalEl.classList.add("is-hidden");
+    resetObjectsForm();
+    setObjectsMessage("");
+  };
+
+  if (objectsBackdropEl) {
+    objectsBackdropEl.addEventListener("click", closeObjectsModal);
+  }
+  if (objectsCloseButton) {
+    objectsCloseButton.addEventListener("click", closeObjectsModal);
+  }
+  if (objectsCancelButton) {
+    objectsCancelButton.addEventListener("click", () => {
+      resetObjectsForm();
+      setObjectsMessage("");
+    });
+  }
+
+  if (objectsFormEl) {
+    objectsFormEl.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      if (!objectsNameInput) return;
+      const name = sanitizeObjectName(objectsNameInput.value);
+      if (!name) {
+        setObjectsMessage("Введите название объекта.");
+        return;
+      }
+
+      if (objectsState.editingId) {
+        const target = objectsState.items.find(
+          (item) => item.id === objectsState.editingId
+        );
+        if (target) {
+          target.name = name;
+        }
+      } else {
+        objectsState.items.unshift({ id: buildObjectId(), name });
+      }
+
+      renderObjectsList();
+      await saveObjects();
+      resetObjectsForm();
+    });
+  }
+
+  if (objectsListEl) {
+    objectsListEl.addEventListener("click", async (event) => {
+      const actionButton = event.target.closest("[data-object-action]");
+      if (!actionButton) return;
+      const itemEl = actionButton.closest("[data-object-id]");
+      if (!itemEl) return;
+      const itemId = itemEl.dataset.objectId;
+      const item = objectsState.items.find((entry) => entry.id === itemId);
+      if (!item) return;
+
+      const action = actionButton.dataset.objectAction;
+      if (action === "edit") {
+        startEditObject(item);
+        return;
+      }
+      if (action === "delete") {
+        const confirmDelete = window.confirm(
+          `Удалить объект «${item.name}»?`
+        );
+        if (!confirmDelete) return;
+        objectsState.items = objectsState.items.filter((entry) => entry.id !== itemId);
+        renderObjectsList();
+        await saveObjects();
+      }
+    });
   }
 
   const updateGroupPanel = () => {
@@ -1781,6 +2032,14 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       targetCard.dataset.actionId === "settings"
     ) {
       openSettingsModal();
+      return;
+    }
+    if (
+      !isGrouping &&
+      targetCard.dataset.energyItemType === "action" &&
+      targetCard.dataset.actionId === "objects"
+    ) {
+      openObjectsModal();
       return;
     }
     if (blockClick || !isGrouping || !allowGrouping) return;

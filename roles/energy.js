@@ -100,6 +100,77 @@ export function renderRole(user) {
             </form>
           </div>
         </div>
+        <div class="objects-modal settings-modal is-hidden" data-energy-objects-modal>
+          <div class="settings-modal__backdrop" data-energy-objects-backdrop></div>
+          <div
+            class="settings-modal__panel objects-modal__panel"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Объекты"
+          >
+            <div class="settings-modal__header objects-modal__header">
+              <div class="settings-modal__title">
+                <h2>Объекты</h2>
+                <p data-energy-objects-subtitle>Управляйте списком объектов</p>
+              </div>
+              <button
+                class="button-icon objects-modal__close"
+                type="button"
+                data-energy-objects-close
+                aria-label="Закрыть окно объектов"
+              >
+                <span class="button-icon-emoji" aria-hidden="true">✕</span>
+              </button>
+            </div>
+            <div class="settings-modal__body objects-modal__body">
+              <form class="objects-form form-card" data-energy-objects-form>
+                <div class="form-field">
+                  <label class="form-label" for="objects-name-input">
+                    Название объекта
+                  </label>
+                  <input
+                    class="form-input"
+                    id="objects-name-input"
+                    name="object-name"
+                    placeholder="Например, ТЦ Север"
+                    autocomplete="off"
+                    required
+                  />
+                </div>
+                <p class="form-hint">
+                  Добавляйте, редактируйте и удаляйте объекты — изменения сохраняются сразу.
+                </p>
+                <div class="objects-form__actions">
+                  <button
+                    class="action-primary"
+                    type="submit"
+                    data-energy-objects-submit
+                  >
+                    Добавить объект
+                  </button>
+                  <button
+                    class="action-secondary is-hidden"
+                    type="button"
+                    data-energy-objects-cancel
+                  >
+                    Отмена
+                  </button>
+                </div>
+                <div class="form-message" data-energy-objects-message></div>
+              </form>
+              <div class="objects-list" data-energy-objects-list>
+                <div class="objects-list__header">
+                  <span class="objects-list__title">Список объектов</span>
+                  <span class="objects-count" data-energy-objects-count>0</span>
+                </div>
+                <div class="objects-list__items" data-energy-objects-items></div>
+                <div class="objects-empty is-hidden" data-energy-objects-empty>
+                  Пока нет объектов. Добавьте первый объект выше.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
   `;

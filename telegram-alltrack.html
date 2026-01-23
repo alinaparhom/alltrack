@@ -1595,9 +1595,9 @@
       }
 
       .orgs-details-modal__body {
-        padding: 12px 20px 20px;
+        padding: 0;
         gap: 12px;
-        overflow-y: auto;
+        overflow: hidden;
         min-height: 0;
         max-height: 100%;
         overscroll-behavior: contain;
@@ -1713,14 +1713,17 @@
       }
 
       .orgs-details {
-        padding: 16px;
-        border-radius: 18px;
-        border: 1px solid rgba(226, 232, 240, 0.9);
+        padding: 18px 20px 20px;
+        border-radius: 0 0 24px 24px;
+        border: 0;
         background: rgba(255, 255, 255, 0.85);
-        box-shadow: 0 16px 32px rgba(15, 23, 42, 0.08);
+        box-shadow: none;
         display: grid;
         gap: 16px;
         min-height: 0;
+        height: 100%;
+        grid-template-rows: auto auto minmax(0, 1fr);
+        overflow: hidden;
       }
 
       .orgs-details__empty {
@@ -1799,6 +1802,7 @@
         display: grid;
         gap: 12px;
         min-height: 0;
+        grid-template-rows: auto minmax(0, 1fr);
       }
 
       .orgs-energy__header {
@@ -1824,6 +1828,10 @@
         display: grid;
         gap: 10px;
         padding-right: 4px;
+        overflow-y: auto;
+        min-height: 0;
+        max-height: none;
+        overscroll-behavior: contain;
       }
 
       .orgs-energy__item {
@@ -1917,7 +1925,7 @@
         }
 
         .orgs-energy__list {
-          max-height: 200px;
+          max-height: none;
         }
 
         .orgs-details-modal__panel {

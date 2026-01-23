@@ -175,6 +175,25 @@
         color: var(--text);
       }
 
+      body[data-theme="dark"] .orgs-details,
+      body[data-theme="dark"] .orgs-metric,
+      body[data-theme="dark"] .orgs-energy__item,
+      body[data-theme="dark"] .orgs-energy__empty {
+        background: rgba(23, 31, 52, 0.92);
+        border-color: rgba(148, 170, 210, 0.25);
+      }
+
+      body[data-theme="dark"] .orgs-details__empty,
+      body[data-theme="dark"] .orgs-metric__hint,
+      body[data-theme="dark"] .orgs-energy__note {
+        color: rgba(185, 195, 216, 0.82);
+      }
+
+      body[data-theme="dark"] .orgs-details__upload {
+        background: rgba(18, 26, 46, 0.92);
+        border-color: rgba(123, 178, 255, 0.35);
+      }
+
       body[data-theme="dark"] .settings-accordion__icon,
       body[data-theme="dark"] .settings-role__icon {
         background: rgba(123, 178, 255, 0.2);
@@ -1525,6 +1544,13 @@
         min-height: 0;
       }
 
+      .orgs-layout {
+        display: grid;
+        gap: 14px;
+        min-height: 0;
+        height: 100%;
+      }
+
       .orgs-table {
         display: grid;
         gap: 10px;
@@ -1567,6 +1593,26 @@
         align-items: center;
       }
 
+      .orgs-row.is-active {
+        border-color: rgba(59, 125, 255, 0.45);
+        box-shadow: 0 16px 30px rgba(59, 125, 255, 0.18);
+      }
+
+      .orgs-row__button {
+        display: grid;
+        gap: 10px;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
+        width: 100%;
+        text-align: left;
+        background: transparent;
+        border: none;
+        padding: 0;
+        color: inherit;
+        font: inherit;
+        cursor: pointer;
+      }
+
       .orgs-row__name {
         font-size: 15px;
         font-weight: 600;
@@ -1582,6 +1628,184 @@
         font-weight: 600;
         font-size: 12px;
         white-space: nowrap;
+      }
+
+      .orgs-details {
+        padding: 16px;
+        border-radius: 18px;
+        border: 1px solid rgba(226, 232, 240, 0.9);
+        background: rgba(255, 255, 255, 0.85);
+        box-shadow: 0 16px 32px rgba(15, 23, 42, 0.08);
+        display: grid;
+        gap: 16px;
+        min-height: 0;
+      }
+
+      .orgs-details__empty {
+        font-size: 15px;
+        color: var(--muted);
+        text-align: center;
+      }
+
+      .orgs-details__content {
+        display: grid;
+        gap: 16px;
+        min-height: 0;
+      }
+
+      .orgs-details__header {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 12px;
+        align-items: center;
+      }
+
+      .orgs-details__title h3 {
+        margin: 0;
+        font-size: 18px;
+        font-weight: 700;
+        color: var(--text);
+      }
+
+      .orgs-details__title p {
+        margin: 6px 0 0;
+        color: var(--muted);
+        font-size: 14px;
+      }
+
+      .orgs-details__upload {
+        width: 46px;
+        height: 46px;
+        border-radius: 14px;
+        border: 1px solid rgba(59, 125, 255, 0.28);
+        background: rgba(255, 255, 255, 0.9);
+      }
+
+      .orgs-metrics {
+        display: grid;
+        gap: 10px;
+      }
+
+      .orgs-metric {
+        padding: 12px 14px;
+        border-radius: 14px;
+        border: 1px solid rgba(226, 232, 240, 0.9);
+        background: rgba(255, 255, 255, 0.9);
+        display: grid;
+        gap: 6px;
+      }
+
+      .orgs-metric__label {
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--title-muted);
+      }
+
+      .orgs-metric__value {
+        font-size: 20px;
+        font-weight: 700;
+        color: var(--text);
+      }
+
+      .orgs-metric__hint {
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      .orgs-energy {
+        display: grid;
+        gap: 12px;
+        min-height: 0;
+      }
+
+      .orgs-energy__header {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 8px;
+      }
+
+      .orgs-energy__header h4 {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--text);
+      }
+
+      .orgs-energy__note {
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      .orgs-energy__list {
+        display: grid;
+        gap: 10px;
+        overflow-y: auto;
+        max-height: 240px;
+        padding-right: 4px;
+      }
+
+      .orgs-energy__item {
+        display: grid;
+        gap: 6px;
+        padding: 12px 14px;
+        border-radius: 14px;
+        border: 1px solid rgba(226, 232, 240, 0.9);
+        background: rgba(255, 255, 255, 0.88);
+      }
+
+      .orgs-energy__name {
+        font-weight: 600;
+        font-size: 15px;
+        color: var(--text);
+      }
+
+      .orgs-energy__status {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--muted);
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .orgs-energy__status::before {
+        content: "";
+        width: 8px;
+        height: 8px;
+        border-radius: 999px;
+        background: #f97316;
+        box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.12);
+      }
+
+      .orgs-energy__status--ok {
+        color: var(--success);
+      }
+
+      .orgs-energy__status--ok::before {
+        background: #22c55e;
+        box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.12);
+      }
+
+      .orgs-energy__empty {
+        padding: 12px;
+        border-radius: 12px;
+        border: 1px dashed rgba(226, 232, 240, 0.8);
+        font-size: 14px;
+        color: var(--muted);
+        text-align: center;
+      }
+
+      @media (min-width: 720px) {
+        .orgs-layout {
+          grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+          align-items: start;
+        }
+
+        .orgs-table__body {
+          max-height: none;
+        }
       }
 
       @media (max-width: 520px) {
@@ -1607,6 +1831,10 @@
 
         .orgs-row__count {
           justify-self: flex-start;
+        }
+
+        .orgs-energy__list {
+          max-height: 200px;
         }
       }
 

@@ -2367,6 +2367,26 @@ function setupSuperAdmin() {
   const orgsCloseButton = contentEl.querySelector("[data-orgs-close]");
   const orgsListEl = contentEl.querySelector("[data-orgs-list]");
   const orgsEmptyEl = contentEl.querySelector("[data-orgs-empty]");
+  const orgsDetailsEmptyEl = contentEl.querySelector(
+    "[data-orgs-details-empty]"
+  );
+  const orgsDetailsContentEl = contentEl.querySelector(
+    "[data-orgs-details-content]"
+  );
+  const orgsDetailsNameEl = contentEl.querySelector(
+    "[data-orgs-details-name]"
+  );
+  const orgsDetailsMetaEl = contentEl.querySelector(
+    "[data-orgs-details-meta]"
+  );
+  const orgsDetailUsersEl = contentEl.querySelector("[data-orgs-detail-users]");
+  const orgsDetailToolsTotalEl = contentEl.querySelector(
+    "[data-orgs-detail-tools-total]"
+  );
+  const orgsDetailToolsActiveEl = contentEl.querySelector(
+    "[data-orgs-detail-tools-active]"
+  );
+  const orgsEnergyListEl = contentEl.querySelector("[data-orgs-energy-list]");
 
   if (!dashboardEl || !addOrgSection || !formEl) return;
 
@@ -2432,6 +2452,116 @@ function setupSuperAdmin() {
     return `${count} пользователей`;
   };
 
+  const orgsState = {
+    organizations: [],
+    users: [],
+  };
+  let selectedOrgName = "";
+
+  const getOrgDisplayName = (org) => {
+    const name = String(org?.full_name ?? org?.fullName ?? "").trim();
+    return name || "Организация без названия";
+  };
+
+  const setDetailsVisibility = (hasSelection) => {
+    if (orgsDetailsEmptyEl) {
+      orgsDetailsEmptyEl.classList.toggle("is-hidden", hasSelection);
+    }
+    if (orgsDetailsContentEl) {
+      orgsDetailsContentEl.classList.toggle("is-hidden", !hasSelection);
+    }
+  };
+
+  const renderEnergyList = (energyUsers) => {
+    if (!orgsEnergyListEl) return;
+    orgsEnergyListEl.innerHTML = "";
+    if (!energyUsers.length) {
+      const empty = document.createElement("div");
+      empty.className = "orgs-energy__empty";
+      empty.textContent = "Энергетики не добавлены.";
+      orgsEnergyListEl.appendChild(empty);
+      return;
+    }
+
+    energyUsers.forEach((user) => {
+      const card = document.createElement("div");
+      card.className = "orgs-energy__item";
+
+      const name = document.createElement("div");
+      name.className = "orgs-energy__name";
+      name.textContent = String(user?.full_name ?? "Без имени").trim();
+
+      const status = document.createElement("div");
+      const hasId = Number(user?.telegram_id) !== 0;
+      status.className = `orgs-energy__status${
+        hasId ? " orgs-energy__status--ok" : ""
+      }`;
+      status.textContent = hasId ? "ID привязан" : "ID не указан";
+
+      card.append(name, status);
+      orgsEnergyListEl.appendChild(card);
+    });
+  };
+
+  const selectOrganization = (orgName) => {
+    if (!orgName) {
+      setDetailsVisibility(false);
+      return;
+    }
+    const org = orgsState.organizations.find(
+      (item) => getOrgDisplayName(item) === orgName
+    );
+    if (!org) {
+      setDetailsVisibility(false);
+      return;
+    }
+
+    selectedOrgName = orgName;
+    if (orgsDetailsNameEl) {
+      orgsDetailsNameEl.textContent = orgName;
+    }
+    if (orgsDetailsMetaEl) {
+      const metaParts = [];
+      if (org?.short_name || org?.shortName) {
+        metaParts.push(
+          `Краткое: ${String(org?.short_name ?? org?.shortName).trim()}`
+        );
+      }
+      if (org?.launch_date || org?.launchDate) {
+        metaParts.push(
+          `Запуск: ${String(org?.launch_date ?? org?.launchDate).trim()}`
+        );
+      }
+      orgsDetailsMetaEl.textContent =
+        metaParts.join(" · ") || "Данные организации";
+    }
+
+    const orgUsers = orgsState.users.filter((user) => {
+      const name = String(user?.organization ?? "").trim();
+      return name === orgName;
+    });
+    if (orgsDetailUsersEl) {
+      orgsDetailUsersEl.textContent = formatUserCount(orgUsers.length);
+    }
+    if (orgsDetailToolsTotalEl) {
+      orgsDetailToolsTotalEl.textContent = "—";
+    }
+    if (orgsDetailToolsActiveEl) {
+      orgsDetailToolsActiveEl.textContent = "—";
+    }
+    const energyUsers = orgUsers.filter(
+      (user) => String(user?.role ?? "").trim() === "Энергетик"
+    );
+    renderEnergyList(energyUsers);
+    setDetailsVisibility(true);
+
+    if (orgsListEl) {
+      orgsListEl.querySelectorAll(".orgs-row").forEach((row) => {
+        row.classList.toggle("is-active", row.dataset.orgName === orgName);
+      });
+    }
+  };
+
   const renderOrganizationsList = async () => {
     if (!orgsListEl) return;
     orgsListEl.innerHTML = "";
@@ -2448,6 +2578,8 @@ function setupSuperAdmin() {
         ? orgData.organizations
         : [];
       const users = Array.isArray(usersData?.users) ? usersData.users : [];
+      orgsState.organizations = organizations;
+      orgsState.users = users;
       const counts = new Map();
       users.forEach((user) => {
         const orgName = String(user?.organization ?? "").trim();
@@ -2457,13 +2589,23 @@ function setupSuperAdmin() {
       if (orgsEmptyEl) {
         orgsEmptyEl.classList.toggle("is-hidden", organizations.length > 0);
       }
+      setDetailsVisibility(false);
+      if (organizations.length === 0) {
+        selectedOrgName = "";
+      }
       organizations.forEach((org) => {
-        const name = String(org?.full_name ?? org?.fullName ?? "").trim();
-        const safeName = name || "Организация без названия";
-        const count = counts.get(name) ?? 0;
+        const safeName = getOrgDisplayName(org);
+        const count = counts.get(
+          String(org?.full_name ?? org?.fullName ?? "").trim()
+        ) ?? 0;
 
         const row = document.createElement("div");
         row.className = "orgs-row";
+        row.dataset.orgName = safeName;
+
+        const button = document.createElement("button");
+        button.className = "orgs-row__button";
+        button.type = "button";
 
         const title = document.createElement("div");
         title.className = "orgs-row__name";
@@ -2473,9 +2615,24 @@ function setupSuperAdmin() {
         countBadge.className = "orgs-row__count";
         countBadge.textContent = formatUserCount(count);
 
-        row.append(title, countBadge);
+        button.append(title, countBadge);
+        row.append(button);
         orgsListEl.appendChild(row);
+
+        button.addEventListener("click", () => {
+          selectOrganization(safeName);
+        });
       });
+
+      if (organizations.length > 0) {
+        const selected = organizations.find(
+          (org) => getOrgDisplayName(org) === selectedOrgName
+        );
+        const nextOrgName =
+          (selected && getOrgDisplayName(selected)) ||
+          getOrgDisplayName(organizations[0]);
+        selectOrganization(nextOrgName);
+      }
     } catch (error) {
       console.error(error);
       if (orgsEmptyEl) {
@@ -2483,6 +2640,7 @@ function setupSuperAdmin() {
         orgsEmptyEl.textContent =
           "Не удалось загрузить список организаций. Попробуйте позже.";
       }
+      setDetailsVisibility(false);
     }
   };
 

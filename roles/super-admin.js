@@ -244,11 +244,58 @@ export function renderRole(user) {
             </button>
           </div>
           <div class="settings-modal__body orgs-modal__body">
-            <div class="orgs-table">
-              <div class="orgs-table__body" data-orgs-list></div>
-            </div>
-            <div class="orgs-empty is-hidden" data-orgs-empty>
-              Пока нет организаций. Добавьте первую организацию через кнопку «Добавить организацию».
+            <div class="orgs-layout">
+              <div class="orgs-table">
+                <div class="orgs-table__body" data-orgs-list></div>
+                <div class="orgs-empty is-hidden" data-orgs-empty>
+                  Пока нет организаций. Добавьте первую организацию через кнопку «Добавить организацию».
+                </div>
+              </div>
+              <div class="orgs-details" data-orgs-details>
+                <div class="orgs-details__empty" data-orgs-details-empty>
+                  Выберите организацию из списка, чтобы увидеть показатели и энергетиков.
+                </div>
+                <div class="orgs-details__content is-hidden" data-orgs-details-content>
+                  <div class="orgs-details__header">
+                    <div class="orgs-details__title">
+                      <h3 data-orgs-details-name>Организация</h3>
+                      <p data-orgs-details-meta>Информация об организации</p>
+                    </div>
+                    <button
+                      class="button-icon orgs-details__upload"
+                      type="button"
+                      data-orgs-upload
+                      aria-label="Загрузить данные"
+                      title="Загрузить данные"
+                    >
+                      <span class="button-icon-emoji" aria-hidden="true">⤴️</span>
+                    </button>
+                  </div>
+                  <div class="orgs-metrics">
+                    <div class="orgs-metric">
+                      <div class="orgs-metric__label">Пользователей</div>
+                      <div class="orgs-metric__value" data-orgs-detail-users>—</div>
+                    </div>
+                    <div class="orgs-metric">
+                      <div class="orgs-metric__label">Инструментов в базе</div>
+                      <div class="orgs-metric__value" data-orgs-detail-tools-total>—</div>
+                      <div class="orgs-metric__hint">концепция</div>
+                    </div>
+                    <div class="orgs-metric">
+                      <div class="orgs-metric__label">Инструментов в работе</div>
+                      <div class="orgs-metric__value" data-orgs-detail-tools-active>—</div>
+                      <div class="orgs-metric__hint">концепция</div>
+                    </div>
+                  </div>
+                  <div class="orgs-energy">
+                    <div class="orgs-energy__header">
+                      <h4>Энергетики</h4>
+                      <span class="orgs-energy__note">ID отмечен, если привязан</span>
+                    </div>
+                    <div class="orgs-energy__list" data-orgs-energy-list></div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>

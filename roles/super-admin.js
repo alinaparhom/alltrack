@@ -288,7 +288,7 @@ export function renderRole(user) {
                   aria-label="Загрузить данные"
                   title="Загрузить данные"
                 >
-                  <span class="button-icon-emoji" aria-hidden="true">⤴️</span>
+                  <span class="button-icon-emoji" aria-hidden="true">📥</span>
                 </button>
               </div>
               <div class="orgs-metrics">

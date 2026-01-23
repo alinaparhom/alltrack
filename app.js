@@ -2466,6 +2466,15 @@ function setupSuperAdmin() {
     return name || "Организация без названия";
   };
 
+  const getOrgNames = (org) => {
+    const names = new Set();
+    const fullName = String(org?.full_name ?? org?.fullName ?? "").trim();
+    const shortName = String(org?.short_name ?? org?.shortName ?? "").trim();
+    if (fullName) names.add(fullName);
+    if (shortName) names.add(shortName);
+    return Array.from(names);
+  };
+
   const pluralize = (count, one, few, many) => {
     const mod10 = count % 10;
     const mod100 = count % 100;
@@ -2577,9 +2586,10 @@ function setupSuperAdmin() {
         : "Дата запуска: —";
     }
 
+    const orgNames = getOrgNames(org);
     const orgUsers = orgsState.users.filter((user) => {
       const name = String(user?.organization ?? "").trim();
-      return name === orgName;
+      return orgNames.includes(name) || name === orgName;
     });
     if (orgsDetailUsersEl) {
       orgsDetailUsersEl.textContent = formatUserCount(orgUsers.length);
@@ -2639,9 +2649,11 @@ function setupSuperAdmin() {
       }
       organizations.forEach((org) => {
         const safeName = getOrgDisplayName(org);
-        const count = counts.get(
-          String(org?.full_name ?? org?.fullName ?? "").trim()
-        ) ?? 0;
+        const orgNames = getOrgNames(org);
+        const count = orgNames.reduce(
+          (total, name) => total + (counts.get(name) ?? 0),
+          0
+        );
 
         const row = document.createElement("div");
         row.className = "orgs-row";

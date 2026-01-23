@@ -1521,11 +1521,15 @@
         padding: 12px 20px 18px;
         gap: 12px;
         touch-action: pan-y;
+        overflow: hidden;
+        min-height: 0;
       }
 
       .orgs-table {
         display: grid;
         gap: 10px;
+        min-height: 0;
+        height: 100%;
       }
 
       .orgs-table__head {
@@ -1547,6 +1551,8 @@
         touch-action: pan-y;
         overscroll-behavior: contain;
         -webkit-overflow-scrolling: touch;
+        min-height: 0;
+        max-height: 100%;
       }
 
       .orgs-row {

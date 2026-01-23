@@ -11,7 +11,6 @@ export const energyActions = [
   { id: "objects", title: "Объекты", icon: "🏢" },
   { id: "move", title: "Переместить за других", icon: "🚚" },
   { id: "info", title: "Информация", icon: "ℹ️" },
-  { id: "upload", title: "Загрузить данные", icon: "📥" },
   { id: "download", title: "Выгрузить данные", icon: "📤" },
   { id: "add-photo", title: "Добавить фото", icon: "📷" },
   { id: "remove-photo", title: "Удалить фото", icon: "🗑️" },

@@ -265,7 +265,6 @@ export function renderRole(user) {
         >
           <div class="settings-modal__header orgs-details-modal__header">
             <div class="settings-modal__title">
-              <span class="orgs-details-modal__label">Полное наименование</span>
               <h2 data-orgs-details-name>Организация</h2>
               <p data-orgs-details-launch>Дата запуска</p>
             </div>
@@ -281,10 +280,7 @@ export function renderRole(user) {
           <div class="settings-modal__body orgs-details-modal__body">
             <div class="orgs-details">
               <div class="orgs-details__header">
-                <div class="orgs-details__title">
-                  <h3>Показатели</h3>
-                  <p>Детальная информация по организации</p>
-                </div>
+                <div class="orgs-details__title" aria-hidden="true"></div>
                 <button
                   class="button-icon orgs-details__upload"
                   type="button"
@@ -314,7 +310,6 @@ export function renderRole(user) {
               <div class="orgs-energy">
                 <div class="orgs-energy__header">
                   <h4>Энергетики</h4>
-                  <span class="orgs-energy__note">ID отмечен, если привязан</span>
                 </div>
                 <div class="orgs-energy__list" data-orgs-energy-list></div>
               </div>

@@ -2361,6 +2361,12 @@ function setupSuperAdmin() {
     "[data-copy-registration]"
   );
   const telegramNoteEl = contentEl.querySelector("[data-telegram-note]");
+  const openOrgsButton = contentEl.querySelector("[data-open-orgs]");
+  const orgsModalEl = contentEl.querySelector("[data-orgs-modal]");
+  const orgsBackdropEl = contentEl.querySelector("[data-orgs-backdrop]");
+  const orgsCloseButton = contentEl.querySelector("[data-orgs-close]");
+  const orgsListEl = contentEl.querySelector("[data-orgs-list]");
+  const orgsEmptyEl = contentEl.querySelector("[data-orgs-empty]");
 
   if (!dashboardEl || !addOrgSection || !formEl) return;
 
@@ -2415,8 +2421,94 @@ function setupSuperAdmin() {
     }
   };
 
+  const formatUserCount = (value) => {
+    const count = Number(value) || 0;
+    const mod10 = count % 10;
+    const mod100 = count % 100;
+    if (mod10 === 1 && mod100 !== 11) return `${count} пользователь`;
+    if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) {
+      return `${count} пользователя`;
+    }
+    return `${count} пользователей`;
+  };
+
+  const renderOrganizationsList = async () => {
+    if (!orgsListEl) return;
+    orgsListEl.innerHTML = "";
+    if (orgsEmptyEl) {
+      orgsEmptyEl.textContent =
+        "Пока нет организаций. Добавьте первую организацию через кнопку «Добавить организацию».";
+    }
+    try {
+      const [orgData, usersData] = await Promise.all([
+        loadJson(orgFilePath),
+        loadJson(usersFilePath),
+      ]);
+      const organizations = Array.isArray(orgData?.organizations)
+        ? orgData.organizations
+        : [];
+      const users = Array.isArray(usersData?.users) ? usersData.users : [];
+      const counts = new Map();
+      users.forEach((user) => {
+        const orgName = String(user?.organization ?? "").trim();
+        if (!orgName) return;
+        counts.set(orgName, (counts.get(orgName) ?? 0) + 1);
+      });
+      if (orgsEmptyEl) {
+        orgsEmptyEl.classList.toggle("is-hidden", organizations.length > 0);
+      }
+      organizations.forEach((org) => {
+        const name = String(org?.full_name ?? org?.fullName ?? "").trim();
+        const safeName = name || "Организация без названия";
+        const count = counts.get(name) ?? 0;
+
+        const card = document.createElement("div");
+        card.className = "orgs-card";
+
+        const title = document.createElement("div");
+        title.className = "orgs-card__title";
+        title.textContent = safeName;
+
+        const meta = document.createElement("div");
+        meta.className = "orgs-card__meta";
+
+        const metaLabel = document.createElement("span");
+        metaLabel.textContent = "Пользователей";
+
+        const countBadge = document.createElement("span");
+        countBadge.className = "orgs-card__count";
+        countBadge.textContent = formatUserCount(count);
+
+        meta.append(metaLabel, countBadge);
+        card.append(title, meta);
+        orgsListEl.appendChild(card);
+      });
+    } catch (error) {
+      console.error(error);
+      if (orgsEmptyEl) {
+        orgsEmptyEl.classList.remove("is-hidden");
+        orgsEmptyEl.textContent =
+          "Не удалось загрузить список организаций. Попробуйте позже.";
+      }
+    }
+  };
+
+  const openOrgsModal = async () => {
+    if (!orgsModalEl) return;
+    await renderOrganizationsList();
+    orgsModalEl.classList.remove("is-hidden");
+  };
+
+  const closeOrgsModal = () => {
+    if (!orgsModalEl) return;
+    orgsModalEl.classList.add("is-hidden");
+  };
+
   openAddOrgButton?.addEventListener("click", showForm);
   backButton?.addEventListener("click", showDashboard);
+  openOrgsButton?.addEventListener("click", openOrgsModal);
+  orgsBackdropEl?.addEventListener("click", closeOrgsModal);
+  orgsCloseButton?.addEventListener("click", closeOrgsModal);
   if (shareTelegramButton) shareTelegramButton.disabled = true;
   shareTelegramButton?.addEventListener("click", () => {
     const link = registrationLinkEl?.value?.trim();

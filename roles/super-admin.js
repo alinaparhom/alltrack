@@ -47,6 +47,10 @@ export function renderRole(user) {
           </div>
         </div>
         <div class="action-grid">
+          <button class="action-card" type="button" data-open-orgs>
+            <span class="action-icon">🏢</span>
+            <div class="action-title">Организации</div>
+          </button>
           <button class="action-card" type="button">
             <span class="action-icon">💳</span>
             <div class="action-title">Оплаты</div>
@@ -220,6 +224,36 @@ export function renderRole(user) {
               </div>
             </div>
           </form>
+        </div>
+      </div>
+      <div class="settings-modal orgs-modal is-hidden" data-orgs-modal>
+        <div class="settings-modal__backdrop" data-orgs-backdrop></div>
+        <div
+          class="settings-modal__panel orgs-modal__panel"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Организации"
+        >
+          <div class="settings-modal__header orgs-modal__header">
+            <div class="settings-modal__title">
+              <h2>Организации</h2>
+              <p>Полные названия и количество пользователей</p>
+            </div>
+            <button
+              class="button-icon orgs-modal__close"
+              type="button"
+              data-orgs-close
+              aria-label="Закрыть окно организаций"
+            >
+              <span class="button-icon-emoji" aria-hidden="true">✕</span>
+            </button>
+          </div>
+          <div class="settings-modal__body orgs-modal__body">
+            <div class="orgs-grid" data-orgs-list></div>
+            <div class="orgs-empty is-hidden" data-orgs-empty>
+              Пока нет организаций. Добавьте первую организацию через кнопку «Добавить организацию».
+            </div>
+          </div>
         </div>
       </div>
     </section>

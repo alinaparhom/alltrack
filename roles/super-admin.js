@@ -5,7 +5,7 @@ export function renderRole(user) {
     <section class="role-card">
       <div class="dashboard" data-super-admin-dashboard>
         <div class="dashboard-stats">
-          <div class="stat-card">
+          <button class="stat-card stat-card--action" type="button" data-open-orgs>
             <div class="stat-card-header">
               <span class="stat-icon">🏢</span>
               <div class="stat-label">Организаций</div>
@@ -14,7 +14,7 @@ export function renderRole(user) {
               <span class="stat-value" data-org-count>—</span>
               <span class="stat-pill">в реестре</span>
             </div>
-          </div>
+          </button>
           <div class="stat-card">
             <div class="stat-card-header">
               <span class="stat-icon">👥</span>
@@ -47,10 +47,6 @@ export function renderRole(user) {
           </div>
         </div>
         <div class="action-grid">
-          <button class="action-card" type="button" data-open-orgs>
-            <span class="action-icon">🏢</span>
-            <div class="action-title">Организации</div>
-          </button>
           <button class="action-card" type="button">
             <span class="action-icon">💳</span>
             <div class="action-title">Оплаты</div>

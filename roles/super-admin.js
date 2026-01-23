@@ -236,8 +236,7 @@ export function renderRole(user) {
         >
           <div class="settings-modal__header orgs-modal__header">
             <div class="settings-modal__title">
-              <h2>Организации</h2>
-              <p>Полные названия и количество пользователей</p>
+              <h2>Организаций</h2>
             </div>
             <button
               class="button-icon orgs-modal__close"
@@ -249,7 +248,13 @@ export function renderRole(user) {
             </button>
           </div>
           <div class="settings-modal__body orgs-modal__body">
-            <div class="orgs-grid" data-orgs-list></div>
+            <div class="orgs-table">
+              <div class="orgs-table__head">
+                <span>Полное наименование</span>
+                <span>Количество пользователей</span>
+              </div>
+              <div class="orgs-table__body" data-orgs-list></div>
+            </div>
             <div class="orgs-empty is-hidden" data-orgs-empty>
               Пока нет организаций. Добавьте первую организацию через кнопку «Добавить организацию».
             </div>

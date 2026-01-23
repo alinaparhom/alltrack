@@ -2462,26 +2462,19 @@ function setupSuperAdmin() {
         const safeName = name || "Организация без названия";
         const count = counts.get(name) ?? 0;
 
-        const card = document.createElement("div");
-        card.className = "orgs-card";
+        const row = document.createElement("div");
+        row.className = "orgs-row";
 
         const title = document.createElement("div");
-        title.className = "orgs-card__title";
+        title.className = "orgs-row__name";
         title.textContent = safeName;
 
-        const meta = document.createElement("div");
-        meta.className = "orgs-card__meta";
-
-        const metaLabel = document.createElement("span");
-        metaLabel.textContent = "Пользователей";
-
-        const countBadge = document.createElement("span");
-        countBadge.className = "orgs-card__count";
+        const countBadge = document.createElement("div");
+        countBadge.className = "orgs-row__count";
         countBadge.textContent = formatUserCount(count);
 
-        meta.append(metaLabel, countBadge);
-        card.append(title, meta);
-        orgsListEl.appendChild(card);
+        row.append(title, countBadge);
+        orgsListEl.appendChild(row);
       });
     } catch (error) {
       console.error(error);

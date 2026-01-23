@@ -160,10 +160,19 @@
         border-color: rgba(148, 170, 210, 0.35);
       }
 
-      body[data-theme="dark"] .orgs-card,
+      body[data-theme="dark"] .orgs-row,
       body[data-theme="dark"] .orgs-empty {
         background: rgba(23, 31, 52, 0.9);
         border-color: rgba(148, 170, 210, 0.25);
+      }
+
+      body[data-theme="dark"] .orgs-table__head {
+        color: rgba(185, 195, 216, 0.9);
+      }
+
+      body[data-theme="dark"] .orgs-row__count {
+        background: rgba(123, 178, 255, 0.22);
+        color: var(--text);
       }
 
       body[data-theme="dark"] .settings-accordion__icon,
@@ -1495,13 +1504,28 @@
         gap: 12px;
       }
 
-      .orgs-grid {
+      .orgs-table {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-        gap: 12px;
+        gap: 10px;
       }
 
-      .orgs-card {
+      .orgs-table__head {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 10px;
+        padding: 0 4px;
+        font-size: 12px;
+        color: var(--title-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+
+      .orgs-table__body {
+        display: grid;
+        gap: 10px;
+      }
+
+      .orgs-row {
         padding: 14px 16px;
         border-radius: 16px;
         border: 1px solid rgba(226, 232, 240, 0.9);
@@ -1509,32 +1533,46 @@
         box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
         display: grid;
         gap: 10px;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
       }
 
-      .orgs-card__title {
+      .orgs-row__name {
         font-size: 15px;
         font-weight: 600;
         color: var(--text);
         line-height: 1.4;
       }
 
-      .orgs-card__meta {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 8px;
-        font-size: 12px;
-        color: var(--muted);
-      }
-
-      .orgs-card__count {
-        padding: 4px 10px;
+      .orgs-row__count {
+        padding: 6px 12px;
         border-radius: 999px;
         background: var(--accent-soft);
         color: var(--accent);
         font-weight: 600;
         font-size: 12px;
         white-space: nowrap;
+      }
+
+      @media (max-width: 520px) {
+        .orgs-table__head {
+          grid-template-columns: minmax(0, 1fr);
+          gap: 4px;
+        }
+
+        .orgs-table__head span:last-child {
+          text-transform: none;
+          letter-spacing: normal;
+        }
+
+        .orgs-row {
+          grid-template-columns: minmax(0, 1fr);
+          gap: 8px;
+        }
+
+        .orgs-row__count {
+          justify-self: flex-start;
+        }
       }
 
       .orgs-empty {

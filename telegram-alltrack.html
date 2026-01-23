@@ -1559,13 +1559,14 @@
 
       .orgs-details-modal__panel {
         width: 100%;
+        height: 100vh;
         height: 100dvh;
-        max-height: none;
+        max-height: 100vh;
         border-radius: 0;
         grid-template-rows: auto minmax(0, 1fr);
         background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(242, 247, 255, 0.92));
-        border: 1px solid rgba(226, 232, 240, 0.8);
-        box-shadow: 0 28px 70px rgba(15, 23, 42, 0.2);
+        border: none;
+        box-shadow: none;
         backdrop-filter: blur(12px);
       }
 
@@ -1721,9 +1722,9 @@
         display: grid;
         gap: 16px;
         min-height: 0;
-        height: 100%;
-        grid-template-rows: auto auto minmax(0, 1fr);
-        overflow: hidden;
+        grid-template-rows: auto auto auto;
+        height: auto;
+        overflow: visible;
       }
 
       .orgs-details__empty {
@@ -1828,9 +1829,9 @@
         display: grid;
         gap: 10px;
         padding-right: 4px;
-        overflow-y: auto;
+        overflow: visible;
         min-height: 0;
-        max-height: 100%;
+        max-height: none;
         overscroll-behavior: contain;
       }
 
@@ -1847,6 +1848,8 @@
         font-weight: 600;
         font-size: 15px;
         color: var(--text);
+        overflow-wrap: anywhere;
+        word-break: break-word;
       }
 
       .orgs-energy__status {
@@ -1896,8 +1899,9 @@
 
         .orgs-details-modal__panel {
           width: 100%;
+          height: 100vh;
           height: 100dvh;
-          max-height: none;
+          max-height: 100vh;
           border-radius: 0;
         }
       }
@@ -1932,8 +1936,9 @@
 
         .orgs-details-modal__panel {
           width: 100%;
-          height: 100%;
-          max-height: 100%;
+          height: 100vh;
+          height: 100dvh;
+          max-height: 100vh;
           border-radius: 0;
         }
 

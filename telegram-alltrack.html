@@ -1541,6 +1541,10 @@
       .orgs-table__body {
         display: grid;
         gap: 10px;
+        max-height: min(56vh, 360px);
+        overflow-y: auto;
+        padding-right: 4px;
+        -webkit-overflow-scrolling: touch;
       }
 
       .orgs-row {
@@ -1573,6 +1577,11 @@
       }
 
       @media (max-width: 520px) {
+        .orgs-table__body {
+          max-height: calc(100vh - 240px);
+          padding-right: 2px;
+        }
+
         .orgs-table__head {
           grid-template-columns: minmax(0, 1fr);
           gap: 4px;

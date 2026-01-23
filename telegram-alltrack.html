@@ -1520,6 +1520,7 @@
       .orgs-modal__body {
         padding: 12px 20px 18px;
         gap: 12px;
+        touch-action: pan-y;
       }
 
       .orgs-table {
@@ -1543,6 +1544,8 @@
         gap: 10px;
         overflow-y: auto;
         padding-right: 4px;
+        touch-action: pan-y;
+        overscroll-behavior: contain;
         -webkit-overflow-scrolling: touch;
       }
 

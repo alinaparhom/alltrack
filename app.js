@@ -2490,11 +2490,13 @@ function setupSuperAdmin() {
     if (!orgsModalEl) return;
     await renderOrganizationsList();
     orgsModalEl.classList.remove("is-hidden");
+    document.body.style.overflow = "hidden";
   };
 
   const closeOrgsModal = () => {
     if (!orgsModalEl) return;
     orgsModalEl.classList.add("is-hidden");
+    document.body.style.overflow = "";
   };
 
   openAddOrgButton?.addEventListener("click", showForm);

@@ -2665,17 +2665,14 @@ function setupSuperAdmin() {
         usersItem.className = "orgs-row__meta-item";
         const usersLabel = document.createElement("span");
         usersLabel.className = "orgs-row__meta-label";
-        usersLabel.textContent = "Пользователи";
-        const usersValue = document.createElement("span");
-        usersValue.className = "orgs-row__meta-value";
-        usersValue.textContent = formatUserCount(count);
-        usersItem.append(usersLabel, usersValue);
+        usersLabel.textContent = `Пользователей ${count}`;
+        usersItem.append(usersLabel);
 
         const toolsItem = document.createElement("div");
         toolsItem.className = "orgs-row__meta-item";
         const toolsLabel = document.createElement("span");
         toolsLabel.className = "orgs-row__meta-label";
-        toolsLabel.textContent = "Текущее количество инструментов в базе";
+        toolsLabel.textContent = "Единиц МТЦ";
         const toolsValue = document.createElement("span");
         toolsValue.className = "orgs-row__meta-value";
         toolsValue.textContent = "—";

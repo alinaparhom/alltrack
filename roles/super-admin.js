@@ -251,50 +251,72 @@ export function renderRole(user) {
                   Пока нет организаций. Добавьте первую организацию через кнопку «Добавить организацию».
                 </div>
               </div>
-              <div class="orgs-details" data-orgs-details>
-                <div class="orgs-details__empty" data-orgs-details-empty>
-                  Выберите организацию из списка, чтобы увидеть показатели и энергетиков.
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="settings-modal orgs-details-modal is-hidden" data-orgs-details-modal>
+        <div class="settings-modal__backdrop" data-orgs-details-backdrop></div>
+        <div
+          class="settings-modal__panel orgs-details-modal__panel"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Детали организации"
+        >
+          <div class="settings-modal__header orgs-details-modal__header">
+            <div class="settings-modal__title">
+              <span class="orgs-details-modal__label">Полное наименование</span>
+              <h2 data-orgs-details-name>Организация</h2>
+              <p data-orgs-details-launch>Дата запуска</p>
+            </div>
+            <button
+              class="button-icon orgs-details-modal__close"
+              type="button"
+              data-orgs-details-close
+              aria-label="Закрыть окно деталей"
+            >
+              <span class="button-icon-emoji" aria-hidden="true">✕</span>
+            </button>
+          </div>
+          <div class="settings-modal__body orgs-details-modal__body">
+            <div class="orgs-details">
+              <div class="orgs-details__header">
+                <div class="orgs-details__title">
+                  <h3>Показатели</h3>
+                  <p>Детальная информация по организации</p>
                 </div>
-                <div class="orgs-details__content is-hidden" data-orgs-details-content>
-                  <div class="orgs-details__header">
-                    <div class="orgs-details__title">
-                      <h3 data-orgs-details-name>Организация</h3>
-                      <p data-orgs-details-meta>Информация об организации</p>
-                    </div>
-                    <button
-                      class="button-icon orgs-details__upload"
-                      type="button"
-                      data-orgs-upload
-                      aria-label="Загрузить данные"
-                      title="Загрузить данные"
-                    >
-                      <span class="button-icon-emoji" aria-hidden="true">⤴️</span>
-                    </button>
-                  </div>
-                  <div class="orgs-metrics">
-                    <div class="orgs-metric">
-                      <div class="orgs-metric__label">Пользователей</div>
-                      <div class="orgs-metric__value" data-orgs-detail-users>—</div>
-                    </div>
-                    <div class="orgs-metric">
-                      <div class="orgs-metric__label">Инструментов в базе</div>
-                      <div class="orgs-metric__value" data-orgs-detail-tools-total>—</div>
-                      <div class="orgs-metric__hint">концепция</div>
-                    </div>
-                    <div class="orgs-metric">
-                      <div class="orgs-metric__label">Инструментов в работе</div>
-                      <div class="orgs-metric__value" data-orgs-detail-tools-active>—</div>
-                      <div class="orgs-metric__hint">концепция</div>
-                    </div>
-                  </div>
-                  <div class="orgs-energy">
-                    <div class="orgs-energy__header">
-                      <h4>Энергетики</h4>
-                      <span class="orgs-energy__note">ID отмечен, если привязан</span>
-                    </div>
-                    <div class="orgs-energy__list" data-orgs-energy-list></div>
-                  </div>
+                <button
+                  class="button-icon orgs-details__upload"
+                  type="button"
+                  data-orgs-upload
+                  aria-label="Загрузить данные"
+                  title="Загрузить данные"
+                >
+                  <span class="button-icon-emoji" aria-hidden="true">⤴️</span>
+                </button>
+              </div>
+              <div class="orgs-metrics">
+                <div class="orgs-metric">
+                  <div class="orgs-metric__label">Пользователей</div>
+                  <div class="orgs-metric__value" data-orgs-detail-users>—</div>
                 </div>
+                <div class="orgs-metric">
+                  <div class="orgs-metric__label">Инструментов в базе</div>
+                  <div class="orgs-metric__value" data-orgs-detail-tools-total>—</div>
+                  <div class="orgs-metric__hint">концепция</div>
+                </div>
+                <div class="orgs-metric">
+                  <div class="orgs-metric__label">Инструментов в работе</div>
+                  <div class="orgs-metric__value" data-orgs-detail-tools-active>—</div>
+                  <div class="orgs-metric__hint">концепция</div>
+                </div>
+              </div>
+              <div class="orgs-energy">
+                <div class="orgs-energy__header">
+                  <h4>Энергетики</h4>
+                  <span class="orgs-energy__note">ID отмечен, если привязан</span>
+                </div>
+                <div class="orgs-energy__list" data-orgs-energy-list></div>
               </div>
             </div>
           </div>

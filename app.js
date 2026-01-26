@@ -2451,6 +2451,44 @@ function setupSuperAdmin() {
   const usersInviteOpenButton = contentEl.querySelector(
     "[data-users-invite-open]"
   );
+  const usersAddButton = contentEl.querySelector("[data-users-add]");
+  const usersAddModalEl = contentEl.querySelector("[data-users-add-modal]");
+  const usersAddBackdropEl = contentEl.querySelector("[data-users-add-backdrop]");
+  const usersAddCloseButton = contentEl.querySelector("[data-users-add-close]");
+  const usersAddCancelButton = contentEl.querySelector("[data-users-add-cancel]");
+  const usersAddFormEl = contentEl.querySelector("[data-users-add-form]");
+  const usersAddMessageEl = contentEl.querySelector("[data-users-add-message]");
+  const usersAddOrgNameEl = contentEl.querySelector("[data-users-add-org-name]");
+  const usersAddLastNameListEl = contentEl.querySelector(
+    "[data-users-last-name-list]"
+  );
+  const usersAddFirstNameListEl = contentEl.querySelector(
+    "[data-users-first-name-list]"
+  );
+  const usersAddMiddleNameListEl = contentEl.querySelector(
+    "[data-users-middle-name-list]"
+  );
+  const usersAddInviteBox = contentEl.querySelector(
+    "[data-users-add-invite-box]"
+  );
+  const usersAddInviteHintEl = contentEl.querySelector(
+    "[data-users-add-invite-hint]"
+  );
+  const usersAddInviteNoteEl = contentEl.querySelector(
+    "[data-users-add-invite-note]"
+  );
+  const usersAddInviteLinkEl = contentEl.querySelector(
+    "[data-users-add-invite-link]"
+  );
+  const usersAddInviteShareButton = contentEl.querySelector(
+    "[data-users-add-invite-share]"
+  );
+  const usersAddInviteCopyButton = contentEl.querySelector(
+    "[data-users-add-invite-copy]"
+  );
+  const usersAddInviteOpenButton = contentEl.querySelector(
+    "[data-users-add-invite-open]"
+  );
 
   if (!dashboardEl || !addOrgSection || !formEl) return;
 
@@ -2667,6 +2705,73 @@ function setupSuperAdmin() {
       usersInviteOpenButton.disabled = true;
       usersInviteOpenButton.textContent = "Открыть в Telegram";
     }
+  };
+
+  const resetUsersAddInvite = () => {
+    if (!usersAddInviteBox) return;
+    usersAddInviteBox.classList.add("is-hidden");
+    delete usersAddInviteBox.dataset.shareText;
+    delete usersAddInviteBox.dataset.telegramLink;
+    delete usersAddInviteBox.dataset.telegramAppLink;
+    if (usersAddInviteLinkEl) {
+      usersAddInviteLinkEl.value = "";
+    }
+    if (usersAddInviteHintEl) {
+      usersAddInviteHintEl.textContent =
+        "Заполните данные пользователя и выберите роль.";
+    }
+    if (usersAddInviteNoteEl) {
+      usersAddInviteNoteEl.textContent =
+        "Откройте ссылку в Telegram — ID сохранится автоматически.";
+    }
+    if (usersAddInviteShareButton) usersAddInviteShareButton.disabled = true;
+    if (usersAddInviteCopyButton) usersAddInviteCopyButton.disabled = true;
+    if (usersAddInviteOpenButton) {
+      usersAddInviteOpenButton.disabled = true;
+      usersAddInviteOpenButton.textContent = "Открыть в Telegram";
+    }
+  };
+
+  const resetUsersAddForm = () => {
+    usersAddFormEl?.reset();
+    resetUsersAddInvite();
+    if (usersAddMessageEl) usersAddMessageEl.textContent = "";
+  };
+
+  const parseUserNameParts = (fullName = "") => {
+    const parts = fullName.trim().split(/\s+/).filter(Boolean);
+    return {
+      lastName: parts[0] ?? "",
+      firstName: parts[1] ?? "",
+      middleName: parts[2] ?? "",
+    };
+  };
+
+  const populateDatalist = (listEl, values) => {
+    if (!listEl) return;
+    listEl.innerHTML = "";
+    values.forEach((value) => {
+      const option = document.createElement("option");
+      option.value = value;
+      listEl.appendChild(option);
+    });
+  };
+
+  const updateUsersNameSuggestions = (users) => {
+    const lastNames = new Set();
+    const firstNames = new Set();
+    const middleNames = new Set();
+    users.forEach((user) => {
+      const fullName = String(user?.full_name ?? "").trim();
+      if (!fullName) return;
+      const { lastName, firstName, middleName } = parseUserNameParts(fullName);
+      if (lastName) lastNames.add(lastName);
+      if (firstName) firstNames.add(firstName);
+      if (middleName) middleNames.add(middleName);
+    });
+    populateDatalist(usersAddLastNameListEl, Array.from(lastNames).sort());
+    populateDatalist(usersAddFirstNameListEl, Array.from(firstNames).sort());
+    populateDatalist(usersAddMiddleNameListEl, Array.from(middleNames).sort());
   };
 
   const createResponsibleInvite = async (user) => {
@@ -3200,12 +3305,59 @@ function setupSuperAdmin() {
     }
   };
 
+  const updateUsersDetailsView = () => {
+    if (!selectedUsersOrgName) return;
+    const org = orgsState.organizations.find(
+      (item) => getOrgDisplayName(item) === selectedUsersOrgName
+    );
+    const orgNames = org ? getOrgNames(org) : [selectedUsersOrgName];
+    const orgUsers = orgsState.users.filter((user) => {
+      const name = String(user?.organization ?? "").trim();
+      return orgNames.includes(name) || name === selectedUsersOrgName;
+    });
+
+    if (usersDetailsCountEl) {
+      usersDetailsCountEl.textContent = formatUserCount(orgUsers.length);
+    }
+
+    renderUsersDetails(orgUsers);
+  };
+
+  const openUsersAddModal = async () => {
+    if (!usersAddModalEl || !selectedUsersOrgName) return;
+    const usersData = await loadJson(usersFilePath).catch(() => ({ users: [] }));
+    orgsState.users = Array.isArray(usersData?.users) ? usersData.users : [];
+    updateUsersNameSuggestions(orgsState.users);
+    if (usersAddOrgNameEl) {
+      usersAddOrgNameEl.textContent = selectedUsersOrgName;
+    }
+    resetUsersAddForm();
+    usersAddModalEl.classList.remove("is-hidden");
+    document.body.style.overflow = "hidden";
+  };
+
+  const closeUsersAddModal = () => {
+    if (!usersAddModalEl) return;
+    usersAddModalEl.classList.add("is-hidden");
+    resetUsersAddForm();
+    if (usersDetailsModalEl && !usersDetailsModalEl.classList.contains("is-hidden")) {
+      document.body.style.overflow = "hidden";
+    } else if (usersModalEl && !usersModalEl.classList.contains("is-hidden")) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+  };
+
   const openUsersModal = async () => {
     if (!usersModalEl) return;
     await renderUsersOrganizationsList();
     usersModalEl.classList.remove("is-hidden");
     if (usersDetailsModalEl) {
       usersDetailsModalEl.classList.add("is-hidden");
+    }
+    if (usersAddModalEl) {
+      usersAddModalEl.classList.add("is-hidden");
     }
     resetUsersInvite();
     document.body.style.overflow = "hidden";
@@ -3217,6 +3369,9 @@ function setupSuperAdmin() {
     if (usersDetailsModalEl) {
       usersDetailsModalEl.classList.add("is-hidden");
     }
+    if (usersAddModalEl) {
+      usersAddModalEl.classList.add("is-hidden");
+    }
     resetUsersInvite();
     document.body.style.overflow = "";
   };
@@ -3224,6 +3379,9 @@ function setupSuperAdmin() {
   const closeUsersDetailsModal = () => {
     if (!usersDetailsModalEl) return;
     usersDetailsModalEl.classList.add("is-hidden");
+    if (usersAddModalEl) {
+      usersAddModalEl.classList.add("is-hidden");
+    }
     resetUsersInvite();
     if (usersModalEl && !usersModalEl.classList.contains("is-hidden")) {
       document.body.style.overflow = "hidden";
@@ -3279,6 +3437,10 @@ function setupSuperAdmin() {
   usersCloseButton?.addEventListener("click", closeUsersModal);
   usersDetailsBackdropEl?.addEventListener("click", closeUsersDetailsModal);
   usersDetailsCloseButton?.addEventListener("click", closeUsersDetailsModal);
+  usersAddButton?.addEventListener("click", openUsersAddModal);
+  usersAddBackdropEl?.addEventListener("click", closeUsersAddModal);
+  usersAddCloseButton?.addEventListener("click", closeUsersAddModal);
+  usersAddCancelButton?.addEventListener("click", closeUsersAddModal);
   if (shareTelegramButton) shareTelegramButton.disabled = true;
   shareTelegramButton?.addEventListener("click", () => {
     const link = registrationLinkEl?.value?.trim();
@@ -3399,6 +3561,195 @@ function setupSuperAdmin() {
       document.execCommand("copy");
       if (usersInviteNoteEl) {
         usersInviteNoteEl.textContent = "Ссылка выделена для копирования.";
+      }
+    }
+  });
+
+  if (usersAddInviteShareButton) usersAddInviteShareButton.disabled = true;
+  if (usersAddInviteCopyButton) usersAddInviteCopyButton.disabled = true;
+  if (usersAddInviteOpenButton) usersAddInviteOpenButton.disabled = true;
+  usersAddInviteShareButton?.addEventListener("click", () => {
+    const link = usersAddInviteLinkEl?.value?.trim();
+    if (!link) return;
+    const shareText =
+      usersAddInviteBox?.dataset.shareText ??
+      "Контакт пользователя. Отправляю ссылку для регистрации.";
+    const telegramShareUrl = new URL("https://t.me/share/url");
+    telegramShareUrl.searchParams.set("url", link);
+    telegramShareUrl.searchParams.set("text", shareText);
+    if (window.Telegram?.WebApp?.openTelegramLink) {
+      window.Telegram.WebApp.openTelegramLink(telegramShareUrl.href);
+    } else {
+      window.open(telegramShareUrl.href, "_blank", "noopener");
+    }
+  });
+  usersAddInviteOpenButton?.addEventListener("click", () => {
+    const webLink = usersAddInviteBox?.dataset.telegramLink?.trim();
+    const appLink = usersAddInviteBox?.dataset.telegramAppLink?.trim();
+    if (!webLink && !appLink) return;
+    if (window.Telegram?.WebApp?.openTelegramLink && webLink) {
+      window.Telegram.WebApp.openTelegramLink(webLink);
+    } else {
+      window.location.href = appLink || webLink;
+    }
+  });
+  usersAddInviteCopyButton?.addEventListener("click", async () => {
+    if (!usersAddInviteLinkEl?.value) return;
+    try {
+      await navigator.clipboard.writeText(usersAddInviteLinkEl.value);
+      if (usersAddInviteNoteEl) {
+        usersAddInviteNoteEl.textContent = "Ссылка скопирована в буфер.";
+      }
+    } catch (error) {
+      usersAddInviteLinkEl.select();
+      document.execCommand("copy");
+      if (usersAddInviteNoteEl) {
+        usersAddInviteNoteEl.textContent = "Ссылка выделена для копирования.";
+      }
+    }
+  });
+
+  usersAddFormEl?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    if (usersAddMessageEl) {
+      usersAddMessageEl.textContent = "Сохраняем данные...";
+    }
+    const formData = new FormData(usersAddFormEl);
+    const lastName = String(formData.get("users-add-last-name") ?? "").trim();
+    const firstName = String(formData.get("users-add-first-name") ?? "").trim();
+    const middleName = String(formData.get("users-add-middle-name") ?? "").trim();
+    const roleName = String(formData.get("users-add-role") ?? "").trim();
+    const organizationName = String(selectedUsersOrgName ?? "").trim();
+
+    if (!organizationName) {
+      if (usersAddMessageEl) {
+        usersAddMessageEl.textContent = "Сначала выберите организацию.";
+      }
+      return;
+    }
+
+    if (!lastName || !firstName || !middleName || !roleName) {
+      if (usersAddMessageEl) {
+        usersAddMessageEl.textContent = "Заполните все поля.";
+      }
+      return;
+    }
+
+    try {
+      const [usersData, registrationsData] = await Promise.all([
+        loadJson(usersFilePath),
+        loadRegistrations(),
+      ]);
+
+      const fullName = `${lastName} ${firstName} ${middleName}`.trim();
+      const nextUsersData = {
+        users: [...(usersData.users ?? [])],
+      };
+      const existingUser = nextUsersData.users.find(
+        (item) =>
+          item.full_name === fullName &&
+          item.organization === organizationName &&
+          item.role === roleName
+      );
+
+      if (!existingUser) {
+        nextUsersData.users.push({
+          telegram_id: 0,
+          full_name: fullName,
+          organization: organizationName,
+          role: roleName,
+        });
+      }
+
+      const registrations = registrationsData.registrations ?? [];
+      const existingRegistration = registrations.find(
+        (item) =>
+          item.user?.full_name === fullName &&
+          item.user?.organization === organizationName &&
+          item.user?.role === roleName
+      );
+      const registrationToken =
+        existingRegistration?.token ?? createRegistrationToken();
+
+      const nextRegistrationsData = existingRegistration
+        ? { registrations }
+        : {
+            registrations: [
+              ...registrations,
+              {
+                token: registrationToken,
+                created_at: new Date().toISOString(),
+                user: {
+                  full_name: fullName,
+                  organization: organizationName,
+                  role: roleName,
+                },
+              },
+            ],
+          };
+
+      await saveEntries([
+        { path: usersFilePath, data: nextUsersData },
+        { path: pendingRegistrationsFilePath, data: nextRegistrationsData },
+      ]);
+
+      orgsState.users = nextUsersData.users;
+      updateUsersDetailsView();
+      await renderUsersOrganizationsList();
+
+      const registrationLink = new URL(
+        `${window.location.origin}${window.location.pathname}`
+      );
+      registrationLink.searchParams.set("registration", registrationToken);
+      const botUsername = await resolveBotUsername();
+      const telegramLinks = buildTelegramRegistrationLinks(
+        botUsername,
+        registrationToken
+      );
+      const fallbackLink = telegramLinks?.webLink ?? registrationLink.href;
+
+      if (usersAddMessageEl) {
+        usersAddMessageEl.textContent = "Ссылка приглашения готова.";
+      }
+      if (usersAddInviteHintEl) {
+        usersAddInviteHintEl.textContent = "Ссылка для приглашения готова.";
+      }
+      if (usersAddInviteLinkEl) {
+        usersAddInviteLinkEl.value = fallbackLink;
+      }
+      if (usersAddInviteNoteEl) {
+        usersAddInviteNoteEl.textContent = telegramLinks?.webLink
+          ? "При открытии в Telegram ID сохранится автоматически."
+          : "Бот ещё не указан. Скопируйте ссылку и отправьте её вручную.";
+      }
+      if (usersAddInviteBox) {
+        usersAddInviteBox.dataset.shareText = `Контакт пользователя: ${fullName}. Роль: ${roleName}. Организация: ${organizationName}.`;
+        usersAddInviteBox.dataset.telegramLink = fallbackLink;
+        if (telegramLinks?.appLink) {
+          usersAddInviteBox.dataset.telegramAppLink = telegramLinks.appLink;
+        } else {
+          delete usersAddInviteBox.dataset.telegramAppLink;
+        }
+        usersAddInviteBox.classList.remove("is-hidden");
+      }
+      if (usersAddInviteShareButton) {
+        usersAddInviteShareButton.disabled = !usersAddInviteLinkEl?.value;
+      }
+      if (usersAddInviteCopyButton) {
+        usersAddInviteCopyButton.disabled = !usersAddInviteLinkEl?.value;
+      }
+      if (usersAddInviteOpenButton) {
+        usersAddInviteOpenButton.disabled = !usersAddInviteLinkEl?.value;
+        usersAddInviteOpenButton.textContent = telegramLinks?.webLink
+          ? "Открыть в Telegram"
+          : "Открыть ссылку";
+      }
+      updateUsersNameSuggestions(nextUsersData.users);
+    } catch (error) {
+      console.error(error);
+      if (usersAddMessageEl) {
+        usersAddMessageEl.textContent =
+          "Не удалось сохранить данные. Попробуйте позже.";
       }
     }
   });

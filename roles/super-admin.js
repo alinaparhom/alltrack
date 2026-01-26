@@ -15,7 +15,7 @@ export function renderRole(user) {
               <span class="stat-pill">в реестре</span>
             </div>
           </button>
-          <div class="stat-card">
+          <button class="stat-card stat-card--action" type="button" data-open-orgs>
             <div class="stat-card-header">
               <span class="stat-icon">👥</span>
               <div class="stat-label">Пользователей</div>
@@ -24,7 +24,7 @@ export function renderRole(user) {
               <span class="stat-value" data-user-count>—</span>
               <span class="stat-pill">активных</span>
             </div>
-          </div>
+          </button>
           <div class="stat-card">
             <div class="stat-card-header">
               <span class="stat-icon">💬</span>

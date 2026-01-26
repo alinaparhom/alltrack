@@ -2036,29 +2036,29 @@
         grid-template-columns: minmax(0, 1fr) auto;
         align-items: start;
         gap: 8px;
-        padding: calc(18px + env(safe-area-inset-top)) 18px 10px;
+        padding: calc(14px + env(safe-area-inset-top)) 16px 8px;
         border-bottom: 1px solid rgba(226, 232, 240, 0.7);
         background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(255, 255, 255, 0.7));
       }
 
       .users-modal__subtitle {
-        margin: 6px 0 0;
-        font-size: 14px;
+        margin: 4px 0 0;
+        font-size: 13px;
         color: var(--muted);
       }
 
       .users-modal__close,
       .users-details-modal__close {
         margin-top: 0;
-        width: 48px;
-        height: 48px;
-        border-radius: 14px;
+        width: 42px;
+        height: 42px;
+        border-radius: 12px;
       }
 
       .users-modal__body,
       .users-details-modal__body {
-        padding: 12px 14px calc(16px + env(safe-area-inset-bottom));
-        gap: 12px;
+        padding: 10px 12px calc(14px + env(safe-area-inset-bottom));
+        gap: 10px;
         overflow: hidden;
         min-height: 0;
         touch-action: pan-y;
@@ -2066,24 +2066,24 @@
 
       .users-orgs {
         display: grid;
-        gap: 12px;
+        gap: 10px;
       }
 
       .users-orgs__list {
         display: grid;
-        gap: 10px;
+        gap: 8px;
         overflow-y: auto;
         padding-right: 4px;
         min-height: 0;
-        max-height: calc(100vh - 220px);
+        max-height: calc(100vh - 180px);
       }
 
       .users-orgs__row {
-        padding: 14px 16px;
-        border-radius: 16px;
+        padding: 10px 12px;
+        border-radius: 14px;
         border: 1px solid rgba(226, 232, 240, 0.9);
         background: rgba(255, 255, 255, 0.86);
-        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+        box-shadow: 0 8px 18px rgba(15, 23, 42, 0.05);
       }
 
       .users-orgs__row.is-active {
@@ -2106,17 +2106,17 @@
 
       .users-orgs__name {
         font-weight: 600;
-        font-size: 16px;
+        font-size: 15px;
         color: var(--text);
         overflow-wrap: anywhere;
       }
 
       .users-orgs__count {
-        padding: 6px 12px;
+        padding: 4px 10px;
         border-radius: 999px;
         background: rgba(59, 125, 255, 0.16);
         color: var(--accent);
-        font-size: 12px;
+        font-size: 11px;
         font-weight: 600;
         white-space: nowrap;
       }
@@ -2133,20 +2133,20 @@
 
       .users-details {
         display: grid;
-        gap: 12px;
+        gap: 10px;
       }
 
       .users-details__add {
         display: flex;
         align-items: center;
         gap: 12px;
-        padding: 14px 16px;
-        border-radius: 16px;
+        padding: 10px 12px;
+        border-radius: 14px;
         border: 1px solid rgba(59, 125, 255, 0.28);
         background: linear-gradient(135deg, rgba(59, 125, 255, 0.18), rgba(255, 255, 255, 0.92));
         color: var(--accent);
         font-weight: 600;
-        font-size: 15px;
+        font-size: 14px;
         cursor: pointer;
         transition: transform 0.2s ease, box-shadow 0.2s ease;
       }
@@ -2156,35 +2156,35 @@
       }
 
       .users-details__add-icon {
-        font-size: 20px;
+        font-size: 18px;
       }
 
       .users-details__list {
         display: grid;
-        gap: 10px;
+        gap: 8px;
       }
 
       .users-details__card {
         display: grid;
         grid-template-columns: auto minmax(0, 1fr);
-        gap: 12px;
-        padding: 12px 14px;
-        border-radius: 14px;
+        gap: 10px;
+        padding: 10px 12px;
+        border-radius: 12px;
         border: 1px solid rgba(226, 232, 240, 0.9);
         background: rgba(255, 255, 255, 0.88);
-        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
+        box-shadow: 0 8px 18px rgba(15, 23, 42, 0.04);
       }
 
       .users-details__initials {
-        width: 44px;
-        height: 44px;
-        border-radius: 14px;
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
         display: grid;
         place-items: center;
         font-weight: 700;
         color: var(--accent);
         background: rgba(59, 125, 255, 0.16);
-        font-size: 14px;
+        font-size: 13px;
         text-transform: uppercase;
       }
 
@@ -2195,7 +2195,7 @@
 
       .users-details__name {
         font-weight: 600;
-        font-size: 15px;
+        font-size: 14px;
         color: var(--text);
         overflow-wrap: anywhere;
       }
@@ -2204,17 +2204,17 @@
         display: flex;
         flex-wrap: wrap;
         gap: 6px;
-        font-size: 12px;
+        font-size: 11px;
         color: var(--muted);
       }
 
       .users-details__tag {
-        padding: 4px 8px;
+        padding: 3px 8px;
         border-radius: 999px;
         background: rgba(59, 125, 255, 0.16);
         color: var(--accent);
         font-weight: 600;
-        font-size: 11px;
+        font-size: 10px;
       }
 
       .users-details__empty {

@@ -385,7 +385,7 @@ export function renderRole(user) {
           <div class="settings-modal__header users-modal__header">
             <div class="settings-modal__title">
               <h2>Пользователи</h2>
-              <p class="users-modal__subtitle">Выберите организацию для просмотра списка</p>
+              <p class="users-modal__subtitle">Все организации</p>
             </div>
             <button
               class="button-icon users-modal__close"

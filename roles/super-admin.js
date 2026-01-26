@@ -392,6 +392,28 @@ export function renderRole(user) {
                     data-orgs-upload-photo-input
                     aria-label="Загрузить фото организации"
                   />
+                  <div class="orgs-details__upload-progress is-hidden" data-orgs-upload-progress>
+                    <div class="upload-progress__header">
+                      <span class="upload-progress__label">Обработка фото</span>
+                      <span class="upload-progress__value" data-orgs-upload-progress-value>0%</span>
+                    </div>
+                    <div
+                      class="upload-progress__track"
+                      role="progressbar"
+                      aria-valuemin="0"
+                      aria-valuemax="100"
+                      aria-valuenow="0"
+                      data-orgs-upload-progress-track
+                    >
+                      <div class="upload-progress__fill" data-orgs-upload-progress-fill></div>
+                      <div class="upload-progress__thumb" data-orgs-upload-progress-thumb>
+                        <span class="upload-progress__thumb-icon" aria-hidden="true">🛠️</span>
+                      </div>
+                    </div>
+                    <div class="upload-progress__hint" data-orgs-upload-progress-hint>
+                      Готовим инструменты к загрузке...
+                    </div>
+                  </div>
                   <div class="orgs-details__upload-status" data-orgs-upload-status role="status"></div>
                 </div>
               </div>

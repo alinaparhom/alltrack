@@ -3196,6 +3196,24 @@ function setupSuperAdmin() {
   const orgsUploadStatusEl = contentEl.querySelector(
     "[data-orgs-upload-status]"
   );
+  const orgsUploadProgressEl = contentEl.querySelector(
+    "[data-orgs-upload-progress]"
+  );
+  const orgsUploadProgressValueEl = contentEl.querySelector(
+    "[data-orgs-upload-progress-value]"
+  );
+  const orgsUploadProgressFillEl = contentEl.querySelector(
+    "[data-orgs-upload-progress-fill]"
+  );
+  const orgsUploadProgressThumbEl = contentEl.querySelector(
+    "[data-orgs-upload-progress-thumb]"
+  );
+  const orgsUploadProgressTrackEl = contentEl.querySelector(
+    "[data-orgs-upload-progress-track]"
+  );
+  const orgsUploadProgressHintEl = contentEl.querySelector(
+    "[data-orgs-upload-progress-hint]"
+  );
   const usersModalEl = contentEl.querySelector("[data-users-modal]");
   const usersBackdropEl = contentEl.querySelector("[data-users-backdrop]");
   const usersCloseButton = contentEl.querySelector("[data-users-close]");
@@ -3388,6 +3406,52 @@ function setupSuperAdmin() {
     }
   };
 
+  const setUploadProgress = (value = 0, options = {}) => {
+    if (!orgsUploadProgressEl) return;
+    const safeValue = Math.min(100, Math.max(0, Number(value) || 0));
+    const { label, hint } = options;
+    orgsUploadProgressEl.classList.remove("is-hidden");
+    if (orgsUploadProgressValueEl) {
+      orgsUploadProgressValueEl.textContent = `${Math.round(safeValue)}%`;
+    }
+    if (orgsUploadProgressFillEl) {
+      orgsUploadProgressFillEl.style.width = `${safeValue}%`;
+    }
+    if (orgsUploadProgressThumbEl) {
+      orgsUploadProgressThumbEl.style.left = `${safeValue}%`;
+    }
+    if (orgsUploadProgressTrackEl) {
+      orgsUploadProgressTrackEl.setAttribute(
+        "aria-valuenow",
+        String(Math.round(safeValue))
+      );
+    }
+    if (orgsUploadProgressHintEl && hint) {
+      orgsUploadProgressHintEl.textContent = hint;
+    }
+    if (orgsUploadProgressEl && label) {
+      const labelEl = orgsUploadProgressEl.querySelector(".upload-progress__label");
+      if (labelEl) labelEl.textContent = label;
+    }
+  };
+
+  const clearUploadProgress = () => {
+    if (!orgsUploadProgressEl) return;
+    orgsUploadProgressEl.classList.add("is-hidden");
+    if (orgsUploadProgressFillEl) {
+      orgsUploadProgressFillEl.style.width = "0%";
+    }
+    if (orgsUploadProgressThumbEl) {
+      orgsUploadProgressThumbEl.style.left = "0%";
+    }
+    if (orgsUploadProgressValueEl) {
+      orgsUploadProgressValueEl.textContent = "0%";
+    }
+    if (orgsUploadProgressTrackEl) {
+      orgsUploadProgressTrackEl.setAttribute("aria-valuenow", "0");
+    }
+  };
+
   const clearUploadStatus = () => {
     setUploadStatus("");
   };
@@ -3551,6 +3615,21 @@ function setupSuperAdmin() {
       };
       reader.readAsDataURL(file);
     });
+
+  const uploadPhotoEntriesInBatches = async (
+    entries,
+    { onBatch, batchSize = 6 } = {}
+  ) => {
+    if (!entries.length) return;
+    const totalBatches = Math.ceil(entries.length / batchSize);
+    for (let index = 0; index < totalBatches; index += 1) {
+      const batch = entries.slice(index * batchSize, (index + 1) * batchSize);
+      await saveEntriesViaEndpoint(batch);
+      if (onBatch) {
+        onBatch(index + 1, totalBatches);
+      }
+    }
+  };
 
   const formatDateValue = (date) => {
     const day = String(date.getDate()).padStart(2, "0");
@@ -4223,18 +4302,30 @@ function setupSuperAdmin() {
     if (!fileList.length) return;
 
     setUploadStatus("Проверяем фото...");
+    setUploadProgress(2, {
+      label: "Подготовка фото",
+      hint: "Проверяем названия и типы файлов...",
+    });
     if (orgsUploadPhotoButton) orgsUploadPhotoButton.disabled = true;
 
     try {
       const { orgFolder, numberType } = await resolveUploadOrganization();
       if (!orgFolder) {
         setUploadStatus("Не удалось определить организацию пользователя.", "error");
+        setUploadProgress(0, {
+          label: "Ошибка",
+          hint: "Не удалось определить организацию.",
+        });
         return;
       }
 
       const tools = await loadToolsData(orgFolder);
       if (!tools.length) {
         setUploadStatus("Сначала загрузите базу инструментов.", "error");
+        setUploadProgress(0, {
+          label: "Нет базы",
+          hint: "Сначала загрузите базу инструментов.",
+        });
         return;
       }
 
@@ -4278,21 +4369,38 @@ function setupSuperAdmin() {
           "Нет фото с корректными номерами для загрузки.",
           "error"
         );
+        setUploadProgress(0, {
+          label: "Нет совпадений",
+          hint: "Файлы не совпали с номерами из базы.",
+        });
         return;
       }
 
       setUploadStatus(`Загружаем фото (${matchedFiles.length} шт.)...`);
+      setUploadProgress(10, {
+        label: "Обработка фото",
+        hint: "Подготавливаем изображения...",
+      });
 
-      const fileEntries = await Promise.all(
-        matchedFiles.map(async ({ file, safeName }) => ({
+      const fileEntries = [];
+      const totalFiles = matchedFiles.length;
+      for (let index = 0; index < matchedFiles.length; index += 1) {
+        const { file, safeName } = matchedFiles[index];
+        const content = await readFileAsBase64(file);
+        fileEntries.push({
           type: "file",
           path: `${orgFolder}/Фото инструментов/${safeName}`,
-          content: await readFileAsBase64(file),
+          content,
           encoding: "base64",
           mime: file.type || "image/*",
           ...buildUploadUserMeta(),
-        }))
-      );
+        });
+        const progress = 10 + ((index + 1) / totalFiles) * 50;
+        setUploadProgress(progress, {
+          label: "Обработка фото",
+          hint: `Готовим файл ${index + 1} из ${totalFiles}...`,
+        });
+      }
 
       const updatedTools = tools.map((tool, index) => {
         const count = matchedCounts.get(index) ?? 0;
@@ -4302,16 +4410,27 @@ function setupSuperAdmin() {
         return { ...tool, "Количество фото": safeCurrent + count };
       });
 
-      const entries = [
-        ...fileEntries,
+      await uploadPhotoEntriesInBatches(fileEntries, {
+        onBatch: (currentBatch, totalBatches) => {
+          const progress = 60 + (currentBatch / totalBatches) * 25;
+          setUploadProgress(progress, {
+            label: "Загрузка фото",
+            hint: `Передаём фото ${currentBatch} из ${totalBatches}...`,
+          });
+        },
+      });
+
+      setUploadProgress(90, {
+        label: "Синхронизация",
+        hint: "Обновляем базу инструментов...",
+      });
+      await saveEntries([
         {
           path: `${orgFolder}/База с инструментами.json`,
           data: updatedTools,
           ...buildUploadUserMeta(),
         },
-      ];
-
-      await saveEntriesViaEndpoint(entries);
+      ]);
 
       const skippedTotal = skipped.invalidName + skipped.noMatch + skipped.nonImage;
       const skippedParts = [];
@@ -4331,12 +4450,20 @@ function setupSuperAdmin() {
         `Фото загружены: ${matchedFiles.length}.${skippedNote}`,
         "success"
       );
+      setUploadProgress(100, {
+        label: "Готово",
+        hint: "Фото загружены и сохранены.",
+      });
     } catch (error) {
       console.error(error);
       setUploadStatus(
         "Не удалось загрузить фото. Проверьте названия файлов и попробуйте ещё раз.",
         "error"
       );
+      setUploadProgress(0, {
+        label: "Ошибка",
+        hint: "Не удалось загрузить фото. Проверьте названия файлов.",
+      });
     } finally {
       if (orgsUploadPhotoButton) orgsUploadPhotoButton.disabled = false;
     }
@@ -4761,6 +4888,7 @@ function setupSuperAdmin() {
     orgsDetailsModalEl.classList.add("is-hidden");
     resetEnergyInvite();
     clearUploadStatus();
+    clearUploadProgress();
     if (orgsUploadInput) {
       orgsUploadInput.value = "";
     }

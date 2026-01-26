@@ -2361,7 +2361,7 @@ function setupSuperAdmin() {
     "[data-copy-registration]"
   );
   const telegramNoteEl = contentEl.querySelector("[data-telegram-note]");
-  const openOrgsButton = contentEl.querySelector("[data-open-orgs]");
+  const openOrgsButtons = contentEl.querySelectorAll("[data-open-orgs]");
   const orgsModalEl = contentEl.querySelector("[data-orgs-modal]");
   const orgsBackdropEl = contentEl.querySelector("[data-orgs-backdrop]");
   const orgsCloseButton = contentEl.querySelector("[data-orgs-close]");
@@ -2902,7 +2902,9 @@ function setupSuperAdmin() {
 
   openAddOrgButton?.addEventListener("click", showForm);
   backButton?.addEventListener("click", showDashboard);
-  openOrgsButton?.addEventListener("click", openOrgsModal);
+  openOrgsButtons.forEach((button) => {
+    button.addEventListener("click", openOrgsModal);
+  });
   orgsBackdropEl?.addEventListener("click", closeOrgsModal);
   orgsCloseButton?.addEventListener("click", closeOrgsModal);
   orgsDetailsBackdropEl?.addEventListener("click", closeOrgsDetailsModal);

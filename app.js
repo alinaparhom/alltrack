@@ -337,6 +337,14 @@ function formatShortName(fullName = "") {
   return parts.slice(0, 2).join(" ");
 }
 
+function formatFullName(fullName = "", maxParts = 3) {
+  const parts = fullName.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) {
+    return "Пользователь";
+  }
+  return parts.slice(0, maxParts).join(" ");
+}
+
 function getInitials(fullName = "") {
   const parts = fullName.trim().split(/\s+/).filter(Boolean);
   if (parts.length === 0) return "??";
@@ -2981,7 +2989,7 @@ function setupSuperAdmin() {
 
       const name = document.createElement("div");
       name.className = "users-details__name";
-      name.textContent = formatShortName(String(user?.full_name ?? "").trim());
+      name.textContent = formatFullName(String(user?.full_name ?? "").trim());
 
       const meta = document.createElement("div");
       meta.className = "users-details__meta";
@@ -2990,8 +2998,12 @@ function setupSuperAdmin() {
       roleTag.textContent = String(user?.role ?? "роль").trim();
 
       const telegramStatus = document.createElement("span");
-      telegramStatus.textContent =
-        Number(user?.telegram_id) === 0 ? "ID не привязан" : "ID активен";
+      telegramStatus.className = "users-details__status";
+      const hasTelegramId = Number(user?.telegram_id) !== 0;
+      telegramStatus.textContent = hasTelegramId
+        ? "ID привязан"
+        : "ID не привязан";
+      telegramStatus.classList.toggle("is-linked", hasTelegramId);
       meta.append(roleTag, telegramStatus);
 
       info.append(name, meta);

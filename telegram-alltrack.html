@@ -212,8 +212,9 @@
       }
 
       body[data-theme="dark"] .orgs-details__upload {
-        background: rgba(18, 26, 46, 0.92);
+        background: linear-gradient(135deg, rgba(123, 178, 255, 0.18), rgba(18, 26, 46, 0.92));
         border-color: rgba(123, 178, 255, 0.35);
+        color: rgba(214, 228, 255, 0.95);
       }
 
       body[data-theme="dark"] .settings-accordion__icon,
@@ -1592,7 +1593,6 @@
 
       .orgs-details-modal__title {
         position: relative;
-        padding-right: 64px;
       }
 
       .orgs-details-modal__label {
@@ -1790,15 +1790,32 @@
       }
 
       .orgs-details__upload {
-        width: 46px;
-        height: 46px;
-        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        width: 100%;
+        padding: 12px 16px;
+        border-radius: 16px;
         border: 1px solid rgba(59, 125, 255, 0.28);
-        background: rgba(255, 255, 255, 0.9);
-        position: absolute;
-        right: 0;
-        top: 0;
-        bottom: auto;
+        background: linear-gradient(135deg, rgba(59, 125, 255, 0.18), rgba(255, 255, 255, 0.92));
+        color: var(--accent);
+        font-weight: 600;
+        font-size: 14px;
+        cursor: pointer;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      .orgs-details__upload:active {
+        transform: translateY(1px);
+      }
+
+      .orgs-details__upload-icon {
+        font-size: 18px;
+      }
+
+      .orgs-details__upload-text {
+        letter-spacing: 0.01em;
       }
 
       .orgs-metrics {
@@ -1837,7 +1854,7 @@
         display: grid;
         gap: 12px;
         min-height: 0;
-        grid-template-rows: auto minmax(0, 1fr);
+        grid-template-rows: auto minmax(0, 1fr) auto;
       }
 
       .orgs-energy__header {

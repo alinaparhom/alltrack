@@ -536,7 +536,6 @@ export function renderRole(user) {
                     name="users-add-last-name"
                     autocomplete="family-name"
                     placeholder="Иванов"
-                    list="users-last-names"
                     required
                   />
                 </div>
@@ -549,9 +548,14 @@ export function renderRole(user) {
                     name="users-add-first-name"
                     autocomplete="given-name"
                     placeholder="Иван"
-                    list="users-first-names"
                     required
                   />
+                  <div
+                    class="suggestions is-hidden"
+                    role="listbox"
+                    aria-label="Подсказки по имени"
+                    data-users-add-first-name-suggestions
+                  ></div>
                 </div>
                 <div class="form-field">
                   <label class="form-label" for="users-add-middle-name">Отчество</label>
@@ -562,9 +566,14 @@ export function renderRole(user) {
                     name="users-add-middle-name"
                     autocomplete="additional-name"
                     placeholder="Иванович"
-                    list="users-middle-names"
                     required
                   />
+                  <div
+                    class="suggestions is-hidden"
+                    role="listbox"
+                    aria-label="Подсказки по отчеству"
+                    data-users-add-middle-name-suggestions
+                  ></div>
                 </div>
                 <div class="form-field">
                   <label class="form-label" for="users-add-role">Роль пользователя</label>
@@ -644,9 +653,6 @@ export function renderRole(user) {
                     </div>
                   </div>
                 </div>
-                <datalist id="users-last-names" data-users-last-name-list></datalist>
-                <datalist id="users-first-names" data-users-first-name-list></datalist>
-                <datalist id="users-middle-names" data-users-middle-name-list></datalist>
               </form>
             </div>
           </div>

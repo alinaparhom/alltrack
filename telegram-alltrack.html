@@ -141,6 +141,21 @@
         color: var(--text);
       }
 
+      body[data-theme="dark"] .suggestions {
+        background: rgba(18, 25, 42, 0.95);
+        border-color: rgba(148, 170, 210, 0.28);
+        box-shadow: 0 20px 44px rgba(0, 0, 0, 0.45);
+      }
+
+      body[data-theme="dark"] .suggestions__item {
+        color: var(--text);
+      }
+
+      body[data-theme="dark"] .suggestions__item:hover,
+      body[data-theme="dark"] .suggestions__item:focus {
+        background: rgba(123, 178, 255, 0.2);
+      }
+
       body[data-theme="dark"] .settings-modal__panel {
         background: rgba(14, 20, 34, 0.96);
         border-color: rgba(148, 170, 210, 0.28);
@@ -1025,6 +1040,7 @@
       .form-field {
         display: grid;
         gap: 6px;
+        position: relative;
       }
 
       .form-label {
@@ -1048,6 +1064,43 @@
         outline: none;
         border-color: rgba(59, 125, 255, 0.6);
         box-shadow: 0 0 0 3px rgba(59, 125, 255, 0.15);
+      }
+
+      .suggestions {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: calc(100% + 6px);
+        display: grid;
+        gap: 4px;
+        padding: 6px;
+        border-radius: 14px;
+        border: 1px solid rgba(226, 232, 240, 0.9);
+        background: rgba(255, 255, 255, 0.95);
+        box-shadow: 0 16px 34px rgba(26, 31, 46, 0.12);
+        backdrop-filter: blur(14px);
+        max-height: 180px;
+        overflow-y: auto;
+        z-index: 5;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      .suggestions__item {
+        border: none;
+        background: transparent;
+        padding: 10px 12px;
+        border-radius: 12px;
+        text-align: left;
+        cursor: pointer;
+        font-size: var(--text-sm);
+        color: var(--text);
+        transition: background 0.2s ease, color 0.2s ease;
+      }
+
+      .suggestions__item:hover,
+      .suggestions__item:focus {
+        outline: none;
+        background: rgba(59, 125, 255, 0.12);
       }
 
       .form-hint {

@@ -2459,14 +2459,17 @@ function setupSuperAdmin() {
   const usersAddFormEl = contentEl.querySelector("[data-users-add-form]");
   const usersAddMessageEl = contentEl.querySelector("[data-users-add-message]");
   const usersAddOrgNameEl = contentEl.querySelector("[data-users-add-org-name]");
-  const usersAddLastNameListEl = contentEl.querySelector(
-    "[data-users-last-name-list]"
+  const usersAddFirstNameInput = contentEl.querySelector(
+    "#users-add-first-name"
   );
-  const usersAddFirstNameListEl = contentEl.querySelector(
-    "[data-users-first-name-list]"
+  const usersAddMiddleNameInput = contentEl.querySelector(
+    "#users-add-middle-name"
   );
-  const usersAddMiddleNameListEl = contentEl.querySelector(
-    "[data-users-middle-name-list]"
+  const usersAddFirstNameSuggestionsEl = contentEl.querySelector(
+    "[data-users-add-first-name-suggestions]"
+  );
+  const usersAddMiddleNameSuggestionsEl = contentEl.querySelector(
+    "[data-users-add-middle-name-suggestions]"
   );
   const usersAddInviteBox = contentEl.querySelector(
     "[data-users-add-invite-box]"
@@ -2736,6 +2739,12 @@ function setupSuperAdmin() {
     usersAddFormEl?.reset();
     resetUsersAddInvite();
     if (usersAddMessageEl) usersAddMessageEl.textContent = "";
+    if (usersAddFirstNameSuggestionsEl) {
+      usersAddFirstNameSuggestionsEl.classList.add("is-hidden");
+    }
+    if (usersAddMiddleNameSuggestionsEl) {
+      usersAddMiddleNameSuggestionsEl.classList.add("is-hidden");
+    }
   };
 
   const parseUserNameParts = (fullName = "") => {
@@ -2747,32 +2756,94 @@ function setupSuperAdmin() {
     };
   };
 
-  const populateDatalist = (listEl, values) => {
-    if (!listEl) return;
-    listEl.innerHTML = "";
-    values.forEach((value) => {
-      const option = document.createElement("option");
-      option.value = value;
-      listEl.appendChild(option);
-    });
+  const usersNameSuggestions = {
+    firstNames: [],
+    middleNames: [],
   };
 
   const updateUsersNameSuggestions = (users) => {
-    const lastNames = new Set();
     const firstNames = new Set();
     const middleNames = new Set();
     users.forEach((user) => {
       const fullName = String(user?.full_name ?? "").trim();
       if (!fullName) return;
       const { lastName, firstName, middleName } = parseUserNameParts(fullName);
-      if (lastName) lastNames.add(lastName);
       if (firstName) firstNames.add(firstName);
       if (middleName) middleNames.add(middleName);
     });
-    populateDatalist(usersAddLastNameListEl, Array.from(lastNames).sort());
-    populateDatalist(usersAddFirstNameListEl, Array.from(firstNames).sort());
-    populateDatalist(usersAddMiddleNameListEl, Array.from(middleNames).sort());
+    usersNameSuggestions.firstNames = Array.from(firstNames).sort();
+    usersNameSuggestions.middleNames = Array.from(middleNames).sort();
   };
+
+  const getFilteredSuggestions = (value, source) => {
+    const safeValue = String(value ?? "").trim();
+    if (!safeValue) return [];
+    const normalized = safeValue.toLowerCase();
+    return source
+      .filter((item) => item.toLowerCase().startsWith(normalized))
+      .slice(0, 6);
+  };
+
+  const renderSuggestions = (containerEl, items, inputEl) => {
+    if (!containerEl) return;
+    containerEl.innerHTML = "";
+    if (!items.length) {
+      containerEl.classList.add("is-hidden");
+      return;
+    }
+    items.forEach((item) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "suggestions__item";
+      button.textContent = item;
+      button.addEventListener("mousedown", (event) => {
+        event.preventDefault();
+        if (inputEl) {
+          inputEl.value = item;
+          inputEl.dispatchEvent(new Event("input", { bubbles: true }));
+        }
+        containerEl.classList.add("is-hidden");
+      });
+      containerEl.appendChild(button);
+    });
+    containerEl.classList.remove("is-hidden");
+  };
+
+  const attachSuggestions = (inputEl, containerEl, sourceKey) => {
+    if (!inputEl || !containerEl) return;
+    const update = () => {
+      const source = usersNameSuggestions[sourceKey] ?? [];
+      const items = getFilteredSuggestions(inputEl.value, source);
+      renderSuggestions(containerEl, items, inputEl);
+    };
+    const hide = () => {
+      containerEl.classList.add("is-hidden");
+    };
+    inputEl.addEventListener("input", () => {
+      if (!inputEl.value.trim()) {
+        hide();
+        return;
+      }
+      update();
+    });
+    inputEl.addEventListener("focus", () => {
+      if (inputEl.value.trim()) update();
+    });
+    inputEl.addEventListener("blur", () => {
+      setTimeout(hide, 120);
+    });
+  };
+
+  attachSuggestions(
+    usersAddFirstNameInput,
+    usersAddFirstNameSuggestionsEl,
+    "firstNames"
+  );
+  attachSuggestions(
+    usersAddMiddleNameInput,
+    usersAddMiddleNameSuggestionsEl,
+    "middleNames"
+  );
 
   const createResponsibleInvite = async (user) => {
     if (!usersInviteBox || !user) return;

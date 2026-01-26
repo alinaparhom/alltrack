@@ -603,6 +603,19 @@ async function saveEntries(entries) {
   }
 }
 
+async function saveEntriesViaEndpoint(entries) {
+  const payload = JSON.stringify({ entries });
+  const response = await fetch(saveEndpoint, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: payload,
+  });
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(errorText || "Не удалось сохранить данные.");
+  }
+}
+
 async function saveJson(path, data, meta = {}) {
   return saveEntries([{ path, data, ...meta }]);
 }
@@ -3174,6 +3187,12 @@ function setupSuperAdmin() {
   );
   const orgsUploadButton = contentEl.querySelector("[data-orgs-upload]");
   const orgsUploadInput = contentEl.querySelector("[data-orgs-upload-input]");
+  const orgsUploadPhotoButton = contentEl.querySelector(
+    "[data-orgs-upload-photo]"
+  );
+  const orgsUploadPhotoInput = contentEl.querySelector(
+    "[data-orgs-upload-photo-input]"
+  );
   const orgsUploadStatusEl = contentEl.querySelector(
     "[data-orgs-upload-status]"
   );
@@ -3393,6 +3412,145 @@ function setupSuperAdmin() {
       },
     };
   };
+
+  const sanitizePhotoFileName = (name = "") => {
+    const trimmed = String(name).trim();
+    const cleaned = trimmed.replace(/[\\/:"*?<>|]+/g, "_");
+    return cleaned.replace(/\s+/g, " ").trim();
+  };
+
+  const normalizeToolNumberValue = (value) => {
+    const digits = String(value ?? "").replace(/\D/g, "");
+    if (!digits) return "";
+    const trimmed = digits.replace(/^0+/, "");
+    return trimmed || "0";
+  };
+
+  const parsePhotoKeyFromName = (fileName) => {
+    if (!fileName) return "";
+    const baseName = String(fileName).replace(/\.[^.]+$/, "");
+    const prefix = baseName.split("_")[0] ?? "";
+    const digits = prefix.replace(/\D/g, "");
+    if (!digits) return "";
+    const trimmed = digits.replace(/^0+/, "");
+    return trimmed || "0";
+  };
+
+  const findOrganizationRecord = (orgData, orgName) => {
+    if (!orgName) return null;
+    const targetName = normalizeOrganizationName(orgName);
+    const targetFolder = normalizeOrganizationFolder(orgName);
+    const organizations = orgData?.organizations ?? [];
+    const exactMatch =
+      organizations.find((org) => {
+        const fullName = normalizeOrganizationName(org.full_name);
+        const fullFolder = normalizeOrganizationFolder(org.full_name);
+        return fullName === targetName || fullFolder === targetFolder;
+      }) ??
+      organizations.find((org) => {
+        const shortName = normalizeOrganizationName(org.short_name);
+        const shortFolder = normalizeOrganizationFolder(org.short_name);
+        return shortName === targetName || shortFolder === targetFolder;
+      });
+
+    if (exactMatch) return exactMatch;
+
+    return (
+      organizations.find((org) => {
+        const fullName = normalizeOrganizationName(org.full_name);
+        const shortName = normalizeOrganizationName(org.short_name);
+        const fullFolder = normalizeOrganizationFolder(org.full_name);
+        const shortFolder = normalizeOrganizationFolder(org.short_name);
+        return (
+          (shortName && targetName.includes(shortName)) ||
+          (fullName && targetName.includes(fullName)) ||
+          (shortName && shortName.includes(targetName)) ||
+          (fullName && fullName.includes(targetName)) ||
+          (shortFolder && targetFolder.includes(shortFolder)) ||
+          (fullFolder && targetFolder.includes(fullFolder))
+        );
+      }) ?? null
+    );
+  };
+
+  const resolveUploadOrganization = async () => {
+    const fallbackOrg = selectedOrgName || currentUser?.organization || "";
+    let organizationName = fallbackOrg;
+    try {
+      const usersData = await loadJson(usersFilePath);
+      const users = Array.isArray(usersData?.users) ? usersData.users : [];
+      const telegramId = normalizeTelegramId(currentUser?.telegram_id ?? null);
+      const matchedUser =
+        users.find(
+          (user) =>
+            telegramId && normalizeTelegramId(user?.telegram_id ?? null) === telegramId
+        ) ??
+        users.find(
+          (user) =>
+            String(user?.full_name ?? "").trim() ===
+              String(currentUser?.full_name ?? "").trim() &&
+            String(user?.organization ?? "").trim() ===
+              String(currentUser?.organization ?? "").trim() &&
+            String(user?.role ?? "").trim() === String(currentUser?.role ?? "").trim()
+        );
+      if (matchedUser?.organization) {
+        organizationName = String(matchedUser.organization).trim();
+      }
+    } catch (error) {
+      console.warn("Не удалось определить организацию пользователя.", error);
+    }
+
+    if (!organizationName) {
+      return { organizationName: "", orgFolder: "", numberType: "" };
+    }
+
+    let orgData = null;
+    try {
+      orgData = await loadJson(orgFilePath);
+    } catch (error) {
+      console.warn("Не удалось загрузить список организаций.", error);
+    }
+
+    const orgRecord = orgData ? findOrganizationRecord(orgData, organizationName) : null;
+    const shortName = orgRecord?.short_name ?? organizationName;
+    const orgFolder = sanitizeOrganizationFolderName(shortName || organizationName);
+    return {
+      organizationName,
+      orgFolder,
+      numberType: String(orgRecord?.number_type ?? "Номер приложения").trim(),
+    };
+  };
+
+  const loadToolsData = async (orgFolder) => {
+    if (!orgFolder) return [];
+    const toolsPath = `./${orgFolder}/База с инструментами.json`;
+    try {
+      const raw = await loadJson(toolsPath);
+      if (Array.isArray(raw)) return raw;
+      if (Array.isArray(raw?.tools)) return raw.tools;
+    } catch (error) {
+      console.warn("Не удалось загрузить базу инструментов.", error);
+    }
+    return [];
+  };
+
+  const readFileAsBase64 = (file) =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = reader.result;
+        if (typeof result !== "string") {
+          reject(new Error("Некорректные данные файла."));
+          return;
+        }
+        const base64 = result.split(",")[1] ?? "";
+        resolve(base64);
+      };
+      reader.onerror = () => {
+        reject(reader.error || new Error("Не удалось прочитать файл."));
+      };
+      reader.readAsDataURL(file);
+    });
 
   const formatDateValue = (date) => {
     const day = String(date.getDate()).padStart(2, "0");
@@ -4060,6 +4218,130 @@ function setupSuperAdmin() {
     }
   };
 
+  const handleUploadPhotos = async (files) => {
+    const fileList = Array.from(files ?? []);
+    if (!fileList.length) return;
+
+    setUploadStatus("Проверяем фото...");
+    if (orgsUploadPhotoButton) orgsUploadPhotoButton.disabled = true;
+
+    try {
+      const { orgFolder, numberType } = await resolveUploadOrganization();
+      if (!orgFolder) {
+        setUploadStatus("Не удалось определить организацию пользователя.", "error");
+        return;
+      }
+
+      const tools = await loadToolsData(orgFolder);
+      if (!tools.length) {
+        setUploadStatus("Сначала загрузите базу инструментов.", "error");
+        return;
+      }
+
+      const numberKey =
+        numberType === "Бухгалтерский номер" ? "Бух.номер" : "Номер";
+      const toolIndexByNumber = new Map();
+      tools.forEach((tool, index) => {
+        const key = normalizeToolNumberValue(tool?.[numberKey]);
+        if (!key) return;
+        if (!toolIndexByNumber.has(key)) {
+          toolIndexByNumber.set(key, index);
+        }
+      });
+
+      const matchedFiles = [];
+      const matchedCounts = new Map();
+      const skipped = { invalidName: 0, noMatch: 0, nonImage: 0 };
+
+      fileList.forEach((file) => {
+        if (file.type && !file.type.startsWith("image/")) {
+          skipped.nonImage += 1;
+          return;
+        }
+        const key = parsePhotoKeyFromName(file.name);
+        if (!key) {
+          skipped.invalidName += 1;
+          return;
+        }
+        const toolIndex = toolIndexByNumber.get(key);
+        if (toolIndex === undefined) {
+          skipped.noMatch += 1;
+          return;
+        }
+        const safeName = sanitizePhotoFileName(file.name) || file.name;
+        matchedFiles.push({ file, toolIndex, safeName });
+        matchedCounts.set(toolIndex, (matchedCounts.get(toolIndex) ?? 0) + 1);
+      });
+
+      if (!matchedFiles.length) {
+        setUploadStatus(
+          "Нет фото с корректными номерами для загрузки.",
+          "error"
+        );
+        return;
+      }
+
+      setUploadStatus(`Загружаем фото (${matchedFiles.length} шт.)...`);
+
+      const fileEntries = await Promise.all(
+        matchedFiles.map(async ({ file, safeName }) => ({
+          type: "file",
+          path: `${orgFolder}/Фото инструментов/${safeName}`,
+          content: await readFileAsBase64(file),
+          encoding: "base64",
+          mime: file.type || "image/*",
+          ...buildUploadUserMeta(),
+        }))
+      );
+
+      const updatedTools = tools.map((tool, index) => {
+        const count = matchedCounts.get(index) ?? 0;
+        if (!count) return tool;
+        const current = Number.parseInt(tool?.["Количество фото"] ?? 0, 10);
+        const safeCurrent = Number.isFinite(current) ? current : 0;
+        return { ...tool, "Количество фото": safeCurrent + count };
+      });
+
+      const entries = [
+        ...fileEntries,
+        {
+          path: `${orgFolder}/База с инструментами.json`,
+          data: updatedTools,
+          ...buildUploadUserMeta(),
+        },
+      ];
+
+      await saveEntriesViaEndpoint(entries);
+
+      const skippedTotal = skipped.invalidName + skipped.noMatch + skipped.nonImage;
+      const skippedParts = [];
+      if (skipped.invalidName) {
+        skippedParts.push(`без номера: ${skipped.invalidName}`);
+      }
+      if (skipped.noMatch) {
+        skippedParts.push(`нет в базе: ${skipped.noMatch}`);
+      }
+      if (skipped.nonImage) {
+        skippedParts.push(`не фото: ${skipped.nonImage}`);
+      }
+      const skippedNote = skippedParts.length
+        ? ` Пропущено ${skippedTotal} (${skippedParts.join(", ")}).`
+        : "";
+      setUploadStatus(
+        `Фото загружены: ${matchedFiles.length}.${skippedNote}`,
+        "success"
+      );
+    } catch (error) {
+      console.error(error);
+      setUploadStatus(
+        "Не удалось загрузить фото. Проверьте названия файлов и попробуйте ещё раз.",
+        "error"
+      );
+    } finally {
+      if (orgsUploadPhotoButton) orgsUploadPhotoButton.disabled = false;
+    }
+  };
+
   const handleUploadTools = async (file) => {
     if (!file) return;
     if (!selectedOrgName) {
@@ -4510,11 +4792,27 @@ function setupSuperAdmin() {
       orgsUploadInput.click();
     }
   });
+  orgsUploadPhotoButton?.addEventListener("click", () => {
+    if (!currentUser) {
+      setUploadStatus("Не удалось определить пользователя.", "error");
+      return;
+    }
+    if (orgsUploadPhotoInput) {
+      orgsUploadPhotoInput.click();
+    }
+  });
   orgsUploadInput?.addEventListener("change", async (event) => {
     const file = event.target?.files?.[0];
     await handleUploadTools(file);
     if (orgsUploadInput) {
       orgsUploadInput.value = "";
+    }
+  });
+  orgsUploadPhotoInput?.addEventListener("change", async (event) => {
+    const files = event.target?.files ?? [];
+    await handleUploadPhotos(files);
+    if (orgsUploadPhotoInput) {
+      orgsUploadPhotoInput.value = "";
     }
   });
   usersBackdropEl?.addEventListener("click", closeUsersModal);

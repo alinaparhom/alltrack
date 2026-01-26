@@ -388,6 +388,7 @@ export function renderRole(user) {
                     class="orgs-details__upload-input"
                     type="file"
                     accept="image/*"
+                    multiple
                     data-orgs-upload-photo-input
                     aria-label="Загрузить фото организации"
                   />

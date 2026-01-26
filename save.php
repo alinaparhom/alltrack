@@ -40,6 +40,12 @@ function sanitizeFolderName(string $name): string {
   return trim($clean);
 }
 
+function sanitizeFileName(string $name): string {
+  $trimmed = trim($name);
+  $clean = preg_replace('/[\/\\\\:\*\?"<>\|]+/', "_", $trimmed);
+  return trim($clean);
+}
+
 function normalizeOrganizationName(string $value): string {
   $value = trim($value);
   $value = mb_strtolower($value, "UTF-8");
@@ -312,7 +318,100 @@ function resolveTargetPath(array $entry, array $allowedFiles): string {
   return $orgPath . DIRECTORY_SEPARATOR . $fileName;
 }
 
+function resolveFileTargetPath(array $entry): string {
+  $path = trim((string) ($entry["path"] ?? ""));
+  if ($path === "") {
+    http_response_code(400);
+    echo json_encode(["error" => "Некорректный путь файла."]);
+    exit;
+  }
+
+  $path = str_replace("\\", "/", $path);
+  $path = ltrim($path, "./");
+  $segments = array_values(array_filter(explode("/", $path), "strlen"));
+  if (count($segments) === 2) {
+    $resolvedFolder = resolveOrganizationFolderForEntry($entry);
+    if (!$resolvedFolder) {
+      http_response_code(403);
+      echo json_encode(["error" => "Не удалось определить папку организации."]);
+      exit;
+    }
+    array_unshift($segments, $resolvedFolder);
+  }
+
+  if (count($segments) !== 3) {
+    http_response_code(403);
+    echo json_encode(["error" => "Доступ запрещен."]);
+    exit;
+  }
+
+  [$orgFolder, $photoFolder, $fileName] = $segments;
+  $orgFolderSafe = sanitizeFolderName($orgFolder);
+  if ($orgFolderSafe === "" || $orgFolderSafe !== $orgFolder) {
+    http_response_code(403);
+    echo json_encode(["error" => "Доступ запрещен."]);
+    exit;
+  }
+
+  $photoFolderSafe = sanitizeFolderName($photoFolder);
+  $allowedFolders = ["Фото инструментов"];
+  if (!in_array($photoFolderSafe, $allowedFolders, true)) {
+    http_response_code(403);
+    echo json_encode(["error" => "Доступ запрещен."]);
+    exit;
+  }
+
+  $fileNameSafe = sanitizeFileName($fileName);
+  if ($fileNameSafe === "" || $fileNameSafe !== $fileName) {
+    http_response_code(403);
+    echo json_encode(["error" => "Некорректное имя файла."]);
+    exit;
+  }
+
+  $orgPath = __DIR__ . DIRECTORY_SEPARATOR . $orgFolderSafe;
+  if (!ensureDirectory($orgPath)) {
+    http_response_code(500);
+    echo json_encode(["error" => "Не удалось создать папку организации."]);
+    exit;
+  }
+  $photoPath = $orgPath . DIRECTORY_SEPARATOR . $photoFolderSafe;
+  if (!ensureDirectory($photoPath)) {
+    http_response_code(500);
+    echo json_encode(["error" => "Не удалось создать папку для фото."]);
+    exit;
+  }
+
+  return $photoPath . DIRECTORY_SEPARATOR . $fileNameSafe;
+}
+
+function saveFileEntry(array $entry): void {
+  $content = (string) ($entry["content"] ?? "");
+  $encoding = (string) ($entry["encoding"] ?? "base64");
+  if ($encoding !== "base64") {
+    http_response_code(400);
+    echo json_encode(["error" => "Неподдерживаемое кодирование файла."]);
+    exit;
+  }
+  $decoded = base64_decode($content, true);
+  if ($decoded === false) {
+    http_response_code(400);
+    echo json_encode(["error" => "Некорректные данные файла."]);
+    exit;
+  }
+  $targetPath = resolveFileTargetPath($entry);
+  $written = file_put_contents($targetPath, $decoded, LOCK_EX);
+  if ($written === false) {
+    http_response_code(500);
+    echo json_encode(["error" => "Не удалось сохранить файл."]);
+    exit;
+  }
+}
+
 function saveEntry(array $entry, array $allowedFiles): void {
+  if (($entry["type"] ?? "") === "file") {
+    saveFileEntry($entry);
+    return;
+  }
   $path = $entry["path"] ?? "";
   $data = $entry["data"] ?? null;
   $fileName = basename((string) $path);

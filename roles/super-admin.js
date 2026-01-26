@@ -303,8 +303,65 @@ export function renderRole(user) {
                 <div class="orgs-energy">
                   <div class="orgs-energy__header">
                     <h4>Энергетики</h4>
+                    <p class="orgs-energy__note" data-orgs-energy-note>
+                      Нажмите на энергетика без ID, чтобы отправить приглашение.
+                    </p>
                   </div>
                   <div class="orgs-energy__list" data-orgs-energy-list></div>
+                  <div class="registration-box orgs-energy__invite is-hidden" data-energy-invite-box>
+                    <div class="registration-title">Приглашение для энергетика</div>
+                    <p class="registration-hint" data-energy-invite-hint>
+                      Выберите энергетика в списке, чтобы сформировать ссылку.
+                    </p>
+                    <p class="registration-note" data-energy-invite-note>
+                      Откройте ссылку в Telegram — ID сохранится автоматически.
+                    </p>
+                    <ul class="registration-steps">
+                      <li><strong>1.</strong> Откройте ссылку в Telegram.</li>
+                      <li><strong>2.</strong> Подтвердите запуск мини‑приложения.</li>
+                      <li><strong>3.</strong> ID сохранится автоматически.</li>
+                    </ul>
+                    <div class="registration-actions">
+                      <div class="registration-links">
+                        <div class="registration-link-row">
+                          <input
+                            class="form-input"
+                            type="text"
+                            readonly
+                            aria-label="Ссылка для открытия в Telegram"
+                            data-energy-invite-link
+                          />
+                          <button
+                            class="button-icon"
+                            type="button"
+                            data-energy-invite-share
+                            aria-label="Отправить контакт в Telegram"
+                            title="Отправить контакт в Telegram"
+                          >
+                            <span class="button-icon-emoji">✈️</span>
+                          </button>
+                          <button
+                            class="button-icon"
+                            type="button"
+                            data-energy-invite-copy
+                            aria-label="Скопировать ссылку"
+                            title="Скопировать ссылку"
+                          >
+                            <span class="button-icon-emoji">📋</span>
+                          </button>
+                        </div>
+                      </div>
+                      <div class="registration-buttons">
+                        <button
+                          class="action-primary button-telegram"
+                          type="button"
+                          data-energy-invite-open
+                        >
+                          Открыть в Telegram
+                        </button>
+                      </div>
+                    </div>
+                  </div>
                   <button
                     class="orgs-details__upload"
                     type="button"

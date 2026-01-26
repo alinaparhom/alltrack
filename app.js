@@ -2390,6 +2390,19 @@ function setupSuperAdmin() {
     "[data-orgs-detail-tools-active]"
   );
   const orgsEnergyListEl = contentEl.querySelector("[data-orgs-energy-list]");
+  const energyInviteBox = contentEl.querySelector("[data-energy-invite-box]");
+  const energyInviteHintEl = contentEl.querySelector("[data-energy-invite-hint]");
+  const energyInviteNoteEl = contentEl.querySelector("[data-energy-invite-note]");
+  const energyInviteLinkEl = contentEl.querySelector("[data-energy-invite-link]");
+  const energyInviteShareButton = contentEl.querySelector(
+    "[data-energy-invite-share]"
+  );
+  const energyInviteCopyButton = contentEl.querySelector(
+    "[data-energy-invite-copy]"
+  );
+  const energyInviteOpenButton = contentEl.querySelector(
+    "[data-energy-invite-open]"
+  );
 
   if (!dashboardEl || !addOrgSection || !formEl) return;
 
@@ -2528,6 +2541,122 @@ function setupSuperAdmin() {
     return parts.join(" ");
   };
 
+  const resetEnergyInvite = () => {
+    if (!energyInviteBox) return;
+    energyInviteBox.classList.add("is-hidden");
+    delete energyInviteBox.dataset.shareText;
+    delete energyInviteBox.dataset.telegramLink;
+    delete energyInviteBox.dataset.telegramAppLink;
+    if (energyInviteLinkEl) {
+      energyInviteLinkEl.value = "";
+    }
+    if (energyInviteHintEl) {
+      energyInviteHintEl.textContent =
+        "Выберите энергетика в списке, чтобы сформировать ссылку.";
+    }
+    if (energyInviteNoteEl) {
+      energyInviteNoteEl.textContent =
+        "Откройте ссылку в Telegram — ID сохранится автоматически.";
+    }
+    if (energyInviteShareButton) energyInviteShareButton.disabled = true;
+    if (energyInviteCopyButton) energyInviteCopyButton.disabled = true;
+    if (energyInviteOpenButton) {
+      energyInviteOpenButton.disabled = true;
+      energyInviteOpenButton.textContent = "Открыть в Telegram";
+    }
+  };
+
+  const createEnergyInvite = async (user) => {
+    if (!energyInviteBox || !user) return;
+    const energyFullName = String(user?.full_name ?? "Энергетик").trim();
+    const organizationName = String(
+      user?.organization ?? selectedOrgName ?? ""
+    ).trim();
+    if (!energyFullName || !organizationName) return;
+
+    try {
+      const registrationsData = await loadRegistrations();
+      const registrations = registrationsData.registrations ?? [];
+      const existing = registrations.find(
+        (item) =>
+          item.user?.full_name === energyFullName &&
+          item.user?.organization === organizationName &&
+          item.user?.role === "Энергетик"
+      );
+      const registrationToken = existing?.token ?? createRegistrationToken();
+
+      if (!existing) {
+        const nextRegistrationsData = {
+          registrations: [
+            ...registrations,
+            {
+              token: registrationToken,
+              created_at: new Date().toISOString(),
+              user: {
+                full_name: energyFullName,
+                organization: organizationName,
+                role: "Энергетик",
+              },
+            },
+          ],
+        };
+        await saveEntries([
+          { path: pendingRegistrationsFilePath, data: nextRegistrationsData },
+        ]);
+      }
+
+      const registrationLink = new URL(
+        `${window.location.origin}${window.location.pathname}`
+      );
+      registrationLink.searchParams.set("registration", registrationToken);
+      const botUsername = await resolveBotUsername();
+      const telegramLinks = buildTelegramRegistrationLinks(
+        botUsername,
+        registrationToken
+      );
+      const fallbackLink = telegramLinks?.webLink ?? registrationLink.href;
+
+      if (energyInviteHintEl) {
+        energyInviteHintEl.textContent = `Энергетик: ${energyFullName}. Организация: ${organizationName}.`;
+      }
+      if (energyInviteLinkEl) {
+        energyInviteLinkEl.value = fallbackLink;
+      }
+      energyInviteBox.dataset.shareText = `Контакт энергетика: ${energyFullName}. Организация: ${organizationName}.`;
+      energyInviteBox.dataset.telegramLink = fallbackLink;
+      if (telegramLinks?.appLink) {
+        energyInviteBox.dataset.telegramAppLink = telegramLinks.appLink;
+      } else {
+        delete energyInviteBox.dataset.telegramAppLink;
+      }
+      if (energyInviteNoteEl) {
+        energyInviteNoteEl.textContent = telegramLinks?.webLink
+          ? "При открытии в Telegram ID сохранится автоматически и энергетик сразу увидит свою страницу."
+          : "Бот ещё не указан. Скопируйте ссылку и отправьте её вручную.";
+      }
+      if (energyInviteShareButton) {
+        energyInviteShareButton.disabled = !energyInviteLinkEl?.value;
+      }
+      if (energyInviteCopyButton) {
+        energyInviteCopyButton.disabled = !energyInviteLinkEl?.value;
+      }
+      if (energyInviteOpenButton) {
+        energyInviteOpenButton.disabled = !energyInviteLinkEl?.value;
+        energyInviteOpenButton.textContent = telegramLinks?.webLink
+          ? "Открыть в Telegram"
+          : "Открыть ссылку";
+      }
+      energyInviteBox.classList.remove("is-hidden");
+    } catch (error) {
+      console.error(error);
+      if (energyInviteNoteEl) {
+        energyInviteNoteEl.textContent =
+          "Не удалось сформировать ссылку. Попробуйте позже.";
+      }
+      energyInviteBox.classList.remove("is-hidden");
+    }
+  };
+
   const renderEnergyList = (energyUsers) => {
     if (!orgsEnergyListEl) return;
     orgsEnergyListEl.innerHTML = "";
@@ -2536,6 +2665,7 @@ function setupSuperAdmin() {
       empty.className = "orgs-energy__empty";
       empty.textContent = "Энергетики не добавлены.";
       orgsEnergyListEl.appendChild(empty);
+      resetEnergyInvite();
       return;
     }
 
@@ -2552,7 +2682,29 @@ function setupSuperAdmin() {
       status.className = `orgs-energy__status${
         hasId ? " orgs-energy__status--ok" : ""
       }`;
-      status.textContent = hasId ? "ID привязан" : "ID не указан";
+      status.textContent = hasId
+        ? "ID привязан"
+        : "ID не указан · нажмите, чтобы пригласить";
+
+      if (!hasId) {
+        card.classList.add("is-actionable");
+        card.setAttribute("role", "button");
+        card.setAttribute("tabindex", "0");
+        card.setAttribute(
+          "aria-label",
+          `Пригласить энергетика ${name.textContent}`
+        );
+        const handleInvite = () => {
+          createEnergyInvite(user);
+        };
+        card.addEventListener("click", handleInvite);
+        card.addEventListener("keydown", (event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            handleInvite();
+          }
+        });
+      }
 
       card.append(name, status);
       orgsEnergyListEl.appendChild(card);
@@ -2563,6 +2715,7 @@ function setupSuperAdmin() {
     if (!orgName) {
       return;
     }
+    resetEnergyInvite();
     const org = orgsState.organizations.find(
       (item) => getOrgDisplayName(item) === orgName
     );
@@ -2732,12 +2885,14 @@ function setupSuperAdmin() {
     if (orgsDetailsModalEl) {
       orgsDetailsModalEl.classList.add("is-hidden");
     }
+    resetEnergyInvite();
     document.body.style.overflow = "";
   };
 
   const closeOrgsDetailsModal = () => {
     if (!orgsDetailsModalEl) return;
     orgsDetailsModalEl.classList.add("is-hidden");
+    resetEnergyInvite();
     if (orgsModalEl && !orgsModalEl.classList.contains("is-hidden")) {
       document.body.style.overflow = "hidden";
     } else {
@@ -2787,6 +2942,49 @@ function setupSuperAdmin() {
       registrationLinkEl.select();
       document.execCommand("copy");
       if (messageEl) messageEl.textContent = "Ссылка выделена для копирования.";
+    }
+  });
+  if (energyInviteShareButton) energyInviteShareButton.disabled = true;
+  if (energyInviteCopyButton) energyInviteCopyButton.disabled = true;
+  if (energyInviteOpenButton) energyInviteOpenButton.disabled = true;
+  energyInviteShareButton?.addEventListener("click", () => {
+    const link = energyInviteLinkEl?.value?.trim();
+    if (!link) return;
+    const shareText =
+      energyInviteBox?.dataset.shareText ??
+      "Контакт энергетика. Отправляю ссылку для регистрации.";
+    const telegramShareUrl = new URL("https://t.me/share/url");
+    telegramShareUrl.searchParams.set("url", link);
+    telegramShareUrl.searchParams.set("text", shareText);
+    if (window.Telegram?.WebApp?.openTelegramLink) {
+      window.Telegram.WebApp.openTelegramLink(telegramShareUrl.href);
+    } else {
+      window.open(telegramShareUrl.href, "_blank", "noopener");
+    }
+  });
+  energyInviteOpenButton?.addEventListener("click", () => {
+    const webLink = energyInviteBox?.dataset.telegramLink?.trim();
+    const appLink = energyInviteBox?.dataset.telegramAppLink?.trim();
+    if (!webLink && !appLink) return;
+    if (window.Telegram?.WebApp?.openTelegramLink && webLink) {
+      window.Telegram.WebApp.openTelegramLink(webLink);
+    } else {
+      window.location.href = appLink || webLink;
+    }
+  });
+  energyInviteCopyButton?.addEventListener("click", async () => {
+    if (!energyInviteLinkEl?.value) return;
+    try {
+      await navigator.clipboard.writeText(energyInviteLinkEl.value);
+      if (energyInviteNoteEl) {
+        energyInviteNoteEl.textContent = "Ссылка скопирована в буфер.";
+      }
+    } catch (error) {
+      energyInviteLinkEl.select();
+      document.execCommand("copy");
+      if (energyInviteNoteEl) {
+        energyInviteNoteEl.textContent = "Ссылка выделена для копирования.";
+      }
     }
   });
 
@@ -2922,6 +3120,7 @@ function setupSuperAdmin() {
     }
   });
 
+  resetEnergyInvite();
   updateStats();
 }
 

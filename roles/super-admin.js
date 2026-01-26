@@ -264,9 +264,18 @@ export function renderRole(user) {
           aria-label="Детали организации"
         >
           <div class="settings-modal__header orgs-details-modal__header">
-            <div class="settings-modal__title">
+            <div class="settings-modal__title orgs-details-modal__title">
               <h2 data-orgs-details-name>Организация</h2>
               <p data-orgs-details-launch>Дата запуска</p>
+              <button
+                class="button-icon orgs-details__upload"
+                type="button"
+                data-orgs-upload
+                aria-label="Загрузить данные"
+                title="Загрузить данные"
+              >
+                <span class="button-icon-emoji" aria-hidden="true">📥</span>
+              </button>
             </div>
             <button
               class="button-icon orgs-details-modal__close"
@@ -283,15 +292,6 @@ export function renderRole(user) {
               <div class="orgs-details__content">
                 <div class="orgs-details__header">
                   <div class="orgs-details__title" aria-hidden="true"></div>
-                  <button
-                    class="button-icon orgs-details__upload"
-                    type="button"
-                    data-orgs-upload
-                    aria-label="Загрузить данные"
-                    title="Загрузить данные"
-                  >
-                    <span class="button-icon-emoji" aria-hidden="true">📥</span>
-                  </button>
                 </div>
                 <div class="orgs-metrics">
                   <div class="orgs-metric">

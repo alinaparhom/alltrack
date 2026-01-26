@@ -2036,7 +2036,7 @@
         grid-template-columns: minmax(0, 1fr) auto;
         align-items: start;
         gap: 8px;
-        padding: calc(14px + env(safe-area-inset-top)) 16px 8px;
+        padding: calc(10px + env(safe-area-inset-top)) 14px 6px;
         border-bottom: 1px solid rgba(226, 232, 240, 0.7);
         background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(255, 255, 255, 0.7));
       }
@@ -2050,15 +2050,15 @@
       .users-modal__close,
       .users-details-modal__close {
         margin-top: 0;
-        width: 42px;
-        height: 42px;
-        border-radius: 12px;
+        width: 38px;
+        height: 38px;
+        border-radius: 10px;
       }
 
       .users-modal__body,
       .users-details-modal__body {
-        padding: 8px 12px calc(12px + env(safe-area-inset-bottom));
-        gap: 8px;
+        padding: 6px 10px calc(10px + env(safe-area-inset-bottom));
+        gap: 6px;
         overflow: hidden;
         min-height: 0;
         touch-action: pan-y;
@@ -2066,21 +2066,21 @@
 
       .users-orgs {
         display: grid;
-        gap: 10px;
+        gap: 8px;
       }
 
       .users-orgs__list {
         display: grid;
-        gap: 8px;
+        gap: 6px;
         overflow-y: auto;
-        padding-right: 4px;
+        padding-right: 3px;
         min-height: 0;
-        max-height: calc(100vh - 180px);
+        max-height: calc(100vh - 170px);
       }
 
       .users-orgs__row {
-        padding: 10px 12px;
-        border-radius: 14px;
+        padding: 8px 10px;
+        border-radius: 12px;
         border: 1px solid rgba(226, 232, 240, 0.9);
         background: rgba(255, 255, 255, 0.86);
         box-shadow: 0 8px 18px rgba(15, 23, 42, 0.05);
@@ -2106,17 +2106,17 @@
 
       .users-orgs__name {
         font-weight: 600;
-        font-size: 15px;
+        font-size: 14px;
         color: var(--text);
         overflow-wrap: anywhere;
       }
 
       .users-orgs__count {
-        padding: 4px 10px;
+        padding: 3px 8px;
         border-radius: 999px;
         background: rgba(59, 125, 255, 0.16);
         color: var(--accent);
-        font-size: 11px;
+        font-size: 10px;
         font-weight: 600;
         white-space: nowrap;
       }
@@ -2133,21 +2133,22 @@
 
       .users-details {
         display: grid;
-        gap: 8px;
+        gap: 6px;
         min-height: 0;
+        align-content: start;
       }
 
       .users-details__add {
         display: flex;
         align-items: center;
         gap: 10px;
-        padding: 6px 10px;
-        border-radius: 10px;
+        padding: 4px 8px;
+        border-radius: 9px;
         border: 1px solid rgba(59, 125, 255, 0.28);
         background: linear-gradient(135deg, rgba(59, 125, 255, 0.18), rgba(255, 255, 255, 0.92));
         color: var(--accent);
         font-weight: 600;
-        font-size: 12px;
+        font-size: 11px;
         cursor: pointer;
         transition: transform 0.2s ease, box-shadow 0.2s ease;
       }
@@ -2157,45 +2158,45 @@
       }
 
       .users-details__add-icon {
-        font-size: 14px;
+        font-size: 13px;
       }
 
       .users-details__list {
         display: grid;
-        gap: 6px;
-        grid-template-columns: 1fr;
+        gap: 5px;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
         overflow-y: auto;
-        max-height: calc(100vh - 200px);
-        padding-right: 4px;
+        max-height: calc(100vh - 170px);
+        padding-right: 3px;
       }
 
       .users-details__card {
         display: grid;
         grid-template-columns: auto minmax(0, 1fr);
-        gap: 6px;
+        gap: 8px;
         padding: 6px 8px;
-        border-radius: 8px;
+        border-radius: 10px;
         border: 1px solid rgba(226, 232, 240, 0.9);
         background: rgba(255, 255, 255, 0.88);
         box-shadow: 0 8px 18px rgba(15, 23, 42, 0.04);
       }
 
       .users-details__initials {
-        width: 30px;
-        height: 30px;
-        border-radius: 8px;
+        width: 26px;
+        height: 26px;
+        border-radius: 7px;
         display: grid;
         place-items: center;
         font-weight: 700;
         color: var(--accent);
         background: rgba(59, 125, 255, 0.16);
-        font-size: 11px;
+        font-size: 10px;
         text-transform: uppercase;
       }
 
       .users-details__info {
         display: grid;
-        gap: 2px;
+        gap: 3px;
       }
 
       .users-details__name {
@@ -2203,13 +2204,14 @@
         font-size: 12px;
         color: var(--text);
         overflow-wrap: anywhere;
+        line-height: 1.25;
       }
 
       .users-details__meta {
         display: flex;
         flex-wrap: wrap;
         gap: 4px 6px;
-        font-size: 9px;
+        font-size: 10px;
         color: var(--muted);
       }
 
@@ -2219,7 +2221,7 @@
         background: rgba(59, 125, 255, 0.16);
         color: var(--accent);
         font-weight: 600;
-        font-size: 8px;
+        font-size: 9px;
       }
 
       .users-details__empty {
@@ -2314,13 +2316,18 @@
         }
 
         .users-orgs__list {
-          max-height: calc(100vh - 240px);
+          max-height: calc(100vh - 220px);
           padding-right: 2px;
         }
 
         .users-details-modal__title h2,
         .users-details-modal__title p {
           word-break: break-word;
+        }
+
+        .users-details__list {
+          grid-template-columns: 1fr;
+          max-height: calc(100vh - 190px);
         }
       }
 

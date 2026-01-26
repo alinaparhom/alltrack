@@ -15,7 +15,7 @@ export function renderRole(user) {
               <span class="stat-pill">в реестре</span>
             </div>
           </button>
-          <button class="stat-card stat-card--action" type="button" data-open-orgs>
+          <button class="stat-card stat-card--action" type="button" data-open-users>
             <div class="stat-card-header">
               <span class="stat-icon">👥</span>
               <div class="stat-label">Пользователей</div>
@@ -369,6 +369,74 @@ export function renderRole(user) {
                     <span class="orgs-details__upload-text">Загрузить данные</span>
                   </button>
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="settings-modal users-modal is-hidden" data-users-modal>
+        <div class="settings-modal__backdrop" data-users-backdrop></div>
+        <div
+          class="settings-modal__panel users-modal__panel"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Пользователи"
+        >
+          <div class="settings-modal__header users-modal__header">
+            <div class="settings-modal__title">
+              <h2>Пользователи</h2>
+              <p class="users-modal__subtitle">Выберите организацию для просмотра списка</p>
+            </div>
+            <button
+              class="button-icon users-modal__close"
+              type="button"
+              data-users-close
+              aria-label="Закрыть окно пользователей"
+            >
+              <span class="button-icon-emoji" aria-hidden="true">✕</span>
+            </button>
+          </div>
+          <div class="settings-modal__body users-modal__body">
+            <div class="users-orgs">
+              <div class="users-orgs__list" data-users-orgs-list></div>
+              <div class="users-orgs__empty is-hidden" data-users-orgs-empty>
+                Пока нет организаций. Добавьте первую организацию через кнопку «Добавить организацию».
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="settings-modal users-details-modal is-hidden" data-users-details-modal>
+        <div class="settings-modal__backdrop" data-users-details-backdrop></div>
+        <div
+          class="settings-modal__panel users-details-modal__panel"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Пользователи организации"
+        >
+          <div class="settings-modal__header users-details-modal__header">
+            <div class="settings-modal__title users-details-modal__title">
+              <h2 data-users-details-name>Организация</h2>
+              <p data-users-details-count>—</p>
+            </div>
+            <button
+              class="button-icon users-details-modal__close"
+              type="button"
+              data-users-details-close
+              aria-label="Закрыть окно пользователей организации"
+            >
+              <span class="button-icon-emoji" aria-hidden="true">✕</span>
+            </button>
+          </div>
+          <div class="settings-modal__body users-details-modal__body">
+            <div class="users-details">
+              <button class="users-details__add" type="button" data-users-add>
+                <span class="users-details__add-icon" aria-hidden="true">➕</span>
+                <span class="users-details__add-text">Добавить пользователя</span>
+              </button>
+              <div class="users-details__list" data-users-details-list></div>
+              <div class="users-details__empty is-hidden" data-users-details-empty>
+                В этой организации ещё нет пользователей.
               </div>
             </div>
           </div>

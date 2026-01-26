@@ -438,6 +438,63 @@ export function renderRole(user) {
               <div class="users-details__empty is-hidden" data-users-details-empty>
                 В этой организации ещё нет пользователей.
               </div>
+              <div
+                class="registration-box users-details__invite is-hidden"
+                data-users-invite-box
+              >
+                <div class="registration-title">Приглашение для ответственного</div>
+                <p class="registration-hint" data-users-invite-hint>
+                  Нажмите на ответственного без ID в списке, чтобы сформировать ссылку.
+                </p>
+                <p class="registration-note" data-users-invite-note>
+                  Откройте ссылку в Telegram — ID сохранится автоматически.
+                </p>
+                <ul class="registration-steps">
+                  <li><strong>1.</strong> Откройте ссылку в Telegram.</li>
+                  <li><strong>2.</strong> Подтвердите запуск мини‑приложения.</li>
+                  <li><strong>3.</strong> ID сохранится автоматически.</li>
+                </ul>
+                <div class="registration-actions">
+                  <div class="registration-links">
+                    <div class="registration-link-row">
+                      <input
+                        class="form-input"
+                        type="text"
+                        readonly
+                        aria-label="Ссылка для открытия в Telegram"
+                        data-users-invite-link
+                      />
+                      <button
+                        class="button-icon"
+                        type="button"
+                        data-users-invite-share
+                        aria-label="Отправить контакт в Telegram"
+                        title="Отправить контакт в Telegram"
+                      >
+                        <span class="button-icon-emoji">✈️</span>
+                      </button>
+                      <button
+                        class="button-icon"
+                        type="button"
+                        data-users-invite-copy
+                        aria-label="Скопировать ссылку"
+                        title="Скопировать ссылку"
+                      >
+                        <span class="button-icon-emoji">📋</span>
+                      </button>
+                    </div>
+                  </div>
+                  <div class="registration-buttons">
+                    <button
+                      class="action-primary button-telegram"
+                      type="button"
+                      data-users-invite-open
+                    >
+                      Открыть в Telegram
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>

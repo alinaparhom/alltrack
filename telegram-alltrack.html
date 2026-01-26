@@ -184,6 +184,12 @@
         box-shadow: 0 14px 28px rgba(0, 0, 0, 0.35);
       }
 
+      body[data-theme="dark"] .users-details__card.is-actionable {
+        background: rgba(27, 38, 66, 0.95);
+        border-color: rgba(123, 178, 255, 0.5);
+        box-shadow: 0 12px 24px rgba(8, 12, 22, 0.35);
+      }
+
       body[data-theme="dark"] .users-orgs__count {
         background: rgba(123, 178, 255, 0.22);
         color: var(--text);
@@ -2181,6 +2187,23 @@
         border: 1px solid rgba(226, 232, 240, 0.9);
         background: rgba(255, 255, 255, 0.88);
         box-shadow: 0 8px 18px rgba(15, 23, 42, 0.04);
+      }
+
+      .users-details__card.is-actionable {
+        cursor: pointer;
+        border-color: rgba(59, 125, 255, 0.35);
+        background: rgba(255, 255, 255, 0.96);
+        box-shadow: 0 10px 24px rgba(59, 125, 255, 0.12);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      .users-details__card.is-actionable:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 16px 30px rgba(59, 125, 255, 0.18);
+      }
+
+      .users-details__card.is-actionable:active {
+        transform: translateY(0);
       }
 
       .users-details__initials {

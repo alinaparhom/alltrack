@@ -2438,6 +2438,19 @@ function setupSuperAdmin() {
   const usersDetailsEmptyEl = contentEl.querySelector(
     "[data-users-details-empty]"
   );
+  const usersInviteBox = contentEl.querySelector("[data-users-invite-box]");
+  const usersInviteHintEl = contentEl.querySelector("[data-users-invite-hint]");
+  const usersInviteNoteEl = contentEl.querySelector("[data-users-invite-note]");
+  const usersInviteLinkEl = contentEl.querySelector("[data-users-invite-link]");
+  const usersInviteShareButton = contentEl.querySelector(
+    "[data-users-invite-share]"
+  );
+  const usersInviteCopyButton = contentEl.querySelector(
+    "[data-users-invite-copy]"
+  );
+  const usersInviteOpenButton = contentEl.querySelector(
+    "[data-users-invite-open]"
+  );
 
   if (!dashboardEl || !addOrgSection || !formEl) return;
 
@@ -2628,6 +2641,123 @@ function setupSuperAdmin() {
     if (energyInviteOpenButton) {
       energyInviteOpenButton.disabled = true;
       energyInviteOpenButton.textContent = "Открыть в Telegram";
+    }
+  };
+
+  const resetUsersInvite = () => {
+    if (!usersInviteBox) return;
+    usersInviteBox.classList.add("is-hidden");
+    delete usersInviteBox.dataset.shareText;
+    delete usersInviteBox.dataset.telegramLink;
+    delete usersInviteBox.dataset.telegramAppLink;
+    if (usersInviteLinkEl) {
+      usersInviteLinkEl.value = "";
+    }
+    if (usersInviteHintEl) {
+      usersInviteHintEl.textContent =
+        "Нажмите на ответственного без ID в списке, чтобы сформировать ссылку.";
+    }
+    if (usersInviteNoteEl) {
+      usersInviteNoteEl.textContent =
+        "Откройте ссылку в Telegram — ID сохранится автоматически.";
+    }
+    if (usersInviteShareButton) usersInviteShareButton.disabled = true;
+    if (usersInviteCopyButton) usersInviteCopyButton.disabled = true;
+    if (usersInviteOpenButton) {
+      usersInviteOpenButton.disabled = true;
+      usersInviteOpenButton.textContent = "Открыть в Telegram";
+    }
+  };
+
+  const createResponsibleInvite = async (user) => {
+    if (!usersInviteBox || !user) return;
+    const fullName = String(user?.full_name ?? "Ответственный").trim();
+    const organizationName = String(
+      user?.organization ?? selectedUsersOrgName ?? ""
+    ).trim();
+    const roleName = String(user?.role ?? responsibleRole).trim() || responsibleRole;
+    if (!fullName || !organizationName) return;
+
+    try {
+      const registrationsData = await loadRegistrations();
+      const registrations = registrationsData.registrations ?? [];
+      const existing = registrations.find(
+        (item) =>
+          item.user?.full_name === fullName &&
+          item.user?.organization === organizationName &&
+          item.user?.role === roleName
+      );
+      const registrationToken = existing?.token ?? createRegistrationToken();
+
+      if (!existing) {
+        const nextRegistrationsData = {
+          registrations: [
+            ...registrations,
+            {
+              token: registrationToken,
+              created_at: new Date().toISOString(),
+              user: {
+                full_name: fullName,
+                organization: organizationName,
+                role: roleName,
+              },
+            },
+          ],
+        };
+        await saveEntries([
+          { path: pendingRegistrationsFilePath, data: nextRegistrationsData },
+        ]);
+      }
+
+      const registrationLink = new URL(
+        `${window.location.origin}${window.location.pathname}`
+      );
+      registrationLink.searchParams.set("registration", registrationToken);
+      const botUsername = await resolveBotUsername();
+      const telegramLinks = buildTelegramRegistrationLinks(
+        botUsername,
+        registrationToken
+      );
+      const fallbackLink = telegramLinks?.webLink ?? registrationLink.href;
+
+      if (usersInviteHintEl) {
+        usersInviteHintEl.textContent = "Ссылка для приглашения готова.";
+      }
+      if (usersInviteLinkEl) {
+        usersInviteLinkEl.value = fallbackLink;
+      }
+      usersInviteBox.dataset.shareText = `Контакт ответственного: ${fullName}. Организация: ${organizationName}.`;
+      usersInviteBox.dataset.telegramLink = fallbackLink;
+      if (telegramLinks?.appLink) {
+        usersInviteBox.dataset.telegramAppLink = telegramLinks.appLink;
+      } else {
+        delete usersInviteBox.dataset.telegramAppLink;
+      }
+      if (usersInviteNoteEl) {
+        usersInviteNoteEl.textContent = telegramLinks?.webLink
+          ? "При открытии в Telegram ID сохранится автоматически и ответственный сразу увидит свою страницу."
+          : "Бот ещё не указан. Скопируйте ссылку и отправьте её вручную.";
+      }
+      if (usersInviteShareButton) {
+        usersInviteShareButton.disabled = !usersInviteLinkEl?.value;
+      }
+      if (usersInviteCopyButton) {
+        usersInviteCopyButton.disabled = !usersInviteLinkEl?.value;
+      }
+      if (usersInviteOpenButton) {
+        usersInviteOpenButton.disabled = !usersInviteLinkEl?.value;
+        usersInviteOpenButton.textContent = telegramLinks?.webLink
+          ? "Открыть в Telegram"
+          : "Открыть ссылку";
+      }
+      usersInviteBox.classList.remove("is-hidden");
+    } catch (error) {
+      console.error(error);
+      if (usersInviteNoteEl) {
+        usersInviteNoteEl.textContent =
+          "Не удалось сформировать ссылку. Попробуйте позже.";
+      }
+      usersInviteBox.classList.remove("is-hidden");
     }
   };
 
@@ -2995,25 +3125,49 @@ function setupSuperAdmin() {
       meta.className = "users-details__meta";
       const roleTag = document.createElement("span");
       roleTag.className = "users-details__tag";
-      roleTag.textContent = String(user?.role ?? "роль").trim();
+      const roleName = String(user?.role ?? "роль").trim();
+      roleTag.textContent = roleName;
 
       const telegramStatus = document.createElement("span");
       telegramStatus.className = "users-details__status";
-      const hasTelegramId = Number(user?.telegram_id) !== 0;
+      const hasTelegramId = Boolean(normalizeTelegramId(user?.telegram_id));
+      const canInvite = roleName === responsibleRole && !hasTelegramId;
       telegramStatus.textContent = hasTelegramId
         ? "ID привязан"
-        : "ID не привязан";
+        : canInvite
+          ? "ID не привязан · нажмите, чтобы пригласить"
+          : "ID не привязан";
       telegramStatus.classList.toggle("is-linked", hasTelegramId);
       meta.append(roleTag, telegramStatus);
 
       info.append(name, meta);
       card.append(initials, info);
+      if (canInvite) {
+        card.classList.add("is-actionable");
+        card.setAttribute("role", "button");
+        card.setAttribute("tabindex", "0");
+        card.setAttribute(
+          "aria-label",
+          `Пригласить ответственного ${name.textContent}`
+        );
+        const handleInvite = () => {
+          createResponsibleInvite(user);
+        };
+        card.addEventListener("click", handleInvite);
+        card.addEventListener("keydown", (event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            handleInvite();
+          }
+        });
+      }
       usersDetailsListEl.appendChild(card);
     });
   };
 
   const selectUsersOrganization = (orgName) => {
     if (!orgName) return;
+    resetUsersInvite();
     selectedUsersOrgName = orgName;
     if (usersDetailsNameEl) {
       usersDetailsNameEl.textContent = orgName;
@@ -3053,6 +3207,7 @@ function setupSuperAdmin() {
     if (usersDetailsModalEl) {
       usersDetailsModalEl.classList.add("is-hidden");
     }
+    resetUsersInvite();
     document.body.style.overflow = "hidden";
   };
 
@@ -3062,12 +3217,14 @@ function setupSuperAdmin() {
     if (usersDetailsModalEl) {
       usersDetailsModalEl.classList.add("is-hidden");
     }
+    resetUsersInvite();
     document.body.style.overflow = "";
   };
 
   const closeUsersDetailsModal = () => {
     if (!usersDetailsModalEl) return;
     usersDetailsModalEl.classList.add("is-hidden");
+    resetUsersInvite();
     if (usersModalEl && !usersModalEl.classList.contains("is-hidden")) {
       document.body.style.overflow = "hidden";
     } else {
@@ -3199,6 +3356,49 @@ function setupSuperAdmin() {
       document.execCommand("copy");
       if (energyInviteNoteEl) {
         energyInviteNoteEl.textContent = "Ссылка выделена для копирования.";
+      }
+    }
+  });
+  if (usersInviteShareButton) usersInviteShareButton.disabled = true;
+  if (usersInviteCopyButton) usersInviteCopyButton.disabled = true;
+  if (usersInviteOpenButton) usersInviteOpenButton.disabled = true;
+  usersInviteShareButton?.addEventListener("click", () => {
+    const link = usersInviteLinkEl?.value?.trim();
+    if (!link) return;
+    const shareText =
+      usersInviteBox?.dataset.shareText ??
+      "Контакт ответственного. Отправляю ссылку для регистрации.";
+    const telegramShareUrl = new URL("https://t.me/share/url");
+    telegramShareUrl.searchParams.set("url", link);
+    telegramShareUrl.searchParams.set("text", shareText);
+    if (window.Telegram?.WebApp?.openTelegramLink) {
+      window.Telegram.WebApp.openTelegramLink(telegramShareUrl.href);
+    } else {
+      window.open(telegramShareUrl.href, "_blank", "noopener");
+    }
+  });
+  usersInviteOpenButton?.addEventListener("click", () => {
+    const webLink = usersInviteBox?.dataset.telegramLink?.trim();
+    const appLink = usersInviteBox?.dataset.telegramAppLink?.trim();
+    if (!webLink && !appLink) return;
+    if (window.Telegram?.WebApp?.openTelegramLink && webLink) {
+      window.Telegram.WebApp.openTelegramLink(webLink);
+    } else {
+      window.location.href = appLink || webLink;
+    }
+  });
+  usersInviteCopyButton?.addEventListener("click", async () => {
+    if (!usersInviteLinkEl?.value) return;
+    try {
+      await navigator.clipboard.writeText(usersInviteLinkEl.value);
+      if (usersInviteNoteEl) {
+        usersInviteNoteEl.textContent = "Ссылка скопирована в буфер.";
+      }
+    } catch (error) {
+      usersInviteLinkEl.select();
+      document.execCommand("copy");
+      if (usersInviteNoteEl) {
+        usersInviteNoteEl.textContent = "Ссылка выделена для копирования.";
       }
     }
   });
@@ -3336,6 +3536,7 @@ function setupSuperAdmin() {
   });
 
   resetEnergyInvite();
+  resetUsersInvite();
   updateStats();
 }
 

@@ -3172,6 +3172,11 @@ function setupSuperAdmin() {
   const energyInviteOpenButton = contentEl.querySelector(
     "[data-energy-invite-open]"
   );
+  const orgsUploadButton = contentEl.querySelector("[data-orgs-upload]");
+  const orgsUploadInput = contentEl.querySelector("[data-orgs-upload-input]");
+  const orgsUploadStatusEl = contentEl.querySelector(
+    "[data-orgs-upload-status]"
+  );
   const usersModalEl = contentEl.querySelector("[data-users-modal]");
   const usersBackdropEl = contentEl.querySelector("[data-users-backdrop]");
   const usersCloseButton = contentEl.querySelector("[data-users-close]");
@@ -3352,6 +3357,75 @@ function setupSuperAdmin() {
   };
   let selectedOrgName = "";
   let selectedUsersOrgName = "";
+
+  const setUploadStatus = (message = "", tone = "info") => {
+    if (!orgsUploadStatusEl) return;
+    orgsUploadStatusEl.textContent = message;
+    orgsUploadStatusEl.classList.remove("is-success", "is-error");
+    if (tone === "success") {
+      orgsUploadStatusEl.classList.add("is-success");
+    } else if (tone === "error") {
+      orgsUploadStatusEl.classList.add("is-error");
+    }
+  };
+
+  const clearUploadStatus = () => {
+    setUploadStatus("");
+  };
+
+  const buildSelectedOrgFolderName = () => {
+    if (!selectedOrgName) return "";
+    const shortName = pickOrganizationShortName(
+      { organizations: orgsState.organizations },
+      selectedOrgName
+    );
+    return sanitizeOrganizationFolderName(shortName || selectedOrgName);
+  };
+
+  const buildUploadUserMeta = () => {
+    if (!selectedOrgName && !currentUser) return {};
+    return {
+      user: {
+        telegram_id: currentUser?.telegram_id ?? null,
+        full_name: currentUser?.full_name ?? currentUser?.fullName ?? "",
+        role: currentUser?.role ?? "",
+        organization: selectedOrgName || currentUser?.organization || "",
+      },
+    };
+  };
+
+  const formatDateValue = (date) => {
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    return `${day}.${month}.${date.getFullYear()}`;
+  };
+
+  const normalizePurchaseDate = (value) => {
+    if (!value) return "";
+    if (value instanceof Date && !Number.isNaN(value.getTime())) {
+      return formatDateValue(value);
+    }
+    if (typeof value === "number" && window.XLSX?.SSF?.parse_date_code) {
+      const parsed = window.XLSX.SSF.parse_date_code(value);
+      if (parsed?.y && parsed?.m && parsed?.d) {
+        const day = String(parsed.d).padStart(2, "0");
+        const month = String(parsed.m).padStart(2, "0");
+        return `${day}.${month}.${parsed.y}`;
+      }
+    }
+    return String(value).trim();
+  };
+
+  const normalizeCostValue = (value) => {
+    if (typeof value === "number" && Number.isFinite(value)) {
+      return value;
+    }
+    const raw = String(value ?? "")
+      .replace(/\s+/g, "")
+      .replace(",", ".");
+    const parsed = Number(raw);
+    return Number.isFinite(parsed) ? parsed : null;
+  };
 
   const getOrgDisplayName = (org) => {
     const name = String(org?.full_name ?? org?.fullName ?? "").trim();
@@ -3842,6 +3916,88 @@ function setupSuperAdmin() {
     });
   };
 
+  const parseExcelToolsData = (sheet) => {
+    const rows = window.XLSX.utils.sheet_to_json(sheet, {
+      header: 1,
+      defval: "",
+    });
+    if (!rows.length) {
+      return { tools: [], objects: [] };
+    }
+    const tools = [];
+    const objectsSet = new Set();
+    const columnMap = [
+      { key: "Номер", index: 0 },
+      { key: "Бух.номер", index: 1 },
+      { key: "Наименование", index: 2 },
+      { key: "Производитель", index: 3 },
+      { key: "Модель", index: 4 },
+      { key: "Наименование по бухгалтерии", index: 5 },
+      { key: "Стоимость", index: 6 },
+      { key: "Дата покупки", index: 7 },
+      { key: "Ответственный", index: 8 },
+      { key: "Объект", index: 9 },
+    ];
+
+    rows.slice(1).forEach((row) => {
+      if (!Array.isArray(row)) return;
+      const entry = {};
+      let hasValue = false;
+      columnMap.forEach(({ key, index }) => {
+        const value = row[index];
+        let normalized = value;
+        if (key === "Стоимость") {
+          normalized = normalizeCostValue(value);
+        } else if (key === "Дата покупки") {
+          normalized = normalizePurchaseDate(value);
+        } else {
+          normalized = String(value ?? "").trim();
+        }
+        if (normalized !== "" && normalized !== null) {
+          hasValue = true;
+        }
+        entry[key] = normalized;
+      });
+
+      if (!hasValue) return;
+      const objectName = sanitizeObjectName(entry["Объект"] ?? "");
+      if (objectName) {
+        objectsSet.add(objectName);
+        entry["Объект"] = objectName;
+      }
+      tools.push(entry);
+    });
+
+    return { tools, objects: Array.from(objectsSet) };
+  };
+
+  const loadObjectsData = async (orgFolder) => {
+    const objectsPath = `./${orgFolder}/Объекты.json`;
+    try {
+      const raw = await loadJson(objectsPath);
+      return normalizeObjectsData(raw);
+    } catch (error) {
+      console.warn("Не удалось загрузить список объектов.", error);
+      return [];
+    }
+  };
+
+  const mergeObjects = (existingObjects, newObjects) => {
+    const normalizedSet = new Set(
+      existingObjects.map((item) => sanitizeObjectName(item.name).toLowerCase())
+    );
+    const merged = [...existingObjects];
+    newObjects.forEach((name) => {
+      const normalized = sanitizeObjectName(name);
+      if (!normalized) return;
+      const key = normalized.toLowerCase();
+      if (normalizedSet.has(key)) return;
+      normalizedSet.add(key);
+      merged.push({ id: buildObjectId(), name: normalized });
+    });
+    return merged;
+  };
+
   const selectOrganization = (orgName) => {
     if (!orgName) {
       return;
@@ -3898,6 +4054,80 @@ function setupSuperAdmin() {
     if (orgsDetailsModalEl) {
       orgsDetailsModalEl.classList.remove("is-hidden");
       document.body.style.overflow = "hidden";
+    }
+  };
+
+  const handleUploadTools = async (file) => {
+    if (!file) return;
+    if (!selectedOrgName) {
+      setUploadStatus("Сначала выберите организацию.", "error");
+      return;
+    }
+    if (!window.XLSX) {
+      setUploadStatus("Модуль Excel не загружен. Обновите страницу.", "error");
+      return;
+    }
+
+    const orgFolder = buildSelectedOrgFolderName();
+    if (!orgFolder) {
+      setUploadStatus("Не удалось определить папку организации.", "error");
+      return;
+    }
+
+    setUploadStatus("Читаем Excel файл...");
+    if (orgsUploadButton) orgsUploadButton.disabled = true;
+
+    try {
+      const buffer = await file.arrayBuffer();
+      const workbook = window.XLSX.read(buffer, {
+        type: "array",
+        cellDates: true,
+      });
+      const sheet = workbook.Sheets["База"];
+      if (!sheet) {
+        throw new Error('Лист "База" не найден.');
+      }
+
+      const { tools, objects } = parseExcelToolsData(sheet);
+      if (!tools.length) {
+        setUploadStatus("В листе «База» нет данных для загрузки.", "error");
+        return;
+      }
+
+      const existingObjects = await loadObjectsData(orgFolder);
+      const mergedObjects = mergeObjects(existingObjects, objects);
+      const meta = buildUploadUserMeta();
+      const basePath = `./${orgFolder}`;
+      await saveEntries([
+        {
+          path: `${basePath}/База с инструментами.json`,
+          data: tools,
+          ...meta,
+        },
+        {
+          path: `${basePath}/Объекты.json`,
+          data: mergedObjects,
+          ...meta,
+        },
+      ]);
+
+      if (orgsDetailToolsTotalEl) {
+        orgsDetailToolsTotalEl.textContent = String(tools.length);
+      }
+      setUploadStatus(
+        `Загружено позиций: ${tools.length}. Новых объектов: ${
+          mergedObjects.length - existingObjects.length
+        }.`,
+        "success"
+      );
+    } catch (error) {
+      console.error(error);
+      setUploadStatus(
+        "Не удалось обработать файл. Проверьте лист «База» и формат данных.",
+        "error"
+      );
+    } finally {
+      if (orgsUploadButton) orgsUploadButton.disabled = false;
     }
   };
 
@@ -4245,6 +4475,10 @@ function setupSuperAdmin() {
     if (!orgsDetailsModalEl) return;
     orgsDetailsModalEl.classList.add("is-hidden");
     resetEnergyInvite();
+    clearUploadStatus();
+    if (orgsUploadInput) {
+      orgsUploadInput.value = "";
+    }
     if (orgsModalEl && !orgsModalEl.classList.contains("is-hidden")) {
       document.body.style.overflow = "hidden";
     } else {
@@ -4264,6 +4498,22 @@ function setupSuperAdmin() {
   orgsCloseButton?.addEventListener("click", closeOrgsModal);
   orgsDetailsBackdropEl?.addEventListener("click", closeOrgsDetailsModal);
   orgsDetailsCloseButton?.addEventListener("click", closeOrgsDetailsModal);
+  orgsUploadButton?.addEventListener("click", () => {
+    if (!selectedOrgName) {
+      setUploadStatus("Сначала выберите организацию.", "error");
+      return;
+    }
+    if (orgsUploadInput) {
+      orgsUploadInput.click();
+    }
+  });
+  orgsUploadInput?.addEventListener("change", async (event) => {
+    const file = event.target?.files?.[0];
+    await handleUploadTools(file);
+    if (orgsUploadInput) {
+      orgsUploadInput.value = "";
+    }
+  });
   usersBackdropEl?.addEventListener("click", closeUsersModal);
   usersCloseButton?.addEventListener("click", closeUsersModal);
   usersDetailsBackdropEl?.addEventListener("click", closeUsersDetailsModal);

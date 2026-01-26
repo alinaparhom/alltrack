@@ -283,6 +283,12 @@
         color: rgba(214, 228, 255, 0.95);
       }
 
+      body[data-theme="dark"] .orgs-details__upload--photo {
+        background: linear-gradient(135deg, rgba(87, 224, 155, 0.22), rgba(16, 24, 40, 0.92));
+        border-color: rgba(87, 224, 155, 0.35);
+        color: var(--success);
+      }
+
       body[data-theme="dark"] .settings-accordion__icon,
       body[data-theme="dark"] .settings-role__icon {
         background: rgba(123, 178, 255, 0.2);
@@ -2256,6 +2262,12 @@
         line-height: 1.35;
         cursor: pointer;
         transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      .orgs-details__upload--photo {
+        border-color: rgba(47, 158, 103, 0.25);
+        background: linear-gradient(135deg, rgba(47, 158, 103, 0.18), rgba(255, 255, 255, 0.92));
+        color: var(--success);
       }
 
       .users-details__add:active {

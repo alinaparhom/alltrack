@@ -368,12 +368,28 @@ export function renderRole(user) {
                     <span class="orgs-details__upload-icon" aria-hidden="true">📥</span>
                     <span class="orgs-details__upload-text">Загрузить данные</span>
                   </button>
+                  <button
+                    class="orgs-details__upload orgs-details__upload--photo"
+                    type="button"
+                    data-orgs-upload-photo
+                    aria-label="Загрузить фото"
+                  >
+                    <span class="orgs-details__upload-icon" aria-hidden="true">🖼️</span>
+                    <span class="orgs-details__upload-text">Загрузить фото</span>
+                  </button>
                   <input
                     class="orgs-details__upload-input"
                     type="file"
                     accept=".xlsx,.xls"
                     data-orgs-upload-input
                     aria-label="Загрузить Excel файл"
+                  />
+                  <input
+                    class="orgs-details__upload-input"
+                    type="file"
+                    accept="image/*"
+                    data-orgs-upload-photo-input
+                    aria-label="Загрузить фото организации"
                   />
                   <div class="orgs-details__upload-status" data-orgs-upload-status role="status"></div>
                 </div>

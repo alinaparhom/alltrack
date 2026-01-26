@@ -1941,6 +1941,32 @@
         letter-spacing: 0.01em;
       }
 
+      .orgs-details__upload-input {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        border: 0;
+      }
+
+      .orgs-details__upload-status {
+        text-align: center;
+        font-size: 12px;
+        min-height: 16px;
+        color: var(--muted);
+      }
+
+      .orgs-details__upload-status.is-success {
+        color: var(--success);
+      }
+
+      .orgs-details__upload-status.is-error {
+        color: #d64545;
+      }
+
       .orgs-metrics {
         display: grid;
         gap: 10px;
@@ -3037,6 +3063,7 @@
     </main>
 
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script>
       (function () {
         const cacheBuster = Date.now().toString();

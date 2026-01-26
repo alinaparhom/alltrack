@@ -267,15 +267,6 @@ export function renderRole(user) {
             <div class="settings-modal__title orgs-details-modal__title">
               <h2 data-orgs-details-name>Организация</h2>
               <p data-orgs-details-launch>Дата запуска</p>
-              <button
-                class="button-icon orgs-details__upload"
-                type="button"
-                data-orgs-upload
-                aria-label="Загрузить данные"
-                title="Загрузить данные"
-              >
-                <span class="button-icon-emoji" aria-hidden="true">📥</span>
-              </button>
             </div>
             <button
               class="button-icon orgs-details-modal__close"
@@ -314,6 +305,15 @@ export function renderRole(user) {
                     <h4>Энергетики</h4>
                   </div>
                   <div class="orgs-energy__list" data-orgs-energy-list></div>
+                  <button
+                    class="orgs-details__upload"
+                    type="button"
+                    data-orgs-upload
+                    aria-label="Загрузить данные"
+                  >
+                    <span class="orgs-details__upload-icon" aria-hidden="true">📥</span>
+                    <span class="orgs-details__upload-text">Загрузить данные</span>
+                  </button>
                 </div>
               </div>
             </div>

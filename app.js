@@ -2617,7 +2617,7 @@ function setupSuperAdmin() {
       const fallbackLink = telegramLinks?.webLink ?? registrationLink.href;
 
       if (energyInviteHintEl) {
-        energyInviteHintEl.textContent = `Энергетик: ${energyFullName}. Организация: ${organizationName}.`;
+        energyInviteHintEl.textContent = "Ссылка для приглашения готова.";
       }
       if (energyInviteLinkEl) {
         energyInviteLinkEl.value = fallbackLink;

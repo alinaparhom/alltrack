@@ -303,9 +303,6 @@ export function renderRole(user) {
                 <div class="orgs-energy">
                   <div class="orgs-energy__header">
                     <h4>Энергетики</h4>
-                    <p class="orgs-energy__note" data-orgs-energy-note>
-                      Нажмите на энергетика без ID, чтобы отправить приглашение.
-                    </p>
                   </div>
                   <div class="orgs-energy__list" data-orgs-energy-list></div>
                   <div class="registration-box orgs-energy__invite is-hidden" data-energy-invite-box>

@@ -2362,6 +2362,7 @@ function setupSuperAdmin() {
   );
   const telegramNoteEl = contentEl.querySelector("[data-telegram-note]");
   const openOrgsButtons = contentEl.querySelectorAll("[data-open-orgs]");
+  const openUsersButtons = contentEl.querySelectorAll("[data-open-users]");
   const orgsModalEl = contentEl.querySelector("[data-orgs-modal]");
   const orgsBackdropEl = contentEl.querySelector("[data-orgs-backdrop]");
   const orgsCloseButton = contentEl.querySelector("[data-orgs-close]");
@@ -2402,6 +2403,32 @@ function setupSuperAdmin() {
   );
   const energyInviteOpenButton = contentEl.querySelector(
     "[data-energy-invite-open]"
+  );
+  const usersModalEl = contentEl.querySelector("[data-users-modal]");
+  const usersBackdropEl = contentEl.querySelector("[data-users-backdrop]");
+  const usersCloseButton = contentEl.querySelector("[data-users-close]");
+  const usersOrgsListEl = contentEl.querySelector("[data-users-orgs-list]");
+  const usersOrgsEmptyEl = contentEl.querySelector("[data-users-orgs-empty]");
+  const usersDetailsModalEl = contentEl.querySelector(
+    "[data-users-details-modal]"
+  );
+  const usersDetailsBackdropEl = contentEl.querySelector(
+    "[data-users-details-backdrop]"
+  );
+  const usersDetailsCloseButton = contentEl.querySelector(
+    "[data-users-details-close]"
+  );
+  const usersDetailsNameEl = contentEl.querySelector(
+    "[data-users-details-name]"
+  );
+  const usersDetailsCountEl = contentEl.querySelector(
+    "[data-users-details-count]"
+  );
+  const usersDetailsListEl = contentEl.querySelector(
+    "[data-users-details-list]"
+  );
+  const usersDetailsEmptyEl = contentEl.querySelector(
+    "[data-users-details-empty]"
   );
 
   if (!dashboardEl || !addOrgSection || !formEl) return;
@@ -2468,11 +2495,41 @@ function setupSuperAdmin() {
     return `${count} пользователей`;
   };
 
+  const loadOrgsAndUsers = async () => {
+    const [orgData, usersData] = await Promise.all([
+      loadJson(orgFilePath),
+      loadJson(usersFilePath),
+    ]);
+    const organizations = Array.isArray(orgData?.organizations)
+      ? orgData.organizations
+      : [];
+    const users = Array.isArray(usersData?.users) ? usersData.users : [];
+    orgsState.organizations = organizations;
+    orgsState.users = users;
+    return { organizations, users };
+  };
+
+  const buildUserCountsMap = (users) => {
+    const counts = new Map();
+    users.forEach((user) => {
+      const orgName = String(user?.organization ?? "").trim();
+      if (!orgName) return;
+      counts.set(orgName, (counts.get(orgName) ?? 0) + 1);
+    });
+    return counts;
+  };
+
+  const getOrgUserCount = (org, counts) => {
+    const orgNames = getOrgNames(org);
+    return orgNames.reduce((total, name) => total + (counts.get(name) ?? 0), 0);
+  };
+
   const orgsState = {
     organizations: [],
     users: [],
   };
   let selectedOrgName = "";
+  let selectedUsersOrgName = "";
 
   const getOrgDisplayName = (org) => {
     const name = String(org?.full_name ?? org?.fullName ?? "").trim();
@@ -2778,22 +2835,8 @@ function setupSuperAdmin() {
         "Пока нет организаций. Добавьте первую организацию через кнопку «Добавить организацию».";
     }
     try {
-      const [orgData, usersData] = await Promise.all([
-        loadJson(orgFilePath),
-        loadJson(usersFilePath),
-      ]);
-      const organizations = Array.isArray(orgData?.organizations)
-        ? orgData.organizations
-        : [];
-      const users = Array.isArray(usersData?.users) ? usersData.users : [];
-      orgsState.organizations = organizations;
-      orgsState.users = users;
-      const counts = new Map();
-      users.forEach((user) => {
-        const orgName = String(user?.organization ?? "").trim();
-        if (!orgName) return;
-        counts.set(orgName, (counts.get(orgName) ?? 0) + 1);
-      });
+      const { organizations, users } = await loadOrgsAndUsers();
+      const counts = buildUserCountsMap(users);
       if (orgsEmptyEl) {
         orgsEmptyEl.classList.toggle("is-hidden", organizations.length > 0);
       }
@@ -2802,11 +2845,7 @@ function setupSuperAdmin() {
       }
       organizations.forEach((org) => {
         const safeName = getOrgDisplayName(org);
-        const orgNames = getOrgNames(org);
-        const count = orgNames.reduce(
-          (total, name) => total + (counts.get(name) ?? 0),
-          0
-        );
+        const count = getOrgUserCount(org, counts);
 
         const row = document.createElement("div");
         row.className = "orgs-row";
@@ -2869,6 +2908,161 @@ function setupSuperAdmin() {
     }
   };
 
+  const renderUsersOrganizationsList = async () => {
+    if (!usersOrgsListEl) return;
+    usersOrgsListEl.innerHTML = "";
+    if (usersOrgsEmptyEl) {
+      usersOrgsEmptyEl.textContent =
+        "Пока нет организаций. Добавьте первую организацию через кнопку «Добавить организацию».";
+    }
+    try {
+      const { organizations, users } = await loadOrgsAndUsers();
+      const counts = buildUserCountsMap(users);
+      if (usersOrgsEmptyEl) {
+        usersOrgsEmptyEl.classList.toggle("is-hidden", organizations.length > 0);
+      }
+      if (organizations.length === 0) {
+        selectedUsersOrgName = "";
+      }
+      organizations.forEach((org) => {
+        const safeName = getOrgDisplayName(org);
+        const count = getOrgUserCount(org, counts);
+
+        const row = document.createElement("div");
+        row.className = "users-orgs__row";
+        row.dataset.orgName = safeName;
+
+        const button = document.createElement("button");
+        button.className = "users-orgs__button";
+        button.type = "button";
+
+        const name = document.createElement("div");
+        name.className = "users-orgs__name";
+        name.textContent = safeName;
+
+        const countLabel = document.createElement("div");
+        countLabel.className = "users-orgs__count";
+        countLabel.textContent = formatUserCount(count);
+
+        button.append(name, countLabel);
+        row.append(button);
+        usersOrgsListEl.appendChild(row);
+
+        button.addEventListener("click", () => {
+          selectUsersOrganization(safeName);
+        });
+      });
+    } catch (error) {
+      console.error(error);
+      if (usersOrgsEmptyEl) {
+        usersOrgsEmptyEl.classList.remove("is-hidden");
+        usersOrgsEmptyEl.textContent =
+          "Не удалось загрузить список организаций. Попробуйте позже.";
+      }
+    }
+  };
+
+  const renderUsersDetails = (orgUsers) => {
+    if (!usersDetailsListEl) return;
+    usersDetailsListEl.innerHTML = "";
+    if (usersDetailsEmptyEl) {
+      usersDetailsEmptyEl.classList.toggle("is-hidden", orgUsers.length > 0);
+    }
+    orgUsers.forEach((user) => {
+      const card = document.createElement("div");
+      card.className = "users-details__card";
+
+      const initials = document.createElement("div");
+      initials.className = "users-details__initials";
+      initials.textContent = getInitials(String(user?.full_name ?? "").trim());
+
+      const info = document.createElement("div");
+      info.className = "users-details__info";
+
+      const name = document.createElement("div");
+      name.className = "users-details__name";
+      name.textContent = formatShortName(String(user?.full_name ?? "").trim());
+
+      const meta = document.createElement("div");
+      meta.className = "users-details__meta";
+      const roleTag = document.createElement("span");
+      roleTag.className = "users-details__tag";
+      roleTag.textContent = String(user?.role ?? "роль").trim();
+
+      const telegramStatus = document.createElement("span");
+      telegramStatus.textContent =
+        Number(user?.telegram_id) === 0 ? "ID не привязан" : "ID активен";
+      meta.append(roleTag, telegramStatus);
+
+      info.append(name, meta);
+      card.append(initials, info);
+      usersDetailsListEl.appendChild(card);
+    });
+  };
+
+  const selectUsersOrganization = (orgName) => {
+    if (!orgName) return;
+    selectedUsersOrgName = orgName;
+    if (usersDetailsNameEl) {
+      usersDetailsNameEl.textContent = orgName;
+    }
+
+    const org = orgsState.organizations.find(
+      (item) => getOrgDisplayName(item) === orgName
+    );
+    const orgNames = org ? getOrgNames(org) : [orgName];
+    const orgUsers = orgsState.users.filter((user) => {
+      const name = String(user?.organization ?? "").trim();
+      return orgNames.includes(name) || name === orgName;
+    });
+
+    if (usersDetailsCountEl) {
+      usersDetailsCountEl.textContent = formatUserCount(orgUsers.length);
+    }
+
+    renderUsersDetails(orgUsers);
+
+    if (usersOrgsListEl) {
+      usersOrgsListEl.querySelectorAll(".users-orgs__row").forEach((row) => {
+        row.classList.toggle("is-active", row.dataset.orgName === orgName);
+      });
+    }
+
+    if (usersDetailsModalEl) {
+      usersDetailsModalEl.classList.remove("is-hidden");
+      document.body.style.overflow = "hidden";
+    }
+  };
+
+  const openUsersModal = async () => {
+    if (!usersModalEl) return;
+    await renderUsersOrganizationsList();
+    usersModalEl.classList.remove("is-hidden");
+    if (usersDetailsModalEl) {
+      usersDetailsModalEl.classList.add("is-hidden");
+    }
+    document.body.style.overflow = "hidden";
+  };
+
+  const closeUsersModal = () => {
+    if (!usersModalEl) return;
+    usersModalEl.classList.add("is-hidden");
+    if (usersDetailsModalEl) {
+      usersDetailsModalEl.classList.add("is-hidden");
+    }
+    document.body.style.overflow = "";
+  };
+
+  const closeUsersDetailsModal = () => {
+    if (!usersDetailsModalEl) return;
+    usersDetailsModalEl.classList.add("is-hidden");
+    if (usersModalEl && !usersModalEl.classList.contains("is-hidden")) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+  };
+
   const openOrgsModal = async () => {
     if (!orgsModalEl) return;
     await renderOrganizationsList();
@@ -2905,10 +3099,17 @@ function setupSuperAdmin() {
   openOrgsButtons.forEach((button) => {
     button.addEventListener("click", openOrgsModal);
   });
+  openUsersButtons.forEach((button) => {
+    button.addEventListener("click", openUsersModal);
+  });
   orgsBackdropEl?.addEventListener("click", closeOrgsModal);
   orgsCloseButton?.addEventListener("click", closeOrgsModal);
   orgsDetailsBackdropEl?.addEventListener("click", closeOrgsDetailsModal);
   orgsDetailsCloseButton?.addEventListener("click", closeOrgsDetailsModal);
+  usersBackdropEl?.addEventListener("click", closeUsersModal);
+  usersCloseButton?.addEventListener("click", closeUsersModal);
+  usersDetailsBackdropEl?.addEventListener("click", closeUsersDetailsModal);
+  usersDetailsCloseButton?.addEventListener("click", closeUsersDetailsModal);
   if (shareTelegramButton) shareTelegramButton.disabled = true;
   shareTelegramButton?.addEventListener("click", () => {
     const link = registrationLinkEl?.value?.trim();

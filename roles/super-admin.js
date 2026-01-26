@@ -279,39 +279,42 @@ export function renderRole(user) {
           </div>
           <div class="settings-modal__body orgs-details-modal__body">
             <div class="orgs-details">
-              <div class="orgs-details__header">
-                <div class="orgs-details__title" aria-hidden="true"></div>
-                <button
-                  class="button-icon orgs-details__upload"
-                  type="button"
-                  data-orgs-upload
-                  aria-label="Загрузить данные"
-                  title="Загрузить данные"
-                >
-                  <span class="button-icon-emoji" aria-hidden="true">📥</span>
-                </button>
-              </div>
-              <div class="orgs-metrics">
-                <div class="orgs-metric">
-                  <div class="orgs-metric__label">Пользователей</div>
-                  <div class="orgs-metric__value" data-orgs-detail-users>—</div>
+              <div class="orgs-details__hero" aria-hidden="true"></div>
+              <div class="orgs-details__content">
+                <div class="orgs-details__header">
+                  <div class="orgs-details__title" aria-hidden="true"></div>
+                  <button
+                    class="button-icon orgs-details__upload"
+                    type="button"
+                    data-orgs-upload
+                    aria-label="Загрузить данные"
+                    title="Загрузить данные"
+                  >
+                    <span class="button-icon-emoji" aria-hidden="true">📥</span>
+                  </button>
                 </div>
-                <div class="orgs-metric">
-                  <div class="orgs-metric__label">Инструментов в базе</div>
-                  <div class="orgs-metric__value" data-orgs-detail-tools-total>—</div>
-                  <div class="orgs-metric__hint">концепция</div>
+                <div class="orgs-metrics">
+                  <div class="orgs-metric">
+                    <div class="orgs-metric__label">Пользователей</div>
+                    <div class="orgs-metric__value" data-orgs-detail-users>—</div>
+                  </div>
+                  <div class="orgs-metric">
+                    <div class="orgs-metric__label">Инструментов в базе</div>
+                    <div class="orgs-metric__value" data-orgs-detail-tools-total>—</div>
+                    <div class="orgs-metric__hint">концепция</div>
+                  </div>
+                  <div class="orgs-metric">
+                    <div class="orgs-metric__label">Инструментов в работе</div>
+                    <div class="orgs-metric__value" data-orgs-detail-tools-active>—</div>
+                    <div class="orgs-metric__hint">концепция</div>
+                  </div>
                 </div>
-                <div class="orgs-metric">
-                  <div class="orgs-metric__label">Инструментов в работе</div>
-                  <div class="orgs-metric__value" data-orgs-detail-tools-active>—</div>
-                  <div class="orgs-metric__hint">концепция</div>
+                <div class="orgs-energy">
+                  <div class="orgs-energy__header">
+                    <h4>Энергетики</h4>
+                  </div>
+                  <div class="orgs-energy__list" data-orgs-energy-list></div>
                 </div>
-              </div>
-              <div class="orgs-energy">
-                <div class="orgs-energy__header">
-                  <h4>Энергетики</h4>
-                </div>
-                <div class="orgs-energy__list" data-orgs-energy-list></div>
               </div>
             </div>
           </div>

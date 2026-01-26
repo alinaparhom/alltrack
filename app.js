@@ -3937,6 +3937,7 @@ function setupSuperAdmin() {
       { key: "Дата покупки", index: 7 },
       { key: "Ответственный", index: 8 },
       { key: "Объект", index: 9 },
+      { key: "Серийный номер", index: 10 },
     ];
 
     rows.slice(1).forEach((row) => {
@@ -3960,6 +3961,8 @@ function setupSuperAdmin() {
       });
 
       if (!hasValue) return;
+      entry["Статус"] = "Рабочий";
+      entry["Количество фото"] = 0;
       const objectName = sanitizeObjectName(entry["Объект"] ?? "");
       if (objectName) {
         objectsSet.add(objectName);

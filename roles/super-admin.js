@@ -499,6 +499,159 @@ export function renderRole(user) {
           </div>
         </div>
       </div>
+      <div class="settings-modal users-add-modal is-hidden" data-users-add-modal>
+        <div class="settings-modal__backdrop" data-users-add-backdrop></div>
+        <div
+          class="settings-modal__panel users-add-modal__panel"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Добавить пользователя"
+        >
+          <div class="settings-modal__header users-add-modal__header">
+            <div class="settings-modal__title">
+              <h2>Новый пользователь</h2>
+              <div class="users-add__meta">
+                <span>Организация:</span>
+                <span class="users-add__org" data-users-add-org-name>—</span>
+              </div>
+            </div>
+            <button
+              class="button-icon users-add-modal__close"
+              type="button"
+              data-users-add-close
+              aria-label="Закрыть окно добавления пользователя"
+            >
+              <span class="button-icon-emoji" aria-hidden="true">✕</span>
+            </button>
+          </div>
+          <div class="settings-modal__body users-add-modal__body">
+            <div class="form-card users-add__form">
+              <form class="form-grid" data-users-add-form>
+                <div class="form-field">
+                  <label class="form-label" for="users-add-last-name">Фамилия</label>
+                  <input
+                    class="form-input"
+                    type="text"
+                    id="users-add-last-name"
+                    name="users-add-last-name"
+                    autocomplete="family-name"
+                    placeholder="Иванов"
+                    list="users-last-names"
+                    required
+                  />
+                </div>
+                <div class="form-field">
+                  <label class="form-label" for="users-add-first-name">Имя</label>
+                  <input
+                    class="form-input"
+                    type="text"
+                    id="users-add-first-name"
+                    name="users-add-first-name"
+                    autocomplete="given-name"
+                    placeholder="Иван"
+                    list="users-first-names"
+                    required
+                  />
+                </div>
+                <div class="form-field">
+                  <label class="form-label" for="users-add-middle-name">Отчество</label>
+                  <input
+                    class="form-input"
+                    type="text"
+                    id="users-add-middle-name"
+                    name="users-add-middle-name"
+                    autocomplete="additional-name"
+                    placeholder="Иванович"
+                    list="users-middle-names"
+                    required
+                  />
+                </div>
+                <div class="form-field">
+                  <label class="form-label" for="users-add-role">Роль пользователя</label>
+                  <select class="form-input" id="users-add-role" name="users-add-role" required>
+                    <option value="" disabled selected>Выберите роль</option>
+                    <option value="Бухгалтерия">Бухгалтерия</option>
+                    <option value="Главный инженер">Главный инженер</option>
+                    <option value="Энергетик">Энергетик</option>
+                    <option value="Руководитель">Руководитель</option>
+                    <option value="Ответственный">Ответственный</option>
+                  </select>
+                </div>
+                <p class="users-add__note">
+                  После сохранения появится ссылка‑приглашение для регистрации пользователя.
+                </p>
+                <div class="form-actions">
+                  <button class="action-primary" type="submit">Сформировать ссылку</button>
+                  <button class="button-secondary" type="button" data-users-add-cancel>
+                    Отменить
+                  </button>
+                </div>
+                <div class="form-message" role="status" data-users-add-message></div>
+                <div
+                  class="registration-box users-details__invite is-hidden"
+                  data-users-add-invite-box
+                >
+                  <div class="registration-title">Ссылка для нового пользователя</div>
+                  <p class="registration-hint" data-users-add-invite-hint>
+                    Заполните данные пользователя и выберите роль.
+                  </p>
+                  <p class="registration-note" data-users-add-invite-note>
+                    Откройте ссылку в Telegram — ID сохранится автоматически.
+                  </p>
+                  <ul class="registration-steps">
+                    <li><strong>1.</strong> Откройте ссылку в Telegram.</li>
+                    <li><strong>2.</strong> Подтвердите запуск мини‑приложения.</li>
+                    <li><strong>3.</strong> ID сохранится автоматически.</li>
+                  </ul>
+                  <div class="registration-actions">
+                    <div class="registration-links">
+                      <div class="registration-link-row">
+                        <input
+                          class="form-input"
+                          type="text"
+                          readonly
+                          aria-label="Ссылка для открытия в Telegram"
+                          data-users-add-invite-link
+                        />
+                        <button
+                          class="button-icon"
+                          type="button"
+                          data-users-add-invite-share
+                          aria-label="Отправить контакт в Telegram"
+                          title="Отправить контакт в Telegram"
+                        >
+                          <span class="button-icon-emoji">✈️</span>
+                        </button>
+                        <button
+                          class="button-icon"
+                          type="button"
+                          data-users-add-invite-copy
+                          aria-label="Скопировать ссылку"
+                          title="Скопировать ссылку"
+                        >
+                          <span class="button-icon-emoji">📋</span>
+                        </button>
+                      </div>
+                    </div>
+                    <div class="registration-buttons">
+                      <button
+                        class="action-primary button-telegram"
+                        type="button"
+                        data-users-add-invite-open
+                      >
+                        Открыть в Telegram
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <datalist id="users-last-names" data-users-last-name-list></datalist>
+                <datalist id="users-first-names" data-users-first-name-list></datalist>
+                <datalist id="users-middle-names" data-users-middle-name-list></datalist>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
     </section>
   `;
 }

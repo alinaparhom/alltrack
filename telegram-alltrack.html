@@ -165,7 +165,8 @@
         border-color: rgba(148, 170, 210, 0.35);
       }
 
-      body[data-theme="dark"] .users-modal__panel {
+      body[data-theme="dark"] .users-modal__panel,
+      body[data-theme="dark"] .users-add-modal__panel {
         background: linear-gradient(160deg, rgba(16, 24, 40, 0.98), rgba(20, 30, 52, 0.92));
         border-color: rgba(148, 170, 210, 0.35);
       }
@@ -2023,7 +2024,8 @@
       }
 
       .users-modal__panel,
-      .users-details-modal__panel {
+      .users-details-modal__panel,
+      .users-add-modal__panel {
         width: 100%;
         height: 100%;
         max-height: 100%;
@@ -2038,7 +2040,8 @@
       }
 
       .users-modal__header,
-      .users-details-modal__header {
+      .users-details-modal__header,
+      .users-add-modal__header {
         grid-template-columns: minmax(0, 1fr) auto;
         align-items: start;
         gap: 8px;
@@ -2054,7 +2057,8 @@
       }
 
       .users-modal__close,
-      .users-details-modal__close {
+      .users-details-modal__close,
+      .users-add-modal__close {
         margin-top: 0;
         width: 38px;
         height: 38px;
@@ -2062,7 +2066,8 @@
       }
 
       .users-modal__body,
-      .users-details-modal__body {
+      .users-details-modal__body,
+      .users-add-modal__body {
         padding: 6px 10px calc(10px + env(safe-area-inset-bottom));
         gap: 6px;
         overflow: hidden;
@@ -2277,6 +2282,35 @@
         text-align: center;
       }
 
+      .users-add__meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        align-items: center;
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      .users-add__org {
+        padding: 4px 10px;
+        border-radius: 999px;
+        background: rgba(59, 125, 255, 0.12);
+        color: var(--accent);
+        font-weight: 600;
+        font-size: 12px;
+      }
+
+      .users-add__form {
+        display: grid;
+        gap: 12px;
+      }
+
+      .users-add__note {
+        margin: 0;
+        font-size: 12px;
+        color: var(--muted);
+      }
+
       @media (min-width: 720px) {
         .orgs-layout {
           grid-template-columns: minmax(0, 1fr);
@@ -2295,7 +2329,8 @@
         }
 
         .users-modal__panel,
-        .users-details-modal__panel {
+        .users-details-modal__panel,
+        .users-add-modal__panel {
           width: 100%;
           height: 100vh;
           height: 100dvh;

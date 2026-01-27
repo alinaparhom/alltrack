@@ -82,6 +82,8 @@
       body[data-theme="dark"] .settings-mailing-card,
       body[data-theme="dark"] .settings-fine-card,
       body[data-theme="dark"] .settings-day-chip,
+      body[data-theme="dark"] .settings-group-chip,
+      body[data-theme="dark"] .settings-day-groups,
       body[data-theme="dark"] .button-icon,
       body[data-theme="dark"] .button-secondary,
       body[data-theme="dark"] .registration-note,
@@ -3048,6 +3050,10 @@
         letter-spacing: normal;
       }
 
+      .settings-mailing-field--full {
+        grid-column: 1 / -1;
+      }
+
       .settings-day-grid {
         display: flex;
         flex-wrap: wrap;
@@ -3067,6 +3073,52 @@
       }
 
       .settings-day-chip input {
+        width: 16px;
+        height: 16px;
+        accent-color: var(--accent);
+      }
+
+      .settings-day-groups-grid {
+        display: grid;
+        gap: 8px;
+      }
+
+      .settings-day-groups {
+        display: grid;
+        gap: 6px;
+        padding: 8px 10px;
+        border-radius: 12px;
+        border: 1px solid rgba(226, 232, 240, 0.9);
+        background: rgba(255, 255, 255, 0.65);
+      }
+
+      .settings-day-groups__title {
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+
+      .settings-day-groups__list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+
+      .settings-group-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 10px;
+        border-radius: 999px;
+        border: 1px solid rgba(226, 232, 240, 0.9);
+        background: rgba(255, 255, 255, 0.85);
+        font-size: 12px;
+        color: var(--title-muted);
+      }
+
+      .settings-group-chip input {
         width: 16px;
         height: 16px;
         accent-color: var(--accent);

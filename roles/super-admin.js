@@ -454,10 +454,6 @@ export function renderRole(user) {
           </div>
           <form class="settings-modal__form" data-orgs-groups-form>
             <div class="settings-modal__body orgs-groups-modal__body">
-              <p class="orgs-groups__hint">
-                Укажите название рассылки и название группы в Telegram, затем
-                сохраните ID группы для подключения рассылки.
-              </p>
               <div class="orgs-groups__list" data-orgs-groups-list></div>
               <button class="action-secondary orgs-groups__add" type="button" data-orgs-groups-add>
                 Добавить группу

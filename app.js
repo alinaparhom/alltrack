@@ -3499,22 +3499,17 @@ function setupSuperAdmin() {
 
   const normalizeTelegramGroupEntry = (entry = {}) => {
     const name = normalizeTelegramGroupName(entry.name ?? entry.title ?? "");
-    const telegramName = normalizeTelegramGroupName(
-      entry.telegramName ?? entry.telegram_name ?? entry.telegram ?? ""
-    );
     const telegramId = normalizeTelegramGroupId(
       entry.telegramId ?? entry.telegram_id ?? ""
     );
-    return { name, telegramName, telegramId };
+    return { name, telegramId };
   };
 
   const normalizeTelegramGroups = (raw) => {
     if (!Array.isArray(raw)) return [];
     return raw
       .map((item) => normalizeTelegramGroupEntry(item ?? {}))
-      .filter(
-        (item) => item.name || item.telegramName || item.telegramId
-      );
+      .filter((item) => item.name || item.telegramId);
   };
 
   const buildUploadUserMeta = () => {
@@ -4396,17 +4391,6 @@ function setupSuperAdmin() {
             />
           </label>
           <label class="orgs-groups__field">
-            <span>Название в Telegram</span>
-            <input
-              class="form-input"
-              type="text"
-              inputmode="text"
-              placeholder="@alltrack_team"
-              data-group-field="telegramName"
-              value="${escapeHtml(group.telegramName)}"
-            />
-          </label>
-          <label class="orgs-groups__field">
             <span>ID группы</span>
             <div class="orgs-groups__id-row">
               <input
@@ -4457,19 +4441,15 @@ function setupSuperAdmin() {
     return rows
       .map((row) => {
         const nameInput = row.querySelector('[data-group-field="name"]');
-        const telegramNameInput = row.querySelector(
-          '[data-group-field="telegramName"]'
-        );
         const telegramIdInput = row.querySelector(
           '[data-group-field="telegramId"]'
         );
         return normalizeTelegramGroupEntry({
           name: nameInput?.value ?? "",
-          telegramName: telegramNameInput?.value ?? "",
           telegramId: telegramIdInput?.value ?? "",
         });
       })
-      .filter((item) => item.name || item.telegramName || item.telegramId);
+      .filter((item) => item.name || item.telegramId);
   };
 
   const openOrgsGroupsModal = async () => {
@@ -5140,7 +5120,7 @@ function setupSuperAdmin() {
   orgsGroupsCancelButton?.addEventListener("click", closeOrgsGroupsModal);
   orgsGroupsAddButton?.addEventListener("click", () => {
     const groups = collectGroupsFromForm();
-    groups.push({ name: "", telegramName: "", telegramId: "" });
+    groups.push({ name: "", telegramId: "" });
     renderGroupsList(groups);
   });
   orgsGroupsFormEl?.addEventListener("submit", async (event) => {
@@ -5148,12 +5128,10 @@ function setupSuperAdmin() {
     if (!orgsGroupsContext) return;
     const groups = collectGroupsFromForm();
     const hasInvalid = groups.some(
-      (group) => !group.name || !group.telegramName || !group.telegramId
+      (group) => !group.name || !group.telegramId
     );
     if (hasInvalid) {
-      setGroupsMessage(
-        "Заполните название, Telegram-группу и ID для каждой рассылки."
-      );
+      setGroupsMessage("Заполните название и ID для каждой рассылки.");
       return;
     }
     setGroupsMessage("Сохраняем настройки групп...");

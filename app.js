@@ -4420,15 +4420,16 @@ function setupSuperAdmin() {
             </div>
           </label>
         </div>
-        <button
-          class="button-icon orgs-groups__remove"
-          type="button"
-          data-group-remove
-          aria-label="Удалить группу"
-          title="Удалить"
-        >
-          <span class="button-icon-emoji" aria-hidden="true">✕</span>
-        </button>
+        <div class="orgs-groups__actions">
+          <button
+            class="action-danger orgs-groups__remove"
+            type="button"
+            data-group-remove
+            aria-label="Удалить группу"
+          >
+            Удалить группу
+          </button>
+        </div>
       `;
       const idInput = row.querySelector('[data-group-field="telegramId"]');
       if (idInput) {

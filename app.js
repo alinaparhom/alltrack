@@ -3230,6 +3230,7 @@ function setupSuperAdmin() {
   const orgsGroupsFormEl = contentEl.querySelector("[data-orgs-groups-form]");
   const orgsGroupsListEl = contentEl.querySelector("[data-orgs-groups-list]");
   const orgsGroupsAddButton = contentEl.querySelector("[data-orgs-groups-add]");
+  const orgsGroupsSaveButton = contentEl.querySelector("[data-orgs-groups-save]");
   const orgsGroupsMessageEl = contentEl.querySelector(
     "[data-orgs-groups-message]"
   );
@@ -4350,6 +4351,20 @@ function setupSuperAdmin() {
     }
   };
 
+  const buildGroupsSignature = (groups = []) =>
+    JSON.stringify(
+      groups.map((group) => ({
+        name: String(group?.name ?? "").trim(),
+        telegramId: String(group?.telegramId ?? "").trim(),
+      }))
+    );
+
+  const setGroupsSaveState = (hasChanges) => {
+    if (!orgsGroupsSaveButton) return;
+    orgsGroupsSaveButton.disabled = !hasChanges;
+    orgsGroupsSaveButton.classList.toggle("is-active", hasChanges);
+  };
+
   const updateGroupStatus = (row, value) => {
     const statusEl = row.querySelector("[data-group-status]");
     if (!statusEl) return;
@@ -4422,34 +4437,50 @@ function setupSuperAdmin() {
           updateGroupStatus(row, event.target.value);
         });
       }
+      row.addEventListener("input", () => {
+        updateGroupsSaveState();
+      });
       const removeButton = row.querySelector("[data-group-remove]");
       removeButton?.addEventListener("click", () => {
         row.remove();
         if (orgsGroupsListEl && orgsGroupsListEl.children.length === 0) {
           orgsGroupsListEl.appendChild(createGroupsEmptyState());
         }
+        updateGroupsSaveState();
       });
       orgsGroupsListEl.appendChild(row);
     });
   };
 
-  const collectGroupsFromForm = () => {
+  const collectGroupsFromForm = (includeEmpty = false) => {
     if (!orgsGroupsListEl) return [];
     const rows = Array.from(
       orgsGroupsListEl.querySelectorAll("[data-orgs-group-row]")
     );
-    return rows
-      .map((row) => {
-        const nameInput = row.querySelector('[data-group-field="name"]');
-        const telegramIdInput = row.querySelector(
-          '[data-group-field="telegramId"]'
-        );
-        return normalizeTelegramGroupEntry({
-          name: nameInput?.value ?? "",
-          telegramId: telegramIdInput?.value ?? "",
-        });
-      })
-      .filter((item) => item.name || item.telegramId);
+    const groups = rows.map((row) => {
+      const nameInput = row.querySelector('[data-group-field="name"]');
+      const telegramIdInput = row.querySelector(
+        '[data-group-field="telegramId"]'
+      );
+      return normalizeTelegramGroupEntry({
+        name: nameInput?.value ?? "",
+        telegramId: telegramIdInput?.value ?? "",
+      });
+    });
+    if (includeEmpty) {
+      return groups;
+    }
+    return groups.filter((item) => item.name || item.telegramId);
+  };
+
+  const updateGroupsSaveState = () => {
+    if (!orgsGroupsContext) return;
+    const currentSignature = buildGroupsSignature(
+      collectGroupsFromForm(true)
+    );
+    const baseSignature =
+      orgsGroupsContext.initialGroupsSignature ?? buildGroupsSignature([]);
+    setGroupsSaveState(currentSignature !== baseSignature);
   };
 
   const openOrgsGroupsModal = async () => {
@@ -4470,12 +4501,17 @@ function setupSuperAdmin() {
     const groups = normalizeTelegramGroups(
       settingsData.organization?.telegramGroups ?? []
     );
-    orgsGroupsContext = { settingsPath, settingsData };
+    orgsGroupsContext = {
+      settingsPath,
+      settingsData,
+      initialGroupsSignature: buildGroupsSignature(groups),
+    };
     renderGroupsList(groups);
     if (orgsGroupsSubtitleEl) {
       orgsGroupsSubtitleEl.textContent = selectedOrgName;
     }
     setGroupsMessage("");
+    updateGroupsSaveState();
     orgsGroupsModalEl.classList.remove("is-hidden");
     document.body.style.overflow = "hidden";
   };
@@ -5122,6 +5158,7 @@ function setupSuperAdmin() {
     const groups = collectGroupsFromForm();
     groups.push({ name: "", telegramId: "" });
     renderGroupsList(groups);
+    updateGroupsSaveState();
   });
   orgsGroupsFormEl?.addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -5145,6 +5182,8 @@ function setupSuperAdmin() {
         orgsGroupsContext.settingsData,
         { user: currentUser }
       );
+      orgsGroupsContext.initialGroupsSignature = buildGroupsSignature(groups);
+      updateGroupsSaveState();
       setGroupsMessage("Группы рассылок сохранены.");
     } catch (error) {
       console.error(error);

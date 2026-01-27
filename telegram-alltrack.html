@@ -2440,8 +2440,8 @@
       .orgs-groups__fields {
         display: grid;
         gap: 8px;
-        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-        align-items: end;
+        grid-template-columns: 1fr;
+        align-items: start;
       }
 
       .orgs-groups__field {
@@ -2480,12 +2480,14 @@
       }
 
       .orgs-groups__actions {
-        display: flex;
-        justify-content: flex-end;
+        display: grid;
       }
 
       .orgs-groups__remove {
-        min-height: 40px;
+        min-height: 52px;
+        padding: 16px var(--space);
+        border-radius: var(--radius-card);
+        width: 100%;
       }
 
       .orgs-groups__add {
@@ -2495,6 +2497,12 @@
         display: flex;
         align-items: center;
         justify-content: center;
+        width: 100%;
+      }
+
+      .orgs-groups__save {
+        min-height: 52px;
+        padding: 16px var(--space);
       }
 
       .orgs-groups__save:disabled {

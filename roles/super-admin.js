@@ -377,6 +377,15 @@ export function renderRole(user) {
                     <span class="orgs-details__upload-icon" aria-hidden="true">🖼️</span>
                     <span class="orgs-details__upload-text">Загрузить фото</span>
                   </button>
+                  <button
+                    class="orgs-details__upload orgs-details__upload--groups"
+                    type="button"
+                    data-orgs-manage-groups
+                    aria-label="Управление группами"
+                  >
+                    <span class="orgs-details__upload-icon" aria-hidden="true">🧩</span>
+                    <span class="orgs-details__upload-text">Управление группами</span>
+                  </button>
                   <input
                     class="orgs-details__upload-input"
                     type="file"

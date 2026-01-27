@@ -1107,6 +1107,7 @@ function buildEnergyOrganizationDefaults() {
       enabled: true,
       days: option.defaultDays,
       time: option.defaultTime,
+      groupsByDay: {},
     };
   });
   return {
@@ -1133,6 +1134,27 @@ function normalizeDays(value, fallback = []) {
     .filter((day) => energyWeekDays.includes(day));
   const unique = Array.from(new Set(normalized));
   return unique.length ? unique : fallbackDays;
+}
+
+function normalizeGroupsByDay(value, allowedGroups = []) {
+  const allowed = new Set(
+    Array.isArray(allowedGroups)
+      ? allowedGroups.map((group) => String(group ?? "").trim()).filter(Boolean)
+      : []
+  );
+  const source =
+    value && typeof value === "object" && !Array.isArray(value) ? value : {};
+  const normalized = {};
+  energyWeekDays.forEach((day) => {
+    const raw = Array.isArray(source[day]) ? source[day] : [];
+    const groups = raw
+      .map((group) => String(group ?? "").trim())
+      .filter((group) => allowed.has(group));
+    if (groups.length > 0) {
+      normalized[day] = Array.from(new Set(groups));
+    }
+  });
+  return normalized;
 }
 
 function normalizeTime(value, fallback) {
@@ -1177,6 +1199,7 @@ function normalizeEnergyOrganizationSettings(raw) {
         defaults.mailings[option.id].days
       ),
       time: normalizeTime(data.time, defaults.mailings[option.id].time),
+      groupsByDay: normalizeGroupsByDay(data.groupsByDay, stcGroups),
     };
   });
   return {
@@ -1307,6 +1330,10 @@ function buildEnergySettingsMarkup(settings) {
     .map((option) => {
       const mailing = settings.mailings?.[option.id] ?? {};
       const selectedDays = new Set(mailing.days ?? []);
+      const groupOptions = Array.isArray(settings.stcGroups)
+        ? settings.stcGroups
+        : [];
+      const groupsByDay = mailing.groupsByDay ?? {};
       const dayOptions = energyWeekDays
         .map(
           (day) => `
@@ -1321,6 +1348,42 @@ function buildEnergySettingsMarkup(settings) {
             </label>
           `
         )
+        .join("");
+      const dayGroupsMarkup = energyWeekDays
+        .map((day) => {
+          const selectedGroups = new Set(groupsByDay[day] ?? []);
+          const groupChips =
+            groupOptions.length > 0
+              ? groupOptions
+                  .map(
+                    (group) => `
+                      <label class="settings-group-chip">
+                        <input
+                          type="checkbox"
+                          name="mailing-${option.id}-groups-${day}"
+                          value="${escapeHtml(group)}"
+                          ${selectedGroups.has(group) ? "checked" : ""}
+                        />
+                        <span>${escapeHtml(group)}</span>
+                      </label>
+                    `
+                  )
+                  .join("")
+              : `<span class="settings-chip is-muted">Нет групп</span>`;
+          return `
+            <div class="settings-day-groups">
+              <div class="settings-day-groups__title">${day}</div>
+              <div
+                class="settings-day-groups__list"
+                data-mailing-groups-list
+                data-mailing-id="${option.id}"
+                data-mailing-day="${day}"
+              >
+                ${groupChips}
+              </div>
+            </div>
+          `;
+        })
         .join("");
       return `
         <div class="settings-mailing-card">
@@ -1350,6 +1413,12 @@ function buildEnergySettingsMarkup(settings) {
                 value="${escapeHtml(mailing.time ?? "")}"
               />
             </label>
+            <div class="settings-mailing-field settings-mailing-field--full">
+              <span>Группы по дням</span>
+              <div class="settings-day-groups-grid">
+                ${dayGroupsMarkup}
+              </div>
+            </div>
           </div>
         </div>
       `;
@@ -2721,6 +2790,41 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     );
     const groupList = settingsBodyEl.querySelector("[data-energy-group-list]");
 
+    const syncMailingGroupLists = () => {
+      const groupLists = settingsBodyEl.querySelectorAll(
+        "[data-mailing-groups-list]"
+      );
+      groupLists.forEach((list) => {
+        const mailingId = list.dataset.mailingId;
+        const day = list.dataset.mailingDay;
+        if (!mailingId || !day) return;
+        const checkedGroups = new Set(
+          Array.from(list.querySelectorAll("input[type=\"checkbox\"]"))
+            .filter((input) => input.checked)
+            .map((input) => input.value)
+        );
+        const groupChips =
+          settingsGroups.length > 0
+            ? settingsGroups
+                .map(
+                  (group) => `
+                    <label class="settings-group-chip">
+                      <input
+                        type="checkbox"
+                        name="mailing-${mailingId}-groups-${day}"
+                        value="${escapeHtml(group)}"
+                        ${checkedGroups.has(group) ? "checked" : ""}
+                      />
+                      <span>${escapeHtml(group)}</span>
+                    </label>
+                  `
+                )
+                .join("")
+            : `<span class="settings-chip is-muted">Нет групп</span>`;
+        list.innerHTML = groupChips;
+      });
+    };
+
     const renderGroupList = () => {
       if (!groupList) return;
       const listMarkup =
@@ -2742,6 +2846,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
               .join("")
           : `<span class="settings-chip is-muted">Список пуст</span>`;
       groupList.innerHTML = listMarkup;
+      syncMailingGroupLists();
     };
 
     const addGroup = () => {
@@ -2824,16 +2929,35 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     });
     const nextMailings = {};
     energyMailingOptions.forEach((option) => {
+      const selectedDays = normalizeDays(
+        formData.getAll(`mailing-${option.id}-days`),
+        option.defaultDays
+      );
+      const rawGroupsByDay = {};
+      energyWeekDays.forEach((day) => {
+        rawGroupsByDay[day] = formData.getAll(
+          `mailing-${option.id}-groups-${day}`
+        );
+      });
+      const normalizedGroupsByDay = normalizeGroupsByDay(
+        rawGroupsByDay,
+        settingsGroups
+      );
+      const groupsByDay = {};
+      selectedDays.forEach((day) => {
+        const groups = normalizedGroupsByDay[day] ?? [];
+        if (groups.length > 0) {
+          groupsByDay[day] = groups;
+        }
+      });
       nextMailings[option.id] = {
         enabled: formData.get(`mailing-${option.id}-enabled`) !== null,
-        days: normalizeDays(
-          formData.getAll(`mailing-${option.id}-days`),
-          option.defaultDays
-        ),
+        days: selectedDays,
         time: normalizeTime(
           formData.get(`mailing-${option.id}-time`),
           option.defaultTime
         ),
+        groupsByDay,
       };
     });
     settingsData.organization = normalizeEnergyOrganizationSettings({

@@ -430,6 +430,51 @@ export function renderRole(user) {
           </div>
         </div>
       </div>
+      <div class="settings-modal orgs-groups-modal is-hidden" data-orgs-groups-modal>
+        <div class="settings-modal__backdrop" data-orgs-groups-backdrop></div>
+        <div
+          class="settings-modal__panel orgs-groups-modal__panel"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Группы рассылок"
+        >
+          <div class="settings-modal__header orgs-groups-modal__header">
+            <div class="settings-modal__title">
+              <h2>Группы рассылок</h2>
+              <p data-orgs-groups-subtitle>Организация</p>
+            </div>
+            <button
+              class="button-icon orgs-groups-modal__close"
+              type="button"
+              data-orgs-groups-close
+              aria-label="Закрыть окно групп"
+            >
+              <span class="button-icon-emoji" aria-hidden="true">✕</span>
+            </button>
+          </div>
+          <form class="settings-modal__form" data-orgs-groups-form>
+            <div class="settings-modal__body orgs-groups-modal__body">
+              <p class="orgs-groups__hint">
+                Укажите название рассылки и название группы в Telegram, затем
+                сохраните ID группы для подключения рассылки.
+              </p>
+              <div class="orgs-groups__list" data-orgs-groups-list></div>
+              <button class="action-secondary orgs-groups__add" type="button" data-orgs-groups-add>
+                Добавить группу
+              </button>
+            </div>
+            <div class="settings-modal__footer orgs-groups-modal__footer">
+              <button class="action-secondary" type="button" data-orgs-groups-cancel>
+                Закрыть
+              </button>
+              <button class="action-primary" type="submit" data-orgs-groups-save>
+                Сохранить
+              </button>
+            </div>
+            <div class="form-message" data-orgs-groups-message></div>
+          </form>
+        </div>
+      </div>
       <div class="settings-modal users-modal is-hidden" data-users-modal>
         <div class="settings-modal__backdrop" data-users-backdrop></div>
         <div

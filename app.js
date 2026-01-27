@@ -3214,6 +3214,28 @@ function setupSuperAdmin() {
   const orgsUploadProgressHintEl = contentEl.querySelector(
     "[data-orgs-upload-progress-hint]"
   );
+  const orgsManageGroupsButton = contentEl.querySelector(
+    "[data-orgs-manage-groups]"
+  );
+  const orgsGroupsModalEl = contentEl.querySelector("[data-orgs-groups-modal]");
+  const orgsGroupsBackdropEl = contentEl.querySelector(
+    "[data-orgs-groups-backdrop]"
+  );
+  const orgsGroupsCloseButton = contentEl.querySelector(
+    "[data-orgs-groups-close]"
+  );
+  const orgsGroupsCancelButton = contentEl.querySelector(
+    "[data-orgs-groups-cancel]"
+  );
+  const orgsGroupsFormEl = contentEl.querySelector("[data-orgs-groups-form]");
+  const orgsGroupsListEl = contentEl.querySelector("[data-orgs-groups-list]");
+  const orgsGroupsAddButton = contentEl.querySelector("[data-orgs-groups-add]");
+  const orgsGroupsMessageEl = contentEl.querySelector(
+    "[data-orgs-groups-message]"
+  );
+  const orgsGroupsSubtitleEl = contentEl.querySelector(
+    "[data-orgs-groups-subtitle]"
+  );
   const usersModalEl = contentEl.querySelector("[data-users-modal]");
   const usersBackdropEl = contentEl.querySelector("[data-users-backdrop]");
   const usersCloseButton = contentEl.querySelector("[data-users-close]");
@@ -3394,6 +3416,7 @@ function setupSuperAdmin() {
   };
   let selectedOrgName = "";
   let selectedUsersOrgName = "";
+  let orgsGroupsContext = null;
 
   const setUploadStatus = (message = "", tone = "info") => {
     if (!orgsUploadStatusEl) return;
@@ -3463,6 +3486,35 @@ function setupSuperAdmin() {
       selectedOrgName
     );
     return sanitizeOrganizationFolderName(shortName || selectedOrgName);
+  };
+
+  const normalizeTelegramGroupName = (value = "") =>
+    String(value ?? "").trim();
+
+  const normalizeTelegramGroupId = (value = "") => {
+    const trimmed = String(value ?? "").trim();
+    if (!trimmed) return "";
+    return trimmed;
+  };
+
+  const normalizeTelegramGroupEntry = (entry = {}) => {
+    const name = normalizeTelegramGroupName(entry.name ?? entry.title ?? "");
+    const telegramName = normalizeTelegramGroupName(
+      entry.telegramName ?? entry.telegram_name ?? entry.telegram ?? ""
+    );
+    const telegramId = normalizeTelegramGroupId(
+      entry.telegramId ?? entry.telegram_id ?? ""
+    );
+    return { name, telegramName, telegramId };
+  };
+
+  const normalizeTelegramGroups = (raw) => {
+    if (!Array.isArray(raw)) return [];
+    return raw
+      .map((item) => normalizeTelegramGroupEntry(item ?? {}))
+      .filter(
+        (item) => item.name || item.telegramName || item.telegramId
+      );
   };
 
   const buildUploadUserMeta = () => {
@@ -4297,6 +4349,171 @@ function setupSuperAdmin() {
     }
   };
 
+  const setGroupsMessage = (message = "") => {
+    if (orgsGroupsMessageEl) {
+      orgsGroupsMessageEl.textContent = message;
+    }
+  };
+
+  const updateGroupStatus = (row, value) => {
+    const statusEl = row.querySelector("[data-group-status]");
+    if (!statusEl) return;
+    const connected = Boolean(normalizeTelegramGroupId(value));
+    statusEl.textContent = connected ? "Подключена" : "Не подключена";
+    statusEl.classList.toggle("is-connected", connected);
+  };
+
+  const createGroupsEmptyState = () => {
+    const empty = document.createElement("div");
+    empty.className = "orgs-groups__empty";
+    empty.textContent = "Добавьте первую группу для рассылок.";
+    return empty;
+  };
+
+  const renderGroupsList = (groups = []) => {
+    if (!orgsGroupsListEl) return;
+    orgsGroupsListEl.innerHTML = "";
+    if (groups.length === 0) {
+      orgsGroupsListEl.appendChild(createGroupsEmptyState());
+      return;
+    }
+
+    groups.forEach((group) => {
+      const row = document.createElement("div");
+      row.className = "orgs-groups__row";
+      row.dataset.orgsGroupRow = "true";
+      row.innerHTML = `
+        <div class="orgs-groups__fields">
+          <label class="orgs-groups__field">
+            <span>Название рассылки</span>
+            <input
+              class="form-input"
+              type="text"
+              inputmode="text"
+              placeholder="Например, Утренний отчёт"
+              data-group-field="name"
+              value="${escapeHtml(group.name)}"
+            />
+          </label>
+          <label class="orgs-groups__field">
+            <span>Название в Telegram</span>
+            <input
+              class="form-input"
+              type="text"
+              inputmode="text"
+              placeholder="@alltrack_team"
+              data-group-field="telegramName"
+              value="${escapeHtml(group.telegramName)}"
+            />
+          </label>
+          <label class="orgs-groups__field">
+            <span>ID группы</span>
+            <div class="orgs-groups__id-row">
+              <input
+                class="form-input"
+                type="text"
+                inputmode="numeric"
+                placeholder="-1001234567890"
+                data-group-field="telegramId"
+                value="${escapeHtml(group.telegramId)}"
+              />
+              <span class="orgs-groups__status" data-group-status></span>
+            </div>
+          </label>
+        </div>
+        <button
+          class="button-icon orgs-groups__remove"
+          type="button"
+          data-group-remove
+          aria-label="Удалить группу"
+          title="Удалить"
+        >
+          <span class="button-icon-emoji" aria-hidden="true">✕</span>
+        </button>
+      `;
+      const idInput = row.querySelector('[data-group-field="telegramId"]');
+      if (idInput) {
+        updateGroupStatus(row, idInput.value);
+        idInput.addEventListener("input", (event) => {
+          updateGroupStatus(row, event.target.value);
+        });
+      }
+      const removeButton = row.querySelector("[data-group-remove]");
+      removeButton?.addEventListener("click", () => {
+        row.remove();
+        if (orgsGroupsListEl && orgsGroupsListEl.children.length === 0) {
+          orgsGroupsListEl.appendChild(createGroupsEmptyState());
+        }
+      });
+      orgsGroupsListEl.appendChild(row);
+    });
+  };
+
+  const collectGroupsFromForm = () => {
+    if (!orgsGroupsListEl) return [];
+    const rows = Array.from(
+      orgsGroupsListEl.querySelectorAll("[data-orgs-group-row]")
+    );
+    return rows
+      .map((row) => {
+        const nameInput = row.querySelector('[data-group-field="name"]');
+        const telegramNameInput = row.querySelector(
+          '[data-group-field="telegramName"]'
+        );
+        const telegramIdInput = row.querySelector(
+          '[data-group-field="telegramId"]'
+        );
+        return normalizeTelegramGroupEntry({
+          name: nameInput?.value ?? "",
+          telegramName: telegramNameInput?.value ?? "",
+          telegramId: telegramIdInput?.value ?? "",
+        });
+      })
+      .filter((item) => item.name || item.telegramName || item.telegramId);
+  };
+
+  const openOrgsGroupsModal = async () => {
+    if (!orgsGroupsModalEl) return;
+    if (!selectedOrgName) {
+      setUploadStatus("Сначала выберите организацию.", "error");
+      return;
+    }
+    const orgFolder = buildSelectedOrgFolderName();
+    if (!orgFolder) {
+      setUploadStatus("Не удалось определить папку организации.", "error");
+      return;
+    }
+    const settingsPath = `./${orgFolder}/Настройки.json`;
+    const settingsData = ensureSettingsData(
+      await loadJson(settingsPath).catch(() => ({ users: {} }))
+    );
+    const groups = normalizeTelegramGroups(
+      settingsData.organization?.telegramGroups ?? []
+    );
+    orgsGroupsContext = { settingsPath, settingsData };
+    renderGroupsList(groups);
+    if (orgsGroupsSubtitleEl) {
+      orgsGroupsSubtitleEl.textContent = selectedOrgName;
+    }
+    setGroupsMessage("");
+    orgsGroupsModalEl.classList.remove("is-hidden");
+    document.body.style.overflow = "hidden";
+  };
+
+  const closeOrgsGroupsModal = () => {
+    if (!orgsGroupsModalEl) return;
+    orgsGroupsModalEl.classList.add("is-hidden");
+    setGroupsMessage("");
+    orgsGroupsContext = null;
+    if (orgsDetailsModalEl && !orgsDetailsModalEl.classList.contains("is-hidden")) {
+      document.body.style.overflow = "hidden";
+    } else if (orgsModalEl && !orgsModalEl.classList.contains("is-hidden")) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+  };
+
   const handleUploadPhotos = async (files) => {
     const fileList = Array.from(files ?? []);
     if (!fileList.length) return;
@@ -4870,6 +5087,9 @@ function setupSuperAdmin() {
     if (orgsDetailsModalEl) {
       orgsDetailsModalEl.classList.add("is-hidden");
     }
+    if (orgsGroupsModalEl) {
+      orgsGroupsModalEl.classList.add("is-hidden");
+    }
     document.body.style.overflow = "hidden";
   };
 
@@ -4886,6 +5106,9 @@ function setupSuperAdmin() {
   const closeOrgsDetailsModal = () => {
     if (!orgsDetailsModalEl) return;
     orgsDetailsModalEl.classList.add("is-hidden");
+    if (orgsGroupsModalEl && !orgsGroupsModalEl.classList.contains("is-hidden")) {
+      orgsGroupsModalEl.classList.add("is-hidden");
+    }
     resetEnergyInvite();
     clearUploadStatus();
     clearUploadProgress();
@@ -4911,6 +5134,45 @@ function setupSuperAdmin() {
   orgsCloseButton?.addEventListener("click", closeOrgsModal);
   orgsDetailsBackdropEl?.addEventListener("click", closeOrgsDetailsModal);
   orgsDetailsCloseButton?.addEventListener("click", closeOrgsDetailsModal);
+  orgsManageGroupsButton?.addEventListener("click", openOrgsGroupsModal);
+  orgsGroupsBackdropEl?.addEventListener("click", closeOrgsGroupsModal);
+  orgsGroupsCloseButton?.addEventListener("click", closeOrgsGroupsModal);
+  orgsGroupsCancelButton?.addEventListener("click", closeOrgsGroupsModal);
+  orgsGroupsAddButton?.addEventListener("click", () => {
+    const groups = collectGroupsFromForm();
+    groups.push({ name: "", telegramName: "", telegramId: "" });
+    renderGroupsList(groups);
+  });
+  orgsGroupsFormEl?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    if (!orgsGroupsContext) return;
+    const groups = collectGroupsFromForm();
+    const hasInvalid = groups.some(
+      (group) => !group.name || !group.telegramName || !group.telegramId
+    );
+    if (hasInvalid) {
+      setGroupsMessage(
+        "Заполните название, Telegram-группу и ID для каждой рассылки."
+      );
+      return;
+    }
+    setGroupsMessage("Сохраняем настройки групп...");
+    try {
+      orgsGroupsContext.settingsData.organization = {
+        ...(orgsGroupsContext.settingsData.organization ?? {}),
+        telegramGroups: groups,
+      };
+      await saveJson(
+        orgsGroupsContext.settingsPath,
+        orgsGroupsContext.settingsData,
+        { user: currentUser }
+      );
+      setGroupsMessage("Группы рассылок сохранены.");
+    } catch (error) {
+      console.error(error);
+      setGroupsMessage("Не удалось сохранить группы. Попробуйте позже.");
+    }
+  });
   orgsUploadButton?.addEventListener("click", () => {
     if (!selectedOrgName) {
       setUploadStatus("Сначала выберите организацию.", "error");

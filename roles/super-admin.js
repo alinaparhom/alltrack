@@ -460,9 +460,6 @@ export function renderRole(user) {
               </button>
             </div>
             <div class="settings-modal__footer orgs-groups-modal__footer">
-              <button class="action-secondary" type="button" data-orgs-groups-cancel>
-                Закрыть
-              </button>
               <button class="action-primary orgs-groups__save" type="submit" data-orgs-groups-save>
                 Сохранить
               </button>

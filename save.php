@@ -284,9 +284,11 @@ function resolveTargetPath(array $entry, array $allowedFiles): string {
   }
 
   $dirName = trim(dirname((string) $path), "/\\.");
-  $resolvedFolder = resolveOrganizationFolderForEntry($entry);
-  if ($resolvedFolder) {
-    $dirName = $resolvedFolder;
+  if ($dirName === "") {
+    $resolvedFolder = resolveOrganizationFolderForEntry($entry);
+    if ($resolvedFolder) {
+      $dirName = $resolvedFolder;
+    }
   }
   if ($dirName === "" || strpos($dirName, "..") !== false) {
     http_response_code(403);

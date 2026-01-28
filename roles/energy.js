@@ -211,10 +211,14 @@ export function renderRole(user) {
                       id="tool-name-input"
                       type="text"
                       name="tool-name"
-                      placeholder="Например, перфоратор"
+                      placeholder="Например, Перфоратор"
                       autocomplete="off"
                       required
                     />
+                    <div
+                      class="suggestions is-hidden"
+                      data-tool-name-suggestions
+                    ></div>
                   </label>
                   <label class="form-field">
                     <span class="form-label">Производитель</span>
@@ -223,10 +227,14 @@ export function renderRole(user) {
                       id="tool-manufacturer-input"
                       type="text"
                       name="tool-manufacturer"
-                      placeholder="Введите производителя"
+                      placeholder="Начните вводить"
                       autocomplete="off"
                       required
                     />
+                    <div
+                      class="suggestions is-hidden"
+                      data-tool-manufacturer-suggestions
+                    ></div>
                   </label>
                   <label class="form-field">
                     <span class="form-label">Модель</span>
@@ -235,10 +243,14 @@ export function renderRole(user) {
                       id="tool-model-input"
                       type="text"
                       name="tool-model"
-                      placeholder="Введите модель"
+                      placeholder="Начните вводить"
                       autocomplete="off"
                       required
                     />
+                    <div
+                      class="suggestions is-hidden"
+                      data-tool-model-suggestions
+                    ></div>
                   </label>
                   <label class="form-field">
                     <span class="form-label">Наименование по бухгалтерии</span>
@@ -269,10 +281,15 @@ export function renderRole(user) {
                       id="tool-responsible-input"
                       type="text"
                       name="tool-responsible"
-                      placeholder="Введите ФИО ответственного"
+                      data-placeholder="Выберите из списка"
+                      placeholder="Выберите из списка"
                       autocomplete="off"
                       required
                     />
+                    <div
+                      class="suggestions is-hidden"
+                      data-tool-responsible-suggestions
+                    ></div>
                   </label>
                   <label class="form-field">
                     <span class="form-label">Объект</span>
@@ -281,10 +298,15 @@ export function renderRole(user) {
                       id="tool-object-input"
                       type="text"
                       name="tool-object"
-                      placeholder="Введите объект"
+                      data-placeholder="Выберите объект"
+                      placeholder="Выберите объект"
                       autocomplete="off"
                       required
                     />
+                    <div
+                      class="suggestions is-hidden"
+                      data-tool-object-suggestions
+                    ></div>
                   </label>
                   <label class="form-field">
                     <span class="form-label">Серийный номер</span>
@@ -303,10 +325,15 @@ export function renderRole(user) {
                       id="tool-group-input"
                       type="text"
                       name="tool-group"
-                      placeholder="Введите группу"
+                      data-placeholder="Выберите группу"
+                      placeholder="Выберите группу"
                       autocomplete="off"
                       required
                     />
+                    <div
+                      class="suggestions is-hidden"
+                      data-tool-group-suggestions
+                    ></div>
                   </label>
                   <label class="form-field">
                     <span class="form-label">Накладная (обязательно)</span>

@@ -2566,7 +2566,21 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const loadAddToolReferences = async () => {
     setAddToolMessage("Загружаем данные...");
     try {
-      const { organizationName, orgFolder } = await resolveUploadOrganization();
+      const fallbackOrgName =
+        context.orgFullName ??
+        context.orgShortName ??
+        context.orgFolderName ??
+        "";
+      const resolvedOrg = fallbackOrgName
+        ? {
+            organizationName: fallbackOrgName,
+            orgFolder: sanitizeOrganizationFolderName(fallbackOrgName),
+          }
+        : await resolveUploadOrganization();
+      const organizationName = resolvedOrg.organizationName ?? "";
+      const orgFolder =
+        resolvedOrg.orgFolder ??
+        sanitizeOrganizationFolderName(organizationName);
       if (!orgFolder) {
         setAddToolMessage("Не удалось определить организацию пользователя.");
         return;

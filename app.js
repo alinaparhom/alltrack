@@ -1580,7 +1580,7 @@ function buildEnergySettingsMarkup(settings) {
       return `
         <div class="settings-notification-card">
           <div class="settings-notification-card__header">
-            <label class="settings-inline">
+            <label class="settings-inline settings-notification-card__title">
               <input
                 type="checkbox"
                 name="notification-${option.id}-enabled"
@@ -1588,7 +1588,7 @@ function buildEnergySettingsMarkup(settings) {
               />
               <span>${escapeHtml(option.title)}</span>
             </label>
-            <label class="settings-inline settings-inline--compact">
+            <label class="settings-inline settings-inline--compact settings-notification-card__photo">
               <input
                 type="checkbox"
                 name="notification-${option.id}-photo"

@@ -1512,19 +1512,19 @@
       }
 
       .add-tool-modal.is-input-focus .settings-modal__form {
-        grid-template-rows: 1fr 0 auto;
-        gap: 0;
+        grid-template-rows: auto;
+        gap: 6px;
       }
 
       .add-tool-modal.is-input-focus .settings-modal__footer {
-        position: fixed;
-        left: 14px;
-        right: 14px;
-        bottom: calc(env(safe-area-inset-bottom));
-        transform: translateY(calc(100% + var(--keyboard-offset, 0px)));
+        position: static;
+        left: auto;
+        right: auto;
+        bottom: auto;
+        transform: none;
         margin: 0;
-        padding: 0;
-        opacity: 0.98;
+        padding: 12px 0 calc(12px + env(safe-area-inset-bottom));
+        opacity: 1;
         pointer-events: auto;
       }
 
@@ -1725,20 +1725,29 @@
       }
 
       .add-tool-modal .settings-modal__footer {
-        position: sticky;
-        bottom: 0;
+        position: static;
         padding: 12px 0 calc(12px + env(safe-area-inset-bottom));
-        margin-top: 6px;
-        justify-content: space-between;
-        background: linear-gradient(180deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.95) 45%);
+        margin-top: 10px;
+        justify-content: flex-end;
+        background: transparent;
         border-top: 1px solid rgba(226, 232, 240, 0.8);
-        backdrop-filter: blur(10px);
-        z-index: 2;
+        backdrop-filter: none;
+        z-index: auto;
       }
 
       .add-tool-modal .settings-modal__footer .action-primary,
       .add-tool-modal .settings-modal__footer .action-secondary {
-        flex: 1 1 140px;
+        flex: 0 0 auto;
+      }
+
+      .add-tool-modal .settings-modal__form {
+        display: block;
+        padding: 6px 14px calc(12px + env(safe-area-inset-bottom));
+      }
+
+      .add-tool-modal .settings-modal__body {
+        overflow: visible;
+        padding-right: 0;
       }
 
       .objects-modal__panel {

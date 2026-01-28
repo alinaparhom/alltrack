@@ -146,6 +146,12 @@
         color: var(--text);
       }
 
+      body[data-theme="dark"] .form-input[type="file"]::file-selector-button {
+        background: rgba(123, 178, 255, 0.2);
+        color: var(--text);
+        box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
+      }
+
       body[data-theme="dark"] .suggestions {
         background: rgba(12, 18, 32, 0.96);
         border-color: rgba(123, 178, 255, 0.4);
@@ -173,6 +179,11 @@
 
       body[data-theme="dark"] .settings-modal__backdrop {
         background: rgba(10, 14, 26, 0.6);
+      }
+
+      body[data-theme="dark"] .add-tool-modal .settings-modal__footer {
+        background: linear-gradient(180deg, rgba(12, 18, 32, 0), rgba(12, 18, 32, 0.92) 45%);
+        border-top-color: rgba(148, 170, 210, 0.3);
       }
 
       body[data-theme="dark"] .orgs-modal__panel {
@@ -1123,6 +1134,29 @@
         transition: border-color 0.2s ease, box-shadow 0.2s ease;
       }
 
+      .form-input[type="file"] {
+        padding: 10px 12px;
+        cursor: pointer;
+      }
+
+      .form-input[type="file"]::file-selector-button {
+        border: none;
+        background: rgba(59, 125, 255, 0.16);
+        color: var(--accent);
+        font-weight: 600;
+        padding: 10px 16px;
+        border-radius: 12px;
+        margin-right: 12px;
+        cursor: pointer;
+        box-shadow: 0 10px 24px rgba(26, 31, 46, 0.08);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      .form-input[type="file"]::file-selector-button:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 14px 28px rgba(26, 31, 46, 0.12);
+      }
+
       .form-input:focus {
         outline: none;
         border-color: rgba(59, 125, 255, 0.6);
@@ -1486,12 +1520,12 @@
         position: fixed;
         left: 14px;
         right: 14px;
-        bottom: 0;
+        bottom: calc(env(safe-area-inset-bottom));
         transform: translateY(calc(100% + var(--keyboard-offset, 0px)));
         margin: 0;
         padding: 0;
         opacity: 0.98;
-        pointer-events: none;
+        pointer-events: auto;
       }
 
       .settings-modal__header {
@@ -1688,6 +1722,23 @@
         flex-wrap: wrap;
         gap: 6px;
         justify-content: flex-end;
+      }
+
+      .add-tool-modal .settings-modal__footer {
+        position: sticky;
+        bottom: 0;
+        padding: 12px 0 calc(12px + env(safe-area-inset-bottom));
+        margin-top: 6px;
+        justify-content: space-between;
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.95) 45%);
+        border-top: 1px solid rgba(226, 232, 240, 0.8);
+        backdrop-filter: blur(10px);
+        z-index: 2;
+      }
+
+      .add-tool-modal .settings-modal__footer .action-primary,
+      .add-tool-modal .settings-modal__footer .action-secondary {
+        flex: 1 1 140px;
       }
 
       .objects-modal__panel {

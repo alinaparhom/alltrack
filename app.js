@@ -2927,6 +2927,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   }
 
   if (addToolFormEl) {
+    addToolFormEl.noValidate = true;
     const scrollAddToolInputIntoView = (target) => {
       const scrollContainer = addToolPanelEl || addToolBodyEl;
       if (!scrollContainer || !(target instanceof HTMLElement)) return;

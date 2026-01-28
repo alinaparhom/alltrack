@@ -1105,14 +1105,14 @@ function buildEnergyOrganizationDefaults() {
   energyMailingOptions.forEach((option) => {
     mailings[option.id] = {
       enabled: true,
-      days: option.defaultDays,
-      time: option.defaultTime,
-      groupsByDay: {},
+      toolGroups: [],
+      telegramSchedule: {},
     };
   });
   return {
     access,
     stcGroups: [],
+    telegramGroups: [],
     fines,
     mailings,
   };
@@ -1157,6 +1157,55 @@ function normalizeGroupsByDay(value, allowedGroups = []) {
   return normalized;
 }
 
+function normalizeTelegramGroupEntry(entry = {}) {
+  const name = String(entry.name ?? entry.title ?? "").trim();
+  const telegramId = String(entry.telegramId ?? entry.telegram_id ?? "").trim();
+  return { name, telegramId };
+}
+
+function normalizeTelegramGroupsList(value) {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((item) => normalizeTelegramGroupEntry(item ?? {}))
+    .filter((item) => item.name || item.telegramId);
+}
+
+function getTelegramGroupKey(group = {}) {
+  return String(group.telegramId || group.name || "").trim();
+}
+
+function normalizeMailingToolGroups(value, allowedGroups = []) {
+  const allowed = new Set(
+    Array.isArray(allowedGroups)
+      ? allowedGroups.map((group) => String(group ?? "").trim()).filter(Boolean)
+      : []
+  );
+  const raw = Array.isArray(value) ? value : [];
+  const normalized = raw
+    .map((group) => String(group ?? "").trim())
+    .filter((group) => allowed.has(group));
+  return Array.from(new Set(normalized));
+}
+
+function normalizeTelegramSchedule(value, telegramGroups = [], defaults = {}) {
+  const source =
+    value && typeof value === "object" && !Array.isArray(value) ? value : {};
+  const fallbackDays = Array.isArray(defaults.days) ? defaults.days : [];
+  const fallbackTime = defaults.time;
+  const normalized = {};
+  telegramGroups.forEach((group) => {
+    const key = getTelegramGroupKey(group);
+    if (!key) return;
+    const entry = source[key] ?? {};
+    const days = Array.isArray(entry.days)
+      ? normalizeDays(entry.days, [])
+      : normalizeDays(fallbackDays, []);
+    const time = normalizeTime(entry.time ?? fallbackTime, fallbackTime);
+    normalized[key] = { days, time };
+  });
+  return normalized;
+}
+
 function normalizeTime(value, fallback) {
   const normalized = String(value ?? "").trim();
   if (/^\d{2}:\d{2}$/.test(normalized)) {
@@ -1168,6 +1217,7 @@ function normalizeTime(value, fallback) {
 function normalizeEnergyOrganizationSettings(raw) {
   const defaults = buildEnergyOrganizationDefaults();
   const source = raw && typeof raw === "object" && !Array.isArray(raw) ? raw : {};
+  const telegramGroups = normalizeTelegramGroupsList(source.telegramGroups);
   const access = {};
   energySettingsRoles.forEach((role) => {
     const allowed = Array.isArray(source.access?.[role])
@@ -1192,19 +1242,33 @@ function normalizeEnergyOrganizationSettings(raw) {
   const mailings = {};
   energyMailingOptions.forEach((option) => {
     const data = source.mailings?.[option.id] ?? {};
+    const legacyDays = Array.isArray(data.days ?? data.day)
+      ? data.days ?? data.day
+      : null;
+    const legacyTime = normalizeTime(data.time, defaults.mailings[option.id].time);
+    const legacyGroupsByDay = normalizeGroupsByDay(data.groupsByDay, stcGroups);
+    const legacyToolGroups = Object.values(legacyGroupsByDay).flat();
+    const toolGroups = Array.isArray(data.toolGroups)
+      ? normalizeMailingToolGroups(data.toolGroups, stcGroups)
+      : normalizeMailingToolGroups(legacyToolGroups, stcGroups);
+    const telegramSchedule = normalizeTelegramSchedule(
+      data.telegramSchedule,
+      telegramGroups,
+      {
+        days: legacyDays ?? defaults.mailings[option.id].days,
+        time: legacyTime,
+      }
+    );
     mailings[option.id] = {
       enabled: Boolean(data.enabled ?? defaults.mailings[option.id].enabled),
-      days: normalizeDays(
-        data.days ?? data.day,
-        defaults.mailings[option.id].days
-      ),
-      time: normalizeTime(data.time, defaults.mailings[option.id].time),
-      groupsByDay: normalizeGroupsByDay(data.groupsByDay, stcGroups),
+      toolGroups,
+      telegramSchedule,
     };
   });
   return {
     access,
     stcGroups,
+    telegramGroups,
     fines,
     mailings,
   };
@@ -1326,65 +1390,88 @@ function buildEnergySettingsMarkup(settings) {
     })
     .join("");
 
+  const telegramGroups = normalizeTelegramGroupsList(settings.telegramGroups);
   const mailingsMarkup = energyMailingOptions
     .map((option) => {
       const mailing = settings.mailings?.[option.id] ?? {};
-      const selectedDays = new Set(mailing.days ?? []);
       const groupOptions = Array.isArray(settings.stcGroups)
         ? settings.stcGroups
         : [];
-      const groupsByDay = mailing.groupsByDay ?? {};
-      const dayOptions = energyWeekDays
-        .map(
-          (day) => `
-            <label class="settings-day-chip">
-              <input
-                type="checkbox"
-                name="mailing-${option.id}-days"
-                value="${day}"
-                ${selectedDays.has(day) ? "checked" : ""}
-              />
-              <span>${day}</span>
-            </label>
-          `
-        )
-        .join("");
-      const dayGroupsMarkup = energyWeekDays
-        .map((day) => {
-          const selectedGroups = new Set(groupsByDay[day] ?? []);
-          const groupChips =
-            groupOptions.length > 0
-              ? groupOptions
+      const selectedToolGroups = new Set(mailing.toolGroups ?? []);
+      const toolGroupsMarkup =
+        groupOptions.length > 0
+          ? groupOptions
+              .map(
+                (group) => `
+                  <label class="settings-group-chip">
+                    <input
+                      type="checkbox"
+                      name="mailing-${option.id}-tool-groups"
+                      value="${escapeHtml(group)}"
+                      ${selectedToolGroups.has(group) ? "checked" : ""}
+                    />
+                    <span>${escapeHtml(group)}</span>
+                  </label>
+                `
+              )
+              .join("")
+          : `<span class="settings-chip is-muted">Нет групп инструментов</span>`;
+      const telegramMarkup =
+        telegramGroups.length > 0
+          ? telegramGroups
+              .map((group, index) => {
+                const key = getTelegramGroupKey(group);
+                const schedule = mailing.telegramSchedule?.[key] ?? {};
+                const selectedDays = new Set(schedule.days ?? []);
+                const dayOptions = energyWeekDays
                   .map(
-                    (group) => `
-                      <label class="settings-group-chip">
+                    (day) => `
+                      <label class="settings-day-chip">
                         <input
                           type="checkbox"
-                          name="mailing-${option.id}-groups-${day}"
-                          value="${escapeHtml(group)}"
-                          ${selectedGroups.has(group) ? "checked" : ""}
+                          name="mailing-${option.id}-tg-${index}-days"
+                          value="${day}"
+                          ${selectedDays.has(day) ? "checked" : ""}
                         />
-                        <span>${escapeHtml(group)}</span>
+                        <span>${day}</span>
                       </label>
                     `
                   )
-                  .join("")
-              : `<span class="settings-chip is-muted">Нет групп</span>`;
-          return `
-            <div class="settings-day-groups">
-              <div class="settings-day-groups__title">${day}</div>
-              <div
-                class="settings-day-groups__list"
-                data-mailing-groups-list
-                data-mailing-id="${option.id}"
-                data-mailing-day="${day}"
-              >
-                ${groupChips}
-              </div>
-            </div>
-          `;
-        })
-        .join("");
+                  .join("");
+                const groupLabel = escapeHtml(group.name || "Группа Telegram");
+                const groupId = escapeHtml(group.telegramId || "");
+                return `
+                  <div class="settings-telegram-group">
+                    <div class="settings-telegram-group__header">
+                      <div class="settings-telegram-group__title">${groupLabel}</div>
+                      ${
+                        groupId
+                          ? `<div class="settings-telegram-group__id">ID: ${groupId}</div>`
+                          : ""
+                      }
+                    </div>
+                    <div class="settings-telegram-group__fields">
+                      <div class="settings-telegram-field">
+                        <span>Дни недели</span>
+                        <div class="settings-day-grid">
+                          ${dayOptions}
+                        </div>
+                      </div>
+                      <label class="settings-telegram-field">
+                        <span>Время</span>
+                        <input
+                          class="form-input"
+                          type="time"
+                          name="mailing-${option.id}-tg-${index}-time"
+                          value="${escapeHtml(schedule.time ?? option.defaultTime)}"
+                        />
+                      </label>
+                    </div>
+                  </div>
+                `;
+              })
+              .join("")
+          : `<div class="settings-empty-note">Сначала добавьте Telegram‑группы в настройках организации.</div>`;
       return `
         <div class="settings-mailing-card">
           <div class="settings-mailing-card__header">
@@ -1398,25 +1485,20 @@ function buildEnergySettingsMarkup(settings) {
             </label>
           </div>
           <div class="settings-mailing-card__fields">
-            <div class="settings-mailing-field">
-              <span>Дни недели</span>
-              <div class="settings-day-grid">
-                ${dayOptions}
+            <div class="settings-mailing-field settings-mailing-field--full">
+              <span>Группы инструментов</span>
+              <div
+                class="settings-group-chip-list"
+                data-mailing-tool-groups
+                data-mailing-id="${option.id}"
+              >
+                ${toolGroupsMarkup}
               </div>
             </div>
-            <label class="settings-mailing-field">
-              <span>Время</span>
-              <input
-                class="form-input"
-                type="time"
-                name="mailing-${option.id}-time"
-                value="${escapeHtml(mailing.time ?? "")}"
-              />
-            </label>
             <div class="settings-mailing-field settings-mailing-field--full">
-              <span>Группы по дням</span>
-              <div class="settings-day-groups-grid">
-                ${dayGroupsMarkup}
+              <span>Группы Telegram: дни и время рассылки</span>
+              <div class="settings-telegram-groups">
+                ${telegramMarkup}
               </div>
             </div>
           </div>
@@ -2792,12 +2874,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
     const syncMailingGroupLists = () => {
       const groupLists = settingsBodyEl.querySelectorAll(
-        "[data-mailing-groups-list]"
+        "[data-mailing-tool-groups]"
       );
       groupLists.forEach((list) => {
         const mailingId = list.dataset.mailingId;
-        const day = list.dataset.mailingDay;
-        if (!mailingId || !day) return;
+        if (!mailingId) return;
         const checkedGroups = new Set(
           Array.from(list.querySelectorAll("input[type=\"checkbox\"]"))
             .filter((input) => input.checked)
@@ -2811,7 +2892,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
                     <label class="settings-group-chip">
                       <input
                         type="checkbox"
-                        name="mailing-${mailingId}-groups-${day}"
+                        name="mailing-${mailingId}-tool-groups"
                         value="${escapeHtml(group)}"
                         ${checkedGroups.has(group) ? "checked" : ""}
                       />
@@ -2820,7 +2901,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
                   `
                 )
                 .join("")
-            : `<span class="settings-chip is-muted">Нет групп</span>`;
+            : `<span class="settings-chip is-muted">Нет групп инструментов</span>`;
         list.innerHTML = groupChips;
       });
     };
@@ -2928,41 +3009,42 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       };
     });
     const nextMailings = {};
+    const telegramGroups = normalizeTelegramGroupsList(
+      settingsData.organization?.telegramGroups ?? organizationSettings.telegramGroups
+    );
     energyMailingOptions.forEach((option) => {
-      const selectedDays = normalizeDays(
-        formData.getAll(`mailing-${option.id}-days`),
-        option.defaultDays
-      );
-      const rawGroupsByDay = {};
-      energyWeekDays.forEach((day) => {
-        rawGroupsByDay[day] = formData.getAll(
-          `mailing-${option.id}-groups-${day}`
-        );
-      });
-      const normalizedGroupsByDay = normalizeGroupsByDay(
-        rawGroupsByDay,
+      const toolGroups = normalizeMailingToolGroups(
+        formData.getAll(`mailing-${option.id}-tool-groups`),
         settingsGroups
       );
-      const groupsByDay = {};
-      selectedDays.forEach((day) => {
-        const groups = normalizedGroupsByDay[day] ?? [];
-        if (groups.length > 0) {
-          groupsByDay[day] = groups;
-        }
+      const telegramSchedule = {};
+      telegramGroups.forEach((group, index) => {
+        const key = getTelegramGroupKey(group);
+        if (!key) return;
+        const selectedDays = normalizeDays(
+          formData.getAll(`mailing-${option.id}-tg-${index}-days`),
+          []
+        );
+        telegramSchedule[key] = {
+          days: selectedDays,
+          time: normalizeTime(
+            formData.get(`mailing-${option.id}-tg-${index}-time`),
+            option.defaultTime
+          ),
+        };
       });
       nextMailings[option.id] = {
         enabled: formData.get(`mailing-${option.id}-enabled`) !== null,
-        days: selectedDays,
-        time: normalizeTime(
-          formData.get(`mailing-${option.id}-time`),
-          option.defaultTime
-        ),
-        groupsByDay,
+        toolGroups,
+        telegramSchedule,
       };
     });
     settingsData.organization = normalizeEnergyOrganizationSettings({
       access: nextAccess,
       stcGroups: settingsGroups,
+      telegramGroups:
+        settingsData.organization?.telegramGroups ??
+        organizationSettings.telegramGroups,
       fines: nextFines,
       mailings: nextMailings,
     });

@@ -84,6 +84,8 @@
       body[data-theme="dark"] .settings-day-chip,
       body[data-theme="dark"] .settings-group-chip,
       body[data-theme="dark"] .settings-day-groups,
+      body[data-theme="dark"] .settings-telegram-group,
+      body[data-theme="dark"] .settings-empty-note,
       body[data-theme="dark"] .button-icon,
       body[data-theme="dark"] .button-secondary,
       body[data-theme="dark"] .registration-note,
@@ -3054,6 +3056,12 @@
         grid-column: 1 / -1;
       }
 
+      .settings-group-chip-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+
       .settings-day-grid {
         display: flex;
         flex-wrap: wrap;
@@ -3122,6 +3130,74 @@
         width: 16px;
         height: 16px;
         accent-color: var(--accent);
+      }
+
+      .settings-telegram-groups {
+        display: grid;
+        gap: 10px;
+      }
+
+      .settings-telegram-group {
+        display: grid;
+        gap: 8px;
+        padding: 10px 12px;
+        border-radius: 14px;
+        border: 1px solid rgba(226, 232, 240, 0.9);
+        background: rgba(255, 255, 255, 0.72);
+        box-shadow: 0 8px 18px rgba(15, 23, 42, 0.05);
+      }
+
+      .settings-telegram-group__header {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 6px;
+      }
+
+      .settings-telegram-group__title {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text);
+      }
+
+      .settings-telegram-group__id {
+        font-size: 11px;
+        color: var(--muted);
+        padding: 2px 8px;
+        border-radius: 999px;
+        background: rgba(148, 163, 184, 0.18);
+      }
+
+      .settings-telegram-group__fields {
+        display: grid;
+        gap: 10px;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      }
+
+      .settings-telegram-field {
+        display: grid;
+        gap: 6px;
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+
+      .settings-telegram-field .form-input {
+        font-size: 13px;
+        font-weight: 500;
+        text-transform: none;
+        letter-spacing: normal;
+      }
+
+      .settings-empty-note {
+        font-size: 12px;
+        color: var(--muted);
+        padding: 10px 12px;
+        border-radius: 12px;
+        background: rgba(148, 163, 184, 0.12);
       }
 
       .settings-fines {

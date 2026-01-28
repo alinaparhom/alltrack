@@ -1030,6 +1030,28 @@ function buildUserKey(user) {
     : [user.full_name ?? "user", user.organization ?? "", user.role ?? ""].join("|");
 }
 
+function normalizeUserName(value = "") {
+  return String(value).trim().toLowerCase().replace(/\s+/g, " ");
+}
+
+function findUserRecord(user, usersData) {
+  const users = Array.isArray(usersData?.users) ? usersData.users : [];
+  const telegramIdKey = normalizeTelegramId(user?.telegram_id);
+  if (telegramIdKey) {
+    const matchedById = users.find(
+      (item) => normalizeTelegramId(item?.telegram_id) === telegramIdKey
+    );
+    if (matchedById) return matchedById;
+  }
+  const fullNameKey = normalizeUserName(user?.full_name);
+  if (!fullNameKey) return null;
+  return (
+    users.find(
+      (item) => normalizeUserName(item?.full_name) === fullNameKey
+    ) ?? null
+  );
+}
+
 function ensureSettingsData(raw) {
   const base = raw && typeof raw === "object" && !Array.isArray(raw) ? raw : {};
   if (!base.users || typeof base.users !== "object" || Array.isArray(base.users)) {
@@ -1742,24 +1764,7 @@ async function saveUserPreferences(context, preferences) {
 }
 
 function findUserOrganizationName(user, usersData) {
-  const telegramIdKey = normalizeTelegramId(user?.telegram_id);
-  let matchedUser = null;
-
-  if (telegramIdKey) {
-    matchedUser = usersData.users?.find(
-      (item) => normalizeTelegramId(item.telegram_id) === telegramIdKey
-    );
-  }
-
-  if (!matchedUser) {
-    matchedUser = usersData.users?.find(
-      (item) =>
-        item.full_name === user?.full_name &&
-        item.organization === user?.organization &&
-        item.role === user?.role
-    );
-  }
-
+  const matchedUser = findUserRecord(user, usersData);
   return matchedUser?.organization ?? user?.organization ?? "Организация";
 }
 
@@ -4564,21 +4569,7 @@ function setupSuperAdmin() {
     let organizationName = fallbackOrg;
     try {
       const usersData = await loadJson(usersFilePath);
-      const users = Array.isArray(usersData?.users) ? usersData.users : [];
-      const telegramId = normalizeTelegramId(currentUser?.telegram_id ?? null);
-      const matchedUser =
-        users.find(
-          (user) =>
-            telegramId && normalizeTelegramId(user?.telegram_id ?? null) === telegramId
-        ) ??
-        users.find(
-          (user) =>
-            String(user?.full_name ?? "").trim() ===
-              String(currentUser?.full_name ?? "").trim() &&
-            String(user?.organization ?? "").trim() ===
-              String(currentUser?.organization ?? "").trim() &&
-            String(user?.role ?? "").trim() === String(currentUser?.role ?? "").trim()
-        );
+      const matchedUser = findUserRecord(currentUser, usersData);
       if (matchedUser?.organization) {
         organizationName = String(matchedUser.organization).trim();
       }

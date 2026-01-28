@@ -344,12 +344,11 @@ export function renderRole(user) {
                       accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                       required
                     />
-                    <span class="form-hint">
-                      Можно прикрепить фото или документ.
-                    </span>
+                    <span class="form-hint">Необходимо прикрепить накладную.</span>
                   </label>
                 </div>
               </div>
+              <div class="form-message" data-add-tool-message></div>
               <div class="settings-modal__footer">
                 <button
                   class="action-secondary"
@@ -360,7 +359,6 @@ export function renderRole(user) {
                 </button>
                 <button class="action-primary" type="submit">Сохранить</button>
               </div>
-              <div class="form-message" data-add-tool-message></div>
             </form>
           </div>
         </div>

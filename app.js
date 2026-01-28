@@ -973,6 +973,20 @@ function findOrganizationRecord(orgData, orgName) {
   );
 }
 
+function getOrgDisplayName(org) {
+  const name = String(org?.full_name ?? org?.fullName ?? "").trim();
+  return name || "Организация без названия";
+}
+
+function getOrgNames(org) {
+  const names = new Set();
+  const fullName = String(org?.full_name ?? org?.fullName ?? "").trim();
+  const shortName = String(org?.short_name ?? org?.shortName ?? "").trim();
+  if (fullName) names.add(fullName);
+  if (shortName) names.add(shortName);
+  return Array.from(names);
+}
+
 function pickOrganizationFullName(orgData, orgName) {
   if (!orgName) return "Организация";
   const targetName = normalizeOrganizationName(orgName);
@@ -4789,20 +4803,6 @@ function setupSuperAdmin() {
       .replace(",", ".");
     const parsed = Number(raw);
     return Number.isFinite(parsed) ? parsed : null;
-  };
-
-  const getOrgDisplayName = (org) => {
-    const name = String(org?.full_name ?? org?.fullName ?? "").trim();
-    return name || "Организация без названия";
-  };
-
-  const getOrgNames = (org) => {
-    const names = new Set();
-    const fullName = String(org?.full_name ?? org?.fullName ?? "").trim();
-    const shortName = String(org?.short_name ?? org?.shortName ?? "").trim();
-    if (fullName) names.add(fullName);
-    if (shortName) names.add(shortName);
-    return Array.from(names);
   };
 
   const pluralize = (count, one, few, many) => {

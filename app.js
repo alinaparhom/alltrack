@@ -2571,16 +2571,19 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         context.orgShortName ??
         context.orgFolderName ??
         "";
-      const resolvedOrg = fallbackOrgName
+      const resolvedOrg = context.orgShortName
         ? {
             organizationName: fallbackOrgName,
-            orgFolder: sanitizeOrganizationFolderName(fallbackOrgName),
+            orgFolder: sanitizeOrganizationFolderName(context.orgShortName),
           }
         : await resolveUploadOrganization();
-      const organizationName = resolvedOrg.organizationName ?? "";
+      const organizationName =
+        resolvedOrg.organizationName ?? fallbackOrgName ?? "";
       const orgFolder =
         resolvedOrg.orgFolder ??
-        sanitizeOrganizationFolderName(organizationName);
+        sanitizeOrganizationFolderName(
+          context.orgShortName ?? context.orgFolderName ?? organizationName
+        );
       if (!orgFolder) {
         setAddToolMessage("Не удалось определить организацию пользователя.");
         return;

@@ -147,9 +147,9 @@
       }
 
       body[data-theme="dark"] .suggestions {
-        background: rgba(18, 25, 42, 0.95);
-        border-color: rgba(148, 170, 210, 0.28);
-        box-shadow: 0 20px 44px rgba(0, 0, 0, 0.45);
+        background: rgba(12, 18, 32, 0.96);
+        border-color: rgba(123, 178, 255, 0.4);
+        box-shadow: 0 24px 48px rgba(0, 0, 0, 0.55);
       }
 
       body[data-theme="dark"] .suggestions__item {
@@ -1138,9 +1138,9 @@
         gap: 4px;
         padding: 6px;
         border-radius: 14px;
-        border: 1px solid rgba(226, 232, 240, 0.9);
-        background: rgba(255, 255, 255, 0.95);
-        box-shadow: 0 16px 34px rgba(26, 31, 46, 0.12);
+        border: 1px solid rgba(59, 125, 255, 0.35);
+        background: rgba(255, 255, 255, 0.98);
+        box-shadow: 0 18px 40px rgba(26, 31, 46, 0.18);
         backdrop-filter: blur(14px);
         max-height: 180px;
         overflow-y: auto;
@@ -1463,6 +1463,18 @@
         border: 1px solid rgba(226, 232, 240, 0.9);
         box-shadow: 0 20px 60px rgba(15, 23, 42, 0.2);
         display: grid;
+      }
+
+      .add-tool-modal__panel {
+        height: 100vh;
+        height: 100lvh;
+        max-height: 100vh;
+        max-height: 100lvh;
+        transition: transform 0.25s ease;
+      }
+
+      .add-tool-modal.is-input-focus .add-tool-modal__panel {
+        transform: translateY(-8vh);
       }
 
       .settings-modal__header {

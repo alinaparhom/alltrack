@@ -1878,6 +1878,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const addToolMessageEl = contentEl.querySelector("[data-add-tool-message]");
   const addToolSubtitleEl = contentEl.querySelector("[data-add-tool-subtitle]");
   const addToolCancelButton = contentEl.querySelector("[data-add-tool-cancel]");
+  const addToolBodyEl = addToolFormEl?.querySelector(".settings-modal__body");
   const addToolNameInput = contentEl.querySelector("#tool-name-input");
   const addToolManufacturerInput = contentEl.querySelector(
     "#tool-manufacturer-input"
@@ -2880,6 +2881,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const closeAddToolModal = () => {
     if (!addToolModalEl) return;
     addToolModalEl.classList.add("is-hidden");
+    addToolModalEl.classList.remove("is-input-focus");
     resetAddToolForm();
   };
 
@@ -2894,6 +2896,35 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   }
 
   if (addToolFormEl) {
+    const scrollAddToolInputIntoView = (target) => {
+      if (!addToolBodyEl || !(target instanceof HTMLElement)) return;
+      const bodyRect = addToolBodyEl.getBoundingClientRect();
+      const inputRect = target.getBoundingClientRect();
+      const offset = 24;
+      const nextTop =
+        addToolBodyEl.scrollTop + (inputRect.top - bodyRect.top) - offset;
+      addToolBodyEl.scrollTo({
+        top: Math.max(nextTop, 0),
+        behavior: "smooth",
+      });
+    };
+
+    addToolFormEl.addEventListener("focusin", (event) => {
+      const target = event.target;
+      if (!(target instanceof HTMLElement)) return;
+      if (!target.closest("input, textarea, select")) return;
+      addToolModalEl?.classList.add("is-input-focus");
+      scrollAddToolInputIntoView(target);
+    });
+
+    addToolFormEl.addEventListener("focusout", () => {
+      setTimeout(() => {
+        if (!addToolFormEl.contains(document.activeElement)) {
+          addToolModalEl?.classList.remove("is-input-focus");
+        }
+      }, 0);
+    });
+
     addToolFormEl.addEventListener("submit", async (event) => {
       event.preventDefault();
       if (addToolState.isSaving) return;

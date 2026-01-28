@@ -2576,14 +2576,37 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       addToolState.orgFolder = orgFolder;
 
       const settingsPath = `./${orgFolder}/Настройки.json`;
-      const [tools, objects, rawSettings, usersData, orgsData] =
-        await Promise.all([
-          loadToolsData(orgFolder),
-          loadObjectsData(orgFolder),
-          loadJson(settingsPath).catch(() => ({})),
-          loadJson(usersFilePath).catch(() => ({ users: [] })),
-          loadJson(orgFilePath).catch(() => ({ organizations: [] })),
-        ]);
+      const results = await Promise.allSettled([
+        loadToolsData(orgFolder),
+        loadObjectsData(orgFolder),
+        loadJson(settingsPath),
+        loadJson(usersFilePath),
+        loadJson(orgFilePath),
+      ]);
+      const [
+        toolsResult,
+        objectsResult,
+        rawSettingsResult,
+        usersDataResult,
+        orgsDataResult,
+      ] = results;
+      const tools =
+        toolsResult.status === "fulfilled" ? toolsResult.value : [];
+      const objects =
+        objectsResult.status === "fulfilled" ? objectsResult.value : [];
+      const rawSettings =
+        rawSettingsResult.status === "fulfilled" ? rawSettingsResult.value : {};
+      const usersData =
+        usersDataResult.status === "fulfilled"
+          ? usersDataResult.value
+          : { users: [] };
+      const orgsData =
+        orgsDataResult.status === "fulfilled"
+          ? orgsDataResult.value
+          : { organizations: [] };
+      if (results.some((result) => result.status === "rejected")) {
+        console.warn("Не удалось загрузить часть данных для формы добавления.");
+      }
 
       addToolState.tools = Array.isArray(tools) ? tools : [];
 

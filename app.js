@@ -1049,6 +1049,10 @@ function sanitizeObjectName(value = "") {
   return String(value).trim().replace(/\s+/g, " ");
 }
 
+function sanitizeToolGroupName(value = "") {
+  return String(value).trim().replace(/\s+/g, " ");
+}
+
 function buildObjectId() {
   return `obj-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
 }
@@ -4544,10 +4548,11 @@ function setupSuperAdmin() {
       defval: "",
     });
     if (!rows.length) {
-      return { tools: [], objects: [] };
+      return { tools: [], objects: [], toolGroups: [] };
     }
     const tools = [];
     const objectsSet = new Set();
+    const toolGroupsSet = new Set();
     const columnMap = [
       { key: "Номер", index: 0 },
       { key: "Бух.номер", index: 1 },
@@ -4560,6 +4565,7 @@ function setupSuperAdmin() {
       { key: "Ответственный", index: 8 },
       { key: "Объект", index: 9 },
       { key: "Серийный номер", index: 10 },
+      { key: "Граппа инструментов", index: 11 },
     ];
 
     rows.slice(1).forEach((row) => {
@@ -4573,6 +4579,8 @@ function setupSuperAdmin() {
           normalized = normalizeCostValue(value);
         } else if (key === "Дата покупки") {
           normalized = normalizePurchaseDate(value);
+        } else if (key === "Граппа инструментов") {
+          normalized = sanitizeToolGroupName(value);
         } else {
           normalized = String(value ?? "").trim();
         }
@@ -4590,10 +4598,21 @@ function setupSuperAdmin() {
         objectsSet.add(objectName);
         entry["Объект"] = objectName;
       }
+      const toolGroupName = sanitizeToolGroupName(
+        entry["Граппа инструментов"] ?? ""
+      );
+      if (toolGroupName) {
+        toolGroupsSet.add(toolGroupName);
+        entry["Граппа инструментов"] = toolGroupName;
+      }
       tools.push(entry);
     });
 
-    return { tools, objects: Array.from(objectsSet) };
+    return {
+      tools,
+      objects: Array.from(objectsSet),
+      toolGroups: Array.from(toolGroupsSet),
+    };
   };
 
   const loadObjectsData = async (orgFolder) => {
@@ -5071,7 +5090,7 @@ function setupSuperAdmin() {
         throw new Error('Лист "База" не найден.');
       }
 
-      const { tools, objects } = parseExcelToolsData(sheet);
+      const { tools, objects, toolGroups } = parseExcelToolsData(sheet);
       if (!tools.length) {
         setUploadStatus("В листе «База» нет данных для загрузки.", "error");
         return;
@@ -5081,7 +5100,32 @@ function setupSuperAdmin() {
       const mergedObjects = mergeObjects(existingObjects, objects);
       const meta = buildUploadUserMeta();
       const basePath = `./${orgFolder}`;
-      await saveEntries([
+      const settingsPath = `${basePath}/Настройки.json`;
+      const settingsData = ensureSettingsData(
+        await loadJson(settingsPath).catch(() => ({}))
+      );
+      const organizationSettings = getEnergyOrganizationSettings(settingsData);
+      const existingGroups = Array.isArray(organizationSettings.stcGroups)
+        ? organizationSettings.stcGroups
+        : [];
+      const nextGroups = Array.from(
+        new Set(
+          [...existingGroups, ...(toolGroups ?? [])]
+            .map((group) => sanitizeToolGroupName(group))
+            .filter(Boolean)
+        )
+      );
+      const addedGroupsCount = Math.max(
+        0,
+        nextGroups.length - existingGroups.length
+      );
+      if (addedGroupsCount > 0) {
+        settingsData.organization = {
+          ...organizationSettings,
+          stcGroups: nextGroups,
+        };
+      }
+      const entries = [
         {
           path: `${basePath}/База с инструментами.json`,
           data: tools,
@@ -5092,15 +5136,27 @@ function setupSuperAdmin() {
           data: mergedObjects,
           ...meta,
         },
-      ]);
+      ];
+      if (addedGroupsCount > 0) {
+        entries.push({
+          path: settingsPath,
+          data: settingsData,
+          ...meta,
+        });
+      }
+      await saveEntries(entries);
 
       if (orgsDetailToolsTotalEl) {
         orgsDetailToolsTotalEl.textContent = String(tools.length);
       }
+      const groupsNote =
+        addedGroupsCount > 0
+          ? ` Групп МТЦ добавлено: ${addedGroupsCount}.`
+          : "";
       setUploadStatus(
         `Загружено позиций: ${tools.length}. Новых объектов: ${
           mergedObjects.length - existingObjects.length
-        }.`,
+        }.${groupsNote}`,
         "success"
       );
     } catch (error) {

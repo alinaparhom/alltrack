@@ -2571,25 +2571,35 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           (value) => ({ status: "fulfilled", value }),
           (reason) => ({ status: "rejected", reason })
         );
+      const safeContext =
+        context && typeof context === "object" ? context : {};
       const fallbackOrgName =
-        context.orgFullName ??
-        context.orgShortName ??
-        context.orgFolderName ??
+        safeContext.orgFullName ??
+        safeContext.orgShortName ??
+        safeContext.orgFolderName ??
         "";
-      const resolvedOrg = context.orgShortName || context.orgFolderName
-        ? {
-            organizationName: fallbackOrgName,
-            orgFolder: sanitizeOrganizationFolderName(
-              context.orgFolderName ?? context.orgShortName ?? fallbackOrgName
-            ),
-          }
-        : await resolveUploadOrganization();
+      const resolvedOrg =
+        safeContext.orgShortName || safeContext.orgFolderName
+          ? {
+              organizationName: fallbackOrgName,
+              orgFolder: sanitizeOrganizationFolderName(
+                safeContext.orgFolderName ??
+                  safeContext.orgShortName ??
+                  fallbackOrgName
+              ),
+            }
+          : await resolveUploadOrganization().catch(() => ({
+              organizationName: fallbackOrgName,
+              orgFolder: sanitizeOrganizationFolderName(fallbackOrgName),
+            }));
       const organizationName =
         resolvedOrg.organizationName ?? fallbackOrgName ?? "";
       const orgFolder =
         resolvedOrg.orgFolder ??
         sanitizeOrganizationFolderName(
-          context.orgShortName ?? context.orgFolderName ?? organizationName
+          safeContext.orgShortName ??
+            safeContext.orgFolderName ??
+            organizationName
         );
       if (!orgFolder) {
         setAddToolMessage("Не удалось определить организацию пользователя.");

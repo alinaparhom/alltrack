@@ -90,6 +90,19 @@ const energyMailingOptions = [
     defaultTime: "12:00",
   },
 ];
+const energyNotificationOptions = [
+  { id: "newTool", title: "Новый инструмент" },
+  { id: "moveTool", title: "Перемещение инструмента" },
+  { id: "acceptTool", title: "Принятие инструмента" },
+  { id: "declineTool", title: "Отказ от принятия" },
+  { id: "moveByEnergy", title: "Перемещение энергетиком" },
+  { id: "toolBreakdown", title: "Поломка инструмента" },
+  { id: "fixBreakdown", title: "Устранение поломки" },
+  { id: "sendToRepair", title: "Отправлен в ремонт" },
+  { id: "repaired", title: "Отремонтирован" },
+  { id: "writeOff", title: "Списание" },
+  { id: "finesIssued", title: "Выставленные штрафы" },
+];
 const energyWeekDays = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
 let currentUser = null;
 let currentUserLabel = "";
@@ -1109,12 +1122,21 @@ function buildEnergyOrganizationDefaults() {
       telegramSchedule: {},
     };
   });
+  const notifications = {};
+  energyNotificationOptions.forEach((option) => {
+    notifications[option.id] = {
+      enabled: false,
+      groups: [],
+      attachPhoto: true,
+    };
+  });
   return {
     access,
     stcGroups: [],
     telegramGroups: [],
     fines,
     mailings,
+    notifications,
   };
 }
 
@@ -1172,6 +1194,17 @@ function normalizeTelegramGroupsList(value) {
 
 function getTelegramGroupKey(group = {}) {
   return String(group.telegramId || group.name || "").trim();
+}
+
+function normalizeTelegramGroupSelection(value, allowedGroups = []) {
+  const allowedKeys = new Set(
+    allowedGroups.map((group) => getTelegramGroupKey(group)).filter(Boolean)
+  );
+  if (!Array.isArray(value)) return [];
+  const normalized = value
+    .map((group) => String(group ?? "").trim())
+    .filter((group) => allowedKeys.has(group));
+  return Array.from(new Set(normalized));
 }
 
 function normalizeMailingToolGroups(value, allowedGroups = []) {
@@ -1265,12 +1298,26 @@ function normalizeEnergyOrganizationSettings(raw) {
       telegramSchedule,
     };
   });
+  const notifications = {};
+  energyNotificationOptions.forEach((option) => {
+    const data = source.notifications?.[option.id] ?? {};
+    notifications[option.id] = {
+      enabled: Boolean(
+        data.enabled ?? defaults.notifications[option.id].enabled
+      ),
+      groups: normalizeTelegramGroupSelection(data.groups, telegramGroups),
+      attachPhoto: Boolean(
+        data.attachPhoto ?? defaults.notifications[option.id].attachPhoto
+      ),
+    };
+  });
   return {
     access,
     stcGroups,
     telegramGroups,
     fines,
     mailings,
+    notifications,
   };
 }
 
@@ -1506,6 +1553,62 @@ function buildEnergySettingsMarkup(settings) {
       `;
     })
     .join("");
+  const notificationsMarkup = energyNotificationOptions
+    .map((option) => {
+      const notification = settings.notifications?.[option.id] ?? {};
+      const selectedGroups = new Set(notification.groups ?? []);
+      const groupOptionsMarkup =
+        telegramGroups.length > 0
+          ? telegramGroups
+              .map((group) => {
+                const groupKey = getTelegramGroupKey(group);
+                const label = escapeHtml(group.name || group.telegramId || "Группа");
+                return `
+                  <label class="settings-group-chip">
+                    <input
+                      type="checkbox"
+                      name="notification-${option.id}-groups"
+                      value="${escapeHtml(groupKey)}"
+                      ${selectedGroups.has(groupKey) ? "checked" : ""}
+                    />
+                    <span>${label}</span>
+                  </label>
+                `;
+              })
+              .join("")
+          : `<div class="settings-empty-note">Добавьте Telegram‑группы в настройках организации.</div>`;
+      return `
+        <div class="settings-notification-card">
+          <div class="settings-notification-card__header">
+            <label class="settings-inline">
+              <input
+                type="checkbox"
+                name="notification-${option.id}-enabled"
+                ${notification.enabled ? "checked" : ""}
+              />
+              <span>${escapeHtml(option.title)}</span>
+            </label>
+            <label class="settings-inline settings-inline--compact">
+              <input
+                type="checkbox"
+                name="notification-${option.id}-photo"
+                ${notification.attachPhoto ? "checked" : ""}
+              />
+              <span>Фото инструмента</span>
+            </label>
+          </div>
+          <div class="settings-notification-card__fields">
+            <div class="settings-notification-field settings-notification-field--full">
+              <span>Telegram‑группы</span>
+              <div class="settings-group-chip-list">
+                ${groupOptionsMarkup}
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    })
+    .join("");
 
   return `
     <div class="settings-accordion" data-settings-accordion>
@@ -1580,6 +1683,22 @@ function buildEnergySettingsMarkup(settings) {
       <div class="settings-accordion__content">
         <div class="settings-mailings">
           ${mailingsMarkup}
+        </div>
+      </div>
+    </div>
+    <div class="settings-accordion" data-settings-accordion>
+      <button
+        class="settings-accordion__header"
+        type="button"
+        data-settings-accordion-toggle
+        aria-expanded="false"
+      >
+        <span class="settings-accordion__title">Уведомления</span>
+        <span class="settings-accordion__icon" aria-hidden="true">⌄</span>
+      </button>
+      <div class="settings-accordion__content">
+        <div class="settings-notifications">
+          ${notificationsMarkup}
         </div>
       </div>
     </div>
@@ -3039,6 +3158,17 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         telegramSchedule,
       };
     });
+    const nextNotifications = {};
+    energyNotificationOptions.forEach((option) => {
+      nextNotifications[option.id] = {
+        enabled: formData.get(`notification-${option.id}-enabled`) !== null,
+        groups: normalizeTelegramGroupSelection(
+          formData.getAll(`notification-${option.id}-groups`),
+          telegramGroups
+        ),
+        attachPhoto: formData.get(`notification-${option.id}-photo`) !== null,
+      };
+    });
     settingsData.organization = normalizeEnergyOrganizationSettings({
       access: nextAccess,
       stcGroups: settingsGroups,
@@ -3047,6 +3177,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         organizationSettings.telegramGroups,
       fines: nextFines,
       mailings: nextMailings,
+      notifications: nextNotifications,
     });
     try {
       await saveJson(context.settingsPath, settingsData, { user });

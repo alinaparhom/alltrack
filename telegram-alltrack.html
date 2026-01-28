@@ -3079,13 +3079,20 @@
       }
 
       .settings-notification-card__header {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        justify-content: space-between;
-        gap: 8px;
+        display: grid;
+        gap: 6px;
         font-weight: 600;
         color: var(--text);
+      }
+
+      .settings-notification-card__title {
+        align-items: center;
+      }
+
+      .settings-notification-card__photo {
+        align-items: center;
+        justify-content: flex-start;
+        font-weight: 500;
       }
 
       .settings-notification-card__fields {

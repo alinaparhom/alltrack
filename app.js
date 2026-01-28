@@ -2061,6 +2061,34 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     orgFolder: "",
     isSaving: false,
   };
+  let addToolViewportListenersAttached = false;
+  const updateAddToolKeyboardOffset = () => {
+    if (!addToolModalEl) return;
+    const viewport = window.visualViewport;
+    if (!viewport) {
+      addToolModalEl.style.removeProperty("--keyboard-offset");
+      return;
+    }
+    const offset = Math.max(
+      0,
+      window.innerHeight - viewport.height - viewport.offsetTop
+    );
+    addToolModalEl.style.setProperty("--keyboard-offset", `${offset}px`);
+  };
+  const attachAddToolViewportListeners = () => {
+    const viewport = window.visualViewport;
+    if (!viewport || addToolViewportListenersAttached) return;
+    viewport.addEventListener("resize", updateAddToolKeyboardOffset);
+    viewport.addEventListener("scroll", updateAddToolKeyboardOffset);
+    addToolViewportListenersAttached = true;
+  };
+  const detachAddToolViewportListeners = () => {
+    const viewport = window.visualViewport;
+    if (!viewport || !addToolViewportListenersAttached) return;
+    viewport.removeEventListener("resize", updateAddToolKeyboardOffset);
+    viewport.removeEventListener("scroll", updateAddToolKeyboardOffset);
+    addToolViewportListenersAttached = false;
+  };
   const objectsPath = context.objectsPath ?? `./${context.orgFolderName}/Объекты.json`;
   const objectsNameInput = objectsFormEl?.querySelector("[name='object-name']");
   let selectedUsersOrgName = "";
@@ -2855,9 +2883,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       );
 
       if (addToolSubtitleEl) {
-        addToolSubtitleEl.textContent = organizationName
-          ? `Организация: ${organizationName}`
-          : "Заполните карточку инструмента";
+        addToolSubtitleEl.textContent = "Заполните карточку инструмента";
       }
       setAddToolMessage("");
     } catch (error) {
@@ -2873,6 +2899,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const openAddToolModal = async () => {
     if (!addToolModalEl) return;
     addToolModalEl.classList.remove("is-hidden");
+    attachAddToolViewportListeners();
+    updateAddToolKeyboardOffset();
     resetAddToolForm();
     await loadAddToolReferences();
     addToolNameInput?.focus();
@@ -2882,6 +2910,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (!addToolModalEl) return;
     addToolModalEl.classList.add("is-hidden");
     addToolModalEl.classList.remove("is-input-focus");
+    addToolModalEl.style.removeProperty("--keyboard-offset");
+    detachAddToolViewportListeners();
     resetAddToolForm();
   };
 
@@ -2914,6 +2944,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       if (!(target instanceof HTMLElement)) return;
       if (!target.closest("input, textarea, select")) return;
       addToolModalEl?.classList.add("is-input-focus");
+      updateAddToolKeyboardOffset();
       scrollAddToolInputIntoView(target);
     });
 
@@ -2921,6 +2952,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       setTimeout(() => {
         if (!addToolFormEl.contains(document.activeElement)) {
           addToolModalEl?.classList.remove("is-input-focus");
+          addToolModalEl?.style.removeProperty("--keyboard-offset");
         }
       }, 0);
     });

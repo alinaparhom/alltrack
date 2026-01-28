@@ -2,7 +2,7 @@ export const roleId = "Энергетик";
 
 export const energyActions = [
   { id: "tools", title: "Мои инструменты", icon: "🧰" },
-  { id: "add-tool", title: "Добавить инструмент", icon: "➕" },
+  { id: "add-tool", title: "Новая МТЦ", icon: "➕" },
   { id: "base", title: "База", icon: "🗂️" },
   { id: "write-off", title: "Списать", icon: "🧾" },
   { id: "repair", title: "Ремонт", icon: "🛠️" },
@@ -174,11 +174,11 @@ export function renderRole(user) {
             class="settings-modal__panel add-tool-modal__panel"
             role="dialog"
             aria-modal="true"
-            aria-label="Добавить инструмент"
+            aria-label="Новая МТЦ"
           >
             <div class="settings-modal__header add-tool-modal__header">
               <div class="settings-modal__title">
-                <h2>Добавить инструмент</h2>
+                <h2>Новая МТЦ</h2>
                 <p data-add-tool-subtitle>Заполните карточку инструмента</p>
               </div>
               <button

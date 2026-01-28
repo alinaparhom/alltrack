@@ -936,6 +936,43 @@ function pickOrganizationShortName(orgData, orgName) {
   return fuzzyMatch?.short_name ?? orgName;
 }
 
+function findOrganizationRecord(orgData, orgName) {
+  if (!orgName) return null;
+  const targetName = normalizeOrganizationName(orgName);
+  const targetFolder = normalizeOrganizationFolder(orgName);
+  const organizations = orgData?.organizations ?? [];
+  const exactMatch =
+    organizations.find((org) => {
+      const fullName = normalizeOrganizationName(org.full_name);
+      const fullFolder = normalizeOrganizationFolder(org.full_name);
+      return fullName === targetName || fullFolder === targetFolder;
+    }) ??
+    organizations.find((org) => {
+      const shortName = normalizeOrganizationName(org.short_name);
+      const shortFolder = normalizeOrganizationFolder(org.short_name);
+      return shortName === targetName || shortFolder === targetFolder;
+    });
+
+  if (exactMatch) return exactMatch;
+
+  return (
+    organizations.find((org) => {
+      const fullName = normalizeOrganizationName(org.full_name);
+      const shortName = normalizeOrganizationName(org.short_name);
+      const fullFolder = normalizeOrganizationFolder(org.full_name);
+      const shortFolder = normalizeOrganizationFolder(org.short_name);
+      return (
+        (shortName && targetName.includes(shortName)) ||
+        (fullName && targetName.includes(fullName)) ||
+        (shortName && shortName.includes(targetName)) ||
+        (fullName && fullName.includes(targetName)) ||
+        (shortFolder && targetFolder.includes(shortFolder)) ||
+        (fullFolder && targetFolder.includes(fullFolder))
+      );
+    }) ?? null
+  );
+}
+
 function pickOrganizationFullName(orgData, orgName) {
   if (!orgName) return "Организация";
   const targetName = normalizeOrganizationName(orgName);
@@ -2632,10 +2669,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const orgsList = Array.isArray(orgsData?.organizations)
       ? orgsData.organizations
       : [];
-    const normalizedOrgName = normalizeOrganizationName(organizationName);
-    const orgRecord = orgsList.find(
-      (org) =>
-        normalizeOrganizationName(org?.full_name ?? "") === normalizedOrgName
+    const orgRecord = findOrganizationRecord(
+      { organizations: orgsList },
+      organizationName
     );
     if (organizationName && !orgRecord) {
       issues.push(
@@ -4626,43 +4662,6 @@ function setupSuperAdmin() {
     if (!digits) return "";
     const trimmed = digits.replace(/^0+/, "");
     return trimmed || "0";
-  };
-
-  const findOrganizationRecord = (orgData, orgName) => {
-    if (!orgName) return null;
-    const targetName = normalizeOrganizationName(orgName);
-    const targetFolder = normalizeOrganizationFolder(orgName);
-    const organizations = orgData?.organizations ?? [];
-    const exactMatch =
-      organizations.find((org) => {
-        const fullName = normalizeOrganizationName(org.full_name);
-        const fullFolder = normalizeOrganizationFolder(org.full_name);
-        return fullName === targetName || fullFolder === targetFolder;
-      }) ??
-      organizations.find((org) => {
-        const shortName = normalizeOrganizationName(org.short_name);
-        const shortFolder = normalizeOrganizationFolder(org.short_name);
-        return shortName === targetName || shortFolder === targetFolder;
-      });
-
-    if (exactMatch) return exactMatch;
-
-    return (
-      organizations.find((org) => {
-        const fullName = normalizeOrganizationName(org.full_name);
-        const shortName = normalizeOrganizationName(org.short_name);
-        const fullFolder = normalizeOrganizationFolder(org.full_name);
-        const shortFolder = normalizeOrganizationFolder(org.short_name);
-        return (
-          (shortName && targetName.includes(shortName)) ||
-          (fullName && targetName.includes(fullName)) ||
-          (shortName && shortName.includes(targetName)) ||
-          (fullName && fullName.includes(targetName)) ||
-          (shortFolder && targetFolder.includes(shortFolder)) ||
-          (fullFolder && targetFolder.includes(fullFolder))
-        );
-      }) ?? null
-    );
   };
 
   const resolveUploadOrganization = async () => {

@@ -1879,6 +1879,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const addToolSubtitleEl = contentEl.querySelector("[data-add-tool-subtitle]");
   const addToolCancelButton = contentEl.querySelector("[data-add-tool-cancel]");
   const addToolBodyEl = addToolFormEl?.querySelector(".settings-modal__body");
+  const addToolPanelEl = addToolModalEl?.querySelector(".settings-modal__panel");
   const addToolNameInput = contentEl.querySelector("#tool-name-input");
   const addToolManufacturerInput = contentEl.querySelector(
     "#tool-manufacturer-input"
@@ -2927,13 +2928,14 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
   if (addToolFormEl) {
     const scrollAddToolInputIntoView = (target) => {
-      if (!addToolBodyEl || !(target instanceof HTMLElement)) return;
-      const bodyRect = addToolBodyEl.getBoundingClientRect();
+      const scrollContainer = addToolPanelEl || addToolBodyEl;
+      if (!scrollContainer || !(target instanceof HTMLElement)) return;
+      const bodyRect = scrollContainer.getBoundingClientRect();
       const inputRect = target.getBoundingClientRect();
       const offset = 24;
       const nextTop =
-        addToolBodyEl.scrollTop + (inputRect.top - bodyRect.top) - offset;
-      addToolBodyEl.scrollTo({
+        scrollContainer.scrollTop + (inputRect.top - bodyRect.top) - offset;
+      scrollContainer.scrollTo({
         top: Math.max(nextTop, 0),
         behavior: "smooth",
       });
@@ -3104,8 +3106,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         ]);
 
         addToolState.tools = updatedTools;
-        setAddToolMessage(`Инструмент добавлен. Номер: ${toolNumber}.`);
+        const successMessage = `Данные о новой позиции сохранены, ему присвоен номер ${toolNumber}.`;
+        setAddToolMessage(successMessage);
         addToolFormEl.reset();
+        window.alert(successMessage);
       } catch (error) {
         console.error(error);
         setAddToolMessage(

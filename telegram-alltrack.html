@@ -1474,7 +1474,21 @@
       }
 
       .add-tool-modal.is-input-focus .add-tool-modal__panel {
-        transform: translateY(-8vh);
+        transform: none;
+      }
+
+      .add-tool-modal.is-input-focus .settings-modal__form {
+        grid-template-rows: 1fr 0 auto;
+        gap: 0;
+      }
+
+      .add-tool-modal.is-input-focus .settings-modal__footer {
+        height: 0;
+        margin: 0;
+        padding: 0;
+        opacity: 0;
+        pointer-events: none;
+        overflow: hidden;
       }
 
       .settings-modal__header {

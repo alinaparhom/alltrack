@@ -2566,15 +2566,22 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const loadAddToolReferences = async () => {
     setAddToolMessage("Загружаем данные...");
     try {
+      const settle = (promise) =>
+        promise.then(
+          (value) => ({ status: "fulfilled", value }),
+          (reason) => ({ status: "rejected", reason })
+        );
       const fallbackOrgName =
         context.orgFullName ??
         context.orgShortName ??
         context.orgFolderName ??
         "";
-      const resolvedOrg = context.orgShortName
+      const resolvedOrg = context.orgShortName || context.orgFolderName
         ? {
             organizationName: fallbackOrgName,
-            orgFolder: sanitizeOrganizationFolderName(context.orgShortName),
+            orgFolder: sanitizeOrganizationFolderName(
+              context.orgFolderName ?? context.orgShortName ?? fallbackOrgName
+            ),
           }
         : await resolveUploadOrganization();
       const organizationName =
@@ -2593,12 +2600,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       addToolState.orgFolder = orgFolder;
 
       const settingsPath = `./${orgFolder}/Настройки.json`;
-      const results = await Promise.allSettled([
-        loadToolsData(orgFolder),
-        loadObjectsData(orgFolder),
-        loadJson(settingsPath),
-        loadJson(usersFilePath),
-        loadJson(orgFilePath),
+      const results = await Promise.all([
+        settle(loadToolsData(orgFolder)),
+        settle(loadObjectsData(orgFolder)),
+        settle(loadJson(settingsPath)),
+        settle(loadJson(usersFilePath)),
+        settle(loadJson(orgFilePath)),
       ]);
       const [
         toolsResult,

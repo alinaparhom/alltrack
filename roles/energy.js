@@ -168,6 +168,202 @@ export function renderRole(user) {
             </div>
           </div>
         </div>
+        <div class="settings-modal add-tool-modal is-hidden" data-add-tool-modal>
+          <div class="settings-modal__backdrop" data-add-tool-backdrop></div>
+          <div
+            class="settings-modal__panel add-tool-modal__panel"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Добавить инструмент"
+          >
+            <div class="settings-modal__header add-tool-modal__header">
+              <div class="settings-modal__title">
+                <h2>Добавить инструмент</h2>
+                <p data-add-tool-subtitle>Заполните карточку инструмента</p>
+              </div>
+              <button
+                class="button-icon add-tool-modal__close"
+                type="button"
+                data-add-tool-close
+                aria-label="Закрыть форму добавления"
+              >
+                <span class="button-icon-emoji" aria-hidden="true">✕</span>
+              </button>
+            </div>
+            <form class="settings-modal__form" data-add-tool-form>
+              <div class="settings-modal__body">
+                <div class="form-card form-grid">
+                  <label class="form-field">
+                    <span class="form-label">Бух.номер</span>
+                    <input
+                      class="form-input"
+                      type="text"
+                      inputmode="numeric"
+                      name="tool-accounting-number"
+                      placeholder="Можно оставить пустым"
+                      autocomplete="off"
+                    />
+                  </label>
+                  <label class="form-field">
+                    <span class="form-label">Наименование</span>
+                    <input
+                      class="form-input"
+                      id="tool-name-input"
+                      type="text"
+                      name="tool-name"
+                      placeholder="Например, Перфоратор"
+                      autocomplete="off"
+                      required
+                    />
+                    <div
+                      class="suggestions is-hidden"
+                      data-tool-name-suggestions
+                    ></div>
+                  </label>
+                  <label class="form-field">
+                    <span class="form-label">Производитель</span>
+                    <input
+                      class="form-input"
+                      id="tool-manufacturer-input"
+                      type="text"
+                      name="tool-manufacturer"
+                      placeholder="Начните вводить"
+                      autocomplete="off"
+                      required
+                    />
+                    <div
+                      class="suggestions is-hidden"
+                      data-tool-manufacturer-suggestions
+                    ></div>
+                  </label>
+                  <label class="form-field">
+                    <span class="form-label">Модель</span>
+                    <input
+                      class="form-input"
+                      id="tool-model-input"
+                      type="text"
+                      name="tool-model"
+                      placeholder="Начните вводить"
+                      autocomplete="off"
+                      required
+                    />
+                    <div
+                      class="suggestions is-hidden"
+                      data-tool-model-suggestions
+                    ></div>
+                  </label>
+                  <label class="form-field">
+                    <span class="form-label">Наименование по бухгалтерии</span>
+                    <input
+                      class="form-input"
+                      type="text"
+                      name="tool-accounting-name"
+                      placeholder="Можно оставить пустым"
+                      autocomplete="off"
+                    />
+                  </label>
+                  <label class="form-field">
+                    <span class="form-label">Стоимость</span>
+                    <input
+                      class="form-input"
+                      type="text"
+                      inputmode="decimal"
+                      name="tool-cost"
+                      placeholder="Например, 12500"
+                      autocomplete="off"
+                      required
+                    />
+                  </label>
+                  <label class="form-field">
+                    <span class="form-label">Ответственный</span>
+                    <input
+                      class="form-input"
+                      id="tool-responsible-input"
+                      type="text"
+                      name="tool-responsible"
+                      data-placeholder="Выберите из списка"
+                      placeholder="Выберите из списка"
+                      autocomplete="off"
+                      required
+                    />
+                    <div
+                      class="suggestions is-hidden"
+                      data-tool-responsible-suggestions
+                    ></div>
+                  </label>
+                  <label class="form-field">
+                    <span class="form-label">Объект</span>
+                    <input
+                      class="form-input"
+                      id="tool-object-input"
+                      type="text"
+                      name="tool-object"
+                      data-placeholder="Выберите объект"
+                      placeholder="Выберите объект"
+                      autocomplete="off"
+                      required
+                    />
+                    <div
+                      class="suggestions is-hidden"
+                      data-tool-object-suggestions
+                    ></div>
+                  </label>
+                  <label class="form-field">
+                    <span class="form-label">Серийный номер</span>
+                    <input
+                      class="form-input"
+                      type="text"
+                      name="tool-serial-number"
+                      placeholder="Можно оставить пустым"
+                      autocomplete="off"
+                    />
+                  </label>
+                  <label class="form-field">
+                    <span class="form-label">Граппа инструментов</span>
+                    <input
+                      class="form-input"
+                      id="tool-group-input"
+                      type="text"
+                      name="tool-group"
+                      data-placeholder="Выберите группу"
+                      placeholder="Выберите группу"
+                      autocomplete="off"
+                      required
+                    />
+                    <div
+                      class="suggestions is-hidden"
+                      data-tool-group-suggestions
+                    ></div>
+                  </label>
+                  <label class="form-field">
+                    <span class="form-label">Накладная (обязательно)</span>
+                    <input
+                      class="form-input"
+                      type="file"
+                      name="tool-invoice"
+                      accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                      required
+                    />
+                    <span class="form-hint">
+                      Можно прикрепить фото или документ.
+                    </span>
+                  </label>
+                </div>
+              </div>
+              <div class="settings-modal__footer">
+                <button
+                  class="action-secondary"
+                  type="button"
+                  data-add-tool-cancel
+                >
+                  Отмена
+                </button>
+                <button class="action-primary" type="submit">Сохранить</button>
+              </div>
+              <div class="form-message" data-add-tool-message></div>
+            </form>
+          </div>
+        </div>
         <div class="settings-modal users-details-modal is-hidden" data-users-details-modal>
           <div class="settings-modal__backdrop" data-users-details-backdrop></div>
           <div

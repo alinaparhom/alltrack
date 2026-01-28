@@ -1811,6 +1811,41 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const objectsEmptyEl = contentEl.querySelector("[data-energy-objects-empty]");
   const objectsCountEl = contentEl.querySelector("[data-energy-objects-count]");
   const objectsSubtitleEl = contentEl.querySelector("[data-energy-objects-subtitle]");
+  const addToolModalEl = contentEl.querySelector("[data-add-tool-modal]");
+  const addToolBackdropEl = contentEl.querySelector("[data-add-tool-backdrop]");
+  const addToolCloseButton = contentEl.querySelector("[data-add-tool-close]");
+  const addToolFormEl = contentEl.querySelector("[data-add-tool-form]");
+  const addToolMessageEl = contentEl.querySelector("[data-add-tool-message]");
+  const addToolSubtitleEl = contentEl.querySelector("[data-add-tool-subtitle]");
+  const addToolCancelButton = contentEl.querySelector("[data-add-tool-cancel]");
+  const addToolNameInput = contentEl.querySelector("#tool-name-input");
+  const addToolManufacturerInput = contentEl.querySelector(
+    "#tool-manufacturer-input"
+  );
+  const addToolModelInput = contentEl.querySelector("#tool-model-input");
+  const addToolResponsibleInput = contentEl.querySelector(
+    "#tool-responsible-input"
+  );
+  const addToolObjectInput = contentEl.querySelector("#tool-object-input");
+  const addToolGroupInput = contentEl.querySelector("#tool-group-input");
+  const addToolNameSuggestionsEl = contentEl.querySelector(
+    "[data-tool-name-suggestions]"
+  );
+  const addToolManufacturerSuggestionsEl = contentEl.querySelector(
+    "[data-tool-manufacturer-suggestions]"
+  );
+  const addToolModelSuggestionsEl = contentEl.querySelector(
+    "[data-tool-model-suggestions]"
+  );
+  const addToolResponsibleSuggestionsEl = contentEl.querySelector(
+    "[data-tool-responsible-suggestions]"
+  );
+  const addToolObjectSuggestionsEl = contentEl.querySelector(
+    "[data-tool-object-suggestions]"
+  );
+  const addToolGroupSuggestionsEl = contentEl.querySelector(
+    "[data-tool-group-suggestions]"
+  );
   const usersDetailsModalEl = contentEl.querySelector("[data-users-details-modal]");
   const usersDetailsBackdropEl = contentEl.querySelector(
     "[data-users-details-backdrop]"
@@ -1955,6 +1990,15 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   };
   const usersState = {
     users: [],
+  };
+  const addToolState = {
+    tools: [],
+    responsibleOptions: [],
+    objectOptions: [],
+    groupOptions: [],
+    organizationName: "",
+    orgFolder: "",
+    isSaving: false,
   };
   const objectsPath = context.objectsPath ?? `./${context.orgFolderName}/Объекты.json`;
   const objectsNameInput = objectsFormEl?.querySelector("[name='object-name']");
@@ -2262,6 +2306,88 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     });
   };
 
+  const attachDynamicSuggestions = ({
+    inputEl,
+    containerEl,
+    getItems,
+    showOnFocus = false,
+  }) => {
+    if (!inputEl || !containerEl) return;
+    const update = () => {
+      const items = getItems(inputEl.value);
+      renderSuggestions(containerEl, items, inputEl);
+    };
+    const hide = () => {
+      containerEl.classList.add("is-hidden");
+    };
+    inputEl.addEventListener("input", () => {
+      if (!inputEl.value.trim() && !showOnFocus) {
+        hide();
+        return;
+      }
+      update();
+    });
+    inputEl.addEventListener("focus", () => {
+      if (showOnFocus || inputEl.value.trim()) {
+        update();
+      }
+    });
+    inputEl.addEventListener("blur", () => {
+      setTimeout(hide, 120);
+    });
+  };
+
+  const normalizeSuggestionValue = (value = "") => String(value ?? "").trim();
+
+  const buildCommonSuggestions = (values, limit = 6) => {
+    const counts = new Map();
+    values.forEach((value) => {
+      const normalized = normalizeSuggestionValue(value);
+      if (!normalized) return;
+      const key = normalized.toLowerCase();
+      const entry = counts.get(key) ?? { value: normalized, count: 0 };
+      entry.count += 1;
+      counts.set(key, entry);
+    });
+    return Array.from(counts.values())
+      .sort(
+        (a, b) =>
+          b.count - a.count || a.value.localeCompare(b.value, "ru")
+      )
+      .slice(0, limit)
+      .map((item) => item.value);
+  };
+
+  const filterSuggestions = (values, query, limit = 6) => {
+    const safeQuery = normalizeSuggestionValue(query).toLowerCase();
+    if (!safeQuery) return [];
+    const counts = new Map();
+    values.forEach((value) => {
+      const normalized = normalizeSuggestionValue(value);
+      if (!normalized) return;
+      const key = normalized.toLowerCase();
+      const entry = counts.get(key) ?? { value: normalized, count: 0 };
+      entry.count += 1;
+      counts.set(key, entry);
+    });
+    return Array.from(counts.values())
+      .filter((item) => item.value.toLowerCase().startsWith(safeQuery))
+      .sort(
+        (a, b) =>
+          b.count - a.count || a.value.localeCompare(b.value, "ru")
+      )
+      .slice(0, limit)
+      .map((item) => item.value);
+  };
+
+  const filterSelectableOptions = (options, query, limit = 8) => {
+    const safeQuery = normalizeSuggestionValue(query).toLowerCase();
+    if (!safeQuery) return options.slice(0, limit);
+    return options
+      .filter((item) => item.toLowerCase().includes(safeQuery))
+      .slice(0, limit);
+  };
+
   attachSuggestions(
     usersAddFirstNameInput,
     usersAddFirstNameSuggestionsEl,
@@ -2272,6 +2398,442 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     usersAddMiddleNameSuggestionsEl,
     "middleNames"
   );
+
+  const setAddToolMessage = (message = "") => {
+    if (addToolMessageEl) {
+      addToolMessageEl.textContent = message;
+    }
+  };
+
+  const getToolValues = (
+    key,
+    { nameFilter = "", manufacturerFilter = "" } = {}
+  ) => {
+    const normalizedName = normalizeSuggestionValue(nameFilter).toLowerCase();
+    const normalizedManufacturer =
+      normalizeSuggestionValue(manufacturerFilter).toLowerCase();
+    return addToolState.tools
+      .filter((tool) => {
+        if (normalizedName) {
+          const toolName = normalizeSuggestionValue(
+            tool?.["Наименование"] ?? ""
+          ).toLowerCase();
+          if (toolName !== normalizedName) return false;
+        }
+        if (normalizedManufacturer) {
+          const toolManufacturer = normalizeSuggestionValue(
+            tool?.["Производитель"] ?? ""
+          ).toLowerCase();
+          if (toolManufacturer !== normalizedManufacturer) return false;
+        }
+        return true;
+      })
+      .map((tool) => normalizeSuggestionValue(tool?.[key] ?? ""))
+      .filter(Boolean);
+  };
+
+  const getToolNameSuggestions = (query) => {
+    if (!normalizeSuggestionValue(query)) return [];
+    return filterSuggestions(getToolValues("Наименование"), query, 6);
+  };
+
+  const getToolManufacturerSuggestions = (query) => {
+    const values = getToolValues("Производитель", {
+      nameFilter: addToolNameInput?.value ?? "",
+    });
+    if (!normalizeSuggestionValue(query)) {
+      return buildCommonSuggestions(values, 6);
+    }
+    return filterSuggestions(values, query, 6);
+  };
+
+  const getToolModelSuggestions = (query) => {
+    const values = getToolValues("Модель", {
+      nameFilter: addToolNameInput?.value ?? "",
+      manufacturerFilter: addToolManufacturerInput?.value ?? "",
+    });
+    if (!normalizeSuggestionValue(query)) {
+      return buildCommonSuggestions(values, 6);
+    }
+    return filterSuggestions(values, query, 6);
+  };
+
+  const getSelectableSuggestions = (options, query) =>
+    filterSelectableOptions(options, query, 8);
+
+  attachDynamicSuggestions({
+    inputEl: addToolNameInput,
+    containerEl: addToolNameSuggestionsEl,
+    getItems: getToolNameSuggestions,
+  });
+
+  attachDynamicSuggestions({
+    inputEl: addToolManufacturerInput,
+    containerEl: addToolManufacturerSuggestionsEl,
+    getItems: getToolManufacturerSuggestions,
+    showOnFocus: true,
+  });
+
+  attachDynamicSuggestions({
+    inputEl: addToolModelInput,
+    containerEl: addToolModelSuggestionsEl,
+    getItems: getToolModelSuggestions,
+    showOnFocus: true,
+  });
+
+  attachDynamicSuggestions({
+    inputEl: addToolResponsibleInput,
+    containerEl: addToolResponsibleSuggestionsEl,
+    getItems: (query) =>
+      getSelectableSuggestions(addToolState.responsibleOptions, query),
+    showOnFocus: true,
+  });
+
+  attachDynamicSuggestions({
+    inputEl: addToolObjectInput,
+    containerEl: addToolObjectSuggestionsEl,
+    getItems: (query) =>
+      getSelectableSuggestions(addToolState.objectOptions, query),
+    showOnFocus: true,
+  });
+
+  attachDynamicSuggestions({
+    inputEl: addToolGroupInput,
+    containerEl: addToolGroupSuggestionsEl,
+    getItems: (query) =>
+      getSelectableSuggestions(addToolState.groupOptions, query),
+    showOnFocus: true,
+  });
+
+  const updateAddToolSelectState = (inputEl, options, emptyPlaceholder) => {
+    if (!inputEl) return;
+    const basePlaceholder =
+      inputEl.dataset.placeholder ?? "Выберите значение";
+    if (options.length) {
+      inputEl.disabled = false;
+      inputEl.placeholder = basePlaceholder;
+      return;
+    }
+    inputEl.disabled = true;
+    inputEl.placeholder = emptyPlaceholder;
+    inputEl.value = "";
+  };
+
+  const resetAddToolForm = () => {
+    addToolFormEl?.reset();
+    setAddToolMessage("");
+    addToolNameSuggestionsEl?.classList.add("is-hidden");
+    addToolManufacturerSuggestionsEl?.classList.add("is-hidden");
+    addToolModelSuggestionsEl?.classList.add("is-hidden");
+    addToolResponsibleSuggestionsEl?.classList.add("is-hidden");
+    addToolObjectSuggestionsEl?.classList.add("is-hidden");
+    addToolGroupSuggestionsEl?.classList.add("is-hidden");
+  };
+
+  const buildNextToolNumber = (tools) => {
+    let maxValue = 0;
+    tools.forEach((tool) => {
+      const raw = String(tool?.["Номер"] ?? "").replace(/\D/g, "");
+      if (raw.length !== 5) return;
+      const numeric = Number.parseInt(raw, 10);
+      if (Number.isFinite(numeric) && numeric > maxValue) {
+        maxValue = numeric;
+      }
+    });
+    const nextValue = maxValue + 1;
+    return String(nextValue).padStart(5, "0");
+  };
+
+  const buildInvoiceFileName = (toolNumber, dateValue, originalName = "") => {
+    const extension = originalName.includes(".")
+      ? originalName.split(".").pop()
+      : "";
+    const randomSuffix = Math.floor(100 + Math.random() * 900);
+    const baseName = `${toolNumber}_${dateValue}_${randomSuffix}`;
+    const rawName = extension ? `${baseName}.${extension}` : baseName;
+    return sanitizePhotoFileName(rawName);
+  };
+
+  const findOptionMatch = (value, options) => {
+    const normalized = normalizeSuggestionValue(value).toLowerCase();
+    if (!normalized) return "";
+    const match = options.find(
+      (item) => item.toLowerCase() === normalized
+    );
+    return match ?? "";
+  };
+
+  const loadAddToolReferences = async () => {
+    setAddToolMessage("Загружаем данные...");
+    try {
+      const { organizationName, orgFolder } = await resolveUploadOrganization();
+      if (!orgFolder) {
+        setAddToolMessage("Не удалось определить организацию пользователя.");
+        return;
+      }
+
+      addToolState.organizationName = organizationName;
+      addToolState.orgFolder = orgFolder;
+
+      const settingsPath = `./${orgFolder}/Настройки.json`;
+      const [tools, objects, rawSettings, usersData, orgsData] =
+        await Promise.all([
+          loadToolsData(orgFolder),
+          loadObjectsData(orgFolder),
+          loadJson(settingsPath).catch(() => ({})),
+          loadJson(usersFilePath).catch(() => ({ users: [] })),
+          loadJson(orgFilePath).catch(() => ({ organizations: [] })),
+        ]);
+
+      addToolState.tools = Array.isArray(tools) ? tools : [];
+
+      const objectOptions = (Array.isArray(objects) ? objects : [])
+        .map((item) => sanitizeObjectName(item?.name ?? item))
+        .filter(Boolean);
+      addToolState.objectOptions = Array.from(new Set(objectOptions)).sort(
+        (a, b) => a.localeCompare(b, "ru")
+      );
+
+      const settingsData = ensureSettingsData(rawSettings);
+      const organizationSettings = getEnergyOrganizationSettings(settingsData);
+      const groupOptions = Array.isArray(organizationSettings.stcGroups)
+        ? organizationSettings.stcGroups
+        : [];
+      addToolState.groupOptions = Array.from(
+        new Set(
+          groupOptions
+            .map((group) => sanitizeToolGroupName(group))
+            .filter(Boolean)
+        )
+      ).sort((a, b) => a.localeCompare(b, "ru"));
+
+      const orgRecord = findOrganizationRecord(orgsData, organizationName);
+      const orgNames = orgRecord ? getOrgNames(orgRecord) : [organizationName];
+      const normalizedOrgNames = orgNames
+        .map((name) => String(name ?? "").trim())
+        .filter(Boolean);
+      const responsibleOptions = (usersData?.users ?? [])
+        .filter((entry) =>
+          normalizedOrgNames.includes(String(entry?.organization ?? "").trim())
+        )
+        .map((entry) => String(entry?.full_name ?? "").trim())
+        .filter(Boolean);
+      addToolState.responsibleOptions = Array.from(
+        new Set(responsibleOptions)
+      ).sort((a, b) => a.localeCompare(b, "ru"));
+
+      updateAddToolSelectState(
+        addToolResponsibleInput,
+        addToolState.responsibleOptions,
+        "Нет ответственных"
+      );
+      updateAddToolSelectState(
+        addToolObjectInput,
+        addToolState.objectOptions,
+        "Нет объектов"
+      );
+      updateAddToolSelectState(
+        addToolGroupInput,
+        addToolState.groupOptions,
+        "Нет групп"
+      );
+
+      if (addToolSubtitleEl) {
+        addToolSubtitleEl.textContent = organizationName
+          ? `Организация: ${organizationName}`
+          : "Заполните карточку инструмента";
+      }
+      setAddToolMessage("");
+    } catch (error) {
+      console.error(error);
+      setAddToolMessage("Не удалось загрузить данные. Проверьте сервер.");
+    }
+  };
+
+  const openAddToolModal = async () => {
+    if (!addToolModalEl) return;
+    addToolModalEl.classList.remove("is-hidden");
+    resetAddToolForm();
+    await loadAddToolReferences();
+    addToolNameInput?.focus();
+  };
+
+  const closeAddToolModal = () => {
+    if (!addToolModalEl) return;
+    addToolModalEl.classList.add("is-hidden");
+    resetAddToolForm();
+  };
+
+  if (addToolBackdropEl) {
+    addToolBackdropEl.addEventListener("click", closeAddToolModal);
+  }
+  if (addToolCloseButton) {
+    addToolCloseButton.addEventListener("click", closeAddToolModal);
+  }
+  if (addToolCancelButton) {
+    addToolCancelButton.addEventListener("click", closeAddToolModal);
+  }
+
+  if (addToolFormEl) {
+    addToolFormEl.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      if (addToolState.isSaving) return;
+      if (!addToolState.orgFolder) {
+        setAddToolMessage("Не удалось определить папку организации.");
+        return;
+      }
+
+      const formData = new FormData(addToolFormEl);
+      const accountingNumber = normalizeSuggestionValue(
+        formData.get("tool-accounting-number")
+      );
+      const toolName = normalizeSuggestionValue(formData.get("tool-name"));
+      const manufacturer = normalizeSuggestionValue(
+        formData.get("tool-manufacturer")
+      );
+      const model = normalizeSuggestionValue(formData.get("tool-model"));
+      const accountingName = normalizeSuggestionValue(
+        formData.get("tool-accounting-name")
+      );
+      const costValue = normalizeCostValue(formData.get("tool-cost"));
+      const responsibleRaw = normalizeSuggestionValue(
+        formData.get("tool-responsible")
+      );
+      const objectRaw = normalizeSuggestionValue(formData.get("tool-object"));
+      const serialNumber = normalizeSuggestionValue(
+        formData.get("tool-serial-number")
+      );
+      const groupRaw = normalizeSuggestionValue(formData.get("tool-group"));
+      const invoiceFile = formData.get("tool-invoice");
+
+      if (!toolName) {
+        setAddToolMessage("Введите наименование.");
+        addToolNameInput?.focus();
+        return;
+      }
+      if (!manufacturer) {
+        setAddToolMessage("Введите производителя.");
+        addToolManufacturerInput?.focus();
+        return;
+      }
+      if (!model) {
+        setAddToolMessage("Введите модель.");
+        addToolModelInput?.focus();
+        return;
+      }
+      if (costValue === null) {
+        setAddToolMessage("Введите корректную стоимость.");
+        return;
+      }
+
+      if (!addToolState.responsibleOptions.length) {
+        setAddToolMessage("В организации нет ответственных.");
+        return;
+      }
+      const responsible = findOptionMatch(
+        responsibleRaw,
+        addToolState.responsibleOptions
+      );
+      if (!responsible) {
+        setAddToolMessage("Выберите ответственного из списка.");
+        addToolResponsibleInput?.focus();
+        return;
+      }
+
+      if (!addToolState.objectOptions.length) {
+        setAddToolMessage("В организации нет объектов.");
+        return;
+      }
+      const objectName = findOptionMatch(
+        objectRaw,
+        addToolState.objectOptions
+      );
+      if (!objectName) {
+        setAddToolMessage("Выберите объект из списка.");
+        addToolObjectInput?.focus();
+        return;
+      }
+
+      if (!addToolState.groupOptions.length) {
+        setAddToolMessage("В организации нет групп инструментов.");
+        return;
+      }
+      const groupName = findOptionMatch(
+        groupRaw,
+        addToolState.groupOptions
+      );
+      if (!groupName) {
+        setAddToolMessage("Выберите группу инструментов из списка.");
+        addToolGroupInput?.focus();
+        return;
+      }
+
+      if (!(invoiceFile instanceof File) || invoiceFile.size === 0) {
+        setAddToolMessage("Прикрепите накладную.");
+        return;
+      }
+
+      addToolState.isSaving = true;
+      setAddToolMessage("Сохраняем данные...");
+
+      try {
+        const dateValue = formatDateValue(new Date());
+        const toolNumber = buildNextToolNumber(addToolState.tools);
+        const invoiceName = buildInvoiceFileName(
+          toolNumber,
+          dateValue,
+          invoiceFile.name
+        );
+        const invoiceContent = await readFileAsBase64(invoiceFile);
+
+        const nextTool = {
+          "Номер": toolNumber,
+          "Бух.номер": accountingNumber,
+          "Наименование": toolName,
+          "Производитель": manufacturer,
+          "Модель": model,
+          "Наименование по бухгалтерии": accountingName,
+          "Стоимость": costValue,
+          "Дата покупки": dateValue,
+          "Ответственный": responsible,
+          "Объект": objectName,
+          "Серийный номер": serialNumber,
+          "Граппа инструментов": groupName,
+          "Статус": "Рабочий",
+          "Количество фото": 0,
+        };
+
+        const updatedTools = [...addToolState.tools, nextTool];
+        const meta = buildUploadUserMeta();
+        await saveEntriesViaEndpoint([
+          {
+            type: "file",
+            path: `${addToolState.orgFolder}/Накладные покупка/${invoiceName}`,
+            content: invoiceContent,
+            encoding: "base64",
+            mime: invoiceFile.type || "application/octet-stream",
+            ...meta,
+          },
+          {
+            path: `${addToolState.orgFolder}/База с инструментами.json`,
+            data: updatedTools,
+            ...meta,
+          },
+        ]);
+
+        addToolState.tools = updatedTools;
+        setAddToolMessage(`Инструмент добавлен. Номер: ${toolNumber}.`);
+        addToolFormEl.reset();
+      } catch (error) {
+        console.error(error);
+        setAddToolMessage(
+          "Не удалось сохранить инструмент. Проверьте сервер."
+        );
+      } finally {
+        addToolState.isSaving = false;
+      }
+    });
+  }
 
   const resetUsersInvite = () => {
     if (!usersInviteBox) return;
@@ -3225,6 +3787,14 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       targetCard.dataset.actionId === "users"
     ) {
       openUsersDetailsModal();
+      return;
+    }
+    if (
+      !isGrouping &&
+      targetCard.dataset.energyItemType === "action" &&
+      targetCard.dataset.actionId === "add-tool"
+    ) {
+      openAddToolModal();
       return;
     }
     if (blockClick || !isGrouping || !allowGrouping) return;

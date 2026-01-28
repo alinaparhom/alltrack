@@ -1087,6 +1087,15 @@ function normalizeObjectsData(raw) {
     .filter(Boolean);
 }
 
+function normalizeToolsData(raw) {
+  if (Array.isArray(raw)) return raw;
+  if (raw && typeof raw === "object") {
+    if (Array.isArray(raw.tools)) return raw.tools;
+    if (Array.isArray(raw.items)) return raw.items;
+  }
+  return [];
+}
+
 function buildRoleKey(value = "") {
   return String(value)
     .trim()
@@ -2563,6 +2572,97 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     return match ?? "";
   };
 
+  const buildAddToolErrorMessage = (issues, prefix = "Не удалось загрузить данные.") => {
+    if (!issues.length) return prefix;
+    return `${prefix} ${issues.join(" ")}`.trim();
+  };
+
+  const resolveAddToolOrganization = async () => {
+    const issues = [];
+    const telegramId = normalizeTelegramId(user?.telegram_id ?? user?.telegramId ?? null);
+    const fullName = String(user?.full_name ?? user?.fullName ?? "").trim();
+
+    if (!telegramId && !fullName) {
+      issues.push("Не хватает данных пользователя (telegram_id или ФИО).");
+    }
+
+    let usersData = null;
+    try {
+      usersData = await loadJson(usersFilePath);
+    } catch (error) {
+      issues.push("Не удалось загрузить users.json.");
+    }
+
+    const usersList = Array.isArray(usersData?.users) ? usersData.users : [];
+    let matchedUser = null;
+    if (telegramId && fullName) {
+      matchedUser = usersList.find(
+        (item) =>
+          normalizeTelegramId(item?.telegram_id ?? null) === telegramId &&
+          String(item?.full_name ?? "").trim() === fullName
+      );
+    }
+    if (!matchedUser && telegramId) {
+      matchedUser = usersList.find(
+        (item) => normalizeTelegramId(item?.telegram_id ?? null) === telegramId
+      );
+    }
+    if (!matchedUser && fullName) {
+      matchedUser = usersList.find(
+        (item) => String(item?.full_name ?? "").trim() === fullName
+      );
+    }
+
+    if (!matchedUser) {
+      issues.push("Пользователь не найден в users.json.");
+    }
+
+    const organizationName = String(matchedUser?.organization ?? "").trim();
+    if (!organizationName) {
+      issues.push("В users.json у пользователя не указана организация.");
+    }
+
+    let orgsData = null;
+    try {
+      orgsData = await loadJson(orgFilePath);
+    } catch (error) {
+      issues.push("Не удалось загрузить organizations.json.");
+    }
+
+    const orgsList = Array.isArray(orgsData?.organizations)
+      ? orgsData.organizations
+      : [];
+    const normalizedOrgName = normalizeOrganizationName(organizationName);
+    const orgRecord = orgsList.find(
+      (org) =>
+        normalizeOrganizationName(org?.full_name ?? "") === normalizedOrgName
+    );
+    if (organizationName && !orgRecord) {
+      issues.push(
+        `Организация "${organizationName}" не найдена в organizations.json.`
+      );
+    }
+
+    const orgShortName = String(orgRecord?.short_name ?? "").trim();
+    if (organizationName && !orgShortName) {
+      issues.push(
+        `В organizations.json нет short_name для "${organizationName}".`
+      );
+    }
+
+    const orgFolder = sanitizeOrganizationFolderName(orgShortName);
+    if (orgShortName && !orgFolder) {
+      issues.push("Не удалось определить папку организации по short_name.");
+    }
+
+    return {
+      organizationName,
+      orgShortName,
+      orgFolder,
+      issues,
+    };
+  };
+
   const loadAddToolReferences = async () => {
     setAddToolMessage("Загружаем данные...");
     try {
@@ -2571,48 +2671,29 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           (value) => ({ status: "fulfilled", value }),
           (reason) => ({ status: "rejected", reason })
         );
-      const safeContext =
-        context && typeof context === "object" ? context : {};
-      const fallbackOrgName =
-        safeContext.orgFullName ??
-        safeContext.orgShortName ??
-        safeContext.orgFolderName ??
-        "";
-      const resolvedOrg =
-        safeContext.orgShortName || safeContext.orgFolderName
-          ? {
-              organizationName: fallbackOrgName,
-              orgFolder: sanitizeOrganizationFolderName(
-                safeContext.orgFolderName ??
-                  safeContext.orgShortName ??
-                  fallbackOrgName
-              ),
-            }
-          : await resolveUploadOrganization().catch(() => ({
-              organizationName: fallbackOrgName,
-              orgFolder: sanitizeOrganizationFolderName(fallbackOrgName),
-            }));
-      const organizationName =
-        resolvedOrg.organizationName ?? fallbackOrgName ?? "";
-      const orgFolder =
-        resolvedOrg.orgFolder ??
-        sanitizeOrganizationFolderName(
-          safeContext.orgShortName ??
-            safeContext.orgFolderName ??
-            organizationName
+      const resolution = await resolveAddToolOrganization();
+      if (resolution.issues.length) {
+        setAddToolMessage(
+          buildAddToolErrorMessage(
+            resolution.issues,
+            "Не удалось определить организацию пользователя."
+          )
         );
-      if (!orgFolder) {
-        setAddToolMessage("Не удалось определить организацию пользователя.");
         return;
       }
+
+      const organizationName = resolution.organizationName;
+      const orgFolder = resolution.orgFolder;
 
       addToolState.organizationName = organizationName;
       addToolState.orgFolder = orgFolder;
 
+      const toolsPath = `./${orgFolder}/База с инструментами.json`;
+      const objectsPath = `./${orgFolder}/Объекты.json`;
       const settingsPath = `./${orgFolder}/Настройки.json`;
       const results = await Promise.all([
-        settle(loadToolsData(orgFolder)),
-        settle(loadObjectsData(orgFolder)),
+        settle(loadJson(toolsPath)),
+        settle(loadJson(objectsPath)),
         settle(loadJson(settingsPath)),
         settle(loadJson(usersFilePath)),
         settle(loadJson(orgFilePath)),
@@ -2625,9 +2706,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         orgsDataResult,
       ] = results;
       const tools =
-        toolsResult.status === "fulfilled" ? toolsResult.value : [];
+        toolsResult.status === "fulfilled"
+          ? normalizeToolsData(toolsResult.value)
+          : [];
       const objects =
-        objectsResult.status === "fulfilled" ? objectsResult.value : [];
+        objectsResult.status === "fulfilled"
+          ? normalizeObjectsData(objectsResult.value)
+          : [];
       const rawSettings =
         rawSettingsResult.status === "fulfilled" ? rawSettingsResult.value : {};
       const usersData =
@@ -2644,8 +2729,25 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           ? orgsData.organizations
           : [],
       };
-      if (results.some((result) => result.status === "rejected")) {
-        console.warn("Не удалось загрузить часть данных для формы добавления.");
+      const missingSources = [];
+      if (toolsResult.status === "rejected") {
+        missingSources.push(`Не найден файл "${toolsPath}".`);
+      }
+      if (objectsResult.status === "rejected") {
+        missingSources.push(`Не найден файл "${objectsPath}".`);
+      }
+      if (rawSettingsResult.status === "rejected") {
+        missingSources.push(`Не найден файл "${settingsPath}".`);
+      }
+      if (usersDataResult.status === "rejected") {
+        missingSources.push("Не удалось загрузить users.json.");
+      }
+      if (orgsDataResult.status === "rejected") {
+        missingSources.push("Не удалось загрузить organizations.json.");
+      }
+      if (missingSources.length) {
+        setAddToolMessage(buildAddToolErrorMessage(missingSources));
+        return;
       }
 
       addToolState.tools = Array.isArray(tools) ? tools : [];
@@ -2709,7 +2811,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       setAddToolMessage("");
     } catch (error) {
       console.error(error);
-      setAddToolMessage("Не удалось загрузить данные. Проверьте сервер.");
+      const reason = error?.message
+        ? `Причина: ${String(error.message).trim()}.`
+        : "";
+      const issues = reason ? [reason] : [];
+      setAddToolMessage(buildAddToolErrorMessage(issues));
     }
   };
 

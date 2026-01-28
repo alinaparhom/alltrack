@@ -4584,7 +4584,7 @@ function setupSuperAdmin() {
     };
   };
 
-  const loadToolsData = async (orgFolder) => {
+  async function loadToolsData(orgFolder) {
     if (!orgFolder) return [];
     const toolsPath = `./${orgFolder}/База с инструментами.json`;
     try {
@@ -4595,7 +4595,7 @@ function setupSuperAdmin() {
       console.warn("Не удалось загрузить базу инструментов.", error);
     }
     return [];
-  };
+  }
 
   const readFileAsBase64 = (file) =>
     new Promise((resolve, reject) => {
@@ -5225,7 +5225,7 @@ function setupSuperAdmin() {
     };
   };
 
-  const loadObjectsData = async (orgFolder) => {
+  async function loadObjectsData(orgFolder) {
     const objectsPath = `./${orgFolder}/Объекты.json`;
     try {
       const raw = await loadJson(objectsPath);
@@ -5234,7 +5234,7 @@ function setupSuperAdmin() {
       console.warn("Не удалось загрузить список объектов.", error);
       return [];
     }
-  };
+  }
 
   const mergeObjects = (existingObjects, newObjects) => {
     const normalizedSet = new Set(

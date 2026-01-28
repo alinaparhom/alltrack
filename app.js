@@ -2628,6 +2628,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         orgsDataResult.status === "fulfilled"
           ? orgsDataResult.value
           : { organizations: [] };
+      const usersList = Array.isArray(usersData?.users) ? usersData.users : [];
+      const orgsSafe = {
+        organizations: Array.isArray(orgsData?.organizations)
+          ? orgsData.organizations
+          : [],
+      };
       if (results.some((result) => result.status === "rejected")) {
         console.warn("Не удалось загрузить часть данных для формы добавления.");
       }
@@ -2654,12 +2660,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         )
       ).sort((a, b) => a.localeCompare(b, "ru"));
 
-      const orgRecord = findOrganizationRecord(orgsData, organizationName);
+      const orgRecord = findOrganizationRecord(orgsSafe, organizationName);
       const orgNames = orgRecord ? getOrgNames(orgRecord) : [organizationName];
       const normalizedOrgNames = orgNames
         .map((name) => String(name ?? "").trim())
         .filter(Boolean);
-      const responsibleOptions = (usersData?.users ?? [])
+      const responsibleOptions = usersList
         .filter((entry) =>
           normalizedOrgNames.includes(String(entry?.organization ?? "").trim())
         )

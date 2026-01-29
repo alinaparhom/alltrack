@@ -2221,7 +2221,7 @@
 
       .tools-search__icon {
         position: absolute;
-        left: 14px;
+        right: 14px;
         top: 50%;
         transform: translateY(-50%);
         font-size: 14px;
@@ -2229,7 +2229,7 @@
       }
 
       .tools-search__input {
-        padding: 6px 14px 6px 38px;
+        padding: 6px 38px 6px 14px;
         line-height: 1.2;
         height: auto;
       }
@@ -2347,6 +2347,14 @@
 
       .tools-list.is-compact {
         grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      }
+
+      .tools-list.is-compact .tools-card {
+        border-radius: 0;
+      }
+
+      .tools-list.is-compact .tools-card__media {
+        border-radius: 0;
       }
 
       .tools-card {
@@ -2516,16 +2524,17 @@
         .tools-search__input {
           font-size: 16px;
           height: 36px;
-          padding: 0 14px 0 38px;
+          padding: 0 38px 0 14px;
         }
 
         .tools-controls {
-          gap: 8px;
+          gap: 4px;
         }
 
         .tools-controls__row {
           flex-direction: column;
           align-items: stretch;
+          gap: 6px;
         }
 
         .tools-actions {

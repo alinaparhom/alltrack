@@ -109,6 +109,17 @@ let currentUserLabel = "";
 let currentPreferences = { ...defaultPreferences };
 let currentSettingsContext = null;
 let pendingGroupingStart = false;
+const buildUploadUserMeta = ({ organizationName } = {}) => {
+  if (!organizationName && !currentUser) return {};
+  return {
+    user: {
+      telegram_id: currentUser?.telegram_id ?? null,
+      full_name: currentUser?.full_name ?? currentUser?.fullName ?? "",
+      role: currentUser?.role ?? "",
+      organization: organizationName || currentUser?.organization || "",
+    },
+  };
+};
 const energyDashboardRoles = new Set([
   energyRole,
   responsibleRole,
@@ -3274,7 +3285,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           };
 
           const updatedTools = [...addToolState.tools, nextTool];
-          const meta = buildUploadUserMeta();
+          const meta = buildUploadUserMeta({
+            organizationName: addToolState.organizationName,
+          });
           const saveResponseText = await saveEntriesViaEndpoint([
             {
               type: "file",
@@ -4926,18 +4939,6 @@ function setupSuperAdmin() {
       .filter((item) => item.name || item.telegramId);
   };
 
-  const buildUploadUserMeta = () => {
-    if (!selectedOrgName && !currentUser) return {};
-    return {
-      user: {
-        telegram_id: currentUser?.telegram_id ?? null,
-        full_name: currentUser?.full_name ?? currentUser?.fullName ?? "",
-        role: currentUser?.role ?? "",
-        organization: selectedOrgName || currentUser?.organization || "",
-      },
-    };
-  };
-
   const normalizeToolNumberValue = (value) => {
     const digits = String(value ?? "").replace(/\D/g, "");
     if (!digits) return "";
@@ -5963,7 +5964,7 @@ function setupSuperAdmin() {
           content,
           encoding: "base64",
           mime: file.type || "image/*",
-          ...buildUploadUserMeta(),
+          ...buildUploadUserMeta({ organizationName: selectedOrgName }),
         });
         const progress = 10 + ((index + 1) / totalFiles) * 50;
         setUploadProgress(progress, {
@@ -5998,7 +5999,7 @@ function setupSuperAdmin() {
         {
           path: `${orgFolder}/База с инструментами.json`,
           data: updatedTools,
-          ...buildUploadUserMeta(),
+          ...buildUploadUserMeta({ organizationName: selectedOrgName }),
         },
       ]);
 
@@ -6078,7 +6079,7 @@ function setupSuperAdmin() {
 
       const existingObjects = await loadObjectsData(orgFolder);
       const mergedObjects = mergeObjects(existingObjects, objects);
-      const meta = buildUploadUserMeta();
+      const meta = buildUploadUserMeta({ organizationName: selectedOrgName });
       const basePath = `./${orgFolder}`;
       const settingsPath = `${basePath}/Настройки.json`;
       const settingsData = ensureSettingsData(

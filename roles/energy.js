@@ -349,37 +349,18 @@ export function renderRole(user) {
                           Добавить файл
                         </span>
                       </label>
-                      <details
-                        class="form-file-option form-file-option--menu"
-                        data-tool-invoice-photo-picker
-                      >
-                        <summary class="form-file-button">
+                      <label class="form-file-option">
+                        <input
+                          class="form-input form-input--file"
+                          type="file"
+                          name="tool-invoice-photo"
+                          accept="image/*"
+                          capture="environment"
+                        />
+                        <span class="form-file-button" aria-hidden="true">
                           Добавить фото
-                        </summary>
-                        <div class="form-file-menu">
-                          <label class="form-file-menu__item">
-                            <input
-                              class="form-input form-input--file"
-                              type="file"
-                              name="tool-invoice-photo"
-                              accept="image/*"
-                              capture="environment"
-                            />
-                            <span class="form-file-menu__text">Снять фото</span>
-                          </label>
-                          <label class="form-file-menu__item">
-                            <input
-                              class="form-input form-input--file"
-                              type="file"
-                              name="tool-invoice-photo"
-                              accept="image/*"
-                            />
-                            <span class="form-file-menu__text">
-                              Выбрать из галереи
-                            </span>
-                          </label>
-                        </div>
-                      </details>
+                        </span>
+                      </label>
                     </div>
                   </div>
                 </div>

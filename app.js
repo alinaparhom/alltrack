@@ -2112,6 +2112,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const addToolObjectInput = contentEl.querySelector("#tool-object-input");
   const addToolGroupInput = contentEl.querySelector("#tool-group-input");
   const addToolInvoiceInput = contentEl.querySelector('[name="tool-invoice"]');
+  const addToolInvoicePhotoInput = contentEl.querySelector(
+    '[name="tool-invoice-photo"]'
+  );
   const addToolNameSuggestionsEl = contentEl.querySelector(
     "[data-tool-name-suggestions]"
   );
@@ -3351,6 +3354,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         );
         const groupRaw = normalizeSuggestionValue(formData.get("tool-group"));
         const invoiceFile = formData.get("tool-invoice");
+        const invoicePhotoFile = formData.get("tool-invoice-photo");
+        const invoiceAttachment =
+          invoicePhotoFile instanceof File && invoicePhotoFile.size > 0
+            ? invoicePhotoFile
+            : invoiceFile;
 
         const errors = [];
         let focusTarget = null;
@@ -3417,7 +3425,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           );
         }
 
-        if (!(invoiceFile instanceof File) || invoiceFile.size === 0) {
+        if (
+          !(invoiceAttachment instanceof File) ||
+          invoiceAttachment.size === 0
+        ) {
           pushError("Прикрепите накладную.", addToolInvoiceInput);
         }
 
@@ -3459,9 +3470,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           const invoiceName = buildInvoiceFileName(
             toolNumber,
             dateValue,
-            invoiceFile.name
+            invoiceAttachment.name
           );
-          const invoiceContent = await readFileAsBase64(invoiceFile);
+          const invoiceContent = await readFileAsBase64(invoiceAttachment);
           const orgFolder = addToolState.orgFolder;
           const toolsPath = `./${orgFolder}/База с инструментами.json`;
           const invoicePath = `./${orgFolder}/Накладные покупка/${invoiceName}`;
@@ -3493,7 +3504,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
               path: invoicePath,
               content: invoiceContent,
               encoding: "base64",
-              mime: invoiceFile.type || "application/octet-stream",
+              mime: invoiceAttachment.type || "application/octet-stream",
               ...meta,
             },
             {

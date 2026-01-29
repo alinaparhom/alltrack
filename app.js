@@ -423,12 +423,10 @@ function buildNewToolNotificationMessage(
     nameParts.length > 0 ? nameParts.join(" ") : "—";
   const lines = [
     "💡💡💡<b><u>НОВЫЙ ИНСТРУМЕНТ</u></b>",
-    creatorLine,
     `1. ${numberLabel}: ${escapeTelegramHtml(
       formatNotificationValue(numberValue)
     )}`,
     `2. ${escapeTelegramHtml(titleLine)}`,
-    "",
     `3. Стоимость: ${escapeTelegramHtml(
       formatNotificationCost(tool?.["Стоимость"])
     )}`,

@@ -2115,6 +2115,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const addToolInvoicePhotoInput = contentEl.querySelector(
     '[name="tool-invoice-photo"]'
   );
+  const addToolInvoicePhotoPicker = contentEl.querySelector(
+    "[data-tool-invoice-photo-picker]"
+  );
+  const addToolInvoicePhotoInputs =
+    addToolInvoicePhotoPicker?.querySelectorAll(
+      '[name="tool-invoice-photo"]'
+    ) ?? [];
   const addToolNameSuggestionsEl = contentEl.querySelector(
     "[data-tool-name-suggestions]"
   );
@@ -3418,6 +3425,14 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     addToolFormEl.addEventListener("input", syncFilledFields);
     addToolFormEl.addEventListener("change", syncFilledFields);
     updateAddToolFilledStates();
+
+    if (addToolInvoicePhotoPicker && addToolInvoicePhotoInputs.length) {
+      addToolInvoicePhotoInputs.forEach((input) => {
+        input.addEventListener("change", () => {
+          addToolInvoicePhotoPicker.open = false;
+        });
+      });
+    }
 
     addToolFormEl.addEventListener("submit", async (event) => {
       event.preventDefault();

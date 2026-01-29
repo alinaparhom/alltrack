@@ -5468,8 +5468,9 @@ function setupSuperAdmin() {
   const parsePhotoKeyFromName = (fileName) => {
     if (!fileName) return "";
     const baseName = String(fileName).replace(/\.[^.]+$/, "");
-    const prefix = baseName.split("_")[0] ?? "";
-    return normalizeToolNumberValue(prefix);
+    const match = baseName.match(/^(\d+)(?:_|$)/);
+    if (!match) return "";
+    return normalizeToolNumberValue(match[1]);
   };
 
   const resolveUploadOrganization = async () => {
@@ -6432,8 +6433,7 @@ function setupSuperAdmin() {
         return;
       }
 
-      const numberKey =
-        numberType === "Бухгалтерский номер" ? "Бух.номер" : "Номер";
+      const numberKey = "Номер";
       const toolIndexByNumber = new Map();
       tools.forEach((tool, index) => {
         const key = normalizeToolNumberValue(tool?.[numberKey]);

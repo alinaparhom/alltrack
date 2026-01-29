@@ -204,7 +204,7 @@ export function renderRole(user) {
                       autocomplete="off"
                     />
                   </label>
-                  <label class="form-field">
+                  <label class="form-field form-field--required">
                     <span class="form-label">Наименование</span>
                     <input
                       class="form-input"
@@ -220,7 +220,7 @@ export function renderRole(user) {
                       data-tool-name-suggestions
                     ></div>
                   </label>
-                  <label class="form-field">
+                  <label class="form-field form-field--required">
                     <span class="form-label">Производитель</span>
                     <input
                       class="form-input"
@@ -236,7 +236,7 @@ export function renderRole(user) {
                       data-tool-manufacturer-suggestions
                     ></div>
                   </label>
-                  <label class="form-field">
+                  <label class="form-field form-field--required">
                     <span class="form-label">Модель</span>
                     <input
                       class="form-input"
@@ -262,7 +262,7 @@ export function renderRole(user) {
                       autocomplete="off"
                     />
                   </label>
-                  <label class="form-field">
+                  <label class="form-field form-field--required">
                     <span class="form-label">Стоимость</span>
                     <input
                       class="form-input"
@@ -274,7 +274,7 @@ export function renderRole(user) {
                       required
                     />
                   </label>
-                  <label class="form-field">
+                  <label class="form-field form-field--required">
                     <span class="form-label">Ответственный</span>
                     <input
                       class="form-input"
@@ -291,7 +291,7 @@ export function renderRole(user) {
                       data-tool-responsible-suggestions
                     ></div>
                   </label>
-                  <label class="form-field">
+                  <label class="form-field form-field--required">
                     <span class="form-label">Объект</span>
                     <input
                       class="form-input"
@@ -318,7 +318,7 @@ export function renderRole(user) {
                       autocomplete="off"
                     />
                   </label>
-                  <label class="form-field">
+                  <label class="form-field form-field--required">
                     <span class="form-label">Граппа инструментов</span>
                     <input
                       class="form-input"
@@ -335,7 +335,7 @@ export function renderRole(user) {
                       data-tool-group-suggestions
                     ></div>
                   </label>
-                  <label class="form-field">
+                  <label class="form-field form-field--required">
                     <span class="form-label">Накладная (обязательно)</span>
                     <input
                       class="form-input"

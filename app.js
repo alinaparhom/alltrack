@@ -2986,70 +2986,68 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const groupRaw = normalizeSuggestionValue(formData.get("tool-group"));
       const invoiceFile = formData.get("tool-invoice");
 
+      const errors = [];
+      let focusTarget = null;
+      const pushError = (message, target) => {
+        errors.push(message);
+        if (!focusTarget && target) {
+          focusTarget = target;
+        }
+      };
+
       if (!toolName) {
-        setAddToolMessage("Введите наименование.");
-        addToolNameInput?.focus();
-        return;
+        pushError("Введите наименование.", addToolNameInput);
       }
       if (!manufacturer) {
-        setAddToolMessage("Введите производителя.");
-        addToolManufacturerInput?.focus();
-        return;
+        pushError("Введите производителя.", addToolManufacturerInput);
       }
       if (!model) {
-        setAddToolMessage("Введите модель.");
-        addToolModelInput?.focus();
-        return;
+        pushError("Введите модель.", addToolModelInput);
       }
       if (costValue === null) {
-        setAddToolMessage("Введите корректную стоимость.");
-        return;
+        pushError("Введите корректную стоимость.");
       }
 
       if (!addToolState.responsibleOptions.length) {
-        setAddToolMessage("В организации нет ответственных.");
-        return;
+        pushError("В организации нет ответственных.");
       }
       const responsible = findOptionMatch(
         responsibleRaw,
         addToolState.responsibleOptions
       );
-      if (!responsible) {
-        setAddToolMessage("Выберите ответственного из списка.");
-        addToolResponsibleInput?.focus();
-        return;
+      if (addToolState.responsibleOptions.length && !responsible) {
+        pushError("Выберите ответственного из списка.", addToolResponsibleInput);
       }
 
       if (!addToolState.objectOptions.length) {
-        setAddToolMessage("В организации нет объектов.");
-        return;
+        pushError("В организации нет объектов.");
       }
       const objectName = findOptionMatch(
         objectRaw,
         addToolState.objectOptions
       );
-      if (!objectName) {
-        setAddToolMessage("Выберите объект из списка.");
-        addToolObjectInput?.focus();
-        return;
+      if (addToolState.objectOptions.length && !objectName) {
+        pushError("Выберите объект из списка.", addToolObjectInput);
       }
 
       if (!addToolState.groupOptions.length) {
-        setAddToolMessage("В организации нет групп инструментов.");
-        return;
+        pushError("В организации нет групп инструментов.");
       }
       const groupName = findOptionMatch(
         groupRaw,
         addToolState.groupOptions
       );
-      if (!groupName) {
-        setAddToolMessage("Выберите группу инструментов из списка.");
-        addToolGroupInput?.focus();
-        return;
+      if (addToolState.groupOptions.length && !groupName) {
+        pushError("Выберите группу инструментов из списка.", addToolGroupInput);
       }
 
       if (!(invoiceFile instanceof File) || invoiceFile.size === 0) {
-        setAddToolMessage("Прикрепите накладную.");
+        pushError("Прикрепите накладную.");
+      }
+
+      if (errors.length) {
+        setAddToolMessage(errors.join(" "));
+        focusTarget?.focus();
         return;
       }
 
@@ -3062,7 +3060,21 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           if (orgResolution?.orgFolder) {
             addToolState.organizationName = orgResolution.organizationName;
             addToolState.orgFolder = orgResolution.orgFolder;
+          } else if (orgResolution?.issues?.length) {
+            setAddToolMessage(
+              buildAddToolErrorMessage(
+                orgResolution.issues,
+                "Не удалось сохранить инструмент."
+              )
+            );
+            return;
           }
+        }
+        if (!addToolState.orgFolder) {
+          setAddToolMessage(
+            "Не удалось определить папку организации. Проверьте users.json и organizations.json."
+          );
+          return;
         }
 
         const dateValue = formatDateValue(new Date());
@@ -3073,6 +3085,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           invoiceFile.name
         );
         const invoiceContent = await readFileAsBase64(invoiceFile);
+        const orgFolder = addToolState.orgFolder;
+        const toolsPath = `./${orgFolder}/База с инструментами.json`;
+        const invoicePath = `./${orgFolder}/Накладные покупка/${invoiceName}`;
 
         const nextTool = {
           "Номер": toolNumber,
@@ -3096,14 +3111,14 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         await saveEntriesViaEndpoint([
           {
             type: "file",
-            path: `Накладные покупка/${invoiceName}`,
+            path: invoicePath,
             content: invoiceContent,
             encoding: "base64",
             mime: invoiceFile.type || "application/octet-stream",
             ...meta,
           },
           {
-            path: "База с инструментами.json",
+            path: toolsPath,
             data: updatedTools,
             ...meta,
           },

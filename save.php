@@ -364,7 +364,7 @@ function resolveFileTargetPath(array $entry): string {
   }
 
   $fileNameSafe = sanitizeFileName($fileName);
-  if ($fileNameSafe === "" || $fileNameSafe !== $fileName) {
+  if ($fileNameSafe === "") {
     http_response_code(403);
     echo json_encode(["error" => "Некорректное имя файла."]);
     exit;

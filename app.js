@@ -368,6 +368,13 @@ function formatNotificationCost(value) {
   return text ? text : "—";
 }
 
+function escapeTelegramHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
 function extractNotificationGroups(settingsData, notificationId) {
   const source =
     settingsData?.organization?.notifications?.[notificationId]?.groups ??
@@ -393,43 +400,50 @@ function isNotificationEnabled(settingsData, notificationId) {
 
 function buildNewToolNotificationMessage(
   tool,
-  { organizationName, createdBy } = {}
+  { organizationName, createdBy, numberType } = {}
 ) {
-  const lines = ["🧰 Новый инструмент зарегистрирован в приложении."];
-  if (organizationName) {
-    lines.push(`Организация: ${formatNotificationValue(organizationName)}`);
-  }
-  if (createdBy) {
-    lines.push(`Добавил: ${formatNotificationValue(createdBy)}`);
-  }
-  lines.push(`Номер: ${formatNotificationValue(tool?.["Номер"])}`);
-  lines.push(`Бух.номер: ${formatNotificationValue(tool?.["Бух.номер"])}`);
-  lines.push(`Наименование: ${formatNotificationValue(tool?.["Наименование"])}`);
-  lines.push(
-    `Производитель: ${formatNotificationValue(tool?.["Производитель"])}`
-  );
-  lines.push(`Модель: ${formatNotificationValue(tool?.["Модель"])}`);
-  lines.push(
-    `Наименование по бухгалтерии: ${formatNotificationValue(
-      tool?.["Наименование по бухгалтерии"]
-    )}`
-  );
-  lines.push(`Стоимость: ${formatNotificationCost(tool?.["Стоимость"])}`);
-  lines.push(`Дата покупки: ${formatNotificationValue(tool?.["Дата покупки"])}`);
-  lines.push(`Ответственный: ${formatNotificationValue(tool?.["Ответственный"])}`);
-  lines.push(`Объект: ${formatNotificationValue(tool?.["Объект"])}`);
-  lines.push(
-    `Серийный номер: ${formatNotificationValue(tool?.["Серийный номер"])}`
-  );
-  lines.push(
-    `Группа инструментов: ${formatNotificationValue(
-      tool?.["Граппа инструментов"]
-    )}`
-  );
-  lines.push(`Статус: ${formatNotificationValue(tool?.["Статус"])}`);
-  lines.push(
-    `Количество фото: ${formatNotificationValue(tool?.["Количество фото"], "0")}`
-  );
+  const normalizedNumberType = String(numberType ?? "").trim().toLowerCase();
+  const shouldUseAccountingNumber =
+    normalizedNumberType === "бухгалтерский номер";
+  const numberLabel = shouldUseAccountingNumber ? "Бух.номер" : "Номер";
+  const numberValue = shouldUseAccountingNumber
+    ? tool?.["Бух.номер"]
+    : tool?.["Номер"];
+  const creatorLine = `Добавил: ${escapeTelegramHtml(
+    formatNotificationValue(createdBy)
+  )}`;
+  const nameParts = [
+    formatNotificationValue(tool?.["Наименование"], ""),
+    formatNotificationValue(tool?.["Производитель"], ""),
+    formatNotificationValue(tool?.["Модель"], ""),
+  ]
+    .map((part) => part.trim())
+    .filter(Boolean);
+  const titleLine =
+    nameParts.length > 0 ? nameParts.join(" ") : "—";
+  const lines = [
+    "💡💡💡<b><u>НОВЫЙ ИНСТРУМЕНТ</u></b>",
+    creatorLine,
+    `1. ${numberLabel}: ${escapeTelegramHtml(
+      formatNotificationValue(numberValue)
+    )}`,
+    `2. ${escapeTelegramHtml(titleLine)}`,
+    "",
+    `3. Стоимость: ${escapeTelegramHtml(
+      formatNotificationCost(tool?.["Стоимость"])
+    )}`,
+    `4. Ответственный: ${escapeTelegramHtml(
+      formatNotificationValue(tool?.["Ответственный"])
+    )}`,
+    `5. Объект: ${escapeTelegramHtml(
+      formatNotificationValue(tool?.["Объект"])
+    )}`,
+    `6. Дата покупки: ${escapeTelegramHtml(
+      formatNotificationValue(tool?.["Дата покупки"])
+    )}`,
+    "",
+    creatorLine,
+  ];
   return lines.join("\n");
 }
 
@@ -443,6 +457,7 @@ async function sendTelegramMessage(chatId, text) {
       body: JSON.stringify({
         chat_id: chatId,
         text,
+        parse_mode: "HTML",
         disable_web_page_preview: true,
       }),
     }
@@ -463,6 +478,7 @@ async function notifyNewToolRegistration({
   organizationName,
   orgFolder,
   createdBy,
+  numberType,
 }) {
   if (!tool || !orgFolder) return;
   if (!fallbackBotToken) return;
@@ -475,6 +491,7 @@ async function notifyNewToolRegistration({
     const message = buildNewToolNotificationMessage(tool, {
       organizationName,
       createdBy,
+      numberType,
     });
     await Promise.all(
       groupIds.map((chatId) => sendTelegramMessage(chatId, message))
@@ -2267,6 +2284,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     groupOptions: [],
     organizationName: "",
     orgFolder: "",
+    numberType: "",
     isSaving: false,
   };
   let addToolViewportListenersAttached = false;
@@ -3045,6 +3063,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       organizationName,
       orgShortName,
       orgFolder,
+      numberType: String(orgRecord?.number_type ?? "Номер приложения").trim(),
       issues,
     };
   };
@@ -3160,6 +3179,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       ).sort((a, b) => a.localeCompare(b, "ru"));
 
       const orgRecord = findOrganizationRecord(orgsSafe, organizationName);
+      addToolState.numberType = String(
+        orgRecord?.number_type ?? "Номер приложения"
+      ).trim();
       const orgNames = orgRecord ? getOrgNames(orgRecord) : [organizationName];
       const normalizedOrgNames = orgNames
         .map((name) => String(name ?? "").trim())
@@ -3418,6 +3440,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
             if (orgResolution?.orgFolder) {
               addToolState.organizationName = orgResolution.organizationName;
               addToolState.orgFolder = orgResolution.orgFolder;
+              addToolState.numberType = orgResolution.numberType;
             } else if (orgResolution?.issues?.length) {
               reportAddToolIssue(
                 ["Не удалось сохранить инструмент.", ...orgResolution.issues],
@@ -3499,6 +3522,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
             organizationName: addToolState.organizationName,
             orgFolder: addToolState.orgFolder,
             createdBy,
+            numberType: addToolState.numberType,
           });
         } catch (error) {
           console.error(error);
@@ -5172,7 +5196,11 @@ function setupSuperAdmin() {
     }
 
     if (!organizationName) {
-      return { organizationName: "", orgFolder: "", numberType: "" };
+      return {
+        organizationName: "",
+        orgFolder: "",
+        numberType: "",
+      };
     }
 
     let orgData = null;

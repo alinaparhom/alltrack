@@ -176,6 +176,74 @@ function normalizeTelegramId(value) {
   return cleaned;
 }
 
+function normalizePersonName(value) {
+  return String(value ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, " ");
+}
+
+function getToolNumberVariants(value) {
+  const raw = String(value ?? "").trim();
+  const match = raw.match(/\d+/);
+  if (!match) return [];
+  const digits = match[0];
+  const noLeading = digits.replace(/^0+/, "") || "0";
+  const variants = new Set([digits, noLeading]);
+  return Array.from(variants).filter(Boolean);
+}
+
+function buildToolSearchLine(tool) {
+  return [
+    tool?.["Номер"],
+    tool?.["Наименование"],
+    tool?.["Производитель"],
+    tool?.["Модель"],
+    tool?.["Статус"],
+    tool?.["Объект"],
+    tool?.["Граппа инструментов"],
+    tool?.["Бух.номер"],
+    tool?.["Серийный номер"],
+  ]
+    .filter((value) => value !== null && value !== undefined && String(value).trim())
+    .join(" ")
+    .toLowerCase();
+}
+
+function buildToolPhotoCandidates(orgFolder, toolNumber) {
+  if (!orgFolder) return [];
+  const variants = getToolNumberVariants(toolNumber);
+  if (!variants.length) return [];
+  const extensions = ["jpg", "jpeg", "png", "webp"];
+  const suffixes = ["", "_1", "-1"];
+  const candidates = [];
+  variants.forEach((variant) => {
+    suffixes.forEach((suffix) => {
+      extensions.forEach((ext) => {
+        candidates.push(`./${orgFolder}/Фото инструментов/${variant}${suffix}.${ext}`);
+      });
+    });
+  });
+  return candidates;
+}
+
+const toolPhotoPlaceholder = `data:image/svg+xml;utf8,${encodeURIComponent(
+  `<svg xmlns="http://www.w3.org/2000/svg" width="320" height="240" viewBox="0 0 320 240">
+    <defs>
+      <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
+        <stop offset="0%" stop-color="#eef2ff"/>
+        <stop offset="100%" stop-color="#ffffff"/>
+      </linearGradient>
+    </defs>
+    <rect width="320" height="240" fill="url(#bg)"/>
+    <rect x="24" y="24" width="272" height="192" rx="24" fill="#f1f5f9" stroke="#cbd5f5" stroke-width="2"/>
+    <path d="M106 138h108v24H106z" fill="#cbd5f5"/>
+    <circle cx="120" cy="110" r="18" fill="#cbd5f5"/>
+    <path d="M150 170l28-36 22 28 18-22 36 30H150z" fill="#dbeafe"/>
+    <text x="160" y="206" text-anchor="middle" font-size="14" fill="#94a3b8" font-family="Inter, sans-serif">Нет фото</text>
+  </svg>`
+)}`;
+
 function parseInitDataUser(initData) {
   if (!initData) return null;
 
@@ -2090,6 +2158,15 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const objectsEmptyEl = contentEl.querySelector("[data-energy-objects-empty]");
   const objectsCountEl = contentEl.querySelector("[data-energy-objects-count]");
   const objectsSubtitleEl = contentEl.querySelector("[data-energy-objects-subtitle]");
+  const toolsModalEl = contentEl.querySelector("[data-tools-modal]");
+  const toolsBackdropEl = contentEl.querySelector("[data-tools-backdrop]");
+  const toolsCloseButton = contentEl.querySelector("[data-tools-close]");
+  const toolsSearchInput = contentEl.querySelector("[data-tools-search]");
+  const toolsListEl = contentEl.querySelector("[data-tools-list]");
+  const toolsEmptyEl = contentEl.querySelector("[data-tools-empty]");
+  const toolsSubtitleEl = contentEl.querySelector("[data-tools-subtitle]");
+  const toolsViewButtons = contentEl.querySelectorAll("[data-tools-view]");
+  const toolsFilterEls = contentEl.querySelectorAll("[data-tools-filter]");
   const addToolModalEl = contentEl.querySelector("[data-add-tool-modal]");
   const addToolBackdropEl = contentEl.querySelector("[data-add-tool-backdrop]");
   const addToolCloseButton = contentEl.querySelector("[data-add-tool-close]");
@@ -2336,6 +2413,21 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     numberType: "",
     isSaving: false,
   };
+  const toolsState = {
+    tools: [],
+    filtered: [],
+    view: "large",
+    filters: {
+      group: "",
+      status: "",
+      object: "",
+      manufacturer: "",
+      model: "",
+      photo: "",
+    },
+    search: "",
+    orgFolder: "",
+  };
   let addToolViewportListenersAttached = false;
   const updateAddToolKeyboardOffset = () => {
     if (!addToolModalEl) return;
@@ -2511,6 +2603,341 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   if (objectsCloseButton) {
     objectsCloseButton.addEventListener("click", closeObjectsModal);
   }
+
+  const setToolsSubtitle = (text) => {
+    if (toolsSubtitleEl) {
+      toolsSubtitleEl.textContent = text;
+    }
+  };
+
+  const clearToolsList = () => {
+    if (toolsListEl) {
+      toolsListEl.innerHTML = "";
+    }
+  };
+
+  const renderToolCard = (tool, viewMode, orgFolder) => {
+    const number = String(tool?.["Номер"] ?? "").trim();
+    const name = String(tool?.["Наименование"] ?? "").trim();
+    const manufacturer = String(tool?.["Производитель"] ?? "").trim();
+    const model = String(tool?.["Модель"] ?? "").trim();
+    const photoCount = Number.parseInt(tool?.["Количество фото"] ?? 0, 10);
+    const hasPhoto = Number.isFinite(photoCount) && photoCount > 0;
+    const lineParts = [number, name, manufacturer, model].filter(Boolean);
+    const infoLine = lineParts.join(" ");
+
+    if (viewMode === "list") {
+      const row = document.createElement("div");
+      row.className = "tools-row";
+      const main = document.createElement("div");
+      main.className = "tools-row__main";
+      const title = document.createElement("div");
+      title.className = "tools-row__title";
+      title.textContent = infoLine || "Без названия";
+      const meta = document.createElement("div");
+      meta.className = "tools-row__meta";
+      meta.textContent = [
+        tool?.["Граппа инструментов"],
+        tool?.["Статус"],
+        tool?.["Объект"],
+      ]
+        .filter((value) => value && String(value).trim())
+        .join(" · ");
+      main.append(title, meta);
+      row.appendChild(main);
+      if (!hasPhoto) {
+        const badge = document.createElement("div");
+        badge.className = "tools-row__badge";
+        badge.textContent = "Без фото";
+        row.appendChild(badge);
+      }
+      return row;
+    }
+
+    const card = document.createElement("div");
+    card.className = "tools-card";
+
+    const media = document.createElement("div");
+    media.className = "tools-card__media";
+    const img = document.createElement("img");
+    img.alt = infoLine || "Инструмент";
+
+    const candidates = hasPhoto
+      ? buildToolPhotoCandidates(orgFolder, tool?.["Номер"])
+      : [];
+    let candidateIndex = 0;
+    const tryCandidate = () => {
+      if (candidateIndex >= candidates.length) {
+        img.onerror = null;
+        img.onload = null;
+        img.src = toolPhotoPlaceholder;
+        return;
+      }
+      const next = candidates[candidateIndex];
+      candidateIndex += 1;
+      img.src = next;
+    };
+    img.onerror = () => {
+      tryCandidate();
+    };
+    img.onload = () => {};
+    if (candidates.length) {
+      tryCandidate();
+    } else {
+      img.src = toolPhotoPlaceholder;
+    }
+
+    media.appendChild(img);
+
+    if (!hasPhoto) {
+      const badge = document.createElement("div");
+      badge.className = "tools-card__badge";
+      badge.textContent = "Нет фото";
+      media.appendChild(badge);
+    }
+
+    if (viewMode === "large") {
+      const overlay = document.createElement("div");
+      overlay.className = "tools-card__overlay";
+      const title = document.createElement("div");
+      title.className = "tools-card__title";
+      title.textContent = infoLine || "Без названия";
+      overlay.appendChild(title);
+      media.appendChild(overlay);
+      card.appendChild(media);
+      return card;
+    }
+
+    const body = document.createElement("div");
+    body.className = "tools-card__body";
+    const title = document.createElement("div");
+    title.className = "tools-card__title";
+    title.textContent = infoLine || "Без названия";
+    body.appendChild(title);
+    card.append(media, body);
+    return card;
+  };
+
+  const renderToolsList = () => {
+    if (!toolsListEl) return;
+    clearToolsList();
+    const viewMode = toolsState.view;
+    toolsListEl.classList.toggle("is-large", viewMode === "large");
+    toolsListEl.classList.toggle("is-compact", viewMode === "compact");
+    const items = toolsState.filtered;
+    items.forEach((tool) => {
+      toolsListEl.appendChild(
+        renderToolCard(tool, viewMode, toolsState.orgFolder)
+      );
+    });
+    if (toolsEmptyEl) {
+      toolsEmptyEl.classList.toggle("is-hidden", items.length > 0);
+    }
+    setToolsSubtitle(
+      `Показано ${items.length} из ${toolsState.tools.length}`
+    );
+  };
+
+  const applyToolsFilters = () => {
+    const search = toolsState.search.trim();
+    const tokens = search ? search.split(/\s+/).filter(Boolean) : [];
+    toolsState.filtered = toolsState.tools.filter((tool) => {
+      if (
+        toolsState.filters.group &&
+        String(tool?.["Граппа инструментов"] ?? "").trim() !==
+          toolsState.filters.group
+      ) {
+        return false;
+      }
+      if (
+        toolsState.filters.status &&
+        String(tool?.["Статус"] ?? "").trim() !== toolsState.filters.status
+      ) {
+        return false;
+      }
+      if (
+        toolsState.filters.object &&
+        String(tool?.["Объект"] ?? "").trim() !== toolsState.filters.object
+      ) {
+        return false;
+      }
+      if (
+        toolsState.filters.manufacturer &&
+        String(tool?.["Производитель"] ?? "").trim() !==
+          toolsState.filters.manufacturer
+      ) {
+        return false;
+      }
+      if (
+        toolsState.filters.model &&
+        String(tool?.["Модель"] ?? "").trim() !== toolsState.filters.model
+      ) {
+        return false;
+      }
+      if (toolsState.filters.photo) {
+        const count = Number.parseInt(tool?.["Количество фото"] ?? 0, 10);
+        const hasPhoto = Number.isFinite(count) && count > 0;
+        if (toolsState.filters.photo === "with" && !hasPhoto) {
+          return false;
+        }
+        if (toolsState.filters.photo === "without" && hasPhoto) {
+          return false;
+        }
+      }
+      if (tokens.length) {
+        const searchLine = tool.__searchLine ?? "";
+        return tokens.every((token) => searchLine.includes(token));
+      }
+      return true;
+    });
+    renderToolsList();
+  };
+
+  const fillToolsFilterOptions = (key, values) => {
+    const selectEl = contentEl.querySelector(`[data-tools-filter="${key}"]`);
+    if (!selectEl) return;
+    selectEl.innerHTML = "";
+    const allOption = document.createElement("option");
+    allOption.value = "";
+    allOption.textContent = "Все";
+    selectEl.appendChild(allOption);
+    values.forEach((value) => {
+      const option = document.createElement("option");
+      option.value = value;
+      option.textContent = value;
+      selectEl.appendChild(option);
+    });
+    selectEl.value = toolsState.filters[key] ?? "";
+  };
+
+  const prepareToolsFilters = () => {
+    const collectValues = (field) => {
+      const set = new Set();
+      toolsState.tools.forEach((tool) => {
+        const value = String(tool?.[field] ?? "").trim();
+        if (value) set.add(value);
+      });
+      return Array.from(set).sort((a, b) =>
+        a.localeCompare(b, "ru", { numeric: true })
+      );
+    };
+    fillToolsFilterOptions("group", collectValues("Граппа инструментов"));
+    fillToolsFilterOptions("status", collectValues("Статус"));
+    fillToolsFilterOptions("object", collectValues("Объект"));
+    fillToolsFilterOptions("manufacturer", collectValues("Производитель"));
+    fillToolsFilterOptions("model", collectValues("Модель"));
+    const photoSelect = contentEl.querySelector('[data-tools-filter="photo"]');
+    if (photoSelect) {
+      photoSelect.innerHTML = "";
+      [
+        { value: "", label: "Все" },
+        { value: "with", label: "С фото" },
+        { value: "without", label: "Без фото" },
+      ].forEach((option) => {
+        const opt = document.createElement("option");
+        opt.value = option.value;
+        opt.textContent = option.label;
+        photoSelect.appendChild(opt);
+      });
+      photoSelect.value = toolsState.filters.photo ?? "";
+    }
+  };
+
+  const loadUserTools = async () => {
+    const orgFolder = context.orgFolderName ?? "";
+    toolsState.orgFolder = orgFolder;
+    if (!orgFolder) {
+      toolsState.tools = [];
+      toolsState.filtered = [];
+      setToolsSubtitle("Не удалось определить организацию.");
+      renderToolsList();
+      return;
+    }
+    const toolsPath = `./${orgFolder}/База с инструментами.json`;
+    let rawTools = [];
+    try {
+      const raw = await loadJson(toolsPath);
+      rawTools = Array.isArray(raw) ? raw : Array.isArray(raw?.tools) ? raw.tools : [];
+    } catch (error) {
+      console.warn("Не удалось загрузить базу инструментов.", error);
+      rawTools = [];
+    }
+    const userNameKey = normalizePersonName(user?.full_name ?? "");
+    toolsState.tools = rawTools
+      .filter(
+        (tool) =>
+          normalizePersonName(tool?.["Ответственный"] ?? "") === userNameKey
+      )
+      .map((tool) => ({
+        ...tool,
+        __searchLine: buildToolSearchLine(tool),
+      }))
+      .sort((a, b) =>
+        String(a?.["Номер"] ?? "").localeCompare(String(b?.["Номер"] ?? ""), "ru", {
+          numeric: true,
+        })
+      );
+    prepareToolsFilters();
+    applyToolsFilters();
+  };
+
+  const openToolsModal = async () => {
+    if (!toolsModalEl) return;
+    toolsModalEl.classList.remove("is-hidden");
+    document.body.style.overflow = "hidden";
+    setToolsSubtitle("Загружаем список...");
+    await loadUserTools();
+    if (toolsSearchInput) {
+      toolsSearchInput.focus();
+    }
+  };
+
+  const closeToolsModal = () => {
+    if (!toolsModalEl) return;
+    toolsModalEl.classList.add("is-hidden");
+    document.body.style.overflow = "";
+  };
+
+  if (toolsBackdropEl) {
+    toolsBackdropEl.addEventListener("click", closeToolsModal);
+  }
+  if (toolsCloseButton) {
+    toolsCloseButton.addEventListener("click", closeToolsModal);
+  }
+  toolsModalEl?.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      closeToolsModal();
+    }
+  });
+
+  if (toolsSearchInput) {
+    toolsSearchInput.addEventListener("input", (event) => {
+      toolsState.search = String(event.target.value ?? "").toLowerCase();
+      applyToolsFilters();
+    });
+  }
+
+  toolsFilterEls.forEach((selectEl) => {
+    selectEl.addEventListener("change", (event) => {
+      const target = event.target;
+      const key = target?.dataset?.toolsFilter;
+      if (!key) return;
+      toolsState.filters[key] = String(target.value ?? "");
+      applyToolsFilters();
+    });
+  });
+
+  toolsViewButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      const view = button.dataset.toolsView;
+      if (!view) return;
+      toolsState.view = view;
+      toolsViewButtons.forEach((item) =>
+        item.classList.toggle("is-active", item === button)
+      );
+      renderToolsList();
+    });
+  });
   if (objectsCancelButton) {
     objectsCancelButton.addEventListener("click", () => {
       resetObjectsForm();
@@ -4820,6 +5247,14 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       targetCard.dataset.actionId === "users"
     ) {
       openUsersDetailsModal();
+      return;
+    }
+    if (
+      !isGrouping &&
+      targetCard.dataset.energyItemType === "action" &&
+      targetCard.dataset.actionId === "tools"
+    ) {
+      openToolsModal();
       return;
     }
     if (

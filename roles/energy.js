@@ -168,6 +168,100 @@ export function renderRole(user) {
             </div>
           </div>
         </div>
+        <div class="tools-modal settings-modal is-hidden" data-tools-modal>
+          <div class="settings-modal__backdrop" data-tools-backdrop></div>
+          <div
+            class="settings-modal__panel tools-modal__panel"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Мои инструменты"
+          >
+            <div class="settings-modal__header tools-modal__header">
+              <div class="settings-modal__title">
+                <h2>Мои инструменты</h2>
+                <p data-tools-subtitle>Загружаем список...</p>
+              </div>
+              <button
+                class="button-icon tools-modal__close"
+                type="button"
+                data-tools-close
+                aria-label="Закрыть список инструментов"
+              >
+                <span class="button-icon-emoji" aria-hidden="true">✕</span>
+              </button>
+            </div>
+            <div class="settings-modal__body tools-modal__body">
+              <div class="tools-controls">
+                <label class="tools-search">
+                  <span class="tools-search__icon" aria-hidden="true">🔍</span>
+                  <input
+                    class="form-input tools-search__input"
+                    type="search"
+                    placeholder="Поиск по номеру, названию, модели..."
+                    data-tools-search
+                    autocomplete="off"
+                  />
+                </label>
+                <div class="tools-filters">
+                  <label class="tools-filter">
+                    <span>Группа</span>
+                    <select class="form-input" data-tools-filter="group"></select>
+                  </label>
+                  <label class="tools-filter">
+                    <span>Статус</span>
+                    <select class="form-input" data-tools-filter="status"></select>
+                  </label>
+                  <label class="tools-filter">
+                    <span>Объект</span>
+                    <select class="form-input" data-tools-filter="object"></select>
+                  </label>
+                  <label class="tools-filter">
+                    <span>Производитель</span>
+                    <select
+                      class="form-input"
+                      data-tools-filter="manufacturer"
+                    ></select>
+                  </label>
+                  <label class="tools-filter">
+                    <span>Модель</span>
+                    <select class="form-input" data-tools-filter="model"></select>
+                  </label>
+                  <label class="tools-filter">
+                    <span>Фото</span>
+                    <select class="form-input" data-tools-filter="photo"></select>
+                  </label>
+                </div>
+                <div class="tools-view-toggle" role="group" aria-label="Вариант отображения">
+                  <button
+                    class="tools-view-button is-active"
+                    type="button"
+                    data-tools-view="large"
+                  >
+                    Крупные
+                  </button>
+                  <button
+                    class="tools-view-button"
+                    type="button"
+                    data-tools-view="compact"
+                  >
+                    Обычные
+                  </button>
+                  <button
+                    class="tools-view-button"
+                    type="button"
+                    data-tools-view="list"
+                  >
+                    Список
+                  </button>
+                </div>
+              </div>
+              <div class="tools-list" data-tools-list></div>
+              <div class="tools-empty is-hidden" data-tools-empty>
+                Инструменты не найдены. Попробуйте сбросить фильтры или поиск.
+              </div>
+            </div>
+          </div>
+        </div>
         <div class="settings-modal add-tool-modal is-hidden" data-add-tool-modal>
           <div class="settings-modal__backdrop" data-add-tool-backdrop></div>
           <div

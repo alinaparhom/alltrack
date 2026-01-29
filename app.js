@@ -6663,10 +6663,11 @@ function setupSuperAdmin() {
       );
     } catch (error) {
       console.error(error);
-      setUploadStatus(
-        "Не удалось обработать файл. Проверьте лист «Выгрузка» и формат данных.",
-        "error"
-      );
+      const fallbackMessage =
+        "Не удалось обработать файл. Проверьте лист «Выгрузка» и формат данных.";
+      const errorMessage =
+        error instanceof Error && error.message ? error.message : "";
+      setUploadStatus(errorMessage || fallbackMessage, "error");
     } finally {
       if (orgsUploadButton) orgsUploadButton.disabled = false;
     }

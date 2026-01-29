@@ -4997,8 +4997,8 @@ function setupSuperAdmin() {
     return [];
   }
 
-  const readFileAsBase64 = (file) =>
-    new Promise((resolve, reject) => {
+  function readFileAsBase64(file) {
+    return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = () => {
         const result = reader.result;
@@ -5014,6 +5014,7 @@ function setupSuperAdmin() {
       };
       reader.readAsDataURL(file);
     });
+  }
 
   const uploadPhotoEntriesInBatches = async (
     entries,

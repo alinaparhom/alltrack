@@ -351,6 +351,8 @@ export function renderRole(user) {
               <div class="settings-modal__footer add-tool-modal__footer">
                 <div
                   class="form-message form-message--inline"
+                  role="status"
+                  aria-live="polite"
                   data-add-tool-message
                 ></div>
                 <div class="settings-modal__actions add-tool-modal__actions">

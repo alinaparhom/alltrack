@@ -335,31 +335,30 @@ export function renderRole(user) {
                       data-tool-group-suggestions
                     ></div>
                   </label>
-                  <label class="form-field form-field--required">
+                  <div class="form-field form-field--required">
                     <span class="form-label">Накладная (обязательно)</span>
-                    <input
-                      class="form-input"
-                      type="file"
-                      name="tool-invoice"
-                      accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                    />
-                    <span class="form-hint">
-                      Можно выбрать файл или сделать фото накладной.
-                    </span>
-                  </label>
-                  <label class="form-field form-field--required">
-                    <span class="form-label">Фото накладной</span>
-                    <input
-                      class="form-input"
-                      type="file"
-                      name="tool-invoice-photo"
-                      accept="image/*"
-                      capture="environment"
-                    />
-                    <span class="form-hint">
-                      Камера откроется на мобильных устройствах.
-                    </span>
-                  </label>
+                    <div class="form-file-row">
+                      <label class="form-file-option">
+                        <span class="form-file-label">Файл</span>
+                        <input
+                          class="form-input"
+                          type="file"
+                          name="tool-invoice"
+                          accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                        />
+                      </label>
+                      <label class="form-file-option">
+                        <span class="form-file-label">Фото</span>
+                        <input
+                          class="form-input"
+                          type="file"
+                          name="tool-invoice-photo"
+                          accept="image/*"
+                          capture="environment"
+                        />
+                      </label>
+                    </div>
+                  </div>
                 </div>
               </div>
               <div class="settings-modal__footer add-tool-modal__footer">

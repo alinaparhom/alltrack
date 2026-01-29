@@ -2963,11 +2963,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     addToolFormEl.addEventListener("submit", async (event) => {
       event.preventDefault();
       if (addToolState.isSaving) return;
-      if (!addToolState.orgFolder) {
-        setAddToolMessage("Не удалось определить папку организации.");
-        return;
-      }
-
       const formData = new FormData(addToolFormEl);
       const accountingNumber = normalizeSuggestionValue(
         formData.get("tool-accounting-number")
@@ -3062,6 +3057,14 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       setAddToolMessage("Сохраняем данные...");
 
       try {
+        if (!addToolState.orgFolder) {
+          const orgResolution = await resolveAddToolOrganization();
+          if (orgResolution?.orgFolder) {
+            addToolState.organizationName = orgResolution.organizationName;
+            addToolState.orgFolder = orgResolution.orgFolder;
+          }
+        }
+
         const dateValue = formatDateValue(new Date());
         const toolNumber = buildNextToolNumber(addToolState.tools);
         const invoiceName = buildInvoiceFileName(
@@ -3093,14 +3096,14 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         await saveEntriesViaEndpoint([
           {
             type: "file",
-            path: `${addToolState.orgFolder}/Накладные покупка/${invoiceName}`,
+            path: `Накладные покупка/${invoiceName}`,
             content: invoiceContent,
             encoding: "base64",
             mime: invoiceFile.type || "application/octet-stream",
             ...meta,
           },
           {
-            path: `${addToolState.orgFolder}/База с инструментами.json`,
+            path: "База с инструментами.json",
             data: updatedTools,
             ...meta,
           },
@@ -3113,8 +3116,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         window.alert(successMessage);
       } catch (error) {
         console.error(error);
+        const errorText = error?.message
+          ? `Причина: ${String(error.message).trim()}.`
+          : "";
         setAddToolMessage(
-          "Не удалось сохранить инструмент. Проверьте сервер."
+          `Не удалось сохранить инструмент. Проверьте сервер. ${errorText}`.trim()
         );
       } finally {
         addToolState.isSaving = false;

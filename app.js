@@ -2804,19 +2804,18 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const normalizedName = normalizeSuggestionValue(nameFilter).toLowerCase();
     const normalizedManufacturer =
       normalizeSuggestionValue(manufacturerFilter).toLowerCase();
+    const matchesFilter = (value, filter) => {
+      if (!filter) return true;
+      const normalizedValue = normalizeSuggestionValue(value).toLowerCase();
+      return normalizedValue.startsWith(filter);
+    };
     return addToolState.tools
       .filter((tool) => {
-        if (normalizedName) {
-          const toolName = normalizeSuggestionValue(
-            tool?.["Наименование"] ?? ""
-          ).toLowerCase();
-          if (toolName !== normalizedName) return false;
-        }
-        if (normalizedManufacturer) {
-          const toolManufacturer = normalizeSuggestionValue(
-            tool?.["Производитель"] ?? ""
-          ).toLowerCase();
-          if (toolManufacturer !== normalizedManufacturer) return false;
+        if (
+          !matchesFilter(tool?.["Наименование"] ?? "", normalizedName) ||
+          !matchesFilter(tool?.["Производитель"] ?? "", normalizedManufacturer)
+        ) {
+          return false;
         }
         return true;
       })

@@ -623,20 +623,21 @@ async function saveEntriesViaEndpoint(entries) {
     headers: { "Content-Type": "application/json" },
     body: payload,
   });
+  let responseText = "";
+  try {
+    responseText = await response.text();
+  } catch (error) {
+    console.warn("Не удалось прочитать ответ сервера.", error);
+  }
   if (!response.ok) {
-    let errorText = "";
-    try {
-      errorText = await response.text();
-    } catch (error) {
-      console.warn("Не удалось прочитать ответ сервера.", error);
-    }
-    if (errorText) {
+    let errorText = responseText;
+    if (responseText) {
       try {
-        const parsed = JSON.parse(errorText);
+        const parsed = JSON.parse(responseText);
         errorText =
           parsed?.error ??
           parsed?.message ??
-          (typeof parsed === "string" ? parsed : errorText);
+          (typeof parsed === "string" ? parsed : responseText);
       } catch (error) {
         // ignore json parse errors
       }
@@ -646,6 +647,7 @@ async function saveEntriesViaEndpoint(entries) {
       `Не удалось сохранить данные. Код ответа: ${response.status}.`;
     throw new Error(message);
   }
+  return responseText;
 }
 
 async function saveJson(path, data, meta = {}) {
@@ -2720,6 +2722,28 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     return `${prefix} ${issues.join(" ")}`.trim();
   };
 
+  const formatSaveResponseMessage = (responseText) => {
+    const raw = String(responseText ?? "").trim();
+    if (!raw) return "";
+    try {
+      const parsed = JSON.parse(raw);
+      if (parsed?.message) return String(parsed.message).trim();
+      if (parsed?.error) return String(parsed.error).trim();
+      if (parsed?.success === true) return "успешно";
+      if (typeof parsed === "string") return parsed.trim();
+      return JSON.stringify(parsed);
+    } catch (error) {
+      return raw;
+    }
+  };
+
+  const buildSaveResponseSuffix = (responseText) => {
+    const message = formatSaveResponseMessage(responseText);
+    if (!message) return "";
+    const normalized = message.endsWith(".") ? message : `${message}.`;
+    return ` Ответ сервера: ${normalized}`;
+  };
+
   const resolveAddToolOrganization = async () => {
     const issues = [];
     const telegramId = normalizeTelegramId(user?.telegram_id ?? user?.telegramId ?? null);
@@ -3044,6 +3068,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         scrollAddToolFooterIntoView();
         return;
       }
+      setAddToolMessage("Проверяем данные...", { tone: "info" });
       const formData = new FormData(addToolFormEl);
       const accountingNumber = normalizeSuggestionValue(
         formData.get("tool-accounting-number")
@@ -3193,7 +3218,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
         const updatedTools = [...addToolState.tools, nextTool];
         const meta = buildUploadUserMeta();
-        await saveEntriesViaEndpoint([
+        const saveResponseText = await saveEntriesViaEndpoint([
           {
             type: "file",
             path: invoicePath,
@@ -3211,7 +3236,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
         addToolState.tools = updatedTools;
         const successMessage = `Данные о новой позиции сохранены, ему присвоен номер ${toolNumber}.`;
-        setAddToolMessage(successMessage, { tone: "success" });
+        const responseSuffix = buildSaveResponseSuffix(saveResponseText);
+        setAddToolMessage(`${successMessage}${responseSuffix}`, {
+          tone: "success",
+        });
         addToolFormEl.reset();
         window.alert(successMessage);
       } catch (error) {

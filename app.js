@@ -351,6 +351,139 @@ async function resolveBotUsername() {
   }
 }
 
+function formatNotificationValue(value, fallback = "—") {
+  if (value === null || value === undefined) return fallback;
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value.toString();
+  }
+  const text = String(value ?? "").trim();
+  return text ? text : fallback;
+}
+
+function formatNotificationCost(value) {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return `${value.toLocaleString("ru-RU")} ₽`;
+  }
+  const text = String(value ?? "").trim();
+  return text ? text : "—";
+}
+
+function extractNotificationGroups(settingsData, notificationId) {
+  const source =
+    settingsData?.organization?.notifications?.[notificationId]?.groups ??
+    settingsData?.notifications?.[notificationId]?.groups ??
+    [];
+  const raw = Array.isArray(source) ? source : [source];
+  const unique = new Set();
+  raw.forEach((value) => {
+    const normalized = normalizeTelegramId(value);
+    if (normalized) {
+      unique.add(normalized);
+    }
+  });
+  return Array.from(unique);
+}
+
+function isNotificationEnabled(settingsData, notificationId) {
+  const value =
+    settingsData?.organization?.notifications?.[notificationId]?.enabled ??
+    settingsData?.notifications?.[notificationId]?.enabled;
+  return Boolean(value);
+}
+
+function buildNewToolNotificationMessage(
+  tool,
+  { organizationName, createdBy } = {}
+) {
+  const lines = ["🧰 Новый инструмент зарегистрирован в приложении."];
+  if (organizationName) {
+    lines.push(`Организация: ${formatNotificationValue(organizationName)}`);
+  }
+  if (createdBy) {
+    lines.push(`Добавил: ${formatNotificationValue(createdBy)}`);
+  }
+  lines.push(`Номер: ${formatNotificationValue(tool?.["Номер"])}`);
+  lines.push(`Бух.номер: ${formatNotificationValue(tool?.["Бух.номер"])}`);
+  lines.push(`Наименование: ${formatNotificationValue(tool?.["Наименование"])}`);
+  lines.push(
+    `Производитель: ${formatNotificationValue(tool?.["Производитель"])}`
+  );
+  lines.push(`Модель: ${formatNotificationValue(tool?.["Модель"])}`);
+  lines.push(
+    `Наименование по бухгалтерии: ${formatNotificationValue(
+      tool?.["Наименование по бухгалтерии"]
+    )}`
+  );
+  lines.push(`Стоимость: ${formatNotificationCost(tool?.["Стоимость"])}`);
+  lines.push(`Дата покупки: ${formatNotificationValue(tool?.["Дата покупки"])}`);
+  lines.push(`Ответственный: ${formatNotificationValue(tool?.["Ответственный"])}`);
+  lines.push(`Объект: ${formatNotificationValue(tool?.["Объект"])}`);
+  lines.push(
+    `Серийный номер: ${formatNotificationValue(tool?.["Серийный номер"])}`
+  );
+  lines.push(
+    `Группа инструментов: ${formatNotificationValue(
+      tool?.["Граппа инструментов"]
+    )}`
+  );
+  lines.push(`Статус: ${formatNotificationValue(tool?.["Статус"])}`);
+  lines.push(
+    `Количество фото: ${formatNotificationValue(tool?.["Количество фото"], "0")}`
+  );
+  return lines.join("\n");
+}
+
+async function sendTelegramMessage(chatId, text) {
+  if (!fallbackBotToken || !chatId || !text) return false;
+  const response = await fetch(
+    `https://api.telegram.org/bot${fallbackBotToken}/sendMessage`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chat_id: chatId,
+        text,
+        disable_web_page_preview: true,
+      }),
+    }
+  );
+  if (!response.ok) {
+    const errorText = await response.text().catch(() => "");
+    console.warn("Не удалось отправить сообщение в Telegram.", {
+      chatId,
+      status: response.status,
+      errorText,
+    });
+  }
+  return response.ok;
+}
+
+async function notifyNewToolRegistration({
+  tool,
+  organizationName,
+  orgFolder,
+  createdBy,
+}) {
+  if (!tool || !orgFolder) return;
+  if (!fallbackBotToken) return;
+  const settingsPath = `./${orgFolder}/Настройки.json`;
+  try {
+    const settingsData = await loadJson(settingsPath);
+    if (!isNotificationEnabled(settingsData, "newTool")) return;
+    const groupIds = extractNotificationGroups(settingsData, "newTool");
+    if (!groupIds.length) return;
+    const message = buildNewToolNotificationMessage(tool, {
+      organizationName,
+      createdBy,
+    });
+    await Promise.all(
+      groupIds.map((chatId) => sendTelegramMessage(chatId, message))
+    );
+  } catch (error) {
+    console.warn("Не удалось отправить уведомление о новом инструменте.", error);
+  }
+}
+
 function getRegistrationToken() {
   const url = new URL(window.location.href);
   const urlToken =
@@ -3357,6 +3490,16 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           });
           addToolFormEl.reset();
           openAddToolSuccessModal(toolNumber);
+          const createdByRaw = String(
+            currentUser?.full_name ?? currentUser?.fullName ?? ""
+          ).trim();
+          const createdBy = createdByRaw ? formatFullName(createdByRaw) : "";
+          void notifyNewToolRegistration({
+            tool: nextTool,
+            organizationName: addToolState.organizationName,
+            orgFolder: addToolState.orgFolder,
+            createdBy,
+          });
         } catch (error) {
           console.error(error);
           const rawMessage = String(error?.message ?? "").trim();

@@ -2167,6 +2167,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const toolsSubtitleEl = contentEl.querySelector("[data-tools-subtitle]");
   const toolsViewButtons = contentEl.querySelectorAll("[data-tools-view]");
   const toolsFilterEls = contentEl.querySelectorAll("[data-tools-filter]");
+  const toolsFiltersPanelEl = contentEl.querySelector(
+    "[data-tools-filters-panel]"
+  );
+  const toolsFiltersToggleEl = contentEl.querySelector(
+    "[data-tools-filters-toggle]"
+  );
   const addToolModalEl = contentEl.querySelector("[data-add-tool-modal]");
   const addToolBackdropEl = contentEl.querySelector("[data-add-tool-backdrop]");
   const addToolCloseButton = contentEl.querySelector("[data-add-tool-close]");
@@ -2724,6 +2730,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const viewMode = toolsState.view;
     toolsListEl.classList.toggle("is-large", viewMode === "large");
     toolsListEl.classList.toggle("is-compact", viewMode === "compact");
+    toolsListEl.classList.toggle("is-list", viewMode === "list");
     const items = toolsState.filtered;
     items.forEach((tool) => {
       toolsListEl.appendChild(
@@ -2915,6 +2922,35 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       toolsState.search = String(event.target.value ?? "").toLowerCase();
       applyToolsFilters();
     });
+  }
+
+  const setToolsFiltersOpen = (isOpen) => {
+    if (toolsFiltersPanelEl) {
+      toolsFiltersPanelEl.classList.toggle("is-open", isOpen);
+    }
+    if (toolsFiltersToggleEl) {
+      toolsFiltersToggleEl.setAttribute("aria-expanded", String(isOpen));
+    }
+  };
+
+  if (toolsFiltersToggleEl) {
+    toolsFiltersToggleEl.addEventListener("click", () => {
+      const isOpen = toolsFiltersPanelEl?.classList.contains("is-open");
+      setToolsFiltersOpen(!isOpen);
+    });
+  }
+
+  if (typeof window !== "undefined" && toolsFiltersPanelEl) {
+    const mediaQuery = window.matchMedia("(max-width: 520px)");
+    const syncFiltersVisibility = () => {
+      setToolsFiltersOpen(!mediaQuery.matches);
+    };
+    syncFiltersVisibility();
+    if (mediaQuery.addEventListener) {
+      mediaQuery.addEventListener("change", syncFiltersVisibility);
+    } else if (mediaQuery.addListener) {
+      mediaQuery.addListener(syncFiltersVisibility);
+    }
   }
 
   toolsFilterEls.forEach((selectEl) => {

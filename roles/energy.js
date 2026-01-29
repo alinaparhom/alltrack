@@ -192,17 +192,58 @@ export function renderRole(user) {
             </div>
             <div class="settings-modal__body tools-modal__body">
               <div class="tools-controls">
-                <label class="tools-search">
-                  <span class="tools-search__icon" aria-hidden="true">🔍</span>
-                  <input
-                    class="form-input tools-search__input"
-                    type="search"
-                    placeholder="Поиск по номеру, названию, модели..."
-                    data-tools-search
-                    autocomplete="off"
-                  />
-                </label>
-                <div class="tools-filters">
+                <div class="tools-controls__row">
+                  <label class="tools-search">
+                    <span class="tools-search__icon" aria-hidden="true">🔍</span>
+                    <input
+                      class="form-input tools-search__input"
+                      type="search"
+                      placeholder="Поиск по номеру, названию, модели..."
+                      data-tools-search
+                      autocomplete="off"
+                    />
+                  </label>
+                  <div class="tools-actions">
+                    <button
+                      class="tools-filters-toggle"
+                      type="button"
+                      data-tools-filters-toggle
+                      aria-expanded="false"
+                      aria-controls="tools-filters-panel"
+                    >
+                      <span aria-hidden="true">⚙️</span>
+                      <span class="tools-filters-toggle__label">Фильтры</span>
+                    </button>
+                    <div
+                      class="tools-view-toggle"
+                      role="group"
+                      aria-label="Вариант отображения"
+                    >
+                      <button
+                        class="tools-view-button is-active"
+                        type="button"
+                        data-tools-view="large"
+                      >
+                        Крупные
+                      </button>
+                      <button
+                        class="tools-view-button"
+                        type="button"
+                        data-tools-view="compact"
+                      >
+                        Обычные
+                      </button>
+                      <button
+                        class="tools-view-button"
+                        type="button"
+                        data-tools-view="list"
+                      >
+                        Список
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <div class="tools-filters" id="tools-filters-panel" data-tools-filters-panel>
                   <label class="tools-filter">
                     <span>Группа</span>
                     <select class="form-input" data-tools-filter="group"></select>
@@ -230,29 +271,6 @@ export function renderRole(user) {
                     <span>Фото</span>
                     <select class="form-input" data-tools-filter="photo"></select>
                   </label>
-                </div>
-                <div class="tools-view-toggle" role="group" aria-label="Вариант отображения">
-                  <button
-                    class="tools-view-button is-active"
-                    type="button"
-                    data-tools-view="large"
-                  >
-                    Крупные
-                  </button>
-                  <button
-                    class="tools-view-button"
-                    type="button"
-                    data-tools-view="compact"
-                  >
-                    Обычные
-                  </button>
-                  <button
-                    class="tools-view-button"
-                    type="button"
-                    data-tools-view="list"
-                  >
-                    Список
-                  </button>
                 </div>
               </div>
               <div class="tools-list" data-tools-list></div>

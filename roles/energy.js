@@ -389,6 +389,83 @@ export function renderRole(user) {
           </div>
         </div>
         <div
+          class="settings-modal camera-modal is-hidden"
+          data-add-tool-camera-modal
+        >
+          <div
+            class="settings-modal__backdrop"
+            data-add-tool-camera-backdrop
+          ></div>
+          <div
+            class="settings-modal__panel camera-modal__panel"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Фото накладной"
+          >
+            <div class="settings-modal__header camera-modal__header">
+              <div class="settings-modal__title">
+                <h2>Фото накладной</h2>
+                <p>Сделайте снимок и подтвердите</p>
+              </div>
+              <button
+                class="button-icon camera-modal__close"
+                type="button"
+                data-add-tool-camera-close
+                aria-label="Закрыть камеру"
+              >
+                <span class="button-icon-emoji" aria-hidden="true">✕</span>
+              </button>
+            </div>
+            <div class="settings-modal__body camera-modal__body">
+              <div class="camera-preview" data-add-tool-camera-preview>
+                <video
+                  class="camera-preview__video"
+                  data-add-tool-camera-video
+                  autoplay
+                  playsinline
+                ></video>
+                <canvas
+                  class="camera-preview__canvas is-hidden"
+                  data-add-tool-camera-canvas
+                ></canvas>
+              </div>
+              <div class="camera-hint" data-add-tool-camera-hint>
+                Держите накладную в кадре и нажмите «Сфотографировать».
+              </div>
+            </div>
+            <div class="settings-modal__footer camera-modal__footer">
+              <button
+                class="action-secondary"
+                type="button"
+                data-add-tool-camera-cancel
+              >
+                Отмена
+              </button>
+              <button
+                class="action-primary"
+                type="button"
+                data-add-tool-camera-capture
+              >
+                Сфотографировать
+              </button>
+              <button
+                class="action-secondary is-hidden"
+                type="button"
+                data-add-tool-camera-retake
+              >
+                Переснять
+              </button>
+              <button
+                class="action-primary is-hidden"
+                type="button"
+                data-add-tool-camera-save
+              >
+                Использовать фото
+              </button>
+            </div>
+          </div>
+        </div>
+        <div
           class="settings-modal add-tool-success-modal is-hidden"
           data-add-tool-success-modal
         >

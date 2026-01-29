@@ -2115,6 +2115,33 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const addToolInvoicePhotoInput = contentEl.querySelector(
     '[name="tool-invoice-photo"]'
   );
+  const addToolCameraModalEl = contentEl.querySelector(
+    "[data-add-tool-camera-modal]"
+  );
+  const addToolCameraBackdropEl = contentEl.querySelector(
+    "[data-add-tool-camera-backdrop]"
+  );
+  const addToolCameraCloseButton = contentEl.querySelector(
+    "[data-add-tool-camera-close]"
+  );
+  const addToolCameraCancelButton = contentEl.querySelector(
+    "[data-add-tool-camera-cancel]"
+  );
+  const addToolCameraCaptureButton = contentEl.querySelector(
+    "[data-add-tool-camera-capture]"
+  );
+  const addToolCameraRetakeButton = contentEl.querySelector(
+    "[data-add-tool-camera-retake]"
+  );
+  const addToolCameraSaveButton = contentEl.querySelector(
+    "[data-add-tool-camera-save]"
+  );
+  const addToolCameraVideoEl = contentEl.querySelector(
+    "[data-add-tool-camera-video]"
+  );
+  const addToolCameraCanvasEl = contentEl.querySelector(
+    "[data-add-tool-camera-canvas]"
+  );
   const addToolInvoicePhotoPicker = contentEl.querySelector(
     "[data-tool-invoice-photo-picker]"
   );
@@ -3008,6 +3035,102 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     });
   };
 
+  let addToolCameraStream = null;
+  let addToolCameraBlob = null;
+  let bypassAddToolCameraPicker = false;
+
+  const resetAddToolCameraUI = () => {
+    if (addToolCameraVideoEl) {
+      addToolCameraVideoEl.classList.remove("is-hidden");
+    }
+    if (addToolCameraCanvasEl) {
+      addToolCameraCanvasEl.classList.add("is-hidden");
+    }
+    addToolCameraCaptureButton?.classList.remove("is-hidden");
+    addToolCameraRetakeButton?.classList.add("is-hidden");
+    addToolCameraSaveButton?.classList.add("is-hidden");
+    addToolCameraBlob = null;
+  };
+
+  const stopAddToolCameraStream = () => {
+    if (addToolCameraStream) {
+      addToolCameraStream.getTracks().forEach((track) => track.stop());
+      addToolCameraStream = null;
+    }
+    if (addToolCameraVideoEl) {
+      addToolCameraVideoEl.srcObject = null;
+    }
+  };
+
+  const openAddToolCameraModal = async () => {
+    if (!addToolCameraModalEl) return false;
+    addToolCameraModalEl.classList.remove("is-hidden");
+    resetAddToolCameraUI();
+    try {
+      addToolCameraStream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: "environment" } },
+        audio: false,
+      });
+      if (addToolCameraVideoEl) {
+        addToolCameraVideoEl.srcObject = addToolCameraStream;
+        await addToolCameraVideoEl.play();
+      }
+      return true;
+    } catch (error) {
+      console.warn("Не удалось открыть камеру для накладной.", error);
+      stopAddToolCameraStream();
+      addToolCameraModalEl.classList.add("is-hidden");
+      return false;
+    }
+  };
+
+  const closeAddToolCameraModal = () => {
+    if (!addToolCameraModalEl) return;
+    addToolCameraModalEl.classList.add("is-hidden");
+    stopAddToolCameraStream();
+    resetAddToolCameraUI();
+  };
+
+  const captureAddToolCameraFrame = () => {
+    if (!addToolCameraVideoEl || !addToolCameraCanvasEl) return;
+    const width = addToolCameraVideoEl.videoWidth;
+    const height = addToolCameraVideoEl.videoHeight;
+    if (!width || !height) return;
+    addToolCameraCanvasEl.width = width;
+    addToolCameraCanvasEl.height = height;
+    const context = addToolCameraCanvasEl.getContext("2d");
+    if (!context) return;
+    context.drawImage(addToolCameraVideoEl, 0, 0, width, height);
+    addToolCameraCanvasEl.classList.remove("is-hidden");
+    addToolCameraVideoEl.classList.add("is-hidden");
+    addToolCameraCaptureButton?.classList.add("is-hidden");
+    addToolCameraRetakeButton?.classList.remove("is-hidden");
+    addToolCameraSaveButton?.classList.remove("is-hidden");
+    addToolCameraCanvasEl.toBlob(
+      (blob) => {
+        addToolCameraBlob = blob;
+      },
+      "image/jpeg",
+      0.92
+    );
+  };
+
+  const applyAddToolCameraSnapshot = () => {
+    if (!addToolInvoicePhotoInput || !addToolCameraBlob) return;
+    const fileName = `invoice_photo_${Date.now()}.jpg`;
+    const photoFile = new File([addToolCameraBlob], fileName, {
+      type: addToolCameraBlob.type || "image/jpeg",
+    });
+    const dataTransfer = new DataTransfer();
+    dataTransfer.items.add(photoFile);
+    addToolInvoicePhotoInput.files = dataTransfer.files;
+    addToolInvoicePhotoInput.dispatchEvent(
+      new Event("change", { bubbles: true })
+    );
+    updateAddToolFilledStates();
+    closeAddToolCameraModal();
+  };
+
   const resetAddToolForm = () => {
     addToolFormEl?.reset();
     setAddToolMessage("", { tone: "info" });
@@ -3343,6 +3466,29 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     detachAddToolViewportListeners();
     resetAddToolForm();
     closeAddToolSuccessModal();
+    closeAddToolCameraModal();
+  };
+
+  const handleAddToolInvoicePhotoClick = async (event) => {
+    if (!(event instanceof Event)) return;
+    if (bypassAddToolCameraPicker) {
+      bypassAddToolCameraPicker = false;
+      return;
+    }
+    if (!navigator.mediaDevices?.getUserMedia) {
+      return;
+    }
+    event.preventDefault();
+    event.stopPropagation();
+    const opened = await openAddToolCameraModal();
+    if (!opened && addToolInvoicePhotoInput) {
+      bypassAddToolCameraPicker = true;
+      addToolInvoicePhotoInput.click();
+      setAddToolMessage(
+        "Камера недоступна. Выберите фото из галереи.",
+        { tone: "warning" }
+      );
+    }
   };
 
   if (addToolBackdropEl) {
@@ -3358,6 +3504,39 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     addToolSuccessBackdropEl.addEventListener(
       "click",
       closeAddToolSuccessModal
+    );
+  }
+  if (addToolInvoicePhotoInput) {
+    addToolInvoicePhotoInput.addEventListener(
+      "click",
+      handleAddToolInvoicePhotoClick
+    );
+  }
+  if (addToolCameraBackdropEl) {
+    addToolCameraBackdropEl.addEventListener("click", closeAddToolCameraModal);
+  }
+  if (addToolCameraCloseButton) {
+    addToolCameraCloseButton.addEventListener("click", closeAddToolCameraModal);
+  }
+  if (addToolCameraCancelButton) {
+    addToolCameraCancelButton.addEventListener("click", closeAddToolCameraModal);
+  }
+  if (addToolCameraCaptureButton) {
+    addToolCameraCaptureButton.addEventListener(
+      "click",
+      captureAddToolCameraFrame
+    );
+  }
+  if (addToolCameraRetakeButton) {
+    addToolCameraRetakeButton.addEventListener("click", () => {
+      resetAddToolCameraUI();
+      addToolCameraVideoEl?.play();
+    });
+  }
+  if (addToolCameraSaveButton) {
+    addToolCameraSaveButton.addEventListener(
+      "click",
+      applyAddToolCameraSnapshot
     );
   }
   if (addToolSuccessCloseButton) {

@@ -2911,6 +2911,52 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     inputEl.value = "";
   };
 
+  const updateAddToolFilledStates = () => {
+    if (!addToolFormEl) return;
+    const fields = addToolFormEl.querySelectorAll(".form-field");
+    fields.forEach((field) => {
+      const inputs = field.querySelectorAll("input, textarea, select");
+      let hasValue = false;
+      inputs.forEach((input) => {
+        if (
+          !(
+            input instanceof HTMLInputElement ||
+            input instanceof HTMLTextAreaElement ||
+            input instanceof HTMLSelectElement
+          )
+        ) {
+          return;
+        }
+        if (input.type === "file") {
+          if (input.files && input.files.length > 0) {
+            hasValue = true;
+          }
+          return;
+        }
+        if (input.type === "checkbox" || input.type === "radio") {
+          if (input.checked) {
+            hasValue = true;
+          }
+          return;
+        }
+        if (String(input.value).trim() !== "") {
+          hasValue = true;
+        }
+      });
+      field.classList.toggle("is-filled", hasValue);
+    });
+
+    const fileOptions = addToolFormEl.querySelectorAll(".form-file-option");
+    fileOptions.forEach((option) => {
+      const fileInput = option.querySelector('input[type="file"]');
+      const isFilled =
+        fileInput instanceof HTMLInputElement &&
+        fileInput.files &&
+        fileInput.files.length > 0;
+      option.classList.toggle("is-filled", isFilled);
+    });
+  };
+
   const resetAddToolForm = () => {
     addToolFormEl?.reset();
     setAddToolMessage("", { tone: "info" });
@@ -2921,6 +2967,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     addToolResponsibleSuggestionsEl?.classList.add("is-hidden");
     addToolObjectSuggestionsEl?.classList.add("is-hidden");
     addToolGroupSuggestionsEl?.classList.add("is-hidden");
+    updateAddToolFilledStates();
   };
 
   const buildNextToolNumber = (tools) => {
@@ -3318,8 +3365,15 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       }
     };
 
+    const syncFilledFields = () => {
+      updateAddToolFilledStates();
+    };
+
     addToolFormEl.addEventListener("input", clearFieldErrorOnInput);
     addToolFormEl.addEventListener("change", clearFieldErrorOnInput);
+    addToolFormEl.addEventListener("input", syncFilledFields);
+    addToolFormEl.addEventListener("change", syncFilledFields);
+    updateAddToolFilledStates();
 
     addToolFormEl.addEventListener("submit", async (event) => {
       event.preventDefault();
@@ -3521,6 +3575,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
             tone: "success",
           });
           addToolFormEl.reset();
+          updateAddToolFilledStates();
           openAddToolSuccessModal(toolNumber);
           const createdByRaw = String(
             currentUser?.full_name ?? currentUser?.fullName ?? ""

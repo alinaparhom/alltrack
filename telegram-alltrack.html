@@ -1136,14 +1136,40 @@
       }
 
       .form-file-option {
-        display: grid;
-        gap: 6px;
+        position: relative;
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.7);
+        box-shadow: 0 12px 30px rgba(26, 31, 46, 0.08);
+        overflow: hidden;
       }
 
-      .form-file-label {
-        font-size: 11px;
-        color: var(--muted);
+      .form-file-button {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 48px;
+        padding: 12px 16px;
+        border-radius: 16px;
+        border: 1px solid rgba(226, 232, 240, 0.95);
+        background: rgba(255, 255, 255, 0.9);
+        color: var(--accent);
         font-weight: 600;
+        font-size: var(--text-sm);
+        text-align: center;
+        transition: transform 0.2s ease, box-shadow 0.2s ease,
+          border-color 0.2s ease, background 0.2s ease;
+      }
+
+      .form-file-option.is-filled .form-file-button {
+        border-color: rgba(44, 186, 103, 0.65);
+        background: rgba(44, 186, 103, 0.16);
+        color: #1f8d52;
+        box-shadow: 0 12px 24px rgba(44, 186, 103, 0.18);
+      }
+
+      .form-file-option:focus-within .form-file-button {
+        border-color: rgba(59, 125, 255, 0.6);
+        box-shadow: 0 0 0 3px rgba(59, 125, 255, 0.15);
       }
 
       .form-label {
@@ -1175,6 +1201,12 @@
         background: rgba(59, 125, 255, 0.06);
       }
 
+      .form-field.is-filled .form-input {
+        border-color: rgba(44, 186, 103, 0.6);
+        background: rgba(44, 186, 103, 0.1);
+        box-shadow: 0 0 0 3px rgba(44, 186, 103, 0.12);
+      }
+
       .form-field.is-invalid .form-label {
         color: #d64545;
       }
@@ -1194,6 +1226,13 @@
         font-size: var(--text-md);
         color: var(--text);
         transition: border-color 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      .form-input--file {
+        position: absolute;
+        inset: 0;
+        opacity: 0;
+        cursor: pointer;
       }
 
       .form-input[type="file"] {

@@ -339,23 +339,27 @@ export function renderRole(user) {
                     <span class="form-label">Накладная (обязательно)</span>
                     <div class="form-file-row">
                       <label class="form-file-option">
-                        <span class="form-file-label">Файл</span>
                         <input
-                          class="form-input"
+                          class="form-input form-input--file"
                           type="file"
                           name="tool-invoice"
                           accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                         />
+                        <span class="form-file-button" aria-hidden="true">
+                          Добавить файл
+                        </span>
                       </label>
                       <label class="form-file-option">
-                        <span class="form-file-label">Фото</span>
                         <input
-                          class="form-input"
+                          class="form-input form-input--file"
                           type="file"
                           name="tool-invoice-photo"
                           accept="image/*"
                           capture="environment"
                         />
+                        <span class="form-file-button" aria-hidden="true">
+                          Добавить фото
+                        </span>
                       </label>
                     </div>
                   </div>

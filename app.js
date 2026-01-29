@@ -3061,210 +3061,228 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
     addToolFormEl.addEventListener("submit", async (event) => {
       event.preventDefault();
-      if (addToolState.isSaving) {
-        setAddToolMessage("Сохранение уже выполняется. Подождите…", {
-          tone: "info",
-        });
-        scrollAddToolFooterIntoView();
-        return;
-      }
-      setAddToolMessage("Проверяем данные...", { tone: "info" });
-      const formData = new FormData(addToolFormEl);
-      const accountingNumber = normalizeSuggestionValue(
-        formData.get("tool-accounting-number")
-      );
-      const toolName = normalizeSuggestionValue(formData.get("tool-name"));
-      const manufacturer = normalizeSuggestionValue(
-        formData.get("tool-manufacturer")
-      );
-      const model = normalizeSuggestionValue(formData.get("tool-model"));
-      const accountingName = normalizeSuggestionValue(
-        formData.get("tool-accounting-name")
-      );
-      const costValue = normalizeCostValue(formData.get("tool-cost"));
-      const responsibleRaw = normalizeSuggestionValue(
-        formData.get("tool-responsible")
-      );
-      const objectRaw = normalizeSuggestionValue(formData.get("tool-object"));
-      const serialNumber = normalizeSuggestionValue(
-        formData.get("tool-serial-number")
-      );
-      const groupRaw = normalizeSuggestionValue(formData.get("tool-group"));
-      const invoiceFile = formData.get("tool-invoice");
-
-      const errors = [];
-      let focusTarget = null;
-      const invalidTargets = new Set();
-      const pushError = (message, target) => {
-        errors.push(message);
-        if (!focusTarget && target) {
-          focusTarget = target;
-        }
-        if (target) {
-          invalidTargets.add(target);
-        }
-      };
-
-      if (!toolName) {
-        pushError("Введите наименование.", addToolNameInput);
-      }
-      if (!manufacturer) {
-        pushError("Введите производителя.", addToolManufacturerInput);
-      }
-      if (!model) {
-        pushError("Введите модель.", addToolModelInput);
-      }
-      if (costValue === null) {
-        pushError("Введите корректную стоимость.", addToolCostInput);
-      }
-
-      if (!addToolState.responsibleOptions.length) {
-        pushError("В организации нет ответственных.", addToolResponsibleInput);
-      }
-      const responsible = findOptionMatch(
-        responsibleRaw,
-        addToolState.responsibleOptions
-      );
-      if (addToolState.responsibleOptions.length && !responsible) {
-        pushError("Выберите ответственного из списка.", addToolResponsibleInput);
-      }
-
-      if (!addToolState.objectOptions.length) {
-        pushError("В организации нет объектов.", addToolObjectInput);
-      }
-      const objectName = findOptionMatch(
-        objectRaw,
-        addToolState.objectOptions
-      );
-      if (addToolState.objectOptions.length && !objectName) {
-        pushError("Выберите объект из списка.", addToolObjectInput);
-      }
-
-      if (!addToolState.groupOptions.length) {
-        pushError("В организации нет групп инструментов.", addToolGroupInput);
-      }
-      const groupName = findOptionMatch(
-        groupRaw,
-        addToolState.groupOptions
-      );
-      if (addToolState.groupOptions.length && !groupName) {
-        pushError("Выберите группу инструментов из списка.", addToolGroupInput);
-      }
-
-      if (!(invoiceFile instanceof File) || invoiceFile.size === 0) {
-        pushError("Прикрепите накладную.", addToolInvoiceInput);
-      }
-
-      if (errors.length) {
-        clearAddToolFieldErrors();
-        invalidTargets.forEach((target) => markAddToolFieldError(target));
-        reportAddToolIssue(errors, { asList: true });
-        focusTarget?.focus();
-        return;
-      }
-
-      addToolState.isSaving = true;
-      setAddToolMessage("Сохраняем данные...", { tone: "info" });
-
       try {
-        if (!addToolState.orgFolder) {
-          const orgResolution = await resolveAddToolOrganization();
-          if (orgResolution?.orgFolder) {
-            addToolState.organizationName = orgResolution.organizationName;
-            addToolState.orgFolder = orgResolution.orgFolder;
-          } else if (orgResolution?.issues?.length) {
-            reportAddToolIssue(
-              ["Не удалось сохранить инструмент.", ...orgResolution.issues],
-              { asList: true }
-            );
-            return;
-          }
+        if (addToolState.isSaving) {
+          setAddToolMessage("Сохранение уже выполняется. Подождите…", {
+            tone: "info",
+          });
+          scrollAddToolFooterIntoView();
+          return;
         }
-        if (!addToolState.orgFolder) {
-          reportAddToolIssue(
-            "Не удалось определить папку организации. Проверьте users.json и organizations.json."
+        setAddToolMessage("Проверяем данные...", { tone: "info" });
+        const formData = new FormData(addToolFormEl);
+        const accountingNumber = normalizeSuggestionValue(
+          formData.get("tool-accounting-number")
+        );
+        const toolName = normalizeSuggestionValue(formData.get("tool-name"));
+        const manufacturer = normalizeSuggestionValue(
+          formData.get("tool-manufacturer")
+        );
+        const model = normalizeSuggestionValue(formData.get("tool-model"));
+        const accountingName = normalizeSuggestionValue(
+          formData.get("tool-accounting-name")
+        );
+        const costValue = normalizeCostValue(formData.get("tool-cost"));
+        const responsibleRaw = normalizeSuggestionValue(
+          formData.get("tool-responsible")
+        );
+        const objectRaw = normalizeSuggestionValue(formData.get("tool-object"));
+        const serialNumber = normalizeSuggestionValue(
+          formData.get("tool-serial-number")
+        );
+        const groupRaw = normalizeSuggestionValue(formData.get("tool-group"));
+        const invoiceFile = formData.get("tool-invoice");
+
+        const errors = [];
+        let focusTarget = null;
+        const invalidTargets = new Set();
+        const pushError = (message, target) => {
+          errors.push(message);
+          if (!focusTarget && target) {
+            focusTarget = target;
+          }
+          if (target) {
+            invalidTargets.add(target);
+          }
+        };
+
+        if (!toolName) {
+          pushError("Введите наименование.", addToolNameInput);
+        }
+        if (!manufacturer) {
+          pushError("Введите производителя.", addToolManufacturerInput);
+        }
+        if (!model) {
+          pushError("Введите модель.", addToolModelInput);
+        }
+        if (costValue === null) {
+          pushError("Введите корректную стоимость.", addToolCostInput);
+        }
+
+        if (!addToolState.responsibleOptions.length) {
+          pushError("В организации нет ответственных.", addToolResponsibleInput);
+        }
+        const responsible = findOptionMatch(
+          responsibleRaw,
+          addToolState.responsibleOptions
+        );
+        if (addToolState.responsibleOptions.length && !responsible) {
+          pushError(
+            "Выберите ответственного из списка.",
+            addToolResponsibleInput
           );
+        }
+
+        if (!addToolState.objectOptions.length) {
+          pushError("В организации нет объектов.", addToolObjectInput);
+        }
+        const objectName = findOptionMatch(
+          objectRaw,
+          addToolState.objectOptions
+        );
+        if (addToolState.objectOptions.length && !objectName) {
+          pushError("Выберите объект из списка.", addToolObjectInput);
+        }
+
+        if (!addToolState.groupOptions.length) {
+          pushError("В организации нет групп инструментов.", addToolGroupInput);
+        }
+        const groupName = findOptionMatch(
+          groupRaw,
+          addToolState.groupOptions
+        );
+        if (addToolState.groupOptions.length && !groupName) {
+          pushError(
+            "Выберите группу инструментов из списка.",
+            addToolGroupInput
+          );
+        }
+
+        if (!(invoiceFile instanceof File) || invoiceFile.size === 0) {
+          pushError("Прикрепите накладную.", addToolInvoiceInput);
+        }
+
+        if (errors.length) {
+          clearAddToolFieldErrors();
+          invalidTargets.forEach((target) => markAddToolFieldError(target));
+          reportAddToolIssue(errors, { asList: true });
+          focusTarget?.focus();
           return;
         }
 
-        const dateValue = formatDateValue(new Date());
-        const toolNumber = buildNextToolNumber(addToolState.tools);
-        const invoiceName = buildInvoiceFileName(
-          toolNumber,
-          dateValue,
-          invoiceFile.name
-        );
-        const invoiceContent = await readFileAsBase64(invoiceFile);
-        const orgFolder = addToolState.orgFolder;
-        const toolsPath = `./${orgFolder}/База с инструментами.json`;
-        const invoicePath = `./${orgFolder}/Накладные покупка/${invoiceName}`;
+        addToolState.isSaving = true;
+        setAddToolMessage("Сохраняем данные...", { tone: "info" });
 
-        const nextTool = {
-          "Номер": toolNumber,
-          "Бух.номер": accountingNumber,
-          "Наименование": toolName,
-          "Производитель": manufacturer,
-          "Модель": model,
-          "Наименование по бухгалтерии": accountingName,
-          "Стоимость": costValue,
-          "Дата покупки": dateValue,
-          "Ответственный": responsible,
-          "Объект": objectName,
-          "Серийный номер": serialNumber,
-          "Граппа инструментов": groupName,
-          "Статус": "Рабочий",
-          "Количество фото": 0,
-        };
-
-        const updatedTools = [...addToolState.tools, nextTool];
-        const meta = buildUploadUserMeta();
-        const saveResponseText = await saveEntriesViaEndpoint([
-          {
-            type: "file",
-            path: invoicePath,
-            content: invoiceContent,
-            encoding: "base64",
-            mime: invoiceFile.type || "application/octet-stream",
-            ...meta,
-          },
-          {
-            path: toolsPath,
-            data: updatedTools,
-            ...meta,
-          },
-        ]);
-
-        addToolState.tools = updatedTools;
-        const successMessage = `Данные о новой позиции сохранены, ему присвоен номер ${toolNumber}.`;
-        const responseSuffix = buildSaveResponseSuffix(saveResponseText);
-        setAddToolMessage(`${successMessage}${responseSuffix}`, {
-          tone: "success",
-        });
-        addToolFormEl.reset();
-        window.alert(successMessage);
-      } catch (error) {
-        console.error(error);
-        const rawMessage = String(error?.message ?? "").trim();
-        let normalizedMessage = rawMessage;
-        if (rawMessage) {
-          try {
-            const parsed = JSON.parse(rawMessage);
-            normalizedMessage =
-              parsed?.error ??
-              parsed?.message ??
-              (typeof parsed === "string" ? parsed : rawMessage);
-          } catch (parseError) {
-            // keep raw text if it's not JSON
+        try {
+          if (!addToolState.orgFolder) {
+            const orgResolution = await resolveAddToolOrganization();
+            if (orgResolution?.orgFolder) {
+              addToolState.organizationName = orgResolution.organizationName;
+              addToolState.orgFolder = orgResolution.orgFolder;
+            } else if (orgResolution?.issues?.length) {
+              reportAddToolIssue(
+                ["Не удалось сохранить инструмент.", ...orgResolution.issues],
+                { asList: true }
+              );
+              return;
+            }
           }
+          if (!addToolState.orgFolder) {
+            reportAddToolIssue(
+              "Не удалось определить папку организации. Проверьте users.json и organizations.json."
+            );
+            return;
+          }
+
+          const dateValue = formatDateValue(new Date());
+          const toolNumber = buildNextToolNumber(addToolState.tools);
+          const invoiceName = buildInvoiceFileName(
+            toolNumber,
+            dateValue,
+            invoiceFile.name
+          );
+          const invoiceContent = await readFileAsBase64(invoiceFile);
+          const orgFolder = addToolState.orgFolder;
+          const toolsPath = `./${orgFolder}/База с инструментами.json`;
+          const invoicePath = `./${orgFolder}/Накладные покупка/${invoiceName}`;
+
+          const nextTool = {
+            "Номер": toolNumber,
+            "Бух.номер": accountingNumber,
+            "Наименование": toolName,
+            "Производитель": manufacturer,
+            "Модель": model,
+            "Наименование по бухгалтерии": accountingName,
+            "Стоимость": costValue,
+            "Дата покупки": dateValue,
+            "Ответственный": responsible,
+            "Объект": objectName,
+            "Серийный номер": serialNumber,
+            "Граппа инструментов": groupName,
+            "Статус": "Рабочий",
+            "Количество фото": 0,
+          };
+
+          const updatedTools = [...addToolState.tools, nextTool];
+          const meta = buildUploadUserMeta();
+          const saveResponseText = await saveEntriesViaEndpoint([
+            {
+              type: "file",
+              path: invoicePath,
+              content: invoiceContent,
+              encoding: "base64",
+              mime: invoiceFile.type || "application/octet-stream",
+              ...meta,
+            },
+            {
+              path: toolsPath,
+              data: updatedTools,
+              ...meta,
+            },
+          ]);
+
+          addToolState.tools = updatedTools;
+          const successMessage = `Данные о новой позиции сохранены, ему присвоен номер ${toolNumber}.`;
+          const responseSuffix = buildSaveResponseSuffix(saveResponseText);
+          setAddToolMessage(`${successMessage}${responseSuffix}`, {
+            tone: "success",
+          });
+          addToolFormEl.reset();
+          window.alert(successMessage);
+        } catch (error) {
+          console.error(error);
+          const rawMessage = String(error?.message ?? "").trim();
+          let normalizedMessage = rawMessage;
+          if (rawMessage) {
+            try {
+              const parsed = JSON.parse(rawMessage);
+              normalizedMessage =
+                parsed?.error ??
+                parsed?.message ??
+                (typeof parsed === "string" ? parsed : rawMessage);
+            } catch (parseError) {
+              // keep raw text if it's not JSON
+            }
+          }
+          const errorSuffix = normalizedMessage
+            ? `Причина: ${normalizedMessage}.`
+            : "Проверьте сервер.";
+          reportAddToolIssue(
+            `Не удалось сохранить инструмент. ${errorSuffix}`.trim()
+          );
+        } finally {
+          addToolState.isSaving = false;
         }
-        const errorSuffix = normalizedMessage
-          ? `Причина: ${normalizedMessage}.`
-          : "Проверьте сервер.";
-        reportAddToolIssue(
-          `Не удалось сохранить инструмент. ${errorSuffix}`.trim()
-        );
-      } finally {
+      } catch (error) {
+        console.error("Ошибка формы новой МТЦ.", error);
         addToolState.isSaving = false;
+        const rawMessage = String(error?.message ?? "").trim();
+        const errorSuffix = rawMessage
+          ? `Причина: ${rawMessage}.`
+          : "Проверьте консоль.";
+        reportAddToolIssue(
+          `Ошибка при обработке формы. ${errorSuffix}`.trim()
+        );
       }
     });
   }

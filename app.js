@@ -2468,6 +2468,21 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     return Number.isFinite(parsed) ? parsed : null;
   };
 
+  const sanitizePhotoFileName = (name = "") => {
+    const trimmed = String(name).trim();
+    const cleaned = trimmed.replace(/[\\/:"*?<>|]+/g, "_");
+    return cleaned.replace(/\s+/g, " ").trim();
+  };
+
+  const buildRandomSuffix = (length = 3) => {
+    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    let result = "";
+    for (let index = 0; index < length; index += 1) {
+      result += chars[Math.floor(Math.random() * chars.length)];
+    }
+    return result;
+  };
+
   const buildCommonSuggestions = (values, limit = 6) => {
     const counts = new Map();
     values.forEach((value) => {
@@ -2718,7 +2733,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const extension = originalName.includes(".")
       ? originalName.split(".").pop()
       : "";
-    const randomSuffix = Math.floor(100 + Math.random() * 900);
+    const randomSuffix = buildRandomSuffix(3);
     const baseName = `${toolNumber}_${dateValue}_${randomSuffix}`;
     const rawName = extension ? `${baseName}.${extension}` : baseName;
     return sanitizePhotoFileName(rawName);
@@ -4902,12 +4917,6 @@ function setupSuperAdmin() {
         organization: selectedOrgName || currentUser?.organization || "",
       },
     };
-  };
-
-  const sanitizePhotoFileName = (name = "") => {
-    const trimmed = String(name).trim();
-    const cleaned = trimmed.replace(/[\\/:"*?<>|]+/g, "_");
-    return cleaned.replace(/\s+/g, " ").trim();
   };
 
   const normalizeToolNumberValue = (value) => {

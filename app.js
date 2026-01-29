@@ -660,6 +660,25 @@ async function saveJson(path, data, meta = {}) {
   return saveEntries([{ path, data, ...meta }]);
 }
 
+function readFileAsBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result;
+      if (typeof result !== "string") {
+        reject(new Error("Некорректные данные файла."));
+        return;
+      }
+      const base64 = result.split(",")[1] ?? "";
+      resolve(base64);
+    };
+    reader.onerror = () => {
+      reject(reader.error || new Error("Не удалось прочитать файл."));
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
 function isDefaultEnergyLayout(layout, actions) {
   if (!Array.isArray(layout) || layout.length === 0) return true;
   const hasGroup = layout.some((item) => item?.type === "group");
@@ -4995,25 +5014,6 @@ function setupSuperAdmin() {
       console.warn("Не удалось загрузить базу инструментов.", error);
     }
     return [];
-  }
-
-  function readFileAsBase64(file) {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => {
-        const result = reader.result;
-        if (typeof result !== "string") {
-          reject(new Error("Некорректные данные файла."));
-          return;
-        }
-        const base64 = result.split(",")[1] ?? "";
-        resolve(base64);
-      };
-      reader.onerror = () => {
-        reject(reader.error || new Error("Не удалось прочитать файл."));
-      };
-      reader.readAsDataURL(file);
-    });
   }
 
   const uploadPhotoEntriesInBatches = async (

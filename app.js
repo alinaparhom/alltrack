@@ -2799,21 +2799,36 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
   const getToolValues = (
     key,
-    { nameFilter = "", manufacturerFilter = "" } = {}
+    {
+      nameFilter = "",
+      manufacturerFilter = "",
+      nameMatchMode = "startsWith",
+      manufacturerMatchMode = "startsWith",
+    } = {}
   ) => {
     const normalizedName = normalizeSuggestionValue(nameFilter).toLowerCase();
     const normalizedManufacturer =
       normalizeSuggestionValue(manufacturerFilter).toLowerCase();
-    const matchesFilter = (value, filter) => {
+    const matchesFilter = (value, filter, mode = "startsWith") => {
       if (!filter) return true;
       const normalizedValue = normalizeSuggestionValue(value).toLowerCase();
+      if (mode === "equals") return normalizedValue === filter;
+      if (mode === "includes") return normalizedValue.includes(filter);
       return normalizedValue.startsWith(filter);
     };
     return addToolState.tools
       .filter((tool) => {
         if (
-          !matchesFilter(tool?.["Наименование"] ?? "", normalizedName) ||
-          !matchesFilter(tool?.["Производитель"] ?? "", normalizedManufacturer)
+          !matchesFilter(
+            tool?.["Наименование"] ?? "",
+            normalizedName,
+            nameMatchMode
+          ) ||
+          !matchesFilter(
+            tool?.["Производитель"] ?? "",
+            normalizedManufacturer,
+            manufacturerMatchMode
+          )
         ) {
           return false;
         }
@@ -2829,8 +2844,17 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   };
 
   const getToolManufacturerSuggestions = (query) => {
+    const rawName = addToolNameInput?.value ?? "";
+    const normalizedName = normalizeSuggestionValue(rawName).toLowerCase();
+    const hasExactNameMatch = normalizedName
+      ? addToolState.tools.some((tool) => {
+          const name = normalizeSuggestionValue(tool?.["Наименование"] ?? "");
+          return name.toLowerCase() === normalizedName;
+        })
+      : false;
     const values = getToolValues("Производитель", {
-      nameFilter: addToolNameInput?.value ?? "",
+      nameFilter: rawName,
+      nameMatchMode: hasExactNameMatch ? "equals" : "startsWith",
     });
     if (!normalizeSuggestionValue(query)) {
       return buildCommonSuggestions(values, 6);
@@ -2864,6 +2888,27 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     getItems: getToolManufacturerSuggestions,
     showOnFocus: true,
   });
+
+  const refreshManufacturerSuggestions = () => {
+    if (!addToolManufacturerInput || !addToolManufacturerSuggestionsEl) return;
+    if (
+      !addToolManufacturerInput.value.trim() &&
+      document.activeElement !== addToolManufacturerInput
+    ) {
+      addToolManufacturerSuggestionsEl.classList.add("is-hidden");
+      return;
+    }
+    const items = getToolManufacturerSuggestions(
+      addToolManufacturerInput.value
+    );
+    renderSuggestions(
+      addToolManufacturerSuggestionsEl,
+      items,
+      addToolManufacturerInput
+    );
+  };
+
+  addToolNameInput?.addEventListener("input", refreshManufacturerSuggestions);
 
   attachDynamicSuggestions({
     inputEl: addToolModelInput,

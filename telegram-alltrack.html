@@ -1778,6 +1778,7 @@
       }
 
       .add-tool-modal .settings-modal__footer {
+        align-items: center;
         position: static;
         padding: 12px 0 calc(12px + env(safe-area-inset-bottom));
         margin-top: 10px;
@@ -1786,6 +1787,22 @@
         border-top: 1px solid rgba(226, 232, 240, 0.8);
         backdrop-filter: none;
         z-index: auto;
+      }
+
+      .add-tool-modal__actions {
+        display: flex;
+        gap: 6px;
+        flex: 0 0 auto;
+      }
+
+      .form-message--inline {
+        flex: 1 1 220px;
+        min-width: 160px;
+        padding: 6px 0;
+      }
+
+      .form-message--inline .form-message__list {
+        padding-left: 18px;
       }
 
       .add-tool-modal .settings-modal__footer .action-primary,

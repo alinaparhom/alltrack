@@ -2627,6 +2627,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const name = String(tool?.["Наименование"] ?? "").trim();
     const manufacturer = String(tool?.["Производитель"] ?? "").trim();
     const model = String(tool?.["Модель"] ?? "").trim();
+    const accountingNumber = String(tool?.["Бух.номер"] ?? "").trim();
     const photoCount = Number.parseInt(tool?.["Количество фото"] ?? 0, 10);
     const hasPhoto = Number.isFinite(photoCount) && photoCount > 0;
     const isCompactMobile =
@@ -2652,6 +2653,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const meta = document.createElement("div");
       meta.className = "tools-row__meta";
       meta.textContent = [
+        accountingNumber,
         tool?.["Граппа инструментов"],
         tool?.["Статус"],
         tool?.["Объект"],

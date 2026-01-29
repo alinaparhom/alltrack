@@ -2451,6 +2451,16 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   };
 
   const normalizeSuggestionValue = (value = "") => String(value ?? "").trim();
+  const normalizeCostValue = (value) => {
+    if (typeof value === "number" && Number.isFinite(value)) {
+      return value;
+    }
+    const raw = String(value ?? "")
+      .replace(/\s+/g, "")
+      .replace(",", ".");
+    const parsed = Number(raw);
+    return Number.isFinite(parsed) ? parsed : null;
+  };
 
   const buildCommonSuggestions = (values, limit = 6) => {
     const counts = new Map();
@@ -5025,17 +5035,6 @@ function setupSuperAdmin() {
       }
     }
     return String(value).trim();
-  };
-
-  const normalizeCostValue = (value) => {
-    if (typeof value === "number" && Number.isFinite(value)) {
-      return value;
-    }
-    const raw = String(value ?? "")
-      .replace(/\s+/g, "")
-      .replace(",", ".");
-    const parsed = Number(raw);
-    return Number.isFinite(parsed) ? parsed : null;
   };
 
   const pluralize = (count, one, few, many) => {

@@ -342,9 +342,23 @@ export function renderRole(user) {
                       type="file"
                       name="tool-invoice"
                       accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                      required
                     />
-                    <span class="form-hint">Необходимо прикрепить накладную.</span>
+                    <span class="form-hint">
+                      Можно выбрать файл или сделать фото накладной.
+                    </span>
+                  </label>
+                  <label class="form-field form-field--required">
+                    <span class="form-label">Фото накладной</span>
+                    <input
+                      class="form-input"
+                      type="file"
+                      name="tool-invoice-photo"
+                      accept="image/*"
+                      capture="environment"
+                    />
+                    <span class="form-hint">
+                      Камера откроется на мобильных устройствах.
+                    </span>
                   </label>
                 </div>
               </div>

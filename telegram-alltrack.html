@@ -2349,9 +2349,12 @@
         grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
       }
 
-      .tools-list.is-compact .tools-card,
+      .tools-list.is-compact .tools-card {
+        border-radius: 0;
+      }
+
       .tools-list.is-compact .tools-card__media {
-        border-radius: 18px;
+        border-radius: 0;
       }
 
       .tools-card {
@@ -2525,20 +2528,19 @@
         }
 
         .tools-controls {
-          gap: 2px;
+          gap: 4px;
         }
 
         .tools-controls__row {
           flex-direction: column;
           align-items: stretch;
-          gap: 4px;
+          gap: 6px;
         }
 
         .tools-actions {
           justify-content: space-between;
           flex-wrap: nowrap;
           width: 100%;
-          margin-top: 0;
         }
 
         .tools-filters-toggle {
@@ -2563,10 +2565,6 @@
 
         .tools-list.is-compact {
           grid-template-columns: repeat(3, minmax(0, 1fr));
-        }
-
-        .tools-list.is-compact .tools-card {
-          min-height: 0;
         }
 
         .tools-list.is-compact .tools-card__media {

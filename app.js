@@ -2629,16 +2629,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const model = String(tool?.["Модель"] ?? "").trim();
     const photoCount = Number.parseInt(tool?.["Количество фото"] ?? 0, 10);
     const hasPhoto = Number.isFinite(photoCount) && photoCount > 0;
-    const isCompactMobile =
-      viewMode === "compact" &&
-      typeof window !== "undefined" &&
-      window.matchMedia &&
-      window.matchMedia("(max-width: 520px)").matches;
     const numberLine = number || "Без номера";
     const lineParts = [number, name, manufacturer, model].filter(Boolean);
     const fullLine = lineParts.join(" ");
-    const infoLine = isCompactMobile ? numberLine : fullLine;
-    const bodyLine = isCompactMobile ? numberLine : infoLine;
+    const infoLine = viewMode === "compact" ? numberLine : fullLine;
 
     if (viewMode === "list") {
       const row = document.createElement("div");
@@ -2651,8 +2645,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       title.textContent = infoLine || "Без названия";
       const meta = document.createElement("div");
       meta.className = "tools-row__meta";
+      const accountingNumber = tool?.["Бух.номер"];
       meta.textContent = [
         tool?.["Граппа инструментов"],
+        accountingNumber
+          ? `Бух.номер ${String(accountingNumber).trim()}`
+          : null,
         tool?.["Статус"],
         tool?.["Объект"],
       ]
@@ -2711,17 +2709,18 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       media.appendChild(badge);
     }
 
-    if (viewMode === "large" || isCompactMobile) {
+    if (viewMode === "large" || viewMode === "compact") {
       const overlay = document.createElement("div");
-      overlay.className = isCompactMobile
-        ? "tools-card__overlay tools-card__overlay--compact"
-        : "tools-card__overlay";
+      overlay.className =
+        viewMode === "compact"
+          ? "tools-card__overlay tools-card__overlay--compact"
+          : "tools-card__overlay";
       const title = document.createElement("div");
       title.className = "tools-card__title";
       title.textContent = infoLine || "Без названия";
       overlay.appendChild(title);
       media.appendChild(overlay);
-      if (viewMode === "large" || isCompactMobile) {
+      if (viewMode === "large" || viewMode === "compact") {
         card.appendChild(media);
         return card;
       }
@@ -2731,7 +2730,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     body.className = "tools-card__body";
     const title = document.createElement("div");
     title.className = "tools-card__title";
-    title.textContent = bodyLine || "Без названия";
+    title.textContent = infoLine || "Без названия";
     body.appendChild(title);
     card.append(media, body);
     return card;

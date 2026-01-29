@@ -2638,7 +2638,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const lineParts = [number, name, manufacturer, model].filter(Boolean);
     const fullLine = lineParts.join(" ");
     const infoLine = isCompactMobile ? numberLine : fullLine;
-    const bodyLine = isCompactMobile ? name || numberLine : infoLine;
+    const bodyLine = isCompactMobile ? numberLine : infoLine;
 
     if (viewMode === "list") {
       const row = document.createElement("div");
@@ -2721,7 +2721,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       title.textContent = infoLine || "Без названия";
       overlay.appendChild(title);
       media.appendChild(overlay);
-      if (viewMode === "large") {
+      if (viewMode === "large" || isCompactMobile) {
         card.appendChild(media);
         return card;
       }

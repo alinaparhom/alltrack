@@ -416,7 +416,9 @@
       body[data-theme="dark"] .tools-card,
       body[data-theme="dark"] .tools-view-button,
       body[data-theme="dark"] .tools-search__input,
-      body[data-theme="dark"] .tools-filter .form-input {
+      body[data-theme="dark"] .tools-filter .form-input,
+      body[data-theme="dark"] .tools-filters-toggle,
+      body[data-theme="dark"] .tools-filters {
         background: rgba(18, 26, 46, 0.9);
         border-color: rgba(148, 170, 210, 0.3);
       }
@@ -2197,9 +2199,17 @@
         gap: 10px;
       }
 
+      .tools-controls__row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
       .tools-search {
         position: relative;
         display: grid;
+        flex: 1 1 260px;
       }
 
       .tools-search__icon {
@@ -2215,10 +2225,45 @@
         padding-left: 38px;
       }
 
+      .tools-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .tools-filters-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        border-radius: 999px;
+        padding: 6px 12px;
+        border: 1px solid rgba(226, 232, 240, 0.9);
+        background: rgba(255, 255, 255, 0.86);
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text);
+        cursor: pointer;
+        transition: all 0.2s ease;
+        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+      }
+
+      .tools-filters-toggle:hover {
+        transform: translateY(-1px);
+      }
+
+      .tools-filters-toggle__label {
+        display: inline-flex;
+      }
+
       .tools-filters {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
         gap: 8px;
+        padding: 8px;
+        border-radius: 16px;
+        background: rgba(248, 250, 255, 0.7);
+        border: 1px solid rgba(226, 232, 240, 0.7);
       }
 
       .tools-filter {
@@ -2273,6 +2318,10 @@
         gap: 10px;
         overflow: auto;
         padding-bottom: 12px;
+      }
+
+      .tools-list.is-list {
+        gap: 8px;
       }
 
       .tools-list.is-large {
@@ -2367,13 +2416,25 @@
       .tools-row {
         display: grid;
         grid-template-columns: 1fr auto;
-        gap: 8px;
+        gap: 10px;
         align-items: center;
-        padding: 10px 12px;
-        border-radius: 14px;
+        padding: 12px 14px;
+        border-radius: 16px;
         border: 1px solid rgba(226, 232, 240, 0.9);
-        background: rgba(255, 255, 255, 0.82);
-        box-shadow: 0 8px 18px rgba(15, 23, 42, 0.05);
+        background: linear-gradient(
+          120deg,
+          rgba(255, 255, 255, 0.92),
+          rgba(240, 246, 255, 0.85)
+        );
+        box-shadow: 0 12px 24px rgba(15, 23, 42, 0.08);
+        cursor: pointer;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        min-height: 72px;
+      }
+
+      .tools-row:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 16px 30px rgba(15, 23, 42, 0.12);
       }
 
       .tools-row__main {
@@ -2382,7 +2443,7 @@
       }
 
       .tools-row__title {
-        font-size: 13px;
+        font-size: 14px;
         font-weight: 700;
         color: var(--text);
       }
@@ -2417,9 +2478,46 @@
           border-radius: 0;
         }
 
+        .tools-controls {
+          gap: 8px;
+        }
+
+        .tools-controls__row {
+          flex-direction: column;
+          align-items: stretch;
+        }
+
+        .tools-actions {
+          justify-content: space-between;
+        }
+
+        .tools-filters-toggle {
+          width: 100%;
+          justify-content: center;
+        }
+
+        .tools-filters {
+          display: none;
+          grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+          padding: 10px;
+        }
+
+        .tools-filters.is-open {
+          display: grid;
+        }
+
         .tools-list.is-large,
         .tools-list.is-compact {
           grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+        }
+
+        .tools-row {
+          padding: 12px;
+          border-radius: 14px;
+        }
+
+        .tools-row__title {
+          font-size: 13px;
         }
       }
 

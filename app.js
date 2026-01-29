@@ -5541,13 +5541,22 @@ function setupSuperAdmin() {
 
   const uploadPhotoEntriesInBatches = async (
     entries,
-    { onBatch, batchSize = 6 } = {}
+    { onBatch, batchSize = 2 } = {}
   ) => {
     if (!entries.length) return;
     const totalBatches = Math.ceil(entries.length / batchSize);
     for (let index = 0; index < totalBatches; index += 1) {
       const batch = entries.slice(index * batchSize, (index + 1) * batchSize);
-      await saveEntriesViaEndpoint(batch);
+      try {
+        await saveEntriesViaEndpoint(batch);
+      } catch (error) {
+        if (batch.length === 1) {
+          throw error;
+        }
+        for (const entry of batch) {
+          await saveEntriesViaEndpoint([entry]);
+        }
+      }
       if (onBatch) {
         onBatch(index + 1, totalBatches);
       }

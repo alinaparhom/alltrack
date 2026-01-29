@@ -204,16 +204,6 @@ export function renderRole(user) {
                     />
                   </label>
                   <div class="tools-actions">
-                    <button
-                      class="tools-filters-toggle"
-                      type="button"
-                      data-tools-filters-toggle
-                      aria-expanded="false"
-                      aria-controls="tools-filters-panel"
-                    >
-                      <span aria-hidden="true">⚙️</span>
-                      <span class="tools-filters-toggle__label">Фильтры</span>
-                    </button>
                     <div
                       class="tools-view-toggle"
                       role="group"
@@ -241,6 +231,25 @@ export function renderRole(user) {
                         Список
                       </button>
                     </div>
+                    <button
+                      class="tools-filters-toggle"
+                      type="button"
+                      data-tools-filters-toggle
+                      aria-expanded="false"
+                      aria-controls="tools-filters-panel"
+                      aria-label="Фильтры"
+                    >
+                      <svg
+                        class="tools-filters-toggle__icon"
+                        aria-hidden="true"
+                        viewBox="0 0 24 24"
+                        focusable="false"
+                      >
+                        <path
+                          d="M3 5.5a1 1 0 0 1 1-1h16a1 1 0 0 1 .8 1.6L14 13.5v4.1a1 1 0 0 1-1.5.86l-3-1.8a1 1 0 0 1-.5-.86v-2.7L3.2 6.1a1 1 0 0 1-.2-.6z"
+                        />
+                      </svg>
+                    </button>
                   </div>
                 </div>
                 <div class="tools-filters" id="tools-filters-panel" data-tools-filters-panel>

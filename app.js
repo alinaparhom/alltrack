@@ -2634,10 +2634,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       typeof window !== "undefined" &&
       window.matchMedia &&
       window.matchMedia("(max-width: 520px)").matches;
+    const numberLine = number || "Без номера";
     const lineParts = [number, name, manufacturer, model].filter(Boolean);
-    const infoLine = isCompactMobile
-      ? number || "Без номера"
-      : lineParts.join(" ");
+    const fullLine = lineParts.join(" ");
+    const infoLine = isCompactMobile ? numberLine : fullLine;
+    const bodyLine = isCompactMobile ? name || numberLine : infoLine;
 
     if (viewMode === "list") {
       const row = document.createElement("div");
@@ -2710,23 +2711,27 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       media.appendChild(badge);
     }
 
-    if (viewMode === "large") {
+    if (viewMode === "large" || isCompactMobile) {
       const overlay = document.createElement("div");
-      overlay.className = "tools-card__overlay";
+      overlay.className = isCompactMobile
+        ? "tools-card__overlay tools-card__overlay--compact"
+        : "tools-card__overlay";
       const title = document.createElement("div");
       title.className = "tools-card__title";
       title.textContent = infoLine || "Без названия";
       overlay.appendChild(title);
       media.appendChild(overlay);
-      card.appendChild(media);
-      return card;
+      if (viewMode === "large") {
+        card.appendChild(media);
+        return card;
+      }
     }
 
     const body = document.createElement("div");
     body.className = "tools-card__body";
     const title = document.createElement("div");
     title.className = "tools-card__title";
-    title.textContent = infoLine || "Без названия";
+    title.textContent = bodyLine || "Без названия";
     body.appendChild(title);
     card.append(media, body);
     return card;
@@ -2902,7 +2907,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     document.body.style.overflow = "hidden";
     setToolsSubtitle("Загружаем список...");
     await loadUserTools();
-    if (toolsSearchInput) {
+    if (
+      toolsSearchInput &&
+      (typeof window === "undefined" ||
+        !window.matchMedia ||
+        !window.matchMedia("(max-width: 520px)").matches)
+    ) {
       toolsSearchInput.focus();
     }
   };
@@ -2910,6 +2920,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const closeToolsModal = () => {
     if (!toolsModalEl) return;
     toolsModalEl.classList.add("is-hidden");
+    toolsModalEl.classList.remove("tools-modal--searching");
     document.body.style.overflow = "";
   };
 
@@ -2929,6 +2940,23 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     toolsSearchInput.addEventListener("input", (event) => {
       toolsState.search = String(event.target.value ?? "").toLowerCase();
       applyToolsFilters();
+    });
+    const setMobileSearchActive = (isActive) => {
+      if (
+        !toolsModalEl ||
+        typeof window === "undefined" ||
+        !window.matchMedia ||
+        !window.matchMedia("(max-width: 520px)").matches
+      ) {
+        return;
+      }
+      toolsModalEl.classList.toggle("tools-modal--searching", isActive);
+    };
+    toolsSearchInput.addEventListener("focus", () => {
+      setMobileSearchActive(true);
+    });
+    toolsSearchInput.addEventListener("blur", () => {
+      setMobileSearchActive(false);
     });
   }
 

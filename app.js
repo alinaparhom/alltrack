@@ -2533,6 +2533,15 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
     addToolMessageEl.textContent = message;
   };
+  const scrollAddToolFooterIntoView = () => {
+    const footerEl = addToolFormEl?.querySelector(".settings-modal__footer");
+    if (!footerEl) return;
+    footerEl.scrollIntoView({ behavior: "smooth", block: "end" });
+  };
+  const reportAddToolIssue = (message, { asList = false } = {}) => {
+    setAddToolMessage(message, { tone: "error", asList });
+    scrollAddToolFooterIntoView();
+  };
 
   const clearAddToolFieldErrors = () => {
     addToolFormEl
@@ -2806,12 +2815,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         );
       const resolution = await resolveAddToolOrganization();
       if (resolution.issues.length) {
-        setAddToolMessage(
+        reportAddToolIssue(
           buildAddToolErrorMessage(
             resolution.issues,
             "Не удалось определить организацию пользователя."
           ),
-          { tone: "error" }
+          { asList: false }
         );
         return;
       }
@@ -2880,9 +2889,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         missingSources.push("Не удалось загрузить organizations.json.");
       }
       if (missingSources.length) {
-        setAddToolMessage(buildAddToolErrorMessage(missingSources), {
-          tone: "error",
-        });
+        reportAddToolIssue(buildAddToolErrorMessage(missingSources));
         return;
       }
 
@@ -2949,7 +2956,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         ? `Причина: ${String(error.message).trim()}.`
         : "";
       const issues = reason ? [reason] : [];
-      setAddToolMessage(buildAddToolErrorMessage(issues), { tone: "error" });
+      reportAddToolIssue(buildAddToolErrorMessage(issues));
     }
   };
 
@@ -3030,7 +3037,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
     addToolFormEl.addEventListener("submit", async (event) => {
       event.preventDefault();
-      if (addToolState.isSaving) return;
+      if (addToolState.isSaving) {
+        setAddToolMessage("Сохранение уже выполняется. Подождите…", {
+          tone: "info",
+        });
+        scrollAddToolFooterIntoView();
+        return;
+      }
       const formData = new FormData(addToolFormEl);
       const accountingNumber = normalizeSuggestionValue(
         formData.get("tool-accounting-number")
@@ -3120,7 +3133,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       if (errors.length) {
         clearAddToolFieldErrors();
         invalidTargets.forEach((target) => markAddToolFieldError(target));
-        setAddToolMessage(errors, { tone: "error", asList: true });
+        reportAddToolIssue(errors, { asList: true });
         focusTarget?.focus();
         return;
       }
@@ -3135,17 +3148,16 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
             addToolState.organizationName = orgResolution.organizationName;
             addToolState.orgFolder = orgResolution.orgFolder;
           } else if (orgResolution?.issues?.length) {
-            setAddToolMessage(
+            reportAddToolIssue(
               ["Не удалось сохранить инструмент.", ...orgResolution.issues],
-              { tone: "error", asList: true }
+              { asList: true }
             );
             return;
           }
         }
         if (!addToolState.orgFolder) {
-          setAddToolMessage(
-            "Не удалось определить папку организации. Проверьте users.json и organizations.json.",
-            { tone: "error" }
+          reportAddToolIssue(
+            "Не удалось определить папку организации. Проверьте users.json и organizations.json."
           );
           return;
         }
@@ -3220,9 +3232,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         const errorSuffix = normalizedMessage
           ? `Причина: ${normalizedMessage}.`
           : "Проверьте сервер.";
-        setAddToolMessage(
-          `Не удалось сохранить инструмент. ${errorSuffix}`.trim(),
-          { tone: "error" }
+        reportAddToolIssue(
+          `Не удалось сохранить инструмент. ${errorSuffix}`.trim()
         );
       } finally {
         addToolState.isSaving = false;

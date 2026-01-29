@@ -194,7 +194,6 @@ export function renderRole(user) {
               <div class="tools-controls">
                 <div class="tools-controls__row">
                   <label class="tools-search">
-                    <span class="tools-search__icon" aria-hidden="true">🔍</span>
                     <input
                       class="form-input tools-search__input"
                       type="search"

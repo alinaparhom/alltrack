@@ -1129,6 +1129,23 @@
         position: relative;
       }
 
+      .form-file-row {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+      }
+
+      .form-file-option {
+        display: grid;
+        gap: 6px;
+      }
+
+      .form-file-label {
+        font-size: 11px;
+        color: var(--muted);
+        font-weight: 600;
+      }
+
       .form-label {
         font-size: var(--text-sm);
         color: var(--title-muted);

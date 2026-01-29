@@ -1141,6 +1141,21 @@
         color: #3b7dff;
       }
 
+      .form-field--required .form-input {
+        border-color: rgba(59, 125, 255, 0.45);
+        background: rgba(59, 125, 255, 0.06);
+      }
+
+      .form-field.is-invalid .form-label {
+        color: #d64545;
+      }
+
+      .form-field.is-invalid .form-input {
+        border-color: rgba(214, 69, 69, 0.7);
+        background: rgba(255, 99, 99, 0.08);
+        box-shadow: 0 0 0 3px rgba(214, 69, 69, 0.15);
+      }
+
       .form-input {
         width: 100%;
         padding: 12px 14px;
@@ -1249,6 +1264,26 @@
         font-size: var(--text-sm);
         color: var(--accent);
         min-height: 18px;
+      }
+
+      .form-message.is-error {
+        color: #d64545;
+      }
+
+      .form-message.is-success {
+        color: #0f766e;
+      }
+
+      .form-message.is-info {
+        color: var(--accent);
+      }
+
+      .form-message__list {
+        list-style: disc;
+        margin: 0;
+        padding-left: 18px;
+        display: grid;
+        gap: 6px;
       }
 
       .registration-box {

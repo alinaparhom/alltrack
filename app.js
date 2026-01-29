@@ -1885,11 +1885,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     "#tool-manufacturer-input"
   );
   const addToolModelInput = contentEl.querySelector("#tool-model-input");
+  const addToolCostInput = contentEl.querySelector('[name="tool-cost"]');
   const addToolResponsibleInput = contentEl.querySelector(
     "#tool-responsible-input"
   );
   const addToolObjectInput = contentEl.querySelector("#tool-object-input");
   const addToolGroupInput = contentEl.querySelector("#tool-group-input");
+  const addToolInvoiceInput = contentEl.querySelector('[name="tool-invoice"]');
   const addToolNameSuggestionsEl = contentEl.querySelector(
     "[data-tool-name-suggestions]"
   );
@@ -2489,9 +2491,40 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     "middleNames"
   );
 
-  const setAddToolMessage = (message = "") => {
-    if (addToolMessageEl) {
-      addToolMessageEl.textContent = message;
+  const setAddToolMessage = (
+    message = "",
+    { tone = "info", asList = false } = {}
+  ) => {
+    if (!addToolMessageEl) return;
+    addToolMessageEl.classList.remove("is-error", "is-success", "is-info");
+    addToolMessageEl.classList.add(`is-${tone}`);
+    addToolMessageEl.innerHTML = "";
+    if (asList) {
+      const list = document.createElement("ul");
+      list.className = "form-message__list";
+      message
+        .filter(Boolean)
+        .forEach((item) => {
+          const listItem = document.createElement("li");
+          listItem.textContent = item;
+          list.appendChild(listItem);
+        });
+      addToolMessageEl.appendChild(list);
+      return;
+    }
+    addToolMessageEl.textContent = message;
+  };
+
+  const clearAddToolFieldErrors = () => {
+    addToolFormEl
+      ?.querySelectorAll(".form-field.is-invalid")
+      .forEach((field) => field.classList.remove("is-invalid"));
+  };
+
+  const markAddToolFieldError = (target) => {
+    const field = target?.closest?.(".form-field");
+    if (field) {
+      field.classList.add("is-invalid");
     }
   };
 
@@ -2611,7 +2644,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
   const resetAddToolForm = () => {
     addToolFormEl?.reset();
-    setAddToolMessage("");
+    setAddToolMessage("", { tone: "info" });
+    clearAddToolFieldErrors();
     addToolNameSuggestionsEl?.classList.add("is-hidden");
     addToolManufacturerSuggestionsEl?.classList.add("is-hidden");
     addToolModelSuggestionsEl?.classList.add("is-hidden");
@@ -2744,7 +2778,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   };
 
   const loadAddToolReferences = async () => {
-    setAddToolMessage("Загружаем данные...");
+    setAddToolMessage("Загружаем данные...", { tone: "info" });
     try {
       const settle = (promise) =>
         promise.then(
@@ -2757,7 +2791,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           buildAddToolErrorMessage(
             resolution.issues,
             "Не удалось определить организацию пользователя."
-          )
+          ),
+          { tone: "error" }
         );
         return;
       }
@@ -2826,7 +2861,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         missingSources.push("Не удалось загрузить organizations.json.");
       }
       if (missingSources.length) {
-        setAddToolMessage(buildAddToolErrorMessage(missingSources));
+        setAddToolMessage(buildAddToolErrorMessage(missingSources), {
+          tone: "error",
+        });
         return;
       }
 
@@ -2886,14 +2923,14 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       if (addToolSubtitleEl) {
         addToolSubtitleEl.textContent = "Заполните карточку инструмента";
       }
-      setAddToolMessage("");
+      setAddToolMessage("", { tone: "info" });
     } catch (error) {
       console.error(error);
       const reason = error?.message
         ? `Причина: ${String(error.message).trim()}.`
         : "";
       const issues = reason ? [reason] : [];
-      setAddToolMessage(buildAddToolErrorMessage(issues));
+      setAddToolMessage(buildAddToolErrorMessage(issues), { tone: "error" });
     }
   };
 
@@ -2960,6 +2997,18 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       }, 0);
     });
 
+    const clearFieldErrorOnInput = (event) => {
+      const target = event.target;
+      if (!(target instanceof HTMLElement)) return;
+      const field = target.closest(".form-field");
+      if (field?.classList.contains("is-invalid")) {
+        field.classList.remove("is-invalid");
+      }
+    };
+
+    addToolFormEl.addEventListener("input", clearFieldErrorOnInput);
+    addToolFormEl.addEventListener("change", clearFieldErrorOnInput);
+
     addToolFormEl.addEventListener("submit", async (event) => {
       event.preventDefault();
       if (addToolState.isSaving) return;
@@ -2988,10 +3037,14 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
       const errors = [];
       let focusTarget = null;
+      const invalidTargets = new Set();
       const pushError = (message, target) => {
         errors.push(message);
         if (!focusTarget && target) {
           focusTarget = target;
+        }
+        if (target) {
+          invalidTargets.add(target);
         }
       };
 
@@ -3005,11 +3058,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         pushError("Введите модель.", addToolModelInput);
       }
       if (costValue === null) {
-        pushError("Введите корректную стоимость.");
+        pushError("Введите корректную стоимость.", addToolCostInput);
       }
 
       if (!addToolState.responsibleOptions.length) {
-        pushError("В организации нет ответственных.");
+        pushError("В организации нет ответственных.", addToolResponsibleInput);
       }
       const responsible = findOptionMatch(
         responsibleRaw,
@@ -3020,7 +3073,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       }
 
       if (!addToolState.objectOptions.length) {
-        pushError("В организации нет объектов.");
+        pushError("В организации нет объектов.", addToolObjectInput);
       }
       const objectName = findOptionMatch(
         objectRaw,
@@ -3031,7 +3084,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       }
 
       if (!addToolState.groupOptions.length) {
-        pushError("В организации нет групп инструментов.");
+        pushError("В организации нет групп инструментов.", addToolGroupInput);
       }
       const groupName = findOptionMatch(
         groupRaw,
@@ -3042,17 +3095,19 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       }
 
       if (!(invoiceFile instanceof File) || invoiceFile.size === 0) {
-        pushError("Прикрепите накладную.");
+        pushError("Прикрепите накладную.", addToolInvoiceInput);
       }
 
       if (errors.length) {
-        setAddToolMessage(errors.join(" "));
+        clearAddToolFieldErrors();
+        invalidTargets.forEach((target) => markAddToolFieldError(target));
+        setAddToolMessage(errors, { tone: "error", asList: true });
         focusTarget?.focus();
         return;
       }
 
       addToolState.isSaving = true;
-      setAddToolMessage("Сохраняем данные...");
+      setAddToolMessage("Сохраняем данные...", { tone: "info" });
 
       try {
         if (!addToolState.orgFolder) {
@@ -3062,17 +3117,16 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
             addToolState.orgFolder = orgResolution.orgFolder;
           } else if (orgResolution?.issues?.length) {
             setAddToolMessage(
-              buildAddToolErrorMessage(
-                orgResolution.issues,
-                "Не удалось сохранить инструмент."
-              )
+              ["Не удалось сохранить инструмент.", ...orgResolution.issues],
+              { tone: "error", asList: true }
             );
             return;
           }
         }
         if (!addToolState.orgFolder) {
           setAddToolMessage(
-            "Не удалось определить папку организации. Проверьте users.json и organizations.json."
+            "Не удалось определить папку организации. Проверьте users.json и organizations.json.",
+            { tone: "error" }
           );
           return;
         }
@@ -3126,7 +3180,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
         addToolState.tools = updatedTools;
         const successMessage = `Данные о новой позиции сохранены, ему присвоен номер ${toolNumber}.`;
-        setAddToolMessage(successMessage);
+        setAddToolMessage(successMessage, { tone: "success" });
         addToolFormEl.reset();
         window.alert(successMessage);
       } catch (error) {
@@ -3135,7 +3189,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           ? `Причина: ${String(error.message).trim()}.`
           : "";
         setAddToolMessage(
-          `Не удалось сохранить инструмент. Проверьте сервер. ${errorText}`.trim()
+          `Не удалось сохранить инструмент. Проверьте сервер. ${errorText}`.trim(),
+          { tone: "error" }
         );
       } finally {
         addToolState.isSaving = false;

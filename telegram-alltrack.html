@@ -2186,6 +2186,13 @@
 
       .tools-modal__header {
         align-items: center;
+        grid-template-columns: minmax(0, 1fr) auto;
+      }
+
+      .tools-modal__close {
+        justify-self: end;
+        align-self: start;
+        margin-top: 2px;
       }
 
       .tools-modal__body {
@@ -2222,7 +2229,9 @@
       }
 
       .tools-search__input {
-        padding-left: 38px;
+        padding: 8px 14px 8px 38px;
+        line-height: 1.2;
+        height: auto;
       }
 
       .tools-actions {
@@ -2322,6 +2331,7 @@
 
       .tools-list.is-list {
         gap: 8px;
+        grid-template-columns: 1fr;
       }
 
       .tools-list.is-large {
@@ -2432,6 +2442,16 @@
         min-height: 72px;
       }
 
+      .tools-row--no-photo {
+        border-color: rgba(248, 113, 113, 0.7);
+        background: linear-gradient(
+          120deg,
+          rgba(254, 242, 242, 0.95),
+          rgba(255, 228, 228, 0.92)
+        );
+        box-shadow: 0 12px 24px rgba(248, 113, 113, 0.18);
+      }
+
       .tools-row:hover {
         transform: translateY(-1px);
         box-shadow: 0 16px 30px rgba(15, 23, 42, 0.12);
@@ -2478,6 +2498,10 @@
           border-radius: 0;
         }
 
+        .tools-search__input {
+          font-size: 16px;
+        }
+
         .tools-controls {
           gap: 8px;
         }
@@ -2506,9 +2530,12 @@
           display: grid;
         }
 
-        .tools-list.is-large,
+        .tools-list.is-large {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
         .tools-list.is-compact {
-          grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+          grid-template-columns: repeat(3, minmax(0, 1fr));
         }
 
         .tools-row {

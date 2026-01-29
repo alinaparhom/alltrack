@@ -2629,12 +2629,20 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const model = String(tool?.["Модель"] ?? "").trim();
     const photoCount = Number.parseInt(tool?.["Количество фото"] ?? 0, 10);
     const hasPhoto = Number.isFinite(photoCount) && photoCount > 0;
+    const isCompactMobile =
+      viewMode === "compact" &&
+      typeof window !== "undefined" &&
+      window.matchMedia &&
+      window.matchMedia("(max-width: 520px)").matches;
     const lineParts = [number, name, manufacturer, model].filter(Boolean);
-    const infoLine = lineParts.join(" ");
+    const infoLine = isCompactMobile
+      ? number || "Без номера"
+      : lineParts.join(" ");
 
     if (viewMode === "list") {
       const row = document.createElement("div");
       row.className = "tools-row";
+      row.classList.toggle("tools-row--no-photo", !hasPhoto);
       const main = document.createElement("div");
       main.className = "tools-row__main";
       const title = document.createElement("div");

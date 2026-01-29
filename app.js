@@ -1937,6 +1937,21 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const addToolCancelButton = contentEl.querySelector("[data-add-tool-cancel]");
   const addToolBodyEl = addToolFormEl?.querySelector(".settings-modal__body");
   const addToolPanelEl = addToolModalEl?.querySelector(".settings-modal__panel");
+  const addToolSuccessModalEl = contentEl.querySelector(
+    "[data-add-tool-success-modal]"
+  );
+  const addToolSuccessBackdropEl = contentEl.querySelector(
+    "[data-add-tool-success-backdrop]"
+  );
+  const addToolSuccessCloseButton = contentEl.querySelector(
+    "[data-add-tool-success-close]"
+  );
+  const addToolSuccessConfirmButton = contentEl.querySelector(
+    "[data-add-tool-success-confirm]"
+  );
+  const addToolSuccessNumberEl = contentEl.querySelector(
+    "[data-add-tool-success-number]"
+  );
   const addToolNameInput = contentEl.querySelector("#tool-name-input");
   const addToolManufacturerInput = contentEl.querySelector(
     "#tool-manufacturer-input"
@@ -2605,6 +2620,17 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     setAddToolMessage(message, { tone: "error", asList });
     scrollAddToolFooterIntoView();
   };
+  const closeAddToolSuccessModal = () => {
+    if (!addToolSuccessModalEl) return;
+    addToolSuccessModalEl.classList.add("is-hidden");
+  };
+  const openAddToolSuccessModal = (toolNumber) => {
+    if (!addToolSuccessModalEl) return;
+    if (addToolSuccessNumberEl) {
+      addToolSuccessNumberEl.textContent = String(toolNumber ?? "—");
+    }
+    addToolSuccessModalEl.classList.remove("is-hidden");
+  };
 
   const clearAddToolFieldErrors = () => {
     addToolFormEl
@@ -3062,6 +3088,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     addToolModalEl.style.removeProperty("--keyboard-offset");
     detachAddToolViewportListeners();
     resetAddToolForm();
+    closeAddToolSuccessModal();
   };
 
   if (addToolBackdropEl) {
@@ -3072,6 +3099,24 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   }
   if (addToolCancelButton) {
     addToolCancelButton.addEventListener("click", closeAddToolModal);
+  }
+  if (addToolSuccessBackdropEl) {
+    addToolSuccessBackdropEl.addEventListener(
+      "click",
+      closeAddToolSuccessModal
+    );
+  }
+  if (addToolSuccessCloseButton) {
+    addToolSuccessCloseButton.addEventListener(
+      "click",
+      closeAddToolSuccessModal
+    );
+  }
+  if (addToolSuccessConfirmButton) {
+    addToolSuccessConfirmButton.addEventListener(
+      "click",
+      closeAddToolSuccessModal
+    );
   }
 
   if (addToolFormEl) {
@@ -3311,7 +3356,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
             tone: "success",
           });
           addToolFormEl.reset();
-          window.alert(successMessage);
+          openAddToolSuccessModal(toolNumber);
         } catch (error) {
           console.error(error);
           const rawMessage = String(error?.message ?? "").trim();

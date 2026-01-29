@@ -186,6 +186,18 @@
         border-top-color: rgba(148, 170, 210, 0.3);
       }
 
+      body[data-theme="dark"] .add-tool-success-modal__panel {
+        background: linear-gradient(160deg, rgba(16, 24, 40, 0.98), rgba(20, 30, 52, 0.92));
+        border-color: rgba(148, 170, 210, 0.35);
+        box-shadow: 0 28px 70px rgba(0, 0, 0, 0.6);
+      }
+
+      body[data-theme="dark"] .success-card {
+        background: rgba(18, 26, 46, 0.9);
+        border-color: rgba(148, 170, 210, 0.3);
+        box-shadow: inset 0 0 0 1px rgba(148, 170, 210, 0.2);
+      }
+
       body[data-theme="dark"] .orgs-modal__panel {
         background: linear-gradient(150deg, rgba(16, 24, 40, 0.98), rgba(18, 26, 46, 0.92));
         border-color: rgba(148, 170, 210, 0.35);
@@ -1828,6 +1840,88 @@
       .add-tool-modal .settings-modal__body {
         overflow: visible;
         padding-right: 0;
+      }
+
+      .add-tool-success-modal__panel {
+        width: min(440px, calc(100% - 24px));
+        height: auto;
+        max-height: calc(100vh - 24px);
+        border-radius: 24px;
+        grid-template-rows: auto minmax(0, 1fr) auto;
+        background: linear-gradient(
+          160deg,
+          rgba(255, 255, 255, 0.96),
+          rgba(246, 250, 255, 0.88)
+        );
+        border: 1px solid rgba(148, 163, 184, 0.25);
+        box-shadow: 0 24px 60px rgba(15, 23, 42, 0.16);
+        backdrop-filter: blur(14px);
+        overflow: hidden;
+      }
+
+      .add-tool-success-modal__header {
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: start;
+        gap: 8px;
+        padding: 18px 18px 10px;
+        border-bottom: 1px solid rgba(226, 232, 240, 0.7);
+        background: linear-gradient(
+          180deg,
+          rgba(255, 255, 255, 0.95),
+          rgba(255, 255, 255, 0)
+        );
+      }
+
+      .add-tool-success-modal__header .settings-modal__title h2 {
+        font-size: 22px;
+      }
+
+      .add-tool-success-modal__header .settings-modal__title p {
+        font-size: 15px;
+      }
+
+      .add-tool-success-modal__close {
+        width: 48px;
+        height: 48px;
+        border-radius: 16px;
+      }
+
+      .add-tool-success-modal__body {
+        padding: 8px 18px 16px;
+      }
+
+      .success-card {
+        display: grid;
+        gap: 10px;
+        padding: 16px;
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.78);
+        border: 1px solid rgba(148, 163, 184, 0.2);
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.7);
+      }
+
+      .success-card__label {
+        font-size: 13px;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+
+      .success-card__number {
+        font-size: 32px;
+        font-weight: 700;
+        color: var(--title);
+      }
+
+      .success-card__note {
+        font-size: 14px;
+        color: var(--muted);
+        line-height: 1.5;
+      }
+
+      .add-tool-success-modal__footer {
+        padding: 0 18px 18px;
+        justify-content: flex-end;
       }
 
       .objects-modal__panel {

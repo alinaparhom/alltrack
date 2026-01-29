@@ -371,6 +371,56 @@ export function renderRole(user) {
             </form>
           </div>
         </div>
+        <div
+          class="settings-modal add-tool-success-modal is-hidden"
+          data-add-tool-success-modal
+        >
+          <div
+            class="settings-modal__backdrop"
+            data-add-tool-success-backdrop
+          ></div>
+          <div
+            class="settings-modal__panel add-tool-success-modal__panel"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Новая МТЦ сохранена"
+          >
+            <div class="settings-modal__header add-tool-success-modal__header">
+              <div class="settings-modal__title">
+                <h2>Готово!</h2>
+                <p>Новая позиция добавлена в базу</p>
+              </div>
+              <button
+                class="button-icon add-tool-success-modal__close"
+                type="button"
+                data-add-tool-success-close
+                aria-label="Закрыть окно"
+              >
+                <span class="button-icon-emoji" aria-hidden="true">✕</span>
+              </button>
+            </div>
+            <div class="settings-modal__body add-tool-success-modal__body">
+              <div class="success-card">
+                <div class="success-card__label">Присвоенный номер</div>
+                <div class="success-card__number" data-add-tool-success-number>
+                  —
+                </div>
+                <div class="success-card__note">
+                  Данные сохранены и доступны в списке МТЦ.
+                </div>
+              </div>
+            </div>
+            <div class="settings-modal__footer add-tool-success-modal__footer">
+              <button
+                class="action-primary"
+                type="button"
+                data-add-tool-success-confirm
+              >
+                Понятно
+              </button>
+            </div>
+          </div>
+        </div>
         <div class="settings-modal users-details-modal is-hidden" data-users-details-modal>
           <div class="settings-modal__backdrop" data-users-details-backdrop></div>
           <div

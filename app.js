@@ -6443,23 +6443,51 @@ function setupSuperAdmin() {
         }
       });
 
+      if (!toolIndexByNumber.size) {
+        setUploadStatus(
+          "В базе инструментов не найдены номера для проверки фото.",
+          "error"
+        );
+        setUploadProgress(0, {
+          label: "Нет номеров",
+          hint: "Проверьте, что в базе заполнена колонка «Номер».",
+        });
+        return;
+      }
+
       const matchedFiles = [];
       const matchedCounts = new Map();
-      const skipped = { invalidName: 0, noMatch: 0, nonImage: 0 };
+      const skipped = {
+        invalidName: 0,
+        noMatch: 0,
+        nonImage: 0,
+        invalidSamples: [],
+        noMatchSamples: [],
+        nonImageSamples: [],
+      };
 
       fileList.forEach((file) => {
         if (file.type && !file.type.startsWith("image/")) {
           skipped.nonImage += 1;
+          if (skipped.nonImageSamples.length < 5) {
+            skipped.nonImageSamples.push(file.name);
+          }
           return;
         }
         const key = parsePhotoKeyFromName(file.name);
         if (!key) {
           skipped.invalidName += 1;
+          if (skipped.invalidSamples.length < 5) {
+            skipped.invalidSamples.push(file.name);
+          }
           return;
         }
         const toolIndex = toolIndexByNumber.get(key);
         if (toolIndex === undefined) {
           skipped.noMatch += 1;
+          if (skipped.noMatchSamples.length < 5) {
+            skipped.noMatchSamples.push(file.name);
+          }
           return;
         }
         const safeName = sanitizePhotoFileName(file.name) || file.name;
@@ -6468,13 +6496,37 @@ function setupSuperAdmin() {
       });
 
       if (!matchedFiles.length) {
+        const parts = [];
+        if (skipped.invalidName) {
+          const examples = skipped.invalidSamples.length
+            ? ` Например: ${skipped.invalidSamples.join(", ")}.`
+            : "";
+          parts.push(`Без номера: ${skipped.invalidName}.${examples}`);
+        }
+        if (skipped.noMatch) {
+          const examples = skipped.noMatchSamples.length
+            ? ` Например: ${skipped.noMatchSamples.join(", ")}.`
+            : "";
+          parts.push(
+            `Номера не найдены в базе: ${skipped.noMatch}.${examples}`
+          );
+        }
+        if (skipped.nonImage) {
+          const examples = skipped.nonImageSamples.length
+            ? ` Например: ${skipped.nonImageSamples.join(", ")}.`
+            : "";
+          parts.push(`Не фото: ${skipped.nonImage}.${examples}`);
+        }
+        const hint = parts.length
+          ? parts.join(" ")
+          : "Файлы не совпали с номерами из базы.";
         setUploadStatus(
           "Нет фото с корректными номерами для загрузки.",
           "error"
         );
         setUploadProgress(0, {
           label: "Нет совпадений",
-          hint: "Файлы не совпали с номерами из базы.",
+          hint,
         });
         return;
       }
@@ -6559,13 +6611,17 @@ function setupSuperAdmin() {
       });
     } catch (error) {
       console.error(error);
+      const reason =
+        error instanceof Error && error.message
+          ? `Причина: ${error.message}`
+          : "Не удалось определить причину.";
       setUploadStatus(
-        "Не удалось загрузить фото. Проверьте названия файлов и попробуйте ещё раз.",
+        `Не удалось загрузить фото. ${reason}`,
         "error"
       );
       setUploadProgress(0, {
         label: "Ошибка",
-        hint: "Не удалось загрузить фото. Проверьте названия файлов.",
+        hint: reason,
       });
     } finally {
       if (orgsUploadPhotoButton) orgsUploadPhotoButton.disabled = false;

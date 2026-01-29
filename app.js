@@ -6584,7 +6584,10 @@ function setupSuperAdmin() {
         type: "array",
         cellDates: true,
       });
-      const sheet = workbook.Sheets["База"];
+      const sheetName = workbook.SheetNames.find(
+        (name) => String(name ?? "").trim().toLowerCase() === "база"
+      );
+      const sheet = sheetName ? workbook.Sheets[sheetName] : null;
       if (!sheet) {
         throw new Error('Лист "База" не найден.');
       }

@@ -349,21 +349,23 @@ export function renderRole(user) {
                 </div>
               </div>
               <div class="settings-modal__footer add-tool-modal__footer">
-                <div
-                  class="form-message form-message--inline"
-                  role="status"
-                  aria-live="polite"
-                  data-add-tool-message
-                ></div>
-                <div class="settings-modal__actions add-tool-modal__actions">
-                  <button
-                    class="action-secondary"
-                    type="button"
-                    data-add-tool-cancel
-                  >
-                    Отмена
-                  </button>
-                  <button class="action-primary" type="submit">Сохранить</button>
+                <div class="add-tool-modal__footer-row">
+                  <div
+                    class="form-message form-message--inline"
+                    role="status"
+                    aria-live="polite"
+                    data-add-tool-message
+                  ></div>
+                  <div class="settings-modal__actions add-tool-modal__actions">
+                    <button
+                      class="action-secondary"
+                      type="button"
+                      data-add-tool-cancel
+                    >
+                      Отмена
+                    </button>
+                    <button class="action-primary" type="submit">Сохранить</button>
+                  </div>
                 </div>
               </div>
             </form>

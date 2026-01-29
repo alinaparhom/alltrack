@@ -145,6 +145,20 @@ function formatDateValue(date) {
   return `${day}.${month}.${date.getFullYear()}`;
 }
 
+function normalizeCostValue(value) {
+  if (value === null || value === undefined) {
+    return null;
+  }
+  if (typeof value === "number") {
+    return Number.isFinite(value) ? value : null;
+  }
+  const raw = String(value).trim();
+  if (!raw) return null;
+  const cleaned = raw.replace(/\s+/g, "").replace(",", ".");
+  const parsed = Number(cleaned);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
 function normalizeTelegramId(value) {
   if (value === null || value === undefined) {
     return null;
@@ -2688,16 +2702,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   };
 
   const normalizeSuggestionValue = (value = "") => String(value ?? "").trim();
-  const normalizeCostValue = (value) => {
-    if (typeof value === "number" && Number.isFinite(value)) {
-      return value;
-    }
-    const raw = String(value ?? "")
-      .replace(/\s+/g, "")
-      .replace(",", ".");
-    const parsed = Number(raw);
-    return Number.isFinite(parsed) ? parsed : null;
-  };
 
   const sanitizePhotoFileName = (name = "") => {
     const trimmed = String(name).trim();
@@ -6076,6 +6080,9 @@ function setupSuperAdmin() {
         let normalized = value;
         if (key === "Стоимость") {
           normalized = normalizeCostValue(value);
+          if (normalized === null) {
+            normalized = "";
+          }
         } else if (key === "Дата покупки") {
           normalized = normalizePurchaseDate(value);
         } else if (key === "Граппа инструментов") {

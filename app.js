@@ -5458,9 +5458,10 @@ function setupSuperAdmin() {
   };
 
   const normalizeToolNumberValue = (value) => {
-    const digits = String(value ?? "").replace(/\D/g, "");
-    if (!digits) return "";
-    const trimmed = digits.replace(/^0+/, "");
+    const raw = String(value ?? "");
+    const match = raw.match(/\d+/);
+    if (!match) return "";
+    const trimmed = match[0].replace(/^0+/, "");
     return trimmed || "0";
   };
 
@@ -5468,10 +5469,7 @@ function setupSuperAdmin() {
     if (!fileName) return "";
     const baseName = String(fileName).replace(/\.[^.]+$/, "");
     const prefix = baseName.split("_")[0] ?? "";
-    const digits = prefix.replace(/\D/g, "");
-    if (!digits) return "";
-    const trimmed = digits.replace(/^0+/, "");
-    return trimmed || "0";
+    return normalizeToolNumberValue(prefix);
   };
 
   const resolveUploadOrganization = async () => {

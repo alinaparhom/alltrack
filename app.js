@@ -5465,6 +5465,15 @@ function setupSuperAdmin() {
     return trimmed || "0";
   };
 
+  const resolvePhotoFileName = (name = "") => {
+    if (typeof sanitizePhotoFileName === "function") {
+      return sanitizePhotoFileName(name);
+    }
+    const trimmed = String(name ?? "").trim();
+    const cleaned = trimmed.replace(/[\\/:"*?<>|]+/g, "_");
+    return cleaned.replace(/\s+/g, " ").trim();
+  };
+
   const parsePhotoKeyFromName = (fileName) => {
     if (!fileName) return "";
     const baseName = String(fileName).replace(/\.[^.]+$/, "");
@@ -6490,7 +6499,7 @@ function setupSuperAdmin() {
           }
           return;
         }
-        const safeName = sanitizePhotoFileName(file.name) || file.name;
+        const safeName = resolvePhotoFileName(file.name) || file.name;
         matchedFiles.push({ file, toolIndex, safeName });
         matchedCounts.set(toolIndex, (matchedCounts.get(toolIndex) ?? 0) + 1);
       });

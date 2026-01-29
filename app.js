@@ -6585,16 +6585,16 @@ function setupSuperAdmin() {
         cellDates: true,
       });
       const sheetName = workbook.SheetNames.find(
-        (name) => String(name ?? "").trim().toLowerCase() === "база"
+        (name) => String(name ?? "").trim().toLowerCase() === "выгрузка"
       );
       const sheet = sheetName ? workbook.Sheets[sheetName] : null;
       if (!sheet) {
-        throw new Error('Лист "База" не найден.');
+        throw new Error('Лист "Выгрузка" не найден.');
       }
 
       const { tools, objects, toolGroups } = parseExcelToolsData(sheet);
       if (!tools.length) {
-        setUploadStatus("В листе «База» нет данных для загрузки.", "error");
+        setUploadStatus("В листе «Выгрузка» нет данных для загрузки.", "error");
         return;
       }
 
@@ -6664,7 +6664,7 @@ function setupSuperAdmin() {
     } catch (error) {
       console.error(error);
       setUploadStatus(
-        "Не удалось обработать файл. Проверьте лист «База» и формат данных.",
+        "Не удалось обработать файл. Проверьте лист «Выгрузка» и формат данных.",
         "error"
       );
     } finally {

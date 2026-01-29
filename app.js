@@ -624,8 +624,27 @@ async function saveEntriesViaEndpoint(entries) {
     body: payload,
   });
   if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(errorText || "Не удалось сохранить данные.");
+    let errorText = "";
+    try {
+      errorText = await response.text();
+    } catch (error) {
+      console.warn("Не удалось прочитать ответ сервера.", error);
+    }
+    if (errorText) {
+      try {
+        const parsed = JSON.parse(errorText);
+        errorText =
+          parsed?.error ??
+          parsed?.message ??
+          (typeof parsed === "string" ? parsed : errorText);
+      } catch (error) {
+        // ignore json parse errors
+      }
+    }
+    const message =
+      errorText ||
+      `Не удалось сохранить данные. Код ответа: ${response.status}.`;
+    throw new Error(message);
   }
 }
 
@@ -3185,11 +3204,24 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         window.alert(successMessage);
       } catch (error) {
         console.error(error);
-        const errorText = error?.message
-          ? `Причина: ${String(error.message).trim()}.`
-          : "";
+        const rawMessage = String(error?.message ?? "").trim();
+        let normalizedMessage = rawMessage;
+        if (rawMessage) {
+          try {
+            const parsed = JSON.parse(rawMessage);
+            normalizedMessage =
+              parsed?.error ??
+              parsed?.message ??
+              (typeof parsed === "string" ? parsed : rawMessage);
+          } catch (parseError) {
+            // keep raw text if it's not JSON
+          }
+        }
+        const errorSuffix = normalizedMessage
+          ? `Причина: ${normalizedMessage}.`
+          : "Проверьте сервер.";
         setAddToolMessage(
-          `Не удалось сохранить инструмент. Проверьте сервер. ${errorText}`.trim(),
+          `Не удалось сохранить инструмент. ${errorSuffix}`.trim(),
           { tone: "error" }
         );
       } finally {

@@ -355,10 +355,9 @@ export function renderRole(user) {
                           type="file"
                           name="tool-invoice-photo"
                           accept="image/*"
-                          capture="environment"
                         />
                         <span class="form-file-button" aria-hidden="true">
-                          Добавить фото
+                          Добавить фото/камеру
                         </span>
                       </label>
                     </div>

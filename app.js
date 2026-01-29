@@ -2646,11 +2646,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const meta = document.createElement("div");
       meta.className = "tools-row__meta";
       const accountingNumber = tool?.["Бух.номер"];
+      const accountingNumberValue =
+        accountingNumber !== undefined && accountingNumber !== null
+          ? String(accountingNumber).trim()
+          : "";
       meta.textContent = [
+        accountingNumberValue || null,
         tool?.["Граппа инструментов"],
-        accountingNumber
-          ? `Бух.номер ${String(accountingNumber).trim()}`
-          : null,
         tool?.["Статус"],
         tool?.["Объект"],
       ]

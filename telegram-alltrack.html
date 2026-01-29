@@ -2221,12 +2221,11 @@
 
       .tools-search__icon {
         position: absolute;
-        right: 12px;
+        right: 14px;
         top: 50%;
         transform: translateY(-50%);
         font-size: 14px;
         opacity: 0.6;
-        pointer-events: none;
       }
 
       .tools-search__input {
@@ -2351,11 +2350,11 @@
       }
 
       .tools-list.is-compact .tools-card {
-        border-radius: 18px;
+        border-radius: 0;
       }
 
       .tools-list.is-compact .tools-card__media {
-        border-radius: 18px;
+        border-radius: 0;
       }
 
       .tools-card {
@@ -2529,7 +2528,7 @@
         }
 
         .tools-controls {
-          gap: 6px;
+          gap: 4px;
         }
 
         .tools-controls__row {
@@ -2542,11 +2541,6 @@
           justify-content: space-between;
           flex-wrap: nowrap;
           width: 100%;
-        }
-
-        .tools-view-toggle {
-          flex: 1 1 auto;
-          justify-content: space-between;
         }
 
         .tools-filters-toggle {
@@ -2571,11 +2565,6 @@
 
         .tools-list.is-compact {
           grid-template-columns: repeat(3, minmax(0, 1fr));
-        }
-
-        .tools-list.is-compact .tools-card {
-          min-height: auto;
-          aspect-ratio: 1 / 1;
         }
 
         .tools-list.is-compact .tools-card__media {

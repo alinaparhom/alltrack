@@ -2506,6 +2506,17 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     search: "",
     orgFolder: "",
   };
+  let pendingAddPhotoTool = null;
+  const addPhotoFileInput = document.createElement("input");
+  addPhotoFileInput.type = "file";
+  addPhotoFileInput.accept = "image/*";
+  addPhotoFileInput.capture = "environment";
+  addPhotoFileInput.style.position = "fixed";
+  addPhotoFileInput.style.opacity = "0";
+  addPhotoFileInput.style.pointerEvents = "none";
+  addPhotoFileInput.style.width = "1px";
+  addPhotoFileInput.style.height = "1px";
+  document.body.appendChild(addPhotoFileInput);
   let addToolViewportListenersAttached = false;
   const updateAddToolKeyboardOffset = () => {
     if (!addToolModalEl) return;
@@ -3241,20 +3252,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const table = document.createElement("div");
     table.className = "tools-table tools-table--add-photo";
 
-    const header = document.createElement("div");
-    header.className = "tools-table__row tools-table__row--header";
-    const numberHeader = document.createElement("div");
-    numberHeader.className = "tools-table__cell tools-table__cell--number";
-    numberHeader.textContent = "Номер";
-    const infoHeader = document.createElement("div");
-    infoHeader.className = "tools-table__cell";
-    infoHeader.textContent = "Информация";
-    const photoHeader = document.createElement("div");
-    photoHeader.className = "tools-table__cell tools-table__cell--thumb";
-    photoHeader.textContent = "Фото";
-    header.append(numberHeader, infoHeader, photoHeader);
-    table.appendChild(header);
-
     items.forEach((tool) => {
       const row = document.createElement("div");
       row.className = "tools-table__row";
@@ -3263,6 +3260,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       numberCell.className = "tools-table__cell tools-table__cell--number";
       const number = String(tool?.["Номер"] ?? "").trim();
       numberCell.textContent = number || "—";
+      row.dataset.addPhotoNumber = number;
 
       const infoCell = document.createElement("div");
       infoCell.className = "tools-table__cell";
@@ -3293,6 +3291,14 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       photoCell.className = "tools-table__cell tools-table__cell--thumb";
       const thumb = document.createElement("div");
       thumb.className = "tools-table__thumb tools-table__thumb--plus";
+      thumb.dataset.addPhotoAction = "capture";
+      thumb.dataset.addPhotoNumber = number;
+      thumb.setAttribute("role", "button");
+      thumb.setAttribute("tabindex", "0");
+      thumb.setAttribute(
+        "aria-label",
+        number ? `Добавить фото для №${number}` : "Добавить фото"
+      );
       const icon = document.createElement("span");
       icon.className = "tools-table__thumb-icon";
       icon.textContent = "+";
@@ -3318,6 +3324,114 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     setAddPhotoSubtitle(
       `Показано ${items.length} из ${addPhotoState.tools.length}`
     );
+  };
+
+  const buildAddPhotoFileName = (toolNumber, file) => {
+    const rawNumber = String(toolNumber ?? "").trim();
+    const nameParts = String(file?.name ?? "").split(".");
+    const nameExtension =
+      nameParts.length > 1 ? nameParts[nameParts.length - 1] : "";
+    let extension = nameExtension;
+    if (!extension && file?.type) {
+      const typeParts = file.type.split("/");
+      extension = typeParts[typeParts.length - 1] ?? "";
+    }
+    const safeExtension = extension || "jpg";
+    const suffix = buildRandomSuffix(4);
+    const baseName = `${rawNumber}_${suffix}.${safeExtension}`;
+    return sanitizePhotoFileName(baseName);
+  };
+
+  const getAddPhotoToolByNumber = (number) => {
+    const normalized = normalizeToolNumberValue(number);
+    if (!normalized) return null;
+    return (
+      addPhotoState.tools.find(
+        (tool) =>
+          normalizeToolNumberValue(tool?.["Номер"] ?? "") === normalized
+      ) ?? null
+    );
+  };
+
+  const updateAddPhotoAfterSave = (toolNumber) => {
+    const normalized = normalizeToolNumberValue(toolNumber);
+    addPhotoState.tools = addPhotoState.tools.filter(
+      (tool) =>
+        normalizeToolNumberValue(tool?.["Номер"] ?? "") !== normalized
+    );
+    applyAddPhotoFilters();
+  };
+
+  const handleAddPhotoUpload = async (tool, file) => {
+    const toolNumber = String(tool?.["Номер"] ?? "").trim();
+    if (!toolNumber) {
+      setAddPhotoSubtitle("У инструмента нет номера для сохранения фото.");
+      return;
+    }
+    const orgFolder = addPhotoState.orgFolder ?? "";
+    if (!orgFolder) {
+      setAddPhotoSubtitle("Не удалось определить организацию.");
+      return;
+    }
+
+    setAddPhotoSubtitle("Загружаем фото...");
+
+    try {
+      const tools = await loadToolsData(orgFolder);
+      if (!tools.length) {
+        setAddPhotoSubtitle("Не найдена база инструментов.");
+        return;
+      }
+      const normalized = normalizeToolNumberValue(toolNumber);
+      const toolIndex = tools.findIndex(
+        (entry) =>
+          normalizeToolNumberValue(entry?.["Номер"] ?? "") === normalized
+      );
+      if (toolIndex < 0) {
+        setAddPhotoSubtitle("Инструмент не найден в базе.");
+        return;
+      }
+
+      const safeName = buildAddPhotoFileName(toolNumber, file);
+      const content = await readFileAsBase64(file);
+      const photoEntry = {
+        type: "file",
+        path: `${orgFolder}/Фото инструментов/${safeName}`,
+        content,
+        encoding: "base64",
+        mime: file.type || "image/*",
+        ...buildUploadUserMeta({ organizationName: context.orgFullName }),
+      };
+      await uploadPhotoEntriesInBatches([photoEntry]);
+
+      const current = Number.parseInt(tools[toolIndex]?.["Количество фото"] ?? 0, 10);
+      const safeCurrent = Number.isFinite(current) ? current : 0;
+      const updatedTool = {
+        ...tools[toolIndex],
+        "Количество фото": safeCurrent + 1,
+      };
+      const updatedTools = [...tools];
+      updatedTools[toolIndex] = updatedTool;
+      await saveEntries([
+        {
+          path: `${orgFolder}/База с инструментами.json`,
+          data: updatedTools,
+          ...buildUploadUserMeta({ organizationName: context.orgFullName }),
+        },
+      ]);
+
+      updateAddPhotoAfterSave(toolNumber);
+    } catch (error) {
+      console.error(error);
+      const reason =
+        error instanceof Error && error.message
+          ? `Причина: ${error.message}`
+          : "Не удалось определить причину.";
+      setAddPhotoSubtitle(`Не удалось загрузить фото. ${reason}`);
+      setTimeout(() => {
+        applyAddPhotoFilters();
+      }, 2500);
+    }
   };
 
   const applyAddPhotoFilters = () => {
@@ -3479,6 +3593,39 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       applyAddPhotoFilters();
     });
   }
+
+  const triggerAddPhotoCapture = (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLElement)) return;
+    const actionEl = target.closest('[data-add-photo-action="capture"]');
+    if (!actionEl) return;
+    const number = String(actionEl.dataset.addPhotoNumber ?? "").trim();
+    const tool = getAddPhotoToolByNumber(number);
+    if (!tool) {
+      setAddPhotoSubtitle("Инструмент не найден для добавления фото.");
+      return;
+    }
+    pendingAddPhotoTool = tool;
+    addPhotoFileInput.value = "";
+    addPhotoFileInput.click();
+  };
+
+  if (addPhotoListEl) {
+    addPhotoListEl.addEventListener("click", triggerAddPhotoCapture);
+    addPhotoListEl.addEventListener("keydown", (event) => {
+      if (event.key !== "Enter" && event.key !== " ") return;
+      event.preventDefault();
+      triggerAddPhotoCapture(event);
+    });
+  }
+
+  addPhotoFileInput.addEventListener("change", async () => {
+    const [file] = addPhotoFileInput.files ?? [];
+    const tool = pendingAddPhotoTool;
+    pendingAddPhotoTool = null;
+    if (!file || !tool) return;
+    await handleAddPhotoUpload(tool, file);
+  });
 
   const setAddPhotoFiltersOpen = (isOpen) => {
     if (addPhotoFiltersPanelEl) {

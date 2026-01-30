@@ -2211,6 +2211,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     "#tool-manufacturer-input"
   );
   const addToolModelInput = contentEl.querySelector("#tool-model-input");
+  const addToolAccountingNumberInput = contentEl.querySelector(
+    "#tool-accounting-number-input"
+  );
   const addToolCostInput = contentEl.querySelector('[name="tool-cost"]');
   const addToolResponsibleInput = contentEl.querySelector(
     "#tool-responsible-input"
@@ -3468,28 +3471,32 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const normalized = String(addToolState.numberType ?? "").trim().toLowerCase();
     return normalized === "бухгалтерский номер" ? "Бух.номер" : "Номер";
   };
+  const isAddToolAccountingNumber = () =>
+    resolveAddToolNumberLabelCapitalized() === "Бух.номер";
   const closeAddToolSuccessModal = () => {
     if (!addToolSuccessModalEl) return;
     addToolSuccessModalEl.classList.add("is-hidden");
   };
-  const openAddToolSuccessModal = (toolNumber) => {
+  const openAddToolSuccessModal = ({ toolNumber, accountingNumber } = {}) => {
     if (!addToolSuccessModalEl) return;
     const numberLabel = resolveAddToolNumberLabelCapitalized();
+    const isAccounting = numberLabel === "Бух.номер";
+    const displayNumber = isAccounting ? accountingNumber : toolNumber;
     if (addToolSuccessTitleEl) {
-      const normalized = numberLabel === "Бух.номер";
-      addToolSuccessTitleEl.textContent = normalized ? "Все готово!" : "Готово!";
+      addToolSuccessTitleEl.textContent = isAccounting
+        ? "Все готово!"
+        : "Готово!";
     }
     if (addToolSuccessMessageEl) {
-      const isAccounting = numberLabel === "Бух.номер";
       addToolSuccessMessageEl.textContent = isAccounting
-        ? "Присвоен Бух.номер."
+        ? `Присвоен Бух.номер ${displayNumber ?? "—"}.`
         : "Новая позиция добавлена в базу";
     }
     if (addToolSuccessLabelEl) {
       addToolSuccessLabelEl.textContent = `Присвоенный ${numberLabel}`;
     }
     if (addToolSuccessNumberEl) {
-      addToolSuccessNumberEl.textContent = String(toolNumber ?? "—");
+      addToolSuccessNumberEl.textContent = String(displayNumber ?? "—");
     }
     addToolSuccessModalEl.classList.remove("is-hidden");
   };
@@ -3820,6 +3827,21 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     updateAddToolFilledStates();
   };
 
+  const updateAddToolAccountingRequirement = () => {
+    if (!addToolAccountingNumberInput) return;
+    if (!addToolAccountingNumberInput.dataset.placeholder) {
+      addToolAccountingNumberInput.dataset.placeholder =
+        addToolAccountingNumberInput.placeholder;
+    }
+    const isRequired = isAddToolAccountingNumber();
+    addToolAccountingNumberInput.required = isRequired;
+    addToolAccountingNumberInput.placeholder = isRequired
+      ? "Введите Бух.номер"
+      : addToolAccountingNumberInput.dataset.placeholder || "Можно оставить пустым";
+    const field = addToolAccountingNumberInput.closest(".form-field");
+    field?.classList.toggle("form-field--required", isRequired);
+  };
+
   const buildNextToolNumber = (tools) => {
     let maxValue = 0;
     tools.forEach((tool) => {
@@ -3992,6 +4014,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       addToolState.organizationName = organizationName;
       addToolState.orgFolder = orgFolder;
       addToolState.numberType = resolution.numberType;
+      updateAddToolAccountingRequirement();
 
       const toolsPath = `./${orgFolder}/База с инструментами.json`;
       const objectsPath = `./${orgFolder}/Объекты.json`;
@@ -4081,6 +4104,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       addToolState.numberType = String(
         orgRecord?.number_type ?? "Номер приложения"
       ).trim();
+      updateAddToolAccountingRequirement();
       const orgNames = orgRecord ? getOrgNames(orgRecord) : [organizationName];
       const normalizedOrgNames = orgNames
         .map((name) => String(name ?? "").trim())
@@ -4345,6 +4369,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         if (!toolName) {
           pushError("Введите наименование.", addToolNameInput);
         }
+        if (isAddToolAccountingNumber() && !accountingNumber) {
+          pushError("Введите Бух.номер.", addToolAccountingNumberInput);
+        }
         if (!manufacturer) {
           pushError("Введите производителя.", addToolManufacturerInput);
         }
@@ -4419,6 +4446,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
               addToolState.organizationName = orgResolution.organizationName;
               addToolState.orgFolder = orgResolution.orgFolder;
               addToolState.numberType = orgResolution.numberType;
+              updateAddToolAccountingRequirement();
             } else if (orgResolution?.issues?.length) {
               reportAddToolIssue(
                 ["Не удалось сохранить инструмент.", ...orgResolution.issues],
@@ -4485,17 +4513,22 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
           addToolState.tools = updatedTools;
           const numberLabel = resolveAddToolNumberLabel();
-          const successMessage =
-            numberLabel === "Бух.номер"
-              ? `Все готово! Присвоен Бух.номер ${toolNumber}.`
-              : `Данные о новой позиции сохранены, ему присвоен ${numberLabel} ${toolNumber}.`;
+          const displayNumber = isAddToolAccountingNumber()
+            ? accountingNumber
+            : toolNumber;
+          const successMessage = isAddToolAccountingNumber()
+            ? `Все готово! Присвоен Бух.номер ${displayNumber}.`
+            : `Данные о новой позиции сохранены, ему присвоен ${numberLabel} ${toolNumber}.`;
           const responseSuffix = buildSaveResponseSuffix(saveResponseText);
           setAddToolMessage(`${successMessage}${responseSuffix}`, {
             tone: "success",
           });
           addToolFormEl.reset();
           updateAddToolFilledStates();
-          openAddToolSuccessModal(toolNumber);
+          openAddToolSuccessModal({
+            toolNumber,
+            accountingNumber: displayNumber,
+          });
           const createdByRaw = String(
             currentUser?.full_name ?? currentUser?.fullName ?? ""
           ).trim();

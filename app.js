@@ -2510,7 +2510,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const addPhotoFileInput = document.createElement("input");
   addPhotoFileInput.type = "file";
   addPhotoFileInput.accept = "image/*";
+  addPhotoFileInput.setAttribute("accept", "image/*");
   addPhotoFileInput.capture = "environment";
+  addPhotoFileInput.setAttribute("capture", "environment");
   addPhotoFileInput.style.position = "fixed";
   addPhotoFileInput.style.opacity = "0";
   addPhotoFileInput.style.pointerEvents = "none";

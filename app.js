@@ -2506,19 +2506,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     search: "",
     orgFolder: "",
   };
-  let pendingAddPhotoTool = null;
-  const addPhotoFileInput = document.createElement("input");
-  addPhotoFileInput.type = "file";
-  addPhotoFileInput.accept = "image/*";
-  addPhotoFileInput.setAttribute("accept", "image/*");
-  addPhotoFileInput.capture = "environment";
-  addPhotoFileInput.setAttribute("capture", "environment");
-  addPhotoFileInput.style.position = "fixed";
-  addPhotoFileInput.style.opacity = "0";
-  addPhotoFileInput.style.pointerEvents = "none";
-  addPhotoFileInput.style.width = "1px";
-  addPhotoFileInput.style.height = "1px";
-  document.body.appendChild(addPhotoFileInput);
   let addToolViewportListenersAttached = false;
   const updateAddToolKeyboardOffset = () => {
     if (!addToolModalEl) return;
@@ -3291,12 +3278,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
       const photoCell = document.createElement("div");
       photoCell.className = "tools-table__cell tools-table__cell--thumb";
-      const thumb = document.createElement("div");
+      const thumb = document.createElement("label");
       thumb.className = "tools-table__thumb tools-table__thumb--plus";
-      thumb.dataset.addPhotoAction = "capture";
-      thumb.dataset.addPhotoNumber = number;
-      thumb.setAttribute("role", "button");
-      thumb.setAttribute("tabindex", "0");
       thumb.setAttribute(
         "aria-label",
         number ? `Добавить фото для №${number}` : "Добавить фото"
@@ -3304,7 +3287,18 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const icon = document.createElement("span");
       icon.className = "tools-table__thumb-icon";
       icon.textContent = "+";
-      thumb.appendChild(icon);
+      const fileInput = document.createElement("input");
+      fileInput.type = "file";
+      fileInput.accept = "image/*";
+      fileInput.capture = "environment";
+      fileInput.className = "tools-table__thumb-input";
+      fileInput.addEventListener("change", async () => {
+        const [file] = fileInput.files ?? [];
+        if (!file) return;
+        fileInput.value = "";
+        await handleAddPhotoUpload(tool, file);
+      });
+      thumb.append(icon, fileInput);
       photoCell.appendChild(thumb);
 
       row.append(numberCell, infoCell, photoCell);
@@ -3342,17 +3336,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const suffix = buildRandomSuffix(4);
     const baseName = `${rawNumber}_${suffix}.${safeExtension}`;
     return sanitizePhotoFileName(baseName);
-  };
-
-  const getAddPhotoToolByNumber = (number) => {
-    const normalized = normalizeToolNumberValue(number);
-    if (!normalized) return null;
-    return (
-      addPhotoState.tools.find(
-        (tool) =>
-          normalizeToolNumberValue(tool?.["Номер"] ?? "") === normalized
-      ) ?? null
-    );
   };
 
   const updateAddPhotoAfterSave = (toolNumber) => {
@@ -3595,39 +3578,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       applyAddPhotoFilters();
     });
   }
-
-  const triggerAddPhotoCapture = (event) => {
-    const target = event.target;
-    if (!(target instanceof HTMLElement)) return;
-    const actionEl = target.closest('[data-add-photo-action="capture"]');
-    if (!actionEl) return;
-    const number = String(actionEl.dataset.addPhotoNumber ?? "").trim();
-    const tool = getAddPhotoToolByNumber(number);
-    if (!tool) {
-      setAddPhotoSubtitle("Инструмент не найден для добавления фото.");
-      return;
-    }
-    pendingAddPhotoTool = tool;
-    addPhotoFileInput.value = "";
-    addPhotoFileInput.click();
-  };
-
-  if (addPhotoListEl) {
-    addPhotoListEl.addEventListener("click", triggerAddPhotoCapture);
-    addPhotoListEl.addEventListener("keydown", (event) => {
-      if (event.key !== "Enter" && event.key !== " ") return;
-      event.preventDefault();
-      triggerAddPhotoCapture(event);
-    });
-  }
-
-  addPhotoFileInput.addEventListener("change", async () => {
-    const [file] = addPhotoFileInput.files ?? [];
-    const tool = pendingAddPhotoTool;
-    pendingAddPhotoTool = null;
-    if (!file || !tool) return;
-    await handleAddPhotoUpload(tool, file);
-  });
 
   const setAddPhotoFiltersOpen = (isOpen) => {
     if (addPhotoFiltersPanelEl) {

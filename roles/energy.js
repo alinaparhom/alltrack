@@ -295,6 +295,99 @@ export function renderRole(user) {
             </div>
           </div>
         </div>
+        <div class="tools-modal settings-modal is-hidden" data-add-photo-modal>
+          <div class="settings-modal__backdrop" data-add-photo-backdrop></div>
+          <div
+            class="settings-modal__panel tools-modal__panel"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Добавить фото"
+          >
+            <div class="settings-modal__header tools-modal__header">
+              <div class="settings-modal__title">
+                <h2>Добавить фото</h2>
+                <p data-add-photo-subtitle>Загружаем список...</p>
+              </div>
+              <button
+                class="button-icon tools-modal__close"
+                type="button"
+                data-add-photo-close
+                aria-label="Закрыть список инструментов"
+              >
+                <span class="button-icon-emoji" aria-hidden="true">✕</span>
+              </button>
+            </div>
+            <div class="settings-modal__body tools-modal__body">
+              <div class="tools-controls">
+                <div class="tools-controls__row">
+                  <label class="tools-search">
+                    <input
+                      class="form-input tools-search__input"
+                      type="search"
+                      placeholder="Поиск по номеру, бух.номеру, названию..."
+                      data-add-photo-search
+                      autocomplete="off"
+                    />
+                  </label>
+                  <div class="tools-actions">
+                    <button
+                      class="tools-filters-toggle"
+                      type="button"
+                      data-add-photo-filters-toggle
+                      aria-expanded="false"
+                      aria-controls="add-photo-filters-panel"
+                      aria-label="Фильтры"
+                    >
+                      <svg
+                        class="tools-filters-toggle__icon"
+                        aria-hidden="true"
+                        viewBox="0 0 24 24"
+                        focusable="false"
+                      >
+                        <path
+                          d="M3 5.5a1 1 0 0 1 1-1h16a1 1 0 0 1 .8 1.6L14 13.5v4.1a1 1 0 0 1-1.5.86l-3-1.8a1 1 0 0 1-.5-.86v-2.7L3.2 6.1a1 1 0 0 1-.2-.6z"
+                        />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+                <div
+                  class="tools-filters"
+                  id="add-photo-filters-panel"
+                  data-add-photo-filters-panel
+                >
+                  <label class="tools-filter">
+                    <span>Группа</span>
+                    <select class="form-input" data-add-photo-filter="group"></select>
+                  </label>
+                  <label class="tools-filter">
+                    <span>Статус</span>
+                    <select class="form-input" data-add-photo-filter="status"></select>
+                  </label>
+                  <label class="tools-filter">
+                    <span>Объект</span>
+                    <select class="form-input" data-add-photo-filter="object"></select>
+                  </label>
+                  <label class="tools-filter">
+                    <span>Производитель</span>
+                    <select
+                      class="form-input"
+                      data-add-photo-filter="manufacturer"
+                    ></select>
+                  </label>
+                  <label class="tools-filter">
+                    <span>Модель</span>
+                    <select class="form-input" data-add-photo-filter="model"></select>
+                  </label>
+                </div>
+              </div>
+              <div class="tools-list is-table" data-add-photo-list></div>
+              <div class="tools-empty is-hidden" data-add-photo-empty>
+                Инструменты без фото не найдены. Попробуйте изменить фильтры.
+              </div>
+            </div>
+          </div>
+        </div>
         <div class="settings-modal add-tool-modal is-hidden" data-add-tool-modal>
           <div class="settings-modal__backdrop" data-add-tool-backdrop></div>
           <div

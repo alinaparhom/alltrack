@@ -6771,6 +6771,10 @@ function setupSuperAdmin() {
     }
   };
 
+  function unploadPhotoEntriesInBatches(...args) {
+    return uploadPhotoEntriesInBatches(...args);
+  }
+
   const normalizePurchaseDate = (value) => {
     if (!value) return "";
     if (value instanceof Date && !Number.isNaN(value.getTime())) {

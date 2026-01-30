@@ -320,10 +320,11 @@ export function renderRole(user) {
             <form class="settings-modal__form" data-add-tool-form>
               <div class="settings-modal__body">
                 <div class="form-card form-grid">
-                  <label class="form-field">
+                  <label class="form-field" data-add-tool-accounting-field>
                     <span class="form-label">Бух.номер</span>
                     <input
                       class="form-input"
+                      id="tool-accounting-number-input"
                       type="text"
                       inputmode="numeric"
                       name="tool-accounting-number"

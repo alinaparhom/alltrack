@@ -2241,10 +2241,16 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     "[data-tools-move-cancel]"
   );
   const toolsMoveFormEl = contentEl.querySelector("[data-tools-move-form]");
-  const toolsMoveResponsibleSelect = contentEl.querySelector(
+  const toolsMoveResponsibleInput = contentEl.querySelector(
     "[data-tools-move-responsible]"
   );
-  const toolsMoveObjectSelect = contentEl.querySelector("[data-tools-move-object]");
+  const toolsMoveResponsibleSuggestionsEl = contentEl.querySelector(
+    "[data-tools-move-responsible-suggestions]"
+  );
+  const toolsMoveObjectInput = contentEl.querySelector("[data-tools-move-object]");
+  const toolsMoveObjectSuggestionsEl = contentEl.querySelector(
+    "[data-tools-move-object-suggestions]"
+  );
   const toolsMoveMessageEl = contentEl.querySelector("[data-tools-move-message]");
   const toolsMoveSubtitleEl = contentEl.querySelector("[data-tools-move-subtitle]");
   const addPhotoModalEl = contentEl.querySelector("[data-add-photo-modal]");
@@ -2552,6 +2558,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     isSelecting: false,
     selectedIds: new Set(),
     toolMap: new Map(),
+  };
+  const toolsMoveState = {
+    responsibleOptions: [],
+    objectOptions: [],
   };
   const addPhotoState = {
     tools: [],
@@ -3375,29 +3385,17 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       .map((entry) => String(entry.full_name ?? "").trim())
       .filter(Boolean);
 
-    if (toolsMoveResponsibleSelect) {
-      toolsMoveResponsibleSelect.innerHTML = "";
-      if (userOptions.length) {
-        const placeholder = document.createElement("option");
-        placeholder.value = "";
-        placeholder.textContent = "Выберите ответственного";
-        placeholder.disabled = true;
-        placeholder.selected = true;
-        toolsMoveResponsibleSelect.appendChild(placeholder);
-        userOptions.forEach((name) => {
-          const option = document.createElement("option");
-          option.value = name;
-          option.textContent = name;
-          toolsMoveResponsibleSelect.appendChild(option);
-        });
-        toolsMoveResponsibleSelect.disabled = false;
-      } else {
-        const option = document.createElement("option");
-        option.value = "";
-        option.textContent = "Нет доступных пользователей";
-        toolsMoveResponsibleSelect.appendChild(option);
-        toolsMoveResponsibleSelect.disabled = true;
-      }
+    toolsMoveState.responsibleOptions = userOptions.sort((a, b) =>
+      a.localeCompare(b, "ru")
+    );
+    if (toolsMoveResponsibleInput) {
+      toolsMoveResponsibleInput.value = "";
+      updateToolsMoveSelectState(
+        toolsMoveResponsibleInput,
+        toolsMoveState.responsibleOptions,
+        "Нет доступных пользователей"
+      );
+      toolsMoveResponsibleSuggestionsEl?.classList.add("is-hidden");
     }
 
     let objectOptions = [];
@@ -3410,29 +3408,17 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       console.warn("Не удалось загрузить объекты для перемещения.", error);
     }
 
-    if (toolsMoveObjectSelect) {
-      toolsMoveObjectSelect.innerHTML = "";
-      if (objectOptions.length) {
-        const placeholder = document.createElement("option");
-        placeholder.value = "";
-        placeholder.textContent = "Выберите объект";
-        placeholder.disabled = true;
-        placeholder.selected = true;
-        toolsMoveObjectSelect.appendChild(placeholder);
-        objectOptions.forEach((name) => {
-          const option = document.createElement("option");
-          option.value = name;
-          option.textContent = name;
-          toolsMoveObjectSelect.appendChild(option);
-        });
-        toolsMoveObjectSelect.disabled = false;
-      } else {
-        const option = document.createElement("option");
-        option.value = "";
-        option.textContent = "Нет объектов";
-        toolsMoveObjectSelect.appendChild(option);
-        toolsMoveObjectSelect.disabled = true;
-      }
+    toolsMoveState.objectOptions = objectOptions.sort((a, b) =>
+      a.localeCompare(b, "ru")
+    );
+    if (toolsMoveObjectInput) {
+      toolsMoveObjectInput.value = "";
+      updateToolsMoveSelectState(
+        toolsMoveObjectInput,
+        toolsMoveState.objectOptions,
+        "Нет объектов"
+      );
+      toolsMoveObjectSuggestionsEl?.classList.add("is-hidden");
     }
 
     toolsMoveModalEl.classList.remove("is-hidden");
@@ -3456,8 +3442,18 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   if (toolsMoveFormEl) {
     toolsMoveFormEl.addEventListener("submit", async (event) => {
       event.preventDefault();
-      const responsible = String(toolsMoveResponsibleSelect?.value ?? "").trim();
-      const targetObject = String(toolsMoveObjectSelect?.value ?? "").trim();
+      const responsibleRaw = String(
+        toolsMoveResponsibleInput?.value ?? ""
+      ).trim();
+      const targetObjectRaw = String(toolsMoveObjectInput?.value ?? "").trim();
+      const responsible = resolveMoveOptionMatch(
+        responsibleRaw,
+        toolsMoveState.responsibleOptions
+      );
+      const targetObject = resolveMoveOptionMatch(
+        targetObjectRaw,
+        toolsMoveState.objectOptions
+      );
       if (!responsible || !targetObject) {
         setToolsMoveMessage("Выберите ответственного и объект.", "error");
         return;
@@ -4532,6 +4528,22 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     showOnFocus: true,
   });
 
+  attachDynamicSuggestions({
+    inputEl: toolsMoveResponsibleInput,
+    containerEl: toolsMoveResponsibleSuggestionsEl,
+    getItems: (query) =>
+      getSelectableSuggestions(toolsMoveState.responsibleOptions, query),
+    showOnFocus: true,
+  });
+
+  attachDynamicSuggestions({
+    inputEl: toolsMoveObjectInput,
+    containerEl: toolsMoveObjectSuggestionsEl,
+    getItems: (query) =>
+      getSelectableSuggestions(toolsMoveState.objectOptions, query),
+    showOnFocus: true,
+  });
+
   const updateAddToolSelectState = (inputEl, options, emptyPlaceholder) => {
     if (!inputEl) return;
     const basePlaceholder =
@@ -4544,6 +4556,31 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     inputEl.disabled = true;
     inputEl.placeholder = emptyPlaceholder;
     inputEl.value = "";
+  };
+
+  const updateToolsMoveSelectState = (inputEl, options, emptyPlaceholder) => {
+    if (!inputEl) return;
+    const basePlaceholder =
+      inputEl.dataset.placeholder ?? "Выберите значение";
+    if (options.length) {
+      inputEl.disabled = false;
+      inputEl.placeholder = basePlaceholder;
+      return;
+    }
+    inputEl.disabled = true;
+    inputEl.placeholder = emptyPlaceholder;
+    inputEl.value = "";
+  };
+
+  const normalizeMoveOption = (value = "") =>
+    String(value ?? "").trim().toLowerCase();
+
+  const resolveMoveOptionMatch = (value, options) => {
+    const normalized = normalizeMoveOption(value);
+    if (!normalized) return "";
+    return (
+      options.find((option) => normalizeMoveOption(option) === normalized) ?? ""
+    );
   };
 
   const updateAddToolFilledStates = () => {

@@ -330,15 +330,35 @@ export function renderRole(user) {
                 <div class="form-card form-grid">
                   <label class="form-field form-field--required">
                     <span class="form-label">Ответственный</span>
-                    <select
+                    <input
                       class="form-input"
+                      type="text"
                       data-tools-move-responsible
+                      data-placeholder="Выберите ответственного"
+                      placeholder="Выберите ответственного"
+                      autocomplete="off"
                       required
-                    ></select>
+                    />
+                    <div
+                      class="suggestions is-hidden"
+                      data-tools-move-responsible-suggestions
+                    ></div>
                   </label>
                   <label class="form-field form-field--required">
                     <span class="form-label">Объект</span>
-                    <select class="form-input" data-tools-move-object required></select>
+                    <input
+                      class="form-input"
+                      type="text"
+                      data-tools-move-object
+                      data-placeholder="Выберите объект"
+                      placeholder="Выберите объект"
+                      autocomplete="off"
+                      required
+                    />
+                    <div
+                      class="suggestions is-hidden"
+                      data-tools-move-object-suggestions
+                    ></div>
                   </label>
                 </div>
                 <div class="form-message" data-tools-move-message></div>

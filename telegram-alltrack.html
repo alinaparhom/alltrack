@@ -428,6 +428,11 @@
         background: rgba(22, 32, 54, 0.95);
       }
 
+      body[data-theme="dark"] .tools-table__thumb {
+        background: rgba(15, 23, 42, 0.75);
+        border-color: rgba(148, 170, 210, 0.35);
+      }
+
       body[data-theme="dark"] .tools-table__row--no-photo {
         background: rgba(74, 32, 44, 0.92);
         border-color: rgba(248, 113, 113, 0.4);
@@ -2473,7 +2478,7 @@
 
       .tools-table__row {
         display: grid;
-        grid-template-columns: minmax(80px, 120px) minmax(0, 1fr);
+        grid-template-columns: minmax(80px, 120px) minmax(0, 1fr) auto;
         gap: 12px;
         align-items: center;
         padding: 12px 14px;
@@ -2507,6 +2512,38 @@
       .tools-table__cell--number {
         font-weight: 600;
         color: var(--title);
+      }
+
+      .tools-table__cell--thumb {
+        display: flex;
+        align-items: center;
+        justify-self: end;
+      }
+
+      .tools-table__thumb {
+        width: 56px;
+        height: 56px;
+        border-radius: 14px;
+        overflow: hidden;
+        border: 1px solid rgba(226, 232, 240, 0.9);
+        background: rgba(255, 255, 255, 0.9);
+        box-shadow: 0 10px 20px rgba(15, 23, 42, 0.08);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .tools-table__thumb-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+      }
+
+      .tools-table__thumb-image.is-placeholder {
+        object-fit: contain;
+        padding: 6px;
+        opacity: 0.85;
       }
 
       .tools-table__title {
@@ -2650,8 +2687,14 @@
         }
 
         .tools-list.is-table .tools-table__row {
-          grid-template-columns: minmax(64px, 90px) minmax(0, 1fr);
+          grid-template-columns: minmax(64px, 90px) minmax(0, 1fr) auto;
           padding: 10px 12px;
+        }
+
+        .tools-list.is-table .tools-table__thumb {
+          width: 46px;
+          height: 46px;
+          border-radius: 12px;
         }
 
         .tools-list.is-table .tools-table__title {

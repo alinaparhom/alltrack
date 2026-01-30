@@ -2421,9 +2421,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   };
   const toolsViewOptions = new Set(["large", "compact", "list", "table"]);
   const normalizeToolsView = (value) =>
-    toolsViewOptions.has(value) ? value : "list";
+    toolsViewOptions.has(value) ? value : "table";
   const savedToolsView = normalizeToolsView(
-    settingsData.users?.[context.userKey]?.energy?.toolsView
+    settingsData.users?.[context.userKey]?.energy?.toolsView ?? "table"
   );
   const toolsState = {
     tools: [],
@@ -2780,7 +2780,44 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const model = String(tool?.["Модель"] ?? "").trim();
       meta.textContent = [manufacturer, model].filter(Boolean).join(" · ") || "—";
       infoCell.append(title, meta);
-      row.append(numberCell, infoCell);
+      const photoCell = document.createElement("div");
+      photoCell.className = "tools-table__cell tools-table__cell--thumb";
+      const thumb = document.createElement("div");
+      thumb.className = "tools-table__thumb";
+      const img = document.createElement("img");
+      img.className = "tools-table__thumb-image";
+      img.alt = name || "Инструмент";
+      const candidates = hasPhoto
+        ? buildToolPhotoCandidates(toolsState.orgFolder, tool?.["Номер"])
+        : [];
+      let candidateIndex = 0;
+      const tryCandidate = () => {
+        if (candidateIndex >= candidates.length) {
+          img.onerror = null;
+          img.onload = null;
+          img.src = toolPhotoPlaceholder;
+          img.classList.add("is-placeholder");
+          return;
+        }
+        const next = candidates[candidateIndex];
+        candidateIndex += 1;
+        img.src = next;
+      };
+      img.onerror = () => {
+        tryCandidate();
+      };
+      img.onload = () => {
+        img.classList.remove("is-placeholder");
+      };
+      if (candidates.length) {
+        tryCandidate();
+      } else {
+        img.src = toolPhotoPlaceholder;
+        img.classList.add("is-placeholder");
+      }
+      thumb.appendChild(img);
+      photoCell.appendChild(thumb);
+      row.append(numberCell, infoCell, photoCell);
       table.appendChild(row);
     });
 

@@ -2758,23 +2758,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const table = document.createElement("div");
     table.className = "tools-table";
 
-    const header = document.createElement("div");
-    header.className = "tools-table__row tools-table__row--header";
-    const headerNumber = document.createElement("div");
-    headerNumber.className = "tools-table__cell tools-table__cell--number";
-    headerNumber.textContent = "Номер";
-    const headerInfo = document.createElement("div");
-    headerInfo.className = "tools-table__cell";
-    const headerTitle = document.createElement("div");
-    headerTitle.className = "tools-table__title";
-    headerTitle.textContent = "Наименование";
-    const headerMeta = document.createElement("div");
-    headerMeta.className = "tools-table__meta";
-    headerMeta.textContent = "Производитель · Модель";
-    headerInfo.append(headerTitle, headerMeta);
-    header.append(headerNumber, headerInfo);
-    table.appendChild(header);
-
     items.forEach((tool) => {
       const row = document.createElement("div");
       row.className = "tools-table__row";

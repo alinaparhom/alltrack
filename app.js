@@ -6771,8 +6771,12 @@ function setupSuperAdmin() {
     }
   };
 
-  function unploadPhotoEntriesInBatches(...args) {
-    return uploadPhotoEntriesInBatches(...args);
+  const unploadPhotoEntriesInBatches = (...args) =>
+    uploadPhotoEntriesInBatches(...args);
+
+  if (typeof window !== "undefined") {
+    window.uploadPhotoEntriesInBatches = uploadPhotoEntriesInBatches;
+    window.unploadPhotoEntriesInBatches = unploadPhotoEntriesInBatches;
   }
 
   const normalizePurchaseDate = (value) => {

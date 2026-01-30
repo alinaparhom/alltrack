@@ -223,14 +223,14 @@ export function renderRole(user) {
                         Обычные
                       </button>
                       <button
-                        class="tools-view-button is-active"
+                        class="tools-view-button"
                         type="button"
                         data-tools-view="list"
                       >
                         Список
                       </button>
                       <button
-                        class="tools-view-button"
+                        class="tools-view-button is-active"
                         type="button"
                         data-tools-view="table"
                       >

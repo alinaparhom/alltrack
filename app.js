@@ -3338,6 +3338,19 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     return sanitizePhotoFileName(baseName);
   };
 
+  const loadToolsData = async (orgFolder) => {
+    if (!orgFolder) return [];
+    const toolsPath = `./${orgFolder}/База с инструментами.json`;
+    try {
+      const raw = await loadJson(toolsPath);
+      if (Array.isArray(raw)) return raw;
+      if (Array.isArray(raw?.tools)) return raw.tools;
+    } catch (error) {
+      console.warn("Не удалось загрузить базу инструментов.", error);
+    }
+    return [];
+  };
+
   const updateAddPhotoAfterSave = (toolNumber) => {
     const normalized = normalizeToolNumberValue(toolNumber);
     addPhotoState.tools = addPhotoState.tools.filter(
@@ -6733,19 +6746,6 @@ function setupSuperAdmin() {
       numberType: String(orgRecord?.number_type ?? "Номер приложения").trim(),
     };
   };
-
-  async function loadToolsData(orgFolder) {
-    if (!orgFolder) return [];
-    const toolsPath = `./${orgFolder}/База с инструментами.json`;
-    try {
-      const raw = await loadJson(toolsPath);
-      if (Array.isArray(raw)) return raw;
-      if (Array.isArray(raw?.tools)) return raw.tools;
-    } catch (error) {
-      console.warn("Не удалось загрузить базу инструментов.", error);
-    }
-    return [];
-  }
 
   const uploadPhotoEntriesInBatches = async (
     entries,

@@ -608,8 +608,8 @@ export function renderRole(user) {
           >
             <div class="settings-modal__header add-tool-success-modal__header">
               <div class="settings-modal__title">
-                <h2>Готово!</h2>
-                <p>Новая позиция добавлена в базу</p>
+                <h2 data-add-tool-success-title>Готово!</h2>
+                <p data-add-tool-success-message>Новая позиция добавлена в базу</p>
               </div>
               <button
                 class="button-icon add-tool-success-modal__close"
@@ -622,7 +622,9 @@ export function renderRole(user) {
             </div>
             <div class="settings-modal__body add-tool-success-modal__body">
               <div class="success-card">
-                <div class="success-card__label">Присвоенный номер</div>
+                <div class="success-card__label" data-add-tool-success-label>
+                  Присвоенный номер
+                </div>
                 <div class="success-card__number" data-add-tool-success-number>
                   —
                 </div>

@@ -2261,11 +2261,23 @@
         box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
       }
 
+      .tools-cancel-button {
+        display: none;
+        padding: 6px 14px;
+        font-size: 12px;
+        border-radius: 999px;
+        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.1);
+      }
+
       .tools-modal--selecting .tools-view-toggle {
         display: none;
       }
 
       .tools-modal--selecting .tools-move-button {
+        display: inline-flex;
+      }
+
+      .tools-modal--selecting .tools-cancel-button {
         display: inline-flex;
       }
 
@@ -2290,6 +2302,38 @@
         border: 1px solid rgba(226, 232, 240, 0.8);
         box-shadow: 0 24px 60px rgba(15, 23, 42, 0.16);
         overflow: hidden;
+      }
+
+      .tools-move-modal .form-card {
+        padding: 14px;
+        border-radius: 18px;
+      }
+
+      .tools-move-modal .form-grid {
+        gap: 10px;
+      }
+
+      .tools-move-modal .form-field--required .form-label {
+        font-size: 11px;
+        padding: 2px 8px;
+        border-radius: 999px;
+      }
+
+      .tools-move-modal .form-input {
+        padding: 10px 12px;
+        font-size: 14px;
+        border-radius: 12px;
+      }
+
+      @media (max-width: 520px) {
+        .tools-move-modal .form-card {
+          padding: 12px;
+        }
+
+        .tools-move-modal .form-input {
+          padding: 9px 10px;
+          font-size: 13px;
+        }
       }
 
       .tools-filters-toggle {

@@ -3347,6 +3347,25 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     applyAddPhotoFilters();
   };
 
+  const syncToolsPhotoCount = (toolNumber) => {
+    const normalized = normalizeToolNumberValue(toolNumber);
+    const updateTool = (tool) => {
+      if (normalizeToolNumberValue(tool?.["Номер"] ?? "") !== normalized) {
+        return tool;
+      }
+      const current = Number.parseInt(tool?.["Количество фото"] ?? 0, 10);
+      const safeCurrent = Number.isFinite(current) ? current : 0;
+      return { ...tool, "Количество фото": safeCurrent + 1 };
+    };
+    if (toolsState.tools.length) {
+      toolsState.tools = toolsState.tools.map(updateTool);
+      toolsState.filtered = toolsState.filtered.map(updateTool);
+      if (toolsModalEl && !toolsModalEl.classList.contains("is-hidden")) {
+        applyToolsFilters();
+      }
+    }
+  };
+
   const handleAddPhotoUpload = async (tool, file) => {
     const toolNumber = String(tool?.["Номер"] ?? "").trim();
     if (!toolNumber) {
@@ -3406,6 +3425,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       ]);
 
       updateAddPhotoAfterSave(toolNumber);
+      syncToolsPhotoCount(toolNumber);
+      setAddPhotoSubtitle(`Фото сохранено для №${toolNumber}.`);
     } catch (error) {
       console.error(error);
       const reason =

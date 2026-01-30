@@ -178,7 +178,7 @@ export function renderRole(user) {
           >
             <div class="settings-modal__header tools-modal__header">
               <div class="settings-modal__title">
-                <h2 data-tools-title>Мои инструменты</h2>
+                <h2>Мои инструменты</h2>
                 <p data-tools-subtitle>Загружаем список...</p>
               </div>
               <button
@@ -208,6 +208,27 @@ export function renderRole(user) {
                       role="group"
                       aria-label="Вариант отображения"
                     >
+                      <button
+                        class="tools-view-button"
+                        type="button"
+                        data-tools-view="large"
+                      >
+                        Крупные
+                      </button>
+                      <button
+                        class="tools-view-button"
+                        type="button"
+                        data-tools-view="compact"
+                      >
+                        Обычные
+                      </button>
+                      <button
+                        class="tools-view-button"
+                        type="button"
+                        data-tools-view="list"
+                      >
+                        Список
+                      </button>
                       <button
                         class="tools-view-button is-active"
                         type="button"

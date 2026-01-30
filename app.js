@@ -2230,6 +2230,23 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const toolsFiltersToggleEl = contentEl.querySelector(
     "[data-tools-filters-toggle]"
   );
+  const toolsViewToggleEl = contentEl.querySelector("[data-tools-view-toggle]");
+  const toolsMoveButtonEl = contentEl.querySelector("[data-tools-move-trigger]");
+  const toolsMoveModalEl = contentEl.querySelector("[data-tools-move-modal]");
+  const toolsMoveBackdropEl = contentEl.querySelector(
+    "[data-tools-move-backdrop]"
+  );
+  const toolsMoveCloseButton = contentEl.querySelector("[data-tools-move-close]");
+  const toolsMoveCancelButton = contentEl.querySelector(
+    "[data-tools-move-cancel]"
+  );
+  const toolsMoveFormEl = contentEl.querySelector("[data-tools-move-form]");
+  const toolsMoveResponsibleSelect = contentEl.querySelector(
+    "[data-tools-move-responsible]"
+  );
+  const toolsMoveObjectSelect = contentEl.querySelector("[data-tools-move-object]");
+  const toolsMoveMessageEl = contentEl.querySelector("[data-tools-move-message]");
+  const toolsMoveSubtitleEl = contentEl.querySelector("[data-tools-move-subtitle]");
   const addPhotoModalEl = contentEl.querySelector("[data-add-photo-modal]");
   const addPhotoBackdropEl = contentEl.querySelector(
     "[data-add-photo-backdrop]"
@@ -2532,6 +2549,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     orgFolder: "",
     numberKey: "Номер",
     numberLabel: "Номер",
+    isSelecting: false,
+    selectedIds: new Set(),
+    toolMap: new Map(),
   };
   const addPhotoState = {
     tools: [],
@@ -2728,6 +2748,45 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
   };
 
+  const buildToolSelectionId = (tool, index) => {
+    const number = String(tool?.["Номер"] ?? "").trim();
+    if (number) return `number:${number}`;
+    const accounting = String(tool?.["Бух.номер"] ?? "").trim();
+    if (accounting) return `account:${accounting}`;
+    return `index:${index}`;
+  };
+
+  const setToolsMoveMessage = (text = "", type = "") => {
+    if (!toolsMoveMessageEl) return;
+    toolsMoveMessageEl.textContent = text;
+    toolsMoveMessageEl.classList.remove("is-error", "is-success", "is-info");
+    if (type) {
+      toolsMoveMessageEl.classList.add(`is-${type}`);
+    }
+  };
+
+  const updateToolsSelectionUi = () => {
+    const count = toolsState.selectedIds.size;
+    if (toolsMoveButtonEl) {
+      toolsMoveButtonEl.disabled = count === 0;
+    }
+    if (toolsMoveSubtitleEl) {
+      toolsMoveSubtitleEl.textContent =
+        count > 0
+          ? `Выбрано инструментов: ${count}`
+          : "Выберите ответственного и объект";
+    }
+    if (toolsModalEl) {
+      toolsModalEl.classList.toggle("tools-modal--selecting", toolsState.isSelecting);
+    }
+  };
+
+  const resetToolsSelection = () => {
+    toolsState.isSelecting = false;
+    toolsState.selectedIds.clear();
+    updateToolsSelectionUi();
+  };
+
   const resolveToolsNumberConfig = async () => {
     const fallback = { numberKey: "Номер", numberLabel: "Номер" };
     const orgName =
@@ -2815,6 +2874,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const row = document.createElement("div");
       row.className = "tools-row";
       row.classList.toggle("tools-row--no-photo", !hasPhoto);
+      row.classList.toggle("is-selected", toolsState.selectedIds.has(tool.__selectionId));
+      row.dataset.toolsItem = "true";
+      row.dataset.toolId = tool.__selectionId;
       const main = document.createElement("div");
       main.className = "tools-row__main";
       const title = document.createElement("div");
@@ -2845,6 +2907,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
     const card = document.createElement("div");
     card.className = "tools-card";
+    card.classList.toggle("is-selected", toolsState.selectedIds.has(tool.__selectionId));
+    card.dataset.toolsItem = "true";
+    card.dataset.toolId = tool.__selectionId;
 
     const media = document.createElement("div");
     media.className = "tools-card__media";
@@ -2918,6 +2983,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     items.forEach((tool) => {
       const row = document.createElement("div");
       row.className = "tools-table__row";
+      row.classList.toggle("is-selected", toolsState.selectedIds.has(tool.__selectionId));
+      row.dataset.toolsItem = "true";
+      row.dataset.toolId = tool.__selectionId;
       const photoCount = Number.parseInt(tool?.["Количество фото"] ?? 0, 10);
       const hasPhoto = Number.isFinite(photoCount) && photoCount > 0;
       row.classList.toggle("tools-table__row--no-photo", !hasPhoto);
@@ -3007,6 +3075,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       `Показано ${items.length} из ${toolsState.tools.length}`
     );
     syncToolsViewButtons();
+    updateToolsSelectionUi();
   };
 
   const applyToolsFilters = () => {
@@ -3139,15 +3208,23 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         (tool) =>
           normalizePersonName(tool?.["Ответственный"] ?? "") === userNameKey
       )
-      .map((tool) => ({
-        ...tool,
-        __searchLine: buildToolSearchLine(tool),
-      }))
+      .map((tool, index) => {
+        const selectionId = buildToolSelectionId(tool, index);
+        return {
+          ...tool,
+          __searchLine: buildToolSearchLine(tool),
+          __selectionId: selectionId,
+        };
+      })
       .sort((a, b) =>
         resolveToolNumberValue(a).localeCompare(resolveToolNumberValue(b), "ru", {
           numeric: true,
         })
       );
+    toolsState.toolMap = new Map(
+      toolsState.tools.map((tool) => [tool.__selectionId, tool])
+    );
+    resetToolsSelection();
     prepareToolsFilters();
     applyToolsFilters();
   };
@@ -3195,6 +3272,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     toolsModalEl.classList.add("is-hidden");
     toolsModalEl.classList.remove("tools-modal--searching");
     document.body.style.overflow = "";
+    resetToolsSelection();
+    closeToolsMoveModal();
   };
 
   if (toolsBackdropEl) {
@@ -3265,6 +3344,275 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       saveToolsViewPreference(view);
     });
   });
+
+  function closeToolsMoveModal() {
+    if (!toolsMoveModalEl) return;
+    toolsMoveModalEl.classList.add("is-hidden");
+    setToolsMoveMessage("");
+  }
+
+  const openToolsMoveModal = async () => {
+    if (!toolsMoveModalEl) return;
+    if (toolsState.selectedIds.size === 0) return;
+    setToolsMoveMessage("");
+    updateToolsSelectionUi();
+    const usersData = await loadJson(usersFilePath).catch(() => ({ users: [] }));
+    const orgName = findUserOrganizationName(user, usersData);
+    const normalizeOrg = (value) => String(value ?? "").trim().toLowerCase();
+    const orgKey = normalizeOrg(orgName);
+    const currentUserName = normalizePersonName(user?.full_name ?? "");
+    const currentTelegramId = normalizeTelegramId(user?.telegram_id);
+    const userOptions = (usersData.users ?? [])
+      .filter((entry) => normalizeOrg(entry.organization) === orgKey)
+      .filter((entry) => {
+        const sameTelegram =
+          currentTelegramId &&
+          normalizeTelegramId(entry.telegram_id) === currentTelegramId;
+        const sameName =
+          normalizePersonName(entry.full_name ?? "") === currentUserName;
+        return !(sameTelegram || sameName);
+      })
+      .map((entry) => String(entry.full_name ?? "").trim())
+      .filter(Boolean);
+
+    if (toolsMoveResponsibleSelect) {
+      toolsMoveResponsibleSelect.innerHTML = "";
+      if (userOptions.length) {
+        const placeholder = document.createElement("option");
+        placeholder.value = "";
+        placeholder.textContent = "Выберите ответственного";
+        placeholder.disabled = true;
+        placeholder.selected = true;
+        toolsMoveResponsibleSelect.appendChild(placeholder);
+        userOptions.forEach((name) => {
+          const option = document.createElement("option");
+          option.value = name;
+          option.textContent = name;
+          toolsMoveResponsibleSelect.appendChild(option);
+        });
+        toolsMoveResponsibleSelect.disabled = false;
+      } else {
+        const option = document.createElement("option");
+        option.value = "";
+        option.textContent = "Нет доступных пользователей";
+        toolsMoveResponsibleSelect.appendChild(option);
+        toolsMoveResponsibleSelect.disabled = true;
+      }
+    }
+
+    let objectOptions = [];
+    try {
+      const rawObjects = await loadJson(objectsPath);
+      objectOptions = normalizeObjectsData(rawObjects)
+        .map((item) => String(item?.name ?? "").trim())
+        .filter(Boolean);
+    } catch (error) {
+      console.warn("Не удалось загрузить объекты для перемещения.", error);
+    }
+
+    if (toolsMoveObjectSelect) {
+      toolsMoveObjectSelect.innerHTML = "";
+      if (objectOptions.length) {
+        const placeholder = document.createElement("option");
+        placeholder.value = "";
+        placeholder.textContent = "Выберите объект";
+        placeholder.disabled = true;
+        placeholder.selected = true;
+        toolsMoveObjectSelect.appendChild(placeholder);
+        objectOptions.forEach((name) => {
+          const option = document.createElement("option");
+          option.value = name;
+          option.textContent = name;
+          toolsMoveObjectSelect.appendChild(option);
+        });
+        toolsMoveObjectSelect.disabled = false;
+      } else {
+        const option = document.createElement("option");
+        option.value = "";
+        option.textContent = "Нет объектов";
+        toolsMoveObjectSelect.appendChild(option);
+        toolsMoveObjectSelect.disabled = true;
+      }
+    }
+
+    toolsMoveModalEl.classList.remove("is-hidden");
+    document.body.style.overflow = "hidden";
+  };
+
+  if (toolsMoveBackdropEl) {
+    toolsMoveBackdropEl.addEventListener("click", closeToolsMoveModal);
+  }
+  if (toolsMoveCloseButton) {
+    toolsMoveCloseButton.addEventListener("click", closeToolsMoveModal);
+  }
+  if (toolsMoveCancelButton) {
+    toolsMoveCancelButton.addEventListener("click", closeToolsMoveModal);
+  }
+
+  if (toolsMoveButtonEl) {
+    toolsMoveButtonEl.addEventListener("click", openToolsMoveModal);
+  }
+
+  if (toolsMoveFormEl) {
+    toolsMoveFormEl.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const responsible = String(toolsMoveResponsibleSelect?.value ?? "").trim();
+      const targetObject = String(toolsMoveObjectSelect?.value ?? "").trim();
+      if (!responsible || !targetObject) {
+        setToolsMoveMessage("Выберите ответственного и объект.", "error");
+        return;
+      }
+
+      const selectedTools = Array.from(toolsState.selectedIds)
+        .map((id) => toolsState.toolMap.get(id))
+        .filter(Boolean);
+      if (!selectedTools.length) {
+        setToolsMoveMessage("Сначала выберите инструменты.", "error");
+        return;
+      }
+
+      const now = new Date();
+      const eligibleEntries = [];
+      let skippedCount = 0;
+
+      selectedTools.forEach((tool) => {
+        const accountingNumber = String(tool?.["Бух.номер"] ?? "").trim();
+        const hasAccountingNumber =
+          accountingNumber &&
+          accountingNumber.toLowerCase() !== "нет номера";
+        const photoCount = Number.parseInt(tool?.["Количество фото"] ?? 0, 10);
+        const hasPhoto = Number.isFinite(photoCount) && photoCount > 0;
+        if (!hasAccountingNumber || !hasPhoto) {
+          skippedCount += 1;
+          return;
+        }
+        eligibleEntries.push({
+          Номер: String(tool?.["Номер"] ?? "").trim(),
+          "Бух.номер": accountingNumber,
+          "Дата перемещения": formatDateValue(now),
+          "Дата ответа": "",
+          Переместил: String(user?.full_name ?? "").trim(),
+          Принял: responsible,
+          "Старый объект": String(tool?.["Объект"] ?? "").trim(),
+          "Новый объект": targetObject,
+          Статус: String(tool?.["Статус"] ?? "").trim(),
+        });
+      });
+
+      if (!eligibleEntries.length) {
+        setToolsMoveMessage(
+          "Для перемещения нужен бух.номер и хотя бы одно фото.",
+          "error"
+        );
+        return;
+      }
+
+      const movesPath = `./${context.orgFolderName}/Перемещения.json`;
+      let movesData = [];
+      try {
+        const rawMoves = await loadJson(movesPath);
+        movesData = Array.isArray(rawMoves)
+          ? rawMoves
+          : Array.isArray(rawMoves?.moves)
+            ? rawMoves.moves
+            : [];
+      } catch (error) {
+        movesData = [];
+      }
+
+      const updatedMoves = [...movesData, ...eligibleEntries];
+      try {
+        await saveJson(movesPath, updatedMoves, { user });
+        const message = skippedCount
+          ? `Перемещение создано: ${eligibleEntries.length}. Пропущено: ${skippedCount}.`
+          : `Перемещение создано: ${eligibleEntries.length}.`;
+        setToolsMoveMessage(message, "success");
+        setTimeout(() => {
+          closeToolsMoveModal();
+          resetToolsSelection();
+          renderToolsList();
+        }, 600);
+      } catch (error) {
+        console.error(error);
+        setToolsMoveMessage("Не удалось сохранить перемещение.", "error");
+      }
+    });
+  }
+
+  const toolsSelectState = {
+    holdTimer: null,
+    startX: 0,
+    startY: 0,
+    suppressClick: false,
+  };
+
+  const clearToolsHold = () => {
+    if (toolsSelectState.holdTimer) {
+      window.clearTimeout(toolsSelectState.holdTimer);
+      toolsSelectState.holdTimer = null;
+    }
+  };
+
+  if (toolsListEl) {
+    toolsListEl.addEventListener("pointerdown", (event) => {
+      if (toolsState.isSelecting) return;
+      const item = event.target.closest("[data-tools-item]");
+      if (!item) return;
+      toolsSelectState.startX = event.clientX;
+      toolsSelectState.startY = event.clientY;
+      toolsSelectState.suppressClick = false;
+      clearToolsHold();
+      toolsSelectState.holdTimer = window.setTimeout(() => {
+        toolsState.isSelecting = true;
+        toolsState.selectedIds.add(item.dataset.toolId);
+        item.classList.add("is-selected");
+        toolsSelectState.suppressClick = true;
+        updateToolsSelectionUi();
+      }, event.pointerType === "touch" ? 320 : 240);
+    });
+
+    toolsListEl.addEventListener("pointermove", (event) => {
+      if (!toolsSelectState.holdTimer) return;
+      const moved =
+        Math.abs(event.clientX - toolsSelectState.startX) > 8 ||
+        Math.abs(event.clientY - toolsSelectState.startY) > 8;
+      if (moved) {
+        clearToolsHold();
+      }
+    });
+
+    toolsListEl.addEventListener("pointerup", () => {
+      clearToolsHold();
+    });
+
+    toolsListEl.addEventListener("pointercancel", () => {
+      clearToolsHold();
+    });
+
+    toolsListEl.addEventListener("click", (event) => {
+      const item = event.target.closest("[data-tools-item]");
+      if (!item) return;
+      if (toolsSelectState.suppressClick) {
+        toolsSelectState.suppressClick = false;
+        return;
+      }
+      if (!toolsState.isSelecting) return;
+      const toolId = item.dataset.toolId;
+      if (toolsState.selectedIds.has(toolId)) {
+        toolsState.selectedIds.delete(toolId);
+        item.classList.remove("is-selected");
+      } else {
+        toolsState.selectedIds.add(toolId);
+        item.classList.add("is-selected");
+      }
+      if (toolsState.selectedIds.size === 0) {
+        toolsState.isSelecting = false;
+        renderToolsList();
+        return;
+      }
+      updateToolsSelectionUi();
+    });
+  }
   const setAddPhotoSubtitle = (text) => {
     if (addPhotoSubtitleEl) {
       addPhotoSubtitleEl.textContent = text;

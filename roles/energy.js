@@ -207,6 +207,7 @@ export function renderRole(user) {
                       class="tools-view-toggle"
                       role="group"
                       aria-label="Вариант отображения"
+                      data-tools-view-toggle
                     >
                       <button
                         class="tools-view-button"
@@ -237,6 +238,13 @@ export function renderRole(user) {
                         Таблица
                       </button>
                     </div>
+                    <button
+                      class="action-primary tools-move-button"
+                      type="button"
+                      data-tools-move-trigger
+                    >
+                      Переместить
+                    </button>
                     <button
                       class="tools-filters-toggle"
                       type="button"
@@ -293,6 +301,61 @@ export function renderRole(user) {
                 Инструменты не найдены. Попробуйте сбросить фильтры или поиск.
               </div>
             </div>
+          </div>
+        </div>
+        <div class="settings-modal tools-move-modal is-hidden" data-tools-move-modal>
+          <div class="settings-modal__backdrop" data-tools-move-backdrop></div>
+          <div
+            class="settings-modal__panel tools-move-modal__panel"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Перемещение инструментов"
+          >
+            <div class="settings-modal__header">
+              <div class="settings-modal__title">
+                <h2>Перемещение</h2>
+                <p data-tools-move-subtitle>Выберите ответственного и объект</p>
+              </div>
+              <button
+                class="button-icon"
+                type="button"
+                data-tools-move-close
+                aria-label="Закрыть окно перемещения"
+              >
+                <span class="button-icon-emoji" aria-hidden="true">✕</span>
+              </button>
+            </div>
+            <form class="settings-modal__form" data-tools-move-form>
+              <div class="settings-modal__body">
+                <div class="form-card form-grid">
+                  <label class="form-field form-field--required">
+                    <span class="form-label">Ответственный</span>
+                    <select
+                      class="form-input"
+                      data-tools-move-responsible
+                      required
+                    ></select>
+                  </label>
+                  <label class="form-field form-field--required">
+                    <span class="form-label">Объект</span>
+                    <select class="form-input" data-tools-move-object required></select>
+                  </label>
+                </div>
+                <div class="form-message" data-tools-move-message></div>
+              </div>
+              <div class="settings-modal__footer">
+                <button
+                  class="action-secondary"
+                  type="button"
+                  data-tools-move-cancel
+                >
+                  Отмена
+                </button>
+                <button class="action-primary" type="submit">
+                  Переместить
+                </button>
+              </div>
+            </form>
           </div>
         </div>
         <div class="tools-modal settings-modal is-hidden" data-add-photo-modal>

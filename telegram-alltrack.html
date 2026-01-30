@@ -419,7 +419,8 @@
       body[data-theme="dark"] .tools-search__input,
       body[data-theme="dark"] .tools-filter .form-input,
       body[data-theme="dark"] .tools-filters-toggle,
-      body[data-theme="dark"] .tools-filters {
+      body[data-theme="dark"] .tools-filters,
+      body[data-theme="dark"] .tools-move-modal__panel {
         background: rgba(18, 26, 46, 0.9);
         border-color: rgba(148, 170, 210, 0.3);
       }
@@ -2252,6 +2253,45 @@
         flex-wrap: wrap;
       }
 
+      .tools-move-button {
+        display: none;
+        padding: 6px 14px;
+        font-size: 12px;
+        border-radius: 999px;
+        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
+      }
+
+      .tools-modal--selecting .tools-view-toggle {
+        display: none;
+      }
+
+      .tools-modal--selecting .tools-move-button {
+        display: inline-flex;
+      }
+
+      .tools-card.is-selected,
+      .tools-row.is-selected,
+      .tools-table__row.is-selected {
+        border-color: rgba(47, 158, 103, 0.65);
+        background: linear-gradient(
+          120deg,
+          rgba(47, 158, 103, 0.16),
+          rgba(255, 255, 255, 0.86)
+        );
+        box-shadow: 0 16px 30px rgba(47, 158, 103, 0.2);
+      }
+
+      .tools-move-modal__panel {
+        width: min(520px, calc(100% - 20px));
+        max-height: calc(100vh - 20px);
+        border-radius: 22px;
+        grid-template-rows: auto minmax(0, 1fr);
+        background: linear-gradient(160deg, rgba(255, 255, 255, 0.98), rgba(255, 255, 255, 0.86));
+        border: 1px solid rgba(226, 232, 240, 0.8);
+        box-shadow: 0 24px 60px rgba(15, 23, 42, 0.16);
+        overflow: hidden;
+      }
+
       .tools-filters-toggle {
         display: inline-flex;
         align-items: center;
@@ -2685,6 +2725,11 @@
           justify-content: space-between;
           flex-wrap: nowrap;
           width: 100%;
+        }
+
+        .tools-move-button {
+          flex: 1 1 auto;
+          justify-content: center;
         }
 
         .tools-filters-toggle {

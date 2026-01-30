@@ -193,6 +193,14 @@ function getToolNumberVariants(value) {
   return Array.from(variants).filter(Boolean);
 }
 
+function normalizeToolNumberValue(value) {
+  const raw = String(value ?? "");
+  const match = raw.match(/\d+/);
+  if (!match) return "";
+  const trimmed = match[0].replace(/^0+/, "");
+  return trimmed || "0";
+}
+
 function buildToolSearchLine(tool) {
   return [
     tool?.["Номер"],
@@ -6668,14 +6676,6 @@ function setupSuperAdmin() {
     return raw
       .map((item) => normalizeTelegramGroupEntry(item ?? {}))
       .filter((item) => item.name || item.telegramId);
-  };
-
-  const normalizeToolNumberValue = (value) => {
-    const raw = String(value ?? "");
-    const match = raw.match(/\d+/);
-    if (!match) return "";
-    const trimmed = match[0].replace(/^0+/, "");
-    return trimmed || "0";
   };
 
   const resolvePhotoFileName = (name = "") => {

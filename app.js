@@ -922,6 +922,38 @@ async function saveEntriesViaEndpoint(entries) {
   return responseText;
 }
 
+async function uploadPhotoEntriesInBatches(
+  entries,
+  { onBatch, batchSize = 2 } = {}
+) {
+  if (!entries.length) return;
+  const totalBatches = Math.ceil(entries.length / batchSize);
+  for (let index = 0; index < totalBatches; index += 1) {
+    const batch = entries.slice(index * batchSize, (index + 1) * batchSize);
+    try {
+      await saveEntriesViaEndpoint(batch);
+    } catch (error) {
+      if (batch.length === 1) {
+        throw error;
+      }
+      for (const entry of batch) {
+        await saveEntriesViaEndpoint([entry]);
+      }
+    }
+    if (onBatch) {
+      onBatch(index + 1, totalBatches);
+    }
+  }
+}
+
+const unploadPhotoEntriesInBatches = (...args) =>
+  uploadPhotoEntriesInBatches(...args);
+
+if (typeof window !== "undefined") {
+  window.uploadPhotoEntriesInBatches = uploadPhotoEntriesInBatches;
+  window.unploadPhotoEntriesInBatches = unploadPhotoEntriesInBatches;
+}
+
 async function saveJson(path, data, meta = {}) {
   return saveEntries([{ path, data, ...meta }]);
 }
@@ -3298,7 +3330,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const fileInput = document.createElement("input");
       fileInput.type = "file";
       fileInput.accept = "image/*";
-      fileInput.capture = "environment";
       fileInput.className = "tools-table__thumb-input";
       fileInput.addEventListener("change", async () => {
         const [file] = fileInput.files ?? [];
@@ -6746,38 +6777,6 @@ function setupSuperAdmin() {
       numberType: String(orgRecord?.number_type ?? "Номер приложения").trim(),
     };
   };
-
-  const uploadPhotoEntriesInBatches = async (
-    entries,
-    { onBatch, batchSize = 2 } = {}
-  ) => {
-    if (!entries.length) return;
-    const totalBatches = Math.ceil(entries.length / batchSize);
-    for (let index = 0; index < totalBatches; index += 1) {
-      const batch = entries.slice(index * batchSize, (index + 1) * batchSize);
-      try {
-        await saveEntriesViaEndpoint(batch);
-      } catch (error) {
-        if (batch.length === 1) {
-          throw error;
-        }
-        for (const entry of batch) {
-          await saveEntriesViaEndpoint([entry]);
-        }
-      }
-      if (onBatch) {
-        onBatch(index + 1, totalBatches);
-      }
-    }
-  };
-
-  const unploadPhotoEntriesInBatches = (...args) =>
-    uploadPhotoEntriesInBatches(...args);
-
-  if (typeof window !== "undefined") {
-    window.uploadPhotoEntriesInBatches = uploadPhotoEntriesInBatches;
-    window.unploadPhotoEntriesInBatches = unploadPhotoEntriesInBatches;
-  }
 
   const normalizePurchaseDate = (value) => {
     if (!value) return "";

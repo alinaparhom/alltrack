@@ -210,6 +210,23 @@ function buildToolSearchLine(tool) {
     .toLowerCase();
 }
 
+function buildAddPhotoSearchLine(tool) {
+  return [
+    tool?.["Номер"],
+    tool?.["Бух.номер"],
+    tool?.["Наименование"],
+    tool?.["Производитель"],
+    tool?.["Модель"],
+    tool?.["Дата покупки"],
+    tool?.["Статус"],
+    tool?.["Объект"],
+    tool?.["Граппа инструментов"],
+  ]
+    .filter((value) => value !== null && value !== undefined && String(value).trim())
+    .join(" ")
+    .toLowerCase();
+}
+
 function buildToolPhotoCandidates(orgFolder, toolNumber) {
   if (!orgFolder) return [];
   const variants = getToolNumberVariants(toolNumber);
@@ -2173,6 +2190,28 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const toolsFiltersToggleEl = contentEl.querySelector(
     "[data-tools-filters-toggle]"
   );
+  const addPhotoModalEl = contentEl.querySelector("[data-add-photo-modal]");
+  const addPhotoBackdropEl = contentEl.querySelector(
+    "[data-add-photo-backdrop]"
+  );
+  const addPhotoCloseButton = contentEl.querySelector("[data-add-photo-close]");
+  const addPhotoSearchInput = contentEl.querySelector(
+    "[data-add-photo-search]"
+  );
+  const addPhotoListEl = contentEl.querySelector("[data-add-photo-list]");
+  const addPhotoEmptyEl = contentEl.querySelector("[data-add-photo-empty]");
+  const addPhotoSubtitleEl = contentEl.querySelector(
+    "[data-add-photo-subtitle]"
+  );
+  const addPhotoFilterEls = contentEl.querySelectorAll(
+    "[data-add-photo-filter]"
+  );
+  const addPhotoFiltersPanelEl = contentEl.querySelector(
+    "[data-add-photo-filters-panel]"
+  );
+  const addPhotoFiltersToggleEl = contentEl.querySelector(
+    "[data-add-photo-filters-toggle]"
+  );
   const addToolModalEl = contentEl.querySelector("[data-add-tool-modal]");
   const addToolBackdropEl = contentEl.querySelector("[data-add-tool-backdrop]");
   const addToolCloseButton = contentEl.querySelector("[data-add-tool-close]");
@@ -2453,6 +2492,19 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     orgFolder: "",
     numberKey: "Номер",
     numberLabel: "Номер",
+  };
+  const addPhotoState = {
+    tools: [],
+    filtered: [],
+    filters: {
+      group: "",
+      status: "",
+      object: "",
+      manufacturer: "",
+      model: "",
+    },
+    search: "",
+    orgFolder: "",
   };
   let addToolViewportListenersAttached = false;
   const updateAddToolKeyboardOffset = () => {
@@ -3171,6 +3223,299 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       syncToolsViewButtons();
       renderToolsList();
       saveToolsViewPreference(view);
+    });
+  });
+  const setAddPhotoSubtitle = (text) => {
+    if (addPhotoSubtitleEl) {
+      addPhotoSubtitleEl.textContent = text;
+    }
+  };
+
+  const clearAddPhotoList = () => {
+    if (addPhotoListEl) {
+      addPhotoListEl.innerHTML = "";
+    }
+  };
+
+  const renderAddPhotoTable = (items) => {
+    const table = document.createElement("div");
+    table.className = "tools-table tools-table--add-photo";
+
+    const header = document.createElement("div");
+    header.className = "tools-table__row tools-table__row--header";
+    const numberHeader = document.createElement("div");
+    numberHeader.className = "tools-table__cell tools-table__cell--number";
+    numberHeader.textContent = "Номер";
+    const infoHeader = document.createElement("div");
+    infoHeader.className = "tools-table__cell";
+    infoHeader.textContent = "Информация";
+    const photoHeader = document.createElement("div");
+    photoHeader.className = "tools-table__cell tools-table__cell--thumb";
+    photoHeader.textContent = "Фото";
+    header.append(numberHeader, infoHeader, photoHeader);
+    table.appendChild(header);
+
+    items.forEach((tool) => {
+      const row = document.createElement("div");
+      row.className = "tools-table__row";
+
+      const numberCell = document.createElement("div");
+      numberCell.className = "tools-table__cell tools-table__cell--number";
+      const number = String(tool?.["Номер"] ?? "").trim();
+      numberCell.textContent = number || "—";
+
+      const infoCell = document.createElement("div");
+      infoCell.className = "tools-table__cell";
+      const title = document.createElement("div");
+      title.className = "tools-table__title";
+      const name = String(tool?.["Наименование"] ?? "").trim();
+      title.textContent = name || "Без названия";
+
+      const meta = document.createElement("div");
+      meta.className = "tools-table__meta tools-table__meta--stack";
+      const accountingNumber = String(tool?.["Бух.номер"] ?? "").trim();
+      const manufacturer = String(tool?.["Производитель"] ?? "").trim();
+      const model = String(tool?.["Модель"] ?? "").trim();
+      const purchaseDate = String(tool?.["Дата покупки"] ?? "").trim();
+
+      const accountingLine = document.createElement("div");
+      accountingLine.textContent = `Бух.номер: ${accountingNumber || "—"}`;
+      const detailsLine = document.createElement("div");
+      detailsLine.textContent = [
+        `Производитель: ${manufacturer || "—"}`,
+        `Модель: ${model || "—"}`,
+        `Дата покупки: ${purchaseDate || "—"}`,
+      ].join(" · ");
+      meta.append(accountingLine, detailsLine);
+      infoCell.append(title, meta);
+
+      const photoCell = document.createElement("div");
+      photoCell.className = "tools-table__cell tools-table__cell--thumb";
+      const thumb = document.createElement("div");
+      thumb.className = "tools-table__thumb tools-table__thumb--plus";
+      const icon = document.createElement("span");
+      icon.className = "tools-table__thumb-icon";
+      icon.textContent = "+";
+      thumb.appendChild(icon);
+      photoCell.appendChild(thumb);
+
+      row.append(numberCell, infoCell, photoCell);
+      table.appendChild(row);
+    });
+
+    return table;
+  };
+
+  const renderAddPhotoList = () => {
+    if (!addPhotoListEl) return;
+    clearAddPhotoList();
+    addPhotoListEl.classList.add("is-table");
+    const items = addPhotoState.filtered;
+    addPhotoListEl.appendChild(renderAddPhotoTable(items));
+    if (addPhotoEmptyEl) {
+      addPhotoEmptyEl.classList.toggle("is-hidden", items.length > 0);
+    }
+    setAddPhotoSubtitle(
+      `Показано ${items.length} из ${addPhotoState.tools.length}`
+    );
+  };
+
+  const applyAddPhotoFilters = () => {
+    const search = addPhotoState.search.trim();
+    const tokens = search ? search.split(/\s+/).filter(Boolean) : [];
+    addPhotoState.filtered = addPhotoState.tools.filter((tool) => {
+      if (
+        addPhotoState.filters.group &&
+        String(tool?.["Граппа инструментов"] ?? "").trim() !==
+          addPhotoState.filters.group
+      ) {
+        return false;
+      }
+      if (
+        addPhotoState.filters.status &&
+        String(tool?.["Статус"] ?? "").trim() !== addPhotoState.filters.status
+      ) {
+        return false;
+      }
+      if (
+        addPhotoState.filters.object &&
+        String(tool?.["Объект"] ?? "").trim() !== addPhotoState.filters.object
+      ) {
+        return false;
+      }
+      if (
+        addPhotoState.filters.manufacturer &&
+        String(tool?.["Производитель"] ?? "").trim() !==
+          addPhotoState.filters.manufacturer
+      ) {
+        return false;
+      }
+      if (
+        addPhotoState.filters.model &&
+        String(tool?.["Модель"] ?? "").trim() !== addPhotoState.filters.model
+      ) {
+        return false;
+      }
+      if (tokens.length) {
+        const searchLine = tool.__searchLine ?? "";
+        return tokens.every((token) => searchLine.includes(token));
+      }
+      return true;
+    });
+    renderAddPhotoList();
+  };
+
+  const fillAddPhotoFilterOptions = (key, values) => {
+    const selectEl = contentEl.querySelector(
+      `[data-add-photo-filter="${key}"]`
+    );
+    if (!selectEl) return;
+    selectEl.innerHTML = "";
+    const allOption = document.createElement("option");
+    allOption.value = "";
+    allOption.textContent = "Все";
+    selectEl.appendChild(allOption);
+    values.forEach((value) => {
+      const option = document.createElement("option");
+      option.value = value;
+      option.textContent = value;
+      selectEl.appendChild(option);
+    });
+    selectEl.value = addPhotoState.filters[key] ?? "";
+  };
+
+  const prepareAddPhotoFilters = () => {
+    const collectValues = (field) => {
+      const set = new Set();
+      addPhotoState.tools.forEach((tool) => {
+        const value = String(tool?.[field] ?? "").trim();
+        if (value) set.add(value);
+      });
+      return Array.from(set).sort((a, b) =>
+        a.localeCompare(b, "ru", { numeric: true })
+      );
+    };
+    fillAddPhotoFilterOptions("group", collectValues("Граппа инструментов"));
+    fillAddPhotoFilterOptions("status", collectValues("Статус"));
+    fillAddPhotoFilterOptions("object", collectValues("Объект"));
+    fillAddPhotoFilterOptions("manufacturer", collectValues("Производитель"));
+    fillAddPhotoFilterOptions("model", collectValues("Модель"));
+  };
+
+  const loadAddPhotoTools = async () => {
+    const orgFolder = context.orgFolderName ?? "";
+    addPhotoState.orgFolder = orgFolder;
+    if (!orgFolder) {
+      addPhotoState.tools = [];
+      addPhotoState.filtered = [];
+      setAddPhotoSubtitle("Не удалось определить организацию.");
+      renderAddPhotoList();
+      return;
+    }
+    const toolsPath = `./${orgFolder}/База с инструментами.json`;
+    let rawTools = [];
+    try {
+      const raw = await loadJson(toolsPath);
+      rawTools = Array.isArray(raw) ? raw : Array.isArray(raw?.tools) ? raw.tools : [];
+    } catch (error) {
+      console.warn("Не удалось загрузить базу инструментов.", error);
+      rawTools = [];
+    }
+    addPhotoState.tools = rawTools
+      .filter((tool) => {
+        const photoCount = Number.parseInt(tool?.["Количество фото"] ?? 0, 10);
+        return !(Number.isFinite(photoCount) && photoCount > 0);
+      })
+      .map((tool) => ({
+        ...tool,
+        __searchLine: buildAddPhotoSearchLine(tool),
+      }))
+      .sort((a, b) =>
+        String(a?.["Номер"] ?? "").localeCompare(String(b?.["Номер"] ?? ""), "ru", {
+          numeric: true,
+        })
+      );
+    prepareAddPhotoFilters();
+    applyAddPhotoFilters();
+  };
+
+  const openAddPhotoModal = async () => {
+    if (!addPhotoModalEl) return;
+    addPhotoModalEl.classList.remove("is-hidden");
+    document.body.style.overflow = "hidden";
+    setAddPhotoSubtitle("Загружаем список...");
+    await loadAddPhotoTools();
+    if (
+      addPhotoSearchInput &&
+      (typeof window === "undefined" ||
+        !window.matchMedia ||
+        !window.matchMedia("(max-width: 520px)").matches)
+    ) {
+      addPhotoSearchInput.focus();
+    }
+  };
+
+  const closeAddPhotoModal = () => {
+    if (!addPhotoModalEl) return;
+    addPhotoModalEl.classList.add("is-hidden");
+    document.body.style.overflow = "";
+  };
+
+  if (addPhotoBackdropEl) {
+    addPhotoBackdropEl.addEventListener("click", closeAddPhotoModal);
+  }
+  if (addPhotoCloseButton) {
+    addPhotoCloseButton.addEventListener("click", closeAddPhotoModal);
+  }
+  addPhotoModalEl?.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      closeAddPhotoModal();
+    }
+  });
+
+  if (addPhotoSearchInput) {
+    addPhotoSearchInput.addEventListener("input", (event) => {
+      addPhotoState.search = String(event.target.value ?? "").toLowerCase();
+      applyAddPhotoFilters();
+    });
+  }
+
+  const setAddPhotoFiltersOpen = (isOpen) => {
+    if (addPhotoFiltersPanelEl) {
+      addPhotoFiltersPanelEl.classList.toggle("is-open", isOpen);
+    }
+    if (addPhotoFiltersToggleEl) {
+      addPhotoFiltersToggleEl.setAttribute("aria-expanded", String(isOpen));
+    }
+  };
+
+  if (addPhotoFiltersToggleEl) {
+    addPhotoFiltersToggleEl.addEventListener("click", () => {
+      const isOpen = addPhotoFiltersPanelEl?.classList.contains("is-open");
+      setAddPhotoFiltersOpen(!isOpen);
+    });
+  }
+
+  if (typeof window !== "undefined" && addPhotoFiltersPanelEl) {
+    const mediaQuery = window.matchMedia("(max-width: 520px)");
+    const syncFiltersVisibility = () => {
+      setAddPhotoFiltersOpen(!mediaQuery.matches);
+    };
+    syncFiltersVisibility();
+    if (mediaQuery.addEventListener) {
+      mediaQuery.addEventListener("change", syncFiltersVisibility);
+    } else if (mediaQuery.addListener) {
+      mediaQuery.addListener(syncFiltersVisibility);
+    }
+  }
+
+  addPhotoFilterEls.forEach((selectEl) => {
+    selectEl.addEventListener("change", (event) => {
+      const target = event.target;
+      const key = target?.dataset?.addPhotoFilter;
+      if (!key) return;
+      addPhotoState.filters[key] = String(target.value ?? "");
+      applyAddPhotoFilters();
     });
   });
   if (objectsCancelButton) {
@@ -5547,6 +5892,14 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       targetCard.dataset.actionId === "tools"
     ) {
       openToolsModal();
+      return;
+    }
+    if (
+      !isGrouping &&
+      targetCard.dataset.energyItemType === "action" &&
+      targetCard.dataset.actionId === "add-photo"
+    ) {
+      openAddPhotoModal();
       return;
     }
     if (

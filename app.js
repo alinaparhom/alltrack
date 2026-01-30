@@ -2778,6 +2778,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     items.forEach((tool) => {
       const row = document.createElement("div");
       row.className = "tools-table__row";
+      const photoCount = Number.parseInt(tool?.["Количество фото"] ?? 0, 10);
+      const hasPhoto = Number.isFinite(photoCount) && photoCount > 0;
+      row.classList.toggle("tools-table__row--no-photo", !hasPhoto);
       const numberCell = document.createElement("div");
       numberCell.className = "tools-table__cell tools-table__cell--number";
       const number = String(tool?.["Номер"] ?? "").trim();

@@ -2419,10 +2419,16 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     numberType: "",
     isSaving: false,
   };
+  const toolsViewOptions = new Set(["large", "compact", "list", "table"]);
+  const normalizeToolsView = (value) =>
+    toolsViewOptions.has(value) ? value : "list";
+  const savedToolsView = normalizeToolsView(
+    settingsData.users?.[context.userKey]?.energy?.toolsView
+  );
   const toolsState = {
     tools: [],
     filtered: [],
-    view: "large",
+    view: savedToolsView,
     filters: {
       group: "",
       status: "",
@@ -2616,6 +2622,15 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
   };
 
+  const syncToolsViewButtons = () => {
+    toolsViewButtons.forEach((button) => {
+      button.classList.toggle(
+        "is-active",
+        button.dataset.toolsView === toolsState.view
+      );
+    });
+  };
+
   const clearToolsList = () => {
     if (toolsListEl) {
       toolsListEl.innerHTML = "";
@@ -2739,6 +2754,53 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     return card;
   };
 
+  const renderToolsTable = (items) => {
+    const table = document.createElement("div");
+    table.className = "tools-table";
+
+    const header = document.createElement("div");
+    header.className = "tools-table__row tools-table__row--header";
+    const headerNumber = document.createElement("div");
+    headerNumber.className = "tools-table__cell tools-table__cell--number";
+    headerNumber.textContent = "Номер";
+    const headerInfo = document.createElement("div");
+    headerInfo.className = "tools-table__cell";
+    const headerTitle = document.createElement("div");
+    headerTitle.className = "tools-table__title";
+    headerTitle.textContent = "Наименование";
+    const headerMeta = document.createElement("div");
+    headerMeta.className = "tools-table__meta";
+    headerMeta.textContent = "Производитель · Модель";
+    headerInfo.append(headerTitle, headerMeta);
+    header.append(headerNumber, headerInfo);
+    table.appendChild(header);
+
+    items.forEach((tool) => {
+      const row = document.createElement("div");
+      row.className = "tools-table__row";
+      const numberCell = document.createElement("div");
+      numberCell.className = "tools-table__cell tools-table__cell--number";
+      const number = String(tool?.["Номер"] ?? "").trim();
+      numberCell.textContent = number || "—";
+      const infoCell = document.createElement("div");
+      infoCell.className = "tools-table__cell";
+      const title = document.createElement("div");
+      title.className = "tools-table__title";
+      const name = String(tool?.["Наименование"] ?? "").trim();
+      title.textContent = name || "Без названия";
+      const meta = document.createElement("div");
+      meta.className = "tools-table__meta";
+      const manufacturer = String(tool?.["Производитель"] ?? "").trim();
+      const model = String(tool?.["Модель"] ?? "").trim();
+      meta.textContent = [manufacturer, model].filter(Boolean).join(" · ") || "—";
+      infoCell.append(title, meta);
+      row.append(numberCell, infoCell);
+      table.appendChild(row);
+    });
+
+    return table;
+  };
+
   const renderToolsList = () => {
     if (!toolsListEl) return;
     clearToolsList();
@@ -2746,18 +2808,24 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     toolsListEl.classList.toggle("is-large", viewMode === "large");
     toolsListEl.classList.toggle("is-compact", viewMode === "compact");
     toolsListEl.classList.toggle("is-list", viewMode === "list");
+    toolsListEl.classList.toggle("is-table", viewMode === "table");
     const items = toolsState.filtered;
-    items.forEach((tool) => {
-      toolsListEl.appendChild(
-        renderToolCard(tool, viewMode, toolsState.orgFolder)
-      );
-    });
+    if (viewMode === "table") {
+      toolsListEl.appendChild(renderToolsTable(items));
+    } else {
+      items.forEach((tool) => {
+        toolsListEl.appendChild(
+          renderToolCard(tool, viewMode, toolsState.orgFolder)
+        );
+      });
+    }
     if (toolsEmptyEl) {
       toolsEmptyEl.classList.toggle("is-hidden", items.length > 0);
     }
     setToolsSubtitle(
       `Показано ${items.length} из ${toolsState.tools.length}`
     );
+    syncToolsViewButtons();
   };
 
   const applyToolsFilters = () => {
@@ -2903,12 +2971,32 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     applyToolsFilters();
   };
 
+  const saveToolsViewPreference = async (view) => {
+    try {
+      const normalized = normalizeToolsView(view);
+      const userSettings = context.settingsData.users?.[context.userKey] ?? {};
+      context.settingsData.users[context.userKey] = {
+        ...userSettings,
+        energy: {
+          ...(userSettings.energy ?? {}),
+          toolsView: normalized,
+        },
+      };
+      await saveJson(context.settingsPath, context.settingsData, {
+        user: currentUser,
+      });
+    } catch (error) {
+      console.warn("Не удалось сохранить вариант отображения инструментов.", error);
+    }
+  };
+
   const openToolsModal = async () => {
     if (!toolsModalEl) return;
     toolsModalEl.classList.remove("is-hidden");
     document.body.style.overflow = "hidden";
     setToolsSubtitle("Загружаем список...");
     await loadUserTools();
+    syncToolsViewButtons();
     if (
       toolsSearchInput &&
       (typeof window === "undefined" ||
@@ -2942,23 +3030,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     toolsSearchInput.addEventListener("input", (event) => {
       toolsState.search = String(event.target.value ?? "").toLowerCase();
       applyToolsFilters();
-    });
-    const setMobileSearchActive = (isActive) => {
-      if (
-        !toolsModalEl ||
-        typeof window === "undefined" ||
-        !window.matchMedia ||
-        !window.matchMedia("(max-width: 520px)").matches
-      ) {
-        return;
-      }
-      toolsModalEl.classList.toggle("tools-modal--searching", isActive);
-    };
-    toolsSearchInput.addEventListener("focus", () => {
-      setMobileSearchActive(true);
-    });
-    toolsSearchInput.addEventListener("blur", () => {
-      setMobileSearchActive(false);
     });
   }
 
@@ -3005,11 +3076,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     button.addEventListener("click", () => {
       const view = button.dataset.toolsView;
       if (!view) return;
-      toolsState.view = view;
-      toolsViewButtons.forEach((item) =>
-        item.classList.toggle("is-active", item === button)
-      );
+      toolsState.view = normalizeToolsView(view);
+      syncToolsViewButtons();
       renderToolsList();
+      saveToolsViewPreference(view);
     });
   });
   if (objectsCancelButton) {

@@ -2679,6 +2679,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     return String(tool?.[fallbackKey] ?? "").trim();
   };
 
+  const resolveToolPhotoNumber = (tool) => {
+    const byNumber = String(tool?.["Номер"] ?? "").trim();
+    return byNumber || resolveToolNumberValue(tool);
+  };
+
   const syncToolsViewButtons = () => {
     toolsViewButtons.forEach((button) => {
       button.classList.toggle(
@@ -2696,6 +2701,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
   const renderToolCard = (tool, viewMode, orgFolder) => {
     const number = resolveToolNumberValue(tool);
+    const photoNumber = resolveToolPhotoNumber(tool);
     const name = String(tool?.["Наименование"] ?? "").trim();
     const manufacturer = String(tool?.["Производитель"] ?? "").trim();
     const model = String(tool?.["Модель"] ?? "").trim();
@@ -2725,7 +2731,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const meta = document.createElement("div");
       meta.className = "tools-row__meta";
       meta.textContent = [
-        accountingNumber,
+        toolsState.numberKey === "Бух.номер" && accountingNumber === number
+          ? ""
+          : accountingNumber,
         tool?.["Граппа инструментов"],
         tool?.["Статус"],
         tool?.["Объект"],
@@ -2752,7 +2760,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     img.alt = infoLine || "Инструмент";
 
     const candidates = hasPhoto
-      ? buildToolPhotoCandidates(orgFolder, number)
+      ? buildToolPhotoCandidates(orgFolder, photoNumber)
       : [];
     let candidateIndex = 0;
     const tryCandidate = () => {
@@ -2824,6 +2832,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const numberCell = document.createElement("div");
       numberCell.className = "tools-table__cell tools-table__cell--number";
       const number = resolveToolNumberValue(tool);
+      const photoNumber = resolveToolPhotoNumber(tool);
       numberCell.textContent = number || "—";
       const infoCell = document.createElement("div");
       infoCell.className = "tools-table__cell";
@@ -2845,7 +2854,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       img.className = "tools-table__thumb-image";
       img.alt = name || "Инструмент";
       const candidates = hasPhoto
-        ? buildToolPhotoCandidates(toolsState.orgFolder, number)
+        ? buildToolPhotoCandidates(toolsState.orgFolder, photoNumber)
         : [];
       let candidateIndex = 0;
       const tryCandidate = () => {

@@ -2439,6 +2439,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     },
     search: "",
     orgFolder: "",
+    numberKey: "Номер",
+    numberLabel: "Номер",
   };
   let addToolViewportListenersAttached = false;
   const updateAddToolKeyboardOffset = () => {
@@ -2622,6 +2624,49 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
   };
 
+  const resolveToolsNumberConfig = async () => {
+    const fallback = { numberKey: "Номер", numberLabel: "Номер" };
+    const orgName =
+      context.orgFullName ??
+      context.orgShortName ??
+      user?.organization ??
+      "";
+    if (!orgName) return fallback;
+    try {
+      const orgData = await loadJson(orgFilePath);
+      const orgRecord = findOrganizationRecord(orgData, orgName);
+      const normalizedType = String(orgRecord?.number_type ?? "")
+        .trim()
+        .toLowerCase();
+      const shouldUseAccountingNumber =
+        normalizedType === "бухгалтерский номер";
+      return {
+        numberKey: shouldUseAccountingNumber ? "Бух.номер" : "Номер",
+        numberLabel: shouldUseAccountingNumber ? "Бух.номер" : "Номер",
+      };
+    } catch (error) {
+      console.warn("Не удалось определить тип номера организации.", error);
+      return fallback;
+    }
+  };
+
+  const updateToolsNumberConfig = ({ numberKey, numberLabel }) => {
+    toolsState.numberKey = numberKey;
+    toolsState.numberLabel = numberLabel;
+    if (toolsSearchInput) {
+      const searchLabel =
+        numberLabel === "Бух.номер" ? "бух.номеру" : "номеру";
+      toolsSearchInput.placeholder = `Поиск по ${searchLabel}, названию, модели...`;
+    }
+  };
+
+  const resolveToolNumberValue = (tool) => {
+    const primary = String(tool?.[toolsState.numberKey] ?? "").trim();
+    if (primary) return primary;
+    const fallbackKey = toolsState.numberKey === "Бух.номер" ? "Номер" : "Бух.номер";
+    return String(tool?.[fallbackKey] ?? "").trim();
+  };
+
   const syncToolsViewButtons = () => {
     toolsViewButtons.forEach((button) => {
       button.classList.toggle(
@@ -2638,7 +2683,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   };
 
   const renderToolCard = (tool, viewMode, orgFolder) => {
-    const number = String(tool?.["Номер"] ?? "").trim();
+    const number = resolveToolNumberValue(tool);
     const name = String(tool?.["Наименование"] ?? "").trim();
     const manufacturer = String(tool?.["Производитель"] ?? "").trim();
     const model = String(tool?.["Модель"] ?? "").trim();
@@ -2695,7 +2740,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     img.alt = infoLine || "Инструмент";
 
     const candidates = hasPhoto
-      ? buildToolPhotoCandidates(orgFolder, tool?.["Номер"])
+      ? buildToolPhotoCandidates(orgFolder, number)
       : [];
     let candidateIndex = 0;
     const tryCandidate = () => {
@@ -2766,7 +2811,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       row.classList.toggle("tools-table__row--no-photo", !hasPhoto);
       const numberCell = document.createElement("div");
       numberCell.className = "tools-table__cell tools-table__cell--number";
-      const number = String(tool?.["Номер"] ?? "").trim();
+      const number = resolveToolNumberValue(tool);
       numberCell.textContent = number || "—";
       const infoCell = document.createElement("div");
       infoCell.className = "tools-table__cell";
@@ -2788,7 +2833,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       img.className = "tools-table__thumb-image";
       img.alt = name || "Инструмент";
       const candidates = hasPhoto
-        ? buildToolPhotoCandidates(toolsState.orgFolder, tool?.["Номер"])
+        ? buildToolPhotoCandidates(toolsState.orgFolder, number)
         : [];
       let candidateIndex = 0;
       const tryCandidate = () => {
@@ -2986,7 +3031,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         __searchLine: buildToolSearchLine(tool),
       }))
       .sort((a, b) =>
-        String(a?.["Номер"] ?? "").localeCompare(String(b?.["Номер"] ?? ""), "ru", {
+        resolveToolNumberValue(a).localeCompare(resolveToolNumberValue(b), "ru", {
           numeric: true,
         })
       );
@@ -3018,6 +3063,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     toolsModalEl.classList.remove("is-hidden");
     document.body.style.overflow = "hidden";
     setToolsSubtitle("Загружаем список...");
+    const numberConfig = await resolveToolsNumberConfig();
+    updateToolsNumberConfig(numberConfig);
     await loadUserTools();
     syncToolsViewButtons();
     if (

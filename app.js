@@ -204,7 +204,6 @@ function buildToolSearchLine(tool) {
     tool?.["Граппа инструментов"],
     tool?.["Бух.номер"],
     tool?.["Серийный номер"],
-    tool?.["Дата покупки"],
   ]
     .filter((value) => value !== null && value !== undefined && String(value).trim())
     .join(" ")
@@ -2162,7 +2161,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const toolsModalEl = contentEl.querySelector("[data-tools-modal]");
   const toolsBackdropEl = contentEl.querySelector("[data-tools-backdrop]");
   const toolsCloseButton = contentEl.querySelector("[data-tools-close]");
-  const toolsTitleEl = contentEl.querySelector("[data-tools-title]");
   const toolsSearchInput = contentEl.querySelector("[data-tools-search]");
   const toolsListEl = contentEl.querySelector("[data-tools-list]");
   const toolsEmptyEl = contentEl.querySelector("[data-tools-empty]");
@@ -2433,7 +2431,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     numberType: "",
     isSaving: false,
   };
-  const toolsViewOptions = new Set(["table"]);
+  const toolsViewOptions = new Set(["large", "compact", "list", "table"]);
   const normalizeToolsView = (value) =>
     toolsViewOptions.has(value) ? value : "table";
   const savedToolsView = normalizeToolsView(
@@ -2443,7 +2441,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     tools: [],
     filtered: [],
     view: savedToolsView,
-    mode: "mine",
     filters: {
       group: "",
       status: "",
@@ -2639,27 +2636,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
   };
 
-  const setToolsTitle = (text) => {
-    if (toolsTitleEl) {
-      toolsTitleEl.textContent = text;
-    }
-  };
-
-  const resetToolsFiltersState = () => {
-    toolsState.filters = {
-      group: "",
-      status: "",
-      object: "",
-      manufacturer: "",
-      model: "",
-      photo: "",
-    };
-    toolsState.search = "";
-    if (toolsSearchInput) {
-      toolsSearchInput.value = "";
-    }
-  };
-
   const resolveToolsNumberConfig = async () => {
     const fallback = { numberKey: "Номер", numberLabel: "Номер" };
     const orgName =
@@ -2746,6 +2722,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (viewMode === "list") {
       const row = document.createElement("div");
       row.className = "tools-row";
+      row.classList.toggle("tools-row--no-photo", !hasPhoto);
       const main = document.createElement("div");
       main.className = "tools-row__main";
       const title = document.createElement("div");
@@ -2765,6 +2742,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         .join(" · ");
       main.append(title, meta);
       row.appendChild(main);
+      if (!hasPhoto) {
+        const badge = document.createElement("div");
+        badge.className = "tools-row__badge";
+        badge.textContent = "Без фото";
+        row.appendChild(badge);
+      }
       return row;
     }
 
@@ -2803,6 +2786,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
     media.appendChild(img);
 
+    if (!hasPhoto) {
+      const badge = document.createElement("div");
+      badge.className = "tools-card__badge";
+      badge.textContent = "Нет фото";
+      media.appendChild(badge);
+    }
+
     if (viewMode === "large" || isCompactMobile) {
       const overlay = document.createElement("div");
       overlay.className = isCompactMobile
@@ -2833,79 +2823,67 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const table = document.createElement("div");
     table.className = "tools-table";
 
-    const headerRow = document.createElement("div");
-    headerRow.className = "tools-table__row tools-table__row--header";
-    [
-      "Номер",
-      "Бух.номер",
-      "Наименование",
-      "Производитель",
-      "Модель",
-      "Дата покупки",
-      "Фото",
-    ].forEach((label) => {
-      const cell = document.createElement("div");
-      cell.className = "tools-table__cell tools-table__cell--header";
-      cell.textContent = label;
-      headerRow.appendChild(cell);
-    });
-    table.appendChild(headerRow);
-
     items.forEach((tool) => {
       const row = document.createElement("div");
       row.className = "tools-table__row";
-      const number = resolveToolNumberValue(tool);
-      const accountingNumber = String(tool?.["Бух.номер"] ?? "").trim();
-      const name = String(tool?.["Наименование"] ?? "").trim();
-      const manufacturer = String(tool?.["Производитель"] ?? "").trim();
-      const model = String(tool?.["Модель"] ?? "").trim();
-      const purchaseDate = String(tool?.["Дата покупки"] ?? "").trim();
-
+      const photoCount = Number.parseInt(tool?.["Количество фото"] ?? 0, 10);
+      const hasPhoto = Number.isFinite(photoCount) && photoCount > 0;
+      row.classList.toggle("tools-table__row--no-photo", !hasPhoto);
       const numberCell = document.createElement("div");
       numberCell.className = "tools-table__cell tools-table__cell--number";
+      const number = resolveToolNumberValue(tool);
+      const photoNumber = resolveToolPhotoNumber(tool);
       numberCell.textContent = number || "—";
-
-      const accountingCell = document.createElement("div");
-      accountingCell.className = "tools-table__cell";
-      accountingCell.textContent = accountingNumber || "—";
-
-      const nameCell = document.createElement("div");
-      nameCell.className = "tools-table__cell";
-      const nameTitle = document.createElement("div");
-      nameTitle.className = "tools-table__title";
-      nameTitle.textContent = name || "Без названия";
-      nameCell.appendChild(nameTitle);
-
-      const manufacturerCell = document.createElement("div");
-      manufacturerCell.className = "tools-table__cell";
-      manufacturerCell.textContent = manufacturer || "—";
-
-      const modelCell = document.createElement("div");
-      modelCell.className = "tools-table__cell";
-      modelCell.textContent = model || "—";
-
-      const dateCell = document.createElement("div");
-      dateCell.className = "tools-table__cell tools-table__cell--date";
-      dateCell.textContent = purchaseDate || "—";
-
+      const infoCell = document.createElement("div");
+      infoCell.className = "tools-table__cell";
+      const title = document.createElement("div");
+      title.className = "tools-table__title";
+      const name = String(tool?.["Наименование"] ?? "").trim();
+      title.textContent = name || "Без названия";
+      const meta = document.createElement("div");
+      meta.className = "tools-table__meta";
+      const manufacturer = String(tool?.["Производитель"] ?? "").trim();
+      const model = String(tool?.["Модель"] ?? "").trim();
+      meta.textContent = [manufacturer, model].filter(Boolean).join(" · ") || "—";
+      infoCell.append(title, meta);
       const photoCell = document.createElement("div");
       photoCell.className = "tools-table__cell tools-table__cell--thumb";
       const thumb = document.createElement("div");
       thumb.className = "tools-table__thumb";
-      const plus = document.createElement("div");
-      plus.className = "tools-table__thumb-icon";
-      plus.textContent = "+";
-      thumb.appendChild(plus);
+      const img = document.createElement("img");
+      img.className = "tools-table__thumb-image";
+      img.alt = name || "Инструмент";
+      const candidates = hasPhoto
+        ? buildToolPhotoCandidates(toolsState.orgFolder, photoNumber)
+        : [];
+      let candidateIndex = 0;
+      const tryCandidate = () => {
+        if (candidateIndex >= candidates.length) {
+          img.onerror = null;
+          img.onload = null;
+          img.src = toolPhotoPlaceholder;
+          img.classList.add("is-placeholder");
+          return;
+        }
+        const next = candidates[candidateIndex];
+        candidateIndex += 1;
+        img.src = next;
+      };
+      img.onerror = () => {
+        tryCandidate();
+      };
+      img.onload = () => {
+        img.classList.remove("is-placeholder");
+      };
+      if (candidates.length) {
+        tryCandidate();
+      } else {
+        img.src = toolPhotoPlaceholder;
+        img.classList.add("is-placeholder");
+      }
+      thumb.appendChild(img);
       photoCell.appendChild(thumb);
-      row.append(
-        numberCell,
-        accountingCell,
-        nameCell,
-        manufacturerCell,
-        modelCell,
-        dateCell,
-        photoCell
-      );
+      row.append(numberCell, infoCell, photoCell);
       table.appendChild(row);
     });
 
@@ -3044,7 +3022,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
   };
 
-  const loadTools = async (mode = "mine") => {
+  const loadUserTools = async () => {
     const orgFolder = context.orgFolderName ?? "";
     toolsState.orgFolder = orgFolder;
     if (!orgFolder) {
@@ -3064,16 +3042,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       rawTools = [];
     }
     const userNameKey = normalizePersonName(user?.full_name ?? "");
-    const filteredTools = rawTools.filter((tool) => {
-      if (mode === "add-photo") {
-        const count = Number.parseInt(tool?.["Количество фото"] ?? 0, 10);
-        return !Number.isFinite(count) || count <= 0;
-      }
-      return (
-        normalizePersonName(tool?.["Ответственный"] ?? "") === userNameKey
-      );
-    });
-    toolsState.tools = filteredTools
+    toolsState.tools = rawTools
+      .filter(
+        (tool) =>
+          normalizePersonName(tool?.["Ответственный"] ?? "") === userNameKey
+      )
       .map((tool) => ({
         ...tool,
         __searchLine: buildToolSearchLine(tool),
@@ -3106,17 +3079,14 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
   };
 
-  const openToolsModal = async (mode = "mine") => {
+  const openToolsModal = async () => {
     if (!toolsModalEl) return;
-    toolsState.mode = mode;
     toolsModalEl.classList.remove("is-hidden");
     document.body.style.overflow = "hidden";
     setToolsSubtitle("Загружаем список...");
-    setToolsTitle(mode === "add-photo" ? "Добавить фото" : "Мои инструменты");
-    resetToolsFiltersState();
     const numberConfig = await resolveToolsNumberConfig();
     updateToolsNumberConfig(numberConfig);
-    await loadTools(mode);
+    await loadUserTools();
     syncToolsViewButtons();
     if (
       toolsSearchInput &&
@@ -5576,7 +5546,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       targetCard.dataset.energyItemType === "action" &&
       targetCard.dataset.actionId === "tools"
     ) {
-      openToolsModal("mine");
+      openToolsModal();
       return;
     }
     if (
@@ -5585,14 +5555,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       targetCard.dataset.actionId === "add-tool"
     ) {
       openAddToolModal();
-      return;
-    }
-    if (
-      !isGrouping &&
-      targetCard.dataset.energyItemType === "action" &&
-      targetCard.dataset.actionId === "add-photo"
-    ) {
-      openToolsModal("add-photo");
       return;
     }
     if (blockClick || !isGrouping || !allowGrouping) return;

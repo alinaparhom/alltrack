@@ -2197,6 +2197,15 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const addToolSuccessNumberEl = contentEl.querySelector(
     "[data-add-tool-success-number]"
   );
+  const addToolSuccessTitleEl = contentEl.querySelector(
+    "[data-add-tool-success-title]"
+  );
+  const addToolSuccessMessageEl = contentEl.querySelector(
+    "[data-add-tool-success-message]"
+  );
+  const addToolSuccessLabelEl = contentEl.querySelector(
+    "[data-add-tool-success-label]"
+  );
   const addToolNameInput = contentEl.querySelector("#tool-name-input");
   const addToolManufacturerInput = contentEl.querySelector(
     "#tool-manufacturer-input"
@@ -3451,12 +3460,34 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     setAddToolMessage(message, { tone: "error", asList });
     scrollAddToolFooterIntoView();
   };
+  const resolveAddToolNumberLabel = () => {
+    const normalized = String(addToolState.numberType ?? "").trim().toLowerCase();
+    return normalized === "бухгалтерский номер" ? "Бух.номер" : "номер";
+  };
+  const resolveAddToolNumberLabelCapitalized = () => {
+    const normalized = String(addToolState.numberType ?? "").trim().toLowerCase();
+    return normalized === "бухгалтерский номер" ? "Бух.номер" : "Номер";
+  };
   const closeAddToolSuccessModal = () => {
     if (!addToolSuccessModalEl) return;
     addToolSuccessModalEl.classList.add("is-hidden");
   };
   const openAddToolSuccessModal = (toolNumber) => {
     if (!addToolSuccessModalEl) return;
+    const numberLabel = resolveAddToolNumberLabelCapitalized();
+    if (addToolSuccessTitleEl) {
+      const normalized = numberLabel === "Бух.номер";
+      addToolSuccessTitleEl.textContent = normalized ? "Все готово!" : "Готово!";
+    }
+    if (addToolSuccessMessageEl) {
+      const isAccounting = numberLabel === "Бух.номер";
+      addToolSuccessMessageEl.textContent = isAccounting
+        ? "Присвоен Бух.номер."
+        : "Новая позиция добавлена в базу";
+    }
+    if (addToolSuccessLabelEl) {
+      addToolSuccessLabelEl.textContent = `Присвоенный ${numberLabel}`;
+    }
     if (addToolSuccessNumberEl) {
       addToolSuccessNumberEl.textContent = String(toolNumber ?? "—");
     }
@@ -3960,6 +3991,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
       addToolState.organizationName = organizationName;
       addToolState.orgFolder = orgFolder;
+      addToolState.numberType = resolution.numberType;
 
       const toolsPath = `./${orgFolder}/База с инструментами.json`;
       const objectsPath = `./${orgFolder}/Объекты.json`;
@@ -4452,7 +4484,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           ]);
 
           addToolState.tools = updatedTools;
-          const successMessage = `Данные о новой позиции сохранены, ему присвоен номер ${toolNumber}.`;
+          const numberLabel = resolveAddToolNumberLabel();
+          const successMessage =
+            numberLabel === "Бух.номер"
+              ? `Все готово! Присвоен Бух.номер ${toolNumber}.`
+              : `Данные о новой позиции сохранены, ему присвоен ${numberLabel} ${toolNumber}.`;
           const responseSuffix = buildSaveResponseSuffix(saveResponseText);
           setAddToolMessage(`${successMessage}${responseSuffix}`, {
             tone: "success",

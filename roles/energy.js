@@ -246,6 +246,13 @@ export function renderRole(user) {
                       Переместить
                     </button>
                     <button
+                      class="action-secondary tools-cancel-button"
+                      type="button"
+                      data-tools-selection-cancel
+                    >
+                      Отменить
+                    </button>
+                    <button
                       class="tools-filters-toggle"
                       type="button"
                       data-tools-filters-toggle

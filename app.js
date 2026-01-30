@@ -2232,6 +2232,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   );
   const toolsViewToggleEl = contentEl.querySelector("[data-tools-view-toggle]");
   const toolsMoveButtonEl = contentEl.querySelector("[data-tools-move-trigger]");
+  const toolsSelectionCancelButtonEl = contentEl.querySelector(
+    "[data-tools-selection-cancel]"
+  );
   const toolsMoveModalEl = contentEl.querySelector("[data-tools-move-modal]");
   const toolsMoveBackdropEl = contentEl.querySelector(
     "[data-tools-move-backdrop]"
@@ -2779,6 +2782,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const count = toolsState.selectedIds.size;
     if (toolsMoveButtonEl) {
       toolsMoveButtonEl.disabled = count === 0;
+    }
+    if (toolsSelectionCancelButtonEl) {
+      toolsSelectionCancelButtonEl.disabled = count === 0;
     }
     if (toolsMoveSubtitleEl) {
       toolsMoveSubtitleEl.textContent =
@@ -3437,6 +3443,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
   if (toolsMoveButtonEl) {
     toolsMoveButtonEl.addEventListener("click", openToolsMoveModal);
+  }
+  if (toolsSelectionCancelButtonEl) {
+    toolsSelectionCancelButtonEl.addEventListener("click", () => {
+      resetToolsSelection();
+      renderToolsList();
+    });
   }
 
   if (toolsMoveFormEl) {

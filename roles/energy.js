@@ -324,7 +324,7 @@ export function renderRole(user) {
                 <p data-tools-move-subtitle>Выберите ответственного и объект</p>
               </div>
               <button
-                class="button-icon"
+                class="button-icon tools-move-modal__close"
                 type="button"
                 data-tools-move-close
                 aria-label="Закрыть окно перемещения"

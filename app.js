@@ -797,6 +797,12 @@ function buildLateReplyFineNote(settingsData) {
   return `У вас ${daysText} дней на ответ, далее штраф ${amountText} за каждый день без ответа.`;
 }
 
+function resolveToolPhotoNumberForNotification(tool) {
+  const byNumber = String(tool?.["Номер"] ?? "").trim();
+  const byAccounting = String(tool?.["Бух.номер"] ?? "").trim();
+  return byNumber || byAccounting;
+}
+
 async function notifyMoveTool({
   tool,
   orgFolder,
@@ -840,7 +846,7 @@ async function notifyMoveTool({
     } else {
       const shouldAttach = isNotificationPhotoEnabled(settingsData, "moveTool");
       if (shouldAttach) {
-        const photoNumber = resolveToolPhotoNumber(tool);
+        const photoNumber = resolveToolPhotoNumberForNotification(tool);
         const photoUrl = await resolveAvailablePhotoUrl(orgFolder, photoNumber);
         if (photoUrl) {
           const sendResults = await Promise.all(

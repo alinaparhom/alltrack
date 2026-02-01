@@ -2778,6 +2778,14 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
   };
 
+  const isToolSelectableForMove = (tool) => {
+    if (!tool) return false;
+    if (tool.__pendingMove) return false;
+    const photoCount = Number.parseInt(tool?.["Количество фото"] ?? 0, 10);
+    const hasPhoto = Number.isFinite(photoCount) && photoCount > 0;
+    return hasPhoto;
+  };
+
   const updateToolsSelectionUi = () => {
     const count = toolsState.selectedIds.size;
     if (toolsMoveButtonEl) {
@@ -3605,6 +3613,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       if (toolsState.isSelecting) return;
       const item = event.target.closest("[data-tools-item]");
       if (!item) return;
+      const tool = toolsState.toolMap.get(item.dataset.toolId);
+      if (!isToolSelectableForMove(tool)) return;
       toolsSelectState.startX = event.clientX;
       toolsSelectState.startY = event.clientY;
       toolsSelectState.suppressClick = false;
@@ -3644,6 +3654,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         return;
       }
       if (!toolsState.isSelecting) return;
+      const tool = toolsState.toolMap.get(item.dataset.toolId);
+      if (!isToolSelectableForMove(tool)) return;
       const toolId = item.dataset.toolId;
       if (toolsState.selectedIds.has(toolId)) {
         toolsState.selectedIds.delete(toolId);

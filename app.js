@@ -742,12 +742,19 @@ async function notifyNewToolRegistration({
 function findUserTelegramId(usersData, { fullName, organization }) {
   const normalizedName = normalizePersonName(fullName ?? "");
   const normalizedOrg = String(organization ?? "").trim().toLowerCase();
-  const match = (usersData?.users ?? []).find((entry) => {
+  const users = usersData?.users ?? [];
+  let match = users.find((entry) => {
     const entryName = normalizePersonName(entry?.full_name ?? "");
     if (normalizedName && entryName !== normalizedName) return false;
     if (!normalizedOrg) return true;
     return String(entry?.organization ?? "").trim().toLowerCase() === normalizedOrg;
   });
+  if (!match && normalizedName) {
+    match = users.find(
+      (entry) =>
+        normalizePersonName(entry?.full_name ?? "") === normalizedName
+    );
+  }
   return normalizeTelegramId(match?.telegram_id);
 }
 
@@ -791,9 +798,12 @@ async function notifyMoveTool({
         const photoUrl = await resolveAvailablePhotoUrl(orgFolder, photoNumber);
         if (photoUrl) {
           await Promise.all(
-            groupIds.map((chatId) =>
-              sendTelegramPhoto(chatId, photoUrl, moveMessage)
-            )
+            groupIds.map(async (chatId) => {
+              const sent = await sendTelegramPhoto(chatId, photoUrl, moveMessage);
+              if (!sent) {
+                await sendTelegramMessage(chatId, moveMessage);
+              }
+            })
           );
         } else {
           await Promise.all(

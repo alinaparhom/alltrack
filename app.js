@@ -484,8 +484,8 @@ function escapeTelegramHtml(value) {
 
 function extractNotificationGroups(settingsData, notificationId) {
   const source =
-    settingsData?.organization?.notifications?.[notificationId]?.groups ??
     settingsData?.notifications?.[notificationId]?.groups ??
+    settingsData?.organization?.notifications?.[notificationId]?.groups ??
     [];
   const raw = Array.isArray(source) ? source : [source];
   const unique = new Set();
@@ -500,15 +500,15 @@ function extractNotificationGroups(settingsData, notificationId) {
 
 function isNotificationEnabled(settingsData, notificationId) {
   const value =
-    settingsData?.organization?.notifications?.[notificationId]?.enabled ??
-    settingsData?.notifications?.[notificationId]?.enabled;
+    settingsData?.notifications?.[notificationId]?.enabled ??
+    settingsData?.organization?.notifications?.[notificationId]?.enabled;
   return Boolean(value);
 }
 
 function isNotificationPhotoEnabled(settingsData, notificationId) {
   const value =
-    settingsData?.organization?.notifications?.[notificationId]?.attachPhoto ??
-    settingsData?.notifications?.[notificationId]?.attachPhoto;
+    settingsData?.notifications?.[notificationId]?.attachPhoto ??
+    settingsData?.organization?.notifications?.[notificationId]?.attachPhoto;
   return Boolean(value);
 }
 

@@ -635,8 +635,34 @@ function buildMoveToolResponsibleMessage(
   return lines.join("\n");
 }
 
+async function parseTelegramError(response) {
+  if (!response || response.ok) return "";
+  const rawText = await response.text().catch(() => "");
+  if (!rawText) return "";
+  try {
+    const parsed = JSON.parse(rawText);
+    return (
+      parsed?.description ||
+      parsed?.error ||
+      parsed?.message ||
+      rawText
+    );
+  } catch (error) {
+    return rawText;
+  }
+}
+
+function formatTelegramSendError({ status, errorText } = {}) {
+  const parts = [];
+  if (status) parts.push(`HTTP ${status}`);
+  if (errorText) parts.push(errorText);
+  return parts.join(": ").trim() || "неизвестная ошибка Telegram API";
+}
+
 async function sendTelegramMessage(chatId, text) {
-  if (!fallbackBotToken || !chatId || !text) return false;
+  if (!fallbackBotToken || !chatId || !text) {
+    return { ok: false, status: null, errorText: "некорректные данные" };
+  }
   const response = await fetch(
     `https://api.telegram.org/bot${fallbackBotToken}/sendMessage`,
     {
@@ -650,19 +676,21 @@ async function sendTelegramMessage(chatId, text) {
       }),
     }
   );
+  const errorText = await parseTelegramError(response);
   if (!response.ok) {
-    const errorText = await response.text().catch(() => "");
     console.warn("Не удалось отправить сообщение в Telegram.", {
       chatId,
       status: response.status,
       errorText,
     });
   }
-  return response.ok;
+  return { ok: response.ok, status: response.status, errorText };
 }
 
 async function sendTelegramPhoto(chatId, photoUrl, caption) {
-  if (!fallbackBotToken || !chatId || !photoUrl) return false;
+  if (!fallbackBotToken || !chatId || !photoUrl) {
+    return { ok: false, status: null, errorText: "некорректные данные" };
+  }
   const response = await fetch(
     `https://api.telegram.org/bot${fallbackBotToken}/sendPhoto`,
     {
@@ -676,15 +704,15 @@ async function sendTelegramPhoto(chatId, photoUrl, caption) {
       }),
     }
   );
+  const errorText = await parseTelegramError(response);
   if (!response.ok) {
-    const errorText = await response.text().catch(() => "");
     console.warn("Не удалось отправить фото в Telegram.", {
       chatId,
       status: response.status,
       errorText,
     });
   }
-  return response.ok;
+  return { ok: response.ok, status: response.status, errorText };
 }
 
 async function resolveAvailablePhotoUrl(orgFolder, toolNumber) {
@@ -804,6 +832,7 @@ async function notifyMoveTool({
       oldObject,
     });
     let groupSent = false;
+    const groupErrors = [];
     if (!groupsEnabled) {
       result.reasons.push("уведомления в группах выключены в Настройки.json");
     } else if (!groupIds.length) {
@@ -816,26 +845,59 @@ async function notifyMoveTool({
         if (photoUrl) {
           const sendResults = await Promise.all(
             groupIds.map(async (chatId) => {
-              const sent = await sendTelegramPhoto(chatId, photoUrl, moveMessage);
-              if (sent) return true;
-              return sendTelegramMessage(chatId, moveMessage);
+              const photoResult = await sendTelegramPhoto(
+                chatId,
+                photoUrl,
+                moveMessage
+              );
+              if (photoResult.ok) return { ok: true };
+              groupErrors.push(formatTelegramSendError(photoResult));
+              const messageResult = await sendTelegramMessage(chatId, moveMessage);
+              if (!messageResult.ok) {
+                groupErrors.push(formatTelegramSendError(messageResult));
+              }
+              return messageResult;
             })
           );
-          groupSent = sendResults.some(Boolean);
+          groupSent = sendResults.some((entry) => entry?.ok);
         } else {
           const sendResults = await Promise.all(
-            groupIds.map((chatId) => sendTelegramMessage(chatId, moveMessage))
+            groupIds.map(async (chatId) => {
+              const messageResult = await sendTelegramMessage(
+                chatId,
+                moveMessage
+              );
+              if (!messageResult.ok) {
+                groupErrors.push(formatTelegramSendError(messageResult));
+              }
+              return messageResult;
+            })
           );
-          groupSent = sendResults.some(Boolean);
+          groupSent = sendResults.some((entry) => entry?.ok);
         }
       } else {
         const sendResults = await Promise.all(
-          groupIds.map((chatId) => sendTelegramMessage(chatId, moveMessage))
+          groupIds.map(async (chatId) => {
+            const messageResult = await sendTelegramMessage(chatId, moveMessage);
+            if (!messageResult.ok) {
+              groupErrors.push(formatTelegramSendError(messageResult));
+            }
+            return messageResult;
+          })
         );
-        groupSent = sendResults.some(Boolean);
+        groupSent = sendResults.some((entry) => entry?.ok);
       }
       if (!groupSent) {
-        result.reasons.push("не удалось отправить уведомление в группы");
+        const uniqueErrors = Array.from(new Set(groupErrors.filter(Boolean)));
+        if (uniqueErrors.length) {
+          result.reasons.push(
+            `не удалось отправить уведомление в группы (${uniqueErrors.join(
+              "; "
+            )})`
+          );
+        } else {
+          result.reasons.push("не удалось отправить уведомление в группы");
+        }
       }
     }
 
@@ -853,12 +915,17 @@ async function notifyMoveTool({
         targetObject,
         fineNote: fineNote || "",
       });
-      responsibleSent = await sendTelegramMessage(
+      const responsibleResult = await sendTelegramMessage(
         responsibleTelegramId,
         responsibleMessage
       );
-      if (!responsibleSent) {
-        result.reasons.push("не удалось отправить ответственному");
+      responsibleSent = responsibleResult.ok;
+      if (!responsibleResult.ok) {
+        result.reasons.push(
+          `не удалось отправить ответственному (${formatTelegramSendError(
+            responsibleResult
+          )})`
+        );
       }
     } else {
       result.reasons.push("у ответственного не указан Telegram ID");
@@ -866,7 +933,8 @@ async function notifyMoveTool({
     result.sent = groupSent || responsibleSent;
   } catch (error) {
     console.warn("Не удалось отправить уведомление о перемещении.", error);
-    result.reasons.push("ошибка при отправке уведомлений");
+    const message = error?.message ? `: ${error.message}` : "";
+    result.reasons.push(`ошибка при отправке уведомлений${message}`);
   }
   return result;
 }

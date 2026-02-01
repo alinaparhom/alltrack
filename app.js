@@ -505,6 +505,13 @@ function isNotificationEnabled(settingsData, notificationId) {
   return Boolean(value);
 }
 
+function isNotificationPhotoEnabled(settingsData, notificationId) {
+  const value =
+    settingsData?.organization?.notifications?.[notificationId]?.attachPhoto ??
+    settingsData?.notifications?.[notificationId]?.attachPhoto;
+  return Boolean(value);
+}
+
 function buildNewToolNotificationMessage(
   tool,
   { organizationName, createdBy, numberType } = {}
@@ -552,6 +559,82 @@ function buildNewToolNotificationMessage(
   return lines.join("\n");
 }
 
+function buildMoveToolNotificationMessage(
+  tool,
+  { movedBy, responsible, targetObject, oldObject } = {}
+) {
+  const titleParts = [
+    formatNotificationValue(tool?.["Наименование"], ""),
+    formatNotificationValue(tool?.["Производитель"], ""),
+    formatNotificationValue(tool?.["Модель"], ""),
+  ]
+    .map((part) => part.trim())
+    .filter(Boolean);
+  const titleLine = titleParts.length ? titleParts.join(" ") : "—";
+  const lines = [
+    "📦📦📦<b><u>ПЕРЕМЕЩЕНИЕ ИНСТРУМЕНТА</u></b>",
+    `1. Номер: ${escapeTelegramHtml(
+      formatNotificationValue(tool?.["Номер"])
+    )}`,
+    `2. Бух.номер: ${escapeTelegramHtml(
+      formatNotificationValue(tool?.["Бух.номер"])
+    )}`,
+    `3. ${escapeTelegramHtml(titleLine)}`,
+    `4. Старый объект: ${escapeTelegramHtml(
+      formatNotificationValue(oldObject)
+    )}`,
+    `5. Новый объект: ${escapeTelegramHtml(
+      formatNotificationValue(targetObject)
+    )}`,
+    `6. Ответственный: ${escapeTelegramHtml(
+      formatNotificationValue(responsible)
+    )}`,
+    "",
+    `Переместил: ${escapeTelegramHtml(
+      formatNotificationValue(movedBy)
+    )}`,
+  ];
+  return lines.join("\n");
+}
+
+function buildMoveToolResponsibleMessage(
+  tool,
+  { movedBy, oldObject, targetObject, fineNote } = {}
+) {
+  const titleParts = [
+    formatNotificationValue(tool?.["Наименование"], ""),
+    formatNotificationValue(tool?.["Производитель"], ""),
+    formatNotificationValue(tool?.["Модель"], ""),
+  ]
+    .map((part) => part.trim())
+    .filter(Boolean);
+  const titleLine = titleParts.length ? titleParts.join(" ") : "—";
+  const lines = [
+    "🔔 Вам переместили инструмент",
+    `1. Номер: ${escapeTelegramHtml(
+      formatNotificationValue(tool?.["Номер"])
+    )}`,
+    `2. Бух.номер: ${escapeTelegramHtml(
+      formatNotificationValue(tool?.["Бух.номер"])
+    )}`,
+    `3. ${escapeTelegramHtml(titleLine)}`,
+    `4. Старый объект: ${escapeTelegramHtml(
+      formatNotificationValue(oldObject)
+    )}`,
+    `5. Новый объект: ${escapeTelegramHtml(
+      formatNotificationValue(targetObject)
+    )}`,
+    "",
+    `Переместил: ${escapeTelegramHtml(
+      formatNotificationValue(movedBy)
+    )}`,
+  ];
+  if (fineNote) {
+    lines.push("", escapeTelegramHtml(fineNote));
+  }
+  return lines.join("\n");
+}
+
 async function sendTelegramMessage(chatId, text) {
   if (!fallbackBotToken || !chatId || !text) return false;
   const response = await fetch(
@@ -576,6 +659,56 @@ async function sendTelegramMessage(chatId, text) {
     });
   }
   return response.ok;
+}
+
+async function sendTelegramPhoto(chatId, photoUrl, caption) {
+  if (!fallbackBotToken || !chatId || !photoUrl) return false;
+  const response = await fetch(
+    `https://api.telegram.org/bot${fallbackBotToken}/sendPhoto`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chat_id: chatId,
+        photo: photoUrl,
+        caption: caption ?? "",
+        parse_mode: "HTML",
+      }),
+    }
+  );
+  if (!response.ok) {
+    const errorText = await response.text().catch(() => "");
+    console.warn("Не удалось отправить фото в Telegram.", {
+      chatId,
+      status: response.status,
+      errorText,
+    });
+  }
+  return response.ok;
+}
+
+async function resolveAvailablePhotoUrl(orgFolder, toolNumber) {
+  if (!orgFolder || !toolNumber) return null;
+  const candidates = buildToolPhotoCandidates(orgFolder, toolNumber);
+  if (!candidates.length) return null;
+  for (const candidate of candidates) {
+    try {
+      const response = await fetch(candidate, { method: "HEAD" });
+      if (response.ok) {
+        return new URL(candidate, window.location.href).toString();
+      }
+    } catch (error) {
+      try {
+        const response = await fetch(candidate);
+        if (response.ok) {
+          return new URL(candidate, window.location.href).toString();
+        }
+      } catch (innerError) {
+        continue;
+      }
+    }
+  }
+  return null;
 }
 
 async function notifyNewToolRegistration({
@@ -603,6 +736,94 @@ async function notifyNewToolRegistration({
     );
   } catch (error) {
     console.warn("Не удалось отправить уведомление о новом инструменте.", error);
+  }
+}
+
+function findUserTelegramId(usersData, { fullName, organization }) {
+  const normalizedName = normalizePersonName(fullName ?? "");
+  const normalizedOrg = String(organization ?? "").trim().toLowerCase();
+  const match = (usersData?.users ?? []).find((entry) => {
+    const entryName = normalizePersonName(entry?.full_name ?? "");
+    if (normalizedName && entryName !== normalizedName) return false;
+    if (!normalizedOrg) return true;
+    return String(entry?.organization ?? "").trim().toLowerCase() === normalizedOrg;
+  });
+  return normalizeTelegramId(match?.telegram_id);
+}
+
+function buildLateReplyFineNote(settingsData) {
+  const fine = settingsData?.organization?.fines?.lateReply ?? {};
+  if (!fine.enabled) return "";
+  const days = normalizeNumber(fine.days, 0);
+  const amount = normalizeNumber(fine.amount, 0);
+  if (!days && !amount) return "";
+  const daysText = days ? `${days}` : "0";
+  const amountText = formatNotificationCost(amount || 0);
+  return `У вас ${daysText} дней на ответ, далее штраф ${amountText} за каждый день без ответа.`;
+}
+
+async function notifyMoveTool({
+  tool,
+  orgFolder,
+  organizationName,
+  responsibleName,
+  targetObject,
+  movedBy,
+}) {
+  if (!tool || !orgFolder || !fallbackBotToken) return;
+  const settingsPath = `./${orgFolder}/Настройки.json`;
+  try {
+    const settingsData = await loadJson(settingsPath);
+    const groupIds = isNotificationEnabled(settingsData, "moveTool")
+      ? extractNotificationGroups(settingsData, "moveTool")
+      : [];
+    const oldObject = String(tool?.["Объект"] ?? "").trim();
+    const moveMessage = buildMoveToolNotificationMessage(tool, {
+      movedBy,
+      responsible: responsibleName,
+      targetObject,
+      oldObject,
+    });
+    if (groupIds.length) {
+      const shouldAttach = isNotificationPhotoEnabled(settingsData, "moveTool");
+      if (shouldAttach) {
+        const photoNumber = resolveToolPhotoNumber(tool);
+        const photoUrl = await resolveAvailablePhotoUrl(orgFolder, photoNumber);
+        if (photoUrl) {
+          await Promise.all(
+            groupIds.map((chatId) =>
+              sendTelegramPhoto(chatId, photoUrl, moveMessage)
+            )
+          );
+        } else {
+          await Promise.all(
+            groupIds.map((chatId) => sendTelegramMessage(chatId, moveMessage))
+          );
+        }
+      } else {
+        await Promise.all(
+          groupIds.map((chatId) => sendTelegramMessage(chatId, moveMessage))
+        );
+      }
+    }
+
+    const usersData = await loadJson(usersFilePath).catch(() => ({ users: [] }));
+    const responsibleTelegramId = findUserTelegramId(usersData, {
+      fullName: responsibleName,
+      organization: organizationName,
+    });
+    if (responsibleTelegramId) {
+      const fineNote = buildLateReplyFineNote(settingsData);
+      const responsibleMessage = buildMoveToolResponsibleMessage(tool, {
+        movedBy,
+        oldObject,
+        targetObject,
+        fineNote: fineNote || "",
+      });
+      await sendTelegramMessage(responsibleTelegramId, responsibleMessage);
+    }
+  } catch (error) {
+    console.warn("Не удалось отправить уведомление о перемещении.", error);
   }
 }
 
@@ -3528,6 +3749,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
       const now = new Date();
       const eligibleEntries = [];
+      const eligibleTools = [];
       let skippedCount = 0;
 
       selectedTools.forEach((tool) => {
@@ -3541,6 +3763,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           skippedCount += 1;
           return;
         }
+        eligibleTools.push(tool);
         eligibleEntries.push({
           Номер: String(tool?.["Номер"] ?? "").trim(),
           "Бух.номер": accountingNumber,
@@ -3582,6 +3805,18 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           ? `Перемещение создано: ${eligibleEntries.length}. Пропущено: ${skippedCount}.`
           : `Перемещение создано: ${eligibleEntries.length}.`;
         setToolsMoveMessage(message, "success");
+        const usersData = await loadJson(usersFilePath).catch(() => ({ users: [] }));
+        const organizationName = findUserOrganizationName(user, usersData);
+        eligibleTools.forEach((tool) => {
+          void notifyMoveTool({
+            tool,
+            orgFolder: context.orgFolderName,
+            organizationName,
+            responsibleName: responsible,
+            targetObject,
+            movedBy: String(user?.full_name ?? "").trim(),
+          });
+        });
         setTimeout(() => {
           closeToolsMoveModal();
           resetToolsSelection();

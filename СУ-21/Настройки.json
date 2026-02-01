@@ -75,12 +75,28 @@
                         "type": "toggle"
                     }
                 ],
-                "layoutCustomized": true
+                "layoutCustomized": true,
+                "toolsView": "table"
             },
             "preferences": {
                 "iconStyle": "icon-title",
                 "grouping": "free",
                 "theme": "light"
+            }
+        },
+        "tg-737803868": {
+            "preferences": {
+                "iconStyle": "icon-title",
+                "grouping": "free",
+                "theme": "light"
+            },
+            "energy": {
+                "toolsView": "table"
+            }
+        },
+        "tg-531530316": {
+            "energy": {
+                "toolsView": "table"
             }
         }
     },
@@ -124,7 +140,7 @@
         "telegramGroups": [
             {
                 "name": "Рабочие вопросы",
-                "telegramId": "-1994739583"
+                "telegramId": "-1001994739583"
             },
             {
                 "name": "Общая",
@@ -157,25 +173,13 @@
                     "Орг.техника"
                 ],
                 "telegramSchedule": {
-                    "-1994739583": {
-                        "days": [
-                            "Пн",
-                            "Вт",
-                            "Ср",
-                            "Чт",
-                            "Пт"
-                        ],
-                        "time": "17:00"
+                    "-1001994739583": {
+                        "days": [],
+                        "time": "09:00"
                     },
                     "-5145416273": {
-                        "days": [
-                            "Пн",
-                            "Вт",
-                            "Ср",
-                            "Чт",
-                            "Пт"
-                        ],
-                        "time": "17:00"
+                        "days": [],
+                        "time": "09:00"
                     }
                 }
             },
@@ -185,19 +189,13 @@
                     "Инструмент"
                 ],
                 "telegramSchedule": {
-                    "-1994739583": {
+                    "-1001994739583": {
                         "days": [],
-                        "time": "17:03"
+                        "time": "10:00"
                     },
                     "-5145416273": {
-                        "days": [
-                            "Пн",
-                            "Вт",
-                            "Ср",
-                            "Чт",
-                            "Пт"
-                        ],
-                        "time": "17:03"
+                        "days": [],
+                        "time": "10:00"
                     }
                 }
             },
@@ -208,25 +206,13 @@
                     "Орг.техника"
                 ],
                 "telegramSchedule": {
-                    "-1994739583": {
-                        "days": [
-                            "Пн",
-                            "Вт",
-                            "Ср",
-                            "Чт",
-                            "Пт"
-                        ],
-                        "time": "17:05"
+                    "-1001994739583": {
+                        "days": [],
+                        "time": "11:00"
                     },
                     "-5145416273": {
-                        "days": [
-                            "Пн",
-                            "Вт",
-                            "Ср",
-                            "Чт",
-                            "Пт"
-                        ],
-                        "time": "17:05"
+                        "days": [],
+                        "time": "11:00"
                     }
                 }
             },
@@ -238,25 +224,13 @@
                     "Орг.техника"
                 ],
                 "telegramSchedule": {
-                    "-1994739583": {
-                        "days": [
-                            "Пн",
-                            "Вт",
-                            "Ср",
-                            "Чт",
-                            "Пт"
-                        ],
-                        "time": "17:10"
+                    "-1001994739583": {
+                        "days": [],
+                        "time": "12:00"
                     },
                     "-5145416273": {
-                        "days": [
-                            "Пн",
-                            "Вт",
-                            "Ср",
-                            "Чт",
-                            "Пт"
-                        ],
-                        "time": "17:10"
+                        "days": [],
+                        "time": "12:00"
                     }
                 }
             }
@@ -265,26 +239,29 @@
             "newTool": {
                 "enabled": true,
                 "groups": [
-                    "-1994739583"
+                    "-1001994739583",
+                    "-5145416273"
                 ],
                 "attachPhoto": true
             },
             "moveTool": {
-                "enabled": false,
-                "groups": [],
-                "attachPhoto": false
+                "enabled": true,
+                "groups": [
+                    "-1001994739583"
+                ],
+                "attachPhoto": true
             },
             "acceptTool": {
                 "enabled": true,
                 "groups": [
-                    "-1994739583"
+                    "-1001994739583"
                 ],
                 "attachPhoto": false
             },
             "declineTool": {
                 "enabled": true,
                 "groups": [
-                    "-1994739583",
+                    "-1001994739583",
                     "-5145416273"
                 ],
                 "attachPhoto": false
@@ -292,42 +269,42 @@
             "moveByEnergy": {
                 "enabled": true,
                 "groups": [
-                    "-1994739583"
+                    "-1001994739583"
                 ],
                 "attachPhoto": true
             },
             "toolBreakdown": {
                 "enabled": true,
                 "groups": [
-                    "-1994739583"
+                    "-1001994739583"
                 ],
                 "attachPhoto": true
             },
             "fixBreakdown": {
                 "enabled": true,
                 "groups": [
-                    "-1994739583"
+                    "-1001994739583"
                 ],
                 "attachPhoto": true
             },
             "sendToRepair": {
                 "enabled": true,
                 "groups": [
-                    "-1994739583"
+                    "-1001994739583"
                 ],
                 "attachPhoto": false
             },
             "repaired": {
                 "enabled": true,
                 "groups": [
-                    "-1994739583"
+                    "-1001994739583"
                 ],
                 "attachPhoto": false
             },
             "writeOff": {
                 "enabled": true,
                 "groups": [
-                    "-1994739583",
+                    "-1001994739583",
                     "-5145416273"
                 ],
                 "attachPhoto": true
@@ -335,7 +312,7 @@
             "finesIssued": {
                 "enabled": true,
                 "groups": [
-                    "-1994739583",
+                    "-1001994739583",
                     "-5145416273"
                 ],
                 "attachPhoto": false

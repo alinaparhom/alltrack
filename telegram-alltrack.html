@@ -2305,7 +2305,7 @@
       }
 
       .tools-move-modal .settings-modal__header {
-        padding-top: calc(22px + env(safe-area-inset-top));
+        padding-top: calc(36px + env(safe-area-inset-top));
         padding-right: 56px;
       }
 
@@ -2332,27 +2332,44 @@
       }
 
       .tools-move-modal .form-field--required .form-label {
-        font-size: 9px;
-        padding: 1px 6px;
+        font-size: 8px;
+        padding: 1px 5px;
         border-radius: 999px;
       }
 
       .tools-move-modal .form-input {
-        padding: 4px 8px;
-        min-height: 32px;
-        font-size: 12px;
+        padding: 3px 7px;
+        min-height: 24px;
+        font-size: 10px;
+        border-radius: 8px;
+      }
+
+      .tools-move-modal .suggestions {
+        top: calc(100% + 4px);
+        padding: 4px;
+        border-radius: 12px;
+        max-height: 70px;
+      }
+
+      .tools-move-modal .suggestions__item {
+        padding: 6px 8px;
         border-radius: 9px;
+        font-size: 10px;
       }
 
       @media (max-width: 520px) {
+        .tools-move-modal .settings-modal__header {
+          padding-top: calc(72px + env(safe-area-inset-top));
+        }
+
         .tools-move-modal .form-card {
           padding: 6px;
         }
 
         .tools-move-modal .form-input {
-          padding: 4px 7px;
-          min-height: 30px;
-          font-size: 11px;
+          padding: 3px 6px;
+          min-height: 22px;
+          font-size: 10px;
         }
       }
 

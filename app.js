@@ -892,6 +892,17 @@ function buildNotificationSummary(results = []) {
     : "Уведомления не отправлены.";
 }
 
+function analyzeNotificationResults(results = []) {
+  const summary = buildNotificationSummary(results);
+  const sentCount = results.filter((entry) => entry?.sent).length;
+  const allSent = results.length > 0 && sentCount === results.length;
+  return {
+    summary,
+    allSent,
+    shouldHoldOnError: Boolean(summary) && !allSent,
+  };
+}
+
 function getRegistrationToken() {
   const url = new URL(window.location.href);
   const urlToken =
@@ -3884,9 +3895,15 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
             })
           )
         );
-        const notificationMessage = buildNotificationSummary(notificationResults);
-        if (notificationMessage) {
-          setToolsMoveMessage(`${message} ${notificationMessage}`, "success");
+        const notificationStatus = analyzeNotificationResults(notificationResults);
+        if (notificationStatus.summary) {
+          setToolsMoveMessage(
+            `${message} ${notificationStatus.summary}`,
+            notificationStatus.allSent ? "success" : "error"
+          );
+        }
+        if (notificationStatus.shouldHoldOnError) {
+          return;
         }
         setTimeout(() => {
           closeToolsMoveModal();

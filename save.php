@@ -276,7 +276,12 @@ function resolveTargetPath(array $entry, array $allowedFiles): string {
     return __DIR__ . DIRECTORY_SEPARATOR . $fileName;
   }
 
-  $orgScopedFiles = ["Настройки.json", "Объекты.json", "База с инструментами.json"];
+  $orgScopedFiles = [
+    "Настройки.json",
+    "Объекты.json",
+    "База с инструментами.json",
+    "Перемещения.json",
+  ];
   if (!in_array($fileName, $orgScopedFiles, true)) {
     http_response_code(403);
     echo json_encode(["error" => "Доступ запрещен."]);

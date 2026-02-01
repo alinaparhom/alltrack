@@ -777,11 +777,23 @@ async function notifyMoveTool({
   targetObject,
   movedBy,
 }) {
-  if (!tool || !orgFolder || !fallbackBotToken) return;
+  const result = {
+    sent: false,
+    reasons: [],
+  };
+  if (!tool || !orgFolder) {
+    result.reasons.push("не переданы данные о перемещении");
+    return result;
+  }
+  if (!fallbackBotToken) {
+    result.reasons.push("не задан токен Telegram‑бота");
+    return result;
+  }
   const settingsPath = `./${orgFolder}/Настройки.json`;
   try {
     const settingsData = await loadJson(settingsPath);
-    const groupIds = isNotificationEnabled(settingsData, "moveTool")
+    const groupsEnabled = isNotificationEnabled(settingsData, "moveTool");
+    const groupIds = groupsEnabled
       ? extractNotificationGroups(settingsData, "moveTool")
       : [];
     const oldObject = String(tool?.["Объект"] ?? "").trim();
@@ -791,29 +803,39 @@ async function notifyMoveTool({
       targetObject,
       oldObject,
     });
-    if (groupIds.length) {
+    let groupSent = false;
+    if (!groupsEnabled) {
+      result.reasons.push("уведомления в группах выключены в Настройки.json");
+    } else if (!groupIds.length) {
+      result.reasons.push("не выбраны группы для уведомлений");
+    } else {
       const shouldAttach = isNotificationPhotoEnabled(settingsData, "moveTool");
       if (shouldAttach) {
         const photoNumber = resolveToolPhotoNumber(tool);
         const photoUrl = await resolveAvailablePhotoUrl(orgFolder, photoNumber);
         if (photoUrl) {
-          await Promise.all(
+          const sendResults = await Promise.all(
             groupIds.map(async (chatId) => {
               const sent = await sendTelegramPhoto(chatId, photoUrl, moveMessage);
-              if (!sent) {
-                await sendTelegramMessage(chatId, moveMessage);
-              }
+              if (sent) return true;
+              return sendTelegramMessage(chatId, moveMessage);
             })
           );
+          groupSent = sendResults.some(Boolean);
         } else {
-          await Promise.all(
+          const sendResults = await Promise.all(
             groupIds.map((chatId) => sendTelegramMessage(chatId, moveMessage))
           );
+          groupSent = sendResults.some(Boolean);
         }
       } else {
-        await Promise.all(
+        const sendResults = await Promise.all(
           groupIds.map((chatId) => sendTelegramMessage(chatId, moveMessage))
         );
+        groupSent = sendResults.some(Boolean);
+      }
+      if (!groupSent) {
+        result.reasons.push("не удалось отправить уведомление в группы");
       }
     }
 
@@ -822,6 +844,7 @@ async function notifyMoveTool({
       fullName: responsibleName,
       organization: organizationName,
     });
+    let responsibleSent = false;
     if (responsibleTelegramId) {
       const fineNote = buildLateReplyFineNote(settingsData);
       const responsibleMessage = buildMoveToolResponsibleMessage(tool, {
@@ -830,11 +853,43 @@ async function notifyMoveTool({
         targetObject,
         fineNote: fineNote || "",
       });
-      await sendTelegramMessage(responsibleTelegramId, responsibleMessage);
+      responsibleSent = await sendTelegramMessage(
+        responsibleTelegramId,
+        responsibleMessage
+      );
+      if (!responsibleSent) {
+        result.reasons.push("не удалось отправить ответственному");
+      }
+    } else {
+      result.reasons.push("у ответственного не указан Telegram ID");
     }
+    result.sent = groupSent || responsibleSent;
   } catch (error) {
     console.warn("Не удалось отправить уведомление о перемещении.", error);
+    result.reasons.push("ошибка при отправке уведомлений");
   }
+  return result;
+}
+
+function buildNotificationSummary(results = []) {
+  if (!results.length) return "";
+  const reasons = [
+    ...new Set(
+      results.flatMap((entry) => entry?.reasons ?? []).filter(Boolean)
+    ),
+  ];
+  const sentCount = results.filter((entry) => entry?.sent).length;
+  if (sentCount === results.length) {
+    return "Уведомления отправлены.";
+  }
+  if (sentCount > 0) {
+    return reasons.length
+      ? `Уведомления отправлены частично, так как ${reasons.join("; ")}.`
+      : "Уведомления отправлены частично.";
+  }
+  return reasons.length
+    ? `Уведомления не отправлены, так как ${reasons.join("; ")}.`
+    : "Уведомления не отправлены.";
 }
 
 function getRegistrationToken() {
@@ -3817,16 +3872,22 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         setToolsMoveMessage(message, "success");
         const usersData = await loadJson(usersFilePath).catch(() => ({ users: [] }));
         const organizationName = findUserOrganizationName(user, usersData);
-        eligibleTools.forEach((tool) => {
-          void notifyMoveTool({
-            tool,
-            orgFolder: context.orgFolderName,
-            organizationName,
-            responsibleName: responsible,
-            targetObject,
-            movedBy: String(user?.full_name ?? "").trim(),
-          });
-        });
+        const notificationResults = await Promise.all(
+          eligibleTools.map((tool) =>
+            notifyMoveTool({
+              tool,
+              orgFolder: context.orgFolderName,
+              organizationName,
+              responsibleName: responsible,
+              targetObject,
+              movedBy: String(user?.full_name ?? "").trim(),
+            })
+          )
+        );
+        const notificationMessage = buildNotificationSummary(notificationResults);
+        if (notificationMessage) {
+          setToolsMoveMessage(`${message} ${notificationMessage}`, "success");
+        }
         setTimeout(() => {
           closeToolsMoveModal();
           resetToolsSelection();

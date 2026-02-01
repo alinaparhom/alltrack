@@ -2851,6 +2851,34 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     return byNumber || resolveToolNumberValue(tool);
   };
 
+  const loadPendingMoves = async (orgFolder) => {
+    const pendingNumbers = new Set();
+    const pendingAccountingNumbers = new Set();
+    if (!orgFolder) {
+      return { pendingNumbers, pendingAccountingNumbers };
+    }
+    const movesPath = `./${orgFolder}/Перемещения.json`;
+    try {
+      const rawMoves = await loadJson(movesPath);
+      const moves = Array.isArray(rawMoves)
+        ? rawMoves
+        : Array.isArray(rawMoves?.moves)
+          ? rawMoves.moves
+          : [];
+      moves.forEach((move) => {
+        const responseDate = String(move?.["Дата ответа"] ?? "").trim();
+        if (responseDate) return;
+        const number = String(move?.["Номер"] ?? "").trim();
+        const accounting = String(move?.["Бух.номер"] ?? "").trim();
+        if (number) pendingNumbers.add(number);
+        if (accounting) pendingAccountingNumbers.add(accounting);
+      });
+    } catch (error) {
+      console.warn("Не удалось загрузить перемещения.", error);
+    }
+    return { pendingNumbers, pendingAccountingNumbers };
+  };
+
   const syncToolsViewButtons = () => {
     toolsViewButtons.forEach((button) => {
       button.classList.toggle(
@@ -2891,6 +2919,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       row.className = "tools-row";
       row.classList.toggle("tools-row--no-photo", !hasPhoto);
       row.classList.toggle("is-selected", toolsState.selectedIds.has(tool.__selectionId));
+      row.classList.toggle("tools-item--pending-response", tool.__pendingMove);
       row.dataset.toolsItem = "true";
       row.dataset.toolId = tool.__selectionId;
       const main = document.createElement("div");
@@ -2924,6 +2953,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const card = document.createElement("div");
     card.className = "tools-card";
     card.classList.toggle("is-selected", toolsState.selectedIds.has(tool.__selectionId));
+    card.classList.toggle("tools-item--pending-response", tool.__pendingMove);
     card.dataset.toolsItem = "true";
     card.dataset.toolId = tool.__selectionId;
 
@@ -3000,6 +3030,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const row = document.createElement("div");
       row.className = "tools-table__row";
       row.classList.toggle("is-selected", toolsState.selectedIds.has(tool.__selectionId));
+      row.classList.toggle("tools-item--pending-response", tool.__pendingMove);
       row.dataset.toolsItem = "true";
       row.dataset.toolId = tool.__selectionId;
       const photoCount = Number.parseInt(tool?.["Количество фото"] ?? 0, 10);
@@ -3219,6 +3250,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       rawTools = [];
     }
     const userNameKey = normalizePersonName(user?.full_name ?? "");
+    const { pendingNumbers, pendingAccountingNumbers } =
+      await loadPendingMoves(orgFolder);
     toolsState.tools = rawTools
       .filter(
         (tool) =>
@@ -3226,10 +3259,16 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       )
       .map((tool, index) => {
         const selectionId = buildToolSelectionId(tool, index);
+        const number = String(tool?.["Номер"] ?? "").trim();
+        const accounting = String(tool?.["Бух.номер"] ?? "").trim();
+        const hasPendingMove =
+          (number && pendingNumbers.has(number)) ||
+          (accounting && pendingAccountingNumbers.has(accounting));
         return {
           ...tool,
           __searchLine: buildToolSearchLine(tool),
           __selectionId: selectionId,
+          __pendingMove: hasPendingMove,
         };
       })
       .sort((a, b) =>

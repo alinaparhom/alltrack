@@ -2773,6 +2773,31 @@
         margin-bottom: 12px;
       }
 
+      .pending-moves-action-button {
+        flex: 1;
+        min-width: 140px;
+      }
+
+      .pending-moves-action-button--accept {
+        border: 1px solid rgba(47, 158, 103, 0.35);
+        background: rgba(47, 158, 103, 0.18);
+        color: var(--success);
+      }
+
+      .pending-moves-action-button--accept:hover {
+        box-shadow: 0 14px 32px rgba(47, 158, 103, 0.18);
+      }
+
+      .pending-moves-action-button--decline {
+        border: 1px solid rgba(248, 113, 113, 0.45);
+        background: rgba(248, 113, 113, 0.18);
+        color: #d64545;
+      }
+
+      .pending-moves-action-button--decline:hover {
+        box-shadow: 0 14px 32px rgba(214, 69, 69, 0.22);
+      }
+
       .pending-moves-tools-table .tools-table__row {
         grid-template-columns: minmax(80px, 120px) minmax(0, 1.2fr) minmax(0, 1fr) auto;
       }

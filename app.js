@@ -534,6 +534,18 @@ function formatNotificationCost(value) {
   return text ? text : "—";
 }
 
+function formatNotificationCostWithoutCurrency(value) {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value.toLocaleString("ru-RU");
+  }
+  const text = String(value ?? "").trim();
+  if (!text) return "—";
+  return text
+    .replace(/\s?₽/g, "")
+    .replace(/\s?(руб\.|рублей|рубля)/gi, "")
+    .trim();
+}
+
 function escapeTelegramHtml(value) {
   return String(value ?? "")
     .replace(/&/g, "&amp;")
@@ -3861,22 +3873,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     pendingMovesEmptyEl?.classList.add("is-hidden");
     const table = document.createElement("div");
     table.className = "tools-table pending-moves-tools-table";
-    const header = document.createElement("div");
-    header.className = "tools-table__row tools-table__row--header";
-    const numberHead = document.createElement("div");
-    numberHead.className = "tools-table__cell tools-table__cell--number";
-    numberHead.textContent = "Номер";
-    const infoHead = document.createElement("div");
-    infoHead.className = "tools-table__cell";
-    infoHead.textContent = "Инструмент";
-    const thumbHead = document.createElement("div");
-    thumbHead.className = "tools-table__cell tools-table__cell--thumb";
-    thumbHead.textContent = "Фото";
-    const actionsHead = document.createElement("div");
-    actionsHead.className = "tools-table__cell tools-table__cell--actions";
-    actionsHead.innerHTML = `<span class=\"tools-table__actions-label\">Ответ</span>`;
-    header.append(numberHead, infoHead, thumbHead, actionsHead);
-    table.appendChild(header);
 
     items.forEach((item) => {
       const { move, tool, moveIndex, fineAmount } = item;
@@ -3919,7 +3915,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       if (fineAmount > 0) {
         const fine = document.createElement("div");
         fine.className = "pending-move-fine";
-        fine.textContent = `Штраф: ${formatNotificationCost(fineAmount)}`;
+        fine.textContent = `Штраф: ${formatNotificationCostWithoutCurrency(
+          fineAmount
+        )}`;
         infoCell.appendChild(fine);
       }
 

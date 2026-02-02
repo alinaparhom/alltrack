@@ -335,14 +335,14 @@ export function renderRole(user) {
             <div class="settings-modal__body tools-modal__body">
               <div class="pending-moves-actions">
                 <button
-                  class="action-primary"
+                  class="action-primary pending-moves-action-button pending-moves-action-button--accept"
                   type="button"
                   data-pending-moves-accept-all
                 >
                   Принять все
                 </button>
                 <button
-                  class="action-secondary"
+                  class="action-secondary pending-moves-action-button pending-moves-action-button--decline"
                   type="button"
                   data-pending-moves-decline-all
                 >

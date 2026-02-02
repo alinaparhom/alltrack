@@ -2800,6 +2800,8 @@
 
       .pending-moves-tools-table .tools-table__row {
         grid-template-columns: minmax(80px, 120px) minmax(0, 1.2fr) minmax(0, 1fr) auto;
+        position: relative;
+        padding-bottom: 52px;
       }
 
       .tools-table__cell--actions {
@@ -2865,6 +2867,13 @@
         border-color: rgba(34, 197, 94, 0.4);
         color: var(--success);
         background: rgba(34, 197, 94, 0.1);
+      }
+
+      .pending-move-action--floating {
+        position: absolute;
+        right: 16px;
+        bottom: 12px;
+        box-shadow: 0 12px 26px rgba(15, 23, 42, 0.12);
       }
 
       .pending-move-action--decline {
@@ -3059,18 +3068,16 @@
 
         .pending-moves-tools-table .tools-table__row {
           grid-template-columns: 1fr;
+          padding-bottom: 60px;
         }
 
         .pending-moves-tools-table .tools-table__cell--actions {
           justify-content: flex-start;
         }
 
-        .pending-moves-tools-table .tools-table__row {
-          grid-template-columns: 1fr;
-        }
-
-        .pending-moves-tools-table .tools-table__cell--actions {
-          justify-content: flex-start;
+        .pending-move-action--floating {
+          right: 12px;
+          bottom: 10px;
         }
 
         .tools-row {

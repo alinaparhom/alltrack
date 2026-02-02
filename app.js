@@ -701,7 +701,7 @@ function buildNewToolNotificationMessage(
 
 function buildMoveToolNotificationMessage(
   tool,
-  { movedBy, responsible, targetObject, oldObject } = {}
+  { movedBy, responsible, targetObject, oldObject, moveReason } = {}
 ) {
   const titleParts = [
     formatNotificationValue(tool?.["Наименование"], ""),
@@ -726,20 +726,31 @@ function buildMoveToolNotificationMessage(
     `5. Новый объект: ${escapeTelegramHtml(
       formatNotificationValue(targetObject)
     )}`,
+  ];
+  lines.push(
     `6. Ответственный: ${escapeTelegramHtml(
       formatNotificationValue(responsible)
-    )}`,
+    )}`
+  );
+  if (moveReason) {
+    lines.push(
+      `7. Причина перемещения: ${escapeTelegramHtml(
+        formatNotificationValue(moveReason)
+      )}`
+    );
+  }
+  lines.push(
     "",
     `Переместил: ${escapeTelegramHtml(
       formatNotificationValue(movedBy)
-    )}`,
-  ];
+    )}`
+  );
   return lines.join("\n");
 }
 
 function buildMoveToolResponsibleMessage(
   tool,
-  { movedBy, oldObject, targetObject, fineNote } = {}
+  { movedBy, oldObject, targetObject, fineNote, moveReason } = {}
 ) {
   const titleParts = [
     formatNotificationValue(tool?.["Наименование"], ""),
@@ -761,14 +772,25 @@ function buildMoveToolResponsibleMessage(
     `4. Старый объект: ${escapeTelegramHtml(
       formatNotificationValue(oldObject)
     )}`,
+  ];
+  lines.push(
     `5. Новый объект: ${escapeTelegramHtml(
       formatNotificationValue(targetObject)
-    )}`,
+    )}`
+  );
+  if (moveReason) {
+    lines.push(
+      `6. Причина перемещения: ${escapeTelegramHtml(
+        formatNotificationValue(moveReason)
+      )}`
+    );
+  }
+  lines.push(
     "",
     `Переместил: ${escapeTelegramHtml(
       formatNotificationValue(movedBy)
-    )}`,
-  ];
+    )}`
+  );
   if (fineNote) {
     lines.push("", escapeTelegramHtml(fineNote));
   }
@@ -784,6 +806,7 @@ function buildMoveDecisionNotificationMessage(
     targetObject,
     oldObject,
     reason,
+    moveReason,
     isForMover = false,
   } = {}
 ) {
@@ -815,10 +838,19 @@ function buildMoveDecisionNotificationMessage(
     `4. Старый объект: ${escapeTelegramHtml(
       formatNotificationValue(oldObject)
     )}`,
+  ];
+  lines.push(
     `5. Новый объект: ${escapeTelegramHtml(
       formatNotificationValue(targetObject)
-    )}`,
-  ];
+    )}`
+  );
+  if (moveReason) {
+    lines.push(
+      `6. Причина перемещения: ${escapeTelegramHtml(
+        formatNotificationValue(moveReason)
+      )}`
+    );
+  }
   if (respondedBy) {
     lines.push("", `Ответил: ${escapeTelegramHtml(respondedBy)}`);
   }
@@ -1022,6 +1054,7 @@ async function notifyMoveTool({
   responsibleName,
   targetObject,
   movedBy,
+  moveReason,
 }) {
   const result = {
     sent: false,
@@ -1048,6 +1081,7 @@ async function notifyMoveTool({
       responsible: responsibleName,
       targetObject,
       oldObject,
+      moveReason,
     });
     let groupSent = false;
     const groupErrors = [];
@@ -1132,6 +1166,7 @@ async function notifyMoveTool({
         oldObject,
         targetObject,
         fineNote: fineNote || "",
+        moveReason,
       });
       const responsibleResult = await sendTelegramMessage(
         responsibleTelegramId,
@@ -1184,6 +1219,7 @@ async function notifyMoveDecision({
       targetObject: String(move?.["Новый объект"] ?? "").trim(),
       oldObject: String(move?.["Старый объект"] ?? "").trim(),
       reason,
+      moveReason: String(move?.["Причина перемещения"] ?? "").trim(),
       isForMover: false,
     });
     if (groupsEnabled && groupIds.length) {
@@ -1229,6 +1265,7 @@ async function notifyMoveDecision({
         targetObject: String(move?.["Новый объект"] ?? "").trim(),
         oldObject: String(move?.["Старый объект"] ?? "").trim(),
         reason,
+        moveReason: String(move?.["Причина перемещения"] ?? "").trim(),
         isForMover: true,
       });
       const shouldAttach = isNotificationPhotoEnabled(
@@ -2948,6 +2985,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const toolsMoveObjectSuggestionsEl = contentEl.querySelector(
     "[data-tools-move-object-suggestions]"
   );
+  const toolsMoveReasonFieldEl = contentEl.querySelector(
+    "[data-tools-move-reason-field]"
+  );
+  const toolsMoveReasonInput = contentEl.querySelector("[data-tools-move-reason]");
   const toolsMoveMessageEl = contentEl.querySelector("[data-tools-move-message]");
   const toolsMoveSubtitleEl = contentEl.querySelector("[data-tools-move-subtitle]");
   const addPhotoModalEl = contentEl.querySelector("[data-add-photo-modal]");
@@ -3316,6 +3357,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const toolsMoveState = {
     responsibleOptions: [],
     objectOptions: [],
+    responsibleRoles: new Map(),
   };
   const addPhotoState = {
     tools: [],
@@ -4860,8 +4902,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const orgKey = normalizeOrg(orgName);
     const currentUserName = normalizePersonName(user?.full_name ?? "");
     const currentTelegramId = normalizeTelegramId(user?.telegram_id);
-    const userOptions = (usersData.users ?? [])
-      .filter((entry) => normalizeOrg(entry.organization) === orgKey)
+    const orgUsers = (usersData.users ?? []).filter(
+      (entry) => normalizeOrg(entry.organization) === orgKey
+    );
+    const userOptions = orgUsers
       .filter((entry) => {
         const sameTelegram =
           currentTelegramId &&
@@ -4876,6 +4920,14 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     toolsMoveState.responsibleOptions = userOptions.sort((a, b) =>
       a.localeCompare(b, "ru")
     );
+    toolsMoveState.responsibleRoles = new Map(
+      orgUsers
+        .map((entry) => [
+          normalizePersonName(entry.full_name ?? ""),
+          String(entry.role ?? "").trim(),
+        ])
+        .filter(([name]) => name)
+    );
     if (toolsMoveResponsibleInput) {
       toolsMoveResponsibleInput.value = "";
       updateToolsMoveSelectState(
@@ -4884,6 +4936,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         "Нет доступных пользователей"
       );
       toolsMoveResponsibleSuggestionsEl?.classList.add("is-hidden");
+    }
+    updateToolsMoveReasonState("");
+    if (toolsMoveReasonInput) {
+      toolsMoveReasonInput.value = "";
     }
 
     let objectOptions = [];
@@ -4926,6 +4982,18 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   if (toolsMoveButtonEl) {
     toolsMoveButtonEl.addEventListener("click", openToolsMoveModal);
   }
+  if (toolsMoveResponsibleInput) {
+    const syncMoveReason = () => {
+      const responsibleRaw = String(toolsMoveResponsibleInput.value ?? "").trim();
+      const responsible = resolveMoveOptionMatch(
+        responsibleRaw,
+        toolsMoveState.responsibleOptions
+      );
+      updateToolsMoveReasonState(responsible);
+    };
+    toolsMoveResponsibleInput.addEventListener("input", syncMoveReason);
+    toolsMoveResponsibleInput.addEventListener("blur", syncMoveReason);
+  }
   if (toolsSelectionCancelButtonEl) {
     toolsSelectionCancelButtonEl.addEventListener("click", () => {
       resetToolsSelection();
@@ -4950,6 +5018,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       );
       if (!responsible || !targetObject) {
         setToolsMoveMessage("Выберите ответственного и объект.", "error");
+        return;
+      }
+      const moveReason = String(toolsMoveReasonInput?.value ?? "").trim();
+      if (isEnergyResponsible(responsible) && !moveReason) {
+        setToolsMoveMessage("Укажите причину перемещения.", "error");
+        toolsMoveReasonInput?.focus();
         return;
       }
 
@@ -4987,6 +5061,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           Принял: responsible,
           "Старый объект": String(tool?.["Объект"] ?? "").trim(),
           "Новый объект": targetObject,
+          "Причина перемещения": moveReason,
           Статус: String(tool?.["Статус"] ?? "").trim(),
         });
       });
@@ -5030,6 +5105,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
               responsibleName: responsible,
               targetObject,
               movedBy: String(user?.full_name ?? "").trim(),
+              moveReason,
             })
           )
         );
@@ -6121,6 +6197,23 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     return (
       options.find((option) => normalizeMoveOption(option) === normalized) ?? ""
     );
+  };
+
+  const isEnergyResponsible = (name) => {
+    const normalizedName = normalizePersonName(name ?? "");
+    if (!normalizedName) return false;
+    const role = toolsMoveState.responsibleRoles.get(normalizedName) ?? "";
+    return String(role).trim().toLowerCase() === "энергетик";
+  };
+
+  const updateToolsMoveReasonState = (responsibleName) => {
+    if (!toolsMoveReasonFieldEl || !toolsMoveReasonInput) return;
+    const shouldRequire = isEnergyResponsible(responsibleName);
+    toolsMoveReasonFieldEl.classList.toggle("is-hidden", !shouldRequire);
+    toolsMoveReasonInput.required = shouldRequire;
+    if (!shouldRequire) {
+      toolsMoveReasonInput.value = "";
+    }
   };
 
   const updateAddToolFilledStates = () => {

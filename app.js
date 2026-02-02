@@ -930,6 +930,14 @@ function resolveToolPhotoNumberForNotification(tool) {
   return byNumber || byAccounting;
 }
 
+function resolveMoveDecisionPhotoNumber(tool, move) {
+  const fromTool = resolveToolPhotoNumberForNotification(tool);
+  if (fromTool) return fromTool;
+  const byNumber = String(move?.["Номер"] ?? "").trim();
+  const byAccounting = String(move?.["Бух.номер"] ?? "").trim();
+  return byNumber || byAccounting;
+}
+
 async function notifyMoveTool({
   tool,
   orgFolder,
@@ -1106,7 +1114,7 @@ async function notifyMoveDecision({
         notificationId
       );
       if (shouldAttach) {
-        const photoNumber = resolveToolPhotoNumberForNotification(tool);
+        const photoNumber = resolveMoveDecisionPhotoNumber(tool, move);
         const photoUrl = await resolveAvailablePhotoUrl(orgFolder, photoNumber);
         if (photoUrl) {
           await Promise.all(
@@ -1148,7 +1156,7 @@ async function notifyMoveDecision({
         notificationId
       );
       if (shouldAttach) {
-        const photoNumber = resolveToolPhotoNumberForNotification(tool);
+        const photoNumber = resolveMoveDecisionPhotoNumber(tool, move);
         const photoUrl = await resolveAvailablePhotoUrl(orgFolder, photoNumber);
         if (photoUrl) {
           await sendTelegramPhoto(moverTelegramId, photoUrl, moverMessage);

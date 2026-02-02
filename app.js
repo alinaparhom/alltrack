@@ -932,6 +932,17 @@ async function resolveAvailablePhotoUrl(orgFolder, toolNumber) {
   return await resolvePhotoUrlFromDirectoryListing(orgFolder, toolNumber);
 }
 
+function buildDeclinePhotoUrl(orgFolder, fileName) {
+  if (!orgFolder || !fileName) return "";
+  const folderSegment = encodeURIComponent("Фото отказов");
+  const orgSegment = encodeURIComponent(orgFolder);
+  const fileSegment = encodeURIComponent(fileName);
+  return new URL(
+    `./${orgSegment}/${folderSegment}/${fileSegment}`,
+    window.location.href
+  ).toString();
+}
+
 async function notifyNewToolRegistration({
   tool,
   organizationName,
@@ -1154,6 +1165,7 @@ async function notifyMoveDecision({
   decision,
   reason,
   respondedBy,
+  declinePhotoUrl,
 } = {}) {
   if (!tool || !move || !orgFolder) return;
   if (!fallbackBotToken) return;
@@ -1179,27 +1191,29 @@ async function notifyMoveDecision({
         settingsData,
         notificationId
       );
-      if (shouldAttach) {
-        const photoNumber = resolveMoveDecisionPhotoNumber(tool, move);
-        const photoUrl = await resolveAvailablePhotoUrl(orgFolder, photoNumber);
-        if (photoUrl) {
-          await Promise.all(
-            groupIds.map((chatId) =>
-              sendTelegramPhoto(chatId, photoUrl, moveMessage)
-            )
+      const sendGroupMessage = async (chatId) => {
+        if (declinePhotoUrl) {
+          const photoResult = await sendTelegramPhoto(
+            chatId,
+            declinePhotoUrl,
+            moveMessage
           );
-        } else {
-          await Promise.all(
-            groupIds.map((chatId) =>
-              sendTelegramMessage(chatId, moveMessage)
-            )
-          );
+          if (!photoResult.ok) {
+            await sendTelegramMessage(chatId, moveMessage);
+          }
+          return;
         }
-      } else {
-        await Promise.all(
-          groupIds.map((chatId) => sendTelegramMessage(chatId, moveMessage))
-        );
-      }
+        if (shouldAttach) {
+          const photoNumber = resolveMoveDecisionPhotoNumber(tool, move);
+          const photoUrl = await resolveAvailablePhotoUrl(orgFolder, photoNumber);
+          if (photoUrl) {
+            await sendTelegramPhoto(chatId, photoUrl, moveMessage);
+            return;
+          }
+        }
+        await sendTelegramMessage(chatId, moveMessage);
+      };
+      await Promise.all(groupIds.map((chatId) => sendGroupMessage(chatId)));
     }
 
     const usersData = await loadJson(usersFilePath).catch(() => ({ users: [] }));
@@ -1221,7 +1235,16 @@ async function notifyMoveDecision({
         settingsData,
         notificationId
       );
-      if (shouldAttach) {
+      if (declinePhotoUrl) {
+        const photoResult = await sendTelegramPhoto(
+          moverTelegramId,
+          declinePhotoUrl,
+          moverMessage
+        );
+        if (!photoResult.ok) {
+          await sendTelegramMessage(moverTelegramId, moverMessage);
+        }
+      } else if (shouldAttach) {
         const photoNumber = resolveMoveDecisionPhotoNumber(tool, move);
         const photoUrl = await resolveAvailablePhotoUrl(orgFolder, photoNumber);
         if (photoUrl) {
@@ -3164,6 +3187,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const pendingMovesDeclineReasonEl = contentEl.querySelector(
     "[data-pending-moves-decline-reason]"
   );
+  const pendingMovesDeclinePhotoInput = contentEl.querySelector(
+    "[data-pending-moves-decline-photo]"
+  );
   const pendingMovesDeclineCancelButton = contentEl.querySelector(
     "[data-pending-moves-decline-cancel]"
   );
@@ -4121,9 +4147,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (pendingMovesDeclineReasonEl) {
       pendingMovesDeclineReasonEl.value = "";
     }
+    if (pendingMovesDeclinePhotoInput) {
+      pendingMovesDeclinePhotoInput.value = "";
+    }
     setPendingMovesDeclineMessage("");
     if (pendingMovesDeclineResolver && shouldResolve) {
-      pendingMovesDeclineResolver("");
+      pendingMovesDeclineResolver({ reason: "", photoFile: null });
       pendingMovesDeclineResolver = null;
     }
   };
@@ -4140,11 +4169,14 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     new Promise((resolve) => {
       if (!pendingMovesDeclineModalEl || !pendingMovesDeclineFormEl) {
         const reason = window.prompt("Укажите причину отказа") ?? "";
-        resolve(reason.trim());
+        resolve({ reason: reason.trim(), photoFile: null });
         return;
       }
       pendingMovesDeclineResolver = resolve;
       setPendingMovesDeclineMessage("");
+      if (pendingMovesDeclinePhotoInput) {
+        pendingMovesDeclinePhotoInput.value = "";
+      }
       openPendingMovesDeclineModal();
     });
 
@@ -4316,16 +4348,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       actionsCell.className = "tools-table__cell tools-table__cell--actions";
       actionsCell.innerHTML = `
         <button class=\"pending-move-action pending-move-action--decline\" type=\"button\" data-pending-move-action=\"decline\" data-move-index=\"${moveIndex}\" aria-label=\"Не принять\">Не принять</button>
+        <button class=\"pending-move-action pending-move-action--accept\" type=\"button\" data-pending-move-action=\"accept\" data-move-index=\"${moveIndex}\" aria-label=\"Принять\">Принять</button>
       `;
-      const acceptButton = document.createElement("button");
-      acceptButton.className =
-        "pending-move-action pending-move-action--accept pending-move-action--floating";
-      acceptButton.type = "button";
-      acceptButton.dataset.pendingMoveAction = "accept";
-      acceptButton.dataset.moveIndex = String(moveIndex);
-      acceptButton.setAttribute("aria-label", "Принять");
-      acceptButton.textContent = "Принять";
-      row.append(numberCell, infoCell, photoCell, actionsCell, acceptButton);
+      row.append(numberCell, infoCell, photoCell, actionsCell);
       table.appendChild(row);
     });
 
@@ -4431,8 +4456,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       return;
     }
     let declineReason = "";
+    let declinePhotoFile = null;
     if (decision === "Не принял") {
-      declineReason = await requestPendingMovesDeclineReason();
+      const declinePayload = await requestPendingMovesDeclineReason();
+      declineReason = String(declinePayload?.reason ?? "").trim();
+      declinePhotoFile = declinePayload?.photoFile ?? null;
       if (!declineReason) {
         return;
       }
@@ -4441,6 +4469,22 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     setPendingMovesMessage("Сохраняем ответы...", "info");
     const updatedMoves = [...pendingMovesState.allMoves];
     const responseDate = formatDateValue(new Date());
+    const declinePhotoEntries = [];
+    const declinePhotoNames = new Map();
+    let declinePhotoContent = "";
+    if (decision === "Не принял" && declinePhotoFile) {
+      try {
+        declinePhotoContent = await readFileAsBase64(declinePhotoFile);
+      } catch (error) {
+        console.error(error);
+        setPendingMovesMessage(
+          "Не удалось прочитать фото отказа. Попробуйте снова.",
+          "error"
+        );
+        pendingMovesState.isSaving = false;
+        return;
+      }
+    }
     const fineEntries = [];
     let toolsPayload = null;
     let toolsNormalized = null;
@@ -4504,6 +4548,27 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       };
       if (decision === "Не принял") {
         updatedMoves[index]["Причина отказа"] = declineReason;
+        if (declinePhotoContent) {
+          const toolNumber =
+            String(move?.["Номер"] ?? "").trim() ||
+            String(move?.["Бух.номер"] ?? "").trim() ||
+            "без_номера";
+          const fileName = buildDeclinePhotoFileName(
+            toolNumber,
+            responseDate,
+            declinePhotoFile
+          );
+          updatedMoves[index]["Фото отказа"] = fileName;
+          declinePhotoNames.set(index, fileName);
+          declinePhotoEntries.push({
+            type: "file",
+            path: `${context.orgFolderName}/Фото отказов/${fileName}`,
+            content: declinePhotoContent,
+            encoding: "base64",
+            mime: declinePhotoFile?.type || "image/*",
+            ...buildUploadUserMeta({ organizationName: context.orgFullName }),
+          });
+        }
       }
     });
     const movesPath = `./${context.orgFolderName}/Перемещения.json`;
@@ -4527,6 +4592,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       }
     }
     try {
+      if (declinePhotoEntries.length) {
+        await uploadPhotoEntriesInBatches(declinePhotoEntries);
+      }
       const entries = [{ path: movesPath, data: updatedMoves, user }];
       if (toolsPayload) {
         entries.push({
@@ -4554,6 +4622,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           if (!move) return;
           const tool = resolveToolForMove(move);
           if (!tool) return;
+          const declinePhotoName = declinePhotoNames.get(index);
+          const declinePhotoUrl = declinePhotoName
+            ? buildDeclinePhotoUrl(context.orgFolderName, declinePhotoName)
+            : "";
           await notifyMoveDecision({
             tool,
             move,
@@ -4562,6 +4634,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
             decision,
             reason: decision === "Не принял" ? declineReason : "",
             respondedBy: responderName,
+            declinePhotoUrl,
           });
         })
       );
@@ -4670,11 +4743,16 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         pendingMovesDeclineReasonEl?.focus();
         return;
       }
+      const photoFile = pendingMovesDeclinePhotoInput?.files?.[0] ?? null;
+      if (photoFile && photoFile.type && !photoFile.type.startsWith("image/")) {
+        setPendingMovesDeclineMessage("Добавьте фото в формате изображения.", "error");
+        return;
+      }
       const resolver = pendingMovesDeclineResolver;
       pendingMovesDeclineResolver = null;
       closePendingMovesDeclineModal(false);
       if (resolver) {
-        resolver(reason);
+        resolver({ reason, photoFile });
       }
     });
   }
@@ -5135,6 +5213,22 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const safeExtension = extension || "jpg";
     const suffix = buildRandomSuffix(4);
     const baseName = `${rawNumber}_${suffix}.${safeExtension}`;
+    return sanitizePhotoFileName(baseName);
+  };
+
+  const buildDeclinePhotoFileName = (toolNumber, responseDate, file) => {
+    const rawNumber = String(toolNumber ?? "").trim() || "без_номера";
+    const nameParts = String(file?.name ?? "").split(".");
+    const nameExtension =
+      nameParts.length > 1 ? nameParts[nameParts.length - 1] : "";
+    let extension = nameExtension;
+    if (!extension && file?.type) {
+      const typeParts = file.type.split("/");
+      extension = typeParts[typeParts.length - 1] ?? "";
+    }
+    const safeExtension = extension || "jpg";
+    const suffix = buildRandomSuffix(2);
+    const baseName = `${rawNumber}_${responseDate}_${suffix}.${safeExtension}`;
     return sanitizePhotoFileName(baseName);
   };
 

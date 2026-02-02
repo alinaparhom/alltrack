@@ -396,6 +396,18 @@ export function renderRole(user) {
                   required
                 ></textarea>
               </label>
+              <label class="form-field">
+                <span class="form-label">Фото отказа (необязательно)</span>
+                <input
+                  class="form-input pending-moves-decline-file"
+                  type="file"
+                  accept="image/*"
+                  data-pending-moves-decline-photo
+                />
+                <span class="form-hint">
+                  Фото добавится в уведомление и сохранится в папку «Фото отказов».
+                </span>
+              </label>
               <div class="pending-moves-decline-actions">
                 <button
                   class="action-secondary"

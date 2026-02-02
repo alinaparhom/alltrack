@@ -362,7 +362,7 @@ function resolveFileTargetPath(array $entry): string {
   }
 
   $photoFolderSafe = sanitizeFolderName($photoFolder);
-  $allowedFolders = ["Фото инструментов", "Накладные покупка"];
+  $allowedFolders = ["Фото инструментов", "Накладные покупка", "Фото отказов"];
   if (!in_array($photoFolderSafe, $allowedFolders, true)) {
     http_response_code(403);
     echo json_encode(["error" => "Доступ запрещен."]);

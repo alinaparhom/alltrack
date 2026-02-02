@@ -4346,10 +4346,46 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
       const actionsCell = document.createElement("div");
       actionsCell.className = "tools-table__cell tools-table__cell--actions";
-      actionsCell.innerHTML = `
-        <button class=\"pending-move-action pending-move-action--decline\" type=\"button\" data-pending-move-action=\"decline\" data-move-index=\"${moveIndex}\" aria-label=\"Не принять\">Не принять</button>
-        <button class=\"pending-move-action pending-move-action--accept\" type=\"button\" data-pending-move-action=\"accept\" data-move-index=\"${moveIndex}\" aria-label=\"Принять\">Принять</button>
-      `;
+
+      const actionsGroup = document.createElement("div");
+      actionsGroup.className = "pending-move-actions-group";
+
+      const declineButton = document.createElement("button");
+      declineButton.className = "pending-move-action pending-move-action--decline";
+      declineButton.type = "button";
+      declineButton.dataset.pendingMoveAction = "decline";
+      declineButton.dataset.moveIndex = String(moveIndex);
+      declineButton.setAttribute("aria-label", "Не принять");
+      declineButton.textContent = "Не принять";
+
+      const acceptButton = document.createElement("button");
+      acceptButton.className = "pending-move-action pending-move-action--accept";
+      acceptButton.type = "button";
+      acceptButton.dataset.pendingMoveAction = "accept";
+      acceptButton.dataset.moveIndex = String(moveIndex);
+      acceptButton.setAttribute("aria-label", "Принять");
+      acceptButton.textContent = "Принять";
+
+      actionsGroup.append(declineButton, acceptButton);
+
+      const waitInfo = document.createElement("div");
+      waitInfo.className = "pending-move-wait";
+      const waitLabel = document.createElement("div");
+      waitLabel.className = "pending-move-wait__label";
+      waitLabel.textContent = "Ожидает";
+      const moveDateValue = String(move?.["Дата перемещения"] ?? "").trim();
+      const moveDateParsed = parseDateValue(moveDateValue);
+      let waitText = "—";
+      if (moveDateParsed instanceof Date) {
+        const waitDays = Math.max(0, getDaysDifference(new Date(), moveDateParsed));
+        waitText = waitDays === 0 ? "Сегодня" : `${waitDays} дн.`;
+      }
+      const waitValue = document.createElement("div");
+      waitValue.className = "pending-move-wait__value";
+      waitValue.textContent = waitText;
+      waitInfo.append(waitLabel, waitValue);
+
+      actionsCell.append(actionsGroup, waitInfo);
       row.append(numberCell, infoCell, photoCell, actionsCell);
       table.appendChild(row);
     });

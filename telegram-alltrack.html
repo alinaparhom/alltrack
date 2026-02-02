@@ -2819,8 +2819,42 @@
         gap: 12px;
       }
 
+      .pending-move-actions-group {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
       .pending-moves-tools-table .pending-move-action--accept {
         margin-left: auto;
+      }
+
+      .pending-move-wait {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 2px;
+        min-width: 96px;
+        padding: 6px 10px;
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.75);
+        border: 1px solid rgba(148, 163, 184, 0.35);
+        text-align: right;
+        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+      }
+
+      .pending-move-wait__label {
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--muted);
+        font-weight: 600;
+      }
+
+      .pending-move-wait__value {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--title);
       }
 
       .tools-table__actions-label {
@@ -3087,8 +3121,14 @@
 
         .pending-moves-tools-table .tools-table__cell--actions {
           justify-content: space-between;
-          flex-wrap: nowrap;
+          flex-wrap: wrap;
           width: 100%;
+        }
+
+        .pending-move-wait {
+          width: 100%;
+          align-items: flex-start;
+          text-align: left;
         }
 
         .tools-row {

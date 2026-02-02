@@ -488,6 +488,21 @@ export function renderRole(user) {
                       data-tools-move-object-suggestions
                     ></div>
                   </label>
+                  <label
+                    class="form-field form-field--required is-hidden"
+                    data-tools-move-reason-field
+                  >
+                    <span class="form-label">Причина перемещения</span>
+                    <textarea
+                      class="form-input"
+                      rows="3"
+                      placeholder="Например: срочный ремонт, смена объекта"
+                      data-tools-move-reason
+                    ></textarea>
+                    <span class="form-hint">
+                      Причина обязательна, если выбран энергетик.
+                    </span>
+                  </label>
                 </div>
                 <div class="form-message" data-tools-move-message></div>
               </div>

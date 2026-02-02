@@ -413,6 +413,7 @@
       }
 
       body[data-theme="dark"] .tools-modal__panel,
+      body[data-theme="dark"] .pending-modal__panel,
       body[data-theme="dark"] .tools-card,
       body[data-theme="dark"] .tools-table__row,
       body[data-theme="dark"] .tools-view-button,
@@ -423,6 +424,19 @@
       body[data-theme="dark"] .tools-move-modal__panel {
         background: rgba(18, 26, 46, 0.9);
         border-color: rgba(148, 170, 210, 0.3);
+      }
+
+      body[data-theme="dark"] .pending-action {
+        background: rgba(18, 26, 46, 0.9);
+        border-color: rgba(148, 170, 210, 0.35);
+        color: var(--text);
+      }
+
+      body[data-theme="dark"] .pending-fine,
+      body[data-theme="dark"] .pending-empty {
+        background: rgba(18, 26, 46, 0.9);
+        border-color: rgba(148, 170, 210, 0.35);
+        color: var(--muted);
       }
 
       body[data-theme="dark"] .tools-table__row--header {
@@ -682,6 +696,7 @@
         box-shadow: 0 12px 24px rgba(26, 31, 46, 0.08);
         color: var(--title-muted);
         flex-shrink: 0;
+        cursor: pointer;
       }
 
       .pending-stat.is-waiting {
@@ -2234,6 +2249,46 @@
         overflow: hidden;
       }
 
+      .pending-modal__panel {
+        max-width: 940px;
+        width: min(96vw, 940px);
+        max-height: 92vh;
+        display: grid;
+      }
+
+      .pending-modal__body {
+        display: grid;
+        gap: 12px;
+        overflow: hidden;
+      }
+
+      .pending-actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      .pending-actions__button {
+        border-radius: 999px;
+        padding: 8px 16px;
+        box-shadow: 0 12px 26px rgba(15, 23, 42, 0.1);
+      }
+
+      .pending-list {
+        display: grid;
+        gap: 10px;
+      }
+
+      .pending-empty {
+        padding: 16px;
+        border-radius: 16px;
+        border: 1px dashed rgba(148, 163, 184, 0.6);
+        text-align: center;
+        color: var(--muted);
+        background: rgba(255, 255, 255, 0.75);
+      }
+
       .tools-controls {
         display: grid;
         gap: 10px;
@@ -2758,6 +2813,72 @@
       .tools-table__meta--stack {
         display: grid;
         gap: 4px;
+      }
+
+      .tools-table--pending .tools-table__row {
+        grid-template-columns: minmax(70px, 110px) minmax(0, 1fr) auto auto;
+      }
+
+      .tools-table--pending.tools-table--pending-fines .tools-table__row {
+        grid-template-columns: minmax(70px, 110px) minmax(0, 1fr) minmax(90px, 120px) auto auto;
+      }
+
+      .tools-table__cell--actions {
+        display: flex;
+        gap: 8px;
+        justify-self: end;
+      }
+
+      .pending-action {
+        width: 38px;
+        height: 38px;
+        border-radius: 12px;
+        border: 1px solid rgba(226, 232, 240, 0.9);
+        background: rgba(255, 255, 255, 0.9);
+        color: var(--title);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        cursor: pointer;
+        box-shadow: 0 10px 20px rgba(15, 23, 42, 0.08);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      .pending-action:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 12px 26px rgba(15, 23, 42, 0.12);
+      }
+
+      .pending-action--accept {
+        border-color: rgba(47, 158, 103, 0.4);
+        background: rgba(47, 158, 103, 0.12);
+        color: var(--success);
+      }
+
+      .pending-action--decline {
+        border-color: rgba(248, 113, 113, 0.45);
+        background: rgba(248, 113, 113, 0.12);
+        color: #ef4444;
+      }
+
+      .pending-fine {
+        display: grid;
+        gap: 2px;
+        padding: 6px 10px;
+        border-radius: 12px;
+        border: 1px solid rgba(226, 232, 240, 0.9);
+        background: rgba(255, 255, 255, 0.88);
+        font-size: 11px;
+        color: var(--muted);
+        text-align: center;
+        min-width: 84px;
+      }
+
+      .pending-fine__value {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--title);
       }
 
       .tools-row {

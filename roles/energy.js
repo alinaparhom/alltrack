@@ -310,6 +310,53 @@ export function renderRole(user) {
             </div>
           </div>
         </div>
+        <div class="pending-modal settings-modal is-hidden" data-pending-modal>
+          <div class="settings-modal__backdrop" data-pending-backdrop></div>
+          <div
+            class="settings-modal__panel pending-modal__panel"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Запросы на принятие"
+          >
+            <div class="settings-modal__header pending-modal__header">
+              <div class="settings-modal__title">
+                <h2>Запросы на принятие</h2>
+                <p data-pending-subtitle>Загружаем список...</p>
+              </div>
+              <button
+                class="button-icon pending-modal__close"
+                type="button"
+                data-pending-close
+                aria-label="Закрыть список запросов"
+              >
+                <span class="button-icon-emoji" aria-hidden="true">✕</span>
+              </button>
+            </div>
+            <div class="settings-modal__body pending-modal__body">
+              <div class="pending-actions" data-pending-actions>
+                <button
+                  class="action-primary pending-actions__button"
+                  type="button"
+                  data-pending-accept-all
+                >
+                  Принять все
+                </button>
+                <button
+                  class="action-secondary pending-actions__button"
+                  type="button"
+                  data-pending-decline-all
+                >
+                  Не принять все
+                </button>
+              </div>
+              <div class="pending-list" data-pending-list></div>
+              <div class="pending-empty is-hidden" data-pending-empty>
+                Все запросы обработаны. Отличная работа!
+              </div>
+              <div class="form-message" data-pending-message></div>
+            </div>
+          </div>
+        </div>
         <div class="settings-modal tools-move-modal is-hidden" data-tools-move-modal>
           <div class="settings-modal__backdrop" data-tools-move-backdrop></div>
           <div

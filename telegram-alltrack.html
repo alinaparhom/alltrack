@@ -3088,13 +3088,17 @@
         .pending-moves-tools-table .tools-table__cell--actions {
           display: flex;
           align-items: center;
-          justify-content: flex-end;
+          justify-content: space-between;
           width: 100%;
           gap: 8px;
         }
 
         .pending-moves-tools-table .pending-move-action--decline {
-          margin-right: auto;
+          margin-right: 0;
+        }
+
+        .pending-moves-tools-table .pending-move-action--accept {
+          margin-left: 0;
         }
 
         .tools-row {

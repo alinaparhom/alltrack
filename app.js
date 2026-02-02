@@ -28,6 +28,7 @@ const superAdminStatEl = document.querySelector("[data-super-admin-stat]");
 const energyPendingStatEl = document.querySelector("[data-energy-pending-stat]");
 const energyPendingIconEl = document.querySelector("[data-energy-pending-icon]");
 const energyPendingCountEl = document.querySelector("[data-energy-pending-count]");
+const energyPendingWrapperEl = document.querySelector("[data-energy-pending-wrapper]");
 const settingsBackButtonEl = document.querySelector(
   "[data-settings-back-header]"
 );
@@ -145,6 +146,34 @@ function formatDateValue(date) {
   return `${day}.${month}.${date.getFullYear()}`;
 }
 
+function parseDateValue(value) {
+  const text = String(value ?? "").trim();
+  if (!text) return null;
+  const parts = text.split(".");
+  if (parts.length !== 3) return null;
+  const [day, month, year] = parts.map((item) => Number.parseInt(item, 10));
+  if (!day || !month || !year) return null;
+  const parsed = new Date(year, month - 1, day);
+  if (Number.isNaN(parsed.getTime())) return null;
+  return parsed;
+}
+
+function getDaysDifference(laterDate, earlierDate) {
+  if (!(laterDate instanceof Date) || !(earlierDate instanceof Date)) return 0;
+  const start = new Date(
+    earlierDate.getFullYear(),
+    earlierDate.getMonth(),
+    earlierDate.getDate()
+  );
+  const end = new Date(
+    laterDate.getFullYear(),
+    laterDate.getMonth(),
+    laterDate.getDate()
+  );
+  const diffMs = end.getTime() - start.getTime();
+  return Math.floor(diffMs / 86400000);
+}
+
 function normalizeCostValue(value) {
   if (value === null || value === undefined) {
     return null;
@@ -183,10 +212,10 @@ function normalizePersonName(value) {
     .replace(/\s+/g, " ");
 }
 
-async function loadUserPendingMovesCount(orgFolderName, user) {
-  if (!orgFolderName || !user) return 0;
+async function loadUserPendingMoves(orgFolderName, user) {
+  if (!orgFolderName || !user) return [];
   const userName = normalizePersonName(user.full_name ?? user.fullName ?? "");
-  if (!userName) return 0;
+  if (!userName) return [];
   const movesPath = `./${orgFolderName}/Перемещения.json`;
   try {
     const rawMoves = await loadJson(movesPath);
@@ -195,17 +224,22 @@ async function loadUserPendingMovesCount(orgFolderName, user) {
       : Array.isArray(rawMoves?.moves)
         ? rawMoves.moves
         : [];
-    return moves.reduce((count, move) => {
+    return moves.filter((move) => {
       const responseDate = String(move?.["Дата ответа"] ?? "").trim();
-      if (responseDate) return count;
+      if (responseDate) return false;
       const acceptedBy = normalizePersonName(move?.["Принял"] ?? "");
-      if (!acceptedBy || acceptedBy !== userName) return count;
-      return count + 1;
-    }, 0);
+      if (!acceptedBy || acceptedBy !== userName) return false;
+      return true;
+    });
   } catch (error) {
     console.warn("Не удалось загрузить перемещения для счётчика.", error);
   }
-  return 0;
+  return [];
+}
+
+async function loadUserPendingMovesCount(orgFolderName, user) {
+  const moves = await loadUserPendingMoves(orgFolderName, user);
+  return moves.length;
 }
 
 function getToolNumberVariants(value) {
@@ -1449,7 +1483,7 @@ function normalizeEnergyLayout(layout, actions, options = {}) {
   return normalized;
 }
 
-function updateEnergyPendingStat(count = 0) {
+function updateEnergyPendingStat({ count = 0, available = [] } = {}) {
   if (!energyPendingStatEl) return;
   const pendingCount = Number.isFinite(Number(count)) ? Math.max(0, Number(count)) : 0;
   const isWaiting = pendingCount > 0;
@@ -1476,6 +1510,10 @@ function updateEnergyPendingStat(count = 0) {
   if (energyPendingCountEl) {
     energyPendingCountEl.textContent = String(pendingCount);
     energyPendingCountEl.classList.toggle("is-hidden", !isWaiting);
+  }
+  if (energyPendingWrapperEl) {
+    energyPendingWrapperEl.dataset.pendingMoves = JSON.stringify(available || []);
+    energyPendingWrapperEl.dataset.pendingCount = String(pendingCount);
   }
 }
 
@@ -2850,6 +2888,33 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const usersAddInviteOpenButton = contentEl.querySelector(
     "[data-users-add-invite-open]"
   );
+  const pendingMovesModalEl = contentEl.querySelector(
+    "[data-pending-moves-modal]"
+  );
+  const pendingMovesBackdropEl = contentEl.querySelector(
+    "[data-pending-moves-backdrop]"
+  );
+  const pendingMovesCloseButton = contentEl.querySelector(
+    "[data-pending-moves-close]"
+  );
+  const pendingMovesListEl = contentEl.querySelector(
+    "[data-pending-moves-list]"
+  );
+  const pendingMovesEmptyEl = contentEl.querySelector(
+    "[data-pending-moves-empty]"
+  );
+  const pendingMovesSubtitleEl = contentEl.querySelector(
+    "[data-pending-moves-subtitle]"
+  );
+  const pendingMovesMessageEl = contentEl.querySelector(
+    "[data-pending-moves-message]"
+  );
+  const pendingMovesAcceptAllButton = contentEl.querySelector(
+    "[data-pending-moves-accept-all]"
+  );
+  const pendingMovesDeclineAllButton = contentEl.querySelector(
+    "[data-pending-moves-decline-all]"
+  );
 
   const context = contextOverride || (await resolveUserSettingsContext(user));
   const settingsData = context.settingsData;
@@ -2862,7 +2927,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     : energyActions;
   const actionsMap = new Map(availableActions.map((action) => [action.id, action]));
   const savedLayout = settingsData.users?.[context.userKey]?.energy?.layout;
-  const pendingMoves = await loadUserPendingMovesCount(context.orgFolderName, user);
+  const pendingMoves = await loadUserPendingMoves(context.orgFolderName, user);
   const layoutCustomized =
     settingsData.users?.[context.userKey]?.energy?.layoutCustomized ?? false;
   const normalizedPreferences = normalizePreferences(preferences);
@@ -2891,7 +2956,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
   });
 
-  updateEnergyPendingStat(pendingMoves);
+  updateEnergyPendingStat({ count: pendingMoves.length, available: pendingMoves });
   fitActionTitleTexts(gridEl);
   if (typeof ResizeObserver !== "undefined" && !gridEl.dataset.fitObserverAttached) {
     const fitObserver = new ResizeObserver(() => {
@@ -2956,6 +3021,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     isSelecting: false,
     selectedIds: new Set(),
     toolMap: new Map(),
+  };
+  const pendingMovesState = {
+    pendingItems: [],
+    allMoves: [],
+    toolMap: new Map(),
+    isSaving: false,
   };
   const toolsMoveState = {
     responsibleOptions: [],
@@ -3280,6 +3351,38 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       console.warn("Не удалось загрузить перемещения.", error);
     }
     return { pendingNumbers, pendingAccountingNumbers };
+  };
+
+  const resolveLateReplyFine = (move, fineConfig) => {
+    if (!fineConfig?.enabled) return 0;
+    const daysLimit = normalizeNumber(fineConfig.days, 0);
+    const amount = normalizeNumber(fineConfig.amount, 0);
+    if (!amount) return 0;
+    const moveDate = parseDateValue(move?.["Дата перемещения"]);
+    if (!moveDate) return 0;
+    const diffDays = getDaysDifference(new Date(), moveDate);
+    if (diffDays <= daysLimit) return 0;
+    const chargedDays = Math.max(0, diffDays - 1);
+    return chargedDays * amount;
+  };
+
+  const buildPendingToolsMap = async (orgFolder) => {
+    const map = new Map();
+    if (!orgFolder) return map;
+    const toolsPath = `./${orgFolder}/База с инструментами.json`;
+    try {
+      const raw = await loadJson(toolsPath);
+      const tools = Array.isArray(raw) ? raw : Array.isArray(raw?.tools) ? raw.tools : [];
+      tools.forEach((tool) => {
+        const number = String(tool?.["Номер"] ?? "").trim();
+        const accounting = String(tool?.["Бух.номер"] ?? "").trim();
+        if (number) map.set(`n:${number}`, tool);
+        if (accounting) map.set(`a:${accounting}`, tool);
+      });
+    } catch (error) {
+      console.warn("Не удалось загрузить базу инструментов для перемещений.", error);
+    }
+    return map;
   };
 
   const syncToolsViewButtons = () => {
@@ -3734,6 +3837,275 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     closeToolsMoveModal();
   };
 
+  const setPendingMovesSubtitle = (text) => {
+    if (pendingMovesSubtitleEl) {
+      pendingMovesSubtitleEl.textContent = text;
+    }
+  };
+
+  const setPendingMovesMessage = (text, type = "info") => {
+    if (!pendingMovesMessageEl) return;
+    pendingMovesMessageEl.textContent = text;
+    pendingMovesMessageEl.classList.remove("is-error", "is-success", "is-info");
+    pendingMovesMessageEl.classList.add(`is-${type}`);
+  };
+
+  const renderPendingMovesList = () => {
+    if (!pendingMovesListEl) return;
+    pendingMovesListEl.innerHTML = "";
+    const items = pendingMovesState.pendingItems;
+    if (!items.length) {
+      pendingMovesEmptyEl?.classList.remove("is-hidden");
+      return;
+    }
+    pendingMovesEmptyEl?.classList.add("is-hidden");
+    const table = document.createElement("div");
+    table.className = "tools-table pending-moves-tools-table";
+    const header = document.createElement("div");
+    header.className = "tools-table__row tools-table__row--header";
+    const numberHead = document.createElement("div");
+    numberHead.className = "tools-table__cell tools-table__cell--number";
+    numberHead.textContent = "Номер";
+    const infoHead = document.createElement("div");
+    infoHead.className = "tools-table__cell";
+    infoHead.textContent = "Инструмент";
+    const thumbHead = document.createElement("div");
+    thumbHead.className = "tools-table__cell tools-table__cell--thumb";
+    thumbHead.textContent = "Фото";
+    const actionsHead = document.createElement("div");
+    actionsHead.className = "tools-table__cell tools-table__cell--actions";
+    actionsHead.innerHTML = `<span class=\"tools-table__actions-label\">Ответ</span>`;
+    header.append(numberHead, infoHead, thumbHead, actionsHead);
+    table.appendChild(header);
+
+    items.forEach((item) => {
+      const { move, tool, moveIndex, fineAmount } = item;
+      const row = document.createElement("div");
+      row.className = "tools-table__row";
+      row.dataset.moveIndex = String(moveIndex);
+      const numberCell = document.createElement("div");
+      numberCell.className = "tools-table__cell tools-table__cell--number";
+      const number =
+        String(move?.["Номер"] ?? "").trim() ||
+        String(move?.["Бух.номер"] ?? "").trim();
+      numberCell.textContent = number || "—";
+
+      const infoCell = document.createElement("div");
+      infoCell.className = "tools-table__cell";
+      const title = document.createElement("div");
+      title.className = "tools-table__title";
+      const meansName = String(tool?.["Наименование"] ?? "").trim();
+      title.textContent = meansName || "Без названия";
+      const meta = document.createElement("div");
+      meta.className = "tools-table__meta tools-table__meta--stack";
+      const manufacturer = String(tool?.["Производитель"] ?? "").trim();
+      const model = String(tool?.["Модель"] ?? "").trim();
+      const sender = String(move?.["Переместил"] ?? "").trim();
+      const moveDate = String(move?.["Дата перемещения"] ?? "").trim();
+      const metaLines = [
+        [manufacturer, model].filter(Boolean).join(" · "),
+        sender ? `Отправил: ${sender}` : "",
+        moveDate ? `Дата перемещения: ${moveDate}` : "",
+      ].filter(Boolean);
+      metaLines.forEach((line) => {
+        const lineEl = document.createElement("div");
+        lineEl.className = line.includes("Отправил")
+          ? "pending-move-responsible"
+          : "pending-move-meta";
+        lineEl.textContent = line;
+        meta.appendChild(lineEl);
+      });
+      infoCell.append(title, meta);
+      if (fineAmount > 0) {
+        const fine = document.createElement("div");
+        fine.className = "pending-move-fine";
+        fine.textContent = `Штраф: ${formatNotificationCost(fineAmount)}`;
+        infoCell.appendChild(fine);
+      }
+
+      const photoCell = document.createElement("div");
+      photoCell.className = "tools-table__cell tools-table__cell--thumb";
+      const thumb = document.createElement("div");
+      thumb.className = "tools-table__thumb";
+      const img = document.createElement("img");
+      img.className = "tools-table__thumb-image";
+      img.alt = meansName || "Инструмент";
+      const photoCount = Number.parseInt(tool?.["Количество фото"] ?? 0, 10);
+      const hasPhoto = Number.isFinite(photoCount) && photoCount > 0;
+      const photoNumber =
+        String(tool?.["Номер"] ?? "").trim() ||
+        String(tool?.["Бух.номер"] ?? "").trim() ||
+        number;
+      const candidates = hasPhoto
+        ? buildToolPhotoCandidates(toolsState.orgFolder, photoNumber)
+        : [];
+      let candidateIndex = 0;
+      const tryCandidate = () => {
+        if (candidateIndex >= candidates.length) {
+          img.onerror = null;
+          img.onload = null;
+          img.src = toolPhotoPlaceholder;
+          img.classList.add("is-placeholder");
+          return;
+        }
+        const next = candidates[candidateIndex];
+        candidateIndex += 1;
+        img.src = next;
+      };
+      img.onerror = () => {
+        tryCandidate();
+      };
+      img.onload = () => {
+        img.classList.remove("is-placeholder");
+      };
+      if (candidates.length) {
+        tryCandidate();
+      } else {
+        img.src = toolPhotoPlaceholder;
+        img.classList.add("is-placeholder");
+      }
+      thumb.appendChild(img);
+      photoCell.appendChild(thumb);
+
+      const actionsCell = document.createElement("div");
+      actionsCell.className = "tools-table__cell tools-table__cell--actions";
+      actionsCell.innerHTML = `
+        <button class=\"pending-move-action pending-move-action--accept\" type=\"button\" data-pending-move-action=\"accept\" data-move-index=\"${moveIndex}\" aria-label=\"Принять\">✅</button>
+        <button class=\"pending-move-action pending-move-action--decline\" type=\"button\" data-pending-move-action=\"decline\" data-move-index=\"${moveIndex}\" aria-label=\"Не принять\">❌</button>
+      `;
+      row.append(numberCell, infoCell, photoCell, actionsCell);
+      table.appendChild(row);
+    });
+
+    pendingMovesListEl.appendChild(table);
+  };
+
+  const loadPendingMovesList = async () => {
+    const orgFolder = context.orgFolderName ?? "";
+    pendingMovesState.pendingItems = [];
+    pendingMovesState.allMoves = [];
+    if (!orgFolder) {
+      setPendingMovesSubtitle("Организация не найдена.");
+      renderPendingMovesList();
+      return;
+    }
+    toolsState.orgFolder = orgFolder;
+    setPendingMovesSubtitle("Загружаем список...");
+    const movesPath = `./${orgFolder}/Перемещения.json`;
+    let moves = [];
+    try {
+      const rawMoves = await loadJson(movesPath);
+      moves = Array.isArray(rawMoves)
+        ? rawMoves
+        : Array.isArray(rawMoves?.moves)
+          ? rawMoves.moves
+          : [];
+    } catch (error) {
+      console.warn("Не удалось загрузить перемещения.", error);
+      moves = [];
+    }
+    pendingMovesState.allMoves = moves;
+    pendingMovesState.toolMap = await buildPendingToolsMap(orgFolder);
+
+    const userName = normalizePersonName(user?.full_name ?? "");
+    const fineConfig = settingsData?.organization?.fines?.lateReply ?? {};
+    const pendingItems = moves
+      .map((move, index) => ({ move, moveIndex: index }))
+      .filter(({ move }) => {
+        const responseDate = String(move?.["Дата ответа"] ?? "").trim();
+        if (responseDate) return false;
+        const acceptedBy = normalizePersonName(move?.["Принял"] ?? "");
+        if (!acceptedBy || acceptedBy !== userName) return false;
+        return true;
+      })
+      .map((entry) => {
+        const number = String(entry.move?.["Номер"] ?? "").trim();
+        const accounting = String(entry.move?.["Бух.номер"] ?? "").trim();
+        const tool =
+          pendingMovesState.toolMap.get(`n:${number}`) ??
+          pendingMovesState.toolMap.get(`a:${accounting}`) ??
+          null;
+        return {
+          ...entry,
+          tool,
+          fineAmount: resolveLateReplyFine(entry.move, fineConfig),
+        };
+      })
+      .sort((a, b) => {
+        const senderA = normalizePersonName(a.move?.["Переместил"] ?? "");
+        const senderB = normalizePersonName(b.move?.["Переместил"] ?? "");
+        const senderCompare = senderA.localeCompare(senderB, "ru");
+        if (senderCompare !== 0) return senderCompare;
+        const numA =
+          String(a.move?.["Номер"] ?? "").trim() ||
+          String(a.move?.["Бух.номер"] ?? "").trim();
+        const numB =
+          String(b.move?.["Номер"] ?? "").trim() ||
+          String(b.move?.["Бух.номер"] ?? "").trim();
+        return numA.localeCompare(numB, "ru", { numeric: true });
+      });
+
+    pendingMovesState.pendingItems = pendingItems;
+    setPendingMovesSubtitle(`Ожидают ответа: ${pendingItems.length}`);
+    renderPendingMovesList();
+  };
+
+  const refreshPendingMovesIndicator = async () => {
+    const moves = await loadUserPendingMoves(context.orgFolderName, user);
+    updateEnergyPendingStat({ count: moves.length, available: moves });
+  };
+
+  const closePendingMovesModal = () => {
+    if (!pendingMovesModalEl) return;
+    pendingMovesModalEl.classList.add("is-hidden");
+    document.body.style.overflow = "";
+    if (pendingMovesMessageEl) {
+      pendingMovesMessageEl.textContent = "";
+      pendingMovesMessageEl.classList.remove("is-error", "is-success", "is-info");
+    }
+  };
+
+  const openPendingMovesModal = async () => {
+    if (!pendingMovesModalEl) return;
+    pendingMovesModalEl.classList.remove("is-hidden");
+    document.body.style.overflow = "hidden";
+    await loadPendingMovesList();
+  };
+
+  const applyPendingMovesDecision = async ({ moveIndexes, decision }) => {
+    if (pendingMovesState.isSaving) return;
+    if (!moveIndexes.length) {
+      setPendingMovesMessage("Нет перемещений для ответа.", "info");
+      return;
+    }
+    pendingMovesState.isSaving = true;
+    setPendingMovesMessage("Сохраняем ответы...", "info");
+    const updatedMoves = [...pendingMovesState.allMoves];
+    const responseDate = formatDateValue(new Date());
+    moveIndexes.forEach((index) => {
+      const move = updatedMoves[index];
+      if (!move) return;
+      updatedMoves[index] = {
+        ...move,
+        "Дата ответа": responseDate,
+        Ответ: decision,
+      };
+    });
+    const movesPath = `./${context.orgFolderName}/Перемещения.json`;
+    try {
+      await saveJson(movesPath, updatedMoves, { user });
+      pendingMovesState.allMoves = updatedMoves;
+      setPendingMovesMessage("Ответы сохранены.", "success");
+      await loadPendingMovesList();
+      await refreshPendingMovesIndicator();
+    } catch (error) {
+      console.error(error);
+      setPendingMovesMessage("Не удалось сохранить ответы.", "error");
+    } finally {
+      pendingMovesState.isSaving = false;
+    }
+  };
+
   if (toolsBackdropEl) {
     toolsBackdropEl.addEventListener("click", closeToolsModal);
   }
@@ -3745,6 +4117,66 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       closeToolsModal();
     }
   });
+
+  if (pendingMovesBackdropEl) {
+    pendingMovesBackdropEl.addEventListener("click", closePendingMovesModal);
+  }
+  if (pendingMovesCloseButton) {
+    pendingMovesCloseButton.addEventListener("click", closePendingMovesModal);
+  }
+  pendingMovesModalEl?.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      closePendingMovesModal();
+    }
+  });
+  if (energyPendingWrapperEl) {
+    energyPendingWrapperEl.addEventListener("click", () => {
+      if (energyPendingWrapperEl.classList.contains("is-hidden")) return;
+      openPendingMovesModal();
+    });
+  }
+  if (pendingMovesListEl) {
+    pendingMovesListEl.addEventListener("click", (event) => {
+      const actionButton = event.target.closest("[data-pending-move-action]");
+      if (!actionButton) return;
+      const moveIndex = Number.parseInt(
+        actionButton.dataset.moveIndex ?? "",
+        10
+      );
+      if (!Number.isFinite(moveIndex)) return;
+      const action = actionButton.dataset.pendingMoveAction;
+      if (action === "accept") {
+        applyPendingMovesDecision({
+          moveIndexes: [moveIndex],
+          decision: "Принял",
+        });
+      } else if (action === "decline") {
+        applyPendingMovesDecision({
+          moveIndexes: [moveIndex],
+          decision: "Не принял",
+        });
+      }
+    });
+  }
+  if (pendingMovesAcceptAllButton) {
+    pendingMovesAcceptAllButton.addEventListener("click", () => {
+      const indexes = pendingMovesState.pendingItems.map(
+        (item) => item.moveIndex
+      );
+      applyPendingMovesDecision({ moveIndexes: indexes, decision: "Принял" });
+    });
+  }
+  if (pendingMovesDeclineAllButton) {
+    pendingMovesDeclineAllButton.addEventListener("click", () => {
+      const indexes = pendingMovesState.pendingItems.map(
+        (item) => item.moveIndex
+      );
+      applyPendingMovesDecision({
+        moveIndexes: indexes,
+        decision: "Не принял",
+      });
+    });
+  }
 
   if (toolsSearchInput) {
     toolsSearchInput.addEventListener("input", (event) => {

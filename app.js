@@ -1143,7 +1143,21 @@ async function notifyMoveDecision({
         reason,
         isForMover: true,
       });
-      await sendTelegramMessage(moverTelegramId, moverMessage);
+      const shouldAttach = isNotificationPhotoEnabled(
+        settingsData,
+        notificationId
+      );
+      if (shouldAttach) {
+        const photoNumber = resolveToolPhotoNumberForNotification(tool);
+        const photoUrl = await resolveAvailablePhotoUrl(orgFolder, photoNumber);
+        if (photoUrl) {
+          await sendTelegramPhoto(moverTelegramId, photoUrl, moverMessage);
+        } else {
+          await sendTelegramMessage(moverTelegramId, moverMessage);
+        }
+      } else {
+        await sendTelegramMessage(moverTelegramId, moverMessage);
+      }
     }
   } catch (error) {
     console.warn("Не удалось отправить уведомление о решении.", error);

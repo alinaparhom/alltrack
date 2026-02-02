@@ -183,6 +183,31 @@ function normalizePersonName(value) {
     .replace(/\s+/g, " ");
 }
 
+async function loadUserPendingMovesCount(orgFolderName, user) {
+  if (!orgFolderName || !user) return 0;
+  const userName = normalizePersonName(user.full_name ?? user.fullName ?? "");
+  if (!userName) return 0;
+  const movesPath = `./${orgFolderName}/Перемещения.json`;
+  try {
+    const rawMoves = await loadJson(movesPath);
+    const moves = Array.isArray(rawMoves)
+      ? rawMoves
+      : Array.isArray(rawMoves?.moves)
+        ? rawMoves.moves
+        : [];
+    return moves.reduce((count, move) => {
+      const responseDate = String(move?.["Дата ответа"] ?? "").trim();
+      if (responseDate) return count;
+      const acceptedBy = normalizePersonName(move?.["Принял"] ?? "");
+      if (!acceptedBy || acceptedBy !== userName) return count;
+      return count + 1;
+    }, 0);
+  } catch (error) {
+    console.warn("Не удалось загрузить перемещения для счётчика.", error);
+  }
+  return 0;
+}
+
 function getToolNumberVariants(value) {
   const raw = String(value ?? "").trim();
   const match = raw.match(/\d+/);
@@ -2837,8 +2862,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     : energyActions;
   const actionsMap = new Map(availableActions.map((action) => [action.id, action]));
   const savedLayout = settingsData.users?.[context.userKey]?.energy?.layout;
-  const pendingMoves =
-    settingsData.users?.[context.userKey]?.energy?.pendingMoves ?? 0;
+  const pendingMoves = await loadUserPendingMovesCount(context.orgFolderName, user);
   const layoutCustomized =
     settingsData.users?.[context.userKey]?.energy?.layoutCustomized ?? false;
   const normalizedPreferences = normalizePreferences(preferences);

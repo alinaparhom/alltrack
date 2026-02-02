@@ -917,19 +917,16 @@ async function resolveAvailablePhotoUrl(orgFolder, toolNumber) {
   if (!candidates.length) return null;
   for (const candidate of candidates) {
     try {
-      const response = await fetch(candidate, { method: "HEAD" });
-      if (response.ok) {
+      const headResponse = await fetch(candidate, { method: "HEAD" });
+      if (headResponse.ok) {
+        return new URL(candidate, window.location.href).toString();
+      }
+      const getResponse = await fetch(candidate, { cache: "no-store" });
+      if (getResponse.ok) {
         return new URL(candidate, window.location.href).toString();
       }
     } catch (error) {
-      try {
-        const response = await fetch(candidate);
-        if (response.ok) {
-          return new URL(candidate, window.location.href).toString();
-        }
-      } catch (innerError) {
-        continue;
-      }
+      continue;
     }
   }
   return await resolvePhotoUrlFromDirectoryListing(orgFolder, toolNumber);

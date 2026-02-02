@@ -3081,18 +3081,8 @@
         }
 
         .pending-moves-tools-table .tools-table__row {
-          grid-template-columns: minmax(0, 1fr) auto;
+          grid-template-columns: 1fr;
           padding-bottom: 18px;
-        }
-
-        .pending-moves-tools-table .tools-table__cell--number,
-        .pending-moves-tools-table .tools-table__row > .tools-table__cell:nth-child(2) {
-          grid-column: 1 / -1;
-        }
-
-        .pending-moves-tools-table .tools-table__cell--thumb {
-          grid-column: 2;
-          justify-self: end;
         }
 
         .pending-moves-tools-table .tools-table__cell--actions {
@@ -3101,7 +3091,6 @@
           align-items: center;
           width: 100%;
           gap: 8px;
-          grid-column: 1 / -1;
         }
 
         .pending-moves-tools-table .pending-move-action--decline {

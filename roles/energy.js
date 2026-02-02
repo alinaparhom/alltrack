@@ -245,6 +245,13 @@ export function renderRole(user) {
                     >
                       Переместить
                     </button>
+                    <div
+                      class="tools-selection-count is-hidden"
+                      data-tools-selection-count
+                      aria-live="polite"
+                    >
+                      Выбрано: 0
+                    </div>
                     <button
                       class="action-secondary tools-cancel-button"
                       type="button"

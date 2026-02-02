@@ -2926,6 +2926,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const toolsSelectionCancelButtonEl = contentEl.querySelector(
     "[data-tools-selection-cancel]"
   );
+  const toolsSelectionCountEl = contentEl.querySelector(
+    "[data-tools-selection-count]"
+  );
   const toolsMoveModalEl = contentEl.querySelector("[data-tools-move-modal]");
   const toolsMoveBackdropEl = contentEl.querySelector(
     "[data-tools-move-backdrop]"
@@ -3542,6 +3545,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (toolsSelectionCancelButtonEl) {
       toolsSelectionCancelButtonEl.disabled = count === 0;
     }
+    if (toolsSelectionCountEl) {
+      toolsSelectionCountEl.textContent = `Выбрано: ${count}`;
+      toolsSelectionCountEl.classList.toggle("is-hidden", !toolsState.isSelecting);
+    }
     if (toolsMoveSubtitleEl) {
       toolsMoveSubtitleEl.textContent =
         count > 0
@@ -3605,6 +3612,24 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const resolveToolPhotoNumber = (tool) => {
     const byNumber = String(tool?.["Номер"] ?? "").trim();
     return byNumber || resolveToolNumberValue(tool);
+  };
+
+  const resolveToolStatusTone = (tool) => {
+    const status = String(tool?.["Статус"] ?? "").trim().toLowerCase();
+    if (status === "сломан") return "broken";
+    if (status === "в ремонте") return "repair";
+    if (status === "на списание") return "writeoff";
+    return "";
+  };
+
+  const applyToolStatusClasses = (element, tool) => {
+    if (!element) return;
+    element.classList.toggle("tools-item--broken", tool.__statusTone === "broken");
+    element.classList.toggle("tools-item--repair", tool.__statusTone === "repair");
+    element.classList.toggle(
+      "tools-item--writeoff",
+      tool.__statusTone === "writeoff"
+    );
   };
 
   const loadPendingMoves = async (orgFolder) => {
@@ -3708,6 +3733,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       row.classList.toggle("tools-row--no-photo", !hasPhoto);
       row.classList.toggle("is-selected", toolsState.selectedIds.has(tool.__selectionId));
       row.classList.toggle("tools-item--pending-response", tool.__pendingMove);
+      applyToolStatusClasses(row, tool);
       row.dataset.toolsItem = "true";
       row.dataset.toolId = tool.__selectionId;
       const main = document.createElement("div");
@@ -3742,6 +3768,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     card.className = "tools-card";
     card.classList.toggle("is-selected", toolsState.selectedIds.has(tool.__selectionId));
     card.classList.toggle("tools-item--pending-response", tool.__pendingMove);
+    applyToolStatusClasses(card, tool);
     card.dataset.toolsItem = "true";
     card.dataset.toolId = tool.__selectionId;
 
@@ -3819,6 +3846,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       row.className = "tools-table__row";
       row.classList.toggle("is-selected", toolsState.selectedIds.has(tool.__selectionId));
       row.classList.toggle("tools-item--pending-response", tool.__pendingMove);
+      applyToolStatusClasses(row, tool);
       row.dataset.toolsItem = "true";
       row.dataset.toolId = tool.__selectionId;
       const photoCount = Number.parseInt(tool?.["Количество фото"] ?? 0, 10);
@@ -4057,6 +4085,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           __searchLine: buildToolSearchLine(tool),
           __selectionId: selectionId,
           __pendingMove: hasPendingMove,
+          __statusTone: resolveToolStatusTone(tool),
         };
       })
       .sort((a, b) =>

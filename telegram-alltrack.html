@@ -3086,18 +3086,21 @@
         }
 
         .pending-moves-tools-table .tools-table__cell--actions {
-          justify-content: space-between;
-          flex-wrap: nowrap;
+          display: grid;
+          grid-template-columns: 1fr auto;
+          align-items: center;
           width: 100%;
-          gap: 0;
+          gap: 8px;
         }
 
         .pending-moves-tools-table .pending-move-action--decline {
-          margin-right: auto;
+          justify-self: start;
+          margin: 0;
         }
 
         .pending-moves-tools-table .pending-move-action--accept {
-          margin-left: auto;
+          justify-self: end;
+          margin: 0;
         }
 
         .tools-row {

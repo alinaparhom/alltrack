@@ -4094,9 +4094,16 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       actionsCell.className = "tools-table__cell tools-table__cell--actions";
       actionsCell.innerHTML = `
         <button class=\"pending-move-action pending-move-action--decline\" type=\"button\" data-pending-move-action=\"decline\" data-move-index=\"${moveIndex}\" aria-label=\"Не принять\">❌</button>
-        <button class=\"pending-move-action pending-move-action--accept\" type=\"button\" data-pending-move-action=\"accept\" data-move-index=\"${moveIndex}\" aria-label=\"Принять\">✅</button>
       `;
-      row.append(numberCell, infoCell, photoCell, actionsCell);
+      const acceptButton = document.createElement("button");
+      acceptButton.className =
+        "pending-move-action pending-move-action--accept pending-move-action--floating";
+      acceptButton.type = "button";
+      acceptButton.dataset.pendingMoveAction = "accept";
+      acceptButton.dataset.moveIndex = String(moveIndex);
+      acceptButton.setAttribute("aria-label", "Принять");
+      acceptButton.textContent = "✅";
+      row.append(numberCell, infoCell, photoCell, actionsCell, acceptButton);
       table.appendChild(row);
     });
 

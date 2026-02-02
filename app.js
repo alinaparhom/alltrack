@@ -294,11 +294,80 @@ function buildAddPhotoSearchLine(tool) {
     .toLowerCase();
 }
 
+const toolPhotoExtensions = new Set(["jpg", "jpeg", "png", "webp"]);
+
+function extractDirectoryListingLinks(html = "") {
+  if (!html) return [];
+  if (typeof DOMParser !== "undefined") {
+    const doc = new DOMParser().parseFromString(html, "text/html");
+    return Array.from(doc.querySelectorAll("a"))
+      .map((link) => link.getAttribute("href"))
+      .filter(Boolean);
+  }
+  const matches = Array.from(html.matchAll(/href=["']([^"']+)["']/gi));
+  return matches.map((match) => match[1]).filter(Boolean);
+}
+
+function extractFileNameFromHref(href = "") {
+  if (!href) return "";
+  const cleaned = href.split("#")[0].split("?")[0];
+  if (!cleaned || cleaned.endsWith("/")) return "";
+  const parts = cleaned.split("/");
+  return parts[parts.length - 1] || "";
+}
+
+async function resolvePhotoUrlFromDirectoryListing(orgFolder, toolNumber) {
+  if (!orgFolder || !toolNumber) return null;
+  const variants = getToolNumberVariants(toolNumber);
+  if (!variants.length) return null;
+  const normalizedVariants = new Set(
+    variants.map((variant) => normalizeToolNumberValue(variant))
+  );
+  const folderPath = `./${orgFolder}/Фото инструментов/`;
+  let response;
+  try {
+    response = await fetch(folderPath, { cache: "no-store" });
+  } catch (error) {
+    return null;
+  }
+  if (!response.ok) return null;
+  const html = await response.text();
+  const links = extractDirectoryListingLinks(html);
+  for (const link of links) {
+    const fileName = extractFileNameFromHref(link);
+    if (!fileName) continue;
+    let decoded = fileName;
+    try {
+      decoded = decodeURIComponent(fileName);
+    } catch (error) {
+      decoded = fileName;
+    }
+    const match = decoded.match(/^(\d+)[_-]/);
+    if (!match) continue;
+    const extension = decoded.split(".").pop()?.toLowerCase() || "";
+    if (!toolPhotoExtensions.has(extension)) continue;
+    const normalized = normalizeToolNumberValue(match[1]);
+    if (
+      !normalizedVariants.has(normalized) &&
+      !normalizedVariants.has(match[1])
+    ) {
+      continue;
+    }
+    try {
+      const url = new URL(link, new URL(folderPath, window.location.href));
+      return url.toString();
+    } catch (error) {
+      continue;
+    }
+  }
+  return null;
+}
+
 function buildToolPhotoCandidates(orgFolder, toolNumber) {
   if (!orgFolder) return [];
   const variants = getToolNumberVariants(toolNumber);
   if (!variants.length) return [];
-  const extensions = ["jpg", "jpeg", "png", "webp"];
+  const extensions = Array.from(toolPhotoExtensions);
   const suffixes = ["", "_1", "-1"];
   const candidates = [];
   variants.forEach((variant) => {
@@ -863,7 +932,7 @@ async function resolveAvailablePhotoUrl(orgFolder, toolNumber) {
       }
     }
   }
-  return null;
+  return await resolvePhotoUrlFromDirectoryListing(orgFolder, toolNumber);
 }
 
 async function notifyNewToolRegistration({
@@ -4249,7 +4318,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const actionsCell = document.createElement("div");
       actionsCell.className = "tools-table__cell tools-table__cell--actions";
       actionsCell.innerHTML = `
-        <button class=\"pending-move-action pending-move-action--decline\" type=\"button\" data-pending-move-action=\"decline\" data-move-index=\"${moveIndex}\" aria-label=\"Не принять\">❌</button>
+        <button class=\"pending-move-action pending-move-action--decline\" type=\"button\" data-pending-move-action=\"decline\" data-move-index=\"${moveIndex}\" aria-label=\"Не принять\">Не принять</button>
       `;
       const acceptButton = document.createElement("button");
       acceptButton.className =
@@ -4258,7 +4327,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       acceptButton.dataset.pendingMoveAction = "accept";
       acceptButton.dataset.moveIndex = String(moveIndex);
       acceptButton.setAttribute("aria-label", "Принять");
-      acceptButton.textContent = "✅";
+      acceptButton.textContent = "Принять";
       row.append(numberCell, infoCell, photoCell, actionsCell, acceptButton);
       table.appendChild(row);
     });

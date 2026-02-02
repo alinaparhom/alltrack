@@ -706,6 +706,62 @@ function buildMoveToolResponsibleMessage(
   return lines.join("\n");
 }
 
+function buildMoveDecisionNotificationMessage(
+  tool,
+  {
+    decision,
+    movedBy,
+    respondedBy,
+    targetObject,
+    oldObject,
+    reason,
+    isForMover = false,
+  } = {}
+) {
+  const titleParts = [
+    formatNotificationValue(tool?.["Наименование"], ""),
+    formatNotificationValue(tool?.["Производитель"], ""),
+    formatNotificationValue(tool?.["Модель"], ""),
+  ]
+    .map((part) => part.trim())
+    .filter(Boolean);
+  const titleLine = titleParts.length ? titleParts.join(" ") : "—";
+  const isAccepted = decision === "Принял";
+  const header = isForMover
+    ? isAccepted
+      ? "✅ Ваше перемещение принято"
+      : "❌ Ваше перемещение не приняли"
+    : isAccepted
+      ? "✅✅✅<b><u>ИНСТРУМЕНТ ПРИНЯТ</u></b>"
+      : "❌❌❌<b><u>ИНСТРУМЕНТ НЕ ПРИНЯТ</u></b>";
+  const lines = [
+    header,
+    `1. Номер: ${escapeTelegramHtml(
+      formatNotificationValue(tool?.["Номер"])
+    )}`,
+    `2. Бух.номер: ${escapeTelegramHtml(
+      formatNotificationValue(tool?.["Бух.номер"])
+    )}`,
+    `3. ${escapeTelegramHtml(titleLine)}`,
+    `4. Старый объект: ${escapeTelegramHtml(
+      formatNotificationValue(oldObject)
+    )}`,
+    `5. Новый объект: ${escapeTelegramHtml(
+      formatNotificationValue(targetObject)
+    )}`,
+  ];
+  if (respondedBy) {
+    lines.push("", `Ответил: ${escapeTelegramHtml(respondedBy)}`);
+  }
+  if (movedBy) {
+    lines.push(`Переместил: ${escapeTelegramHtml(movedBy)}`);
+  }
+  if (!isAccepted && reason) {
+    lines.push(`Причина отказа: ${escapeTelegramHtml(reason)}`);
+  }
+  return lines.join("\n");
+}
+
 async function parseTelegramError(response) {
   if (!response || response.ok) return "";
   const rawText = await response.text().catch(() => "");
@@ -1014,6 +1070,84 @@ async function notifyMoveTool({
     result.reasons.push(`ошибка при отправке уведомлений${message}`);
   }
   return result;
+}
+
+async function notifyMoveDecision({
+  tool,
+  move,
+  orgFolder,
+  organizationName,
+  decision,
+  reason,
+  respondedBy,
+} = {}) {
+  if (!tool || !move || !orgFolder) return;
+  if (!fallbackBotToken) return;
+  const notificationId = decision === "Принял" ? "acceptTool" : "declineTool";
+  const settingsPath = `./${orgFolder}/Настройки.json`;
+  try {
+    const settingsData = await loadJson(settingsPath);
+    const groupsEnabled = isNotificationEnabled(settingsData, notificationId);
+    const groupIds = groupsEnabled
+      ? extractNotificationGroups(settingsData, notificationId)
+      : [];
+    const moveMessage = buildMoveDecisionNotificationMessage(tool, {
+      decision,
+      movedBy: String(move?.["Переместил"] ?? "").trim(),
+      respondedBy,
+      targetObject: String(move?.["Новый объект"] ?? "").trim(),
+      oldObject: String(move?.["Старый объект"] ?? "").trim(),
+      reason,
+      isForMover: false,
+    });
+    if (groupsEnabled && groupIds.length) {
+      const shouldAttach = isNotificationPhotoEnabled(
+        settingsData,
+        notificationId
+      );
+      if (shouldAttach) {
+        const photoNumber = resolveToolPhotoNumberForNotification(tool);
+        const photoUrl = await resolveAvailablePhotoUrl(orgFolder, photoNumber);
+        if (photoUrl) {
+          await Promise.all(
+            groupIds.map((chatId) =>
+              sendTelegramPhoto(chatId, photoUrl, moveMessage)
+            )
+          );
+        } else {
+          await Promise.all(
+            groupIds.map((chatId) =>
+              sendTelegramMessage(chatId, moveMessage)
+            )
+          );
+        }
+      } else {
+        await Promise.all(
+          groupIds.map((chatId) => sendTelegramMessage(chatId, moveMessage))
+        );
+      }
+    }
+
+    const usersData = await loadJson(usersFilePath).catch(() => ({ users: [] }));
+    const moverTelegramId = findUserTelegramId(usersData, {
+      fullName: String(move?.["Переместил"] ?? "").trim(),
+      organization: organizationName,
+    });
+    if (moverTelegramId) {
+      const moverMessage = buildMoveDecisionNotificationMessage(tool, {
+        decision,
+        movedBy: String(move?.["Переместил"] ?? "").trim(),
+        respondedBy,
+        targetObject: String(move?.["Новый объект"] ?? "").trim(),
+        oldObject: String(move?.["Старый объект"] ?? "").trim(),
+        reason,
+        isForMover: true,
+      });
+      await sendTelegramMessage(moverTelegramId, moverMessage);
+    }
+  } catch (error) {
+    console.warn("Не удалось отправить уведомление о решении.", error);
+  }
 }
 
 function buildNotificationSummary(results = []) {
@@ -4233,6 +4367,23 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         console.warn("Не удалось загрузить базу инструментов.", error);
       }
     }
+    const resolveToolForMove = (move) => {
+      const number = String(move?.["Номер"] ?? "").trim();
+      const accounting = String(move?.["Бух.номер"] ?? "").trim();
+      if (toolsNormalized && toolsIndexMap) {
+        const toolIndex =
+          (number && toolsIndexMap.get(`n:${number}`)) ??
+          (accounting && toolsIndexMap.get(`a:${accounting}`));
+        if (toolIndex !== undefined) {
+          return toolsNormalized.items[toolIndex];
+        }
+      }
+      return (
+        pendingMovesState.toolMap?.get(`n:${number}`) ??
+        pendingMovesState.toolMap?.get(`a:${accounting}`) ??
+        null
+      );
+    };
 
     moveIndexes.forEach((index) => {
       const move = updatedMoves[index];
@@ -4306,6 +4457,26 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       await saveEntries(entries);
       pendingMovesState.allMoves = updatedMoves;
       setPendingMovesMessage("Ответы сохранены.", "success");
+      const usersData = await loadJson(usersFilePath).catch(() => ({ users: [] }));
+      const organizationName = findUserOrganizationName(user, usersData);
+      const responderName = String(user?.full_name ?? "").trim();
+      await Promise.all(
+        moveIndexes.map(async (index) => {
+          const move = updatedMoves[index];
+          if (!move) return;
+          const tool = resolveToolForMove(move);
+          if (!tool) return;
+          await notifyMoveDecision({
+            tool,
+            move,
+            orgFolder: context.orgFolderName,
+            organizationName,
+            decision,
+            reason: decision === "Не принял" ? declineReason : "",
+            respondedBy: responderName,
+          });
+        })
+      );
       await loadPendingMovesList();
       await refreshPendingMovesIndicator();
     } catch (error) {

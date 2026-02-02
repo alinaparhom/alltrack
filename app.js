@@ -2927,6 +2927,27 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const pendingMovesDeclineAllButton = contentEl.querySelector(
     "[data-pending-moves-decline-all]"
   );
+  const pendingMovesDeclineModalEl = contentEl.querySelector(
+    "[data-pending-moves-decline-modal]"
+  );
+  const pendingMovesDeclineBackdropEl = contentEl.querySelector(
+    "[data-pending-moves-decline-backdrop]"
+  );
+  const pendingMovesDeclineCloseButton = contentEl.querySelector(
+    "[data-pending-moves-decline-close]"
+  );
+  const pendingMovesDeclineFormEl = contentEl.querySelector(
+    "[data-pending-moves-decline-form]"
+  );
+  const pendingMovesDeclineReasonEl = contentEl.querySelector(
+    "[data-pending-moves-decline-reason]"
+  );
+  const pendingMovesDeclineCancelButton = contentEl.querySelector(
+    "[data-pending-moves-decline-cancel]"
+  );
+  const pendingMovesDeclineMessageEl = contentEl.querySelector(
+    "[data-pending-moves-decline-message]"
+  );
 
   const context = contextOverride || (await resolveUserSettingsContext(user));
   const settingsData = context.settingsData;
@@ -3040,6 +3061,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     toolMap: new Map(),
     isSaving: false,
   };
+  let pendingMovesDeclineResolver = null;
   const toolsMoveState = {
     responsibleOptions: [],
     objectOptions: [],
@@ -3862,6 +3884,109 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     pendingMovesMessageEl.classList.add(`is-${type}`);
   };
 
+  const setPendingMovesDeclineMessage = (text = "", type = "") => {
+    if (!pendingMovesDeclineMessageEl) return;
+    pendingMovesDeclineMessageEl.textContent = text;
+    pendingMovesDeclineMessageEl.classList.remove("is-error", "is-success", "is-info");
+    if (type) {
+      pendingMovesDeclineMessageEl.classList.add(`is-${type}`);
+    }
+  };
+
+  const closePendingMovesDeclineModal = (shouldResolve = true) => {
+    if (!pendingMovesDeclineModalEl) return;
+    pendingMovesDeclineModalEl.classList.add("is-hidden");
+    if (pendingMovesDeclineReasonEl) {
+      pendingMovesDeclineReasonEl.value = "";
+    }
+    setPendingMovesDeclineMessage("");
+    if (pendingMovesDeclineResolver && shouldResolve) {
+      pendingMovesDeclineResolver("");
+      pendingMovesDeclineResolver = null;
+    }
+  };
+
+  const openPendingMovesDeclineModal = () => {
+    if (!pendingMovesDeclineModalEl) return;
+    pendingMovesDeclineModalEl.classList.remove("is-hidden");
+    if (pendingMovesDeclineReasonEl) {
+      pendingMovesDeclineReasonEl.focus();
+    }
+  };
+
+  const requestPendingMovesDeclineReason = () =>
+    new Promise((resolve) => {
+      if (!pendingMovesDeclineModalEl || !pendingMovesDeclineFormEl) {
+        const reason = window.prompt("Укажите причину отказа") ?? "";
+        resolve(reason.trim());
+        return;
+      }
+      pendingMovesDeclineResolver = resolve;
+      setPendingMovesDeclineMessage("");
+      openPendingMovesDeclineModal();
+    });
+
+  const normalizeCollectionPayload = (raw, key) => {
+    if (Array.isArray(raw)) {
+      return { items: raw, wrapper: null, key: null };
+    }
+    if (raw && Array.isArray(raw[key])) {
+      return { items: raw[key], wrapper: raw, key };
+    }
+    return {
+      items: [],
+      wrapper: raw && typeof raw === "object" ? raw : null,
+      key: raw && typeof raw === "object" ? key : null,
+    };
+  };
+
+  const resolveMoveFineAmount = (move) => {
+    const candidates = [
+      move?.["Штраф за ответ"],
+      move?.["Штраф"],
+      move?.["Сумма штрафа"],
+      move?.["Штраф (руб)"],
+    ];
+    for (const candidate of candidates) {
+      const amount = normalizeCostValue(candidate);
+      if (amount) return amount;
+    }
+    return 0;
+  };
+
+  const buildMoveFineEntry = (move, amount, responseDate, decision, reason) => {
+    const baseReason =
+      String(move?.["Причина штрафа"] ?? move?.["Причина"] ?? "").trim() ||
+      "Штраф за ответ";
+    const entry = {
+      Дата: responseDate,
+      Ответственный: String(move?.["Принял"] ?? "").trim(),
+      Сумма: amount,
+      Причина: baseReason,
+      Номер: String(move?.["Номер"] ?? "").trim(),
+      "Бух.номер": String(move?.["Бух.номер"] ?? "").trim(),
+      Объект: String(
+        move?.["Новый объект"] ?? move?.["Старый объект"] ?? ""
+      ).trim(),
+      Решение: decision,
+    };
+    if (reason) {
+      entry["Причина отказа"] = reason;
+    }
+    return entry;
+  };
+
+  const buildToolIndexMap = (tools) => {
+    const map = new Map();
+    tools.forEach((tool, index) => {
+      const number = String(tool?.["Номер"] ?? "").trim();
+      const accounting = String(tool?.["Бух.номер"] ?? "").trim();
+      if (number) map.set(`n:${number}`, index);
+      if (accounting) map.set(`a:${accounting}`, index);
+    });
+    return map;
+  };
+
   const renderPendingMovesList = () => {
     if (!pendingMovesListEl) return;
     pendingMovesListEl.innerHTML = "";
@@ -3968,8 +4093,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const actionsCell = document.createElement("div");
       actionsCell.className = "tools-table__cell tools-table__cell--actions";
       actionsCell.innerHTML = `
-        <button class=\"pending-move-action pending-move-action--accept\" type=\"button\" data-pending-move-action=\"accept\" data-move-index=\"${moveIndex}\" aria-label=\"Принять\">✅</button>
         <button class=\"pending-move-action pending-move-action--decline\" type=\"button\" data-pending-move-action=\"decline\" data-move-index=\"${moveIndex}\" aria-label=\"Не принять\">❌</button>
+        <button class=\"pending-move-action pending-move-action--accept\" type=\"button\" data-pending-move-action=\"accept\" data-move-index=\"${moveIndex}\" aria-label=\"Принять\">✅</button>
       `;
       row.append(numberCell, infoCell, photoCell, actionsCell);
       table.appendChild(row);
@@ -4076,22 +4201,102 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       setPendingMovesMessage("Нет перемещений для ответа.", "info");
       return;
     }
+    let declineReason = "";
+    if (decision === "Не принял") {
+      declineReason = await requestPendingMovesDeclineReason();
+      if (!declineReason) {
+        return;
+      }
+    }
     pendingMovesState.isSaving = true;
     setPendingMovesMessage("Сохраняем ответы...", "info");
     const updatedMoves = [...pendingMovesState.allMoves];
     const responseDate = formatDateValue(new Date());
+    const fineEntries = [];
+    let toolsPayload = null;
+    let toolsNormalized = null;
+    let toolsIndexMap = null;
+    if (decision === "Принял") {
+      const toolsPath = `./${context.orgFolderName}/База с инструментами.json`;
+      try {
+        const rawTools = await loadJson(toolsPath);
+        toolsNormalized = normalizeCollectionPayload(rawTools, "tools");
+        toolsIndexMap = buildToolIndexMap(toolsNormalized.items);
+      } catch (error) {
+        console.warn("Не удалось загрузить базу инструментов.", error);
+      }
+    }
+
     moveIndexes.forEach((index) => {
       const move = updatedMoves[index];
       if (!move) return;
+      const fineAmount = resolveMoveFineAmount(move);
+      if (fineAmount > 0) {
+        fineEntries.push(
+          buildMoveFineEntry(move, fineAmount, responseDate, decision, declineReason)
+        );
+      }
+      if (decision === "Принял" && toolsNormalized && toolsIndexMap) {
+        const number = String(move?.["Номер"] ?? "").trim();
+        const accounting = String(move?.["Бух.номер"] ?? "").trim();
+        const toolIndex =
+          (number && toolsIndexMap.get(`n:${number}`)) ??
+          (accounting && toolsIndexMap.get(`a:${accounting}`));
+        if (toolIndex !== undefined) {
+          const tool = toolsNormalized.items[toolIndex];
+          toolsNormalized.items[toolIndex] = {
+            ...tool,
+            Ответственный: String(move?.["Принял"] ?? "").trim(),
+            Объект: String(move?.["Новый объект"] ?? "").trim(),
+          };
+        }
+      }
       updatedMoves[index] = {
         ...move,
         "Дата ответа": responseDate,
         Ответ: decision,
       };
+      if (decision === "Не принял") {
+        updatedMoves[index]["Причина отказа"] = declineReason;
+      }
     });
     const movesPath = `./${context.orgFolderName}/Перемещения.json`;
+    if (toolsNormalized) {
+      toolsPayload = toolsNormalized.wrapper
+        ? { ...toolsNormalized.wrapper, [toolsNormalized.key]: toolsNormalized.items }
+        : toolsNormalized.items;
+    }
+    let finesPayload = null;
+    if (fineEntries.length) {
+      const finesPath = `./${context.orgFolderName}/Штрафы.json`;
+      try {
+        const rawFines = await loadJson(finesPath);
+        const finesNormalized = normalizeCollectionPayload(rawFines, "fines");
+        finesNormalized.items.push(...fineEntries);
+        finesPayload = finesNormalized.wrapper
+          ? { ...finesNormalized.wrapper, [finesNormalized.key]: finesNormalized.items }
+          : finesNormalized.items;
+      } catch (error) {
+        finesPayload = fineEntries;
+      }
+    }
     try {
-      await saveJson(movesPath, updatedMoves, { user });
+      const entries = [{ path: movesPath, data: updatedMoves, user }];
+      if (toolsPayload) {
+        entries.push({
+          path: `./${context.orgFolderName}/База с инструментами.json`,
+          data: toolsPayload,
+          user,
+        });
+      }
+      if (finesPayload) {
+        entries.push({
+          path: `./${context.orgFolderName}/Штрафы.json`,
+          data: finesPayload,
+          user,
+        });
+      }
+      await saveEntries(entries);
       pendingMovesState.allMoves = updatedMoves;
       setPendingMovesMessage("Ответы сохранены.", "success");
       await loadPendingMovesList();
@@ -4173,6 +4378,38 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         moveIndexes: indexes,
         decision: "Не принял",
       });
+    });
+  }
+  if (pendingMovesDeclineBackdropEl) {
+    pendingMovesDeclineBackdropEl.addEventListener("click", () =>
+      closePendingMovesDeclineModal(true)
+    );
+  }
+  if (pendingMovesDeclineCloseButton) {
+    pendingMovesDeclineCloseButton.addEventListener("click", () =>
+      closePendingMovesDeclineModal(true)
+    );
+  }
+  if (pendingMovesDeclineCancelButton) {
+    pendingMovesDeclineCancelButton.addEventListener("click", () =>
+      closePendingMovesDeclineModal(true)
+    );
+  }
+  if (pendingMovesDeclineFormEl) {
+    pendingMovesDeclineFormEl.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const reason = String(pendingMovesDeclineReasonEl?.value ?? "").trim();
+      if (!reason) {
+        setPendingMovesDeclineMessage("Укажите причину отказа.", "error");
+        pendingMovesDeclineReasonEl?.focus();
+        return;
+      }
+      const resolver = pendingMovesDeclineResolver;
+      pendingMovesDeclineResolver = null;
+      closePendingMovesDeclineModal(false);
+      if (resolver) {
+        resolver(reason);
+      }
     });
   }
 

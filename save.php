@@ -281,6 +281,7 @@ function resolveTargetPath(array $entry, array $allowedFiles): string {
     "Объекты.json",
     "База с инструментами.json",
     "Перемещения.json",
+    "Штрафы.json",
   ];
   if (!in_array($fileName, $orgScopedFiles, true)) {
     http_response_code(403);

@@ -357,6 +357,61 @@ export function renderRole(user) {
             </div>
           </div>
         </div>
+        <div
+          class="settings-modal is-hidden pending-moves-decline-modal"
+          data-pending-moves-decline-modal
+        >
+          <div
+            class="settings-modal__backdrop"
+            data-pending-moves-decline-backdrop
+          ></div>
+          <div
+            class="settings-modal__panel pending-moves-decline-modal__panel"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Причина отказа"
+          >
+            <div class="settings-modal__header">
+              <div class="settings-modal__title">
+                <h2>Почему не принимаете?</h2>
+                <p>Причина обязательна и попадёт в историю перемещений.</p>
+              </div>
+              <button
+                class="button-icon"
+                type="button"
+                data-pending-moves-decline-close
+                aria-label="Закрыть окно причины"
+              >
+                <span class="button-icon-emoji" aria-hidden="true">✕</span>
+              </button>
+            </div>
+            <form class="settings-modal__body" data-pending-moves-decline-form>
+              <label class="form-field">
+                <span class="form-label">Причина</span>
+                <textarea
+                  class="form-input pending-moves-decline-textarea"
+                  rows="4"
+                  placeholder="Например: инструмент не получен, нет комплекта..."
+                  data-pending-moves-decline-reason
+                  required
+                ></textarea>
+              </label>
+              <div class="pending-moves-decline-actions">
+                <button
+                  class="action-secondary"
+                  type="button"
+                  data-pending-moves-decline-cancel
+                >
+                  Отмена
+                </button>
+                <button class="action-primary" type="submit">
+                  Сохранить причину
+                </button>
+              </div>
+              <div class="form-message" data-pending-moves-decline-message></div>
+            </form>
+          </div>
+        </div>
         <div class="settings-modal tools-move-modal is-hidden" data-tools-move-modal>
           <div class="settings-modal__backdrop" data-tools-move-backdrop></div>
           <div

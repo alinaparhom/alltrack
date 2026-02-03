@@ -202,6 +202,10 @@ export function renderRole(user) {
                       autocomplete="off"
                     />
                   </label>
+                  <label class="tools-quick-filter">
+                    <span>Статус</span>
+                    <select class="form-input" data-tools-filter="status"></select>
+                  </label>
                   <div class="tools-actions">
                     <div
                       class="tools-view-toggle"

@@ -940,6 +940,86 @@ export function renderRole(user) {
           </div>
         </div>
         <div
+          class="settings-modal is-hidden breakdown-status-modal"
+          data-breakdown-status-modal
+        >
+          <div
+            class="settings-modal__backdrop"
+            data-breakdown-status-backdrop
+          ></div>
+          <div
+            class="settings-modal__panel breakdown-status-modal__panel"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Статус поломки"
+          >
+            <div class="settings-modal__header breakdown-status__header">
+              <div class="settings-modal__title">
+                <h2>Поломка: статус</h2>
+                <p data-breakdown-status-subtitle>
+                  Выберите новый статус для инструмента
+                </p>
+              </div>
+              <button
+                class="button-icon breakdown-status__close"
+                type="button"
+                data-breakdown-status-close
+                aria-label="Закрыть окно статуса"
+              >
+                <span class="button-icon-emoji" aria-hidden="true">✕</span>
+              </button>
+            </div>
+            <div class="settings-modal__body breakdown-status__body">
+              <div class="breakdown-tool-card">
+                <div class="breakdown-tool-title" data-breakdown-status-tool-title>
+                  —
+                </div>
+                <div class="breakdown-tool-meta" data-breakdown-status-tool-meta></div>
+              </div>
+              <div class="breakdown-status-actions">
+                <button
+                  class="action-primary"
+                  type="button"
+                  data-breakdown-status-action="repaired"
+                >
+                  Отремонтирован
+                </button>
+                <button
+                  class="action-secondary"
+                  type="button"
+                  data-breakdown-status-action="send-repair"
+                >
+                  Отправлен в ремонт
+                </button>
+                <button
+                  class="action-danger"
+                  type="button"
+                  data-breakdown-status-action="writeoff"
+                >
+                  На списание
+                </button>
+              </div>
+            </div>
+            <div class="settings-modal__footer breakdown-status__footer">
+              <div
+                class="form-message form-message--inline"
+                role="status"
+                aria-live="polite"
+                data-breakdown-status-message
+              ></div>
+              <div class="settings-modal__actions breakdown-status__actions">
+                <button
+                  class="action-secondary"
+                  type="button"
+                  data-breakdown-status-cancel
+                >
+                  Закрыть
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div
           class="settings-modal is-hidden breakdown-form-modal"
           data-breakdown-form-modal
         >

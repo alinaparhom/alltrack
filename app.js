@@ -310,6 +310,13 @@ function buildRemovePhotoSearchLine(tool) {
     .toLowerCase();
 }
 
+function buildRemovePhotoNumberSearchLine(value) {
+  const raw = String(value ?? "").trim();
+  if (!raw) return "";
+  const variants = new Set([raw, ...getToolNumberVariants(raw)]);
+  return Array.from(variants).join(" ").toLowerCase();
+}
+
 const toolPhotoExtensions = new Set(["jpg", "jpeg", "png", "webp"]);
 
 function extractDirectoryListingLinks(html = "") {
@@ -6114,6 +6121,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const row = document.createElement("div");
       row.className = "tools-table__row remove-photo-row";
       row.dataset.removePhotoToolId = tool.__removeId;
+      row.dataset.removePhotoSelect = "true";
+      row.setAttribute("role", "button");
+      row.tabIndex = 0;
 
       const numberCell = document.createElement("div");
       numberCell.className = "tools-table__cell tools-table__cell--number";
@@ -6152,17 +6162,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       });
       photoCell.appendChild(thumb);
 
-      const actionCell = document.createElement("div");
-      actionCell.className = "tools-table__cell tools-table__cell--action";
-      const button = document.createElement("button");
-      button.type = "button";
-      button.className = "action-secondary remove-photo-select";
-      button.textContent = "Выбрать";
-      button.dataset.removePhotoSelect = "true";
-      button.dataset.removePhotoToolId = tool.__removeId;
-      actionCell.appendChild(button);
-
-      row.append(numberCell, infoCell, photoCell, actionCell);
+      row.append(numberCell, infoCell, photoCell);
       table.appendChild(row);
     });
 
@@ -6186,8 +6186,30 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const applyRemovePhotoFilters = () => {
     const search = removePhotoState.search.trim();
     const tokens = search ? search.split(/\s+/).filter(Boolean) : [];
+    if (!tokens.length) {
+      removePhotoState.filtered = removePhotoState.tools.slice();
+      renderRemovePhotoList();
+      return;
+    }
+    const isNumericSearch = tokens.every((token) => /^\d+$/.test(token));
+    if (isNumericSearch) {
+      const numberMatches = removePhotoState.tools.filter((tool) => {
+        const searchLine = tool.__numberSearchLine ?? "";
+        return tokens.every((token) => searchLine.includes(token));
+      });
+      if (numberMatches.length) {
+        removePhotoState.filtered = numberMatches;
+        renderRemovePhotoList();
+        return;
+      }
+      removePhotoState.filtered = removePhotoState.tools.filter((tool) => {
+        const searchLine = tool.__accountingSearchLine ?? "";
+        return tokens.every((token) => searchLine.includes(token));
+      });
+      renderRemovePhotoList();
+      return;
+    }
     removePhotoState.filtered = removePhotoState.tools.filter((tool) => {
-      if (!tokens.length) return true;
       const searchLine = tool.__searchLine ?? "";
       return tokens.every((token) => searchLine.includes(token));
     });
@@ -6224,6 +6246,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           ...tool,
           __removeId: `remove-${index}`,
           __searchLine: buildRemovePhotoSearchLine(tool),
+          __numberSearchLine: buildRemovePhotoNumberSearchLine(tool?.["Номер"]),
+          __accountingSearchLine: buildRemovePhotoNumberSearchLine(
+            tool?.["Бух.номер"]
+          ),
         };
         removePhotoState.toolMap.set(entry.__removeId, entry);
         return entry;
@@ -6387,11 +6413,26 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     setRemovePhotoSubtitle("Выберите фото для удаления");
     setRemovePhotoMessage("Загружаем фото...");
     setRemovePhotoView("photos");
-    const photoNumber = resolveToolPhotoNumber(tool);
+    const primaryPhotoNumber = resolveToolPhotoNumber(tool);
+    const accountingNumber = String(tool?.["Бух.номер"] ?? "").trim();
+    const fallbackPhotoNumber =
+      primaryPhotoNumber === accountingNumber
+        ? String(tool?.["Номер"] ?? "").trim()
+        : accountingNumber;
     removePhotoState.toolPhotos = await loadToolPhotoFiles(
       removePhotoState.orgFolder,
-      photoNumber
+      primaryPhotoNumber
     );
+    if (
+      !removePhotoState.toolPhotos.length &&
+      fallbackPhotoNumber &&
+      fallbackPhotoNumber !== primaryPhotoNumber
+    ) {
+      removePhotoState.toolPhotos = await loadToolPhotoFiles(
+        removePhotoState.orgFolder,
+        fallbackPhotoNumber
+      );
+    }
     setRemovePhotoMessage("");
     renderRemovePhotoPhotos();
   };
@@ -6548,6 +6589,16 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const button = event.target.closest("[data-remove-photo-select]");
       if (!button) return;
       const toolId = button.dataset.removePhotoToolId;
+      if (!toolId) return;
+      const tool = removePhotoState.toolMap.get(toolId);
+      openRemovePhotoTool(tool);
+    });
+    removePhotoListEl.addEventListener("keydown", (event) => {
+      if (event.key !== "Enter" && event.key !== " ") return;
+      const target = event.target.closest("[data-remove-photo-select]");
+      if (!target) return;
+      event.preventDefault();
+      const toolId = target.dataset.removePhotoToolId;
       if (!toolId) return;
       const tool = removePhotoState.toolMap.get(toolId);
       openRemovePhotoTool(tool);

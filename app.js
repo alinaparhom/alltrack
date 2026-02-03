@@ -9115,7 +9115,15 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       return;
     }
     if (action === "send-repair") {
-      setBreakdownStatusMessage("Функция скоро появится.", "info");
+      const tool = breakdownsState.statusTool;
+      if (!tool) {
+        setBreakdownStatusMessage("Инструмент не выбран.", "error");
+        return;
+      }
+      repairState.orgFolder =
+        breakdownsState.orgFolder ?? repairState.orgFolder ?? context.orgFolderName;
+      closeBreakdownStatusModal();
+      void openRepairFormModal(tool);
       return;
     }
     setBreakdownStatusMessage("Неизвестное действие.", "error");

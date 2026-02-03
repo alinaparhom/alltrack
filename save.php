@@ -222,6 +222,7 @@ function createOrganizationFolders(array $newOrganizations): void {
   $jsonFiles = [
     "База с инструментами.json" => [],
     "Перемещения.json" => [],
+    "Перемещения история.json" => [],
     "Объекты.json" => [],
     "Штрафы.json" => [],
     "Списания.json" => [],
@@ -231,6 +232,7 @@ function createOrganizationFolders(array $newOrganizations): void {
   ];
   $folders = [
     "Фото инструментов",
+    "Фото инструментов. Списание",
     "Акты списания",
     "Акты ремонтов",
     "Фото поломок",
@@ -281,7 +283,9 @@ function resolveTargetPath(array $entry, array $allowedFiles): string {
     "Объекты.json",
     "База с инструментами.json",
     "Перемещения.json",
+    "Перемещения история.json",
     "Штрафы.json",
+    "Списания.json",
   ];
   if (!in_array($fileName, $orgScopedFiles, true)) {
     http_response_code(403);
@@ -326,8 +330,8 @@ function resolveTargetPath(array $entry, array $allowedFiles): string {
   return $orgPath . DIRECTORY_SEPARATOR . $fileName;
 }
 
-function resolveFileTargetPath(array $entry): string {
-  $path = trim((string) ($entry["path"] ?? ""));
+function resolveFilePathValue(string $path, array $entry): string {
+  $path = trim($path);
   if ($path === "") {
     http_response_code(400);
     echo json_encode(["error" => "Некорректный путь файла."]);
@@ -362,7 +366,13 @@ function resolveFileTargetPath(array $entry): string {
   }
 
   $photoFolderSafe = sanitizeFolderName($photoFolder);
-  $allowedFolders = ["Фото инструментов", "Накладные покупка", "Фото отказов"];
+  $allowedFolders = [
+    "Фото инструментов",
+    "Фото инструментов. Списание",
+    "Накладные покупка",
+    "Фото отказов",
+    "Акты списания",
+  ];
   if (!in_array($photoFolderSafe, $allowedFolders, true)) {
     http_response_code(403);
     echo json_encode(["error" => "Доступ запрещен."]);
@@ -390,6 +400,11 @@ function resolveFileTargetPath(array $entry): string {
   }
 
   return $photoPath . DIRECTORY_SEPARATOR . $fileNameSafe;
+}
+
+function resolveFileTargetPath(array $entry): string {
+  $path = (string) ($entry["path"] ?? "");
+  return resolveFilePathValue($path, $entry);
 }
 
 function resolvePhotoFolderPath(array $entry): string {
@@ -428,7 +443,13 @@ function resolvePhotoFolderPath(array $entry): string {
   }
 
   $photoFolderSafe = sanitizeFolderName($photoFolder);
-  $allowedFolders = ["Фото инструментов", "Накладные покупка", "Фото отказов"];
+  $allowedFolders = [
+    "Фото инструментов",
+    "Фото инструментов. Списание",
+    "Накладные покупка",
+    "Фото отказов",
+    "Акты списания",
+  ];
   if (!in_array($photoFolderSafe, $allowedFolders, true)) {
     http_response_code(403);
     echo json_encode(["error" => "Доступ запрещен."]);
@@ -484,6 +505,39 @@ function saveFileEntry(array $entry): void {
   }
 }
 
+function moveFileEntry(array $entry): void {
+  $from = (string) ($entry["from"] ?? "");
+  $to = (string) ($entry["to"] ?? "");
+  if ($from === "" || $to === "") {
+    http_response_code(400);
+    echo json_encode(["error" => "Некорректный путь файла."]);
+    exit;
+  }
+  $sourcePath = resolveFilePathValue($from, $entry);
+  $targetPath = resolveFilePathValue($to, $entry);
+  if (!file_exists($sourcePath)) {
+    return;
+  }
+  $targetDir = dirname($targetPath);
+  if (!ensureDirectory($targetDir)) {
+    http_response_code(500);
+    echo json_encode(["error" => "Не удалось создать папку назначения."]);
+    exit;
+  }
+  if (!@rename($sourcePath, $targetPath)) {
+    if (!@copy($sourcePath, $targetPath)) {
+      http_response_code(500);
+      echo json_encode(["error" => "Не удалось перенести файл."]);
+      exit;
+    }
+    if (!@unlink($sourcePath)) {
+      http_response_code(500);
+      echo json_encode(["error" => "Не удалось удалить исходный файл."]);
+      exit;
+    }
+  }
+}
+
 function deleteFileEntry(array $entry): void {
   $targetPath = resolveFileTargetPath($entry);
   if (!file_exists($targetPath)) {
@@ -499,6 +553,10 @@ function deleteFileEntry(array $entry): void {
 function saveEntry(array $entry, array $allowedFiles): void {
   if (($entry["type"] ?? "") === "file") {
     saveFileEntry($entry);
+    return;
+  }
+  if (($entry["type"] ?? "") === "move-file") {
+    moveFileEntry($entry);
     return;
   }
   if (($entry["type"] ?? "") === "delete-file") {

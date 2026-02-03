@@ -317,6 +317,134 @@ export function renderRole(user) {
             </div>
           </div>
         </div>
+        <div class="settings-modal is-hidden writeoff-modal" data-writeoff-modal>
+          <div class="settings-modal__backdrop" data-writeoff-backdrop></div>
+          <div
+            class="settings-modal__panel writeoff-modal__panel"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Списание инструментов"
+          >
+            <div class="settings-modal__header writeoff-modal__header">
+              <div class="settings-modal__title">
+                <h2>Списание</h2>
+                <p data-writeoff-subtitle>Выберите инструменты для списания</p>
+              </div>
+              <button
+                class="button-icon"
+                type="button"
+                data-writeoff-close
+                aria-label="Закрыть окно списания"
+              >
+                <span class="button-icon-emoji" aria-hidden="true">✕</span>
+              </button>
+            </div>
+            <div class="settings-modal__body writeoff-modal__body">
+              <label class="tools-search writeoff-search">
+                <input
+                  class="form-input tools-search__input"
+                  type="search"
+                  placeholder="Поиск по бух.номеру"
+                  data-writeoff-search
+                  autocomplete="off"
+                />
+              </label>
+              <div class="writeoff-selection" data-writeoff-selection>
+                <span>Выбрано:</span>
+                <strong data-writeoff-count>0</strong>
+              </div>
+              <div class="writeoff-list" data-writeoff-list></div>
+              <div class="tools-empty is-hidden" data-writeoff-empty>
+                Инструменты не найдены. Попробуйте другой бух.номер.
+              </div>
+              <div class="form-message" data-writeoff-message></div>
+            </div>
+            <div class="settings-modal__footer writeoff-modal__footer">
+              <button
+                class="action-secondary"
+                type="button"
+                data-writeoff-cancel
+              >
+                Отмена
+              </button>
+              <button
+                class="action-primary"
+                type="button"
+                data-writeoff-next
+              >
+                Списать
+              </button>
+            </div>
+          </div>
+        </div>
+        <div
+          class="settings-modal is-hidden writeoff-confirm-modal"
+          data-writeoff-confirm-modal
+        >
+          <div
+            class="settings-modal__backdrop"
+            data-writeoff-confirm-backdrop
+          ></div>
+          <div
+            class="settings-modal__panel writeoff-confirm-modal__panel"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Подтверждение списания"
+          >
+            <div class="settings-modal__header writeoff-confirm-modal__header">
+              <div class="settings-modal__title">
+                <h2>Подтверждение списания</h2>
+                <p data-writeoff-confirm-subtitle>
+                  Проверьте список и добавьте акт.
+                </p>
+              </div>
+              <button
+                class="button-icon"
+                type="button"
+                data-writeoff-confirm-close
+                aria-label="Закрыть подтверждение"
+              >
+                <span class="button-icon-emoji" aria-hidden="true">✕</span>
+              </button>
+            </div>
+            <form class="settings-modal__body" data-writeoff-confirm-form>
+              <div class="form-card writeoff-confirm-card">
+                <div class="writeoff-confirm-title">
+                  Выбрано инструментов:
+                  <strong data-writeoff-confirm-count>0</strong>
+                </div>
+                <div class="writeoff-confirm-list" data-writeoff-confirm-list></div>
+              </div>
+              <label class="form-field">
+                <span class="form-label">Акты на списание</span>
+                <input
+                  class="form-input"
+                  type="file"
+                  accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.heic"
+                  multiple
+                  data-writeoff-acts
+                  required
+                />
+                <span class="form-hint">
+                  Можно загрузить фото или документ.
+                </span>
+              </label>
+              <div class="form-message" data-writeoff-confirm-message></div>
+              <div class="writeoff-confirm-actions">
+                <button
+                  class="action-secondary"
+                  type="button"
+                  data-writeoff-confirm-cancel
+                >
+                  Отмена
+                </button>
+                <button class="action-primary" type="submit">
+                  Подтвердить списание
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
         <div
           class="settings-modal is-hidden tools-cancel-move-modal"
           data-tools-cancel-move-modal

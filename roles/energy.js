@@ -879,6 +879,224 @@ export function renderRole(user) {
             </div>
           </div>
         </div>
+        <div class="tools-modal settings-modal is-hidden breakdowns-modal" data-breakdowns-modal>
+          <div class="settings-modal__backdrop" data-breakdowns-backdrop></div>
+          <div
+            class="settings-modal__panel tools-modal__panel breakdowns-modal__panel"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Поломки"
+          >
+            <div class="settings-modal__header tools-modal__header">
+              <div class="settings-modal__title">
+                <h2>Поломки</h2>
+                <p data-breakdowns-subtitle>Выберите инструмент для фиксации поломки</p>
+              </div>
+              <button
+                class="button-icon tools-modal__close"
+                type="button"
+                data-breakdowns-close
+                aria-label="Закрыть список инструментов"
+              >
+                <span class="button-icon-emoji" aria-hidden="true">✕</span>
+              </button>
+            </div>
+            <div class="settings-modal__body tools-modal__body">
+              <label class="tools-search breakdowns-search">
+                <input
+                  class="form-input tools-search__input"
+                  type="search"
+                  placeholder="Поиск по номеру, названию, модели..."
+                  data-breakdowns-search
+                  autocomplete="off"
+                />
+              </label>
+              <div class="tools-list is-table breakdowns-list" data-breakdowns-list></div>
+              <div class="tools-empty is-hidden" data-breakdowns-empty>
+                Инструменты не найдены. Попробуйте другой поиск.
+              </div>
+              <div class="form-message" data-breakdowns-message></div>
+            </div>
+          </div>
+        </div>
+        <div
+          class="settings-modal is-hidden breakdown-form-modal"
+          data-breakdown-form-modal
+        >
+          <div
+            class="settings-modal__backdrop"
+            data-breakdown-form-backdrop
+          ></div>
+          <div
+            class="settings-modal__panel breakdown-form-modal__panel"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Поломка инструмента"
+          >
+            <div class="settings-modal__header breakdown-form__header">
+              <div class="settings-modal__title">
+                <h2>Поломка инструмента</h2>
+                <p data-breakdown-form-subtitle>Проверьте данные и опишите поломку</p>
+              </div>
+              <button
+                class="button-icon breakdown-form__close"
+                type="button"
+                data-breakdown-form-close
+                aria-label="Закрыть форму поломки"
+              >
+                <span class="button-icon-emoji" aria-hidden="true">✕</span>
+              </button>
+            </div>
+            <form class="settings-modal__form breakdown-form" data-breakdown-form>
+              <div class="settings-modal__body breakdown-form__body">
+                <div class="breakdown-tool-card">
+                  <div class="breakdown-tool-title" data-breakdown-tool-title>
+                    —
+                  </div>
+                  <div class="breakdown-tool-meta" data-breakdown-tool-meta></div>
+                </div>
+                <label class="form-field form-field--required">
+                  <span class="form-label">Описание поломки</span>
+                  <textarea
+                    class="form-input"
+                    name="breakdown-description"
+                    data-breakdown-description
+                    rows="3"
+                    placeholder="Опишите, что случилось и что не работает"
+                    required
+                  ></textarea>
+                </label>
+                <div class="form-field">
+                  <span class="form-label">Фото поломки</span>
+                  <div class="form-file-row">
+                    <label class="form-file-option">
+                      <input
+                        class="form-input form-input--file"
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        data-breakdown-photo-input
+                      />
+                      <span class="form-file-button" aria-hidden="true">
+                        Выбрать фото
+                      </span>
+                    </label>
+                    <button
+                      class="form-file-option form-file-option--button"
+                      type="button"
+                      data-breakdown-camera-trigger
+                    >
+                      <span class="form-file-button" aria-hidden="true">
+                        Сделать фото
+                      </span>
+                    </button>
+                  </div>
+                  <div class="breakdown-photo-summary">
+                    Добавлено фото: <strong data-breakdown-photo-count>0</strong>
+                  </div>
+                  <div class="breakdown-photo-grid" data-breakdown-photo-preview></div>
+                </div>
+              </div>
+              <div class="settings-modal__footer breakdown-form__footer">
+                <div
+                  class="form-message form-message--inline"
+                  role="status"
+                  aria-live="polite"
+                  data-breakdown-form-message
+                ></div>
+                <div class="settings-modal__actions breakdown-form__actions">
+                  <button
+                    class="action-secondary"
+                    type="button"
+                    data-breakdown-form-cancel
+                  >
+                    Отмена
+                  </button>
+                  <button class="action-primary" type="submit">
+                    Пометить сломанным
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+        <div
+          class="settings-modal camera-modal is-hidden"
+          data-breakdown-camera-modal
+        >
+          <div
+            class="settings-modal__backdrop"
+            data-breakdown-camera-backdrop
+          ></div>
+          <div
+            class="settings-modal__panel camera-modal__panel"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Фото поломки"
+          >
+            <div class="settings-modal__header camera-modal__header">
+              <div class="settings-modal__title">
+                <h2>Фото поломки</h2>
+                <p>Сделайте снимок и подтвердите</p>
+              </div>
+              <button
+                class="button-icon camera-modal__close"
+                type="button"
+                data-breakdown-camera-close
+                aria-label="Закрыть камеру"
+              >
+                <span class="button-icon-emoji" aria-hidden="true">✕</span>
+              </button>
+            </div>
+            <div class="settings-modal__body camera-modal__body">
+              <div class="camera-preview" data-breakdown-camera-preview>
+                <video
+                  class="camera-preview__video"
+                  data-breakdown-camera-video
+                  autoplay
+                  playsinline
+                ></video>
+                <canvas
+                  class="camera-preview__canvas is-hidden"
+                  data-breakdown-camera-canvas
+                ></canvas>
+              </div>
+              <div class="camera-hint" data-breakdown-camera-hint>
+                Сфотографируйте поломку и подтвердите снимок.
+              </div>
+            </div>
+            <div class="settings-modal__footer camera-modal__footer">
+              <button
+                class="action-secondary"
+                type="button"
+                data-breakdown-camera-cancel
+              >
+                Отмена
+              </button>
+              <button
+                class="action-primary"
+                type="button"
+                data-breakdown-camera-capture
+              >
+                Сфотографировать
+              </button>
+              <button
+                class="action-secondary is-hidden"
+                type="button"
+                data-breakdown-camera-retake
+              >
+                Переснять
+              </button>
+              <button
+                class="action-primary is-hidden"
+                type="button"
+                data-breakdown-camera-save
+              >
+                Использовать фото
+              </button>
+            </div>
+          </div>
+        </div>
         <div class="settings-modal add-tool-modal is-hidden" data-add-tool-modal>
           <div class="settings-modal__backdrop" data-add-tool-backdrop></div>
           <div

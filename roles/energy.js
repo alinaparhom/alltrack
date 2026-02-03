@@ -667,6 +667,90 @@ export function renderRole(user) {
             </div>
           </div>
         </div>
+        <div class="tools-modal settings-modal is-hidden" data-remove-photo-modal>
+          <div class="settings-modal__backdrop" data-remove-photo-backdrop></div>
+          <div
+            class="settings-modal__panel tools-modal__panel remove-photo-modal__panel"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Удалить фото"
+          >
+            <div class="settings-modal__header tools-modal__header">
+              <div class="settings-modal__title">
+                <h2>Удалить фото</h2>
+                <p data-remove-photo-subtitle>Загружаем список...</p>
+              </div>
+              <button
+                class="button-icon tools-modal__close"
+                type="button"
+                data-remove-photo-close
+                aria-label="Закрыть окно удаления фото"
+              >
+                <span class="button-icon-emoji" aria-hidden="true">✕</span>
+              </button>
+            </div>
+            <div class="settings-modal__body tools-modal__body">
+              <div class="remove-photo-view" data-remove-photo-view="list">
+                <div class="tools-controls">
+                  <div class="tools-controls__row">
+                    <label class="tools-search">
+                      <input
+                        class="form-input tools-search__input"
+                        type="search"
+                        placeholder="Поиск по номеру, названию, модели..."
+                        data-remove-photo-search
+                        autocomplete="off"
+                      />
+                    </label>
+                  </div>
+                </div>
+                <div class="tools-list is-table" data-remove-photo-list></div>
+                <div class="tools-empty is-hidden" data-remove-photo-empty>
+                  Инструменты с фото не найдены. Попробуйте изменить поиск.
+                </div>
+              </div>
+              <div
+                class="remove-photo-view is-hidden"
+                data-remove-photo-view="photos"
+              >
+                <div class="remove-photo-tool">
+                  <button
+                    class="button-icon remove-photo-back"
+                    type="button"
+                    data-remove-photo-back
+                    aria-label="Вернуться к списку инструментов"
+                  >
+                    <span class="button-icon-emoji" aria-hidden="true">←</span>
+                  </button>
+                  <div class="remove-photo-tool__info">
+                    <div class="remove-photo-tool__title" data-remove-photo-tool-title>
+                      Инструмент
+                    </div>
+                    <div class="remove-photo-tool__meta" data-remove-photo-tool-meta></div>
+                  </div>
+                </div>
+                <div class="remove-photo-photos" data-remove-photo-photos></div>
+                <div class="remove-photo-empty is-hidden" data-remove-photo-photos-empty>
+                  Для этого инструмента фото не найдены.
+                </div>
+                <div class="remove-photo-actions">
+                  <div class="remove-photo-selected">
+                    Выбрано: <span data-remove-photo-selected>0</span>
+                  </div>
+                  <button
+                    class="action-primary"
+                    type="button"
+                    data-remove-photo-delete
+                    disabled
+                  >
+                    Удалить выбранные
+                  </button>
+                </div>
+                <div class="form-message" data-remove-photo-message></div>
+              </div>
+            </div>
+          </div>
+        </div>
         <div class="settings-modal add-tool-modal is-hidden" data-add-tool-modal>
           <div class="settings-modal__backdrop" data-add-tool-backdrop></div>
           <div

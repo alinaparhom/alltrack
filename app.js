@@ -953,6 +953,49 @@ function buildMoveCancelResponsibleMessage(
   return lines.join("\n");
 }
 
+function buildWriteOffNotificationMessage(
+  tool,
+  { organizationName, writeOffDate, writeOffUser } = {}
+) {
+  const titleParts = [
+    formatNotificationValue(tool?.["Наименование"], ""),
+    formatNotificationValue(tool?.["Производитель"], ""),
+    formatNotificationValue(tool?.["Модель"], ""),
+  ]
+    .map((part) => part.trim())
+    .filter(Boolean);
+  const titleLine = titleParts.length ? titleParts.join(" ") : "—";
+  const lines = [
+    "🧾 Списание инструмента",
+    `1. Номер: ${escapeTelegramHtml(
+      formatNotificationValue(tool?.["Номер"])
+    )}`,
+    `2. Бух.номер: ${escapeTelegramHtml(
+      formatNotificationValue(tool?.["Бух.номер"])
+    )}`,
+    `3. ${escapeTelegramHtml(titleLine)}`,
+    `4. Стоимость: ${escapeTelegramHtml(
+      formatNotificationCost(tool?.["Стоимость"])
+    )}`,
+    `5. Ответственный: ${escapeTelegramHtml(
+      formatNotificationValue(tool?.["Ответственный"])
+    )}`,
+    `6. Объект: ${escapeTelegramHtml(
+      formatNotificationValue(tool?.["Объект"])
+    )}`,
+    `7. Дата списания: ${escapeTelegramHtml(
+      formatNotificationValue(writeOffDate)
+    )}`,
+  ];
+  if (writeOffUser) {
+    lines.push(`Списал: ${escapeTelegramHtml(writeOffUser)}`);
+  }
+  if (organizationName) {
+    lines.push(`Организация: ${escapeTelegramHtml(organizationName)}`);
+  }
+  return lines.join("\n");
+}
+
 async function parseTelegramError(response) {
   if (!response || response.ok) return "";
   const rawText = await response.text().catch(() => "");
@@ -1432,6 +1475,60 @@ async function notifyMoveCancel({
     await sendTelegramMessage(responsibleTelegramId, cancelMessage);
   } catch (error) {
     console.warn("Не удалось отправить уведомление об отмене.", error);
+  }
+}
+
+async function notifyWriteOffTools({
+  tools,
+  orgFolder,
+  organizationName,
+  writeOffDate,
+  writeOffUser,
+} = {}) {
+  if (!tools || !tools.length || !orgFolder) return;
+  if (!fallbackBotToken) return;
+  const settingsPath = `./${orgFolder}/Настройки.json`;
+  try {
+    const settingsData = await loadJson(settingsPath);
+    if (!isNotificationEnabled(settingsData, "declineTool")) return;
+    const groupIds = extractNotificationGroups(settingsData, "declineTool");
+    if (!groupIds.length) return;
+    const shouldAttach = isNotificationPhotoEnabled(
+      settingsData,
+      "declineTool"
+    );
+    const sendForTool = async (tool) => {
+      const message = buildWriteOffNotificationMessage(tool, {
+        organizationName,
+        writeOffDate,
+        writeOffUser,
+      });
+      let photoUrl = null;
+      if (shouldAttach) {
+        const photoNumber = resolveToolPhotoNumberForNotification(tool);
+        if (photoNumber) {
+          photoUrl = await resolveAvailablePhotoUrl(orgFolder, photoNumber);
+        }
+      }
+      await Promise.all(
+        groupIds.map(async (chatId) => {
+          if (photoUrl) {
+            const result = await sendTelegramPhoto(chatId, photoUrl, message);
+            if (!result.ok) {
+              await sendTelegramMessage(chatId, message);
+            }
+            return;
+          }
+          await sendTelegramMessage(chatId, message);
+        })
+      );
+    };
+    for (const tool of tools) {
+      if (!tool) continue;
+      await sendForTool(tool);
+    }
+  } catch (error) {
+    console.warn("Не удалось отправить уведомление о списании.", error);
   }
 }
 
@@ -4995,6 +5092,14 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       if (fileEntries.length) {
         await uploadPhotoEntriesInBatches(fileEntries);
       }
+
+      await notifyWriteOffTools({
+        tools: selectedTools,
+        orgFolder,
+        organizationName: context.orgFullName,
+        writeOffDate,
+        writeOffUser,
+      });
 
       const photoMessage = movedPhotosCount
         ? ` Фото перенесено: ${movedPhotosCount}.`

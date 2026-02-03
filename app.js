@@ -7853,9 +7853,19 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     table.className = "tools-table tools-table--breakdowns";
 
     items.forEach((tool) => {
+      const isBroken =
+        String(tool?.["Статус"] ?? "").trim().toLowerCase() === "сломан";
       const row = document.createElement("div");
       row.className = "tools-table__row";
       row.dataset.breakdownsToolId = tool.__breakdownId;
+      row.dataset.breakdownsSelect = tool.__breakdownId;
+      row.classList.toggle("is-disabled", isBroken);
+      row.setAttribute("role", "button");
+      if (isBroken) {
+        row.setAttribute("aria-disabled", "true");
+      } else {
+        row.tabIndex = 0;
+      }
       applyToolStatusClasses(row, tool);
 
       const numberCell = document.createElement("div");
@@ -7889,19 +7899,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       meta.append(lineTop, lineBottom);
       infoCell.append(title, meta);
 
-      const actionCell = document.createElement("div");
-      actionCell.className = "tools-table__cell tools-table__cell--action";
-      const actionButton = document.createElement("button");
-      actionButton.type = "button";
-      actionButton.className = "action-primary breakdowns-action-button";
-      actionButton.dataset.breakdownsSelect = tool.__breakdownId;
-      const isBroken =
-        String(tool?.["Статус"] ?? "").trim().toLowerCase() === "сломан";
-      actionButton.textContent = isBroken ? "Уже сломан" : "Отметить";
-      actionButton.disabled = isBroken;
-      actionCell.appendChild(actionButton);
-
-      row.append(numberCell, infoCell, actionCell);
+      row.append(numberCell, infoCell);
       table.appendChild(row);
     });
     return table;
@@ -8009,7 +8007,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     setBreakdownFormMessage("");
     breakdownFormModalEl.classList.remove("is-hidden");
     document.body.style.overflow = "hidden";
-    breakdownDescriptionInput?.focus();
   };
 
   const closeBreakdownFormModal = () => {
@@ -8091,12 +8088,27 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   }
   if (breakdownsListEl) {
     breakdownsListEl.addEventListener("click", (event) => {
-      const button = event.target.closest("[data-breakdowns-select]");
-      if (!button) return;
-      const toolId = button.dataset.breakdownsSelect;
+      const row = event.target.closest("[data-breakdowns-select]");
+      if (!row) return;
+      const toolId = row.dataset.breakdownsSelect;
       if (!toolId) return;
       const tool = breakdownsState.toolMap.get(toolId);
+      if (!tool) return;
+      const isBroken =
+        String(tool?.["Статус"] ?? "").trim().toLowerCase() === "сломан";
+      if (isBroken) {
+        setBreakdownsMessage("Инструмент уже сломан.", "info");
+        return;
+      }
       openBreakdownFormModal(tool);
+    });
+    breakdownsListEl.addEventListener("keydown", (event) => {
+      if (!(event instanceof KeyboardEvent)) return;
+      if (event.key !== "Enter" && event.key !== " ") return;
+      const row = event.target.closest("[data-breakdowns-select]");
+      if (!row) return;
+      event.preventDefault();
+      row.click();
     });
   }
   if (breakdownFormBackdropEl) {

@@ -1379,6 +1379,17 @@
         outline-offset: 2px;
       }
 
+      .breakdown-form__body {
+        overflow-y: auto;
+        padding-bottom: calc(12px + env(safe-area-inset-bottom));
+      }
+
+      .breakdown-form textarea.form-input {
+        direction: ltr;
+        text-align: left;
+        unicode-bidi: plaintext;
+      }
+
       .form-label {
         font-size: var(--text-sm);
         color: var(--title-muted);
@@ -1892,6 +1903,14 @@
         max-height: 92vh;
         border-radius: 24px;
         overflow: hidden;
+        grid-template-rows: auto 1fr auto;
+      }
+
+      .breakdown-form-modal__panel {
+        height: 100vh;
+        height: 100svh;
+        max-height: 100vh;
+        max-height: 100svh;
         grid-template-rows: auto 1fr auto;
       }
 
@@ -2982,6 +3001,16 @@
       .tools-table {
         display: grid;
         gap: 10px;
+      }
+
+      .tools-table--breakdowns .tools-table__row {
+        grid-template-columns: minmax(80px, 120px) minmax(0, 1fr);
+        cursor: pointer;
+      }
+
+      .tools-table--breakdowns .tools-table__row.is-disabled {
+        cursor: not-allowed;
+        opacity: 0.6;
       }
 
       .tools-table__row {

@@ -917,7 +917,10 @@ export function renderRole(user) {
                       autocomplete="off"
                     />
                   </label>
+                </div>
+                <div class="tools-controls__row">
                   <label class="tools-quick-filter breakdowns-status-filter">
+                    <span>По статусу</span>
                     <select
                       class="form-input"
                       data-breakdowns-status-filter

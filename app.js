@@ -969,6 +969,46 @@ function buildWriteOffNotificationMessage(
   return lines.join("\n");
 }
 
+function buildBreakdownNotificationMessage(
+  tool,
+  { breakdownDate, description, markedBy } = {}
+) {
+  const titleParts = [
+    formatNotificationValue(tool?.["Наименование"], ""),
+    formatNotificationValue(tool?.["Производитель"], ""),
+    formatNotificationValue(tool?.["Модель"], ""),
+  ]
+    .map((part) => part.trim())
+    .filter(Boolean);
+  const titleLine = titleParts.length ? titleParts.join(" ") : "—";
+  const lines = [
+    "⚠️⚠️⚠️<b><u>ПОЛОМКА ИНСТРУМЕНТА</u></b>",
+    `1. Номер: ${escapeTelegramHtml(
+      formatNotificationValue(tool?.["Номер"])
+    )}`,
+    `2. Бух.номер: ${escapeTelegramHtml(
+      formatNotificationValue(tool?.["Бух.номер"])
+    )}`,
+    `3. ${escapeTelegramHtml(titleLine)}`,
+    `4. Ответственный: ${escapeTelegramHtml(
+      formatNotificationValue(tool?.["Ответственный"])
+    )}`,
+    `5. Объект: ${escapeTelegramHtml(
+      formatNotificationValue(tool?.["Объект"])
+    )}`,
+    `6. Описание: ${escapeTelegramHtml(
+      formatNotificationValue(description)
+    )}`,
+    `7. Дата поломки: ${escapeTelegramHtml(
+      formatNotificationValue(breakdownDate)
+    )}`,
+    `8. Отметил: ${escapeTelegramHtml(
+      formatNotificationValue(markedBy)
+    )}`,
+  ];
+  return lines.join("\n");
+}
+
 function buildMoveCancelResponsibleMessage(
   tool,
   { movedBy, canceledBy, targetObject, oldObject, moveReason } = {}
@@ -1163,6 +1203,17 @@ function buildDeclinePhotoUrl(orgFolder, fileName) {
   ).toString();
 }
 
+function buildBreakdownPhotoUrl(orgFolder, fileName) {
+  if (!orgFolder || !fileName) return "";
+  const folderSegment = encodeURIComponent("Фото поломок");
+  const orgSegment = encodeURIComponent(orgFolder);
+  const fileSegment = encodeURIComponent(fileName);
+  return new URL(
+    `./${orgSegment}/${folderSegment}/${fileSegment}`,
+    window.location.href
+  ).toString();
+}
+
 async function notifyNewToolRegistration({
   tool,
   organizationName,
@@ -1304,6 +1355,66 @@ async function notifyWriteOffTool({
     result.reasons.push(`ошибка при отправке уведомлений${message}`);
   }
   return result;
+}
+
+async function notifyToolBreakdown({
+  tool,
+  orgFolder,
+  breakdownDate,
+  description,
+  markedBy,
+  breakdownPhotos = [],
+} = {}) {
+  if (!tool || !orgFolder) return;
+  if (!fallbackBotToken) return;
+  const settingsPath = `./${orgFolder}/Настройки.json`;
+  try {
+    const settingsData = await loadJson(settingsPath);
+    const groupsEnabled = isNotificationEnabled(settingsData, "toolBreakdown");
+    const groupIds = groupsEnabled
+      ? extractNotificationGroups(settingsData, "toolBreakdown")
+      : [];
+    if (!groupsEnabled || !groupIds.length) return;
+    const message = buildBreakdownNotificationMessage(tool, {
+      breakdownDate,
+      description,
+      markedBy,
+    });
+    const photoUrls = [];
+    if (breakdownPhotos.length) {
+      breakdownPhotos.forEach((fileName) => {
+        const url = buildBreakdownPhotoUrl(orgFolder, fileName);
+        if (url) photoUrls.push(url);
+      });
+    }
+    if (isNotificationPhotoEnabled(settingsData, "toolBreakdown")) {
+      const photoNumber = resolveToolPhotoNumberForNotification(tool);
+      const toolPhotoUrl = await resolveAvailablePhotoUrl(orgFolder, photoNumber);
+      if (toolPhotoUrl) {
+        photoUrls.push(toolPhotoUrl);
+      }
+    }
+    const sendToGroup = async (chatId) => {
+      if (!photoUrls.length) {
+        await sendTelegramMessage(chatId, message);
+        return;
+      }
+      let hasSent = false;
+      for (let index = 0; index < photoUrls.length; index += 1) {
+        const caption = index === 0 ? message : "";
+        const result = await sendTelegramPhoto(chatId, photoUrls[index], caption);
+        if (result.ok) {
+          hasSent = true;
+        }
+      }
+      if (!hasSent) {
+        await sendTelegramMessage(chatId, message);
+      }
+    };
+    await Promise.all(groupIds.map((chatId) => sendToGroup(chatId)));
+  } catch (error) {
+    console.warn("Не удалось отправить уведомление о поломке.", error);
+  }
 }
 
 function findUserTelegramId(usersData, { fullName, organization }) {
@@ -3443,6 +3554,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     "[data-breakdown-form-cancel]"
   );
   const breakdownFormEl = contentEl.querySelector("[data-breakdown-form]");
+  const breakdownFormBodyEl = breakdownFormEl?.querySelector(
+    ".breakdown-form__body"
+  );
   const breakdownFormSubtitleEl = contentEl.querySelector(
     "[data-breakdown-form-subtitle]"
   );
@@ -3951,6 +4065,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     isSaving: false,
   };
   let addToolViewportListenersAttached = false;
+  let breakdownViewportListenersAttached = false;
   const updateAddToolKeyboardOffset = () => {
     if (!addToolModalEl) return;
     const viewport = window.visualViewport;
@@ -3977,6 +4092,33 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     viewport.removeEventListener("resize", updateAddToolKeyboardOffset);
     viewport.removeEventListener("scroll", updateAddToolKeyboardOffset);
     addToolViewportListenersAttached = false;
+  };
+  const updateBreakdownKeyboardOffset = () => {
+    if (!breakdownFormModalEl) return;
+    const viewport = window.visualViewport;
+    if (!viewport) {
+      breakdownFormModalEl.style.removeProperty("--keyboard-offset");
+      return;
+    }
+    const offset = Math.max(
+      0,
+      window.innerHeight - viewport.height - viewport.offsetTop
+    );
+    breakdownFormModalEl.style.setProperty("--keyboard-offset", `${offset}px`);
+  };
+  const attachBreakdownViewportListeners = () => {
+    const viewport = window.visualViewport;
+    if (!viewport || breakdownViewportListenersAttached) return;
+    viewport.addEventListener("resize", updateBreakdownKeyboardOffset);
+    viewport.addEventListener("scroll", updateBreakdownKeyboardOffset);
+    breakdownViewportListenersAttached = true;
+  };
+  const detachBreakdownViewportListeners = () => {
+    const viewport = window.visualViewport;
+    if (!viewport || !breakdownViewportListenersAttached) return;
+    viewport.removeEventListener("resize", updateBreakdownKeyboardOffset);
+    viewport.removeEventListener("scroll", updateBreakdownKeyboardOffset);
+    breakdownViewportListenersAttached = false;
   };
   const objectsPath = context.objectsPath ?? `./${context.orgFolderName}/Объекты.json`;
   const objectsNameInput = objectsFormEl?.querySelector("[name='object-name']");
@@ -4659,20 +4801,36 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   };
 
   const fillToolsFilterOptions = (key, values) => {
-    const selectEl = contentEl.querySelector(`[data-tools-filter="${key}"]`);
-    if (!selectEl) return;
-    selectEl.innerHTML = "";
-    const allOption = document.createElement("option");
-    allOption.value = "";
-    allOption.textContent = "Все";
-    selectEl.appendChild(allOption);
-    values.forEach((value) => {
-      const option = document.createElement("option");
-      option.value = value;
-      option.textContent = value;
-      selectEl.appendChild(option);
+    const selectEls = contentEl.querySelectorAll(
+      `[data-tools-filter="${key}"]`
+    );
+    if (!selectEls.length) return;
+    const currentValue = toolsState.filters[key] ?? "";
+    selectEls.forEach((selectEl) => {
+      selectEl.innerHTML = "";
+      const allOption = document.createElement("option");
+      allOption.value = "";
+      allOption.textContent = "Все";
+      selectEl.appendChild(allOption);
+      values.forEach((value) => {
+        const option = document.createElement("option");
+        option.value = value;
+        option.textContent = value;
+        selectEl.appendChild(option);
+      });
+      selectEl.value = currentValue;
     });
-    selectEl.value = toolsState.filters[key] ?? "";
+  };
+
+  const syncToolsFilterValue = (key, value) => {
+    const selectEls = contentEl.querySelectorAll(
+      `[data-tools-filter="${key}"]`
+    );
+    selectEls.forEach((selectEl) => {
+      if (selectEl.value !== value) {
+        selectEl.value = value;
+      }
+    });
   };
 
   const prepareToolsFilters = () => {
@@ -6240,7 +6398,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const target = event.target;
       const key = target?.dataset?.toolsFilter;
       if (!key) return;
-      toolsState.filters[key] = String(target.value ?? "");
+      const value = String(target.value ?? "");
+      toolsState.filters[key] = value;
+      syncToolsFilterValue(key, value);
       applyToolsFilters();
     });
   });
@@ -7848,20 +8008,24 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     closeBreakdownCameraModal();
   };
 
+  const isBreakdownStatusBlocked = (tool) => {
+    const tone = tool?.__statusTone ?? resolveToolStatusTone(tool);
+    return tone === "broken" || tone === "repair" || tone === "writeoff";
+  };
+
   const renderBreakdownsTable = (items) => {
     const table = document.createElement("div");
     table.className = "tools-table tools-table--breakdowns";
 
     items.forEach((tool) => {
-      const isBroken =
-        String(tool?.["Статус"] ?? "").trim().toLowerCase() === "сломан";
+      const isBlocked = isBreakdownStatusBlocked(tool);
       const row = document.createElement("div");
       row.className = "tools-table__row";
       row.dataset.breakdownsToolId = tool.__breakdownId;
       row.dataset.breakdownsSelect = tool.__breakdownId;
-      row.classList.toggle("is-disabled", isBroken);
+      row.classList.toggle("is-disabled", isBlocked);
       row.setAttribute("role", "button");
-      if (isBroken) {
+      if (isBlocked) {
         row.setAttribute("aria-disabled", "true");
       } else {
         row.tabIndex = 0;
@@ -8006,12 +8170,19 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
     setBreakdownFormMessage("");
     breakdownFormModalEl.classList.remove("is-hidden");
+    breakdownFormModalEl.classList.remove("is-input-focus");
+    attachBreakdownViewportListeners();
+    updateBreakdownKeyboardOffset();
     document.body.style.overflow = "hidden";
+    breakdownDescriptionInput?.focus();
   };
 
   const closeBreakdownFormModal = () => {
     if (!breakdownFormModalEl) return;
     breakdownFormModalEl.classList.add("is-hidden");
+    breakdownFormModalEl.classList.remove("is-input-focus");
+    breakdownFormModalEl.style.removeProperty("--keyboard-offset");
+    detachBreakdownViewportListeners();
     resetBreakdownForm();
     if (breakdownsModalEl && !breakdownsModalEl.classList.contains("is-hidden")) {
       document.body.style.overflow = "hidden";
@@ -8094,10 +8265,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       if (!toolId) return;
       const tool = breakdownsState.toolMap.get(toolId);
       if (!tool) return;
-      const isBroken =
-        String(tool?.["Статус"] ?? "").trim().toLowerCase() === "сломан";
-      if (isBroken) {
-        setBreakdownsMessage("Инструмент уже сломан.", "info");
+      if (isBreakdownStatusBlocked(tool)) {
+        const status = String(tool?.["Статус"] ?? "").trim().toLowerCase();
+        const message =
+          status === "сломан"
+            ? "Инструмент уже сломан."
+            : "Инструмент уже в ремонте или на списании.";
+        setBreakdownsMessage(message, "info");
         return;
       }
       openBreakdownFormModal(tool);
@@ -8186,6 +8360,38 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
   if (breakdownFormEl) {
     breakdownFormEl.noValidate = true;
+    const scrollBreakdownInputIntoView = (target) => {
+      const scrollContainer = breakdownFormBodyEl || breakdownFormModalEl;
+      if (!scrollContainer || !(target instanceof HTMLElement)) return;
+      const bodyRect = scrollContainer.getBoundingClientRect();
+      const inputRect = target.getBoundingClientRect();
+      const offset = 24;
+      const nextTop =
+        scrollContainer.scrollTop + (inputRect.top - bodyRect.top) - offset;
+      scrollContainer.scrollTo({
+        top: Math.max(nextTop, 0),
+        behavior: "smooth",
+      });
+    };
+
+    breakdownFormEl.addEventListener("focusin", (event) => {
+      const target = event.target;
+      if (!(target instanceof HTMLElement)) return;
+      if (!target.closest("input, textarea, select")) return;
+      breakdownFormModalEl?.classList.add("is-input-focus");
+      updateBreakdownKeyboardOffset();
+      scrollBreakdownInputIntoView(target);
+    });
+
+    breakdownFormEl.addEventListener("focusout", () => {
+      setTimeout(() => {
+        if (!breakdownFormEl.contains(document.activeElement)) {
+          breakdownFormModalEl?.classList.remove("is-input-focus");
+          breakdownFormModalEl?.style.removeProperty("--keyboard-offset");
+        }
+      }, 0);
+    });
+
     breakdownFormEl.addEventListener("submit", async (event) => {
       event.preventDefault();
       if (breakdownsState.isSaving) {
@@ -8195,6 +8401,15 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const tool = breakdownsState.selectedTool;
       if (!tool) {
         setBreakdownFormMessage("Инструмент не выбран.", "error");
+        return;
+      }
+      if (isBreakdownStatusBlocked(tool)) {
+        const status = String(tool?.["Статус"] ?? "").trim().toLowerCase();
+        const message =
+          status === "сломан"
+            ? "Инструмент уже сломан."
+            : "Нельзя пометить сломанным: инструмент уже в ремонте или на списании.";
+        setBreakdownFormMessage(message, "error");
         return;
       }
       const description = String(breakdownDescriptionInput?.value ?? "").trim();
@@ -8266,6 +8481,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           { path: breakdownsPath, data: updatedBreakdowns, ...meta },
         ]);
 
+        const breakdownPhotoNames = [];
         if (breakdownsState.photos.length) {
           setBreakdownFormMessage("Загружаем фото...", "info");
           const photoEntries = [];
@@ -8275,6 +8491,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
               dateValue,
               file
             );
+            breakdownPhotoNames.push(safeName);
             const content = await readFileAsBase64(file);
             photoEntries.push({
               type: "file",
@@ -8294,6 +8511,15 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
             },
           });
         }
+
+        await notifyToolBreakdown({
+          tool: updatedTools[toolIndex],
+          orgFolder,
+          breakdownDate: dateValue,
+          description,
+          markedBy: marker,
+          breakdownPhotos: breakdownPhotoNames,
+        });
 
         syncBrokenStatusInToolsState(tool);
         setBreakdownsMessage("Поломка сохранена.", "success");

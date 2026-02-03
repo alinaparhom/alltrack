@@ -8475,6 +8475,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       breakdownFormModalEl?.classList.add("is-input-focus");
       updateBreakdownKeyboardOffset();
       scrollBreakdownInputIntoView(target);
+      setTimeout(() => {
+        updateBreakdownKeyboardOffset();
+        scrollBreakdownInputIntoView(target);
+      }, 150);
     });
 
     breakdownFormEl.addEventListener("focusout", () => {

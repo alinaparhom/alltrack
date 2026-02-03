@@ -317,6 +317,59 @@ export function renderRole(user) {
             </div>
           </div>
         </div>
+        <div
+          class="settings-modal is-hidden tools-cancel-move-modal"
+          data-tools-cancel-move-modal
+        >
+          <div
+            class="settings-modal__backdrop"
+            data-tools-cancel-move-backdrop
+          ></div>
+          <div
+            class="settings-modal__panel tools-cancel-move-modal__panel"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Отмена перемещения"
+          >
+            <div class="settings-modal__header">
+              <div class="settings-modal__title">
+                <h2>Отмена перемещения</h2>
+                <p>Перемещение ещё ожидает ответа.</p>
+              </div>
+              <button
+                class="button-icon"
+                type="button"
+                data-tools-cancel-move-close
+                aria-label="Закрыть окно отмены"
+              >
+                <span class="button-icon-emoji" aria-hidden="true">✕</span>
+              </button>
+            </div>
+            <div class="settings-modal__body">
+              <div
+                class="tools-cancel-move-info"
+                data-tools-cancel-move-info
+              ></div>
+              <div class="form-message" data-tools-cancel-move-message></div>
+            </div>
+            <div class="settings-modal__footer tools-cancel-move-actions">
+              <button
+                class="action-secondary"
+                type="button"
+                data-tools-cancel-move-cancel
+              >
+                Не отменять
+              </button>
+              <button
+                class="action-danger"
+                type="button"
+                data-tools-cancel-move-confirm
+              >
+                Отменить перемещение
+              </button>
+            </div>
+          </div>
+        </div>
         <div class="tools-modal settings-modal is-hidden" data-pending-moves-modal>
           <div class="settings-modal__backdrop" data-pending-moves-backdrop></div>
           <div

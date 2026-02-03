@@ -863,6 +863,50 @@ function buildMoveDecisionNotificationMessage(
   return lines.join("\n");
 }
 
+function buildMoveCancelResponsibleMessage(
+  tool,
+  { movedBy, canceledBy, targetObject, oldObject, moveReason } = {}
+) {
+  const titleParts = [
+    formatNotificationValue(tool?.["Наименование"], ""),
+    formatNotificationValue(tool?.["Производитель"], ""),
+    formatNotificationValue(tool?.["Модель"], ""),
+  ]
+    .map((part) => part.trim())
+    .filter(Boolean);
+  const titleLine = titleParts.length ? titleParts.join(" ") : "—";
+  const lines = [
+    "⚪️ Перемещение отменено",
+    `1. Номер: ${escapeTelegramHtml(
+      formatNotificationValue(tool?.["Номер"])
+    )}`,
+    `2. Бух.номер: ${escapeTelegramHtml(
+      formatNotificationValue(tool?.["Бух.номер"])
+    )}`,
+    `3. ${escapeTelegramHtml(titleLine)}`,
+    `4. Старый объект: ${escapeTelegramHtml(
+      formatNotificationValue(oldObject)
+    )}`,
+    `5. Новый объект: ${escapeTelegramHtml(
+      formatNotificationValue(targetObject)
+    )}`,
+  ];
+  if (moveReason) {
+    lines.push(
+      `6. Причина перемещения: ${escapeTelegramHtml(
+        formatNotificationValue(moveReason)
+      )}`
+    );
+  }
+  if (movedBy) {
+    lines.push("", `Переместил: ${escapeTelegramHtml(movedBy)}`);
+  }
+  if (canceledBy) {
+    lines.push(`Отменил: ${escapeTelegramHtml(canceledBy)}`);
+  }
+  return lines.join("\n");
+}
+
 async function parseTelegramError(response) {
   if (!response || response.ok) return "";
   const rawText = await response.text().catch(() => "");
@@ -1295,6 +1339,53 @@ async function notifyMoveDecision({
     }
   } catch (error) {
     console.warn("Не удалось отправить уведомление о решении.", error);
+  }
+}
+
+async function notifyMoveCancel({
+  tool,
+  move,
+  orgFolder,
+  organizationName,
+  canceledBy,
+} = {}) {
+  if (!tool || !move || !orgFolder) return;
+  if (!fallbackBotToken) return;
+  const settingsPath = `./${orgFolder}/Настройки.json`;
+  try {
+    const settingsData = await loadJson(settingsPath);
+    const usersData = await loadJson(usersFilePath).catch(() => ({ users: [] }));
+    const responsibleTelegramId = findUserTelegramId(usersData, {
+      fullName: String(move?.["Принял"] ?? "").trim(),
+      organization: organizationName,
+    });
+    if (!responsibleTelegramId) return;
+    const cancelMessage = buildMoveCancelResponsibleMessage(tool, {
+      movedBy: String(move?.["Переместил"] ?? "").trim(),
+      canceledBy,
+      targetObject: String(move?.["Новый объект"] ?? "").trim(),
+      oldObject: String(move?.["Старый объект"] ?? "").trim(),
+      moveReason: String(move?.["Причина перемещения"] ?? "").trim(),
+    });
+    const shouldAttach = isNotificationPhotoEnabled(
+      settingsData,
+      "moveTool"
+    );
+    if (shouldAttach) {
+      const photoNumber = resolveMoveDecisionPhotoNumber(tool, move);
+      const photoUrl = await resolveAvailablePhotoUrl(orgFolder, photoNumber);
+      if (photoUrl) {
+        const photoResult = await sendTelegramPhoto(
+          responsibleTelegramId,
+          photoUrl,
+          cancelMessage
+        );
+        if (photoResult.ok) return;
+      }
+    }
+    await sendTelegramMessage(responsibleTelegramId, cancelMessage);
+  } catch (error) {
+    console.warn("Не удалось отправить уведомление об отмене.", error);
   }
 }
 
@@ -3240,6 +3331,27 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const pendingMovesDeclineMessageEl = contentEl.querySelector(
     "[data-pending-moves-decline-message]"
   );
+  const toolsCancelMoveModalEl = contentEl.querySelector(
+    "[data-tools-cancel-move-modal]"
+  );
+  const toolsCancelMoveBackdropEl = contentEl.querySelector(
+    "[data-tools-cancel-move-backdrop]"
+  );
+  const toolsCancelMoveCloseButton = contentEl.querySelector(
+    "[data-tools-cancel-move-close]"
+  );
+  const toolsCancelMoveCancelButton = contentEl.querySelector(
+    "[data-tools-cancel-move-cancel]"
+  );
+  const toolsCancelMoveConfirmButton = contentEl.querySelector(
+    "[data-tools-cancel-move-confirm]"
+  );
+  const toolsCancelMoveInfoEl = contentEl.querySelector(
+    "[data-tools-cancel-move-info]"
+  );
+  const toolsCancelMoveMessageEl = contentEl.querySelector(
+    "[data-tools-cancel-move-message]"
+  );
 
   const context = contextOverride || (await resolveUserSettingsContext(user));
   const settingsData = context.settingsData;
@@ -3351,6 +3463,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     pendingItems: [],
     allMoves: [],
     toolMap: new Map(),
+    isSaving: false,
+  };
+  const toolsCancelMoveState = {
+    move: null,
+    moveIndex: null,
+    tool: null,
+    movesPayload: null,
     isSaving: false,
   };
   let pendingMovesDeclineResolver = null;
@@ -3569,6 +3688,48 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (type) {
       toolsMoveMessageEl.classList.add(`is-${type}`);
     }
+  };
+
+  const setToolsCancelMoveMessage = (text = "", type = "info") => {
+    if (!toolsCancelMoveMessageEl) return;
+    toolsCancelMoveMessageEl.textContent = text;
+    toolsCancelMoveMessageEl.classList.remove("is-error", "is-success", "is-info");
+    toolsCancelMoveMessageEl.classList.add(`is-${type}`);
+  };
+
+  const resetToolsCancelMoveState = () => {
+    toolsCancelMoveState.move = null;
+    toolsCancelMoveState.moveIndex = null;
+    toolsCancelMoveState.tool = null;
+    toolsCancelMoveState.movesPayload = null;
+    toolsCancelMoveState.isSaving = false;
+    if (toolsCancelMoveConfirmButton) {
+      toolsCancelMoveConfirmButton.disabled = true;
+    }
+  };
+
+  const buildToolsCancelMoveInfo = (tool, move) => {
+    const nameParts = [
+      String(tool?.["Наименование"] ?? "").trim(),
+      String(tool?.["Производитель"] ?? "").trim(),
+      String(tool?.["Модель"] ?? "").trim(),
+    ].filter(Boolean);
+    const title = nameParts.length ? nameParts.join(" ") : "—";
+    const number =
+      String(move?.["Номер"] ?? "").trim() ||
+      String(move?.["Бух.номер"] ?? "").trim() ||
+      resolveToolNumberValue(tool) ||
+      "—";
+    const responsible = String(move?.["Принял"] ?? "").trim() || "—";
+    const targetObject = String(move?.["Новый объект"] ?? "").trim() || "—";
+    const moveDate = String(move?.["Дата перемещения"] ?? "").trim() || "—";
+    return [
+      `Инструмент: ${title}`,
+      `Номер: ${number}`,
+      `Новый ответственный: ${responsible}`,
+      `Новый объект: ${targetObject}`,
+      `Дата перемещения: ${moveDate}`,
+    ].join("\n");
   };
 
   const isToolSelectableForMove = (tool) => {
@@ -4188,6 +4349,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     document.body.style.overflow = "";
     resetToolsSelection();
     closeToolsMoveModal();
+    closeToolsCancelMoveModal();
   };
 
   const setPendingMovesSubtitle = (text) => {
@@ -4263,6 +4425,141 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       wrapper: raw && typeof raw === "object" ? raw : null,
       key: raw && typeof raw === "object" ? key : null,
     };
+  };
+
+  const findPendingMoveForTool = (moves, tool) => {
+    if (!tool || !moves.length) return null;
+    const number = String(tool?.["Номер"] ?? "").trim();
+    const accounting = String(tool?.["Бух.номер"] ?? "").trim();
+    const moverName = normalizePersonName(user?.full_name ?? "");
+    const matchIndex = moves.findIndex((move) => {
+      const responseDate = String(move?.["Дата ответа"] ?? "").trim();
+      if (responseDate) return false;
+      const moveNumber = String(move?.["Номер"] ?? "").trim();
+      const moveAccounting = String(move?.["Бух.номер"] ?? "").trim();
+      const sameTool =
+        (number && moveNumber && number === moveNumber) ||
+        (accounting && moveAccounting && accounting === moveAccounting);
+      if (!sameTool) return false;
+      const movedBy = normalizePersonName(move?.["Переместил"] ?? "");
+      return moverName ? movedBy === moverName : true;
+    });
+    if (matchIndex < 0) return null;
+    return { move: moves[matchIndex], moveIndex: matchIndex };
+  };
+
+  const openToolsCancelMoveModal = async (tool) => {
+    if (!toolsCancelMoveModalEl) return;
+    resetToolsCancelMoveState();
+    toolsCancelMoveModalEl.classList.remove("is-hidden");
+    document.body.style.overflow = "hidden";
+    setToolsCancelMoveMessage("Проверяем перемещение...", "info");
+    if (toolsCancelMoveInfoEl) {
+      toolsCancelMoveInfoEl.textContent = "";
+    }
+    const orgFolder = context.orgFolderName ?? "";
+    if (!orgFolder) {
+      setToolsCancelMoveMessage("Не удалось определить организацию.", "error");
+      return;
+    }
+    const movesPath = `./${orgFolder}/Перемещения.json`;
+    try {
+      const rawMoves = await loadJson(movesPath);
+      const normalizedMoves = normalizeCollectionPayload(rawMoves, "moves");
+      const pendingEntry = findPendingMoveForTool(
+        normalizedMoves.items,
+        tool
+      );
+      if (!pendingEntry) {
+        setToolsCancelMoveMessage(
+          "Перемещение не найдено или уже закрыто.",
+          "error"
+        );
+        return;
+      }
+      toolsCancelMoveState.move = pendingEntry.move;
+      toolsCancelMoveState.moveIndex = pendingEntry.moveIndex;
+      toolsCancelMoveState.tool = tool;
+      toolsCancelMoveState.movesPayload = normalizedMoves;
+      if (toolsCancelMoveInfoEl) {
+        toolsCancelMoveInfoEl.textContent = buildToolsCancelMoveInfo(
+          tool,
+          pendingEntry.move
+        );
+      }
+      if (toolsCancelMoveConfirmButton) {
+        toolsCancelMoveConfirmButton.disabled = false;
+      }
+      setToolsCancelMoveMessage("", "info");
+    } catch (error) {
+      console.warn("Не удалось загрузить перемещения для отмены.", error);
+      setToolsCancelMoveMessage(
+        "Не удалось загрузить перемещения. Попробуйте позже.",
+        "error"
+      );
+    }
+  };
+
+  const closeToolsCancelMoveModal = () => {
+    if (!toolsCancelMoveModalEl) return;
+    toolsCancelMoveModalEl.classList.add("is-hidden");
+    if (toolsModalEl && !toolsModalEl.classList.contains("is-hidden")) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    setToolsCancelMoveMessage("");
+    resetToolsCancelMoveState();
+  };
+
+  const applyToolsMoveCancel = async () => {
+    if (toolsCancelMoveState.isSaving) return;
+    const { move, moveIndex, tool, movesPayload } = toolsCancelMoveState;
+    if (!move || moveIndex === null || moveIndex === undefined) {
+      setToolsCancelMoveMessage(
+        "Перемещение не найдено для отмены.",
+        "error"
+      );
+      return;
+    }
+    toolsCancelMoveState.isSaving = true;
+    setToolsCancelMoveMessage("Отменяем перемещение...", "info");
+    const responseDate = formatDateValue(new Date());
+    const updatedMoves = [...movesPayload.items];
+    updatedMoves[moveIndex] = {
+      ...move,
+      "Дата ответа": responseDate,
+      Ответ: "Отменено",
+      "Отменил": String(user?.full_name ?? "").trim(),
+      "Дата отмены": responseDate,
+    };
+    const movesPath = `./${context.orgFolderName}/Перемещения.json`;
+    const movesPayloadOut = movesPayload.wrapper
+      ? { ...movesPayload.wrapper, [movesPayload.key]: updatedMoves }
+      : updatedMoves;
+    try {
+      await saveJson(movesPath, movesPayloadOut, { user });
+      const usersData = await loadJson(usersFilePath).catch(() => ({ users: [] }));
+      const organizationName = findUserOrganizationName(user, usersData);
+      await notifyMoveCancel({
+        tool,
+        move: updatedMoves[moveIndex],
+        orgFolder: context.orgFolderName,
+        organizationName,
+        canceledBy: String(user?.full_name ?? "").trim(),
+      });
+      setToolsCancelMoveMessage("Перемещение отменено.", "success");
+      await loadUserTools();
+      await refreshPendingMovesIndicator();
+      setTimeout(() => {
+        closeToolsCancelMoveModal();
+      }, 600);
+    } catch (error) {
+      console.error(error);
+      setToolsCancelMoveMessage("Не удалось отменить перемещение.", "error");
+    } finally {
+      toolsCancelMoveState.isSaving = false;
+    }
   };
 
   const resolveMoveFineAmount = (move) => {
@@ -4731,6 +5028,24 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
   });
 
+  if (toolsCancelMoveBackdropEl) {
+    toolsCancelMoveBackdropEl.addEventListener("click", closeToolsCancelMoveModal);
+  }
+  if (toolsCancelMoveCloseButton) {
+    toolsCancelMoveCloseButton.addEventListener("click", closeToolsCancelMoveModal);
+  }
+  if (toolsCancelMoveCancelButton) {
+    toolsCancelMoveCancelButton.addEventListener("click", closeToolsCancelMoveModal);
+  }
+  if (toolsCancelMoveConfirmButton) {
+    toolsCancelMoveConfirmButton.addEventListener("click", applyToolsMoveCancel);
+  }
+  toolsCancelMoveModalEl?.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      closeToolsCancelMoveModal();
+    }
+  });
+
   if (pendingMovesBackdropEl) {
     pendingMovesBackdropEl.addEventListener("click", closePendingMovesModal);
   }
@@ -5190,8 +5505,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         toolsSelectState.suppressClick = false;
         return;
       }
-      if (!toolsState.isSelecting) return;
       const tool = toolsState.toolMap.get(item.dataset.toolId);
+      if (!toolsState.isSelecting) {
+        if (tool?.__pendingMove) {
+          openToolsCancelMoveModal(tool);
+        }
+        return;
+      }
       if (!isToolSelectableForMove(tool)) return;
       const toolId = item.dataset.toolId;
       if (toolsState.selectedIds.has(toolId)) {

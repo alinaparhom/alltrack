@@ -6191,11 +6191,14 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       renderRemovePhotoList();
       return;
     }
-    const isNumericSearch = tokens.every((token) => /^\d+$/.test(token));
+    const numericTokens = tokens
+      .map((token) => token.replace(/\D/g, ""))
+      .filter(Boolean);
+    const isNumericSearch = numericTokens.length === tokens.length;
     if (isNumericSearch) {
       const numberMatches = removePhotoState.tools.filter((tool) => {
         const searchLine = tool.__numberSearchLine ?? "";
-        return tokens.every((token) => searchLine.includes(token));
+        return numericTokens.every((token) => searchLine.includes(token));
       });
       if (numberMatches.length) {
         removePhotoState.filtered = numberMatches;
@@ -6204,7 +6207,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       }
       removePhotoState.filtered = removePhotoState.tools.filter((tool) => {
         const searchLine = tool.__accountingSearchLine ?? "";
-        return tokens.every((token) => searchLine.includes(token));
+        return numericTokens.every((token) => searchLine.includes(token));
       });
       renderRemovePhotoList();
       return;
@@ -6280,9 +6283,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
   };
 
-  const getToolNumberFromFileName = (fileName) => {
-    const match = fileName.match(/^(\d+)(?:[_-]|\.|$)/);
-    return match ? match[1] : "";
+  const getToolNumberPartsFromFileName = (fileName) => {
+    if (!fileName) return [];
+    return Array.from(fileName.matchAll(/\d+/g)).map((match) => match[0]);
   };
 
   const loadToolPhotoFiles = async (orgFolder, toolNumber) => {
@@ -6315,15 +6318,15 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       }
       const extension = decodedName.split(".").pop()?.toLowerCase() || "";
       if (!toolPhotoExtensions.has(extension)) return;
-      const numberPart = getToolNumberFromFileName(decodedName);
-      if (!numberPart) return;
-      const normalized = normalizeToolNumberValue(numberPart);
-      if (
-        !normalizedVariants.has(normalized) &&
-        !normalizedVariants.has(numberPart)
-      ) {
-        return;
-      }
+      const numberParts = getToolNumberPartsFromFileName(decodedName);
+      if (!numberParts.length) return;
+      const hasMatch = numberParts.some((part) => {
+        const normalized = normalizeToolNumberValue(part);
+        return (
+          normalizedVariants.has(normalized) || normalizedVariants.has(part)
+        );
+      });
+      if (!hasMatch) return;
       if (seen.has(decodedName)) return;
       seen.add(decodedName);
       files.push({

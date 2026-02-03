@@ -1453,6 +1453,69 @@
         min-width: 0;
       }
 
+      .repair-form__body {
+        overflow: visible;
+        padding-bottom: 0;
+        scroll-padding-bottom: 0;
+      }
+
+      .repair-form__body.settings-modal__body {
+        overflow: visible;
+        padding-right: 0;
+      }
+
+      .repair-form {
+        display: block;
+      }
+
+      .repair-form.settings-modal__form {
+        display: block;
+        padding: 6px 14px 16px;
+      }
+
+      .repair-form__header {
+        padding-right: 18px;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
+      }
+
+      .repair-form__close {
+        position: static;
+        margin-top: 0;
+        width: 40px;
+        height: 40px;
+        border-radius: 14px;
+        align-self: center;
+      }
+
+      .repair-form textarea.form-input {
+        direction: ltr;
+        text-align: left;
+        unicode-bidi: plaintext;
+      }
+
+      .repair-form__footer {
+        position: static;
+        margin-top: 12px;
+        padding: 12px 0 calc(12px + env(safe-area-inset-bottom));
+        border-top: 1px solid rgba(226, 232, 240, 0.7);
+        background: transparent;
+        display: grid;
+        gap: 10px;
+      }
+
+      .repair-form__actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: nowrap;
+      }
+
+      .repair-form__actions .action-primary,
+      .repair-form__actions .action-secondary {
+        flex: 1 1 0;
+        min-width: 0;
+      }
+
       .breakdown-status__body {
         display: grid;
         gap: 16px;
@@ -1993,7 +2056,22 @@
         display: block;
       }
 
+      .repair-form-modal__panel {
+        height: 100vh;
+        height: 100svh;
+        height: 100dvh;
+        max-height: 100vh;
+        max-height: 100svh;
+        max-height: 100dvh;
+        display: block;
+      }
+
       .breakdown-form-modal {
+        --keyboard-offset: 0px;
+        place-items: stretch;
+      }
+
+      .repair-form-modal {
         --keyboard-offset: 0px;
         place-items: stretch;
       }
@@ -2003,7 +2081,16 @@
         gap: 6px;
       }
 
+      .repair-form-modal.is-input-focus .settings-modal__form {
+        grid-template-rows: none;
+        gap: 6px;
+      }
+
       .breakdown-form-modal.is-input-focus .breakdown-form__body {
+        padding-bottom: 0;
+      }
+
+      .repair-form-modal.is-input-focus .repair-form__body {
         padding-bottom: 0;
       }
 
@@ -2012,7 +2099,18 @@
         margin-top: 8px;
       }
 
+      .repair-form-modal.is-input-focus .repair-form__footer {
+        position: static;
+        margin-top: 8px;
+      }
+
       .breakdown-form-modal.is-input-focus .breakdown-form-modal__panel {
+        height: 100svh;
+        max-height: 100svh;
+        padding-bottom: 0;
+      }
+
+      .repair-form-modal.is-input-focus .repair-form-modal__panel {
         height: 100svh;
         max-height: 100svh;
         padding-bottom: 0;

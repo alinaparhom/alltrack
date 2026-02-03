@@ -996,6 +996,102 @@ export function renderRole(user) {
           </div>
         </div>
         <div
+          class="settings-modal is-hidden repair-form-modal"
+          data-repair-form-modal
+        >
+          <div class="settings-modal__backdrop" data-repair-form-backdrop></div>
+          <div
+            class="settings-modal__panel repair-form-modal__panel"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Отправка в ремонт"
+          >
+            <div class="settings-modal__header repair-form__header">
+              <div class="settings-modal__title">
+                <h2>Отправка в ремонт</h2>
+                <p data-repair-form-subtitle>Проверьте данные инструмента</p>
+              </div>
+              <button
+                class="button-icon repair-form__close"
+                type="button"
+                data-repair-form-close
+                aria-label="Закрыть окно отправки в ремонт"
+              >
+                <span class="button-icon-emoji" aria-hidden="true">✕</span>
+              </button>
+            </div>
+            <form class="settings-modal__form repair-form" data-repair-form>
+              <div class="settings-modal__body repair-form__body">
+                <div class="breakdown-tool-card">
+                  <div class="breakdown-tool-title" data-repair-tool-title>
+                    —
+                  </div>
+                  <div class="breakdown-tool-meta" data-repair-tool-meta></div>
+                </div>
+                <label class="form-field form-field--required">
+                  <span class="form-label">Организация</span>
+                  <div class="suggestions-field">
+                    <input
+                      class="form-input"
+                      type="text"
+                      name="repair-organization"
+                      data-repair-organization
+                      placeholder="Куда отправляем инструмент"
+                      autocomplete="off"
+                      required
+                    />
+                    <div
+                      class="suggestions is-hidden"
+                      data-repair-organization-suggestions
+                    ></div>
+                  </div>
+                </label>
+                <label class="form-field">
+                  <span class="form-label">Предварительное описание ремонта</span>
+                  <textarea
+                    class="form-input"
+                    name="repair-description"
+                    data-repair-description
+                    rows="3"
+                    placeholder="Опишите, что нужно сделать"
+                  ></textarea>
+                </label>
+                <label class="form-field">
+                  <span class="form-label">Предварительная стоимость ремонта</span>
+                  <input
+                    class="form-input"
+                    type="text"
+                    inputmode="decimal"
+                    name="repair-cost"
+                    data-repair-cost
+                    placeholder="Например, 2 500"
+                  />
+                </label>
+              </div>
+              <div class="settings-modal__footer repair-form__footer">
+                <div
+                  class="form-message form-message--inline"
+                  role="status"
+                  aria-live="polite"
+                  data-repair-form-message
+                ></div>
+                <div class="settings-modal__actions repair-form__actions">
+                  <button
+                    class="action-secondary"
+                    type="button"
+                    data-repair-form-cancel
+                  >
+                    Отмена
+                  </button>
+                  <button class="action-primary" type="submit">
+                    Отправить в ремонт
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+        <div
           class="settings-modal is-hidden breakdown-status-modal"
           data-breakdown-status-modal
         >

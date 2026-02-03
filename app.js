@@ -317,6 +317,29 @@ function buildRemovePhotoNumberSearchLine(value) {
   return Array.from(variants).join(" ").toLowerCase();
 }
 
+function buildWriteOffSearchLine(tool) {
+  return [
+    tool?.["Бух.номер"],
+    tool?.["Номер"],
+    tool?.["Наименование"],
+    tool?.["Производитель"],
+    tool?.["Модель"],
+    tool?.["Статус"],
+    tool?.["Объект"],
+    tool?.["Граппа инструментов"],
+  ]
+    .filter((value) => value !== null && value !== undefined && String(value).trim())
+    .join(" ")
+    .toLowerCase();
+}
+
+function buildWriteOffNumberSearchLine(value) {
+  const raw = String(value ?? "").trim();
+  if (!raw) return "";
+  const variants = new Set([raw, ...getToolNumberVariants(raw)]);
+  return Array.from(variants).join(" ").toLowerCase();
+}
+
 const toolPhotoExtensions = new Set(["jpg", "jpeg", "png", "webp"]);
 
 function extractDirectoryListingLinks(html = "") {
@@ -2290,6 +2313,13 @@ function sanitizeToolGroupName(value = "") {
   return String(value).trim().replace(/\s+/g, " ");
 }
 
+function sanitizeFileName(value = "") {
+  return String(value)
+    .trim()
+    .replace(/[\/\\:*?"<>|]+/g, "_")
+    .replace(/\s+/g, "_");
+}
+
 function buildObjectId() {
   return `obj-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
 }
@@ -3417,6 +3447,42 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const toolsCancelMoveMessageEl = contentEl.querySelector(
     "[data-tools-cancel-move-message]"
   );
+  const writeOffModalEl = contentEl.querySelector("[data-writeoff-modal]");
+  const writeOffBackdropEl = contentEl.querySelector("[data-writeoff-backdrop]");
+  const writeOffCloseButton = contentEl.querySelector("[data-writeoff-close]");
+  const writeOffCancelButton = contentEl.querySelector("[data-writeoff-cancel]");
+  const writeOffSearchInput = contentEl.querySelector("[data-writeoff-search]");
+  const writeOffListEl = contentEl.querySelector("[data-writeoff-list]");
+  const writeOffEmptyEl = contentEl.querySelector("[data-writeoff-empty]");
+  const writeOffCountEl = contentEl.querySelector("[data-writeoff-count]");
+  const writeOffSubtitleEl = contentEl.querySelector("[data-writeoff-subtitle]");
+  const writeOffMessageEl = contentEl.querySelector("[data-writeoff-message]");
+  const writeOffNextButton = contentEl.querySelector("[data-writeoff-next]");
+  const writeOffConfirmModalEl = contentEl.querySelector(
+    "[data-writeoff-confirm-modal]"
+  );
+  const writeOffConfirmBackdropEl = contentEl.querySelector(
+    "[data-writeoff-confirm-backdrop]"
+  );
+  const writeOffConfirmCloseButton = contentEl.querySelector(
+    "[data-writeoff-confirm-close]"
+  );
+  const writeOffConfirmCancelButton = contentEl.querySelector(
+    "[data-writeoff-confirm-cancel]"
+  );
+  const writeOffConfirmFormEl = contentEl.querySelector(
+    "[data-writeoff-confirm-form]"
+  );
+  const writeOffConfirmListEl = contentEl.querySelector(
+    "[data-writeoff-confirm-list]"
+  );
+  const writeOffConfirmCountEl = contentEl.querySelector(
+    "[data-writeoff-confirm-count]"
+  );
+  const writeOffConfirmMessageEl = contentEl.querySelector(
+    "[data-writeoff-confirm-message]"
+  );
+  const writeOffActsInput = contentEl.querySelector("[data-writeoff-acts]");
 
   const context = contextOverride || (await resolveUserSettingsContext(user));
   const settingsData = context.settingsData;
@@ -3565,6 +3631,16 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     selectedTool: null,
     toolPhotos: [],
     selectedFiles: new Set(),
+  };
+  const writeOffState = {
+    tools: [],
+    filtered: [],
+    search: "",
+    orgFolder: "",
+    selectedIds: new Set(),
+    toolMap: new Map(),
+    selectedTools: [],
+    isSaving: false,
   };
   let addToolViewportListenersAttached = false;
   const updateAddToolKeyboardOffset = () => {
@@ -4427,6 +4503,523 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     closeToolsCancelMoveModal();
   };
 
+  const setWriteOffSubtitle = (text) => {
+    if (writeOffSubtitleEl) {
+      writeOffSubtitleEl.textContent = text;
+    }
+  };
+
+  const setWriteOffMessage = (text = "", type = "") => {
+    if (!writeOffMessageEl) return;
+    writeOffMessageEl.textContent = text;
+    writeOffMessageEl.classList.remove("is-error", "is-success", "is-info");
+    if (type) {
+      writeOffMessageEl.classList.add(`is-${type}`);
+    }
+  };
+
+  const setWriteOffConfirmMessage = (text = "", type = "") => {
+    if (!writeOffConfirmMessageEl) return;
+    writeOffConfirmMessageEl.textContent = text;
+    writeOffConfirmMessageEl.classList.remove("is-error", "is-success", "is-info");
+    if (type) {
+      writeOffConfirmMessageEl.classList.add(`is-${type}`);
+    }
+  };
+
+  const updateWriteOffSelectionUi = () => {
+    const count = writeOffState.selectedIds.size;
+    if (writeOffCountEl) {
+      writeOffCountEl.textContent = String(count);
+    }
+    if (writeOffNextButton) {
+      writeOffNextButton.disabled = count === 0;
+    }
+  };
+
+  const renderWriteOffList = () => {
+    if (!writeOffListEl) return;
+    writeOffListEl.innerHTML = "";
+    writeOffState.filtered.forEach((tool) => {
+      const item = document.createElement("div");
+      item.className = "writeoff-item";
+      item.dataset.writeoffId = tool.__selectionId;
+      if (writeOffState.selectedIds.has(tool.__selectionId)) {
+        item.classList.add("is-selected");
+      }
+      const check = document.createElement("div");
+      check.className = "writeoff-item__check";
+      check.textContent = writeOffState.selectedIds.has(tool.__selectionId) ? "✓" : "";
+      const content = document.createElement("div");
+      const title = document.createElement("div");
+      title.className = "writeoff-item__title";
+      const accounting = String(tool?.["Бух.номер"] ?? "").trim();
+      const number = String(tool?.["Номер"] ?? "").trim();
+      const name = String(tool?.["Наименование"] ?? "").trim();
+      title.textContent =
+        [accounting || number, name].filter(Boolean).join(" · ") || "Без названия";
+      const meta = document.createElement("div");
+      meta.className = "writeoff-item__meta";
+      meta.textContent = [
+        accounting ? `Бух.номер: ${accounting}` : "",
+        number && number !== accounting ? `Номер: ${number}` : "",
+        tool?.["Объект"],
+        tool?.["Статус"],
+      ]
+        .filter((value) => value && String(value).trim())
+        .join(" · ");
+      content.append(title, meta);
+      item.append(check, content);
+      writeOffListEl.appendChild(item);
+    });
+    if (writeOffEmptyEl) {
+      writeOffEmptyEl.classList.toggle("is-hidden", writeOffState.filtered.length > 0);
+    }
+    updateWriteOffSelectionUi();
+  };
+
+  const applyWriteOffFilters = () => {
+    const query = writeOffState.search.trim();
+    const tokens = query ? query.split(/\s+/).filter(Boolean) : [];
+    if (tokens.length) {
+      const numericTokens = tokens.filter((token) => /\d/.test(token));
+      if (numericTokens.length === tokens.length) {
+        writeOffState.filtered = writeOffState.tools.filter((tool) => {
+          const searchLine = tool.__accountingSearchLine ?? "";
+          return numericTokens.every((token) => searchLine.includes(token));
+        });
+      } else {
+        writeOffState.filtered = writeOffState.tools.filter((tool) => {
+          const searchLine = tool.__searchLine ?? "";
+          return tokens.every((token) => searchLine.includes(token));
+        });
+      }
+    } else {
+      writeOffState.filtered = [...writeOffState.tools];
+    }
+    renderWriteOffList();
+  };
+
+  const loadWriteOffTools = async () => {
+    const orgFolder = context.orgFolderName ?? "";
+    writeOffState.orgFolder = orgFolder;
+    if (!orgFolder) {
+      writeOffState.tools = [];
+      writeOffState.filtered = [];
+      setWriteOffSubtitle("Не удалось определить организацию.");
+      renderWriteOffList();
+      return;
+    }
+    const toolsPath = `./${orgFolder}/База с инструментами.json`;
+    let rawTools = [];
+    try {
+      const raw = await loadJson(toolsPath);
+      rawTools = Array.isArray(raw) ? raw : Array.isArray(raw?.tools) ? raw.tools : [];
+    } catch (error) {
+      console.warn("Не удалось загрузить базу инструментов.", error);
+      rawTools = [];
+    }
+    writeOffState.toolMap.clear();
+    writeOffState.tools = rawTools
+      .map((tool, index) => {
+        const selectionId = buildToolSelectionId(tool, index);
+        const entry = {
+          ...tool,
+          __selectionId: selectionId,
+          __searchLine: buildWriteOffSearchLine(tool),
+          __accountingSearchLine: buildWriteOffNumberSearchLine(
+            tool?.["Бух.номер"]
+          ),
+        };
+        writeOffState.toolMap.set(selectionId, entry);
+        return entry;
+      })
+      .sort((a, b) =>
+        resolveToolNumberValue(a).localeCompare(resolveToolNumberValue(b), "ru", {
+          numeric: true,
+        })
+      );
+    applyWriteOffFilters();
+  };
+
+  const resetWriteOffState = () => {
+    writeOffState.search = "";
+    writeOffState.selectedIds.clear();
+    writeOffState.selectedTools = [];
+    if (writeOffSearchInput) {
+      writeOffSearchInput.value = "";
+    }
+    updateWriteOffSelectionUi();
+  };
+
+  const openWriteOffModal = async () => {
+    if (!writeOffModalEl) return;
+    writeOffModalEl.classList.remove("is-hidden");
+    document.body.style.overflow = "hidden";
+    setWriteOffSubtitle("Загружаем инструменты...");
+    setWriteOffMessage("");
+    resetWriteOffState();
+    await loadWriteOffTools();
+    setWriteOffSubtitle(
+      `Инструментов: ${writeOffState.tools.length}`
+    );
+    if (
+      writeOffSearchInput &&
+      (typeof window === "undefined" ||
+        !window.matchMedia ||
+        !window.matchMedia("(max-width: 520px)").matches)
+    ) {
+      writeOffSearchInput.focus();
+    }
+  };
+
+  const closeWriteOffModal = () => {
+    if (!writeOffModalEl) return;
+    writeOffModalEl.classList.add("is-hidden");
+    document.body.style.overflow = "";
+    setWriteOffMessage("");
+    resetWriteOffState();
+  };
+
+  const renderWriteOffConfirmList = (tools) => {
+    if (!writeOffConfirmListEl) return;
+    writeOffConfirmListEl.innerHTML = "";
+    tools.forEach((tool) => {
+      const accounting = String(tool?.["Бух.номер"] ?? "").trim();
+      const number = String(tool?.["Номер"] ?? "").trim();
+      const name = String(tool?.["Наименование"] ?? "").trim();
+      const item = document.createElement("div");
+      item.className = "writeoff-confirm-item";
+      item.textContent =
+        [accounting || number, name].filter(Boolean).join(" · ") || "Инструмент";
+      writeOffConfirmListEl.appendChild(item);
+    });
+  };
+
+  const openWriteOffConfirmModal = () => {
+    if (!writeOffConfirmModalEl) return;
+    const selectedTools = Array.from(writeOffState.selectedIds)
+      .map((id) => writeOffState.toolMap.get(id))
+      .filter(Boolean);
+    if (!selectedTools.length) {
+      setWriteOffMessage("Сначала выберите инструменты.", "error");
+      return;
+    }
+    writeOffState.selectedTools = selectedTools;
+    renderWriteOffConfirmList(selectedTools);
+    if (writeOffConfirmCountEl) {
+      writeOffConfirmCountEl.textContent = String(selectedTools.length);
+    }
+    if (writeOffActsInput) {
+      writeOffActsInput.value = "";
+    }
+    setWriteOffConfirmMessage("");
+    writeOffConfirmModalEl.classList.remove("is-hidden");
+    document.body.style.overflow = "hidden";
+  };
+
+  const closeWriteOffConfirmModal = () => {
+    if (!writeOffConfirmModalEl) return;
+    writeOffConfirmModalEl.classList.add("is-hidden");
+    setWriteOffConfirmMessage("");
+    if (writeOffModalEl && !writeOffModalEl.classList.contains("is-hidden")) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+  };
+
+  const collectWriteOffMatchKeys = (tools) => {
+    const keys = new Set();
+    tools.forEach((tool) => {
+      const number = String(tool?.["Номер"] ?? "").trim();
+      const accounting = String(tool?.["Бух.номер"] ?? "").trim();
+      if (number) keys.add(`n:${number}`);
+      if (accounting) keys.add(`a:${accounting}`);
+    });
+    return keys;
+  };
+
+  const buildWriteOffFileChunks = (numbers, maxLength = 160) => {
+    const chunks = [];
+    let current = [];
+    let currentLength = 0;
+    numbers.forEach((number) => {
+      const safe = sanitizeFileName(String(number ?? "").trim());
+      if (!safe) return;
+      const nextLength = currentLength ? currentLength + safe.length + 1 : safe.length;
+      if (nextLength > maxLength && current.length) {
+        chunks.push([...current]);
+        current = [safe];
+        currentLength = safe.length;
+      } else {
+        current.push(safe);
+        currentLength = nextLength;
+      }
+    });
+    if (current.length) {
+      chunks.push(current);
+    }
+    return chunks.length ? chunks : [["акт"]];
+  };
+
+  const filterToolPhotoFiles = (files, tools) => {
+    if (!files.length || !tools.length) return [];
+    const variants = new Set();
+    tools.forEach((tool) => {
+      const numbers = [tool?.["Номер"], tool?.["Бух.номер"]];
+      numbers.forEach((value) => {
+        const list = getToolNumberVariants(value);
+        list.forEach((item) =>
+          variants.add(normalizeToolNumberValue(item))
+        );
+      });
+    });
+    return files.filter((fileName) => {
+      const decoded = String(fileName ?? "");
+      const match = decoded.match(/(\d+)/);
+      if (!match) return false;
+      const normalized = normalizeToolNumberValue(match[1]);
+      return normalized && variants.has(normalized);
+    });
+  };
+
+  const applyWriteOff = async () => {
+    if (writeOffState.isSaving) return;
+    const selectedTools = writeOffState.selectedTools.length
+      ? writeOffState.selectedTools
+      : Array.from(writeOffState.selectedIds)
+          .map((id) => writeOffState.toolMap.get(id))
+          .filter(Boolean);
+    if (!selectedTools.length) {
+      setWriteOffConfirmMessage("Сначала выберите инструменты.", "error");
+      return;
+    }
+    const actFiles = Array.from(writeOffActsInput?.files ?? []);
+    if (!actFiles.length) {
+      setWriteOffConfirmMessage("Добавьте акт на списание.", "error");
+      return;
+    }
+    if (!context.orgFolderName) {
+      setWriteOffConfirmMessage("Не удалось определить организацию.", "error");
+      return;
+    }
+    writeOffState.isSaving = true;
+    setWriteOffConfirmMessage("Списываем инструменты...", "info");
+
+    const orgFolder = context.orgFolderName;
+    const toolsPath = `./${orgFolder}/База с инструментами.json`;
+    const writeOffPath = `./${orgFolder}/Списания.json`;
+    const movesPath = `./${orgFolder}/Перемещения.json`;
+    const movesHistoryPath = `./${orgFolder}/Перемещения история.json`;
+    const writeOffDate = formatDateValue(new Date());
+    const writeOffUser = String(user?.full_name ?? "").trim();
+    const matchKeys = collectWriteOffMatchKeys(selectedTools);
+
+    let toolsPayloadRaw = [];
+    try {
+      toolsPayloadRaw = await loadJson(toolsPath);
+    } catch (error) {
+      toolsPayloadRaw = [];
+    }
+    const toolsNormalized = normalizeCollectionPayload(toolsPayloadRaw, "tools");
+    const remainingTools = toolsNormalized.items.filter((tool) => {
+      const number = String(tool?.["Номер"] ?? "").trim();
+      const accounting = String(tool?.["Бух.номер"] ?? "").trim();
+      if (number && matchKeys.has(`n:${number}`)) return false;
+      if (accounting && matchKeys.has(`a:${accounting}`)) return false;
+      return true;
+    });
+    const updatedToolsPayload = toolsNormalized.wrapper
+      ? { ...toolsNormalized.wrapper, [toolsNormalized.key]: remainingTools }
+      : remainingTools;
+
+    let writeOffRaw = [];
+    try {
+      writeOffRaw = await loadJson(writeOffPath);
+    } catch (error) {
+      writeOffRaw = [];
+    }
+    const writeOffNormalized = normalizeCollectionPayload(writeOffRaw, "items");
+    const writeOffEntries = selectedTools.map((tool) => ({
+      ...tool,
+      "Дата списания": writeOffDate,
+      "Списал": writeOffUser,
+    }));
+    const updatedWriteOff = [
+      ...writeOffNormalized.items,
+      ...writeOffEntries,
+    ];
+    const updatedWriteOffPayload = writeOffNormalized.wrapper
+      ? { ...writeOffNormalized.wrapper, [writeOffNormalized.key]: updatedWriteOff }
+      : updatedWriteOff;
+
+    let movesRaw = [];
+    try {
+      movesRaw = await loadJson(movesPath);
+    } catch (error) {
+      movesRaw = [];
+    }
+    const movesNormalized = normalizeCollectionPayload(movesRaw, "moves");
+    const movedFromActive = [];
+    const remainingMoves = movesNormalized.items.filter((move) => {
+      const number = String(move?.["Номер"] ?? "").trim();
+      const accounting = String(move?.["Бух.номер"] ?? "").trim();
+      const shouldMove =
+        (number && matchKeys.has(`n:${number}`)) ||
+        (accounting && matchKeys.has(`a:${accounting}`));
+      if (shouldMove) {
+        movedFromActive.push(move);
+      }
+      return !shouldMove;
+    });
+    const updatedMovesPayload = movesNormalized.wrapper
+      ? { ...movesNormalized.wrapper, [movesNormalized.key]: remainingMoves }
+      : remainingMoves;
+
+    let historyRaw = [];
+    try {
+      historyRaw = await loadJson(movesHistoryPath);
+    } catch (error) {
+      historyRaw = [];
+    }
+    const historyNormalized = normalizeCollectionPayload(historyRaw, "moves");
+    const updatedHistory = [
+      ...historyNormalized.items,
+      ...movedFromActive,
+    ];
+    const updatedHistoryPayload = historyNormalized.wrapper
+      ? { ...historyNormalized.wrapper, [historyNormalized.key]: updatedHistory }
+      : updatedHistory;
+
+    const listToolPhotos = async () => {
+      const payload = JSON.stringify({
+        entries: [
+          {
+            type: "list-photos",
+            path: `${orgFolder}/Фото инструментов`,
+            ...buildUploadUserMeta({ organizationName: context.orgFullName }),
+          },
+        ],
+      });
+      const response = await fetch(saveEndpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: payload,
+      });
+      if (!response.ok) {
+        throw new Error("Не удалось загрузить список фото.");
+      }
+      const responseText = await response.text();
+      if (!responseText) return [];
+      const parsed = JSON.parse(responseText);
+      return Array.isArray(parsed?.files) ? parsed.files : [];
+    };
+
+    const buildActFileName = (base, index, chunkIndex, extension) => {
+      const suffixes = [];
+      if (actFiles.length > 1) {
+        suffixes.push(`акт${index + 1}`);
+      }
+      if (chunkIndex > 0) {
+        suffixes.push(`часть${chunkIndex + 1}`);
+      }
+      const suffix = suffixes.length ? `_${suffixes.join("_")}` : "";
+      return `${base}${suffix}.${extension}`;
+    };
+
+    try {
+      const entries = [
+        { path: toolsPath, data: updatedToolsPayload, user },
+        { path: writeOffPath, data: updatedWriteOffPayload, user },
+        { path: movesPath, data: updatedMovesPayload, user },
+        { path: movesHistoryPath, data: updatedHistoryPayload, user },
+      ];
+      await saveEntries(entries);
+
+      let movedPhotosCount = 0;
+      try {
+        const files = await listToolPhotos();
+        const targetFiles = filterToolPhotoFiles(files, selectedTools);
+        if (targetFiles.length) {
+          const moveEntries = targetFiles.map((fileName) => ({
+            type: "move-file",
+            from: `${orgFolder}/Фото инструментов/${fileName}`,
+            to: `${orgFolder}/Фото инструментов. Списание/${fileName}`,
+            ...buildUploadUserMeta({ organizationName: context.orgFullName }),
+          }));
+          await saveEntriesViaEndpoint(moveEntries);
+          movedPhotosCount = targetFiles.length;
+        }
+      } catch (error) {
+        console.warn("Не удалось перенести фото списания.", error);
+      }
+
+      const numbers = selectedTools
+        .map((tool) => String(tool?.["Бух.номер"] ?? "").trim())
+        .filter(Boolean);
+      if (!numbers.length) {
+        numbers.push(
+          ...selectedTools
+            .map((tool) => String(tool?.["Номер"] ?? "").trim())
+            .filter(Boolean)
+        );
+      }
+      const chunks = buildWriteOffFileChunks(numbers);
+      const fileEntries = [];
+      for (let index = 0; index < actFiles.length; index += 1) {
+        const file = actFiles[index];
+        const base64 = await readFileAsBase64(file);
+        const nameParts = String(file?.name ?? "").split(".");
+        let extension =
+          nameParts.length > 1 ? nameParts.pop().toLowerCase() : "";
+        if (!extension && file?.type) {
+          const typeParts = file.type.split("/");
+          extension = typeParts[typeParts.length - 1] || "";
+        }
+        if (!extension) {
+          extension = "file";
+        }
+        chunks.forEach((chunk, chunkIndex) => {
+          const base = chunk.join("_") || "акт";
+          const fileName = buildActFileName(base, index, chunkIndex, extension);
+          fileEntries.push({
+            type: "file",
+            path: `${orgFolder}/Акты списания/${fileName}`,
+            content: base64,
+            encoding: "base64",
+            ...buildUploadUserMeta({ organizationName: context.orgFullName }),
+          });
+        });
+      }
+      if (fileEntries.length) {
+        await uploadPhotoEntriesInBatches(fileEntries);
+      }
+
+      const photoMessage = movedPhotosCount
+        ? ` Фото перенесено: ${movedPhotosCount}.`
+        : "";
+      setWriteOffConfirmMessage(
+        `Списание выполнено.${photoMessage}`,
+        "success"
+      );
+      await loadWriteOffTools();
+      resetWriteOffState();
+      setTimeout(() => {
+        closeWriteOffConfirmModal();
+        closeWriteOffModal();
+      }, 700);
+    } catch (error) {
+      console.error(error);
+      setWriteOffConfirmMessage(
+        "Не удалось списать инструменты. Проверьте сервер.",
+        "error"
+      );
+    } finally {
+      writeOffState.isSaving = false;
+    }
+  };
+
   const setPendingMovesSubtitle = (text) => {
     if (pendingMovesSubtitleEl) {
       pendingMovesSubtitleEl.textContent = text;
@@ -5102,6 +5695,71 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       closeToolsModal();
     }
   });
+
+  if (writeOffBackdropEl) {
+    writeOffBackdropEl.addEventListener("click", closeWriteOffModal);
+  }
+  if (writeOffCloseButton) {
+    writeOffCloseButton.addEventListener("click", closeWriteOffModal);
+  }
+  if (writeOffCancelButton) {
+    writeOffCancelButton.addEventListener("click", closeWriteOffModal);
+  }
+  writeOffModalEl?.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      closeWriteOffModal();
+    }
+  });
+  if (writeOffSearchInput) {
+    writeOffSearchInput.addEventListener("input", (event) => {
+      writeOffState.search = String(event.target.value ?? "").toLowerCase();
+      applyWriteOffFilters();
+    });
+  }
+  if (writeOffListEl) {
+    writeOffListEl.addEventListener("click", (event) => {
+      const item = event.target.closest("[data-writeoff-id]");
+      if (!item) return;
+      const toolId = item.dataset.writeoffId;
+      if (!toolId) return;
+      if (writeOffState.selectedIds.has(toolId)) {
+        writeOffState.selectedIds.delete(toolId);
+        item.classList.remove("is-selected");
+      } else {
+        writeOffState.selectedIds.add(toolId);
+        item.classList.add("is-selected");
+      }
+      const checkEl = item.querySelector(".writeoff-item__check");
+      if (checkEl) {
+        checkEl.textContent = writeOffState.selectedIds.has(toolId) ? "✓" : "";
+      }
+      updateWriteOffSelectionUi();
+    });
+  }
+  if (writeOffNextButton) {
+    writeOffNextButton.addEventListener("click", openWriteOffConfirmModal);
+  }
+
+  if (writeOffConfirmBackdropEl) {
+    writeOffConfirmBackdropEl.addEventListener("click", closeWriteOffConfirmModal);
+  }
+  if (writeOffConfirmCloseButton) {
+    writeOffConfirmCloseButton.addEventListener("click", closeWriteOffConfirmModal);
+  }
+  if (writeOffConfirmCancelButton) {
+    writeOffConfirmCancelButton.addEventListener("click", closeWriteOffConfirmModal);
+  }
+  writeOffConfirmModalEl?.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      closeWriteOffConfirmModal();
+    }
+  });
+  if (writeOffConfirmFormEl) {
+    writeOffConfirmFormEl.addEventListener("submit", (event) => {
+      event.preventDefault();
+      applyWriteOff();
+    });
+  }
 
   if (toolsCancelMoveBackdropEl) {
     toolsCancelMoveBackdropEl.addEventListener("click", closeToolsCancelMoveModal);
@@ -9151,6 +9809,14 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       targetCard.dataset.actionId === "add-tool"
     ) {
       openAddToolModal();
+      return;
+    }
+    if (
+      !isGrouping &&
+      targetCard.dataset.energyItemType === "action" &&
+      targetCard.dataset.actionId === "write-off"
+    ) {
+      openWriteOffModal();
       return;
     }
     if (blockClick || !isGrouping || !allowGrouping) return;

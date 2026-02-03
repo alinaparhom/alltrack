@@ -90,6 +90,9 @@
       body[data-theme="dark"] .remove-photo-card,
       body[data-theme="dark"] .remove-photo-tool,
       body[data-theme="dark"] .remove-photo-actions,
+      body[data-theme="dark"] .writeoff-item,
+      body[data-theme="dark"] .writeoff-confirm-item,
+      body[data-theme="dark"] .writeoff-confirm-card,
       body[data-theme="dark"] .button-icon,
       body[data-theme="dark"] .button-secondary,
       body[data-theme="dark"] .registration-note,
@@ -2665,6 +2668,136 @@
 
       .tools-list.is-compact .tools-card__media {
         border-radius: 0;
+      }
+
+      .writeoff-modal__panel {
+        width: min(720px, 96vw);
+        max-height: 92vh;
+        display: grid;
+      }
+
+      .writeoff-modal__header,
+      .writeoff-confirm-modal__header {
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
+      }
+
+      .writeoff-modal__body {
+        display: grid;
+        gap: 12px;
+        overflow: hidden;
+      }
+
+      .writeoff-search .form-input {
+        padding: 8px 14px;
+        font-size: 15px;
+      }
+
+      .writeoff-selection {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 14px;
+        border-radius: 999px;
+        background: rgba(59, 130, 246, 0.12);
+        color: #1d4ed8;
+        font-weight: 600;
+        font-size: 13px;
+        width: fit-content;
+      }
+
+      .writeoff-list {
+        display: grid;
+        gap: 10px;
+        overflow: auto;
+        padding-bottom: 10px;
+      }
+
+      .writeoff-item {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        gap: 12px;
+        align-items: center;
+        padding: 12px 14px;
+        border-radius: 16px;
+        border: 1px solid rgba(226, 232, 240, 0.9);
+        background: rgba(255, 255, 255, 0.88);
+        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+
+      .writeoff-item.is-selected {
+        border-color: rgba(59, 130, 246, 0.55);
+        box-shadow: 0 16px 30px rgba(59, 130, 246, 0.16);
+        background: rgba(239, 246, 255, 0.9);
+      }
+
+      .writeoff-item__check {
+        width: 22px;
+        height: 22px;
+        border-radius: 8px;
+        border: 1px solid rgba(148, 163, 184, 0.6);
+        display: grid;
+        place-items: center;
+        font-size: 14px;
+        color: #1d4ed8;
+        background: rgba(255, 255, 255, 0.9);
+      }
+
+      .writeoff-item.is-selected .writeoff-item__check {
+        border-color: rgba(59, 130, 246, 0.7);
+        background: rgba(191, 219, 254, 0.6);
+      }
+
+      .writeoff-item__title {
+        font-size: 15px;
+        font-weight: 700;
+        color: var(--text);
+      }
+
+      .writeoff-item__meta {
+        font-size: 12px;
+        color: var(--muted);
+        margin-top: 4px;
+      }
+
+      .writeoff-confirm-modal__panel {
+        width: min(640px, 96vw);
+        max-height: 92vh;
+      }
+
+      .writeoff-confirm-card {
+        display: grid;
+        gap: 10px;
+      }
+
+      .writeoff-confirm-title {
+        font-weight: 600;
+        color: var(--text);
+      }
+
+      .writeoff-confirm-list {
+        display: grid;
+        gap: 8px;
+        max-height: 240px;
+        overflow: auto;
+      }
+
+      .writeoff-confirm-item {
+        padding: 8px 12px;
+        border-radius: 14px;
+        background: rgba(255, 255, 255, 0.9);
+        border: 1px solid rgba(226, 232, 240, 0.9);
+        font-size: 13px;
+        color: var(--text);
+      }
+
+      .writeoff-confirm-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        justify-content: flex-end;
       }
 
       .tools-card {

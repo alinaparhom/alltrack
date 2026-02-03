@@ -154,6 +154,11 @@
         color: var(--text);
       }
 
+      body[data-theme="dark"] .breakdowns-status-filter select.form-input {
+        color-scheme: dark;
+        background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 20 20'><path d='M5 7l5 6 5-6' fill='none' stroke='%23dfe6f5' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+      }
+
       body[data-theme="dark"] .breakdowns-status-filter select.form-input option,
       body[data-theme="dark"] .breakdowns-status-filter select.form-input optgroup {
         background: rgba(12, 18, 32, 0.96);
@@ -2576,6 +2581,7 @@
 
       .breakdowns-status-filter select.form-input {
         padding-right: 36px;
+        color-scheme: light;
         background: linear-gradient(
           120deg,
           rgba(255, 255, 255, 0.96),

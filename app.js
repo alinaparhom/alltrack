@@ -1133,6 +1133,32 @@ async function sendTelegramPhoto(chatId, photoUrl, caption) {
   return { ok: response.ok, status: response.status, errorText };
 }
 
+async function sendTelegramMediaGroup(chatId, media) {
+  if (!fallbackBotToken || !chatId || !Array.isArray(media) || !media.length) {
+    return { ok: false, status: null, errorText: "некорректные данные" };
+  }
+  const response = await fetch(
+    `https://api.telegram.org/bot${fallbackBotToken}/sendMediaGroup`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chat_id: chatId,
+        media,
+      }),
+    }
+  );
+  const errorText = await parseTelegramError(response);
+  if (!response.ok) {
+    console.warn("Не удалось отправить медиагруппу в Telegram.", {
+      chatId,
+      status: response.status,
+      errorText,
+    });
+  }
+  return { ok: response.ok, status: response.status, errorText };
+}
+
 async function resolveAvailablePhotoUrl(orgFolder, toolNumber) {
   if (!orgFolder || !toolNumber) return null;
   const candidates = buildToolPhotoCandidates(orgFolder, toolNumber);
@@ -1394,21 +1420,45 @@ async function notifyToolBreakdown({
         photoUrls.push(toolPhotoUrl);
       }
     }
+    const uniquePhotoUrls = Array.from(new Set(photoUrls)).slice(0, 10);
     const sendToGroup = async (chatId) => {
-      if (!photoUrls.length) {
+      if (!uniquePhotoUrls.length) {
         await sendTelegramMessage(chatId, message);
         return;
       }
-      let hasSent = false;
-      for (let index = 0; index < photoUrls.length; index += 1) {
-        const caption = index === 0 ? message : "";
-        const result = await sendTelegramPhoto(chatId, photoUrls[index], caption);
-        if (result.ok) {
-          hasSent = true;
+      if (uniquePhotoUrls.length === 1) {
+        const result = await sendTelegramPhoto(
+          chatId,
+          uniquePhotoUrls[0],
+          message
+        );
+        if (!result.ok) {
+          await sendTelegramMessage(chatId, message);
         }
+        return;
       }
-      if (!hasSent) {
-        await sendTelegramMessage(chatId, message);
+      const media = uniquePhotoUrls.map((url, index) => ({
+        type: "photo",
+        media: url,
+        ...(index === 0 ? { caption: message, parse_mode: "HTML" } : {}),
+      }));
+      const result = await sendTelegramMediaGroup(chatId, media);
+      if (!result.ok) {
+        let hasSent = false;
+        for (let index = 0; index < uniquePhotoUrls.length; index += 1) {
+          const caption = index === 0 ? message : "";
+          const fallbackResult = await sendTelegramPhoto(
+            chatId,
+            uniquePhotoUrls[index],
+            caption
+          );
+          if (fallbackResult.ok) {
+            hasSent = true;
+          }
+        }
+        if (!hasSent) {
+          await sendTelegramMessage(chatId, message);
+        }
       }
     };
     await Promise.all(groupIds.map((chatId) => sendToGroup(chatId)));
@@ -3533,6 +3583,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const breakdownsSearchInput = contentEl.querySelector(
     "[data-breakdowns-search]"
   );
+  const breakdownsStatusFilter = contentEl.querySelector(
+    "[data-breakdowns-status-filter]"
+  );
   const breakdownsListEl = contentEl.querySelector("[data-breakdowns-list]");
   const breakdownsEmptyEl = contentEl.querySelector("[data-breakdowns-empty]");
   const breakdownsSubtitleEl = contentEl.querySelector(
@@ -4062,6 +4115,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     selectedTool: null,
     toolMap: new Map(),
     photos: [],
+    statusFilter: "",
     isSaving: false,
   };
   let addToolViewportListenersAttached = false;
@@ -8088,11 +8142,44 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const search = breakdownsState.search.trim();
     const tokens = search ? search.split(/\s+/).filter(Boolean) : [];
     breakdownsState.filtered = breakdownsState.tools.filter((tool) => {
+      if (
+        breakdownsState.statusFilter &&
+        String(tool?.["Статус"] ?? "").trim() !== breakdownsState.statusFilter
+      ) {
+        return false;
+      }
       if (!tokens.length) return true;
       const searchLine = tool.__searchLine ?? "";
       return tokens.every((token) => searchLine.includes(token));
     });
     renderBreakdownsList();
+  };
+
+  const prepareBreakdownsStatusFilter = () => {
+    if (!breakdownsStatusFilter) return;
+    const values = new Set();
+    breakdownsState.tools.forEach((tool) => {
+      const status = String(tool?.["Статус"] ?? "").trim();
+      if (status) values.add(status);
+    });
+    const sortedValues = Array.from(values).sort((a, b) =>
+      a.localeCompare(b, "ru", { numeric: true })
+    );
+    breakdownsStatusFilter.innerHTML = "";
+    const allOption = document.createElement("option");
+    allOption.value = "";
+    allOption.textContent = "Все";
+    breakdownsStatusFilter.appendChild(allOption);
+    sortedValues.forEach((value) => {
+      const option = document.createElement("option");
+      option.value = value;
+      option.textContent = value;
+      breakdownsStatusFilter.appendChild(option);
+    });
+    if (breakdownsState.statusFilter && !values.has(breakdownsState.statusFilter)) {
+      breakdownsState.statusFilter = "";
+    }
+    breakdownsStatusFilter.value = breakdownsState.statusFilter;
   };
 
   const loadBreakdownsTools = async () => {
@@ -8130,6 +8217,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           { numeric: true }
         )
       );
+    prepareBreakdownsStatusFilter();
     applyBreakdownsFilters();
   };
 
@@ -8254,6 +8342,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   if (breakdownsSearchInput) {
     breakdownsSearchInput.addEventListener("input", (event) => {
       breakdownsState.search = String(event.target.value ?? "").toLowerCase();
+      applyBreakdownsFilters();
+    });
+  }
+  if (breakdownsStatusFilter) {
+    breakdownsStatusFilter.addEventListener("change", (event) => {
+      breakdownsState.statusFilter = String(event.target.value ?? "").trim();
       applyBreakdownsFilters();
     });
   }

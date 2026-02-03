@@ -3412,6 +3412,91 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const removePhotoMessageEl = contentEl.querySelector(
     "[data-remove-photo-message]"
   );
+  const breakdownsModalEl = contentEl.querySelector("[data-breakdowns-modal]");
+  const breakdownsBackdropEl = contentEl.querySelector(
+    "[data-breakdowns-backdrop]"
+  );
+  const breakdownsCloseButton = contentEl.querySelector(
+    "[data-breakdowns-close]"
+  );
+  const breakdownsSearchInput = contentEl.querySelector(
+    "[data-breakdowns-search]"
+  );
+  const breakdownsListEl = contentEl.querySelector("[data-breakdowns-list]");
+  const breakdownsEmptyEl = contentEl.querySelector("[data-breakdowns-empty]");
+  const breakdownsSubtitleEl = contentEl.querySelector(
+    "[data-breakdowns-subtitle]"
+  );
+  const breakdownsMessageEl = contentEl.querySelector(
+    "[data-breakdowns-message]"
+  );
+  const breakdownFormModalEl = contentEl.querySelector(
+    "[data-breakdown-form-modal]"
+  );
+  const breakdownFormBackdropEl = contentEl.querySelector(
+    "[data-breakdown-form-backdrop]"
+  );
+  const breakdownFormCloseButton = contentEl.querySelector(
+    "[data-breakdown-form-close]"
+  );
+  const breakdownFormCancelButton = contentEl.querySelector(
+    "[data-breakdown-form-cancel]"
+  );
+  const breakdownFormEl = contentEl.querySelector("[data-breakdown-form]");
+  const breakdownFormSubtitleEl = contentEl.querySelector(
+    "[data-breakdown-form-subtitle]"
+  );
+  const breakdownToolTitleEl = contentEl.querySelector(
+    "[data-breakdown-tool-title]"
+  );
+  const breakdownToolMetaEl = contentEl.querySelector(
+    "[data-breakdown-tool-meta]"
+  );
+  const breakdownDescriptionInput = contentEl.querySelector(
+    "[data-breakdown-description]"
+  );
+  const breakdownPhotoInput = contentEl.querySelector(
+    "[data-breakdown-photo-input]"
+  );
+  const breakdownPhotoPreviewEl = contentEl.querySelector(
+    "[data-breakdown-photo-preview]"
+  );
+  const breakdownPhotoCountEl = contentEl.querySelector(
+    "[data-breakdown-photo-count]"
+  );
+  const breakdownCameraTrigger = contentEl.querySelector(
+    "[data-breakdown-camera-trigger]"
+  );
+  const breakdownFormMessageEl = contentEl.querySelector(
+    "[data-breakdown-form-message]"
+  );
+  const breakdownCameraModalEl = contentEl.querySelector(
+    "[data-breakdown-camera-modal]"
+  );
+  const breakdownCameraBackdropEl = contentEl.querySelector(
+    "[data-breakdown-camera-backdrop]"
+  );
+  const breakdownCameraCloseButton = contentEl.querySelector(
+    "[data-breakdown-camera-close]"
+  );
+  const breakdownCameraCancelButton = contentEl.querySelector(
+    "[data-breakdown-camera-cancel]"
+  );
+  const breakdownCameraCaptureButton = contentEl.querySelector(
+    "[data-breakdown-camera-capture]"
+  );
+  const breakdownCameraRetakeButton = contentEl.querySelector(
+    "[data-breakdown-camera-retake]"
+  );
+  const breakdownCameraSaveButton = contentEl.querySelector(
+    "[data-breakdown-camera-save]"
+  );
+  const breakdownCameraVideoEl = contentEl.querySelector(
+    "[data-breakdown-camera-video]"
+  );
+  const breakdownCameraCanvasEl = contentEl.querySelector(
+    "[data-breakdown-camera-canvas]"
+  );
   const addToolModalEl = contentEl.querySelector("[data-add-tool-modal]");
   const addToolBackdropEl = contentEl.querySelector("[data-add-tool-backdrop]");
   const addToolCloseButton = contentEl.querySelector("[data-add-tool-close]");
@@ -3853,6 +3938,16 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     selectedIds: new Set(),
     toolMap: new Map(),
     selectedTools: [],
+    isSaving: false,
+  };
+  const breakdownsState = {
+    tools: [],
+    filtered: [],
+    search: "",
+    orgFolder: "",
+    selectedTool: null,
+    toolMap: new Map(),
+    photos: [],
     isSaving: false,
   };
   let addToolViewportListenersAttached = false;
@@ -7581,6 +7676,630 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   if (removePhotoDeleteButton) {
     removePhotoDeleteButton.addEventListener("click", handleRemovePhotoDelete);
   }
+  const setBreakdownsSubtitle = (text) => {
+    if (breakdownsSubtitleEl) {
+      breakdownsSubtitleEl.textContent = text;
+    }
+  };
+
+  const setBreakdownsMessage = (text = "", tone = "") => {
+    if (!breakdownsMessageEl) return;
+    breakdownsMessageEl.textContent = text;
+    breakdownsMessageEl.classList.remove("is-error", "is-success", "is-info");
+    if (tone) {
+      breakdownsMessageEl.classList.add(`is-${tone}`);
+    }
+  };
+
+  const setBreakdownFormMessage = (text = "", tone = "") => {
+    if (!breakdownFormMessageEl) return;
+    breakdownFormMessageEl.textContent = text;
+    breakdownFormMessageEl.classList.remove("is-error", "is-success", "is-info");
+    if (tone) {
+      breakdownFormMessageEl.classList.add(`is-${tone}`);
+    }
+  };
+
+  const clearBreakdownPhotoPreview = () => {
+    if (!breakdownPhotoPreviewEl) return;
+    breakdownPhotoPreviewEl.querySelectorAll("img").forEach((img) => {
+      const url = img.dataset.objectUrl;
+      if (url) {
+        URL.revokeObjectURL(url);
+      }
+    });
+    breakdownPhotoPreviewEl.innerHTML = "";
+  };
+
+  const updateBreakdownPhotoPreview = () => {
+    if (!breakdownPhotoPreviewEl) return;
+    clearBreakdownPhotoPreview();
+    if (breakdownPhotoCountEl) {
+      breakdownPhotoCountEl.textContent = String(breakdownsState.photos.length);
+    }
+    breakdownsState.photos.forEach((file, index) => {
+      const item = document.createElement("div");
+      item.className = "breakdown-photo-item";
+
+      const img = document.createElement("img");
+      const objectUrl = URL.createObjectURL(file);
+      img.src = objectUrl;
+      img.alt = "Фото поломки";
+      img.dataset.objectUrl = objectUrl;
+      item.appendChild(img);
+
+      const removeButton = document.createElement("button");
+      removeButton.type = "button";
+      removeButton.className = "breakdown-photo-remove";
+      removeButton.textContent = "×";
+      removeButton.setAttribute("aria-label", "Удалить фото");
+      removeButton.addEventListener("click", () => {
+        breakdownsState.photos.splice(index, 1);
+        updateBreakdownPhotoPreview();
+      });
+      item.appendChild(removeButton);
+      breakdownPhotoPreviewEl.appendChild(item);
+    });
+  };
+
+  const buildBreakdownPhotoFileName = (toolNumber, dateValue, file) => {
+    const rawNumber = String(toolNumber ?? "").trim() || "без_номера";
+    const nameParts = String(file?.name ?? "").split(".");
+    const nameExtension =
+      nameParts.length > 1 ? nameParts[nameParts.length - 1] : "";
+    let extension = nameExtension;
+    if (!extension && file?.type) {
+      const typeParts = file.type.split("/");
+      extension = typeParts[typeParts.length - 1] ?? "";
+    }
+    const safeExtension = extension || "jpg";
+    const suffix = buildRandomSuffix(2);
+    const baseName = `${rawNumber}_${dateValue}_${suffix}.${safeExtension}`;
+    return sanitizePhotoFileName(baseName);
+  };
+
+  let breakdownCameraStream = null;
+  let breakdownCameraBlob = null;
+
+  const resetBreakdownCameraUI = () => {
+    if (breakdownCameraVideoEl) {
+      breakdownCameraVideoEl.classList.remove("is-hidden");
+    }
+    if (breakdownCameraCanvasEl) {
+      breakdownCameraCanvasEl.classList.add("is-hidden");
+    }
+    breakdownCameraCaptureButton?.classList.remove("is-hidden");
+    breakdownCameraRetakeButton?.classList.add("is-hidden");
+    breakdownCameraSaveButton?.classList.add("is-hidden");
+    breakdownCameraBlob = null;
+  };
+
+  const stopBreakdownCameraStream = () => {
+    if (breakdownCameraStream) {
+      breakdownCameraStream.getTracks().forEach((track) => track.stop());
+      breakdownCameraStream = null;
+    }
+    if (breakdownCameraVideoEl) {
+      breakdownCameraVideoEl.srcObject = null;
+    }
+  };
+
+  const openBreakdownCameraModal = async () => {
+    if (!breakdownCameraModalEl) return false;
+    breakdownCameraModalEl.classList.remove("is-hidden");
+    resetBreakdownCameraUI();
+    try {
+      breakdownCameraStream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: "environment" } },
+        audio: false,
+      });
+      if (breakdownCameraVideoEl) {
+        breakdownCameraVideoEl.srcObject = breakdownCameraStream;
+        await breakdownCameraVideoEl.play();
+      }
+      return true;
+    } catch (error) {
+      console.warn("Не удалось открыть камеру для поломки.", error);
+      stopBreakdownCameraStream();
+      breakdownCameraModalEl.classList.add("is-hidden");
+      return false;
+    }
+  };
+
+  const closeBreakdownCameraModal = () => {
+    if (!breakdownCameraModalEl) return;
+    breakdownCameraModalEl.classList.add("is-hidden");
+    stopBreakdownCameraStream();
+    resetBreakdownCameraUI();
+  };
+
+  const captureBreakdownCameraFrame = () => {
+    if (!breakdownCameraVideoEl || !breakdownCameraCanvasEl) return;
+    const width = breakdownCameraVideoEl.videoWidth;
+    const height = breakdownCameraVideoEl.videoHeight;
+    if (!width || !height) return;
+    breakdownCameraCanvasEl.width = width;
+    breakdownCameraCanvasEl.height = height;
+    const context = breakdownCameraCanvasEl.getContext("2d");
+    if (!context) return;
+    context.drawImage(breakdownCameraVideoEl, 0, 0, width, height);
+    breakdownCameraCanvasEl.classList.remove("is-hidden");
+    breakdownCameraVideoEl.classList.add("is-hidden");
+    breakdownCameraCaptureButton?.classList.add("is-hidden");
+    breakdownCameraRetakeButton?.classList.remove("is-hidden");
+    breakdownCameraSaveButton?.classList.remove("is-hidden");
+    breakdownCameraCanvasEl.toBlob(
+      (blob) => {
+        breakdownCameraBlob = blob;
+      },
+      "image/jpeg",
+      0.92
+    );
+  };
+
+  const applyBreakdownCameraSnapshot = () => {
+    if (!breakdownCameraBlob) return;
+    const fileName = `breakdown_${Date.now()}.jpg`;
+    const photoFile = new File([breakdownCameraBlob], fileName, {
+      type: breakdownCameraBlob.type || "image/jpeg",
+    });
+    breakdownsState.photos.push(photoFile);
+    updateBreakdownPhotoPreview();
+    closeBreakdownCameraModal();
+  };
+
+  const renderBreakdownsTable = (items) => {
+    const table = document.createElement("div");
+    table.className = "tools-table tools-table--breakdowns";
+
+    items.forEach((tool) => {
+      const row = document.createElement("div");
+      row.className = "tools-table__row";
+      row.dataset.breakdownsToolId = tool.__breakdownId;
+      applyToolStatusClasses(row, tool);
+
+      const numberCell = document.createElement("div");
+      numberCell.className = "tools-table__cell tools-table__cell--number";
+      const number = resolveToolNumberValue(tool);
+      numberCell.textContent = number || "—";
+
+      const infoCell = document.createElement("div");
+      infoCell.className = "tools-table__cell";
+      const title = document.createElement("div");
+      title.className = "tools-table__title";
+      const name = String(tool?.["Наименование"] ?? "").trim();
+      title.textContent = name || "Без названия";
+
+      const meta = document.createElement("div");
+      meta.className = "tools-table__meta tools-table__meta--stack";
+      const manufacturer = String(tool?.["Производитель"] ?? "").trim();
+      const model = String(tool?.["Модель"] ?? "").trim();
+      const accountingNumber = String(tool?.["Бух.номер"] ?? "").trim();
+      const status = String(tool?.["Статус"] ?? "").trim();
+      const lineTop = document.createElement("div");
+      lineTop.textContent = [
+        `Производитель: ${manufacturer || "—"}`,
+        `Модель: ${model || "—"}`,
+      ].join(" · ");
+      const lineBottom = document.createElement("div");
+      lineBottom.textContent = [
+        `Бух.номер: ${accountingNumber || "—"}`,
+        `Статус: ${status || "—"}`,
+      ].join(" · ");
+      meta.append(lineTop, lineBottom);
+      infoCell.append(title, meta);
+
+      const actionCell = document.createElement("div");
+      actionCell.className = "tools-table__cell tools-table__cell--action";
+      const actionButton = document.createElement("button");
+      actionButton.type = "button";
+      actionButton.className = "action-primary breakdowns-action-button";
+      actionButton.dataset.breakdownsSelect = tool.__breakdownId;
+      const isBroken =
+        String(tool?.["Статус"] ?? "").trim().toLowerCase() === "сломан";
+      actionButton.textContent = isBroken ? "Уже сломан" : "Отметить";
+      actionButton.disabled = isBroken;
+      actionCell.appendChild(actionButton);
+
+      row.append(numberCell, infoCell, actionCell);
+      table.appendChild(row);
+    });
+    return table;
+  };
+
+  const renderBreakdownsList = () => {
+    if (!breakdownsListEl) return;
+    breakdownsListEl.innerHTML = "";
+    breakdownsListEl.appendChild(renderBreakdownsTable(breakdownsState.filtered));
+    if (breakdownsEmptyEl) {
+      breakdownsEmptyEl.classList.toggle(
+        "is-hidden",
+        breakdownsState.filtered.length > 0
+      );
+    }
+    setBreakdownsSubtitle(
+      `Показано ${breakdownsState.filtered.length} из ${breakdownsState.tools.length}`
+    );
+  };
+
+  const applyBreakdownsFilters = () => {
+    const search = breakdownsState.search.trim();
+    const tokens = search ? search.split(/\s+/).filter(Boolean) : [];
+    breakdownsState.filtered = breakdownsState.tools.filter((tool) => {
+      if (!tokens.length) return true;
+      const searchLine = tool.__searchLine ?? "";
+      return tokens.every((token) => searchLine.includes(token));
+    });
+    renderBreakdownsList();
+  };
+
+  const loadBreakdownsTools = async () => {
+    const orgFolder = context.orgFolderName ?? "";
+    breakdownsState.orgFolder = orgFolder;
+    if (!orgFolder) {
+      breakdownsState.tools = [];
+      breakdownsState.filtered = [];
+      setBreakdownsSubtitle("Не удалось определить организацию.");
+      renderBreakdownsList();
+      return;
+    }
+    const tools = await loadToolsData(orgFolder);
+    const userName = normalizePersonName(user?.full_name ?? user?.fullName ?? "");
+    breakdownsState.toolMap = new Map();
+    breakdownsState.tools = tools
+      .filter((tool) => {
+        if (!userName) return true;
+        return normalizePersonName(tool?.["Ответственный"] ?? "") === userName;
+      })
+      .map((tool, index) => {
+        const enhanced = {
+          ...tool,
+          __searchLine: buildToolSearchLine(tool),
+          __breakdownId: buildToolSelectionId(tool, index),
+          __statusTone: resolveToolStatusTone(tool),
+        };
+        breakdownsState.toolMap.set(enhanced.__breakdownId, enhanced);
+        return enhanced;
+      })
+      .sort((a, b) =>
+        String(resolveToolNumberValue(a) ?? "").localeCompare(
+          String(resolveToolNumberValue(b) ?? ""),
+          "ru",
+          { numeric: true }
+        )
+      );
+    applyBreakdownsFilters();
+  };
+
+  const resetBreakdownForm = () => {
+    breakdownFormEl?.reset();
+    breakdownsState.photos = [];
+    breakdownsState.selectedTool = null;
+    updateBreakdownPhotoPreview();
+    setBreakdownFormMessage("");
+  };
+
+  const openBreakdownFormModal = (tool) => {
+    if (!breakdownFormModalEl || !tool) return;
+    breakdownsState.selectedTool = tool;
+    breakdownsState.photos = [];
+    updateBreakdownPhotoPreview();
+    const number = resolveToolNumberValue(tool);
+    const name = String(tool?.["Наименование"] ?? "").trim();
+    if (breakdownFormSubtitleEl) {
+      breakdownFormSubtitleEl.textContent = `Инструмент №${number || "—"} · ${
+        name || "Без названия"
+      }`;
+    }
+    if (breakdownToolTitleEl) {
+      breakdownToolTitleEl.textContent = name || "Инструмент";
+    }
+    if (breakdownToolMetaEl) {
+      const manufacturer = String(tool?.["Производитель"] ?? "").trim();
+      const model = String(tool?.["Модель"] ?? "").trim();
+      const accountingNumber = String(tool?.["Бух.номер"] ?? "").trim();
+      const status = String(tool?.["Статус"] ?? "").trim();
+      breakdownToolMetaEl.textContent = [
+        `Бух.номер: ${accountingNumber || "—"}`,
+        `Производитель: ${manufacturer || "—"}`,
+        `Модель: ${model || "—"}`,
+        `Статус: ${status || "—"}`,
+      ].join(" · ");
+    }
+    setBreakdownFormMessage("");
+    breakdownFormModalEl.classList.remove("is-hidden");
+    document.body.style.overflow = "hidden";
+    breakdownDescriptionInput?.focus();
+  };
+
+  const closeBreakdownFormModal = () => {
+    if (!breakdownFormModalEl) return;
+    breakdownFormModalEl.classList.add("is-hidden");
+    resetBreakdownForm();
+    if (breakdownsModalEl && !breakdownsModalEl.classList.contains("is-hidden")) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+  };
+
+  const openBreakdownsModal = async () => {
+    if (!breakdownsModalEl) return;
+    breakdownsModalEl.classList.remove("is-hidden");
+    document.body.style.overflow = "hidden";
+    setBreakdownsSubtitle("Загружаем список...");
+    setBreakdownsMessage("");
+    await loadBreakdownsTools();
+    if (
+      breakdownsSearchInput &&
+      (typeof window === "undefined" ||
+        !window.matchMedia ||
+        !window.matchMedia("(max-width: 520px)").matches)
+    ) {
+      breakdownsSearchInput.focus();
+    }
+  };
+
+  const closeBreakdownsModal = () => {
+    if (!breakdownsModalEl) return;
+    breakdownsModalEl.classList.add("is-hidden");
+    document.body.style.overflow = "";
+  };
+
+  const syncBrokenStatusInToolsState = (tool) => {
+    if (!tool) return;
+    const number = normalizeToolNumberValue(tool?.["Номер"] ?? "");
+    const accounting = String(tool?.["Бух.номер"] ?? "").trim();
+    const updateTool = (entry) => {
+      const entryNumber = normalizeToolNumberValue(entry?.["Номер"] ?? "");
+      const entryAccounting = String(entry?.["Бух.номер"] ?? "").trim();
+      if (
+        (number && entryNumber === number) ||
+        (accounting && entryAccounting === accounting)
+      ) {
+        return { ...entry, "Статус": "Сломан", __statusTone: "broken" };
+      }
+      return entry;
+    };
+    if (toolsState.tools.length) {
+      toolsState.tools = toolsState.tools.map(updateTool);
+      toolsState.filtered = toolsState.filtered.map(updateTool);
+      if (toolsModalEl && !toolsModalEl.classList.contains("is-hidden")) {
+        applyToolsFilters();
+      }
+    }
+    breakdownsState.tools = breakdownsState.tools.map(updateTool);
+    breakdownsState.filtered = breakdownsState.filtered.map(updateTool);
+  };
+
+  if (breakdownsBackdropEl) {
+    breakdownsBackdropEl.addEventListener("click", closeBreakdownsModal);
+  }
+  if (breakdownsCloseButton) {
+    breakdownsCloseButton.addEventListener("click", closeBreakdownsModal);
+  }
+  breakdownsModalEl?.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      closeBreakdownsModal();
+    }
+  });
+  if (breakdownsSearchInput) {
+    breakdownsSearchInput.addEventListener("input", (event) => {
+      breakdownsState.search = String(event.target.value ?? "").toLowerCase();
+      applyBreakdownsFilters();
+    });
+  }
+  if (breakdownsListEl) {
+    breakdownsListEl.addEventListener("click", (event) => {
+      const button = event.target.closest("[data-breakdowns-select]");
+      if (!button) return;
+      const toolId = button.dataset.breakdownsSelect;
+      if (!toolId) return;
+      const tool = breakdownsState.toolMap.get(toolId);
+      openBreakdownFormModal(tool);
+    });
+  }
+  if (breakdownFormBackdropEl) {
+    breakdownFormBackdropEl.addEventListener("click", closeBreakdownFormModal);
+  }
+  if (breakdownFormCloseButton) {
+    breakdownFormCloseButton.addEventListener("click", closeBreakdownFormModal);
+  }
+  if (breakdownFormCancelButton) {
+    breakdownFormCancelButton.addEventListener("click", closeBreakdownFormModal);
+  }
+  if (breakdownPhotoInput) {
+    breakdownPhotoInput.addEventListener("change", (event) => {
+      const files = Array.from(event.target.files ?? []);
+      if (!files.length) return;
+      breakdownsState.photos.push(...files);
+      breakdownPhotoInput.value = "";
+      updateBreakdownPhotoPreview();
+    });
+  }
+  if (breakdownCameraTrigger) {
+    breakdownCameraTrigger.addEventListener("click", async () => {
+      if (!navigator.mediaDevices?.getUserMedia) {
+        setBreakdownFormMessage(
+          "Камера недоступна. Выберите фото из галереи.",
+          "info"
+        );
+        return;
+      }
+      const opened = await openBreakdownCameraModal();
+      if (!opened) {
+        setBreakdownFormMessage(
+          "Камера недоступна. Выберите фото из галереи.",
+          "info"
+        );
+      }
+    });
+  }
+  if (breakdownCameraBackdropEl) {
+    breakdownCameraBackdropEl.addEventListener(
+      "click",
+      closeBreakdownCameraModal
+    );
+  }
+  if (breakdownCameraCloseButton) {
+    breakdownCameraCloseButton.addEventListener(
+      "click",
+      closeBreakdownCameraModal
+    );
+  }
+  if (breakdownCameraCancelButton) {
+    breakdownCameraCancelButton.addEventListener(
+      "click",
+      closeBreakdownCameraModal
+    );
+  }
+  if (breakdownCameraCaptureButton) {
+    breakdownCameraCaptureButton.addEventListener(
+      "click",
+      captureBreakdownCameraFrame
+    );
+  }
+  if (breakdownCameraRetakeButton) {
+    breakdownCameraRetakeButton.addEventListener("click", () => {
+      resetBreakdownCameraUI();
+      breakdownCameraVideoEl?.play();
+    });
+  }
+  if (breakdownCameraSaveButton) {
+    breakdownCameraSaveButton.addEventListener(
+      "click",
+      applyBreakdownCameraSnapshot
+    );
+  }
+
+  if (breakdownFormEl) {
+    breakdownFormEl.noValidate = true;
+    breakdownFormEl.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      if (breakdownsState.isSaving) {
+        setBreakdownFormMessage("Сохранение уже выполняется. Подождите…", "info");
+        return;
+      }
+      const tool = breakdownsState.selectedTool;
+      if (!tool) {
+        setBreakdownFormMessage("Инструмент не выбран.", "error");
+        return;
+      }
+      const description = String(breakdownDescriptionInput?.value ?? "").trim();
+      if (!description) {
+        setBreakdownFormMessage("Введите описание поломки.", "error");
+        breakdownDescriptionInput?.focus();
+        return;
+      }
+      const orgFolder = breakdownsState.orgFolder ?? "";
+      if (!orgFolder) {
+        setBreakdownFormMessage("Не удалось определить организацию.", "error");
+        return;
+      }
+      breakdownsState.isSaving = true;
+      setBreakdownFormMessage("Сохраняем данные...", "info");
+      try {
+        const toolsPath = `./${orgFolder}/База с инструментами.json`;
+        const breakdownsPath = `./${orgFolder}/Поломки.json`;
+        const [rawTools, rawBreakdowns] = await Promise.all([
+          loadJson(toolsPath).catch(() => []),
+          loadJson(breakdownsPath).catch(() => []),
+        ]);
+        const tools = normalizeToolsData(rawTools);
+        const breakdowns = Array.isArray(rawBreakdowns)
+          ? rawBreakdowns
+          : Array.isArray(rawBreakdowns?.breakdowns)
+            ? rawBreakdowns.breakdowns
+            : [];
+        const selectedNumber = normalizeToolNumberValue(tool?.["Номер"] ?? "");
+        const selectedAccounting = String(tool?.["Бух.номер"] ?? "").trim();
+        const toolIndex = tools.findIndex((entry) => {
+          const entryNumber = normalizeToolNumberValue(entry?.["Номер"] ?? "");
+          const entryAccounting = String(entry?.["Бух.номер"] ?? "").trim();
+          if (selectedNumber && entryNumber === selectedNumber) return true;
+          if (selectedAccounting && entryAccounting === selectedAccounting) {
+            return true;
+          }
+          return false;
+        });
+        if (toolIndex < 0) {
+          setBreakdownFormMessage("Инструмент не найден в базе.", "error");
+          breakdownsState.isSaving = false;
+          return;
+        }
+
+        const dateValue = formatDateValue(new Date());
+        const markerRaw = String(
+          user?.full_name ?? user?.fullName ?? currentUser?.full_name ?? ""
+        ).trim();
+        const marker = markerRaw ? formatFullName(markerRaw) : "Пользователь";
+        const updatedTools = [...tools];
+        updatedTools[toolIndex] = {
+          ...updatedTools[toolIndex],
+          "Статус": "Сломан",
+        };
+        const breakdownEntry = {
+          "Номер": String(tool?.["Номер"] ?? "").trim(),
+          "Бух.номер": String(tool?.["Бух.номер"] ?? "").trim(),
+          "Серийный номер": String(tool?.["Серийный номер"] ?? "").trim(),
+          "Дата поломки": dateValue,
+          "Описание поломки": description,
+          "Ответственный": String(tool?.["Ответственный"] ?? "").trim(),
+          "Пользователь, который пометил поломку": marker,
+        };
+        const updatedBreakdowns = [...breakdowns, breakdownEntry];
+        const meta = buildUploadUserMeta({ organizationName: context.orgFullName });
+        await saveEntries([
+          { path: toolsPath, data: updatedTools, ...meta },
+          { path: breakdownsPath, data: updatedBreakdowns, ...meta },
+        ]);
+
+        if (breakdownsState.photos.length) {
+          setBreakdownFormMessage("Загружаем фото...", "info");
+          const photoEntries = [];
+          for (const file of breakdownsState.photos) {
+            const safeName = buildBreakdownPhotoFileName(
+              tool?.["Номер"] ?? "",
+              dateValue,
+              file
+            );
+            const content = await readFileAsBase64(file);
+            photoEntries.push({
+              type: "file",
+              path: `${orgFolder}/Фото поломок/${safeName}`,
+              content,
+              encoding: "base64",
+              mime: file.type || "image/*",
+              ...meta,
+            });
+          }
+          await uploadPhotoEntriesInBatches(photoEntries, {
+            onBatch: (currentBatch, totalBatches) => {
+              setBreakdownFormMessage(
+                `Загружаем фото (${currentBatch}/${totalBatches})...`,
+                "info"
+              );
+            },
+          });
+        }
+
+        syncBrokenStatusInToolsState(tool);
+        setBreakdownsMessage("Поломка сохранена.", "success");
+        closeBreakdownFormModal();
+        await loadBreakdownsTools();
+      } catch (error) {
+        console.error(error);
+        const reason =
+          error instanceof Error && error.message
+            ? `Причина: ${error.message}`
+            : "Проверьте сервер.";
+        setBreakdownFormMessage(`Не удалось сохранить. ${reason}`, "error");
+      } finally {
+        breakdownsState.isSaving = false;
+      }
+    });
+  }
+
   if (objectsCancelButton) {
     objectsCancelButton.addEventListener("click", () => {
       resetObjectsForm();
@@ -10045,6 +10764,14 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       targetCard.dataset.actionId === "write-off"
     ) {
       openWriteOffModal();
+      return;
+    }
+    if (
+      !isGrouping &&
+      targetCard.dataset.energyItemType === "action" &&
+      targetCard.dataset.actionId === "breakdowns"
+    ) {
+      openBreakdownsModal();
       return;
     }
     if (blockClick || !isGrouping || !allowGrouping) return;

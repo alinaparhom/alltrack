@@ -8602,9 +8602,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
     const tools = await loadToolsData(orgFolder);
     const userName = normalizePersonName(user?.full_name ?? user?.fullName ?? "");
+    const canManageAllTools = user?.role === energyRole;
     repairState.toolMap = new Map();
     repairState.tools = tools
       .filter((tool) => {
+        if (canManageAllTools) return true;
         if (!userName) return true;
         return normalizePersonName(tool?.["Ответственный"] ?? "") === userName;
       })
@@ -8686,9 +8688,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
     const tools = await loadToolsData(orgFolder);
     const userName = normalizePersonName(user?.full_name ?? user?.fullName ?? "");
+    const canManageAllTools = user?.role === energyRole;
     breakdownsState.toolMap = new Map();
     breakdownsState.tools = tools
       .filter((tool) => {
+        if (canManageAllTools) return true;
         if (!userName) return true;
         return normalizePersonName(tool?.["Ответственный"] ?? "") === userName;
       })

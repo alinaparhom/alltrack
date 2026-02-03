@@ -906,15 +906,25 @@ export function renderRole(user) {
               </button>
             </div>
             <div class="settings-modal__body tools-modal__body">
-              <label class="tools-search breakdowns-search">
-                <input
-                  class="form-input tools-search__input"
-                  type="search"
-                  placeholder="Поиск по номеру, названию, модели..."
-                  data-breakdowns-search
-                  autocomplete="off"
-                />
-              </label>
+              <div class="tools-controls">
+                <div class="tools-controls__row">
+                  <label class="tools-search breakdowns-search">
+                    <input
+                      class="form-input tools-search__input"
+                      type="search"
+                      placeholder="Поиск по номеру, названию, модели..."
+                      data-breakdowns-search
+                      autocomplete="off"
+                    />
+                  </label>
+                  <label class="tools-quick-filter breakdowns-status-filter">
+                    <span>Статус</span>
+                    <select class="form-input" data-breakdowns-status-filter>
+                      <option value="">Все</option>
+                    </select>
+                  </label>
+                </div>
+              </div>
               <div class="tools-list is-table breakdowns-list" data-breakdowns-list></div>
               <div class="tools-empty is-hidden" data-breakdowns-empty>
                 Инструменты не найдены. Попробуйте другой поиск.

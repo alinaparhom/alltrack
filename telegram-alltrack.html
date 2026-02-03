@@ -1384,10 +1384,49 @@
         padding-bottom: calc(12px + env(safe-area-inset-bottom));
       }
 
+      .breakdown-form {
+        display: block;
+      }
+
+      .breakdown-form__header {
+        padding-right: 64px;
+      }
+
+      .breakdown-form__close {
+        position: absolute;
+        top: calc(16px + env(safe-area-inset-top));
+        right: 16px;
+        width: 40px;
+        height: 40px;
+        border-radius: 14px;
+      }
+
       .breakdown-form textarea.form-input {
         direction: ltr;
         text-align: left;
         unicode-bidi: plaintext;
+      }
+
+      .breakdown-form__footer {
+        position: static;
+        margin-top: 12px;
+        padding: 12px 4px calc(12px + env(safe-area-inset-bottom));
+        border-top: 1px solid rgba(226, 232, 240, 0.7);
+        background: transparent;
+        display: grid;
+        gap: 10px;
+      }
+
+      .breakdown-form__actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: nowrap;
+      }
+
+      .breakdown-form__actions .action-primary,
+      .breakdown-form__actions .action-secondary {
+        flex: 1 1 0;
+        min-width: 0;
       }
 
       .form-label {
@@ -1909,13 +1948,16 @@
       .breakdown-form-modal__panel {
         height: 100vh;
         height: 100svh;
+        height: 100dvh;
         max-height: 100vh;
         max-height: 100svh;
+        max-height: 100dvh;
         grid-template-rows: auto 1fr auto;
       }
 
       .breakdown-form-modal {
         --keyboard-offset: 0px;
+        place-items: stretch;
       }
 
       .breakdown-form-modal.is-input-focus .settings-modal__form {
@@ -1930,6 +1972,10 @@
       .breakdown-form-modal.is-input-focus .breakdown-form__footer {
         position: static;
         margin-top: 8px;
+      }
+
+      .breakdown-form-modal.is-input-focus .breakdown-form-modal__panel {
+        padding-bottom: calc(8px + var(--keyboard-offset));
       }
 
       .add-tool-modal.is-input-focus .add-tool-modal__panel {

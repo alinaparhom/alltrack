@@ -362,14 +362,18 @@ function extractFileNameFromHref(href = "") {
   return parts[parts.length - 1] || "";
 }
 
-async function resolvePhotoUrlFromDirectoryListing(orgFolder, toolNumber) {
+async function resolvePhotoUrlFromDirectoryListingInFolder(
+  orgFolder,
+  folderName,
+  toolNumber
+) {
   if (!orgFolder || !toolNumber) return null;
   const variants = getToolNumberVariants(toolNumber);
   if (!variants.length) return null;
   const normalizedVariants = new Set(
     variants.map((variant) => normalizeToolNumberValue(variant))
   );
-  const folderPath = `./${orgFolder}/Фото инструментов/`;
+  const folderPath = `./${orgFolder}/${folderName}/`;
   let response;
   try {
     response = await fetch(folderPath, { cache: "no-store" });
@@ -409,7 +413,15 @@ async function resolvePhotoUrlFromDirectoryListing(orgFolder, toolNumber) {
   return null;
 }
 
-function buildToolPhotoCandidates(orgFolder, toolNumber) {
+async function resolvePhotoUrlFromDirectoryListing(orgFolder, toolNumber) {
+  return await resolvePhotoUrlFromDirectoryListingInFolder(
+    orgFolder,
+    "Фото инструментов",
+    toolNumber
+  );
+}
+
+function buildToolPhotoCandidatesForFolder(orgFolder, folderName, toolNumber) {
   if (!orgFolder) return [];
   const variants = getToolNumberVariants(toolNumber);
   if (!variants.length) return [];
@@ -419,11 +431,19 @@ function buildToolPhotoCandidates(orgFolder, toolNumber) {
   variants.forEach((variant) => {
     suffixes.forEach((suffix) => {
       extensions.forEach((ext) => {
-        candidates.push(`./${orgFolder}/Фото инструментов/${variant}${suffix}.${ext}`);
+        candidates.push(`./${orgFolder}/${folderName}/${variant}${suffix}.${ext}`);
       });
     });
   });
   return candidates;
+}
+
+function buildToolPhotoCandidates(orgFolder, toolNumber) {
+  return buildToolPhotoCandidatesForFolder(
+    orgFolder,
+    "Фото инструментов",
+    toolNumber
+  );
 }
 
 const toolPhotoPlaceholder = `data:image/svg+xml;utf8,${encodeURIComponent(
@@ -909,6 +929,46 @@ function buildMoveDecisionNotificationMessage(
   return lines.join("\n");
 }
 
+function buildWriteOffNotificationMessage(
+  tool,
+  { writeOffDate, wroteOffBy } = {}
+) {
+  const titleParts = [
+    formatNotificationValue(tool?.["Наименование"], ""),
+    formatNotificationValue(tool?.["Производитель"], ""),
+    formatNotificationValue(tool?.["Модель"], ""),
+  ]
+    .map((part) => part.trim())
+    .filter(Boolean);
+  const titleLine = titleParts.length ? titleParts.join(" ") : "—";
+  const lines = [
+    "🧾🧾🧾<b><u>СПИСАНИЕ ИНСТРУМЕНТА</u></b>",
+    `1. Номер: ${escapeTelegramHtml(
+      formatNotificationValue(tool?.["Номер"])
+    )}`,
+    `2. Бух.номер: ${escapeTelegramHtml(
+      formatNotificationValue(tool?.["Бух.номер"])
+    )}`,
+    `3. ${escapeTelegramHtml(titleLine)}`,
+    `4. Стоимость: ${escapeTelegramHtml(
+      formatNotificationCost(tool?.["Стоимость"])
+    )}`,
+    `5. Ответственный: ${escapeTelegramHtml(
+      formatNotificationValue(tool?.["Ответственный"])
+    )}`,
+    `6. Объект: ${escapeTelegramHtml(
+      formatNotificationValue(tool?.["Объект"])
+    )}`,
+    `7. Дата списания: ${escapeTelegramHtml(
+      formatNotificationValue(writeOffDate)
+    )}`,
+    `8. Списал: ${escapeTelegramHtml(
+      formatNotificationValue(wroteOffBy)
+    )}`,
+  ];
+  return lines.join("\n");
+}
+
 function buildMoveCancelResponsibleMessage(
   tool,
   { movedBy, canceledBy, targetObject, oldObject, moveReason } = {}
@@ -1054,6 +1114,44 @@ async function resolveAvailablePhotoUrl(orgFolder, toolNumber) {
   return await resolvePhotoUrlFromDirectoryListing(orgFolder, toolNumber);
 }
 
+async function resolveWriteOffPhotoUrl(orgFolder, toolNumber) {
+  if (!orgFolder || !toolNumber) return null;
+  const candidates = [
+    ...buildToolPhotoCandidatesForFolder(
+      orgFolder,
+      "Фото инструментов. Списание",
+      toolNumber
+    ),
+    ...buildToolPhotoCandidatesForFolder(
+      orgFolder,
+      "Фото инструментов",
+      toolNumber
+    ),
+  ];
+  if (!candidates.length) return null;
+  for (const candidate of candidates) {
+    try {
+      const headResponse = await fetch(candidate, { method: "HEAD" });
+      if (headResponse.ok) {
+        return new URL(candidate, window.location.href).toString();
+      }
+      const getResponse = await fetch(candidate, { cache: "no-store" });
+      if (getResponse.ok) {
+        return new URL(candidate, window.location.href).toString();
+      }
+    } catch (error) {
+      continue;
+    }
+  }
+  const fromWriteOff = await resolvePhotoUrlFromDirectoryListingInFolder(
+    orgFolder,
+    "Фото инструментов. Списание",
+    toolNumber
+  );
+  if (fromWriteOff) return fromWriteOff;
+  return await resolvePhotoUrlFromDirectoryListing(orgFolder, toolNumber);
+}
+
 function buildDeclinePhotoUrl(orgFolder, fileName) {
   if (!orgFolder || !fileName) return "";
   const folderSegment = encodeURIComponent("Фото отказов");
@@ -1091,6 +1189,121 @@ async function notifyNewToolRegistration({
   } catch (error) {
     console.warn("Не удалось отправить уведомление о новом инструменте.", error);
   }
+}
+
+async function notifyWriteOffTool({
+  tool,
+  orgFolder,
+  organizationName,
+  writeOffDate,
+  wroteOffBy,
+}) {
+  const result = {
+    sent: false,
+    reasons: [],
+  };
+  if (!tool || !orgFolder) {
+    result.reasons.push("не переданы данные о списании");
+    return result;
+  }
+  if (!fallbackBotToken) {
+    result.reasons.push("не задан токен Telegram‑бота");
+    return result;
+  }
+  const settingsPath = `./${orgFolder}/Настройки.json`;
+  try {
+    const settingsData = await loadJson(settingsPath);
+    const groupsEnabled = isNotificationEnabled(settingsData, "writeOff");
+    const groupIds = groupsEnabled
+      ? extractNotificationGroups(settingsData, "writeOff")
+      : [];
+    const writeOffMessage = buildWriteOffNotificationMessage(tool, {
+      writeOffDate,
+      wroteOffBy,
+      organizationName,
+    });
+    let groupSent = false;
+    const groupErrors = [];
+    if (!groupsEnabled) {
+      result.reasons.push("уведомления в группах выключены в Настройки.json");
+    } else if (!groupIds.length) {
+      result.reasons.push("не выбраны группы для уведомлений");
+    } else {
+      const shouldAttach = isNotificationPhotoEnabled(settingsData, "writeOff");
+      if (shouldAttach) {
+        const photoNumber = resolveToolPhotoNumberForNotification(tool);
+        const photoUrl = await resolveWriteOffPhotoUrl(orgFolder, photoNumber);
+        if (photoUrl) {
+          const sendResults = await Promise.all(
+            groupIds.map(async (chatId) => {
+              const photoResult = await sendTelegramPhoto(
+                chatId,
+                photoUrl,
+                writeOffMessage
+              );
+              if (photoResult.ok) return { ok: true };
+              groupErrors.push(formatTelegramSendError(photoResult));
+              const messageResult = await sendTelegramMessage(
+                chatId,
+                writeOffMessage
+              );
+              if (!messageResult.ok) {
+                groupErrors.push(formatTelegramSendError(messageResult));
+              }
+              return messageResult;
+            })
+          );
+          groupSent = sendResults.some((entry) => entry?.ok);
+        } else {
+          const sendResults = await Promise.all(
+            groupIds.map(async (chatId) => {
+              const messageResult = await sendTelegramMessage(
+                chatId,
+                writeOffMessage
+              );
+              if (!messageResult.ok) {
+                groupErrors.push(formatTelegramSendError(messageResult));
+              }
+              return messageResult;
+            })
+          );
+          groupSent = sendResults.some((entry) => entry?.ok);
+        }
+      } else {
+        const sendResults = await Promise.all(
+          groupIds.map(async (chatId) => {
+            const messageResult = await sendTelegramMessage(
+              chatId,
+              writeOffMessage
+            );
+            if (!messageResult.ok) {
+              groupErrors.push(formatTelegramSendError(messageResult));
+            }
+            return messageResult;
+          })
+        );
+        groupSent = sendResults.some((entry) => entry?.ok);
+      }
+      if (!groupSent) {
+        const uniqueErrors = Array.from(new Set(groupErrors.filter(Boolean)));
+        if (uniqueErrors.length) {
+          result.reasons.push(
+            `не удалось отправить уведомление в группы (${uniqueErrors.join(
+              "; "
+            )})`
+          );
+        } else {
+          result.reasons.push("не удалось отправить уведомление в группы");
+        }
+      }
+    }
+    result.sent = groupSent;
+  } catch (error) {
+    console.warn("Не удалось отправить уведомление о списании.", error);
+    const message = error?.message ? `: ${error.message}` : "";
+    result.reasons.push(`ошибка при отправке уведомлений${message}`);
+  }
+  return result;
 }
 
 function findUserTelegramId(usersData, { fullName, organization }) {
@@ -4999,9 +5212,24 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const photoMessage = movedPhotosCount
         ? ` Фото перенесено: ${movedPhotosCount}.`
         : "";
+      const notificationResults = await Promise.all(
+        selectedTools.map((tool) =>
+          notifyWriteOffTool({
+            tool,
+            orgFolder,
+            organizationName: context.orgFullName,
+            writeOffDate,
+            wroteOffBy: writeOffUser,
+          })
+        )
+      );
+      const notificationStatus = analyzeNotificationResults(notificationResults);
+      const notificationSummary = notificationStatus.summary
+        ? ` ${notificationStatus.summary}`
+        : "";
       setWriteOffConfirmMessage(
-        `Списание выполнено.${photoMessage}`,
-        "success"
+        `Списание выполнено.${photoMessage}${notificationSummary}`,
+        notificationStatus.allSent ? "success" : "error"
       );
       await loadWriteOffTools();
       resetWriteOffState();

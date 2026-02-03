@@ -2524,6 +2524,17 @@
         box-shadow: 0 12px 24px rgba(15, 23, 42, 0.08);
       }
 
+      .breakdowns-status-filter {
+        flex: 1 1 100%;
+        min-width: 0;
+        padding: 0;
+        min-height: unset;
+        border: none;
+        background: transparent;
+        box-shadow: none;
+        align-content: center;
+      }
+
       .tools-quick-filter .form-input {
         font-size: 13px;
         font-weight: 500;
@@ -2537,6 +2548,23 @@
         border-radius: 12px;
       }
 
+      .breakdowns-status-filter .form-input {
+        padding: 4px 24px 4px 0;
+        border-radius: 0;
+        border: none;
+        border-bottom: 1px solid rgba(148, 163, 184, 0.45);
+        background: transparent;
+        box-shadow: none;
+        font-size: 15px;
+        font-weight: 600;
+        color: #0f172a;
+      }
+
+      .breakdowns-status-filter .form-input:focus {
+        outline: none;
+        border-bottom-color: rgba(99, 102, 241, 0.7);
+      }
+
       .tools-quick-filter select.form-input {
         appearance: none;
         padding-right: 36px;
@@ -2548,6 +2576,14 @@
         box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.6),
           0 10px 24px rgba(15, 23, 42, 0.08);
         backdrop-filter: blur(10px);
+      }
+
+      .breakdowns-status-filter select.form-input {
+        padding-right: 22px;
+        background-position: right 0 center;
+        background-color: transparent;
+        box-shadow: none;
+        border: none;
       }
 
       .tools-actions {

@@ -6289,25 +6289,35 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   };
 
   const loadToolPhotoFiles = async (orgFolder, ...toolNumbers) => {
-    if (!orgFolder) return [];
+    if (!orgFolder) return { files: [], errorMessage: "" };
     const numbers = toolNumbers
       .flat()
       .map((value) => String(value ?? "").trim())
       .filter(Boolean);
-    if (!numbers.length) return [];
+    if (!numbers.length) return { files: [], errorMessage: "" };
     const variants = numbers.flatMap((value) => getToolNumberVariants(value));
-    if (!variants.length) return [];
+    if (!variants.length) return { files: [], errorMessage: "" };
     const normalizedVariants = new Set(
       variants.map((variant) => normalizeToolNumberValue(variant))
     );
     const folderPath = `./${orgFolder}/Фото инструментов/`;
     let response;
+    let errorMessage = "";
     try {
       response = await fetch(folderPath, { cache: "no-store" });
     } catch (error) {
-      return [];
+      console.warn("Не удалось загрузить каталог фото.", error);
+      return {
+        files: [],
+        errorMessage: "Не удалось загрузить каталог фото. Проверьте подключение.",
+      };
     }
-    if (!response.ok) return [];
+    if (!response.ok) {
+      return {
+        files: [],
+        errorMessage: `Не удалось загрузить каталог фото. Код ответа: ${response.status}.`,
+      };
+    }
     const html = await response.text();
     const links = extractDirectoryListingLinks(html);
     const files = [];
@@ -6339,7 +6349,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         url: `./${orgFolder}/Фото инструментов/${encodeURIComponent(decodedName)}`,
       });
     });
-    return files.sort((a, b) => a.name.localeCompare(b.name, "ru", { numeric: true }));
+    return {
+      files: files.sort((a, b) =>
+        a.name.localeCompare(b.name, "ru", { numeric: true })
+      ),
+      errorMessage,
+    };
   };
 
   const updateRemovePhotoSelection = () => {
@@ -6424,13 +6439,18 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const primaryPhotoNumber = resolveToolPhotoNumber(tool);
     const numberValue = String(tool?.["Номер"] ?? "").trim();
     const accountingNumber = String(tool?.["Бух.номер"] ?? "").trim();
-    removePhotoState.toolPhotos = await loadToolPhotoFiles(
+    const { files, errorMessage } = await loadToolPhotoFiles(
       removePhotoState.orgFolder,
       primaryPhotoNumber,
       numberValue,
       accountingNumber
     );
-    setRemovePhotoMessage("");
+    removePhotoState.toolPhotos = files;
+    if (errorMessage) {
+      setRemovePhotoMessage(errorMessage, "error");
+    } else {
+      setRemovePhotoMessage("");
+    }
     renderRemovePhotoPhotos();
   };
 

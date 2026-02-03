@@ -286,6 +286,7 @@ function resolveTargetPath(array $entry, array $allowedFiles): string {
     "Перемещения история.json",
     "Штрафы.json",
     "Списания.json",
+    "Поломки.json",
   ];
   if (!in_array($fileName, $orgScopedFiles, true)) {
     http_response_code(403);
@@ -372,6 +373,7 @@ function resolveFilePathValue(string $path, array $entry): string {
     "Накладные покупка",
     "Фото отказов",
     "Акты списания",
+    "Фото поломок",
   ];
   if (!in_array($photoFolderSafe, $allowedFolders, true)) {
     http_response_code(403);
@@ -449,6 +451,7 @@ function resolvePhotoFolderPath(array $entry): string {
     "Накладные покупка",
     "Фото отказов",
     "Акты списания",
+    "Фото поломок",
   ];
   if (!in_array($photoFolderSafe, $allowedFolders, true)) {
     http_response_code(403);

@@ -1380,13 +1380,23 @@
       }
 
       .breakdown-form__body {
-        overflow-y: auto;
-        padding-bottom: calc(12px + env(safe-area-inset-bottom));
-        scroll-padding-bottom: calc(24px + env(safe-area-inset-bottom));
+        overflow: visible;
+        padding-bottom: 0;
+        scroll-padding-bottom: 0;
+      }
+
+      .breakdown-form__body.settings-modal__body {
+        overflow: visible;
+        padding-right: 0;
       }
 
       .breakdown-form {
         display: block;
+      }
+
+      .breakdown-form.settings-modal__form {
+        display: block;
+        padding: 6px 14px 16px;
       }
 
       .breakdown-form__header {
@@ -1413,7 +1423,7 @@
       .breakdown-form__footer {
         position: static;
         margin-top: 12px;
-        padding: 12px 4px calc(12px + env(safe-area-inset-bottom));
+        padding: 12px 0 calc(12px + env(safe-area-inset-bottom));
         border-top: 1px solid rgba(226, 232, 240, 0.7);
         background: transparent;
         display: grid;
@@ -1955,7 +1965,7 @@
         max-height: 100vh;
         max-height: 100svh;
         max-height: 100dvh;
-        grid-template-rows: auto 1fr auto;
+        display: block;
       }
 
       .breakdown-form-modal {
@@ -1964,12 +1974,12 @@
       }
 
       .breakdown-form-modal.is-input-focus .settings-modal__form {
-        grid-template-rows: minmax(0, 1fr) auto;
+        grid-template-rows: none;
         gap: 6px;
       }
 
       .breakdown-form-modal.is-input-focus .breakdown-form__body {
-        padding-bottom: calc(16px + env(safe-area-inset-bottom) + var(--keyboard-offset));
+        padding-bottom: 0;
       }
 
       .breakdown-form-modal.is-input-focus .breakdown-form__footer {
@@ -1980,7 +1990,7 @@
       .breakdown-form-modal.is-input-focus .breakdown-form-modal__panel {
         height: 100svh;
         max-height: 100svh;
-        padding-bottom: calc(8px + var(--keyboard-offset));
+        padding-bottom: 0;
       }
 
       .add-tool-modal.is-input-focus .add-tool-modal__panel {
@@ -2492,15 +2502,26 @@
 
       .tools-quick-filter {
         display: grid;
-        gap: 4px;
+        gap: 6px;
+        align-content: center;
         font-size: 11px;
         font-weight: 600;
         color: var(--muted);
         text-transform: uppercase;
         letter-spacing: 0.04em;
-        flex: 0 1 160px;
-        min-width: 120px;
+        flex: 1 1 220px;
+        min-width: 180px;
         align-self: center;
+        padding: 10px 14px;
+        min-height: 72px;
+        border-radius: 16px;
+        border: 1px solid rgba(226, 232, 240, 0.9);
+        background: linear-gradient(
+          120deg,
+          rgba(255, 255, 255, 0.92),
+          rgba(240, 246, 255, 0.85)
+        );
+        box-shadow: 0 12px 24px rgba(15, 23, 42, 0.08);
       }
 
       .tools-quick-filter .form-input {
@@ -2512,6 +2533,8 @@
         min-height: unset;
         height: auto;
         line-height: 1.2;
+        width: 100%;
+        border-radius: 12px;
       }
 
       .tools-quick-filter select.form-input {

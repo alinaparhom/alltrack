@@ -939,6 +939,62 @@ export function renderRole(user) {
             </div>
           </div>
         </div>
+        <div class="tools-modal settings-modal is-hidden breakdowns-modal repair-modal" data-repair-modal>
+          <div class="settings-modal__backdrop" data-repair-backdrop></div>
+          <div
+            class="settings-modal__panel tools-modal__panel breakdowns-modal__panel repair-modal__panel"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Ремонт"
+          >
+            <div class="settings-modal__header tools-modal__header">
+              <div class="settings-modal__title">
+                <h2>Ремонт</h2>
+                <p data-repair-subtitle>Выберите инструмент для ремонта</p>
+              </div>
+              <button
+                class="button-icon tools-modal__close"
+                type="button"
+                data-repair-close
+                aria-label="Закрыть список инструментов"
+              >
+                <span class="button-icon-emoji" aria-hidden="true">✕</span>
+              </button>
+            </div>
+            <div class="settings-modal__body tools-modal__body">
+              <div class="tools-controls">
+                <div class="tools-controls__row">
+                  <label class="tools-search breakdowns-search">
+                    <input
+                      class="form-input tools-search__input"
+                      type="search"
+                      placeholder="Поиск по номеру, названию, модели..."
+                      data-repair-search
+                      autocomplete="off"
+                    />
+                  </label>
+                </div>
+                <div class="tools-controls__row">
+                  <label class="tools-quick-filter breakdowns-status-filter">
+                    <span>По статусу</span>
+                    <select
+                      class="form-input"
+                      data-repair-status-filter
+                      aria-label="Статус"
+                    >
+                      <option value="">Всё</option>
+                    </select>
+                  </label>
+                </div>
+              </div>
+              <div class="tools-list is-table breakdowns-list" data-repair-list></div>
+              <div class="tools-empty is-hidden" data-repair-empty>
+                Инструменты не найдены. Попробуйте другой поиск.
+              </div>
+              <div class="form-message" data-repair-message></div>
+            </div>
+          </div>
+        </div>
         <div
           class="settings-modal is-hidden breakdown-status-modal"
           data-breakdown-status-modal

@@ -3677,6 +3677,17 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const breakdownsMessageEl = contentEl.querySelector(
     "[data-breakdowns-message]"
   );
+  const repairModalEl = contentEl.querySelector("[data-repair-modal]");
+  const repairBackdropEl = contentEl.querySelector("[data-repair-backdrop]");
+  const repairCloseButton = contentEl.querySelector("[data-repair-close]");
+  const repairSearchInput = contentEl.querySelector("[data-repair-search]");
+  const repairStatusFilter = contentEl.querySelector(
+    "[data-repair-status-filter]"
+  );
+  const repairListEl = contentEl.querySelector("[data-repair-list]");
+  const repairEmptyEl = contentEl.querySelector("[data-repair-empty]");
+  const repairSubtitleEl = contentEl.querySelector("[data-repair-subtitle]");
+  const repairMessageEl = contentEl.querySelector("[data-repair-message]");
   const breakdownStatusModalEl = contentEl.querySelector(
     "[data-breakdown-status-modal]"
   );
@@ -4229,6 +4240,14 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     statusFilter: "",
     isSaving: false,
     isStatusSaving: false,
+  };
+  const repairState = {
+    tools: [],
+    filtered: [],
+    search: "",
+    orgFolder: "",
+    statusFilter: "",
+    toolMap: new Map(),
   };
   let addToolViewportListenersAttached = false;
   let breakdownViewportListenersAttached = false;
@@ -8017,6 +8036,21 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
   };
 
+  const setRepairSubtitle = (text) => {
+    if (repairSubtitleEl) {
+      repairSubtitleEl.textContent = text;
+    }
+  };
+
+  const setRepairMessage = (text = "", tone = "") => {
+    if (!repairMessageEl) return;
+    repairMessageEl.textContent = text;
+    repairMessageEl.classList.remove("is-error", "is-success", "is-info");
+    if (tone) {
+      repairMessageEl.classList.add(`is-${tone}`);
+    }
+  };
+
   const setBreakdownFormMessage = (text = "", tone = "") => {
     if (!breakdownFormMessageEl) return;
     breakdownFormMessageEl.textContent = text;
@@ -8278,6 +8312,150 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       return tokens.every((token) => searchLine.includes(token));
     });
     renderBreakdownsList();
+  };
+
+  const renderRepairTable = (items) => {
+    const table = document.createElement("div");
+    table.className = "tools-table tools-table--breakdowns";
+
+    items.forEach((tool) => {
+      const row = document.createElement("div");
+      row.className = "tools-table__row";
+      row.dataset.repairToolId = tool.__repairId;
+      row.setAttribute("role", "button");
+      row.tabIndex = 0;
+      applyToolStatusClasses(row, tool);
+
+      const numberCell = document.createElement("div");
+      numberCell.className = "tools-table__cell tools-table__cell--number";
+      const number = resolveToolNumberValue(tool);
+      numberCell.textContent = number || "—";
+
+      const infoCell = document.createElement("div");
+      infoCell.className = "tools-table__cell";
+      const title = document.createElement("div");
+      title.className = "tools-table__title";
+      const name = String(tool?.["Наименование"] ?? "").trim();
+      title.textContent = name || "Без названия";
+
+      const meta = document.createElement("div");
+      meta.className = "tools-table__meta tools-table__meta--stack";
+      const manufacturer = String(tool?.["Производитель"] ?? "").trim();
+      const model = String(tool?.["Модель"] ?? "").trim();
+      const accountingNumber = String(tool?.["Бух.номер"] ?? "").trim();
+      const status = String(tool?.["Статус"] ?? "").trim();
+      const lineTop = document.createElement("div");
+      lineTop.textContent = [
+        `Производитель: ${manufacturer || "—"}`,
+        `Модель: ${model || "—"}`,
+      ].join(" · ");
+      const lineBottom = document.createElement("div");
+      lineBottom.textContent = [
+        `Бух.номер: ${accountingNumber || "—"}`,
+        `Статус: ${status || "—"}`,
+      ].join(" · ");
+      meta.append(lineTop, lineBottom);
+      infoCell.append(title, meta);
+
+      row.append(numberCell, infoCell);
+      table.appendChild(row);
+    });
+    return table;
+  };
+
+  const renderRepairList = () => {
+    if (!repairListEl) return;
+    repairListEl.innerHTML = "";
+    repairListEl.appendChild(renderRepairTable(repairState.filtered));
+    if (repairEmptyEl) {
+      repairEmptyEl.classList.toggle("is-hidden", repairState.filtered.length > 0);
+    }
+    setRepairSubtitle(
+      `Показано ${repairState.filtered.length} из ${repairState.tools.length}`
+    );
+  };
+
+  const applyRepairFilters = () => {
+    const search = repairState.search.trim();
+    const tokens = search ? search.split(/\s+/).filter(Boolean) : [];
+    repairState.filtered = repairState.tools.filter((tool) => {
+      if (
+        repairState.statusFilter &&
+        String(tool?.["Статус"] ?? "").trim() !== repairState.statusFilter
+      ) {
+        return false;
+      }
+      if (!tokens.length) return true;
+      const searchLine = tool.__searchLine ?? "";
+      return tokens.every((token) => searchLine.includes(token));
+    });
+    renderRepairList();
+  };
+
+  const prepareRepairStatusFilter = () => {
+    if (!repairStatusFilter) return;
+    const values = new Set();
+    repairState.tools.forEach((tool) => {
+      const status = String(tool?.["Статус"] ?? "").trim();
+      if (status) values.add(status);
+    });
+    const sortedValues = Array.from(values).sort((a, b) =>
+      a.localeCompare(b, "ru", { numeric: true })
+    );
+    repairStatusFilter.innerHTML = "";
+    const allOption = document.createElement("option");
+    allOption.value = "";
+    allOption.textContent = "Все";
+    repairStatusFilter.appendChild(allOption);
+    sortedValues.forEach((value) => {
+      const option = document.createElement("option");
+      option.value = value;
+      option.textContent = value;
+      repairStatusFilter.appendChild(option);
+    });
+    if (repairState.statusFilter && !values.has(repairState.statusFilter)) {
+      repairState.statusFilter = "";
+    }
+    repairStatusFilter.value = repairState.statusFilter;
+  };
+
+  const loadRepairTools = async () => {
+    const orgFolder = context.orgFolderName ?? "";
+    repairState.orgFolder = orgFolder;
+    if (!orgFolder) {
+      repairState.tools = [];
+      repairState.filtered = [];
+      setRepairSubtitle("Не удалось определить организацию.");
+      renderRepairList();
+      return;
+    }
+    const tools = await loadToolsData(orgFolder);
+    const userName = normalizePersonName(user?.full_name ?? user?.fullName ?? "");
+    repairState.toolMap = new Map();
+    repairState.tools = tools
+      .filter((tool) => {
+        if (!userName) return true;
+        return normalizePersonName(tool?.["Ответственный"] ?? "") === userName;
+      })
+      .map((tool, index) => {
+        const enhanced = {
+          ...tool,
+          __searchLine: buildToolSearchLine(tool),
+          __repairId: buildToolSelectionId(tool, index),
+          __statusTone: resolveToolStatusTone(tool),
+        };
+        repairState.toolMap.set(enhanced.__repairId, enhanced);
+        return enhanced;
+      })
+      .sort((a, b) =>
+        String(resolveToolNumberValue(a) ?? "").localeCompare(
+          String(resolveToolNumberValue(b) ?? ""),
+          "ru",
+          { numeric: true }
+        )
+      );
+    prepareRepairStatusFilter();
+    applyRepairFilters();
   };
 
   const prepareBreakdownsStatusFilter = () => {
@@ -8697,6 +8875,29 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     setBreakdownStatusMessage("Неизвестное действие.", "error");
   };
 
+  const openRepairModal = async () => {
+    if (!repairModalEl) return;
+    repairModalEl.classList.remove("is-hidden");
+    document.body.style.overflow = "hidden";
+    setRepairSubtitle("Загружаем список...");
+    setRepairMessage("");
+    await loadRepairTools();
+    if (
+      repairSearchInput &&
+      (typeof window === "undefined" ||
+        !window.matchMedia ||
+        !window.matchMedia("(max-width: 520px)").matches)
+    ) {
+      repairSearchInput.focus();
+    }
+  };
+
+  const closeRepairModal = () => {
+    if (!repairModalEl) return;
+    repairModalEl.classList.add("is-hidden");
+    document.body.style.overflow = "";
+  };
+
   const openBreakdownsModal = async () => {
     if (!breakdownsModalEl) return;
     breakdownsModalEl.classList.remove("is-hidden");
@@ -8752,6 +8953,16 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         breakdownsState.toolMap.set(key, updated);
       }
     });
+    repairState.tools = repairState.tools.map(updateTool);
+    repairState.filtered = repairState.filtered.map(updateTool);
+    repairState.toolMap.forEach((value, key) => {
+      const updated = updateTool(value);
+      if (updated !== value) {
+        repairState.toolMap.set(key, updated);
+      }
+    });
+    prepareRepairStatusFilter();
+    applyRepairFilters();
     prepareBreakdownsStatusFilter();
     applyBreakdownsFilters();
   };
@@ -8760,6 +8971,29 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     syncToolStatusInStates(tool, "Сломан");
   };
 
+  if (repairBackdropEl) {
+    repairBackdropEl.addEventListener("click", closeRepairModal);
+  }
+  if (repairCloseButton) {
+    repairCloseButton.addEventListener("click", closeRepairModal);
+  }
+  repairModalEl?.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      closeRepairModal();
+    }
+  });
+  if (repairSearchInput) {
+    repairSearchInput.addEventListener("input", (event) => {
+      repairState.search = String(event.target.value ?? "").toLowerCase();
+      applyRepairFilters();
+    });
+  }
+  if (repairStatusFilter) {
+    repairStatusFilter.addEventListener("change", (event) => {
+      repairState.statusFilter = String(event.target.value ?? "").trim();
+      applyRepairFilters();
+    });
+  }
   if (breakdownsBackdropEl) {
     breakdownsBackdropEl.addEventListener("click", closeBreakdownsModal);
   }
@@ -11557,6 +11791,14 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       targetCard.dataset.actionId === "write-off"
     ) {
       openWriteOffModal();
+      return;
+    }
+    if (
+      !isGrouping &&
+      targetCard.dataset.energyItemType === "action" &&
+      targetCard.dataset.actionId === "repair"
+    ) {
+      openRepairModal();
       return;
     }
     if (

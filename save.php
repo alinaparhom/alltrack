@@ -415,9 +415,25 @@ function saveFileEntry(array $entry): void {
   }
 }
 
+function deleteFileEntry(array $entry): void {
+  $targetPath = resolveFileTargetPath($entry);
+  if (!file_exists($targetPath)) {
+    return;
+  }
+  if (!unlink($targetPath)) {
+    http_response_code(500);
+    echo json_encode(["error" => "Не удалось удалить файл."]);
+    exit;
+  }
+}
+
 function saveEntry(array $entry, array $allowedFiles): void {
   if (($entry["type"] ?? "") === "file") {
     saveFileEntry($entry);
+    return;
+  }
+  if (($entry["type"] ?? "") === "delete-file") {
+    deleteFileEntry($entry);
     return;
   }
   $path = $entry["path"] ?? "";

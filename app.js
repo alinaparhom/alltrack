@@ -294,6 +294,22 @@ function buildAddPhotoSearchLine(tool) {
     .toLowerCase();
 }
 
+function buildRemovePhotoSearchLine(tool) {
+  return [
+    tool?.["Номер"],
+    tool?.["Бух.номер"],
+    tool?.["Наименование"],
+    tool?.["Производитель"],
+    tool?.["Модель"],
+    tool?.["Статус"],
+    tool?.["Объект"],
+    tool?.["Граппа инструментов"],
+  ]
+    .filter((value) => value !== null && value !== undefined && String(value).trim())
+    .join(" ")
+    .toLowerCase();
+}
+
 const toolPhotoExtensions = new Set(["jpg", "jpeg", "png", "webp"]);
 
 function extractDirectoryListingLinks(html = "") {
@@ -3104,6 +3120,48 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const addPhotoFiltersToggleEl = contentEl.querySelector(
     "[data-add-photo-filters-toggle]"
   );
+  const removePhotoModalEl = contentEl.querySelector("[data-remove-photo-modal]");
+  const removePhotoBackdropEl = contentEl.querySelector(
+    "[data-remove-photo-backdrop]"
+  );
+  const removePhotoCloseButton = contentEl.querySelector(
+    "[data-remove-photo-close]"
+  );
+  const removePhotoSearchInput = contentEl.querySelector(
+    "[data-remove-photo-search]"
+  );
+  const removePhotoListEl = contentEl.querySelector("[data-remove-photo-list]");
+  const removePhotoEmptyEl = contentEl.querySelector("[data-remove-photo-empty]");
+  const removePhotoSubtitleEl = contentEl.querySelector(
+    "[data-remove-photo-subtitle]"
+  );
+  const removePhotoViews = contentEl.querySelectorAll(
+    "[data-remove-photo-view]"
+  );
+  const removePhotoBackButton = contentEl.querySelector(
+    "[data-remove-photo-back]"
+  );
+  const removePhotoToolTitleEl = contentEl.querySelector(
+    "[data-remove-photo-tool-title]"
+  );
+  const removePhotoToolMetaEl = contentEl.querySelector(
+    "[data-remove-photo-tool-meta]"
+  );
+  const removePhotoPhotosEl = contentEl.querySelector(
+    "[data-remove-photo-photos]"
+  );
+  const removePhotoPhotosEmptyEl = contentEl.querySelector(
+    "[data-remove-photo-photos-empty]"
+  );
+  const removePhotoDeleteButton = contentEl.querySelector(
+    "[data-remove-photo-delete]"
+  );
+  const removePhotoSelectedCountEl = contentEl.querySelector(
+    "[data-remove-photo-selected]"
+  );
+  const removePhotoMessageEl = contentEl.querySelector(
+    "[data-remove-photo-message]"
+  );
   const addToolModalEl = contentEl.querySelector("[data-add-tool-modal]");
   const addToolBackdropEl = contentEl.querySelector("[data-add-tool-backdrop]");
   const addToolCloseButton = contentEl.querySelector("[data-add-tool-close]");
@@ -3490,6 +3548,16 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     },
     search: "",
     orgFolder: "",
+  };
+  const removePhotoState = {
+    tools: [],
+    filtered: [],
+    search: "",
+    orgFolder: "",
+    toolMap: new Map(),
+    selectedTool: null,
+    toolPhotos: [],
+    selectedFiles: new Set(),
   };
   let addToolViewportListenersAttached = false;
   const updateAddToolKeyboardOffset = () => {
@@ -5970,6 +6038,524 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       applyAddPhotoFilters();
     });
   });
+
+  const setRemovePhotoSubtitle = (text) => {
+    if (removePhotoSubtitleEl) {
+      removePhotoSubtitleEl.textContent = text;
+    }
+  };
+
+  const setRemovePhotoMessage = (text = "", tone = "") => {
+    if (!removePhotoMessageEl) return;
+    removePhotoMessageEl.textContent = text;
+    removePhotoMessageEl.classList.toggle("is-error", tone === "error");
+    removePhotoMessageEl.classList.toggle("is-success", tone === "success");
+    if (!tone) {
+      removePhotoMessageEl.classList.remove("is-error", "is-success");
+    }
+  };
+
+  const setRemovePhotoView = (view) => {
+    removePhotoViews.forEach((viewEl) => {
+      const isActive = viewEl.dataset.removePhotoView === view;
+      viewEl.classList.toggle("is-hidden", !isActive);
+    });
+    if (view === "list") {
+      setRemovePhotoMessage("");
+    }
+  };
+
+  const clearRemovePhotoList = () => {
+    if (removePhotoListEl) {
+      removePhotoListEl.innerHTML = "";
+    }
+  };
+
+  const buildRemovePhotoThumb = ({ candidates, altText }) => {
+    const thumb = document.createElement("div");
+    thumb.className = "tools-table__thumb remove-photo-thumb";
+    const img = document.createElement("img");
+    img.className = "tools-table__thumb-image";
+    img.alt = altText;
+    let candidateIndex = 0;
+    const tryCandidate = () => {
+      if (candidateIndex >= candidates.length) {
+        img.onerror = null;
+        img.onload = null;
+        img.src = toolPhotoPlaceholder;
+        img.classList.add("is-placeholder");
+        return;
+      }
+      const next = candidates[candidateIndex];
+      candidateIndex += 1;
+      img.src = next;
+    };
+    img.onerror = () => {
+      tryCandidate();
+    };
+    img.onload = () => {
+      img.classList.remove("is-placeholder");
+    };
+    if (candidates.length) {
+      tryCandidate();
+    } else {
+      img.src = toolPhotoPlaceholder;
+      img.classList.add("is-placeholder");
+    }
+    thumb.appendChild(img);
+    return thumb;
+  };
+
+  const renderRemovePhotoTable = (items) => {
+    const table = document.createElement("div");
+    table.className = "tools-table tools-table--remove-photo";
+
+    items.forEach((tool) => {
+      const row = document.createElement("div");
+      row.className = "tools-table__row remove-photo-row";
+      row.dataset.removePhotoToolId = tool.__removeId;
+
+      const numberCell = document.createElement("div");
+      numberCell.className = "tools-table__cell tools-table__cell--number";
+      const number = resolveToolNumberValue(tool);
+      numberCell.textContent = number || "—";
+
+      const infoCell = document.createElement("div");
+      infoCell.className = "tools-table__cell";
+      const title = document.createElement("div");
+      title.className = "tools-table__title";
+      const name = String(tool?.["Наименование"] ?? "").trim();
+      title.textContent = name || "Без названия";
+      const meta = document.createElement("div");
+      meta.className = "tools-table__meta tools-table__meta--stack";
+      const manufacturer = String(tool?.["Производитель"] ?? "").trim();
+      const model = String(tool?.["Модель"] ?? "").trim();
+      const accountingNumber = String(tool?.["Бух.номер"] ?? "").trim();
+      const count = Number.parseInt(tool?.["Количество фото"] ?? 0, 10);
+      const safeCount = Number.isFinite(count) ? count : 0;
+      meta.innerHTML = `
+        <div>Производитель: ${manufacturer || "—"} · Модель: ${model || "—"}</div>
+        <div>Бух.номер: ${accountingNumber || "—"}</div>
+        <div class="remove-photo-count">Фото: ${safeCount}</div>
+      `;
+      infoCell.append(title, meta);
+
+      const photoCell = document.createElement("div");
+      photoCell.className = "tools-table__cell tools-table__cell--thumb";
+      const photoNumber = resolveToolPhotoNumber(tool);
+      const candidates = photoNumber
+        ? buildToolPhotoCandidates(removePhotoState.orgFolder, photoNumber)
+        : [];
+      const thumb = buildRemovePhotoThumb({
+        candidates,
+        altText: name || "Инструмент",
+      });
+      photoCell.appendChild(thumb);
+
+      const actionCell = document.createElement("div");
+      actionCell.className = "tools-table__cell tools-table__cell--action";
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "action-secondary remove-photo-select";
+      button.textContent = "Выбрать";
+      button.dataset.removePhotoSelect = "true";
+      button.dataset.removePhotoToolId = tool.__removeId;
+      actionCell.appendChild(button);
+
+      row.append(numberCell, infoCell, photoCell, actionCell);
+      table.appendChild(row);
+    });
+
+    return table;
+  };
+
+  const renderRemovePhotoList = () => {
+    if (!removePhotoListEl) return;
+    clearRemovePhotoList();
+    const items = removePhotoState.filtered;
+    removePhotoListEl.classList.add("is-table");
+    removePhotoListEl.appendChild(renderRemovePhotoTable(items));
+    if (removePhotoEmptyEl) {
+      removePhotoEmptyEl.classList.toggle("is-hidden", items.length > 0);
+    }
+    setRemovePhotoSubtitle(
+      `Показано ${items.length} из ${removePhotoState.tools.length}`
+    );
+  };
+
+  const applyRemovePhotoFilters = () => {
+    const search = removePhotoState.search.trim();
+    const tokens = search ? search.split(/\s+/).filter(Boolean) : [];
+    removePhotoState.filtered = removePhotoState.tools.filter((tool) => {
+      if (!tokens.length) return true;
+      const searchLine = tool.__searchLine ?? "";
+      return tokens.every((token) => searchLine.includes(token));
+    });
+    renderRemovePhotoList();
+  };
+
+  const loadRemovePhotoTools = async () => {
+    const orgFolder = context.orgFolderName ?? "";
+    removePhotoState.orgFolder = orgFolder;
+    if (!orgFolder) {
+      removePhotoState.tools = [];
+      removePhotoState.filtered = [];
+      setRemovePhotoSubtitle("Не удалось определить организацию.");
+      renderRemovePhotoList();
+      return;
+    }
+    const toolsPath = `./${orgFolder}/База с инструментами.json`;
+    let rawTools = [];
+    try {
+      const raw = await loadJson(toolsPath);
+      rawTools = Array.isArray(raw) ? raw : Array.isArray(raw?.tools) ? raw.tools : [];
+    } catch (error) {
+      console.warn("Не удалось загрузить базу инструментов.", error);
+      rawTools = [];
+    }
+    removePhotoState.toolMap.clear();
+    removePhotoState.tools = rawTools
+      .filter((tool) => {
+        const photoCount = Number.parseInt(tool?.["Количество фото"] ?? 0, 10);
+        return Number.isFinite(photoCount) && photoCount > 0;
+      })
+      .map((tool, index) => {
+        const entry = {
+          ...tool,
+          __removeId: `remove-${index}`,
+          __searchLine: buildRemovePhotoSearchLine(tool),
+        };
+        removePhotoState.toolMap.set(entry.__removeId, entry);
+        return entry;
+      })
+      .sort((a, b) =>
+        resolveToolNumberValue(a).localeCompare(resolveToolNumberValue(b), "ru", {
+          numeric: true,
+        })
+      );
+    applyRemovePhotoFilters();
+  };
+
+  const resetRemovePhotoSelection = () => {
+    removePhotoState.selectedTool = null;
+    removePhotoState.toolPhotos = [];
+    removePhotoState.selectedFiles.clear();
+    if (removePhotoToolTitleEl) removePhotoToolTitleEl.textContent = "";
+    if (removePhotoToolMetaEl) removePhotoToolMetaEl.textContent = "";
+    if (removePhotoPhotosEl) removePhotoPhotosEl.innerHTML = "";
+    if (removePhotoPhotosEmptyEl) {
+      removePhotoPhotosEmptyEl.classList.add("is-hidden");
+    }
+    if (removePhotoSelectedCountEl) {
+      removePhotoSelectedCountEl.textContent = "0";
+    }
+    if (removePhotoDeleteButton) {
+      removePhotoDeleteButton.disabled = true;
+    }
+  };
+
+  const getToolNumberFromFileName = (fileName) => {
+    const match = fileName.match(/^(\d+)(?:[_-]|\.|$)/);
+    return match ? match[1] : "";
+  };
+
+  const loadToolPhotoFiles = async (orgFolder, toolNumber) => {
+    if (!orgFolder || !toolNumber) return [];
+    const variants = getToolNumberVariants(toolNumber);
+    if (!variants.length) return [];
+    const normalizedVariants = new Set(
+      variants.map((variant) => normalizeToolNumberValue(variant))
+    );
+    const folderPath = `./${orgFolder}/Фото инструментов/`;
+    let response;
+    try {
+      response = await fetch(folderPath, { cache: "no-store" });
+    } catch (error) {
+      return [];
+    }
+    if (!response.ok) return [];
+    const html = await response.text();
+    const links = extractDirectoryListingLinks(html);
+    const files = [];
+    const seen = new Set();
+    links.forEach((link) => {
+      const fileName = extractFileNameFromHref(link);
+      if (!fileName) return;
+      let decodedName = fileName;
+      try {
+        decodedName = decodeURIComponent(fileName);
+      } catch (error) {
+        decodedName = fileName;
+      }
+      const extension = decodedName.split(".").pop()?.toLowerCase() || "";
+      if (!toolPhotoExtensions.has(extension)) return;
+      const numberPart = getToolNumberFromFileName(decodedName);
+      if (!numberPart) return;
+      const normalized = normalizeToolNumberValue(numberPart);
+      if (
+        !normalizedVariants.has(normalized) &&
+        !normalizedVariants.has(numberPart)
+      ) {
+        return;
+      }
+      if (seen.has(decodedName)) return;
+      seen.add(decodedName);
+      files.push({
+        name: decodedName,
+        url: `./${orgFolder}/Фото инструментов/${encodeURIComponent(decodedName)}`,
+      });
+    });
+    return files.sort((a, b) => a.name.localeCompare(b.name, "ru", { numeric: true }));
+  };
+
+  const updateRemovePhotoSelection = () => {
+    if (removePhotoSelectedCountEl) {
+      removePhotoSelectedCountEl.textContent = String(
+        removePhotoState.selectedFiles.size
+      );
+    }
+    if (removePhotoDeleteButton) {
+      removePhotoDeleteButton.disabled = removePhotoState.selectedFiles.size === 0;
+    }
+  };
+
+  const renderRemovePhotoPhotos = () => {
+    if (!removePhotoPhotosEl) return;
+    removePhotoPhotosEl.innerHTML = "";
+    removePhotoState.selectedFiles.clear();
+    updateRemovePhotoSelection();
+    const files = removePhotoState.toolPhotos;
+    if (!files.length) {
+      if (removePhotoPhotosEmptyEl) {
+        removePhotoPhotosEmptyEl.classList.remove("is-hidden");
+      }
+      return;
+    }
+    if (removePhotoPhotosEmptyEl) {
+      removePhotoPhotosEmptyEl.classList.add("is-hidden");
+    }
+    files.forEach((file) => {
+      const card = document.createElement("label");
+      card.className = "remove-photo-card";
+      card.dataset.photoName = file.name;
+
+      const checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.className = "remove-photo-checkbox";
+      checkbox.addEventListener("change", () => {
+        if (checkbox.checked) {
+          removePhotoState.selectedFiles.add(file.name);
+          card.classList.add("is-selected");
+        } else {
+          removePhotoState.selectedFiles.delete(file.name);
+          card.classList.remove("is-selected");
+        }
+        updateRemovePhotoSelection();
+      });
+
+      const img = document.createElement("img");
+      img.src = file.url;
+      img.alt = "Фото инструмента";
+      img.loading = "lazy";
+      img.className = "remove-photo-image";
+
+      const name = document.createElement("span");
+      name.className = "remove-photo-name";
+      name.textContent = file.name;
+
+      card.append(checkbox, img, name);
+      removePhotoPhotosEl.appendChild(card);
+    });
+  };
+
+  const openRemovePhotoTool = async (tool) => {
+    if (!tool) return;
+    resetRemovePhotoSelection();
+    removePhotoState.selectedTool = tool;
+    const toolNumber = resolveToolNumberValue(tool);
+    const toolName = String(tool?.["Наименование"] ?? "").trim() || "Инструмент";
+    const manufacturer = String(tool?.["Производитель"] ?? "").trim();
+    const model = String(tool?.["Модель"] ?? "").trim();
+    if (removePhotoToolTitleEl) {
+      removePhotoToolTitleEl.textContent = `${toolName} · №${toolNumber || "—"}`;
+    }
+    if (removePhotoToolMetaEl) {
+      removePhotoToolMetaEl.textContent = [manufacturer, model]
+        .filter(Boolean)
+        .join(" · ");
+    }
+    setRemovePhotoSubtitle("Выберите фото для удаления");
+    setRemovePhotoMessage("Загружаем фото...");
+    setRemovePhotoView("photos");
+    const photoNumber = resolveToolPhotoNumber(tool);
+    removePhotoState.toolPhotos = await loadToolPhotoFiles(
+      removePhotoState.orgFolder,
+      photoNumber
+    );
+    setRemovePhotoMessage("");
+    renderRemovePhotoPhotos();
+  };
+
+  const syncToolsPhotoCountAfterDelete = (toolNumber, nextCount) => {
+    if (nextCount === null) return;
+    const normalized = normalizeToolNumberValue(toolNumber);
+    const updateTool = (tool) => {
+      if (normalizeToolNumberValue(tool?.["Номер"] ?? "") !== normalized) {
+        return tool;
+      }
+      return {
+        ...tool,
+        "Количество фото": nextCount,
+      };
+    };
+    if (toolsState.tools.length) {
+      toolsState.tools = toolsState.tools.map(updateTool);
+      toolsState.filtered = toolsState.filtered.map(updateTool);
+      if (toolsModalEl && !toolsModalEl.classList.contains("is-hidden")) {
+        applyToolsFilters();
+      }
+    }
+    removePhotoState.tools = removePhotoState.tools
+      .map(updateTool)
+      .filter((tool) => {
+        const count = Number.parseInt(tool?.["Количество фото"] ?? 0, 10);
+        return Number.isFinite(count) && count > 0;
+      });
+    applyRemovePhotoFilters();
+  };
+
+  const handleRemovePhotoDelete = async () => {
+    const tool = removePhotoState.selectedTool;
+    if (!tool) return;
+    const orgFolder = removePhotoState.orgFolder;
+    if (!orgFolder) return;
+    const selectedFiles = Array.from(removePhotoState.selectedFiles);
+    if (!selectedFiles.length) return;
+    const confirmDelete = window.confirm(
+      `Удалить выбранные фото (${selectedFiles.length})?`
+    );
+    if (!confirmDelete) return;
+    setRemovePhotoMessage("Удаляем фото...");
+    try {
+      const deleteEntries = selectedFiles.map((fileName) => ({
+        type: "delete-file",
+        path: `${orgFolder}/Фото инструментов/${fileName}`,
+        ...buildUploadUserMeta({ organizationName: context.orgFullName }),
+      }));
+      await saveEntriesViaEndpoint(deleteEntries);
+
+      const tools = await loadToolsData(orgFolder);
+      const normalized = normalizeToolNumberValue(tool?.["Номер"] ?? "");
+      const toolIndex = tools.findIndex(
+        (entry) =>
+          normalizeToolNumberValue(entry?.["Номер"] ?? "") === normalized
+      );
+      let nextCount = null;
+      if (toolIndex >= 0) {
+        const current = Number.parseInt(
+          tools[toolIndex]?.["Количество фото"] ?? 0,
+          10
+        );
+        const safeCurrent = Number.isFinite(current) ? current : 0;
+        nextCount = Math.max(0, safeCurrent - selectedFiles.length);
+        tools[toolIndex] = {
+          ...tools[toolIndex],
+          "Количество фото": nextCount,
+        };
+        await saveEntries([
+          {
+            path: `${orgFolder}/База с инструментами.json`,
+            data: tools,
+            ...buildUploadUserMeta({ organizationName: context.orgFullName }),
+          },
+        ]);
+      }
+
+      removePhotoState.toolPhotos = removePhotoState.toolPhotos.filter(
+        (file) => !removePhotoState.selectedFiles.has(file.name)
+      );
+      removePhotoState.selectedFiles.clear();
+      updateRemovePhotoSelection();
+      renderRemovePhotoPhotos();
+      syncToolsPhotoCountAfterDelete(tool?.["Номер"] ?? "", nextCount);
+      if (!removePhotoState.toolPhotos.length) {
+        setRemovePhotoMessage("Фото удалены. Возвращаемся к списку.", "success");
+        setTimeout(() => {
+          setRemovePhotoView("list");
+          resetRemovePhotoSelection();
+        }, 500);
+        return;
+      }
+      setRemovePhotoMessage("Фото удалены.", "success");
+    } catch (error) {
+      console.error(error);
+      setRemovePhotoMessage(
+        "Не удалось удалить фото. Проверьте сервер.",
+        "error"
+      );
+    }
+  };
+
+  const openRemovePhotoModal = async () => {
+    if (!removePhotoModalEl) return;
+    removePhotoModalEl.classList.remove("is-hidden");
+    document.body.style.overflow = "hidden";
+    setRemovePhotoView("list");
+    resetRemovePhotoSelection();
+    setRemovePhotoSubtitle("Загружаем список...");
+    await loadRemovePhotoTools();
+    if (
+      removePhotoSearchInput &&
+      (typeof window === "undefined" ||
+        !window.matchMedia ||
+        !window.matchMedia("(max-width: 520px)").matches)
+    ) {
+      removePhotoSearchInput.focus();
+    }
+  };
+
+  const closeRemovePhotoModal = () => {
+    if (!removePhotoModalEl) return;
+    removePhotoModalEl.classList.add("is-hidden");
+    document.body.style.overflow = "";
+  };
+
+  if (removePhotoBackdropEl) {
+    removePhotoBackdropEl.addEventListener("click", closeRemovePhotoModal);
+  }
+  if (removePhotoCloseButton) {
+    removePhotoCloseButton.addEventListener("click", closeRemovePhotoModal);
+  }
+  removePhotoModalEl?.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      closeRemovePhotoModal();
+    }
+  });
+  if (removePhotoBackButton) {
+    removePhotoBackButton.addEventListener("click", () => {
+      setRemovePhotoView("list");
+      resetRemovePhotoSelection();
+    });
+  }
+  if (removePhotoSearchInput) {
+    removePhotoSearchInput.addEventListener("input", (event) => {
+      removePhotoState.search = String(event.target.value ?? "").toLowerCase();
+      applyRemovePhotoFilters();
+    });
+  }
+  if (removePhotoListEl) {
+    removePhotoListEl.addEventListener("click", (event) => {
+      const button = event.target.closest("[data-remove-photo-select]");
+      if (!button) return;
+      const toolId = button.dataset.removePhotoToolId;
+      if (!toolId) return;
+      const tool = removePhotoState.toolMap.get(toolId);
+      openRemovePhotoTool(tool);
+    });
+  }
+  if (removePhotoDeleteButton) {
+    removePhotoDeleteButton.addEventListener("click", handleRemovePhotoDelete);
+  }
   if (objectsCancelButton) {
     objectsCancelButton.addEventListener("click", () => {
       resetObjectsForm();
@@ -8410,6 +8996,14 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       targetCard.dataset.actionId === "add-photo"
     ) {
       openAddPhotoModal();
+      return;
+    }
+    if (
+      !isGrouping &&
+      targetCard.dataset.energyItemType === "action" &&
+      targetCard.dataset.actionId === "remove-photo"
+    ) {
+      openRemovePhotoModal();
       return;
     }
     if (

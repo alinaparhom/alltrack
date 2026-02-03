@@ -1046,6 +1046,57 @@ function buildFixBreakdownNotificationMessage(
   return lines.join("\n");
 }
 
+function buildSendToRepairNotificationMessage(
+  tool,
+  { organizationName, description, cost, repairDate, markedBy } = {}
+) {
+  const titleParts = [
+    formatNotificationValue(tool?.["Наименование"], ""),
+    formatNotificationValue(tool?.["Производитель"], ""),
+    formatNotificationValue(tool?.["Модель"], ""),
+  ]
+    .map((part) => part.trim())
+    .filter(Boolean);
+  const titleLine = titleParts.length ? titleParts.join(" ") : "—";
+  const lines = [
+    "🛠️🛠️🛠️<b><u>ОТПРАВЛЕН В РЕМОНТ</u></b>",
+    `1. Номер: ${escapeTelegramHtml(
+      formatNotificationValue(tool?.["Номер"])
+    )}`,
+    `2. Бух.номер: ${escapeTelegramHtml(
+      formatNotificationValue(tool?.["Бух.номер"])
+    )}`,
+    `3. ${escapeTelegramHtml(titleLine)}`,
+    `4. Ответственный: ${escapeTelegramHtml(
+      formatNotificationValue(tool?.["Ответственный"])
+    )}`,
+    `5. Организация: ${escapeTelegramHtml(
+      formatNotificationValue(organizationName)
+    )}`,
+  ];
+  if (description) {
+    lines.push(
+      `6. Описание: ${escapeTelegramHtml(
+        formatNotificationValue(description)
+      )}`
+    );
+  }
+  if (cost) {
+    lines.push(
+      `7. Стоимость: ${escapeTelegramHtml(formatNotificationCost(cost))}`
+    );
+  }
+  lines.push(
+    `8. Дата отправки: ${escapeTelegramHtml(
+      formatNotificationValue(repairDate)
+    )}`,
+    `9. Отправил: ${escapeTelegramHtml(
+      formatNotificationValue(markedBy)
+    )}`
+  );
+  return lines.join("\n");
+}
+
 function buildMoveCancelResponsibleMessage(
   tool,
   { movedBy, canceledBy, targetObject, oldObject, moveReason } = {}
@@ -1547,6 +1598,58 @@ async function notifyFixBreakdown({
     await Promise.all(groupIds.map((chatId) => sendToGroup(chatId)));
   } catch (error) {
     console.warn("Не удалось отправить уведомление об устранении поломки.", error);
+  }
+}
+
+async function notifySendToRepair({
+  tool,
+  orgFolder,
+  organizationName,
+  description,
+  cost,
+  repairDate,
+  markedBy,
+} = {}) {
+  if (!tool || !orgFolder) return;
+  if (!fallbackBotToken) return;
+  const settingsPath = `./${orgFolder}/Настройки.json`;
+  try {
+    const settingsData = await loadJson(settingsPath);
+    const groupsEnabled = isNotificationEnabled(settingsData, "sendToRepair");
+    const groupIds = groupsEnabled
+      ? extractNotificationGroups(settingsData, "sendToRepair")
+      : [];
+    if (!groupsEnabled || !groupIds.length) return;
+    const message = buildSendToRepairNotificationMessage(tool, {
+      organizationName,
+      description,
+      cost,
+      repairDate,
+      markedBy,
+    });
+    const attachSetting =
+      settingsData?.notifications?.sendToRepair?.attachPhoto ??
+      settingsData?.organization?.notifications?.sendToRepair?.attachPhoto;
+    const shouldAttach = attachSetting === false;
+    let photoUrl = "";
+    if (shouldAttach) {
+      const photoNumber = resolveToolPhotoNumberForNotification(tool);
+      const resolved = await resolveAvailablePhotoUrl(orgFolder, photoNumber);
+      if (resolved) photoUrl = resolved;
+    }
+    const sendToGroup = async (chatId) => {
+      if (!photoUrl) {
+        await sendTelegramMessage(chatId, message);
+        return;
+      }
+      const result = await sendTelegramPhoto(chatId, photoUrl, message);
+      if (!result.ok) {
+        await sendTelegramMessage(chatId, message);
+      }
+    };
+    await Promise.all(groupIds.map((chatId) => sendToGroup(chatId)));
+  } catch (error) {
+    console.warn("Не удалось отправить уведомление об отправке в ремонт.", error);
   }
 }
 
@@ -3688,6 +3791,36 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const repairEmptyEl = contentEl.querySelector("[data-repair-empty]");
   const repairSubtitleEl = contentEl.querySelector("[data-repair-subtitle]");
   const repairMessageEl = contentEl.querySelector("[data-repair-message]");
+  const repairFormModalEl = contentEl.querySelector("[data-repair-form-modal]");
+  const repairFormBackdropEl = contentEl.querySelector(
+    "[data-repair-form-backdrop]"
+  );
+  const repairFormCloseButton = contentEl.querySelector(
+    "[data-repair-form-close]"
+  );
+  const repairFormCancelButton = contentEl.querySelector(
+    "[data-repair-form-cancel]"
+  );
+  const repairFormEl = contentEl.querySelector("[data-repair-form]");
+  const repairFormBodyEl = repairFormEl?.querySelector(".repair-form__body");
+  const repairFormSubtitleEl = contentEl.querySelector(
+    "[data-repair-form-subtitle]"
+  );
+  const repairToolTitleEl = contentEl.querySelector("[data-repair-tool-title]");
+  const repairToolMetaEl = contentEl.querySelector("[data-repair-tool-meta]");
+  const repairOrganizationInput = contentEl.querySelector(
+    "[data-repair-organization]"
+  );
+  const repairOrganizationSuggestionsEl = contentEl.querySelector(
+    "[data-repair-organization-suggestions]"
+  );
+  const repairDescriptionInput = contentEl.querySelector(
+    "[data-repair-description]"
+  );
+  const repairCostInput = contentEl.querySelector("[data-repair-cost]");
+  const repairFormMessageEl = contentEl.querySelector(
+    "[data-repair-form-message]"
+  );
   const breakdownStatusModalEl = contentEl.querySelector(
     "[data-breakdown-status-modal]"
   );
@@ -4248,6 +4381,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     orgFolder: "",
     statusFilter: "",
     toolMap: new Map(),
+  };
+  const repairFormState = {
+    selectedTool: null,
+    organizations: [],
+    isSaving: false,
   };
   let addToolViewportListenersAttached = false;
   let breakdownViewportListenersAttached = false;
@@ -8051,6 +8189,28 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
   };
 
+  const setRepairFormMessage = (text = "", tone = "") => {
+    if (!repairFormMessageEl) return;
+    repairFormMessageEl.textContent = text;
+    repairFormMessageEl.classList.remove("is-error", "is-success", "is-info");
+    if (tone) {
+      repairFormMessageEl.classList.add(`is-${tone}`);
+    }
+  };
+
+  const clearRepairFormFieldErrors = () => {
+    repairFormEl
+      ?.querySelectorAll(".form-field.is-invalid")
+      .forEach((field) => field.classList.remove("is-invalid"));
+  };
+
+  const markRepairFormFieldError = (target) => {
+    const field = target?.closest?.(".form-field");
+    if (field) {
+      field.classList.add("is-invalid");
+    }
+  };
+
   const setBreakdownFormMessage = (text = "", tone = "") => {
     if (!breakdownFormMessageEl) return;
     breakdownFormMessageEl.textContent = text;
@@ -8226,6 +8386,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     return tone === "repair" || tone === "writeoff";
   };
 
+  const isRepairSelectionBlocked = (tool) => {
+    const tone = tool?.__statusTone ?? resolveToolStatusTone(tool);
+    return tone === "repair" || tone === "writeoff";
+  };
+
   const renderBreakdownsTable = (items) => {
     const table = document.createElement("div");
     table.className = "tools-table tools-table--breakdowns";
@@ -8319,11 +8484,17 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     table.className = "tools-table tools-table--breakdowns";
 
     items.forEach((tool) => {
+      const isBlocked = isRepairSelectionBlocked(tool);
       const row = document.createElement("div");
       row.className = "tools-table__row";
       row.dataset.repairToolId = tool.__repairId;
       row.setAttribute("role", "button");
-      row.tabIndex = 0;
+      row.classList.toggle("is-disabled", isBlocked);
+      if (isBlocked) {
+        row.setAttribute("aria-disabled", "true");
+      } else {
+        row.tabIndex = 0;
+      }
       applyToolStatusClasses(row, tool);
 
       const numberCell = document.createElement("div");
@@ -8458,6 +8629,24 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     applyRepairFilters();
   };
 
+  const loadRepairOrganizations = async () => {
+    const orgFolder = repairState.orgFolder ?? context.orgFolderName ?? "";
+    if (!orgFolder) {
+      repairFormState.organizations = [];
+      return;
+    }
+    const repairsPath = `./${orgFolder}/Ремонты.json`;
+    const rawRepairs = await loadJson(repairsPath).catch(() => []);
+    const repairs = Array.isArray(rawRepairs)
+      ? rawRepairs
+      : Array.isArray(rawRepairs?.repairs)
+        ? rawRepairs.repairs
+        : [];
+    repairFormState.organizations = repairs
+      .map((entry) => normalizeSuggestionValue(entry?.["Организация"] ?? ""))
+      .filter(Boolean);
+  };
+
   const prepareBreakdownsStatusFilter = () => {
     if (!breakdownsStatusFilter) return;
     const values = new Set();
@@ -8536,6 +8725,63 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     breakdownsState.statusTool = null;
     breakdownsState.isStatusSaving = false;
     setBreakdownStatusMessage("");
+  };
+
+  const resetRepairForm = () => {
+    repairFormEl?.reset();
+    repairFormState.selectedTool = null;
+    setRepairFormMessage("");
+  };
+
+  const fillRepairToolInfo = (tool) => {
+    if (!tool) return;
+    const number = resolveToolNumberValue(tool);
+    const name = String(tool?.["Наименование"] ?? "").trim();
+    if (repairFormSubtitleEl) {
+      repairFormSubtitleEl.textContent = `Инструмент №${number || "—"} · ${
+        name || "Без названия"
+      }`;
+    }
+    if (repairToolTitleEl) {
+      repairToolTitleEl.textContent = name || "Инструмент";
+    }
+    if (repairToolMetaEl) {
+      const manufacturer = String(tool?.["Производитель"] ?? "").trim();
+      const model = String(tool?.["Модель"] ?? "").trim();
+      const accountingNumber = String(tool?.["Бух.номер"] ?? "").trim();
+      const status = String(tool?.["Статус"] ?? "").trim();
+      repairToolMetaEl.textContent = [
+        `Бух.номер: ${accountingNumber || "—"}`,
+        `Производитель: ${manufacturer || "—"}`,
+        `Модель: ${model || "—"}`,
+        `Статус: ${status || "—"}`,
+      ].join(" · ");
+    }
+  };
+
+  const openRepairFormModal = async (tool) => {
+    if (!repairFormModalEl || !tool) return;
+    resetRepairForm();
+    repairFormState.selectedTool = tool;
+    fillRepairToolInfo(tool);
+    await loadRepairOrganizations();
+    setRepairFormMessage("");
+    repairFormModalEl.classList.remove("is-hidden");
+    document.body.style.overflow = "hidden";
+    setTimeout(() => {
+      repairOrganizationInput?.focus();
+    }, 0);
+  };
+
+  const closeRepairFormModal = () => {
+    if (!repairFormModalEl) return;
+    repairFormModalEl.classList.add("is-hidden");
+    resetRepairForm();
+    if (repairModalEl && !repairModalEl.classList.contains("is-hidden")) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
   };
 
   const fillBreakdownStatusToolInfo = (tool) => {
@@ -8994,6 +9240,43 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       applyRepairFilters();
     });
   }
+  if (repairListEl) {
+    repairListEl.addEventListener("click", (event) => {
+      const row = event.target.closest("[data-repair-tool-id]");
+      if (!row) return;
+      const toolId = row.dataset.repairToolId;
+      if (!toolId) return;
+      const tool = repairState.toolMap.get(toolId);
+      if (!tool) return;
+      if (isRepairSelectionBlocked(tool)) {
+        setRepairMessage("Инструмент уже в ремонте или на списании.", "info");
+        return;
+      }
+      openRepairFormModal(tool);
+    });
+    repairListEl.addEventListener("keydown", (event) => {
+      if (!(event instanceof KeyboardEvent)) return;
+      if (event.key !== "Enter" && event.key !== " ") return;
+      const row = event.target.closest("[data-repair-tool-id]");
+      if (!row) return;
+      event.preventDefault();
+      row.click();
+    });
+  }
+  if (repairFormBackdropEl) {
+    repairFormBackdropEl.addEventListener("click", closeRepairFormModal);
+  }
+  if (repairFormCloseButton) {
+    repairFormCloseButton.addEventListener("click", closeRepairFormModal);
+  }
+  if (repairFormCancelButton) {
+    repairFormCancelButton.addEventListener("click", closeRepairFormModal);
+  }
+  repairFormModalEl?.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      closeRepairFormModal();
+    }
+  });
   if (breakdownsBackdropEl) {
     breakdownsBackdropEl.addEventListener("click", closeBreakdownsModal);
   }
@@ -9323,6 +9606,157 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         setBreakdownFormMessage(`Не удалось сохранить. ${reason}`, "error");
       } finally {
         breakdownsState.isSaving = false;
+      }
+    });
+  }
+
+  if (repairFormEl) {
+    repairFormEl.noValidate = true;
+    const scrollRepairInputIntoView = (target) => {
+      const scrollContainer = repairFormBodyEl || repairFormModalEl;
+      if (!scrollContainer || !(target instanceof HTMLElement)) return;
+      const bodyRect = scrollContainer.getBoundingClientRect();
+      const inputRect = target.getBoundingClientRect();
+      const offset = 24;
+      const nextTop =
+        scrollContainer.scrollTop + (inputRect.top - bodyRect.top) - offset;
+      scrollContainer.scrollTo({
+        top: Math.max(nextTop, 0),
+        behavior: "smooth",
+      });
+    };
+
+    repairFormEl.addEventListener("focusin", (event) => {
+      const target = event.target;
+      if (!(target instanceof HTMLElement)) return;
+      if (!target.closest("input, textarea, select")) return;
+      repairFormModalEl?.classList.add("is-input-focus");
+      scrollRepairInputIntoView(target);
+      setTimeout(() => {
+        scrollRepairInputIntoView(target);
+      }, 150);
+    });
+
+    repairFormEl.addEventListener("focusout", () => {
+      setTimeout(() => {
+        if (!repairFormEl.contains(document.activeElement)) {
+          repairFormModalEl?.classList.remove("is-input-focus");
+          repairFormModalEl?.style.removeProperty("--keyboard-offset");
+        }
+      }, 0);
+    });
+
+    repairFormEl.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      if (repairFormState.isSaving) {
+        setRepairFormMessage("Сохранение уже выполняется. Подождите…", "info");
+        return;
+      }
+      const tool = repairFormState.selectedTool;
+      if (!tool) {
+        setRepairFormMessage("Инструмент не выбран.", "error");
+        return;
+      }
+      if (isRepairSelectionBlocked(tool)) {
+        setRepairFormMessage("Инструмент уже в ремонте или на списании.", "info");
+        return;
+      }
+      clearRepairFormFieldErrors();
+      const organization = String(repairOrganizationInput?.value ?? "").trim();
+      if (!organization) {
+        setRepairFormMessage("Выберите организацию.", "error");
+        repairOrganizationInput?.focus();
+        markRepairFormFieldError(repairOrganizationInput);
+        return;
+      }
+      const description = String(repairDescriptionInput?.value ?? "").trim();
+      const cost = String(repairCostInput?.value ?? "").trim();
+      const orgFolder = repairState.orgFolder ?? "";
+      if (!orgFolder) {
+        setRepairFormMessage("Не удалось определить организацию.", "error");
+        return;
+      }
+      repairFormState.isSaving = true;
+      setRepairFormMessage("Сохраняем данные...", "info");
+      try {
+        const toolsPath = `./${orgFolder}/База с инструментами.json`;
+        const repairsPath = `./${orgFolder}/Ремонты.json`;
+        const [rawTools, rawRepairs] = await Promise.all([
+          loadJson(toolsPath).catch(() => []),
+          loadJson(repairsPath).catch(() => []),
+        ]);
+        const tools = normalizeToolsData(rawTools);
+        const repairs = Array.isArray(rawRepairs)
+          ? rawRepairs
+          : Array.isArray(rawRepairs?.repairs)
+            ? rawRepairs.repairs
+            : [];
+        const selectedNumber = normalizeToolNumberValue(tool?.["Номер"] ?? "");
+        const selectedAccounting = String(tool?.["Бух.номер"] ?? "").trim();
+        const toolIndex = tools.findIndex((entry) => {
+          const entryNumber = normalizeToolNumberValue(entry?.["Номер"] ?? "");
+          const entryAccounting = String(entry?.["Бух.номер"] ?? "").trim();
+          if (selectedNumber && entryNumber === selectedNumber) return true;
+          if (selectedAccounting && entryAccounting === selectedAccounting) {
+            return true;
+          }
+          return false;
+        });
+        if (toolIndex < 0) {
+          setRepairFormMessage("Инструмент не найден в базе.", "error");
+          repairFormState.isSaving = false;
+          return;
+        }
+        const dateValue = formatDateValue(new Date());
+        const markerRaw = String(
+          user?.full_name ?? user?.fullName ?? currentUser?.full_name ?? ""
+        ).trim();
+        const marker = markerRaw ? formatFullName(markerRaw) : "Пользователь";
+        const updatedTools = [...tools];
+        updatedTools[toolIndex] = {
+          ...updatedTools[toolIndex],
+          "Статус": "В ремонте",
+        };
+        const repairEntry = {
+          "Номер": String(tool?.["Номер"] ?? "").trim(),
+          "Бух.номер": String(tool?.["Бух.номер"] ?? "").trim(),
+          "Ответственный": String(tool?.["Ответственный"] ?? "").trim(),
+          "Организация": organization,
+          "Предварительное описание ремонта": description,
+          "Предварительная стоимость ремонта": cost,
+          "Дата отправки в ремонт": dateValue,
+          "Пользователь, который отправил в ремонт": marker,
+        };
+        const updatedRepairs = [...repairs, repairEntry];
+        const meta = buildUploadUserMeta({ organizationName: context.orgFullName });
+        await saveEntries([
+          { path: toolsPath, data: updatedTools, ...meta },
+          { path: repairsPath, data: updatedRepairs, ...meta },
+        ]);
+
+        await notifySendToRepair({
+          tool: updatedTools[toolIndex],
+          orgFolder,
+          organizationName: organization,
+          description,
+          cost,
+          repairDate: dateValue,
+          markedBy: marker,
+        });
+
+        syncToolStatusInStates(updatedTools[toolIndex], "В ремонте");
+        setRepairMessage("Инструмент отправлен в ремонт.", "success");
+        closeRepairFormModal();
+        await loadRepairTools();
+      } catch (error) {
+        console.error(error);
+        const reason =
+          error instanceof Error && error.message
+            ? `Причина: ${error.message}`
+            : "Проверьте сервер.";
+        setRepairFormMessage(`Не удалось сохранить. ${reason}`, "error");
+      } finally {
+        repairFormState.isSaving = false;
       }
     });
   }
@@ -9756,6 +10190,14 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const getSelectableSuggestions = (options, query) =>
     filterSelectableOptions(options, query, 8);
 
+  const getRepairOrganizationSuggestions = (query) => {
+    const values = repairFormState.organizations ?? [];
+    if (!normalizeSuggestionValue(query)) {
+      return buildCommonSuggestions(values, 6);
+    }
+    return filterSuggestions(values, query, 6);
+  };
+
   attachDynamicSuggestions({
     inputEl: addToolNameInput,
     containerEl: addToolNameSuggestionsEl,
@@ -9794,6 +10236,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     inputEl: addToolModelInput,
     containerEl: addToolModelSuggestionsEl,
     getItems: getToolModelSuggestions,
+    showOnFocus: true,
+  });
+
+  attachDynamicSuggestions({
+    inputEl: repairOrganizationInput,
+    containerEl: repairOrganizationSuggestionsEl,
+    getItems: getRepairOrganizationSuggestions,
     showOnFocus: true,
   });
 

@@ -285,6 +285,7 @@ function resolveTargetPath(array $entry, array $allowedFiles): string {
     "Перемещения.json",
     "Перемещения история.json",
     "Штрафы.json",
+    "Ремонты.json",
     "Списания.json",
     "Поломки.json",
   ];

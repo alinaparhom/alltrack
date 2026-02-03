@@ -1009,6 +1009,43 @@ function buildBreakdownNotificationMessage(
   return lines.join("\n");
 }
 
+function buildFixBreakdownNotificationMessage(
+  tool,
+  { fixDate, markedBy } = {}
+) {
+  const titleParts = [
+    formatNotificationValue(tool?.["Наименование"], ""),
+    formatNotificationValue(tool?.["Производитель"], ""),
+    formatNotificationValue(tool?.["Модель"], ""),
+  ]
+    .map((part) => part.trim())
+    .filter(Boolean);
+  const titleLine = titleParts.length ? titleParts.join(" ") : "—";
+  const lines = [
+    "✅✅✅<b><u>ИНСТРУМЕНТ ОТРЕМОНТИРОВАН</u></b>",
+    `1. Номер: ${escapeTelegramHtml(
+      formatNotificationValue(tool?.["Номер"])
+    )}`,
+    `2. Бух.номер: ${escapeTelegramHtml(
+      formatNotificationValue(tool?.["Бух.номер"])
+    )}`,
+    `3. ${escapeTelegramHtml(titleLine)}`,
+    `4. Ответственный: ${escapeTelegramHtml(
+      formatNotificationValue(tool?.["Ответственный"])
+    )}`,
+    `5. Объект: ${escapeTelegramHtml(
+      formatNotificationValue(tool?.["Объект"])
+    )}`,
+    `6. Дата ремонта: ${escapeTelegramHtml(
+      formatNotificationValue(fixDate)
+    )}`,
+    `7. Отметил: ${escapeTelegramHtml(
+      formatNotificationValue(markedBy)
+    )}`,
+  ];
+  return lines.join("\n");
+}
+
 function buildMoveCancelResponsibleMessage(
   tool,
   { movedBy, canceledBy, targetObject, oldObject, moveReason } = {}
@@ -1464,6 +1501,52 @@ async function notifyToolBreakdown({
     await Promise.all(groupIds.map((chatId) => sendToGroup(chatId)));
   } catch (error) {
     console.warn("Не удалось отправить уведомление о поломке.", error);
+  }
+}
+
+async function notifyFixBreakdown({
+  tool,
+  orgFolder,
+  fixDate,
+  markedBy,
+} = {}) {
+  if (!tool || !orgFolder) return;
+  if (!fallbackBotToken) return;
+  const settingsPath = `./${orgFolder}/Настройки.json`;
+  try {
+    const settingsData = await loadJson(settingsPath);
+    const groupsEnabled = isNotificationEnabled(settingsData, "fixBreakdown");
+    const groupIds = groupsEnabled
+      ? extractNotificationGroups(settingsData, "fixBreakdown")
+      : [];
+    if (!groupsEnabled || !groupIds.length) return;
+    const message = buildFixBreakdownNotificationMessage(tool, {
+      fixDate,
+      markedBy,
+    });
+    const shouldAttach = isNotificationPhotoEnabled(
+      settingsData,
+      "fixBreakdown"
+    );
+    let photoUrl = "";
+    if (shouldAttach) {
+      const photoNumber = resolveToolPhotoNumberForNotification(tool);
+      const resolved = await resolveAvailablePhotoUrl(orgFolder, photoNumber);
+      if (resolved) photoUrl = resolved;
+    }
+    const sendToGroup = async (chatId) => {
+      if (!photoUrl) {
+        await sendTelegramMessage(chatId, message);
+        return;
+      }
+      const result = await sendTelegramPhoto(chatId, photoUrl, message);
+      if (!result.ok) {
+        await sendTelegramMessage(chatId, message);
+      }
+    };
+    await Promise.all(groupIds.map((chatId) => sendToGroup(chatId)));
+  } catch (error) {
+    console.warn("Не удалось отправить уведомление об устранении поломки.", error);
   }
 }
 
@@ -3594,6 +3677,33 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const breakdownsMessageEl = contentEl.querySelector(
     "[data-breakdowns-message]"
   );
+  const breakdownStatusModalEl = contentEl.querySelector(
+    "[data-breakdown-status-modal]"
+  );
+  const breakdownStatusBackdropEl = contentEl.querySelector(
+    "[data-breakdown-status-backdrop]"
+  );
+  const breakdownStatusCloseButton = contentEl.querySelector(
+    "[data-breakdown-status-close]"
+  );
+  const breakdownStatusCancelButton = contentEl.querySelector(
+    "[data-breakdown-status-cancel]"
+  );
+  const breakdownStatusSubtitleEl = contentEl.querySelector(
+    "[data-breakdown-status-subtitle]"
+  );
+  const breakdownStatusToolTitleEl = contentEl.querySelector(
+    "[data-breakdown-status-tool-title]"
+  );
+  const breakdownStatusToolMetaEl = contentEl.querySelector(
+    "[data-breakdown-status-tool-meta]"
+  );
+  const breakdownStatusMessageEl = contentEl.querySelector(
+    "[data-breakdown-status-message]"
+  );
+  const breakdownStatusActionButtons = Array.from(
+    contentEl.querySelectorAll("[data-breakdown-status-action]")
+  );
   const breakdownFormModalEl = contentEl.querySelector(
     "[data-breakdown-form-modal]"
   );
@@ -4113,10 +4223,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     search: "",
     orgFolder: "",
     selectedTool: null,
+    statusTool: null,
     toolMap: new Map(),
     photos: [],
     statusFilter: "",
     isSaving: false,
+    isStatusSaving: false,
   };
   let addToolViewportListenersAttached = false;
   let breakdownViewportListenersAttached = false;
@@ -7914,6 +8026,19 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
   };
 
+  const setBreakdownStatusMessage = (text = "", tone = "") => {
+    if (!breakdownStatusMessageEl) return;
+    breakdownStatusMessageEl.textContent = text;
+    breakdownStatusMessageEl.classList.remove(
+      "is-error",
+      "is-success",
+      "is-info"
+    );
+    if (tone) {
+      breakdownStatusMessageEl.classList.add(`is-${tone}`);
+    }
+  };
+
   const clearBreakdownPhotoPreview = () => {
     if (!breakdownPhotoPreviewEl) return;
     breakdownPhotoPreviewEl.querySelectorAll("img").forEach((img) => {
@@ -8064,7 +8189,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
   const isBreakdownStatusBlocked = (tool) => {
     const tone = tool?.__statusTone ?? resolveToolStatusTone(tool);
-    return tone === "broken" || tone === "repair" || tone === "writeoff";
+    return tone === "repair" || tone === "writeoff";
   };
 
   const renderBreakdownsTable = (items) => {
@@ -8229,6 +8354,58 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     setBreakdownFormMessage("");
   };
 
+  const resetBreakdownStatusState = () => {
+    breakdownsState.statusTool = null;
+    breakdownsState.isStatusSaving = false;
+    setBreakdownStatusMessage("");
+  };
+
+  const fillBreakdownStatusToolInfo = (tool) => {
+    if (!tool) return;
+    const number = resolveToolNumberValue(tool);
+    const name = String(tool?.["Наименование"] ?? "").trim();
+    if (breakdownStatusSubtitleEl) {
+      breakdownStatusSubtitleEl.textContent = `Инструмент №${number || "—"} · ${
+        name || "Без названия"
+      }`;
+    }
+    if (breakdownStatusToolTitleEl) {
+      breakdownStatusToolTitleEl.textContent = name || "Инструмент";
+    }
+    if (breakdownStatusToolMetaEl) {
+      const manufacturer = String(tool?.["Производитель"] ?? "").trim();
+      const model = String(tool?.["Модель"] ?? "").trim();
+      const accountingNumber = String(tool?.["Бух.номер"] ?? "").trim();
+      const status = String(tool?.["Статус"] ?? "").trim();
+      breakdownStatusToolMetaEl.textContent = [
+        `Бух.номер: ${accountingNumber || "—"}`,
+        `Производитель: ${manufacturer || "—"}`,
+        `Модель: ${model || "—"}`,
+        `Статус: ${status || "—"}`,
+      ].join(" · ");
+    }
+  };
+
+  const openBreakdownStatusModal = (tool) => {
+    if (!breakdownStatusModalEl || !tool) return;
+    breakdownsState.statusTool = tool;
+    fillBreakdownStatusToolInfo(tool);
+    setBreakdownStatusMessage("");
+    breakdownStatusModalEl.classList.remove("is-hidden");
+    document.body.style.overflow = "hidden";
+  };
+
+  const closeBreakdownStatusModal = () => {
+    if (!breakdownStatusModalEl) return;
+    breakdownStatusModalEl.classList.add("is-hidden");
+    resetBreakdownStatusState();
+    if (breakdownsModalEl && !breakdownsModalEl.classList.contains("is-hidden")) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+  };
+
   const openBreakdownFormModal = (tool) => {
     if (!breakdownFormModalEl || !tool) return;
     breakdownsState.selectedTool = tool;
@@ -8279,6 +8456,247 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
   };
 
+  const applyBreakdownStatusRepaired = async () => {
+    if (breakdownsState.isStatusSaving) return;
+    const tool = breakdownsState.statusTool;
+    if (!tool) {
+      setBreakdownStatusMessage("Инструмент не выбран.", "error");
+      return;
+    }
+    const orgFolder = breakdownsState.orgFolder ?? "";
+    if (!orgFolder) {
+      setBreakdownStatusMessage("Не удалось определить организацию.", "error");
+      return;
+    }
+    breakdownsState.isStatusSaving = true;
+    setBreakdownStatusMessage("Сохраняем данные...", "info");
+    try {
+      const toolsPath = `./${orgFolder}/База с инструментами.json`;
+      const breakdownsPath = `./${orgFolder}/Поломки.json`;
+      const [rawTools, rawBreakdowns] = await Promise.all([
+        loadJson(toolsPath).catch(() => []),
+        loadJson(breakdownsPath).catch(() => []),
+      ]);
+      const tools = normalizeToolsData(rawTools);
+      const breakdowns = Array.isArray(rawBreakdowns)
+        ? rawBreakdowns
+        : Array.isArray(rawBreakdowns?.breakdowns)
+          ? rawBreakdowns.breakdowns
+          : [];
+      const selectedNumber = normalizeToolNumberValue(tool?.["Номер"] ?? "");
+      const selectedAccounting = String(tool?.["Бух.номер"] ?? "").trim();
+      const toolIndex = tools.findIndex((entry) => {
+        const entryNumber = normalizeToolNumberValue(entry?.["Номер"] ?? "");
+        const entryAccounting = String(entry?.["Бух.номер"] ?? "").trim();
+        if (selectedNumber && entryNumber === selectedNumber) return true;
+        if (selectedAccounting && entryAccounting === selectedAccounting) {
+          return true;
+        }
+        return false;
+      });
+      if (toolIndex < 0) {
+        setBreakdownStatusMessage("Инструмент не найден в базе.", "error");
+        breakdownsState.isStatusSaving = false;
+        return;
+      }
+      const dateValue = formatDateValue(new Date());
+      const markerRaw = String(
+        user?.full_name ?? user?.fullName ?? currentUser?.full_name ?? ""
+      ).trim();
+      const marker = markerRaw ? formatFullName(markerRaw) : "Пользователь";
+      const updatedTools = [...tools];
+      updatedTools[toolIndex] = {
+        ...updatedTools[toolIndex],
+        "Статус": "Рабочий",
+      };
+      const fixPayload = {
+        "Дата ремонта": dateValue,
+        "Пользователь, который пометил ремонт": marker,
+      };
+      const updatedBreakdowns = [...breakdowns];
+      let breakdownIndex = -1;
+      for (let index = updatedBreakdowns.length - 1; index >= 0; index -= 1) {
+        const entry = updatedBreakdowns[index];
+        const entryNumber = normalizeToolNumberValue(entry?.["Номер"] ?? "");
+        const entryAccounting = String(entry?.["Бух.номер"] ?? "").trim();
+        if (selectedNumber && entryNumber === selectedNumber) {
+          breakdownIndex = index;
+          break;
+        }
+        if (selectedAccounting && entryAccounting === selectedAccounting) {
+          breakdownIndex = index;
+          break;
+        }
+      }
+      if (breakdownIndex >= 0) {
+        updatedBreakdowns[breakdownIndex] = {
+          ...updatedBreakdowns[breakdownIndex],
+          ...fixPayload,
+        };
+      } else {
+        updatedBreakdowns.push({
+          "Номер": String(tool?.["Номер"] ?? "").trim(),
+          "Бух.номер": String(tool?.["Бух.номер"] ?? "").trim(),
+          "Ответственный": String(tool?.["Ответственный"] ?? "").trim(),
+          ...fixPayload,
+        });
+      }
+      const meta = buildUploadUserMeta({ organizationName: context.orgFullName });
+      await saveEntries([
+        { path: toolsPath, data: updatedTools, ...meta },
+        { path: breakdownsPath, data: updatedBreakdowns, ...meta },
+      ]);
+      syncToolStatusInStates(updatedTools[toolIndex], "Рабочий");
+      await notifyFixBreakdown({
+        tool: updatedTools[toolIndex],
+        orgFolder,
+        fixDate: dateValue,
+        markedBy: marker,
+      });
+      setBreakdownStatusMessage("Статус обновлен.", "success");
+      setTimeout(() => {
+        closeBreakdownStatusModal();
+      }, 500);
+    } catch (error) {
+      console.error(error);
+      setBreakdownStatusMessage(
+        "Не удалось сохранить изменения. Проверьте сервер.",
+        "error"
+      );
+    } finally {
+      breakdownsState.isStatusSaving = false;
+    }
+  };
+
+  const applyBreakdownStatusWriteoff = async () => {
+    if (breakdownsState.isStatusSaving) return;
+    const tool = breakdownsState.statusTool;
+    if (!tool) {
+      setBreakdownStatusMessage("Инструмент не выбран.", "error");
+      return;
+    }
+    const orgFolder = breakdownsState.orgFolder ?? "";
+    if (!orgFolder) {
+      setBreakdownStatusMessage("Не удалось определить организацию.", "error");
+      return;
+    }
+    breakdownsState.isStatusSaving = true;
+    setBreakdownStatusMessage("Сохраняем данные...", "info");
+    try {
+      const toolsPath = `./${orgFolder}/База с инструментами.json`;
+      const writeOffPath = `./${orgFolder}/Списания.json`;
+      const [rawTools, rawWriteOff] = await Promise.all([
+        loadJson(toolsPath).catch(() => []),
+        loadJson(writeOffPath).catch(() => []),
+      ]);
+      const tools = normalizeToolsData(rawTools);
+      const selectedNumber = normalizeToolNumberValue(tool?.["Номер"] ?? "");
+      const selectedAccounting = String(tool?.["Бух.номер"] ?? "").trim();
+      const toolIndex = tools.findIndex((entry) => {
+        const entryNumber = normalizeToolNumberValue(entry?.["Номер"] ?? "");
+        const entryAccounting = String(entry?.["Бух.номер"] ?? "").trim();
+        if (selectedNumber && entryNumber === selectedNumber) return true;
+        if (selectedAccounting && entryAccounting === selectedAccounting) {
+          return true;
+        }
+        return false;
+      });
+      if (toolIndex < 0) {
+        setBreakdownStatusMessage("Инструмент не найден в базе.", "error");
+        breakdownsState.isStatusSaving = false;
+        return;
+      }
+      const dateValue = formatDateValue(new Date());
+      const markerRaw = String(
+        user?.full_name ?? user?.fullName ?? currentUser?.full_name ?? ""
+      ).trim();
+      const marker = markerRaw ? formatFullName(markerRaw) : "Пользователь";
+      const updatedTools = [...tools];
+      updatedTools[toolIndex] = {
+        ...updatedTools[toolIndex],
+        "Статус": "На списание",
+      };
+
+      const baseWrapper =
+        rawWriteOff && typeof rawWriteOff === "object" && !Array.isArray(rawWriteOff)
+          ? { ...rawWriteOff }
+          : {};
+      const writeOffItems = Array.isArray(rawWriteOff)
+        ? rawWriteOff
+        : Array.isArray(rawWriteOff?.items)
+          ? rawWriteOff.items
+          : [];
+      const pendingKey = "списокНаСписание";
+      const pendingList = Array.isArray(baseWrapper[pendingKey])
+        ? baseWrapper[pendingKey]
+        : [];
+      const pendingEntry = {
+        "Номер": String(tool?.["Номер"] ?? "").trim(),
+        "Бух.номер": String(tool?.["Бух.номер"] ?? "").trim(),
+        "Ответственный": String(tool?.["Ответственный"] ?? "").trim(),
+        "Дата постановки статуса \"На списание\"": dateValue,
+        "Поставил статус": marker,
+      };
+      const pendingIndex = pendingList.findIndex((entry) => {
+        const entryNumber = normalizeToolNumberValue(entry?.["Номер"] ?? "");
+        const entryAccounting = String(entry?.["Бух.номер"] ?? "").trim();
+        if (selectedNumber && entryNumber === selectedNumber) return true;
+        if (selectedAccounting && entryAccounting === selectedAccounting) {
+          return true;
+        }
+        return false;
+      });
+      const updatedPending = [...pendingList];
+      if (pendingIndex >= 0) {
+        updatedPending[pendingIndex] = {
+          ...updatedPending[pendingIndex],
+          ...pendingEntry,
+        };
+      } else {
+        updatedPending.push(pendingEntry);
+      }
+      const updatedWriteOffPayload = {
+        ...baseWrapper,
+        items: writeOffItems,
+        [pendingKey]: updatedPending,
+      };
+      const meta = buildUploadUserMeta({ organizationName: context.orgFullName });
+      await saveEntries([
+        { path: toolsPath, data: updatedTools, ...meta },
+        { path: writeOffPath, data: updatedWriteOffPayload, ...meta },
+      ]);
+      syncToolStatusInStates(updatedTools[toolIndex], "На списание");
+      setBreakdownStatusMessage("Инструмент отправлен на списание.", "success");
+      setTimeout(() => {
+        closeBreakdownStatusModal();
+      }, 500);
+    } catch (error) {
+      console.error(error);
+      setBreakdownStatusMessage(
+        "Не удалось сохранить изменения. Проверьте сервер.",
+        "error"
+      );
+    } finally {
+      breakdownsState.isStatusSaving = false;
+    }
+  };
+
+  const handleBreakdownStatusAction = (action) => {
+    if (action === "repaired") {
+      void applyBreakdownStatusRepaired();
+      return;
+    }
+    if (action === "writeoff") {
+      void applyBreakdownStatusWriteoff();
+      return;
+    }
+    if (action === "send-repair") {
+      setBreakdownStatusMessage("Функция скоро появится.", "info");
+      return;
+    }
+    setBreakdownStatusMessage("Неизвестное действие.", "error");
+  };
+
   const openBreakdownsModal = async () => {
     if (!breakdownsModalEl) return;
     breakdownsModalEl.classList.remove("is-hidden");
@@ -8302,8 +8720,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     document.body.style.overflow = "";
   };
 
-  const syncBrokenStatusInToolsState = (tool) => {
-    if (!tool) return;
+  const syncToolStatusInStates = (tool, status) => {
+    if (!tool || !status) return;
     const number = normalizeToolNumberValue(tool?.["Номер"] ?? "");
     const accounting = String(tool?.["Бух.номер"] ?? "").trim();
     const updateTool = (entry) => {
@@ -8313,7 +8731,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         (number && entryNumber === number) ||
         (accounting && entryAccounting === accounting)
       ) {
-        return { ...entry, "Статус": "Сломан", __statusTone: "broken" };
+        const updated = { ...entry, "Статус": status };
+        updated.__statusTone = resolveToolStatusTone(updated);
+        return updated;
       }
       return entry;
     };
@@ -8326,6 +8746,18 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
     breakdownsState.tools = breakdownsState.tools.map(updateTool);
     breakdownsState.filtered = breakdownsState.filtered.map(updateTool);
+    breakdownsState.toolMap.forEach((value, key) => {
+      const updated = updateTool(value);
+      if (updated !== value) {
+        breakdownsState.toolMap.set(key, updated);
+      }
+    });
+    prepareBreakdownsStatusFilter();
+    applyBreakdownsFilters();
+  };
+
+  const syncBrokenStatusInToolsState = (tool) => {
+    syncToolStatusInStates(tool, "Сломан");
   };
 
   if (breakdownsBackdropEl) {
@@ -8359,13 +8791,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       if (!toolId) return;
       const tool = breakdownsState.toolMap.get(toolId);
       if (!tool) return;
+      const tone = tool?.__statusTone ?? resolveToolStatusTone(tool);
+      if (tone === "broken") {
+        openBreakdownStatusModal(tool);
+        return;
+      }
       if (isBreakdownStatusBlocked(tool)) {
-        const status = String(tool?.["Статус"] ?? "").trim().toLowerCase();
-        const message =
-          status === "сломан"
-            ? "Инструмент уже сломан."
-            : "Инструмент уже в ремонте или на списании.";
-        setBreakdownsMessage(message, "info");
+        setBreakdownsMessage("Инструмент уже в ремонте или на списании.", "info");
         return;
       }
       openBreakdownFormModal(tool);
@@ -8377,6 +8809,31 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       if (!row) return;
       event.preventDefault();
       row.click();
+    });
+  }
+  if (breakdownStatusBackdropEl) {
+    breakdownStatusBackdropEl.addEventListener("click", closeBreakdownStatusModal);
+  }
+  if (breakdownStatusCloseButton) {
+    breakdownStatusCloseButton.addEventListener("click", closeBreakdownStatusModal);
+  }
+  if (breakdownStatusCancelButton) {
+    breakdownStatusCancelButton.addEventListener(
+      "click",
+      closeBreakdownStatusModal
+    );
+  }
+  breakdownStatusModalEl?.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      closeBreakdownStatusModal();
+    }
+  });
+  if (breakdownStatusActionButtons.length) {
+    breakdownStatusActionButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        const action = button.dataset.breakdownStatusAction ?? "";
+        handleBreakdownStatusAction(action);
+      });
     });
   }
   if (breakdownFormBackdropEl) {

@@ -923,7 +923,7 @@ export function renderRole(user) {
                       data-breakdowns-status-filter
                       aria-label="Статус"
                     >
-                      <option value="">Все</option>
+                      <option value="">Всё</option>
                     </select>
                   </label>
                 </div>

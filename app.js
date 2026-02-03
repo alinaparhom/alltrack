@@ -6283,9 +6283,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
   };
 
-  const getToolNumberPartsFromFileName = (fileName) => {
-    if (!fileName) return [];
-    return Array.from(fileName.matchAll(/\d+/g)).map((match) => match[0]);
+  const getToolNumberFromFileName = (fileName) => {
+    if (!fileName) return "";
+    const match = String(fileName).match(/^(?:№|N)?\s*(\d+)/i);
+    return match ? match[1] : "";
   };
 
   const listPhotoFilesViaEndpoint = async (orgFolder) => {
@@ -6362,15 +6363,15 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       }
       const extension = decodedName.split(".").pop()?.toLowerCase() || "";
       if (!toolPhotoExtensions.has(extension)) return;
-      const numberParts = getToolNumberPartsFromFileName(decodedName);
-      if (!numberParts.length) return;
-      const hasMatch = numberParts.some((part) => {
-        const normalized = normalizeToolNumberValue(part);
-        return (
-          normalizedVariants.has(normalized) || normalizedVariants.has(part)
-        );
-      });
-      if (!hasMatch) return;
+      const leadingNumber = getToolNumberFromFileName(decodedName);
+      if (!leadingNumber) return;
+      const normalized = normalizeToolNumberValue(leadingNumber);
+      if (
+        !normalizedVariants.has(normalized) &&
+        !normalizedVariants.has(leadingNumber)
+      ) {
+        return;
+      }
       if (seen.has(decodedName)) return;
       seen.add(decodedName);
       files.push({

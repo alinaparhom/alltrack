@@ -918,8 +918,11 @@ export function renderRole(user) {
                     />
                   </label>
                   <label class="tools-quick-filter breakdowns-status-filter">
-                    <span>Статус</span>
-                    <select class="form-input" data-breakdowns-status-filter>
+                    <select
+                      class="form-input"
+                      data-breakdowns-status-filter
+                      aria-label="Статус"
+                    >
                       <option value="">Все</option>
                     </select>
                   </label>

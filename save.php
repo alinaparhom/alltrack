@@ -392,6 +392,75 @@ function resolveFileTargetPath(array $entry): string {
   return $photoPath . DIRECTORY_SEPARATOR . $fileNameSafe;
 }
 
+function resolvePhotoFolderPath(array $entry): string {
+  $path = trim((string) ($entry["path"] ?? ""));
+  if ($path === "") {
+    http_response_code(400);
+    echo json_encode(["error" => "Некорректный путь папки."]);
+    exit;
+  }
+
+  $path = str_replace("\\", "/", $path);
+  $path = ltrim($path, "./");
+  $segments = array_values(array_filter(explode("/", $path), "strlen"));
+  if (count($segments) === 1) {
+    $resolvedFolder = resolveOrganizationFolderForEntry($entry);
+    if (!$resolvedFolder) {
+      http_response_code(403);
+      echo json_encode(["error" => "Не удалось определить папку организации."]);
+      exit;
+    }
+    array_unshift($segments, $resolvedFolder);
+  }
+
+  if (count($segments) !== 2) {
+    http_response_code(403);
+    echo json_encode(["error" => "Доступ запрещен."]);
+    exit;
+  }
+
+  [$orgFolder, $photoFolder] = $segments;
+  $orgFolderSafe = sanitizeFolderName($orgFolder);
+  if ($orgFolderSafe === "" || $orgFolderSafe !== $orgFolder) {
+    http_response_code(403);
+    echo json_encode(["error" => "Доступ запрещен."]);
+    exit;
+  }
+
+  $photoFolderSafe = sanitizeFolderName($photoFolder);
+  $allowedFolders = ["Фото инструментов", "Накладные покупка", "Фото отказов"];
+  if (!in_array($photoFolderSafe, $allowedFolders, true)) {
+    http_response_code(403);
+    echo json_encode(["error" => "Доступ запрещен."]);
+    exit;
+  }
+
+  $orgPath = __DIR__ . DIRECTORY_SEPARATOR . $orgFolderSafe;
+  return $orgPath . DIRECTORY_SEPARATOR . $photoFolderSafe;
+}
+
+function listPhotoFiles(array $entry): array {
+  $photoPath = resolvePhotoFolderPath($entry);
+  if (!is_dir($photoPath)) {
+    return [];
+  }
+  $items = scandir($photoPath);
+  if ($items === false) {
+    return [];
+  }
+  $files = [];
+  foreach ($items as $item) {
+    if ($item === "." || $item === "..") {
+      continue;
+    }
+    $fullPath = $photoPath . DIRECTORY_SEPARATOR . $item;
+    if (is_file($fullPath)) {
+      $files[] = $item;
+    }
+  }
+  return $files;
+}
+
 function saveFileEntry(array $entry): void {
   $content = (string) ($entry["content"] ?? "");
   $encoding = (string) ($entry["encoding"] ?? "base64");
@@ -467,6 +536,11 @@ function saveEntry(array $entry, array $allowedFiles): void {
 }
 
 $entries = buildEntries($payload);
+if (count($entries) === 1 && ($entries[0]["type"] ?? "") === "list-photos") {
+  $files = listPhotoFiles($entries[0]);
+  echo json_encode(["files" => $files], JSON_UNESCAPED_UNICODE);
+  exit;
+}
 foreach ($entries as $entry) {
   if (!is_array($entry)) {
     http_response_code(400);

@@ -6288,6 +6288,56 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     return Array.from(fileName.matchAll(/\d+/g)).map((match) => match[0]);
   };
 
+  const listPhotoFilesViaEndpoint = async (orgFolder) => {
+    if (!orgFolder) return [];
+    const payload = JSON.stringify({
+      entries: [
+        {
+          type: "list-photos",
+          path: `${orgFolder}/Фото инструментов`,
+          ...buildUploadUserMeta({ organizationName: context.orgFullName }),
+        },
+      ],
+    });
+    const response = await fetch(saveEndpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: payload,
+    });
+    let responseText = "";
+    try {
+      responseText = await response.text();
+    } catch (error) {
+      console.warn("Не удалось прочитать ответ сервера.", error);
+    }
+    if (!response.ok) {
+      let errorText = responseText;
+      if (responseText) {
+        try {
+          const parsed = JSON.parse(responseText);
+          errorText =
+            parsed?.error ??
+            parsed?.message ??
+            (typeof parsed === "string" ? parsed : responseText);
+        } catch (error) {
+          // ignore json parse errors
+        }
+      }
+      const message =
+        errorText ||
+        `Не удалось загрузить каталог фото. Код ответа: ${response.status}.`;
+      throw new Error(message);
+    }
+    if (!responseText) return [];
+    try {
+      const parsed = JSON.parse(responseText);
+      return Array.isArray(parsed?.files) ? parsed.files : [];
+    } catch (error) {
+      console.warn("Не удалось распарсить список фото.", error);
+      return [];
+    }
+  };
+
   const loadToolPhotoFiles = async (orgFolder, ...toolNumbers) => {
     if (!orgFolder) return { files: [], errorMessage: "" };
     const numbers = toolNumbers
@@ -6300,30 +6350,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const normalizedVariants = new Set(
       variants.map((variant) => normalizeToolNumberValue(variant))
     );
-    const folderPath = `./${orgFolder}/Фото инструментов/`;
-    let response;
-    let errorMessage = "";
-    try {
-      response = await fetch(folderPath, { cache: "no-store" });
-    } catch (error) {
-      console.warn("Не удалось загрузить каталог фото.", error);
-      return {
-        files: [],
-        errorMessage: "Не удалось загрузить каталог фото. Проверьте подключение.",
-      };
-    }
-    if (!response.ok) {
-      return {
-        files: [],
-        errorMessage: `Не удалось загрузить каталог фото. Код ответа: ${response.status}.`,
-      };
-    }
-    const html = await response.text();
-    const links = extractDirectoryListingLinks(html);
     const files = [];
     const seen = new Set();
-    links.forEach((link) => {
-      const fileName = extractFileNameFromHref(link);
+    const registerFileName = (fileName) => {
       if (!fileName) return;
       let decodedName = fileName;
       try {
@@ -6348,6 +6377,47 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         name: decodedName,
         url: `./${orgFolder}/Фото инструментов/${encodeURIComponent(decodedName)}`,
       });
+    };
+    let endpointError = "";
+    try {
+      const endpointFiles = await listPhotoFilesViaEndpoint(orgFolder);
+      if (endpointFiles.length) {
+        endpointFiles.forEach(registerFileName);
+        return {
+          files: files.sort((a, b) =>
+            a.name.localeCompare(b.name, "ru", { numeric: true })
+          ),
+          errorMessage: "",
+        };
+      }
+    } catch (error) {
+      endpointError = error?.message || "";
+    }
+    const folderPath = `./${orgFolder}/Фото инструментов/`;
+    let response;
+    let errorMessage = "";
+    try {
+      response = await fetch(folderPath, { cache: "no-store" });
+    } catch (error) {
+      console.warn("Не удалось загрузить каталог фото.", error);
+      return {
+        files: [],
+        errorMessage: "Не удалось загрузить каталог фото. Проверьте подключение.",
+      };
+    }
+    if (!response.ok) {
+      return {
+        files: [],
+        errorMessage:
+          endpointError ||
+          `Не удалось загрузить каталог фото. Код ответа: ${response.status}.`,
+      };
+    }
+    const html = await response.text();
+    const links = extractDirectoryListingLinks(html);
+    links.forEach((link) => {
+      const fileName = extractFileNameFromHref(link);
+      registerFileName(fileName);
     });
     return {
       files: files.sort((a, b) =>

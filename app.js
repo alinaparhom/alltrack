@@ -6288,9 +6288,14 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     return Array.from(fileName.matchAll(/\d+/g)).map((match) => match[0]);
   };
 
-  const loadToolPhotoFiles = async (orgFolder, toolNumber) => {
-    if (!orgFolder || !toolNumber) return [];
-    const variants = getToolNumberVariants(toolNumber);
+  const loadToolPhotoFiles = async (orgFolder, ...toolNumbers) => {
+    if (!orgFolder) return [];
+    const numbers = toolNumbers
+      .flat()
+      .map((value) => String(value ?? "").trim())
+      .filter(Boolean);
+    if (!numbers.length) return [];
+    const variants = numbers.flatMap((value) => getToolNumberVariants(value));
     if (!variants.length) return [];
     const normalizedVariants = new Set(
       variants.map((variant) => normalizeToolNumberValue(variant))
@@ -6417,25 +6422,14 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     setRemovePhotoMessage("Загружаем фото...");
     setRemovePhotoView("photos");
     const primaryPhotoNumber = resolveToolPhotoNumber(tool);
+    const numberValue = String(tool?.["Номер"] ?? "").trim();
     const accountingNumber = String(tool?.["Бух.номер"] ?? "").trim();
-    const fallbackPhotoNumber =
-      primaryPhotoNumber === accountingNumber
-        ? String(tool?.["Номер"] ?? "").trim()
-        : accountingNumber;
     removePhotoState.toolPhotos = await loadToolPhotoFiles(
       removePhotoState.orgFolder,
-      primaryPhotoNumber
+      primaryPhotoNumber,
+      numberValue,
+      accountingNumber
     );
-    if (
-      !removePhotoState.toolPhotos.length &&
-      fallbackPhotoNumber &&
-      fallbackPhotoNumber !== primaryPhotoNumber
-    ) {
-      removePhotoState.toolPhotos = await loadToolPhotoFiles(
-        removePhotoState.orgFolder,
-        fallbackPhotoNumber
-      );
-    }
     setRemovePhotoMessage("");
     renderRemovePhotoPhotos();
   };

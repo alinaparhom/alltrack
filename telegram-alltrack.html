@@ -1149,10 +1149,18 @@
       }
 
       .energy-grid {
+        display: flex;
+        flex-wrap: wrap-reverse;
+        gap: var(--space);
         touch-action: pan-y;
         user-select: none;
-        align-content: end;
+        align-content: flex-end;
         margin-top: auto;
+      }
+
+      .energy-grid .action-card {
+        flex: 1 1 calc(50% - var(--space));
+        max-width: calc(50% - var(--space));
       }
 
       .energy-grid [data-energy-item] {
@@ -6133,6 +6141,11 @@
         .dashboard-stats,
         .statistics-grid {
           grid-template-columns: 1fr;
+        }
+
+        .energy-grid .action-card {
+          flex-basis: 100%;
+          max-width: 100%;
         }
       }
     </style>

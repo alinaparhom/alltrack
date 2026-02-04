@@ -356,6 +356,13 @@ export function renderRole(user) {
               <div class="writeoff-selection" data-writeoff-selection>
                 <span>Выбрано:</span>
                 <strong data-writeoff-count>0</strong>
+                <button
+                  class="writeoff-selection__filter"
+                  type="button"
+                  data-writeoff-filter
+                >
+                  Только «На списание»
+                </button>
               </div>
               <div class="writeoff-list" data-writeoff-list></div>
               <div class="tools-empty is-hidden" data-writeoff-empty>

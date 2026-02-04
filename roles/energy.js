@@ -71,39 +71,7 @@ export function renderRole(user) {
           </div>
         </div>
         <div class="quick-access" data-quick-access>
-          <div class="quick-access-header">
-            <div>
-              <div class="quick-access-title">Быстрый доступ</div>
-              <div class="quick-access-subtitle">До 5 плашек</div>
-            </div>
-            <button
-              class="button-secondary quick-access-edit"
-              type="button"
-              data-quick-access-edit
-            >
-              Настроить
-            </button>
-          </div>
           <div class="quick-access-list" data-quick-access-list></div>
-          <div class="quick-access-empty is-hidden" data-quick-access-empty>
-            Выберите 1–5 плашек, чтобы они были всегда под рукой.
-          </div>
-          <div class="quick-access-picker is-hidden" data-quick-access-picker>
-            <div class="quick-access-picker__title">Выберите до 5 плашек</div>
-            <div
-              class="quick-access-picker__grid"
-              data-quick-access-picker-grid
-            ></div>
-            <div class="quick-access-picker__message" data-quick-access-message></div>
-            <div class="quick-access-picker__actions">
-              <button class="action-secondary" type="button" data-quick-access-cancel>
-                Отмена
-              </button>
-              <button class="action-primary" type="button" data-quick-access-save>
-                Сохранить
-              </button>
-            </div>
-          </div>
         </div>
         <div class="settings-modal is-hidden" data-energy-settings-modal>
           <div class="settings-modal__backdrop" data-energy-settings-backdrop></div>

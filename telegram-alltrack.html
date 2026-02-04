@@ -785,6 +785,27 @@
         cursor: pointer;
       }
 
+      .pending-stat--grid {
+        width: 100%;
+        min-width: 0;
+        height: auto;
+        min-height: 72px;
+        padding: var(--space);
+        border-radius: var(--radius-card);
+      }
+
+      .pending-stat--grid .pending-info {
+        min-width: 0;
+      }
+
+      .pending-stat--grid .pending-title {
+        font-size: var(--text-md);
+      }
+
+      .pending-stat--grid .pending-status {
+        font-size: var(--text-sm);
+      }
+
       .pending-stat.is-waiting {
         border-color: rgba(59, 125, 255, 0.45);
         color: var(--accent);
@@ -1179,7 +1200,7 @@
       .quick-access {
         display: grid;
         gap: 12px;
-        padding: 14px;
+        padding: 12px;
         border-radius: var(--radius-card);
         background: rgba(255, 255, 255, 0.9);
         border: 1px solid rgba(226, 232, 240, 0.9);
@@ -1214,7 +1235,8 @@
       .quick-access-list {
         display: grid;
         gap: 10px;
-        grid-template-columns: repeat(5, minmax(0, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(56px, 1fr));
+        align-items: stretch;
       }
 
       .quick-access-item {

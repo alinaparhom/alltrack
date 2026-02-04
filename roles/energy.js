@@ -1008,7 +1008,7 @@ export function renderRole(user) {
           >
             <div class="settings-modal__header repair-form__header">
               <div class="settings-modal__title">
-                <h2>Отправка в ремонт</h2>
+                <h2 data-repair-form-title>Отправка в ремонт</h2>
                 <p data-repair-form-subtitle>Проверьте данные инструмента</p>
               </div>
               <button
@@ -1028,45 +1028,91 @@ export function renderRole(user) {
                   </div>
                   <div class="breakdown-tool-meta" data-repair-tool-meta></div>
                 </div>
-                <label class="form-field form-field--required">
-                  <span class="form-label">Организация</span>
-                  <div class="suggestions-field">
+                <div data-repair-form-send>
+                  <label class="form-field form-field--required">
+                    <span class="form-label">Организация</span>
+                    <div class="suggestions-field">
+                      <input
+                        class="form-input"
+                        type="text"
+                        name="repair-organization"
+                        data-repair-organization
+                        placeholder="Куда отправляем инструмент"
+                        autocomplete="off"
+                        required
+                      />
+                      <div
+                        class="suggestions is-hidden"
+                        data-repair-organization-suggestions
+                      ></div>
+                    </div>
+                  </label>
+                  <label class="form-field">
+                    <span class="form-label">Предварительное описание ремонта</span>
+                    <textarea
+                      class="form-input"
+                      name="repair-description"
+                      data-repair-description
+                      rows="3"
+                      placeholder="Опишите, что нужно сделать"
+                    ></textarea>
+                  </label>
+                  <label class="form-field">
+                    <span class="form-label">Предварительная стоимость ремонта</span>
                     <input
                       class="form-input"
                       type="text"
-                      name="repair-organization"
-                      data-repair-organization
-                      placeholder="Куда отправляем инструмент"
-                      autocomplete="off"
+                      inputmode="decimal"
+                      name="repair-cost"
+                      data-repair-cost
+                      placeholder="Например, 2 500"
+                    />
+                  </label>
+                </div>
+                <div class="is-hidden" data-repair-form-complete>
+                  <label class="form-field form-field--required">
+                    <span class="form-label">Стоимость ремонта</span>
+                    <input
+                      class="form-input"
+                      type="text"
+                      inputmode="decimal"
+                      name="repair-final-cost"
+                      data-repair-final-cost
+                      placeholder="Например, 2 500"
                       required
                     />
-                    <div
-                      class="suggestions is-hidden"
-                      data-repair-organization-suggestions
-                    ></div>
+                  </label>
+                  <div class="form-field form-field--required">
+                    <span class="form-label">Акт ремонта</span>
+                    <div class="form-file-row">
+                      <label class="form-file-option">
+                        <input
+                          class="form-input form-input--file"
+                          type="file"
+                          name="repair-act"
+                          data-repair-act
+                          accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                        />
+                        <span class="form-file-button" aria-hidden="true">
+                          Добавить файл
+                        </span>
+                      </label>
+                      <label class="form-file-option">
+                        <input
+                          class="form-input form-input--file"
+                          type="file"
+                          name="repair-act-photo"
+                          data-repair-act-photo
+                          accept="image/*"
+                          capture="environment"
+                        />
+                        <span class="form-file-button" aria-hidden="true">
+                          Сделать фото
+                        </span>
+                      </label>
+                    </div>
                   </div>
-                </label>
-                <label class="form-field">
-                  <span class="form-label">Предварительное описание ремонта</span>
-                  <textarea
-                    class="form-input"
-                    name="repair-description"
-                    data-repair-description
-                    rows="3"
-                    placeholder="Опишите, что нужно сделать"
-                  ></textarea>
-                </label>
-                <label class="form-field">
-                  <span class="form-label">Предварительная стоимость ремонта</span>
-                  <input
-                    class="form-input"
-                    type="text"
-                    inputmode="decimal"
-                    name="repair-cost"
-                    data-repair-cost
-                    placeholder="Например, 2 500"
-                  />
-                </label>
+                </div>
               </div>
               <div class="settings-modal__footer repair-form__footer">
                 <div
@@ -1083,7 +1129,11 @@ export function renderRole(user) {
                   >
                     Отмена
                   </button>
-                  <button class="action-primary" type="submit">
+                  <button
+                    class="action-primary"
+                    type="submit"
+                    data-repair-form-submit
+                  >
                     Отправить в ремонт
                   </button>
                 </div>

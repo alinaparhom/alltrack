@@ -3815,12 +3815,14 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const objectsCountEl = contentEl.querySelector("[data-energy-objects-count]");
   const objectsSubtitleEl = contentEl.querySelector("[data-energy-objects-subtitle]");
   const toolsModalEl = contentEl.querySelector("[data-tools-modal]");
+  const toolsPanelEl = contentEl.querySelector("[data-tools-panel]");
   const toolsBackdropEl = contentEl.querySelector("[data-tools-backdrop]");
   const toolsCloseButton = contentEl.querySelector("[data-tools-close]");
   const toolsSearchInput = contentEl.querySelector("[data-tools-search]");
   const toolsListEl = contentEl.querySelector("[data-tools-list]");
   const toolsEmptyEl = contentEl.querySelector("[data-tools-empty]");
   const toolsSubtitleEl = contentEl.querySelector("[data-tools-subtitle]");
+  const toolsTitleEl = contentEl.querySelector("[data-tools-title]");
   const toolsViewButtons = contentEl.querySelectorAll("[data-tools-view]");
   const toolsFilterEls = contentEl.querySelectorAll("[data-tools-filter]");
   const toolsFiltersPanelEl = contentEl.querySelector(
@@ -4508,6 +4510,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     tools: [],
     filtered: [],
     view: savedToolsView,
+    mode: "user",
     filters: {
       group: "",
       status: "",
@@ -4814,6 +4817,15 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
   };
 
+  const setToolsTitle = (text) => {
+    if (toolsTitleEl) {
+      toolsTitleEl.textContent = text;
+    }
+    if (toolsPanelEl) {
+      toolsPanelEl.setAttribute("aria-label", text);
+    }
+  };
+
   const buildToolSelectionId = (tool, index) => {
     const number = String(tool?.["Номер"] ?? "").trim();
     if (number) return `number:${number}`;
@@ -4874,6 +4886,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   };
 
   const isToolSelectableForMove = (tool) => {
+    if (toolsState.mode === "base") return false;
     if (!tool) return false;
     if (tool.__pendingMove) return false;
     const photoCount = Number.parseInt(tool?.["Количество фото"] ?? 0, 10);
@@ -4882,6 +4895,23 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   };
 
   const updateToolsSelectionUi = () => {
+    if (toolsState.mode === "base") {
+      toolsState.isSelecting = false;
+      toolsState.selectedIds.clear();
+      if (toolsMoveButtonEl) {
+        toolsMoveButtonEl.disabled = true;
+      }
+      if (toolsSelectionCancelButtonEl) {
+        toolsSelectionCancelButtonEl.disabled = true;
+      }
+      if (toolsSelectionCountEl) {
+        toolsSelectionCountEl.classList.add("is-hidden");
+      }
+      if (toolsModalEl) {
+        toolsModalEl.classList.remove("tools-modal--selecting");
+      }
+      return;
+    }
     const count = toolsState.selectedIds.size;
     if (toolsMoveButtonEl) {
       toolsMoveButtonEl.disabled = count === 0;
@@ -5461,6 +5491,56 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     applyToolsFilters();
   };
 
+  const loadBaseTools = async () => {
+    const orgFolder = context.orgFolderName ?? "";
+    toolsState.orgFolder = orgFolder;
+    if (!orgFolder) {
+      toolsState.tools = [];
+      toolsState.filtered = [];
+      setToolsSubtitle("Не удалось определить организацию.");
+      renderToolsList();
+      return;
+    }
+    const toolsPath = `./${orgFolder}/База с инструментами.json`;
+    let rawTools = [];
+    try {
+      const raw = await loadJson(toolsPath);
+      rawTools = Array.isArray(raw) ? raw : Array.isArray(raw?.tools) ? raw.tools : [];
+    } catch (error) {
+      console.warn("Не удалось загрузить базу инструментов.", error);
+      rawTools = [];
+    }
+    const { pendingNumbers, pendingAccountingNumbers } =
+      await loadPendingMoves(orgFolder);
+    toolsState.tools = rawTools
+      .map((tool, index) => {
+        const selectionId = buildToolSelectionId(tool, index);
+        const number = String(tool?.["Номер"] ?? "").trim();
+        const accounting = String(tool?.["Бух.номер"] ?? "").trim();
+        const hasPendingMove =
+          (number && pendingNumbers.has(number)) ||
+          (accounting && pendingAccountingNumbers.has(accounting));
+        return {
+          ...tool,
+          __searchLine: buildToolSearchLine(tool),
+          __selectionId: selectionId,
+          __pendingMove: hasPendingMove,
+          __statusTone: resolveToolStatusTone(tool),
+        };
+      })
+      .sort((a, b) =>
+        resolveToolNumberValue(a).localeCompare(resolveToolNumberValue(b), "ru", {
+          numeric: true,
+        })
+      );
+    toolsState.toolMap = new Map(
+      toolsState.tools.map((tool) => [tool.__selectionId, tool])
+    );
+    resetToolsSelection();
+    prepareToolsFilters();
+    applyToolsFilters();
+  };
+
   const saveToolsViewPreference = async (view) => {
     try {
       const normalized = normalizeToolsView(view);
@@ -5482,12 +5562,35 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
   const openToolsModal = async () => {
     if (!toolsModalEl) return;
+    toolsState.mode = "user";
+    setToolsTitle("Мои инструменты");
     toolsModalEl.classList.remove("is-hidden");
     document.body.style.overflow = "hidden";
     setToolsSubtitle("Загружаем список...");
     const numberConfig = await resolveToolsNumberConfig();
     updateToolsNumberConfig(numberConfig);
     await loadUserTools();
+    syncToolsViewButtons();
+    if (
+      toolsSearchInput &&
+      (typeof window === "undefined" ||
+        !window.matchMedia ||
+        !window.matchMedia("(max-width: 520px)").matches)
+    ) {
+      toolsSearchInput.focus();
+    }
+  };
+
+  const openBaseModal = async () => {
+    if (!toolsModalEl) return;
+    toolsState.mode = "base";
+    setToolsTitle("База");
+    toolsModalEl.classList.remove("is-hidden");
+    document.body.style.overflow = "hidden";
+    setToolsSubtitle("Загружаем список...");
+    const numberConfig = await resolveToolsNumberConfig();
+    updateToolsNumberConfig(numberConfig);
+    await loadBaseTools();
     syncToolsViewButtons();
     if (
       toolsSearchInput &&
@@ -6994,6 +7097,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
   const openToolsMoveModal = async () => {
     if (!toolsMoveModalEl) return;
+    if (toolsState.mode === "base") return;
     if (toolsState.selectedIds.size === 0) return;
     setToolsMoveMessage("");
     updateToolsSelectionUi();
@@ -7248,6 +7352,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
   if (toolsListEl) {
     toolsListEl.addEventListener("pointerdown", (event) => {
+      if (toolsState.mode === "base") return;
       if (toolsState.isSelecting) return;
       const item = event.target.closest("[data-tools-item]");
       if (!item) return;
@@ -7285,6 +7390,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     });
 
     toolsListEl.addEventListener("click", (event) => {
+      if (toolsState.mode === "base") return;
       const item = event.target.closest("[data-tools-item]");
       if (!item) return;
       if (toolsSelectState.suppressClick) {
@@ -12860,6 +12966,14 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       targetCard.dataset.actionId === "tools"
     ) {
       openToolsModal();
+      return;
+    }
+    if (
+      !isGrouping &&
+      targetCard.dataset.energyItemType === "action" &&
+      targetCard.dataset.actionId === "base"
+    ) {
+      openBaseModal();
       return;
     }
     if (

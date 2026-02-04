@@ -475,7 +475,7 @@ const applyToolPhotoWithFallback = ({
     : [];
   let candidateIndex = 0;
   const fallbackToDirectoryListing = async () => {
-    if (!hasPhoto || !orgFolder || !toolNumber) return;
+    if (!orgFolder || !toolNumber) return;
     const resolved = await resolvePhotoUrlFromDirectoryListing(
       orgFolder,
       toolNumber
@@ -484,6 +484,19 @@ const applyToolPhotoWithFallback = ({
       img.src = resolved;
       img.classList.remove("is-placeholder");
     }
+  };
+  const markLoaded = () => {
+    img.classList.remove("is-placeholder");
+    img
+      .closest(".tools-card__media")
+      ?.querySelector(".tools-card__badge")
+      ?.remove();
+    img
+      .closest(".tools-table__row")
+      ?.classList.remove("tools-table__row--no-photo");
+    img
+      .closest(".tools-row")
+      ?.classList.remove("tools-row--no-photo");
   };
   const setPlaceholder = () => {
     img.onerror = null;
@@ -505,7 +518,7 @@ const applyToolPhotoWithFallback = ({
     tryCandidate();
   };
   img.onload = () => {
-    img.classList.remove("is-placeholder");
+    markLoaded();
   };
   if (candidates.length) {
     tryCandidate();

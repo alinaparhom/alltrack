@@ -1128,13 +1128,19 @@
       }
 
       .energy-dashboard {
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
         gap: 18px;
-        padding-bottom: calc(120px + env(safe-area-inset-bottom));
+        min-height: 100%;
+        padding-bottom: calc(150px + env(safe-area-inset-bottom));
       }
 
       .energy-grid {
         touch-action: pan-y;
         user-select: none;
+        flex: 1;
+        align-content: end;
       }
 
       .energy-grid [data-energy-item] {

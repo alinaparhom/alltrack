@@ -50,7 +50,13 @@ const defaultPreferences = {
   grouping: "free",
   theme: "telegram",
 };
-const quickAccessDefaults = ["demand", "tools", "info", "download"];
+const quickAccessDefaults = [
+  "pending-moves",
+  "demand",
+  "tools",
+  "info",
+  "download",
+];
 const quickAccessLimit = 5;
 const energySettingsRoles = [
   responsibleRole,
@@ -4653,6 +4659,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       Array.isArray(saved) && saved.length > 0 ? saved : quickAccessDefaults;
     const filtered = baseList.filter((id) => actionsMap.has(id));
     if (filtered.length > 0) {
+      if (actionsMap.has("pending-moves") && !filtered.includes("pending-moves")) {
+        return ["pending-moves", ...filtered].slice(0, quickAccessLimit);
+      }
       return filtered.slice(0, quickAccessLimit);
     }
     const fallback = quickAccessDefaults.filter((id) => actionsMap.has(id));
@@ -13598,6 +13607,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
   const handleEnergyAction = (actionId) => {
     if (!actionId) return false;
+    if (actionId === "pending-moves") {
+      openPendingMovesModal();
+      return true;
+    }
     if (actionId === "settings") {
       openSettingsModal();
       return true;

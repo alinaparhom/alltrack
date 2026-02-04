@@ -1,6 +1,7 @@
 export const roleId = "Энергетик";
 
 export const energyActions = [
+  { id: "pending-moves", title: "Перемещения", icon: "📦" },
   { id: "tools", title: "Мои инструменты", icon: "🧰" },
   { id: "add-tool", title: "Новая МТЦ", icon: "➕" },
   { id: "base", title: "База", icon: "🗂️" },

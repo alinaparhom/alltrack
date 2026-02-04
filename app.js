@@ -50,7 +50,7 @@ const defaultPreferences = {
   grouping: "free",
   theme: "telegram",
 };
-const quickAccessDefaults = ["demand", "tools", "info", "download"];
+const quickAccessDefaults = ["breakdowns", "info", "search", "tools", "move"];
 const quickAccessLimit = 5;
 const energySettingsRoles = [
   responsibleRole,

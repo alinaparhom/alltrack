@@ -4698,6 +4698,16 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     updateQuickAccessOffset();
   };
 
+  const scrollToQuickAccess = () => {
+    if (!quickAccessEl) return;
+    const appScrollEl = document.querySelector(".app-scroll");
+    if (!appScrollEl || appScrollEl.scrollTop > 0) return;
+    const quickAccessRect = quickAccessEl.getBoundingClientRect();
+    const scrollRect = appScrollEl.getBoundingClientRect();
+    const targetTop = quickAccessRect.top - scrollRect.top + appScrollEl.scrollTop - 8;
+    appScrollEl.scrollTo({ top: Math.max(0, targetTop), behavior: "auto" });
+  };
+
   const renderQuickAccessPicker = () => {
     if (!quickAccessPickerGridEl) return;
     quickAccessPickerGridEl.innerHTML = "";
@@ -4753,6 +4763,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
   renderEnergyGrid();
   renderQuickAccessList();
+  requestAnimationFrame(() => {
+    scrollToQuickAccess();
+  });
 
   if (quickAccessEl && typeof ResizeObserver !== "undefined") {
     if (!quickAccessEl.dataset.offsetObserverAttached) {

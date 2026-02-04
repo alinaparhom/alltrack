@@ -3828,6 +3828,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const toolsStatusFilterEls = contentEl.querySelectorAll(
     "[data-tools-status-filter]"
   );
+  const toolsResponsibleFilterEls = contentEl.querySelectorAll(
+    "[data-tools-responsible-filter]"
+  );
   const toolsFiltersPanelEl = contentEl.querySelector(
     "[data-tools-filters-panel]"
   );
@@ -4518,6 +4521,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       group: "",
       status: "",
       object: "",
+      responsible: "",
       manufacturer: "",
       model: "",
       photo: "",
@@ -4831,6 +4835,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
   const setToolsStatusFilterVisibility = (isVisible) => {
     toolsStatusFilterEls.forEach((element) => {
+      element.classList.toggle("is-hidden", !isVisible);
+    });
+  };
+
+  const setToolsResponsibleFilterVisibility = (isVisible) => {
+    toolsResponsibleFilterEls.forEach((element) => {
       element.classList.toggle("is-hidden", !isVisible);
     });
   };
@@ -5350,6 +5360,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         return false;
       }
       if (
+        toolsState.filters.responsible &&
+        String(tool?.["Ответственный"] ?? "").trim() !==
+          toolsState.filters.responsible
+      ) {
+        return false;
+      }
+      if (
         toolsState.filters.manufacturer &&
         String(tool?.["Производитель"] ?? "").trim() !==
           toolsState.filters.manufacturer
@@ -5428,6 +5445,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     fillToolsFilterOptions("group", collectValues("Граппа инструментов"));
     fillToolsFilterOptions("status", collectValues("Статус"));
     fillToolsFilterOptions("object", collectValues("Объект"));
+    fillToolsFilterOptions("responsible", collectValues("Ответственный"));
     fillToolsFilterOptions("manufacturer", collectValues("Производитель"));
     fillToolsFilterOptions("model", collectValues("Модель"));
     const photoSelect = contentEl.querySelector('[data-tools-filter="photo"]');
@@ -5575,7 +5593,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (!toolsModalEl) return;
     toolsState.mode = "user";
     setToolsTitle("Мои инструменты");
+    toolsState.filters.responsible = "";
+    syncToolsFilterValue("responsible", "");
     setToolsStatusFilterVisibility(true);
+    setToolsResponsibleFilterVisibility(false);
     toolsModalEl.classList.remove("is-hidden");
     document.body.style.overflow = "hidden";
     setToolsSubtitle("Загружаем список...");
@@ -5600,6 +5621,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     toolsState.filters.status = "";
     syncToolsFilterValue("status", "");
     setToolsStatusFilterVisibility(false);
+    setToolsResponsibleFilterVisibility(true);
     toolsModalEl.classList.remove("is-hidden");
     document.body.style.overflow = "hidden";
     setToolsSubtitle("Загружаем список...");

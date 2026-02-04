@@ -298,6 +298,13 @@ export function renderRole(user) {
                     <span>Объект</span>
                     <select class="form-input" data-tools-filter="object"></select>
                   </label>
+                  <label class="tools-filter" data-tools-responsible-filter>
+                    <span>Ответственны</span>
+                    <select
+                      class="form-input"
+                      data-tools-filter="responsible"
+                    ></select>
+                  </label>
                   <label class="tools-filter">
                     <span>Производитель</span>
                     <select

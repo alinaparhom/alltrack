@@ -478,6 +478,87 @@ export function renderRole(user) {
             </div>
           </div>
         </div>
+        <div class="tools-modal settings-modal is-hidden tools-info-modal" data-tools-info-modal>
+          <div class="settings-modal__backdrop" data-tools-info-backdrop></div>
+          <div
+            class="settings-modal__panel tools-info-modal__panel"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Информация об инструменте"
+          >
+            <div class="settings-modal__header tools-modal__header">
+              <div class="settings-modal__title">
+                <h2 data-tools-info-title>Инструмент</h2>
+                <p data-tools-info-subtitle>Детальная информация</p>
+              </div>
+              <button
+                class="button-icon tools-modal__close"
+                type="button"
+                data-tools-info-close
+                aria-label="Закрыть окно информации"
+              >
+                <span class="button-icon-emoji" aria-hidden="true">✕</span>
+              </button>
+            </div>
+            <div class="settings-modal__body tools-info-modal__body">
+              <div class="tools-info-card">
+                <div class="tools-info-grid" data-tools-info-grid></div>
+              </div>
+              <div class="tools-info-tabs" role="tablist" aria-label="История">
+                <button
+                  class="tools-info-tab is-active"
+                  type="button"
+                  role="tab"
+                  aria-selected="true"
+                  data-tools-info-tab="moves"
+                >
+                  Перемещения
+                </button>
+                <button
+                  class="tools-info-tab"
+                  type="button"
+                  role="tab"
+                  aria-selected="false"
+                  data-tools-info-tab="breakdowns"
+                >
+                  Поломки
+                </button>
+                <button
+                  class="tools-info-tab"
+                  type="button"
+                  role="tab"
+                  aria-selected="false"
+                  data-tools-info-tab="repairs"
+                >
+                  Ремонты
+                </button>
+              </div>
+              <div class="tools-info-panels">
+                <section class="tools-info-panel is-active" data-tools-info-panel="moves">
+                  <div class="tools-info-summary" data-tools-info-moves-summary></div>
+                  <div class="tools-info-list" data-tools-info-moves-list></div>
+                  <div class="tools-info-empty is-hidden" data-tools-info-moves-empty>
+                    Перемещений пока нет.
+                  </div>
+                </section>
+                <section class="tools-info-panel" data-tools-info-panel="breakdowns">
+                  <div class="tools-info-summary" data-tools-info-breakdowns-summary></div>
+                  <div class="tools-info-list" data-tools-info-breakdowns-list></div>
+                  <div class="tools-info-empty is-hidden" data-tools-info-breakdowns-empty>
+                    Поломок пока нет.
+                  </div>
+                </section>
+                <section class="tools-info-panel" data-tools-info-panel="repairs">
+                  <div class="tools-info-summary" data-tools-info-repairs-summary></div>
+                  <div class="tools-info-list" data-tools-info-repairs-list></div>
+                  <div class="tools-info-empty is-hidden" data-tools-info-repairs-empty>
+                    Ремонтов пока нет.
+                  </div>
+                </section>
+              </div>
+            </div>
+          </div>
+        </div>
         <div class="settings-modal is-hidden writeoff-modal" data-writeoff-modal>
           <div class="settings-modal__backdrop" data-writeoff-backdrop></div>
           <div

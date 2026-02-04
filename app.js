@@ -4054,6 +4054,45 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const toolsEditMessageEl = contentEl.querySelector("[data-tools-edit-message]");
   const toolsEditTitleEl = contentEl.querySelector("[data-tools-edit-title]");
   const toolsEditSubtitleEl = contentEl.querySelector("[data-tools-edit-subtitle]");
+  const toolsInfoModalEl = contentEl.querySelector("[data-tools-info-modal]");
+  const toolsInfoBackdropEl = contentEl.querySelector("[data-tools-info-backdrop]");
+  const toolsInfoCloseButton = contentEl.querySelector("[data-tools-info-close]");
+  const toolsInfoTitleEl = contentEl.querySelector("[data-tools-info-title]");
+  const toolsInfoSubtitleEl = contentEl.querySelector("[data-tools-info-subtitle]");
+  const toolsInfoGridEl = contentEl.querySelector("[data-tools-info-grid]");
+  const toolsInfoTabButtons = Array.from(
+    contentEl.querySelectorAll("[data-tools-info-tab]")
+  );
+  const toolsInfoPanels = Array.from(
+    contentEl.querySelectorAll("[data-tools-info-panel]")
+  );
+  const toolsInfoMovesSummaryEl = contentEl.querySelector(
+    "[data-tools-info-moves-summary]"
+  );
+  const toolsInfoMovesListEl = contentEl.querySelector(
+    "[data-tools-info-moves-list]"
+  );
+  const toolsInfoMovesEmptyEl = contentEl.querySelector(
+    "[data-tools-info-moves-empty]"
+  );
+  const toolsInfoBreakdownsSummaryEl = contentEl.querySelector(
+    "[data-tools-info-breakdowns-summary]"
+  );
+  const toolsInfoBreakdownsListEl = contentEl.querySelector(
+    "[data-tools-info-breakdowns-list]"
+  );
+  const toolsInfoBreakdownsEmptyEl = contentEl.querySelector(
+    "[data-tools-info-breakdowns-empty]"
+  );
+  const toolsInfoRepairsSummaryEl = contentEl.querySelector(
+    "[data-tools-info-repairs-summary]"
+  );
+  const toolsInfoRepairsListEl = contentEl.querySelector(
+    "[data-tools-info-repairs-list]"
+  );
+  const toolsInfoRepairsEmptyEl = contentEl.querySelector(
+    "[data-tools-info-repairs-empty]"
+  );
   const toolsEditAccountingInput = contentEl.querySelector(
     "[data-tools-edit-accounting]"
   );
@@ -4867,6 +4906,14 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     orgFolder: "",
     isSaving: false,
   };
+  const toolsInfoState = {
+    tool: null,
+    orgFolder: "",
+    tab: "moves",
+    moves: [],
+    breakdowns: [],
+    repairs: [],
+  };
   let pendingMovesDeclineResolver = null;
   const toolsMoveState = {
     responsibleOptions: [],
@@ -5361,6 +5408,43 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (status === "в ремонте") return "repair";
     if (status === "на списание") return "writeoff";
     return "";
+  };
+
+  const pluralizeDaysValue = (count) => {
+    const mod10 = count % 10;
+    const mod100 = count % 100;
+    if (mod10 === 1 && mod100 !== 11) return "день";
+    if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return "дня";
+    return "дней";
+  };
+
+  const formatDaysValue = (count) =>
+    `${count} ${pluralizeDaysValue(Math.abs(count))}`;
+
+  const formatInfoValue = (value) => {
+    const raw = String(value ?? "").trim();
+    return raw || "—";
+  };
+
+  const formatDateWithDays = ({ dateLabel, startDate, endDate }) => {
+    if (!startDate) return formatInfoValue(dateLabel);
+    const safeEndDate = endDate || new Date();
+    const days = getDaysDifference(safeEndDate, startDate);
+    const label = dateLabel || "—";
+    return `${label} · ${formatDaysValue(days)}`;
+  };
+
+  const buildToolsInfoRow = (label, value) => {
+    const row = document.createElement("div");
+    row.className = "tools-info-item__row";
+    const labelEl = document.createElement("span");
+    labelEl.className = "tools-info-item__label";
+    labelEl.textContent = label;
+    const valueEl = document.createElement("span");
+    valueEl.className = "tools-info-item__value";
+    valueEl.textContent = formatInfoValue(value);
+    row.append(labelEl, valueEl);
+    return row;
   };
 
   const applyToolStatusClasses = (element, tool) => {
@@ -5970,6 +6054,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     resetToolsSelection();
     closeToolsMoveModal();
     closeToolsCancelMoveModal();
+    if (toolsInfoModalEl && !toolsInfoModalEl.classList.contains("is-hidden")) {
+      closeToolsInfoModal();
+    }
   };
 
   const closeToolsEditModal = () => {
@@ -5984,6 +6071,328 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (toolsEditPhotoInput) {
       toolsEditPhotoInput.value = "";
     }
+  };
+
+  const setToolsInfoTab = (tab) => {
+    toolsInfoState.tab = tab;
+    toolsInfoTabButtons.forEach((button) => {
+      const isActive = button.dataset.toolsInfoTab === tab;
+      button.classList.toggle("is-active", isActive);
+      button.setAttribute("aria-selected", isActive ? "true" : "false");
+    });
+    toolsInfoPanels.forEach((panel) => {
+      const isActive = panel.dataset.toolsInfoPanel === tab;
+      panel.classList.toggle("is-active", isActive);
+    });
+  };
+
+  const renderToolsInfoGrid = (tool) => {
+    if (!toolsInfoGridEl) return;
+    toolsInfoGridEl.innerHTML = "";
+    const toolNumber =
+      String(tool?.["Номер"] ?? "").trim() || resolveToolNumberValue(tool);
+    const accountingNumber = String(tool?.["Бух.номер"] ?? "").trim();
+    const nameParts = [
+      String(tool?.["Наименование"] ?? "").trim(),
+      String(tool?.["Производитель"] ?? "").trim(),
+      String(tool?.["Модель"] ?? "").trim(),
+    ].filter(Boolean);
+    const info = [
+      { label: "Номер", value: toolNumber },
+      { label: "Бух.номер", value: accountingNumber },
+      { label: "Наименование", value: nameParts.join(" ") },
+      { label: "Стоимость", value: tool?.["Стоимость"] },
+      { label: "Дата покупки", value: tool?.["Дата покупки"] },
+      { label: "Ответственный", value: tool?.["Ответственный"] },
+      { label: "Объект", value: tool?.["Объект"] },
+      { label: "Статус", value: tool?.["Статус"] },
+    ];
+    info.forEach(({ label, value }) => {
+      const row = document.createElement("div");
+      row.className = "tools-info-row";
+      const labelEl = document.createElement("div");
+      labelEl.className = "tools-info-label";
+      labelEl.textContent = label;
+      const valueEl = document.createElement("div");
+      valueEl.className = "tools-info-value";
+      valueEl.textContent = formatInfoValue(value);
+      row.append(labelEl, valueEl);
+      toolsInfoGridEl.appendChild(row);
+    });
+  };
+
+  const buildToolsInfoMatcher = (tool) => {
+    const number = normalizeToolNumberValue(tool?.["Номер"] ?? "");
+    const accounting = String(tool?.["Бух.номер"] ?? "").trim();
+    return (entry) => {
+      const entryNumber = normalizeToolNumberValue(entry?.["Номер"] ?? "");
+      const entryAccounting = String(entry?.["Бух.номер"] ?? "").trim();
+      if (number && entryNumber === number) return true;
+      if (accounting && entryAccounting === accounting) return true;
+      return false;
+    };
+  };
+
+  const renderToolsInfoMoves = () => {
+    if (toolsInfoMovesListEl) toolsInfoMovesListEl.innerHTML = "";
+    const moves = toolsInfoState.moves;
+    if (toolsInfoMovesSummaryEl) {
+      toolsInfoMovesSummaryEl.textContent = moves.length
+        ? `Всего перемещений: ${moves.length}`
+        : "Перемещений пока нет.";
+    }
+    if (toolsInfoMovesEmptyEl) {
+      toolsInfoMovesEmptyEl.classList.toggle("is-hidden", moves.length > 0);
+    }
+    if (!toolsInfoMovesListEl) return;
+    moves.forEach((move) => {
+      const response = String(move?.["Ответ"] ?? "").trim().toLowerCase();
+      const isRejected = response === "не принял";
+      const item = document.createElement("div");
+      item.className = "tools-info-item";
+      if (isRejected) {
+        item.classList.add("tools-info-item--danger");
+      }
+      const title = document.createElement("div");
+      title.className = "tools-info-item__title";
+      title.textContent = formatInfoValue(move?.["Дата перемещения"]);
+      const grid = document.createElement("div");
+      grid.className = "tools-info-item__grid";
+      grid.append(
+        buildToolsInfoRow("Переместил", move?.["Переместил"]),
+        buildToolsInfoRow("Старый объект", move?.["Старый объект"]),
+        buildToolsInfoRow("Принял", move?.["Принял"]),
+        buildToolsInfoRow("Новый объект", move?.["Новый объект"])
+      );
+      item.append(title, grid);
+      if (isRejected) {
+        const reason = formatInfoValue(move?.["Причина отказа"]);
+        const note = document.createElement("div");
+        note.className = "tools-info-item__note";
+        note.textContent = `Причина отказа: ${reason}`;
+        item.appendChild(note);
+      }
+      toolsInfoMovesListEl.appendChild(item);
+    });
+  };
+
+  const renderToolsInfoBreakdowns = () => {
+    if (toolsInfoBreakdownsListEl) toolsInfoBreakdownsListEl.innerHTML = "";
+    const breakdowns = toolsInfoState.breakdowns;
+    let totalDays = 0;
+    breakdowns.forEach((entry) => {
+      const startDate = parseDateValue(entry?.["Дата поломки"]);
+      if (!startDate) return;
+      const endDate = parseDateValue(entry?.["Дата ремонта"]) || new Date();
+      totalDays += getDaysDifference(endDate, startDate);
+    });
+    if (toolsInfoBreakdownsSummaryEl) {
+      toolsInfoBreakdownsSummaryEl.textContent = breakdowns.length
+        ? `Поломок: ${breakdowns.length} · Суммарно: ${formatDaysValue(totalDays)}`
+        : "Поломок пока нет.";
+    }
+    if (toolsInfoBreakdownsEmptyEl) {
+      toolsInfoBreakdownsEmptyEl.classList.toggle(
+        "is-hidden",
+        breakdowns.length > 0
+      );
+    }
+    if (!toolsInfoBreakdownsListEl) return;
+    breakdowns.forEach((entry) => {
+      const startDate = parseDateValue(entry?.["Дата поломки"]);
+      const endDate = parseDateValue(entry?.["Дата ремонта"]);
+      const endLabel = endDate ? entry?.["Дата ремонта"] : "В работе";
+      const item = document.createElement("div");
+      item.className = "tools-info-item";
+      const title = document.createElement("div");
+      title.className = "tools-info-item__title";
+      title.textContent = formatInfoValue(entry?.["Дата поломки"]);
+      const grid = document.createElement("div");
+      grid.className = "tools-info-item__grid";
+      const dateValue = formatDateWithDays({
+        dateLabel: endLabel,
+        startDate,
+        endDate,
+      });
+      grid.append(
+        buildToolsInfoRow("Дата ремонта", dateValue),
+        buildToolsInfoRow("Описание поломки", entry?.["Описание поломки"]),
+        buildToolsInfoRow("Ответственный", entry?.["Ответственный"])
+      );
+      item.append(title, grid);
+      toolsInfoBreakdownsListEl.appendChild(item);
+    });
+  };
+
+  const renderToolsInfoRepairs = () => {
+    if (toolsInfoRepairsListEl) toolsInfoRepairsListEl.innerHTML = "";
+    const repairs = toolsInfoState.repairs;
+    let totalDays = 0;
+    repairs.forEach((entry) => {
+      const startDate = parseDateValue(entry?.["Дата отправки в ремонт"]);
+      if (!startDate) return;
+      const endDate = parseDateValue(entry?.["Дата ремонта"]) || new Date();
+      totalDays += getDaysDifference(endDate, startDate);
+    });
+    if (toolsInfoRepairsSummaryEl) {
+      toolsInfoRepairsSummaryEl.textContent = repairs.length
+        ? `Ремонтов: ${repairs.length} · Суммарно: ${formatDaysValue(totalDays)}`
+        : "Ремонтов пока нет.";
+    }
+    if (toolsInfoRepairsEmptyEl) {
+      toolsInfoRepairsEmptyEl.classList.toggle("is-hidden", repairs.length > 0);
+    }
+    if (!toolsInfoRepairsListEl) return;
+    repairs.forEach((entry) => {
+      const startDate = parseDateValue(entry?.["Дата отправки в ремонт"]);
+      const endDate = parseDateValue(entry?.["Дата ремонта"]);
+      const endLabel = endDate ? entry?.["Дата ремонта"] : "В ремонте";
+      const item = document.createElement("div");
+      item.className = "tools-info-item";
+      const title = document.createElement("div");
+      title.className = "tools-info-item__title";
+      title.textContent = formatInfoValue(entry?.["Дата отправки в ремонт"]);
+      const grid = document.createElement("div");
+      grid.className = "tools-info-item__grid";
+      const dateValue = formatDateWithDays({
+        dateLabel: endLabel,
+        startDate,
+        endDate,
+      });
+      const costValue =
+        entry?.["Стоимость ремонта"] ?? entry?.["Предварительная стоимость ремонта"];
+      grid.append(
+        buildToolsInfoRow("Организация", entry?.["Организация"]),
+        buildToolsInfoRow("Дата ремонта", dateValue),
+        buildToolsInfoRow("Стоимость ремонта", costValue),
+        buildToolsInfoRow("Ответственный", entry?.["Ответственный"])
+      );
+      item.append(title, grid);
+      toolsInfoRepairsListEl.appendChild(item);
+    });
+  };
+
+  const loadToolsInfoData = async () => {
+    const tool = toolsInfoState.tool;
+    const orgFolder = toolsInfoState.orgFolder;
+    if (!tool || !orgFolder) {
+      toolsInfoState.moves = [];
+      toolsInfoState.breakdowns = [];
+      toolsInfoState.repairs = [];
+      renderToolsInfoMoves();
+      renderToolsInfoBreakdowns();
+      renderToolsInfoRepairs();
+      return;
+    }
+    const matcher = buildToolsInfoMatcher(tool);
+    const movesPath = `./${orgFolder}/Перемещения.json`;
+    const breakdownsPath = `./${orgFolder}/Поломки.json`;
+    const repairsPath = `./${orgFolder}/Ремонты.json`;
+    const [rawMoves, rawBreakdowns, rawRepairs] = await Promise.all([
+      loadJson(movesPath).catch(() => []),
+      loadJson(breakdownsPath).catch(() => []),
+      loadJson(repairsPath).catch(() => []),
+    ]);
+    const moves = Array.isArray(rawMoves)
+      ? rawMoves
+      : Array.isArray(rawMoves?.moves)
+        ? rawMoves.moves
+        : [];
+    const breakdowns = Array.isArray(rawBreakdowns)
+      ? rawBreakdowns
+      : Array.isArray(rawBreakdowns?.breakdowns)
+        ? rawBreakdowns.breakdowns
+        : [];
+    const repairs = Array.isArray(rawRepairs)
+      ? rawRepairs
+      : Array.isArray(rawRepairs?.repairs)
+        ? rawRepairs.repairs
+        : [];
+    toolsInfoState.moves = moves
+      .filter(matcher)
+      .filter(
+        (move) =>
+          String(move?.["Ответ"] ?? "").trim().toLowerCase() !== "отменено"
+      )
+      .sort((a, b) => {
+        const aDate = parseDateValue(a?.["Дата перемещения"]);
+        const bDate = parseDateValue(b?.["Дата перемещения"]);
+        if (!aDate && !bDate) return 0;
+        if (!aDate) return 1;
+        if (!bDate) return -1;
+        return bDate - aDate;
+      });
+    toolsInfoState.breakdowns = breakdowns
+      .filter(matcher)
+      .sort((a, b) => {
+        const aDate = parseDateValue(a?.["Дата поломки"]);
+        const bDate = parseDateValue(b?.["Дата поломки"]);
+        if (!aDate && !bDate) return 0;
+        if (!aDate) return 1;
+        if (!bDate) return -1;
+        return bDate - aDate;
+      });
+    toolsInfoState.repairs = repairs
+      .filter(matcher)
+      .sort((a, b) => {
+        const aDate = parseDateValue(a?.["Дата отправки в ремонт"]);
+        const bDate = parseDateValue(b?.["Дата отправки в ремонт"]);
+        if (!aDate && !bDate) return 0;
+        if (!aDate) return 1;
+        if (!bDate) return -1;
+        return bDate - aDate;
+      });
+    renderToolsInfoMoves();
+    renderToolsInfoBreakdowns();
+    renderToolsInfoRepairs();
+  };
+
+  const closeToolsInfoModal = () => {
+    if (!toolsInfoModalEl) return;
+    toolsInfoModalEl.classList.add("is-hidden");
+    document.body.style.overflow = "";
+    toolsInfoState.tool = null;
+  };
+
+  const openToolsInfoModal = async (tool) => {
+    if (!toolsInfoModalEl || !tool) return;
+    toolsInfoState.tool = tool;
+    toolsInfoState.orgFolder = toolsState.orgFolder || context.orgFolderName || "";
+    const toolNumber = resolveToolNumberValue(tool) || "—";
+    const nameParts = [
+      String(tool?.["Наименование"] ?? "").trim(),
+      String(tool?.["Производитель"] ?? "").trim(),
+      String(tool?.["Модель"] ?? "").trim(),
+    ].filter(Boolean);
+    const title = nameParts.length ? nameParts.join(" ") : "Инструмент";
+    if (toolsInfoTitleEl) {
+      toolsInfoTitleEl.textContent = title;
+    }
+    if (toolsInfoSubtitleEl) {
+      toolsInfoSubtitleEl.textContent = `№${toolNumber}`;
+    }
+    renderToolsInfoGrid(tool);
+    if (toolsInfoMovesSummaryEl) {
+      toolsInfoMovesSummaryEl.textContent = "Загружаем перемещения...";
+    }
+    if (toolsInfoBreakdownsSummaryEl) {
+      toolsInfoBreakdownsSummaryEl.textContent = "Загружаем поломки...";
+    }
+    if (toolsInfoRepairsSummaryEl) {
+      toolsInfoRepairsSummaryEl.textContent = "Загружаем ремонты...";
+    }
+    if (toolsInfoMovesListEl) toolsInfoMovesListEl.innerHTML = "";
+    if (toolsInfoBreakdownsListEl) toolsInfoBreakdownsListEl.innerHTML = "";
+    if (toolsInfoRepairsListEl) toolsInfoRepairsListEl.innerHTML = "";
+    if (toolsInfoMovesEmptyEl) toolsInfoMovesEmptyEl.classList.add("is-hidden");
+    if (toolsInfoBreakdownsEmptyEl) {
+      toolsInfoBreakdownsEmptyEl.classList.add("is-hidden");
+    }
+    if (toolsInfoRepairsEmptyEl) toolsInfoRepairsEmptyEl.classList.add("is-hidden");
+    setToolsInfoTab("moves");
+    toolsInfoModalEl.classList.remove("is-hidden");
+    document.body.style.overflow = "hidden";
+    await loadToolsInfoData();
   };
 
   const openToolsEditModal = (tool) => {
@@ -7503,6 +7912,26 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       closeToolsEditModal();
     }
   });
+  if (toolsInfoBackdropEl) {
+    toolsInfoBackdropEl.addEventListener("click", closeToolsInfoModal);
+  }
+  if (toolsInfoCloseButton) {
+    toolsInfoCloseButton.addEventListener("click", closeToolsInfoModal);
+  }
+  toolsInfoModalEl?.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      closeToolsInfoModal();
+    }
+  });
+  if (toolsInfoTabButtons.length) {
+    toolsInfoTabButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        const tab = button.dataset.toolsInfoTab;
+        if (!tab) return;
+        setToolsInfoTab(tab);
+      });
+    });
+  }
   if (toolsEditFormEl) {
     toolsEditFormEl.addEventListener("submit", (event) => {
       event.preventDefault();
@@ -8091,6 +8520,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         return;
       }
       if (toolsState.mode === "search") {
+        const tool = toolsState.toolMap.get(item.dataset.toolId);
+        if (tool) {
+          openToolsInfoModal(tool);
+        }
         return;
       }
       if (toolsSelectState.suppressClick) {

@@ -4391,6 +4391,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const writeOffSubtitleEl = contentEl.querySelector("[data-writeoff-subtitle]");
   const writeOffMessageEl = contentEl.querySelector("[data-writeoff-message]");
   const writeOffNextButton = contentEl.querySelector("[data-writeoff-next]");
+  const writeOffFilterButton = contentEl.querySelector("[data-writeoff-filter]");
   const writeOffConfirmModalEl = contentEl.querySelector(
     "[data-writeoff-confirm-modal]"
   );
@@ -4574,6 +4575,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     toolMap: new Map(),
     selectedTools: [],
     isSaving: false,
+    filterWriteOffOnly: false,
   };
   const breakdownsState = {
     tools: [],
@@ -5541,6 +5543,17 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
   };
 
+  const updateWriteOffFilterButton = () => {
+    if (!writeOffFilterButton) return;
+    writeOffFilterButton.classList.toggle(
+      "is-active",
+      writeOffState.filterWriteOffOnly
+    );
+    writeOffFilterButton.textContent = writeOffState.filterWriteOffOnly
+      ? "Показаны «На списание»"
+      : "Только «На списание»";
+  };
+
   const renderWriteOffList = () => {
     if (!writeOffListEl) return;
     writeOffListEl.innerHTML = "";
@@ -5548,6 +5561,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const item = document.createElement("div");
       item.className = "writeoff-item";
       item.dataset.writeoffId = tool.__selectionId;
+      const statusText = String(tool?.["Статус"] ?? "").trim().toLowerCase();
+      if (statusText === "на списание") {
+        item.classList.add("writeoff-item--pending");
+      }
       if (writeOffState.selectedIds.has(tool.__selectionId)) {
         item.classList.add("is-selected");
       }
@@ -5585,21 +5602,27 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const applyWriteOffFilters = () => {
     const query = writeOffState.search.trim();
     const tokens = query ? query.split(/\s+/).filter(Boolean) : [];
+    const availableTools = writeOffState.filterWriteOffOnly
+      ? writeOffState.tools.filter(
+          (tool) =>
+            String(tool?.["Статус"] ?? "").trim().toLowerCase() === "на списание"
+        )
+      : writeOffState.tools;
     if (tokens.length) {
       const numericTokens = tokens.filter((token) => /\d/.test(token));
       if (numericTokens.length === tokens.length) {
-        writeOffState.filtered = writeOffState.tools.filter((tool) => {
+        writeOffState.filtered = availableTools.filter((tool) => {
           const searchLine = tool.__accountingSearchLine ?? "";
           return numericTokens.every((token) => searchLine.includes(token));
         });
       } else {
-        writeOffState.filtered = writeOffState.tools.filter((tool) => {
+        writeOffState.filtered = availableTools.filter((tool) => {
           const searchLine = tool.__searchLine ?? "";
           return tokens.every((token) => searchLine.includes(token));
         });
       }
     } else {
-      writeOffState.filtered = [...writeOffState.tools];
+      writeOffState.filtered = [...availableTools];
     }
     renderWriteOffList();
   };
@@ -5650,9 +5673,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     writeOffState.search = "";
     writeOffState.selectedIds.clear();
     writeOffState.selectedTools = [];
+    writeOffState.filterWriteOffOnly = false;
     if (writeOffSearchInput) {
       writeOffSearchInput.value = "";
     }
+    updateWriteOffFilterButton();
     updateWriteOffSelectionUi();
   };
 
@@ -6732,6 +6757,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   if (writeOffSearchInput) {
     writeOffSearchInput.addEventListener("input", (event) => {
       writeOffState.search = String(event.target.value ?? "").toLowerCase();
+      applyWriteOffFilters();
+    });
+  }
+  if (writeOffFilterButton) {
+    writeOffFilterButton.addEventListener("click", () => {
+      writeOffState.filterWriteOffOnly = !writeOffState.filterWriteOffOnly;
+      updateWriteOffFilterButton();
       applyWriteOffFilters();
     });
   }

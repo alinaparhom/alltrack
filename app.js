@@ -4687,6 +4687,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     filters: {
       group: "",
       object: "",
+      status: "",
       responsible: "",
       manufacturer: "",
       model: "",
@@ -5512,6 +5513,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         return false;
       }
       if (
+        toolsState.filters.status &&
+        String(tool?.["Статус"] ?? "").trim() !== toolsState.filters.status
+      ) {
+        return false;
+      }
+      if (
         toolsState.filters.responsible &&
         String(tool?.["Ответственный"] ?? "").trim() !==
           toolsState.filters.responsible
@@ -5596,6 +5603,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     };
     fillToolsFilterOptions("group", collectValues("Граппа инструментов"));
     fillToolsFilterOptions("object", collectValues("Объект"));
+    fillToolsFilterOptions("status", collectValues("Статус"));
     fillToolsFilterOptions("responsible", collectValues("Ответственный"));
     fillToolsFilterOptions("manufacturer", collectValues("Производитель"));
     fillToolsFilterOptions("model", collectValues("Модель"));

@@ -3870,6 +3870,35 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const toolsMoveReasonInput = contentEl.querySelector("[data-tools-move-reason]");
   const toolsMoveMessageEl = contentEl.querySelector("[data-tools-move-message]");
   const toolsMoveSubtitleEl = contentEl.querySelector("[data-tools-move-subtitle]");
+  const toolsEditModalEl = contentEl.querySelector("[data-tools-edit-modal]");
+  const toolsEditBackdropEl = contentEl.querySelector("[data-tools-edit-backdrop]");
+  const toolsEditCloseButton = contentEl.querySelector("[data-tools-edit-close]");
+  const toolsEditCancelButton = contentEl.querySelector("[data-tools-edit-cancel]");
+  const toolsEditFormEl = contentEl.querySelector("[data-tools-edit-form]");
+  const toolsEditDeleteButton = contentEl.querySelector("[data-tools-edit-delete]");
+  const toolsEditMessageEl = contentEl.querySelector("[data-tools-edit-message]");
+  const toolsEditTitleEl = contentEl.querySelector("[data-tools-edit-title]");
+  const toolsEditSubtitleEl = contentEl.querySelector("[data-tools-edit-subtitle]");
+  const toolsEditAccountingInput = contentEl.querySelector(
+    "[data-tools-edit-accounting]"
+  );
+  const toolsEditNameInput = contentEl.querySelector("[data-tools-edit-name]");
+  const toolsEditManufacturerInput = contentEl.querySelector(
+    "[data-tools-edit-manufacturer]"
+  );
+  const toolsEditModelInput = contentEl.querySelector("[data-tools-edit-model]");
+  const toolsEditAccountingNameInput = contentEl.querySelector(
+    "[data-tools-edit-accounting-name]"
+  );
+  const toolsEditSerialInput = contentEl.querySelector("[data-tools-edit-serial]");
+  const toolsEditGroupInput = contentEl.querySelector("[data-tools-edit-group]");
+  const toolsEditPhotoInput = contentEl.querySelector("[data-tools-edit-photo-add]");
+  const toolsEditPhotoCountEl = contentEl.querySelector(
+    "[data-tools-edit-photo-count]"
+  );
+  const toolsEditRemovePhotoButton = contentEl.querySelector(
+    "[data-tools-edit-photo-remove]"
+  );
   const addPhotoModalEl = contentEl.querySelector("[data-add-photo-modal]");
   const addPhotoBackdropEl = contentEl.querySelector(
     "[data-add-photo-backdrop]"
@@ -4547,6 +4576,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     movesPayload: null,
     isSaving: false,
   };
+  const toolsEditState = {
+    tool: null,
+    matchNumber: "",
+    matchAccounting: "",
+    orgFolder: "",
+    isSaving: false,
+  };
   let pendingMovesDeclineResolver = null;
   const toolsMoveState = {
     responsibleOptions: [],
@@ -4867,6 +4903,40 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     toolsCancelMoveMessageEl.textContent = text;
     toolsCancelMoveMessageEl.classList.remove("is-error", "is-success", "is-info");
     toolsCancelMoveMessageEl.classList.add(`is-${type}`);
+  };
+
+  const setToolsEditMessage = (text = "", type = "") => {
+    if (!toolsEditMessageEl) return;
+    toolsEditMessageEl.textContent = text;
+    toolsEditMessageEl.classList.remove("is-error", "is-success", "is-info");
+    if (type) {
+      toolsEditMessageEl.classList.add(`is-${type}`);
+    }
+  };
+
+  const buildToolsEditMatcher = (tool) => {
+    const number = normalizeToolNumberValue(tool?.["Номер"] ?? "");
+    const accounting = String(tool?.["Бух.номер"] ?? "").trim();
+    return (entry) => {
+      if (number) {
+        const entryNumber = normalizeToolNumberValue(entry?.["Номер"] ?? "");
+        if (entryNumber === number) return true;
+      }
+      if (accounting) {
+        const entryAccounting = String(entry?.["Бух.номер"] ?? "").trim();
+        if (entryAccounting === accounting) return true;
+      }
+      return false;
+    };
+  };
+
+  const updateToolsEditPhotoCount = (count) => {
+    if (toolsEditPhotoCountEl) {
+      toolsEditPhotoCountEl.textContent = String(count ?? 0);
+    }
+    if (toolsEditRemovePhotoButton) {
+      toolsEditRemovePhotoButton.disabled = !count;
+    }
   };
 
   const resetToolsCancelMoveState = () => {
@@ -5647,6 +5717,315 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     resetToolsSelection();
     closeToolsMoveModal();
     closeToolsCancelMoveModal();
+  };
+
+  const closeToolsEditModal = () => {
+    if (!toolsEditModalEl) return;
+    toolsEditModalEl.classList.add("is-hidden");
+    document.body.style.overflow = "";
+    toolsEditState.tool = null;
+    toolsEditState.matchNumber = "";
+    toolsEditState.matchAccounting = "";
+    toolsEditState.isSaving = false;
+    setToolsEditMessage("");
+    if (toolsEditPhotoInput) {
+      toolsEditPhotoInput.value = "";
+    }
+  };
+
+  const openToolsEditModal = (tool) => {
+    if (!toolsEditModalEl || !tool) return;
+    toolsEditState.tool = tool;
+    toolsEditState.matchNumber = normalizeToolNumberValue(tool?.["Номер"] ?? "");
+    toolsEditState.matchAccounting = String(tool?.["Бух.номер"] ?? "").trim();
+    toolsEditState.orgFolder = toolsState.orgFolder || context.orgFolderName || "";
+    toolsEditState.isSaving = false;
+    const toolNumber = resolveToolNumberValue(tool) || "—";
+    const toolName = String(tool?.["Наименование"] ?? "").trim() || "Инструмент";
+    if (toolsEditTitleEl) {
+      toolsEditTitleEl.textContent = toolName;
+    }
+    if (toolsEditSubtitleEl) {
+      toolsEditSubtitleEl.textContent = `№${toolNumber}`;
+    }
+    if (toolsEditAccountingInput) {
+      toolsEditAccountingInput.value = String(tool?.["Бух.номер"] ?? "");
+    }
+    if (toolsEditNameInput) {
+      toolsEditNameInput.value = String(tool?.["Наименование"] ?? "");
+    }
+    if (toolsEditManufacturerInput) {
+      toolsEditManufacturerInput.value = String(tool?.["Производитель"] ?? "");
+    }
+    if (toolsEditModelInput) {
+      toolsEditModelInput.value = String(tool?.["Модель"] ?? "");
+    }
+    if (toolsEditAccountingNameInput) {
+      toolsEditAccountingNameInput.value = String(
+        tool?.["Наименование по бухгалтерии"] ?? ""
+      );
+    }
+    if (toolsEditSerialInput) {
+      toolsEditSerialInput.value = String(tool?.["Серийный номер"] ?? "");
+    }
+    if (toolsEditGroupInput) {
+      toolsEditGroupInput.value = String(tool?.["Граппа инструментов"] ?? "");
+    }
+    const count = Number.parseInt(tool?.["Количество фото"] ?? 0, 10);
+    updateToolsEditPhotoCount(Number.isFinite(count) ? count : 0);
+    setToolsEditMessage("");
+    toolsEditModalEl.classList.remove("is-hidden");
+    document.body.style.overflow = "hidden";
+    if (toolsEditNameInput) {
+      toolsEditNameInput.focus();
+    }
+  };
+
+  const applyToolsEditUpdateToState = (updatedFields) => {
+    const matcher = buildToolsEditMatcher({
+      "Номер": toolsEditState.matchNumber,
+      "Бух.номер": toolsEditState.matchAccounting,
+    });
+    let updatedTool = null;
+    toolsState.tools = toolsState.tools.map((entry, index) => {
+      if (!matcher(entry)) return entry;
+      const next = {
+        ...entry,
+        ...updatedFields,
+      };
+      next.__searchLine = buildToolSearchLine(next);
+      next.__statusTone = resolveToolStatusTone(next);
+      next.__selectionId = buildToolSelectionId(next, index);
+      updatedTool = next;
+      return next;
+    });
+    toolsState.toolMap = new Map(
+      toolsState.tools.map((tool) => [tool.__selectionId, tool])
+    );
+    if (updatedTool) {
+      toolsEditState.tool = updatedTool;
+    }
+    applyToolsFilters();
+  };
+
+  const saveToolsEditChanges = async () => {
+    if (toolsEditState.isSaving) return;
+    const tool = toolsEditState.tool;
+    if (!tool) return;
+    const orgFolder = toolsEditState.orgFolder;
+    if (!orgFolder) {
+      setToolsEditMessage("Не удалось определить организацию.", "error");
+      return;
+    }
+    toolsEditState.isSaving = true;
+    setToolsEditMessage("Сохраняем изменения...", "info");
+
+    const updatedFields = {
+      "Бух.номер": String(toolsEditAccountingInput?.value ?? "").trim(),
+      "Наименование": String(toolsEditNameInput?.value ?? "").trim(),
+      "Производитель": String(toolsEditManufacturerInput?.value ?? "").trim(),
+      "Модель": String(toolsEditModelInput?.value ?? "").trim(),
+      "Наименование по бухгалтерии": String(
+        toolsEditAccountingNameInput?.value ?? ""
+      ).trim(),
+      "Серийный номер": String(toolsEditSerialInput?.value ?? "").trim(),
+      "Граппа инструментов": String(toolsEditGroupInput?.value ?? "").trim(),
+    };
+    const matcher = buildToolsEditMatcher({
+      "Номер": toolsEditState.matchNumber,
+      "Бух.номер": toolsEditState.matchAccounting,
+    });
+    const toolsPath = `./${orgFolder}/База с инструментами.json`;
+    let toolsPayloadRaw = [];
+    try {
+      toolsPayloadRaw = await loadJson(toolsPath);
+    } catch (error) {
+      toolsPayloadRaw = [];
+    }
+    const toolsNormalized = normalizeCollectionPayload(toolsPayloadRaw, "tools");
+    const toolIndex = toolsNormalized.items.findIndex(matcher);
+    if (toolIndex < 0) {
+      setToolsEditMessage("Инструмент не найден в базе.", "error");
+      toolsEditState.isSaving = false;
+      return;
+    }
+    const nextTool = {
+      ...toolsNormalized.items[toolIndex],
+      ...updatedFields,
+    };
+    const updatedTools = [...toolsNormalized.items];
+    updatedTools[toolIndex] = nextTool;
+    const updatedToolsPayload = toolsNormalized.wrapper
+      ? { ...toolsNormalized.wrapper, [toolsNormalized.key]: updatedTools }
+      : updatedTools;
+    try {
+      await saveEntries([
+        {
+          path: toolsPath,
+          data: updatedToolsPayload,
+          ...buildUploadUserMeta({ organizationName: context.orgFullName }),
+        },
+      ]);
+      applyToolsEditUpdateToState(updatedFields);
+      toolsEditState.matchAccounting = updatedFields["Бух.номер"];
+      setToolsEditMessage("Изменения сохранены.", "success");
+    } catch (error) {
+      console.error(error);
+      setToolsEditMessage("Не удалось сохранить изменения.", "error");
+    } finally {
+      toolsEditState.isSaving = false;
+    }
+  };
+
+  const handleToolsEditDelete = async () => {
+    if (toolsEditState.isSaving) return;
+    const tool = toolsEditState.tool;
+    if (!tool) return;
+    const orgFolder = toolsEditState.orgFolder;
+    if (!orgFolder) {
+      setToolsEditMessage("Не удалось определить организацию.", "error");
+      return;
+    }
+    const confirmDelete = window.confirm(
+      "Удалить инструмент из базы? Он будет перенесён в «Списания» как удаление."
+    );
+    if (!confirmDelete) return;
+    toolsEditState.isSaving = true;
+    setToolsEditMessage("Удаляем инструмент...", "info");
+
+    const toolsPath = `./${orgFolder}/База с инструментами.json`;
+    const writeOffPath = `./${orgFolder}/Списания.json`;
+    const deleteDate = formatDateValue(new Date());
+    const deleteUser = String(user?.full_name ?? "").trim();
+    let toolsPayloadRaw = [];
+    try {
+      toolsPayloadRaw = await loadJson(toolsPath);
+    } catch (error) {
+      toolsPayloadRaw = [];
+    }
+    const toolsNormalized = normalizeCollectionPayload(toolsPayloadRaw, "tools");
+    const matcher = buildToolsEditMatcher({
+      "Номер": toolsEditState.matchNumber,
+      "Бух.номер": toolsEditState.matchAccounting,
+    });
+    const removedTool = toolsNormalized.items.find(matcher);
+    if (!removedTool) {
+      setToolsEditMessage("Инструмент не найден в базе.", "error");
+      toolsEditState.isSaving = false;
+      return;
+    }
+    const updatedTools = toolsNormalized.items.filter((entry) => !matcher(entry));
+    const updatedToolsPayload = toolsNormalized.wrapper
+      ? { ...toolsNormalized.wrapper, [toolsNormalized.key]: updatedTools }
+      : updatedTools;
+
+    let writeOffRaw = [];
+    try {
+      writeOffRaw = await loadJson(writeOffPath);
+    } catch (error) {
+      writeOffRaw = [];
+    }
+    const writeOffNormalized = normalizeCollectionPayload(writeOffRaw, "items");
+    const deleteEntry = {
+      ...removedTool,
+      "Тип списания": "Удаление",
+      "Удалил": deleteUser,
+      "Дата удаления": deleteDate,
+    };
+    const updatedWriteOff = [...writeOffNormalized.items, deleteEntry];
+    const updatedWriteOffPayload = writeOffNormalized.wrapper
+      ? { ...writeOffNormalized.wrapper, [writeOffNormalized.key]: updatedWriteOff }
+      : updatedWriteOff;
+
+    try {
+      await saveEntries([
+        { path: toolsPath, data: updatedToolsPayload, user },
+        { path: writeOffPath, data: updatedWriteOffPayload, user },
+      ]);
+      toolsState.tools = toolsState.tools.filter((entry) => !matcher(entry));
+      toolsState.toolMap = new Map(
+        toolsState.tools.map((entry) => [entry.__selectionId, entry])
+      );
+      applyToolsFilters();
+      setToolsEditMessage("Инструмент удалён.", "success");
+      setTimeout(() => {
+        closeToolsEditModal();
+      }, 400);
+    } catch (error) {
+      console.error(error);
+      setToolsEditMessage("Не удалось удалить инструмент.", "error");
+    } finally {
+      toolsEditState.isSaving = false;
+    }
+  };
+
+  const handleToolsEditPhotoUpload = async (files) => {
+    const tool = toolsEditState.tool;
+    if (!tool || !files.length) return;
+    const orgFolder = toolsEditState.orgFolder;
+    if (!orgFolder) {
+      setToolsEditMessage("Не удалось определить организацию.", "error");
+      return;
+    }
+    const toolNumber = String(tool?.["Номер"] ?? "").trim();
+    if (!toolNumber) {
+      setToolsEditMessage("У инструмента нет номера для фото.", "error");
+      return;
+    }
+    setToolsEditMessage("Загружаем фото...", "info");
+    try {
+      const tools = await loadToolsData(orgFolder);
+      const normalized = normalizeToolNumberValue(toolNumber);
+      const toolIndex = tools.findIndex(
+        (entry) =>
+          normalizeToolNumberValue(entry?.["Номер"] ?? "") === normalized
+      );
+      if (toolIndex < 0) {
+        setToolsEditMessage("Инструмент не найден в базе.", "error");
+        return;
+      }
+      const entries = [];
+      for (const file of files) {
+        const safeName = buildAddPhotoFileName(toolNumber, file);
+        const content = await readFileAsBase64(file);
+        entries.push({
+          type: "file",
+          path: `${orgFolder}/Фото инструментов/${safeName}`,
+          content,
+          encoding: "base64",
+          mime: file.type || "image/*",
+          ...buildUploadUserMeta({ organizationName: context.orgFullName }),
+        });
+      }
+      await uploadPhotoEntriesInBatches(entries);
+      const current = Number.parseInt(
+        tools[toolIndex]?.["Количество фото"] ?? 0,
+        10
+      );
+      const safeCurrent = Number.isFinite(current) ? current : 0;
+      const nextCount = safeCurrent + files.length;
+      tools[toolIndex] = {
+        ...tools[toolIndex],
+        "Количество фото": nextCount,
+      };
+      await saveEntries([
+        {
+          path: `${orgFolder}/База с инструментами.json`,
+          data: tools,
+          ...buildUploadUserMeta({ organizationName: context.orgFullName }),
+        },
+      ]);
+      applyToolsEditUpdateToState({ "Количество фото": nextCount });
+      updateToolsEditPhotoCount(nextCount);
+      setToolsEditMessage("Фото загружены.", "success");
+    } catch (error) {
+      console.error(error);
+      setToolsEditMessage("Не удалось загрузить фото.", "error");
+    } finally {
+      if (toolsEditPhotoInput) {
+        toolsEditPhotoInput.value = "";
+      }
+    }
   };
 
   const setWriteOffSubtitle = (text) => {
@@ -6879,6 +7258,50 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       closeToolsModal();
     }
   });
+  if (toolsEditBackdropEl) {
+    toolsEditBackdropEl.addEventListener("click", closeToolsEditModal);
+  }
+  if (toolsEditCloseButton) {
+    toolsEditCloseButton.addEventListener("click", closeToolsEditModal);
+  }
+  if (toolsEditCancelButton) {
+    toolsEditCancelButton.addEventListener("click", closeToolsEditModal);
+  }
+  toolsEditModalEl?.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      closeToolsEditModal();
+    }
+  });
+  if (toolsEditFormEl) {
+    toolsEditFormEl.addEventListener("submit", (event) => {
+      event.preventDefault();
+      saveToolsEditChanges();
+    });
+  }
+  if (toolsEditDeleteButton) {
+    toolsEditDeleteButton.addEventListener("click", handleToolsEditDelete);
+  }
+  if (toolsEditPhotoInput) {
+    toolsEditPhotoInput.addEventListener("change", () => {
+      const files = Array.from(toolsEditPhotoInput.files ?? []);
+      if (files.length) {
+        handleToolsEditPhotoUpload(files);
+      }
+    });
+  }
+  if (toolsEditRemovePhotoButton) {
+    toolsEditRemovePhotoButton.addEventListener("click", () => {
+      const tool = toolsEditState.tool;
+      if (!tool) return;
+      if (!removePhotoModalEl) return;
+      removePhotoModalEl.classList.remove("is-hidden");
+      document.body.style.overflow = "hidden";
+      removePhotoState.orgFolder =
+        toolsEditState.orgFolder || context.orgFolderName || "";
+      resetRemovePhotoSelection();
+      openRemovePhotoTool(tool);
+    });
+  }
 
   if (writeOffBackdropEl) {
     writeOffBackdropEl.addEventListener("click", closeWriteOffModal);
@@ -7427,9 +7850,15 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     });
 
     toolsListEl.addEventListener("click", (event) => {
-      if (toolsState.mode === "base") return;
       const item = event.target.closest("[data-tools-item]");
       if (!item) return;
+      if (toolsState.mode === "base") {
+        const tool = toolsState.toolMap.get(item.dataset.toolId);
+        if (tool) {
+          openToolsEditModal(tool);
+        }
+        return;
+      }
       if (toolsSelectState.suppressClick) {
         toolsSelectState.suppressClick = false;
         return;
@@ -7624,6 +8053,20 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       if (toolsModalEl && !toolsModalEl.classList.contains("is-hidden")) {
         applyToolsFilters();
       }
+    }
+    if (
+      toolsEditState.tool &&
+      normalizeToolNumberValue(toolsEditState.tool?.["Номер"] ?? "") ===
+        normalized
+    ) {
+      const current = Number.parseInt(
+        toolsEditState.tool?.["Количество фото"] ?? 0,
+        10
+      );
+      const safeCurrent = Number.isFinite(current) ? current : 0;
+      const nextCount = safeCurrent + 1;
+      toolsEditState.tool = { ...toolsEditState.tool, "Количество фото": nextCount };
+      updateToolsEditPhotoCount(nextCount);
     }
   };
 
@@ -8405,6 +8848,17 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         return Number.isFinite(count) && count > 0;
       });
     applyRemovePhotoFilters();
+    if (
+      toolsEditState.tool &&
+      normalizeToolNumberValue(toolsEditState.tool?.["Номер"] ?? "") ===
+        normalized
+    ) {
+      toolsEditState.tool = {
+        ...toolsEditState.tool,
+        "Количество фото": nextCount,
+      };
+      updateToolsEditPhotoCount(nextCount);
+    }
   };
 
   const handleRemovePhotoDelete = async () => {

@@ -362,6 +362,77 @@ function extractFileNameFromHref(href = "") {
   return parts[parts.length - 1] || "";
 }
 
+function getLeadingToolNumberFromFileName(fileName) {
+  if (!fileName) return "";
+  const match = String(fileName).match(/^(?:№|N)?\s*(\d+)/i);
+  return match ? match[1] : "";
+}
+
+async function resolvePhotoUrlFromListingEndpointInFolder(
+  orgFolder,
+  folderName,
+  toolNumber
+) {
+  if (!orgFolder || !folderName || !toolNumber) return null;
+  const variants = getToolNumberVariants(toolNumber);
+  if (!variants.length) return null;
+  const normalizedVariants = new Set(
+    variants.map((variant) => normalizeToolNumberValue(variant))
+  );
+  const payload = JSON.stringify({
+    entries: [
+      {
+        type: "list-photos",
+        path: `${orgFolder}/${folderName}`,
+        ...buildUploadUserMeta(),
+      },
+    ],
+  });
+  let responseText = "";
+  try {
+    const response = await fetch(saveEndpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: payload,
+    });
+    responseText = await response.text();
+    if (!response.ok) return null;
+  } catch (error) {
+    return null;
+  }
+  if (!responseText) return null;
+  try {
+    const parsed = JSON.parse(responseText);
+    const files = Array.isArray(parsed?.files) ? parsed.files : [];
+    for (const file of files) {
+      let decodedName = file;
+      try {
+        decodedName = decodeURIComponent(file);
+      } catch (error) {
+        decodedName = file;
+      }
+      const extension = decodedName.split(".").pop()?.toLowerCase() || "";
+      if (!toolPhotoExtensions.has(extension)) continue;
+      const leadingNumber = getLeadingToolNumberFromFileName(decodedName);
+      if (!leadingNumber) continue;
+      const normalized = normalizeToolNumberValue(leadingNumber);
+      if (
+        !normalizedVariants.has(normalized) &&
+        !normalizedVariants.has(leadingNumber)
+      ) {
+        continue;
+      }
+      return new URL(
+        `./${orgFolder}/${folderName}/${encodeURIComponent(decodedName)}`,
+        window.location.href
+      ).toString();
+    }
+  } catch (error) {
+    return null;
+  }
+  return null;
+}
+
 async function resolvePhotoUrlFromDirectoryListingInFolder(
   orgFolder,
   folderName,
@@ -373,6 +444,12 @@ async function resolvePhotoUrlFromDirectoryListingInFolder(
   const normalizedVariants = new Set(
     variants.map((variant) => normalizeToolNumberValue(variant))
   );
+  const endpointResolved = await resolvePhotoUrlFromListingEndpointInFolder(
+    orgFolder,
+    folderName,
+    toolNumber
+  );
+  if (endpointResolved) return endpointResolved;
   const folderPath = `./${orgFolder}/${folderName}/`;
   let response;
   try {

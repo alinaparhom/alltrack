@@ -69,6 +69,9 @@
       body[data-theme="dark"] .app-user,
       body[data-theme="dark"] .stat-card,
       body[data-theme="dark"] .action-card,
+      body[data-theme="dark"] .quick-access,
+      body[data-theme="dark"] .quick-access-item,
+      body[data-theme="dark"] .quick-access-option,
       body[data-theme="dark"] .energy-group-panel,
       body[data-theme="dark"] .form-card,
       body[data-theme="dark"] .role-tile,
@@ -768,10 +771,12 @@
         position: relative;
         display: inline-flex;
         align-items: center;
-        justify-content: center;
-        width: 40px;
-        height: 40px;
-        border-radius: 14px;
+        justify-content: flex-start;
+        gap: 10px;
+        min-width: 144px;
+        height: 44px;
+        padding: 6px 12px;
+        border-radius: 16px;
         background: rgba(255, 255, 255, 0.8);
         border: 1px solid rgba(226, 232, 240, 0.9);
         box-shadow: 0 12px 24px rgba(26, 31, 46, 0.08);
@@ -794,6 +799,23 @@
 
       .pending-icon {
         font-size: 18px;
+      }
+
+      .pending-info {
+        display: grid;
+        gap: 2px;
+        text-align: left;
+      }
+
+      .pending-title {
+        font-size: var(--text-sm);
+        font-weight: 700;
+        color: var(--text);
+      }
+
+      .pending-status {
+        font-size: 11px;
+        color: var(--muted);
       }
 
       .pending-badge {
@@ -1068,6 +1090,20 @@
           font-size: clamp(11px, 3.8vw, 14px);
           line-height: 1.15;
         }
+
+        .pending-stat {
+          min-width: 120px;
+          height: 42px;
+          padding: 6px 10px;
+        }
+
+        .quick-access-list {
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+        }
+
+        .quick-access-picker__grid {
+          grid-template-columns: 1fr;
+        }
       }
 
       .energy-dashboard {
@@ -1137,6 +1173,158 @@
       .energy-group-actions {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 10px;
+      }
+
+      .quick-access {
+        display: grid;
+        gap: 12px;
+        padding: 14px;
+        border-radius: var(--radius-card);
+        background: rgba(255, 255, 255, 0.9);
+        border: 1px solid rgba(226, 232, 240, 0.9);
+        box-shadow: 0 12px 26px rgba(26, 31, 46, 0.08);
+        position: sticky;
+        bottom: calc(12px + env(safe-area-inset-bottom));
+        z-index: 2;
+      }
+
+      .quick-access-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .quick-access-title {
+        font-size: var(--text-md);
+        font-weight: 700;
+        color: var(--text);
+      }
+
+      .quick-access-subtitle {
+        font-size: var(--text-sm);
+        color: var(--muted);
+      }
+
+      .quick-access-edit {
+        white-space: nowrap;
+      }
+
+      .quick-access-list {
+        display: grid;
+        gap: 10px;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+      }
+
+      .quick-access-item {
+        width: 100%;
+        aspect-ratio: 1 / 1;
+        border-radius: 16px;
+        border: 1px solid rgba(226, 232, 240, 0.9);
+        background: rgba(255, 255, 255, 0.72);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 22px;
+        color: var(--accent);
+        box-shadow: 0 10px 22px rgba(26, 31, 46, 0.08);
+        cursor: pointer;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      .quick-access-item:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 14px 28px rgba(26, 31, 46, 0.12);
+      }
+
+      .quick-access-item:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
+      }
+
+      .quick-access-empty {
+        font-size: var(--text-sm);
+        color: var(--muted);
+        line-height: 1.4;
+      }
+
+      .quick-access-picker {
+        display: grid;
+        gap: 12px;
+        padding-top: 10px;
+        border-top: 1px solid rgba(226, 232, 240, 0.8);
+      }
+
+      .quick-access-picker__title {
+        font-size: var(--text-sm);
+        font-weight: 600;
+        color: var(--title-muted);
+      }
+
+      .quick-access-picker__grid {
+        display: grid;
+        gap: 10px;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .quick-access-option {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 12px;
+        border-radius: 16px;
+        border: 1px solid rgba(226, 232, 240, 0.9);
+        background: rgba(255, 255, 255, 0.85);
+        color: var(--text);
+        font-size: var(--text-md);
+        font-weight: 600;
+        text-align: left;
+        cursor: pointer;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      .quick-access-option__icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 12px;
+        background: rgba(59, 125, 255, 0.12);
+        color: var(--accent);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        font-size: 18px;
+      }
+
+      .quick-access-option__check {
+        margin-left: auto;
+        font-size: 14px;
+        color: var(--accent);
+        opacity: 0;
+        transition: opacity 0.2s ease;
+      }
+
+      .quick-access-option.is-selected {
+        border-color: rgba(59, 125, 255, 0.5);
+        background: rgba(59, 125, 255, 0.12);
+        color: var(--accent);
+        box-shadow: 0 10px 22px rgba(26, 31, 46, 0.12);
+      }
+
+      .quick-access-option.is-selected .quick-access-option__check {
+        opacity: 1;
+      }
+
+      .quick-access-picker__message {
+        font-size: var(--text-sm);
+        color: var(--muted);
+      }
+
+      .quick-access-picker__actions {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
         gap: 10px;
       }
 
@@ -5928,6 +6116,12 @@
               <span class="pending-icon" data-energy-pending-icon aria-hidden="true"
                 >✅</span
               >
+              <span class="pending-info">
+                <span class="pending-title">Перемещения</span>
+                <span class="pending-status" data-energy-pending-status>
+                  Все приняты
+                </span>
+              </span>
               <span class="pending-badge is-hidden" data-energy-pending-count>0</span>
             </button>
             <div class="app-stat is-hidden" data-super-admin-stat title="Статистика">

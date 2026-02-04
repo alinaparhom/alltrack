@@ -1097,19 +1097,22 @@ export function renderRole(user) {
                           Добавить файл
                         </span>
                       </label>
-                      <label class="form-file-option">
-                        <input
-                          class="form-input form-input--file"
-                          type="file"
-                          name="repair-act-photo"
-                          data-repair-act-photo
-                          accept="image/*"
-                          capture="environment"
-                        />
+                      <input
+                        class="form-input form-input--file is-hidden"
+                        type="file"
+                        name="repair-act-photo"
+                        data-repair-act-photo
+                        accept="image/*"
+                      />
+                      <button
+                        class="form-file-option form-file-option--button"
+                        type="button"
+                        data-repair-camera-trigger
+                      >
                         <span class="form-file-button" aria-hidden="true">
                           Сделать фото
                         </span>
-                      </label>
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -1218,6 +1221,80 @@ export function renderRole(user) {
                   Закрыть
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+        <div
+          class="settings-modal camera-modal is-hidden"
+          data-repair-camera-modal
+        >
+          <div class="settings-modal__backdrop" data-repair-camera-backdrop></div>
+          <div
+            class="settings-modal__panel camera-modal__panel"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Фото акта ремонта"
+          >
+            <div class="settings-modal__header camera-modal__header">
+              <div class="settings-modal__title">
+                <h2>Фото акта ремонта</h2>
+                <p>Сделайте снимок и подтвердите</p>
+              </div>
+              <button
+                class="button-icon camera-modal__close"
+                type="button"
+                data-repair-camera-close
+                aria-label="Закрыть камеру"
+              >
+                <span class="button-icon-emoji" aria-hidden="true">✕</span>
+              </button>
+            </div>
+            <div class="settings-modal__body camera-modal__body">
+              <div class="camera-preview" data-repair-camera-preview>
+                <video
+                  class="camera-preview__video"
+                  data-repair-camera-video
+                  autoplay
+                  playsinline
+                ></video>
+                <canvas
+                  class="camera-preview__canvas is-hidden"
+                  data-repair-camera-canvas
+                ></canvas>
+              </div>
+              <div class="camera-hint" data-repair-camera-hint>
+                Сфотографируйте акт ремонта и подтвердите снимок.
+              </div>
+            </div>
+            <div class="settings-modal__footer camera-modal__footer">
+              <button
+                class="action-secondary"
+                type="button"
+                data-repair-camera-cancel
+              >
+                Отмена
+              </button>
+              <button
+                class="action-primary"
+                type="button"
+                data-repair-camera-capture
+              >
+                Сфотографировать
+              </button>
+              <button
+                class="action-secondary is-hidden"
+                type="button"
+                data-repair-camera-retake
+              >
+                Переснять
+              </button>
+              <button
+                class="action-primary is-hidden"
+                type="button"
+                data-repair-camera-save
+              >
+                Использовать фото
+              </button>
             </div>
           </div>
         </div>

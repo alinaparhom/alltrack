@@ -3987,6 +3987,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const repairActPhotoInput = contentEl.querySelector(
     "[data-repair-act-photo]"
   );
+  const repairCameraTrigger = contentEl.querySelector(
+    "[data-repair-camera-trigger]"
+  );
   const repairFormMessageEl = contentEl.querySelector(
     "[data-repair-form-message]"
   );
@@ -4089,6 +4092,33 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   );
   const breakdownCameraCanvasEl = contentEl.querySelector(
     "[data-breakdown-camera-canvas]"
+  );
+  const repairCameraModalEl = contentEl.querySelector(
+    "[data-repair-camera-modal]"
+  );
+  const repairCameraBackdropEl = contentEl.querySelector(
+    "[data-repair-camera-backdrop]"
+  );
+  const repairCameraCloseButton = contentEl.querySelector(
+    "[data-repair-camera-close]"
+  );
+  const repairCameraCancelButton = contentEl.querySelector(
+    "[data-repair-camera-cancel]"
+  );
+  const repairCameraCaptureButton = contentEl.querySelector(
+    "[data-repair-camera-capture]"
+  );
+  const repairCameraRetakeButton = contentEl.querySelector(
+    "[data-repair-camera-retake]"
+  );
+  const repairCameraSaveButton = contentEl.querySelector(
+    "[data-repair-camera-save]"
+  );
+  const repairCameraVideoEl = contentEl.querySelector(
+    "[data-repair-camera-video]"
+  );
+  const repairCameraCanvasEl = contentEl.querySelector(
+    "[data-repair-camera-canvas]"
   );
   const addToolModalEl = contentEl.querySelector("[data-add-tool-modal]");
   const addToolBackdropEl = contentEl.querySelector("[data-add-tool-backdrop]");
@@ -8554,6 +8584,103 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     closeBreakdownCameraModal();
   };
 
+  let repairCameraStream = null;
+  let repairCameraBlob = null;
+
+  const resetRepairCameraUI = () => {
+    if (repairCameraVideoEl) {
+      repairCameraVideoEl.classList.remove("is-hidden");
+    }
+    if (repairCameraCanvasEl) {
+      repairCameraCanvasEl.classList.add("is-hidden");
+    }
+    repairCameraCaptureButton?.classList.remove("is-hidden");
+    repairCameraRetakeButton?.classList.add("is-hidden");
+    repairCameraSaveButton?.classList.add("is-hidden");
+    repairCameraBlob = null;
+  };
+
+  const stopRepairCameraStream = () => {
+    if (repairCameraStream) {
+      repairCameraStream.getTracks().forEach((track) => track.stop());
+      repairCameraStream = null;
+    }
+    if (repairCameraVideoEl) {
+      repairCameraVideoEl.srcObject = null;
+    }
+  };
+
+  const openRepairCameraModal = async () => {
+    if (!repairCameraModalEl) return false;
+    repairCameraModalEl.classList.remove("is-hidden");
+    resetRepairCameraUI();
+    try {
+      repairCameraStream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: "environment" } },
+        audio: false,
+      });
+      if (repairCameraVideoEl) {
+        repairCameraVideoEl.srcObject = repairCameraStream;
+        await repairCameraVideoEl.play();
+      }
+      return true;
+    } catch (error) {
+      console.warn("Не удалось открыть камеру для акта ремонта.", error);
+      stopRepairCameraStream();
+      repairCameraModalEl.classList.add("is-hidden");
+      return false;
+    }
+  };
+
+  const closeRepairCameraModal = () => {
+    if (!repairCameraModalEl) return;
+    repairCameraModalEl.classList.add("is-hidden");
+    stopRepairCameraStream();
+    resetRepairCameraUI();
+  };
+
+  const captureRepairCameraFrame = () => {
+    if (!repairCameraVideoEl || !repairCameraCanvasEl) return;
+    const width = repairCameraVideoEl.videoWidth;
+    const height = repairCameraVideoEl.videoHeight;
+    if (!width || !height) return;
+    repairCameraCanvasEl.width = width;
+    repairCameraCanvasEl.height = height;
+    const context = repairCameraCanvasEl.getContext("2d");
+    if (!context) return;
+    context.drawImage(repairCameraVideoEl, 0, 0, width, height);
+    repairCameraCanvasEl.classList.remove("is-hidden");
+    repairCameraVideoEl.classList.add("is-hidden");
+    repairCameraCaptureButton?.classList.add("is-hidden");
+    repairCameraRetakeButton?.classList.remove("is-hidden");
+    repairCameraSaveButton?.classList.remove("is-hidden");
+    repairCameraCanvasEl.toBlob(
+      (blob) => {
+        repairCameraBlob = blob;
+      },
+      "image/jpeg",
+      0.92
+    );
+  };
+
+  const applyRepairCameraSnapshot = () => {
+    if (!repairCameraBlob) return;
+    const fileName = `repair_act_${Date.now()}.jpg`;
+    const photoFile = new File([repairCameraBlob], fileName, {
+      type: repairCameraBlob.type || "image/jpeg",
+    });
+    if (repairActPhotoInput instanceof HTMLInputElement) {
+      const transfer = new DataTransfer();
+      transfer.items.add(photoFile);
+      repairActPhotoInput.files = transfer.files;
+    }
+    if (repairActInput instanceof HTMLInputElement) {
+      repairActInput.value = "";
+    }
+    updateRepairActPickerState();
+    closeRepairCameraModal();
+  };
+
   const isBreakdownStatusBlocked = (tool) => {
     const tone = tool?.__statusTone ?? resolveToolStatusTone(tool);
     return tone === "repair" || tone === "writeoff";
@@ -8945,6 +9072,16 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         input.files.length > 0;
       option.classList.toggle("is-filled", isFilled);
     });
+    const isPhotoFilled =
+      repairActPhotoInput instanceof HTMLInputElement &&
+      repairActPhotoInput.files &&
+      repairActPhotoInput.files.length > 0;
+    const cameraButton = repairFormCompleteSection.querySelector(
+      "[data-repair-camera-trigger]"
+    );
+    if (cameraButton) {
+      cameraButton.classList.toggle("is-filled", isPhotoFilled);
+    }
   };
 
   const resolveRepairActFile = () => {
@@ -9065,6 +9202,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (!repairFormModalEl) return;
     repairFormModalEl.classList.add("is-hidden");
     resetRepairForm();
+    closeRepairCameraModal();
     if (repairModalEl && !repairModalEl.classList.contains("is-hidden")) {
       document.body.style.overflow = "hidden";
     } else {
@@ -9720,6 +9858,48 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       "click",
       applyBreakdownCameraSnapshot
     );
+  }
+  if (repairCameraTrigger) {
+    repairCameraTrigger.addEventListener("click", async () => {
+      if (!navigator.mediaDevices?.getUserMedia) {
+        setRepairFormMessage(
+          "Камера недоступна. Прикрепите фото из галереи.",
+          "info"
+        );
+        return;
+      }
+      const opened = await openRepairCameraModal();
+      if (!opened) {
+        setRepairFormMessage(
+          "Камера недоступна. Прикрепите фото из галереи.",
+          "info"
+        );
+      }
+    });
+  }
+  if (repairCameraBackdropEl) {
+    repairCameraBackdropEl.addEventListener("click", closeRepairCameraModal);
+  }
+  if (repairCameraCloseButton) {
+    repairCameraCloseButton.addEventListener("click", closeRepairCameraModal);
+  }
+  if (repairCameraCancelButton) {
+    repairCameraCancelButton.addEventListener("click", closeRepairCameraModal);
+  }
+  if (repairCameraCaptureButton) {
+    repairCameraCaptureButton.addEventListener(
+      "click",
+      captureRepairCameraFrame
+    );
+  }
+  if (repairCameraRetakeButton) {
+    repairCameraRetakeButton.addEventListener("click", () => {
+      resetRepairCameraUI();
+      repairCameraVideoEl?.play();
+    });
+  }
+  if (repairCameraSaveButton) {
+    repairCameraSaveButton.addEventListener("click", applyRepairCameraSnapshot);
   }
 
   if (breakdownFormEl) {

@@ -3041,25 +3041,21 @@
 
       .tools-info-tabs {
         display: flex;
+        flex-wrap: wrap;
         gap: 8px;
-        width: 100%;
       }
 
       .tools-info-tab {
         border: 1px solid rgba(226, 232, 240, 0.85);
         background: rgba(255, 255, 255, 0.86);
         color: var(--muted);
-        padding: 8px 12px;
-        border-radius: 14px;
+        padding: 8px 14px;
+        border-radius: 999px;
         font-size: 13px;
         font-weight: 600;
         cursor: pointer;
         transition: all 0.2s ease;
         box-shadow: 0 10px 22px rgba(15, 23, 42, 0.08);
-        flex: 1;
-        text-align: center;
-        line-height: 1.2;
-        min-height: 36px;
       }
 
       .tools-info-tab.is-active {
@@ -3111,26 +3107,6 @@
           rgba(255, 255, 255, 0.9)
         );
         box-shadow: 0 12px 26px rgba(239, 68, 68, 0.18);
-      }
-
-      .tools-info-item--warning {
-        border-color: rgba(245, 158, 11, 0.55);
-        background: linear-gradient(
-          135deg,
-          rgba(254, 243, 199, 0.95),
-          rgba(255, 255, 255, 0.9)
-        );
-        box-shadow: 0 12px 26px rgba(245, 158, 11, 0.16);
-      }
-
-      .tools-info-item--repair {
-        border-color: rgba(249, 115, 22, 0.6);
-        background: linear-gradient(
-          135deg,
-          rgba(254, 215, 170, 0.92),
-          rgba(255, 255, 255, 0.9)
-        );
-        box-shadow: 0 12px 26px rgba(249, 115, 22, 0.2);
       }
 
       .tools-info-item__title {

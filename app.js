@@ -3945,6 +3945,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const cancelGroupButton = contentEl.querySelector("[data-energy-cancel-group]");
   const selectedCountEl = contentEl.querySelector("[data-energy-selected-count]");
   const quickAccessListEl = contentEl.querySelector("[data-quick-access-list]");
+  const quickAccessEl = contentEl.querySelector("[data-quick-access]");
   const quickAccessEmptyEl = contentEl.querySelector("[data-quick-access-empty]");
   const quickAccessEditButton = contentEl.querySelector("[data-quick-access-edit]");
   const quickAccessPickerEl = contentEl.querySelector("[data-quick-access-picker]");
@@ -4732,6 +4733,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         gridEl.appendChild(createEnergyGroupToggleCard());
       }
     });
+    if (energyPendingStatEl) {
+      energyPendingStatEl.classList.add("pending-stat--grid", "action-card");
+      if (!gridEl.contains(energyPendingStatEl)) {
+        gridEl.prepend(energyPendingStatEl);
+      }
+    }
   };
 
   renderEnergyGrid();
@@ -13657,12 +13664,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     setQuickAccessMessage(`Выбрано ${quickAccessDraft.length} из ${quickAccessLimit}`);
   });
 
-  quickAccessSaveButton?.addEventListener("click", async () => {
-    if (quickAccessDraft.length === 0) {
-      setQuickAccessMessage("Нужно выбрать хотя бы одну плашку.");
-      return;
-    }
-    quickAccessIds = quickAccessDraft.slice(0, quickAccessLimit);
+  const persistQuickAccessIds = async (nextIds, { renderGrid = false } = {}) => {
+    quickAccessIds = nextIds.slice(0, quickAccessLimit);
     settingsData.users = settingsData.users ?? {};
     const currentUserSettings = settingsData.users?.[context.userKey] ?? {};
     settingsData.users[context.userKey] = {
@@ -13676,16 +13679,30 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       setQuickAccessMessage("Сохраняем быстрый доступ...");
       await saveJson(context.settingsPath, settingsData, { user });
       renderQuickAccessList();
-      renderEnergyGrid();
-      fitActionTitleTexts(gridEl);
+      if (renderGrid) {
+        renderEnergyGrid();
+        fitActionTitleTexts(gridEl);
+      }
       closeQuickAccessPicker();
+      setQuickAccessMessage("");
+      return true;
     } catch (error) {
       console.error(error);
       setQuickAccessMessage("Не удалось сохранить. Проверьте соединение.");
+      return false;
     }
+  };
+
+  quickAccessSaveButton?.addEventListener("click", async () => {
+    if (quickAccessDraft.length === 0) {
+      setQuickAccessMessage("Нужно выбрать хотя бы одну плашку.");
+      return;
+    }
+    await persistQuickAccessIds(quickAccessDraft, { renderGrid: true });
   });
 
   quickAccessListEl?.addEventListener("click", (event) => {
+    if (blockClick) return;
     const quickButton = event.target.closest("[data-action-id]");
     if (!quickButton) return;
     handleEnergyAction(quickButton.dataset.actionId);
@@ -13764,6 +13781,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     lastPointerX: 0,
     lastPointerY: 0,
     rafId: null,
+    source: null,
   };
   const animateEnergyReorder = (firstRects) => {
     const items = Array.from(gridEl.querySelectorAll("[data-energy-item]"));
@@ -13815,6 +13833,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     dragState.item = null;
     dragState.pointerId = null;
     dragState.pointerType = null;
+    dragState.source = null;
   };
 
   const updateDragTransform = (clientX, clientY) => {
@@ -13825,10 +13844,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     dragState.item.style.setProperty("--drag-y", `${deltaY}px`);
   };
 
-  gridEl.addEventListener("pointerdown", (event) => {
-    if (isGrouping) return;
-    const card = event.target.closest("[data-energy-item]");
-    if (!card) return;
+  const startDrag = (event, card, source) => {
     const rect = card.getBoundingClientRect();
     dragState.item = card;
     dragState.pointerId = event.pointerId;
@@ -13839,17 +13855,27 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     dragState.lastPointerY = event.clientY;
     dragState.startCenterX = rect.left + rect.width / 2;
     dragState.startCenterY = rect.top + rect.height / 2;
+    dragState.source = source;
     dragState.holdTimer = window.setTimeout(() => {
       if (!dragState.item) return;
       dragState.isDragging = true;
       dragState.item.classList.add("is-dragging");
-      gridEl.classList.add("is-dragging");
+      if (source === "grid") {
+        gridEl.classList.add("is-dragging");
+      }
       card.setPointerCapture(dragState.pointerId);
       updateDragTransform(dragState.lastPointerX, dragState.lastPointerY);
     }, event.pointerType === "touch" ? 280 : 200);
+  };
+
+  gridEl.addEventListener("pointerdown", (event) => {
+    if (isGrouping) return;
+    const card = event.target.closest("[data-energy-item]");
+    if (!card) return;
+    startDrag(event, card, "grid");
   });
 
-  gridEl.addEventListener("pointermove", (event) => {
+  const handleDragMove = (event) => {
     if (!dragState.item) return;
     dragState.lastPointerX = event.clientX;
     dragState.lastPointerY = event.clientY;
@@ -13872,6 +13898,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     dragState.rafId = requestAnimationFrame(() => {
       updateDragTransform(event.clientX, event.clientY);
     });
+    if (dragState.source !== "grid") return;
     const target = document
       .elementsFromPoint(event.clientX, event.clientY)
       .map((element) => element.closest?.("[data-energy-item]"))
@@ -13893,14 +13920,95 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     dragState.startCenterY += updatedRect.top - draggedRect.top;
     animateEnergyReorder(firstRects);
     scheduleLayoutSave();
+  };
+
+  const isPointInside = (element, x, y) => {
+    if (!element) return false;
+    const rect = element.getBoundingClientRect();
+    return x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom;
+  };
+
+  const resolveDropZone = (x, y) => {
+    if (quickAccessEl && isPointInside(quickAccessEl, x, y)) {
+      return "quick";
+    }
+    if (gridEl && isPointInside(gridEl, x, y)) {
+      return "grid";
+    }
+    return null;
+  };
+
+  const insertActionIntoGrid = (action, clientX, clientY) => {
+    if (!action) return;
+    const card = createEnergyActionCard(action);
+    const target = document
+      .elementsFromPoint(clientX, clientY)
+      .map((element) => element.closest?.("[data-energy-item]"))
+      .find((element) => element && gridEl.contains(element));
+    if (target) {
+      const rect = target.getBoundingClientRect();
+      const shouldInsertAfter = clientY > rect.top + rect.height / 2;
+      gridEl.insertBefore(card, shouldInsertAfter ? target.nextSibling : target);
+    } else {
+      gridEl.appendChild(card);
+    }
+    fitActionTitleTexts(gridEl);
+  };
+
+  const handleDrop = async () => {
+    if (!dragState.isDragging || !dragState.item) return;
+    const dropZone = resolveDropZone(dragState.lastPointerX, dragState.lastPointerY);
+    const actionId = dragState.item.dataset.actionId;
+    const itemType = dragState.item.dataset.energyItemType;
+    if (dragState.source === "grid" && dropZone === "quick") {
+      if (itemType !== "action" || !actionId) return;
+      if (quickAccessIds.includes(actionId)) return;
+      if (quickAccessIds.length >= quickAccessLimit) {
+        setQuickAccessMessage(`Можно выбрать максимум ${quickAccessLimit} плашек.`);
+        return;
+      }
+      const nextQuickAccess = [...quickAccessIds, actionId];
+      dragState.item.remove();
+      scheduleLayoutSave();
+      await persistQuickAccessIds(nextQuickAccess);
+    }
+    if (dragState.source === "quick" && dropZone === "grid") {
+      if (!actionId) return;
+      if (!quickAccessIds.includes(actionId)) return;
+      const action = actionsMap.get(actionId);
+      const nextQuickAccess = quickAccessIds.filter((id) => id !== actionId);
+      insertActionIntoGrid(action, dragState.lastPointerX, dragState.lastPointerY);
+      scheduleLayoutSave();
+      await persistQuickAccessIds(nextQuickAccess);
+    }
+  };
+
+  gridEl.addEventListener("pointermove", handleDragMove);
+
+  gridEl.addEventListener("pointerup", async () => {
+    await handleDrop();
+    await clearDrag();
   });
 
-  gridEl.addEventListener("pointerup", () => {
-    clearDrag();
+  gridEl.addEventListener("pointercancel", async () => {
+    await clearDrag();
   });
 
-  gridEl.addEventListener("pointercancel", () => {
-    clearDrag();
+  quickAccessListEl?.addEventListener("pointerdown", (event) => {
+    const card = event.target.closest("[data-action-id]");
+    if (!card) return;
+    startDrag(event, card, "quick");
+  });
+
+  quickAccessListEl?.addEventListener("pointermove", handleDragMove);
+
+  quickAccessListEl?.addEventListener("pointerup", async () => {
+    await handleDrop();
+    await clearDrag();
+  });
+
+  quickAccessListEl?.addEventListener("pointercancel", async () => {
+    await clearDrag();
   });
 }
 

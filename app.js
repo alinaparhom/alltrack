@@ -3956,6 +3956,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   );
   const quickAccessSaveButton = contentEl.querySelector("[data-quick-access-save]");
   const quickAccessMessageEl = contentEl.querySelector("[data-quick-access-message]");
+
+  if (energyPendingStatEl) {
+    energyPendingStatEl.classList.add("pending-stat--grid", "action-card");
+    if (!gridEl.contains(energyPendingStatEl)) {
+      gridEl.prepend(energyPendingStatEl);
+    }
+  }
   const settingsModalEl = contentEl.querySelector("[data-energy-settings-modal]");
   const settingsFormEl = contentEl.querySelector("[data-energy-settings-form]");
   const settingsBodyEl = contentEl.querySelector("[data-energy-settings-body]");

@@ -3957,6 +3957,15 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   );
   const quickAccessSaveButton = contentEl.querySelector("[data-quick-access-save]");
   const quickAccessMessageEl = contentEl.querySelector("[data-quick-access-message]");
+  const updateQuickAccessOffset = () => {
+    if (!quickAccessEl) return;
+    const rect = quickAccessEl.getBoundingClientRect();
+    const offset = Math.max(96, Math.ceil(rect.height) + 16);
+    document.documentElement.style.setProperty(
+      "--quick-access-offset",
+      `${offset}px`
+    );
+  };
 
   if (energyPendingStatEl) {
     energyPendingStatEl.classList.add("pending-stat--grid", "action-card");
@@ -4686,6 +4695,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       if (!action) return;
       quickAccessListEl.appendChild(createQuickAccessItem(action));
     });
+    updateQuickAccessOffset();
   };
 
   const renderQuickAccessPicker = () => {
@@ -4743,6 +4753,18 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
   renderEnergyGrid();
   renderQuickAccessList();
+
+  if (quickAccessEl && typeof ResizeObserver !== "undefined") {
+    if (!quickAccessEl.dataset.offsetObserverAttached) {
+      const quickAccessObserver = new ResizeObserver(() => {
+        updateQuickAccessOffset();
+      });
+      quickAccessObserver.observe(quickAccessEl);
+      quickAccessEl.dataset.offsetObserverAttached = "true";
+    }
+  } else {
+    updateQuickAccessOffset();
+  }
 
   updateEnergyPendingStat({ count: pendingMoves.length, available: pendingMoves });
   fitActionTitleTexts(gridEl);

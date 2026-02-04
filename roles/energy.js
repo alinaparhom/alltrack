@@ -175,10 +175,11 @@ export function renderRole(user) {
             role="dialog"
             aria-modal="true"
             aria-label="Мои инструменты"
+            data-tools-panel
           >
             <div class="settings-modal__header tools-modal__header">
               <div class="settings-modal__title">
-                <h2>Мои инструменты</h2>
+                <h2 data-tools-title>Мои инструменты</h2>
                 <p data-tools-subtitle>Загружаем список...</p>
               </div>
               <button

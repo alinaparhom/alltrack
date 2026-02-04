@@ -2727,6 +2727,7 @@ function normalizeEnergyLayout(layout, actions, options = {}) {
   const normalized = [];
   const usedIds = new Set();
   let hasToggle = false;
+  let hasPending = false;
 
   if (Array.isArray(layout)) {
     layout.forEach((item) => {
@@ -2736,6 +2737,13 @@ function normalizeEnergyLayout(layout, actions, options = {}) {
         if (actionIds.has(actionId) && !usedIds.has(actionId)) {
           normalized.push({ type: "action", id: actionId });
           usedIds.add(actionId);
+        }
+        return;
+      }
+      if (item.type === "pending") {
+        if (!hasPending) {
+          normalized.push({ type: "pending" });
+          hasPending = true;
         }
         return;
       }
@@ -2769,6 +2777,11 @@ function normalizeEnergyLayout(layout, actions, options = {}) {
       normalized.push({ type: "action", id: action.id });
     }
   });
+
+  if (!hasPending) {
+    normalized.unshift({ type: "pending" });
+    hasPending = true;
+  }
 
   if (!hasToggle) {
     normalized.push({ type: "toggle" });
@@ -2826,10 +2839,14 @@ function updateEnergyPendingStat({ count = 0, available = [] } = {}) {
 
 function applyGroupingPreference(layout, actions, preference) {
   if (preference === "none") {
-    return actions.map((action) => ({ type: "action", id: action.id }));
+    return [
+      { type: "pending" },
+      ...actions.map((action) => ({ type: "action", id: action.id })),
+    ];
   }
   if (preference === "all-group") {
     return [
+      { type: "pending" },
       {
         type: "group",
         id: "group-all",
@@ -2947,6 +2964,8 @@ function buildEnergyLayoutFromDom(gridEl) {
     if (type === "action") {
       const actionId = item.dataset.actionId;
       if (actionId) layout.push({ type: "action", id: actionId });
+    } else if (type === "pending") {
+      layout.push({ type: "pending" });
     } else if (type === "group") {
       let groupItems = [];
       if (item.dataset.groupItems) {
@@ -4714,6 +4733,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   let quickAccessIds = resolveQuickAccessIds();
   let quickAccessDraft = [...quickAccessIds];
 
+  const getQuickAccessOrderFromDom = () => {
+    if (!quickAccessListEl) return [];
+    return Array.from(quickAccessListEl.querySelectorAll("[data-action-id]"))
+      .map((item) => item.dataset.actionId)
+      .filter(Boolean);
+  };
+
   const createQuickAccessItem = (action) => {
     const button = document.createElement("button");
     button.type = "button";
@@ -4776,7 +4802,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const quickAccessSet = new Set(quickAccessIds);
     gridEl.innerHTML = "";
     layoutToRender.forEach((item) => {
-      if (item.type === "action") {
+      if (item.type === "pending") {
+        if (!energyPendingStatEl) return;
+        energyPendingStatEl.classList.add("pending-stat--grid", "action-card");
+        energyPendingStatEl.dataset.energyItem = "";
+        energyPendingStatEl.dataset.energyItemType = "pending";
+        gridEl.appendChild(energyPendingStatEl);
+      } else if (item.type === "action") {
         if (quickAccessSet.has(item.id)) return;
         const action = actionsMap.get(item.id);
         if (action) {
@@ -4792,12 +4824,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         gridEl.appendChild(createEnergyGroupToggleCard());
       }
     });
-    if (energyPendingStatEl) {
-      energyPendingStatEl.classList.add("pending-stat--grid", "action-card");
-      if (!gridEl.contains(energyPendingStatEl)) {
-        gridEl.prepend(energyPendingStatEl);
-      }
-    }
   };
 
   renderEnergyGrid();
@@ -14286,6 +14312,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     rafId: null,
     source: null,
   };
+  let quickAccessOrderDirty = false;
   const animateEnergyReorder = (firstRects) => {
     const items = Array.from(gridEl.querySelectorAll("[data-energy-item]"));
     items.forEach((item) => {
@@ -14303,6 +14330,30 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           ],
           {
             duration: 260,
+            easing: "cubic-bezier(0.2, 0.8, 0.2, 1)",
+          }
+        );
+      }
+    });
+  };
+  const animateQuickAccessReorder = (firstRects) => {
+    if (!quickAccessListEl) return;
+    const items = Array.from(quickAccessListEl.querySelectorAll(".quick-access-item"));
+    items.forEach((item) => {
+      if (item === dragState.item) return;
+      const firstRect = firstRects.get(item);
+      if (!firstRect) return;
+      const lastRect = item.getBoundingClientRect();
+      const deltaX = firstRect.left - lastRect.left;
+      const deltaY = firstRect.top - lastRect.top;
+      if (deltaX || deltaY) {
+        item.animate(
+          [
+            { transform: `translate(${deltaX}px, ${deltaY}px)` },
+            { transform: "translate(0, 0)" },
+          ],
+          {
+            duration: 220,
             easing: "cubic-bezier(0.2, 0.8, 0.2, 1)",
           }
         );
@@ -14337,6 +14388,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     dragState.pointerId = null;
     dragState.pointerType = null;
     dragState.source = null;
+    quickAccessOrderDirty = false;
   };
 
   const updateDragTransform = (clientX, clientY) => {
@@ -14359,6 +14411,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     dragState.startCenterX = rect.left + rect.width / 2;
     dragState.startCenterY = rect.top + rect.height / 2;
     dragState.source = source;
+    if (source === "quick") {
+      quickAccessOrderDirty = false;
+    }
     dragState.holdTimer = window.setTimeout(() => {
       if (!dragState.item) return;
       dragState.isDragging = true;
@@ -14401,28 +14456,61 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     dragState.rafId = requestAnimationFrame(() => {
       updateDragTransform(event.clientX, event.clientY);
     });
-    if (dragState.source !== "grid") return;
-    const target = document
-      .elementsFromPoint(event.clientX, event.clientY)
-      .map((element) => element.closest?.("[data-energy-item]"))
-      .find((element) => element && element !== dragState.item);
-    if (!target || target === dragState.item) return;
-    const items = Array.from(gridEl.querySelectorAll("[data-energy-item]"));
-    const firstRects = new Map(
-      items.map((item) => [item, item.getBoundingClientRect()])
-    );
-    const draggedRect = dragState.item.getBoundingClientRect();
-    const rect = target.getBoundingClientRect();
-    const shouldInsertAfter = event.clientY > rect.top + rect.height / 2;
-    gridEl.insertBefore(
-      dragState.item,
-      shouldInsertAfter ? target.nextSibling : target
-    );
-    const updatedRect = dragState.item.getBoundingClientRect();
-    dragState.startCenterX += updatedRect.left - draggedRect.left;
-    dragState.startCenterY += updatedRect.top - draggedRect.top;
-    animateEnergyReorder(firstRects);
-    scheduleLayoutSave();
+    if (dragState.source === "grid") {
+      const target = document
+        .elementsFromPoint(event.clientX, event.clientY)
+        .map((element) => element.closest?.("[data-energy-item]"))
+        .find((element) => element && element !== dragState.item);
+      if (!target || target === dragState.item) return;
+      const items = Array.from(gridEl.querySelectorAll("[data-energy-item]"));
+      const firstRects = new Map(
+        items.map((item) => [item, item.getBoundingClientRect()])
+      );
+      const draggedRect = dragState.item.getBoundingClientRect();
+      const rect = target.getBoundingClientRect();
+      const shouldInsertAfter = event.clientY > rect.top + rect.height / 2;
+      gridEl.insertBefore(
+        dragState.item,
+        shouldInsertAfter ? target.nextSibling : target
+      );
+      const updatedRect = dragState.item.getBoundingClientRect();
+      dragState.startCenterX += updatedRect.left - draggedRect.left;
+      dragState.startCenterY += updatedRect.top - draggedRect.top;
+      animateEnergyReorder(firstRects);
+      scheduleLayoutSave();
+      return;
+    }
+    if (dragState.source === "quick" && quickAccessListEl) {
+      const target = document
+        .elementsFromPoint(event.clientX, event.clientY)
+        .map((element) => element.closest?.(".quick-access-item"))
+        .find((element) => element && element !== dragState.item);
+      if (!target || target === dragState.item) return;
+      if (!quickAccessListEl.contains(target)) return;
+      const items = Array.from(
+        quickAccessListEl.querySelectorAll(".quick-access-item")
+      );
+      const firstRects = new Map(
+        items.map((item) => [item, item.getBoundingClientRect()])
+      );
+      const draggedRect = dragState.item.getBoundingClientRect();
+      const rect = target.getBoundingClientRect();
+      const centerY = rect.top + rect.height / 2;
+      const centerX = rect.left + rect.width / 2;
+      const shouldInsertAfter =
+        event.clientY > centerY ||
+        (Math.abs(event.clientY - centerY) < rect.height / 2 &&
+          event.clientX > centerX);
+      quickAccessListEl.insertBefore(
+        dragState.item,
+        shouldInsertAfter ? target.nextSibling : target
+      );
+      const updatedRect = dragState.item.getBoundingClientRect();
+      dragState.startCenterX += updatedRect.left - draggedRect.left;
+      dragState.startCenterY += updatedRect.top - draggedRect.top;
+      animateQuickAccessReorder(firstRects);
+      quickAccessOrderDirty = true;
+    }
   };
 
   const isPointInside = (element, x, y) => {
@@ -14483,6 +14571,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       insertActionIntoGrid(action, dragState.lastPointerX, dragState.lastPointerY);
       scheduleLayoutSave();
       await persistQuickAccessIds(nextQuickAccess);
+    }
+    if (dragState.source === "quick" && quickAccessOrderDirty && dropZone !== "grid") {
+      const nextOrder = getQuickAccessOrderFromDom();
+      if (nextOrder.length > 0) {
+        await persistQuickAccessIds(nextOrder);
+      }
+      quickAccessOrderDirty = false;
     }
   };
 

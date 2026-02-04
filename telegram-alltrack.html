@@ -1128,13 +1128,20 @@
       }
 
       .energy-dashboard {
+        display: flex;
+        flex-direction: column;
         gap: 18px;
-        padding-bottom: calc(120px + env(safe-area-inset-bottom));
+        min-height: calc(100vh - var(--quick-access-offset, 120px) - 200px);
+        padding-bottom: calc(
+          var(--quick-access-offset, 120px) + env(safe-area-inset-bottom)
+        );
       }
 
       .energy-grid {
         touch-action: pan-y;
         user-select: none;
+        align-content: end;
+        margin-top: auto;
       }
 
       .energy-grid [data-energy-item] {
@@ -1258,6 +1265,7 @@
         cursor: pointer;
         transition: transform 0.2s ease, box-shadow 0.2s ease;
         will-change: transform;
+        touch-action: none;
         transform: translate3d(var(--drag-x, 0px), var(--drag-y, 0px), 0)
           scale(var(--drag-scale, 1));
       }

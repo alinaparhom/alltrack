@@ -71,7 +71,18 @@ export function renderRole(user) {
           </div>
         </div>
         <div class="quick-access" data-quick-access>
+          <div class="quick-access-header">
+            <div>
+              <div class="quick-access-title">Быстрый доступ</div>
+              <div class="quick-access-subtitle">
+                Зажмите и перетащите в общую сетку
+              </div>
+            </div>
+          </div>
           <div class="quick-access-list" data-quick-access-list></div>
+          <div class="quick-access-empty is-hidden" data-quick-access-empty>
+            Добавьте сюда нужные действия.
+          </div>
         </div>
         <div class="settings-modal is-hidden" data-energy-settings-modal>
           <div class="settings-modal__backdrop" data-energy-settings-backdrop></div>

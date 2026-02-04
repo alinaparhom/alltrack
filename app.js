@@ -1770,29 +1770,41 @@ async function notifyRepaired({
         if (toolPhotoUrl) {
           const media = [
             {
-              type: "document",
-              media: actFileUrl,
+              type: "photo",
+              media: toolPhotoUrl,
               caption: message,
               parse_mode: "HTML",
             },
             {
-              type: "photo",
-              media: toolPhotoUrl,
+              type: "document",
+              media: actFileUrl,
             },
           ];
           const result = await sendTelegramMediaGroup(chatId, media);
           if (result.ok) return;
         }
-        const docResult = await sendTelegramDocument(
-          chatId,
-          actFileUrl,
-          message
-        );
-        if (!docResult.ok) {
-          await sendTelegramMessage(chatId, message);
-        }
+        let messageSent = false;
         if (toolPhotoUrl) {
-          await sendTelegramPhoto(chatId, toolPhotoUrl, "");
+          const photoResult = await sendTelegramPhoto(
+            chatId,
+            toolPhotoUrl,
+            message
+          );
+          if (!photoResult.ok) {
+            await sendTelegramMessage(chatId, message);
+            messageSent = true;
+          } else {
+            messageSent = true;
+          }
+        } else {
+          await sendTelegramMessage(chatId, message);
+          messageSent = true;
+        }
+        const docResult = await sendTelegramDocument(chatId, actFileUrl, "");
+        if (!docResult.ok) {
+          if (!messageSent) {
+            await sendTelegramMessage(chatId, message);
+          }
         }
         return;
       }

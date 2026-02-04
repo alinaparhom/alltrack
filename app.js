@@ -3966,9 +3966,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const toolsTitleEl = contentEl.querySelector("[data-tools-title]");
   const toolsViewButtons = contentEl.querySelectorAll("[data-tools-view]");
   const toolsFilterEls = contentEl.querySelectorAll("[data-tools-filter]");
-  const toolsStatusFilterEls = contentEl.querySelectorAll(
-    "[data-tools-status-filter]"
-  );
   const toolsResponsibleFilterEls = contentEl.querySelectorAll(
     "[data-tools-responsible-filter]"
   );
@@ -4689,7 +4686,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     mode: "user",
     filters: {
       group: "",
-      status: "",
       object: "",
       responsible: "",
       manufacturer: "",
@@ -5008,12 +5004,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (toolsPanelEl) {
       toolsPanelEl.setAttribute("aria-label", text);
     }
-  };
-
-  const setToolsStatusFilterVisibility = (isVisible) => {
-    toolsStatusFilterEls.forEach((element) => {
-      element.classList.toggle("is-hidden", !isVisible);
-    });
   };
 
   const setToolsResponsibleFilterVisibility = (isVisible) => {
@@ -5515,14 +5505,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       ) {
         return false;
       }
-      if (toolsState.mode !== "base") {
-        if (
-          toolsState.filters.status &&
-          String(tool?.["Статус"] ?? "").trim() !== toolsState.filters.status
-        ) {
-          return false;
-        }
-      }
       if (
         toolsState.filters.object &&
         String(tool?.["Объект"] ?? "").trim() !== toolsState.filters.object
@@ -5613,7 +5595,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       );
     };
     fillToolsFilterOptions("group", collectValues("Граппа инструментов"));
-    fillToolsFilterOptions("status", collectValues("Статус"));
     fillToolsFilterOptions("object", collectValues("Объект"));
     fillToolsFilterOptions("responsible", collectValues("Ответственный"));
     fillToolsFilterOptions("manufacturer", collectValues("Производитель"));
@@ -5765,7 +5746,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     setToolsTitle("Мои инструменты");
     toolsState.filters.responsible = "";
     syncToolsFilterValue("responsible", "");
-    setToolsStatusFilterVisibility(true);
     setToolsResponsibleFilterVisibility(false);
     toolsModalEl.classList.remove("is-hidden");
     document.body.style.overflow = "hidden";
@@ -5788,9 +5768,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (!toolsModalEl) return;
     toolsState.mode = "base";
     setToolsTitle("База");
-    toolsState.filters.status = "";
-    syncToolsFilterValue("status", "");
-    setToolsStatusFilterVisibility(false);
     setToolsResponsibleFilterVisibility(true);
     toolsModalEl.classList.remove("is-hidden");
     document.body.style.overflow = "hidden";

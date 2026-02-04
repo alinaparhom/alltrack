@@ -6201,13 +6201,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     breakdowns.forEach((entry) => {
       const startDate = parseDateValue(entry?.["Дата поломки"]);
       const endDate = parseDateValue(entry?.["Дата ремонта"]);
-      const isActiveBreakdown = !endDate;
-      const endLabel = endDate ? entry?.["Дата ремонта"] : "Сломан";
+      const endLabel = endDate ? entry?.["Дата ремонта"] : "В работе";
       const item = document.createElement("div");
       item.className = "tools-info-item";
-      if (isActiveBreakdown) {
-        item.classList.add("tools-info-item--warning");
-      }
       const title = document.createElement("div");
       title.className = "tools-info-item__title";
       title.textContent = formatInfoValue(entry?.["Дата поломки"]);
@@ -6253,9 +6249,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const endLabel = endDate ? entry?.["Дата ремонта"] : "В ремонте";
       const item = document.createElement("div");
       item.className = "tools-info-item";
-      if (!endDate) {
-        item.classList.add("tools-info-item--repair");
-      }
       const title = document.createElement("div");
       title.className = "tools-info-item__title";
       title.textContent = formatInfoValue(entry?.["Дата отправки в ремонт"]);

@@ -374,6 +374,7 @@ function resolveFilePathValue(string $path, array $entry): string {
     "Накладные покупка",
     "Фото отказов",
     "Акты списания",
+    "Акты ремонтов",
     "Фото поломок",
   ];
   if (!in_array($photoFolderSafe, $allowedFolders, true)) {
@@ -452,6 +453,7 @@ function resolvePhotoFolderPath(array $entry): string {
     "Накладные покупка",
     "Фото отказов",
     "Акты списания",
+    "Акты ремонтов",
     "Фото поломок",
   ];
   if (!in_array($photoFolderSafe, $allowedFolders, true)) {

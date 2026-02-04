@@ -463,6 +463,57 @@ const toolPhotoPlaceholder = `data:image/svg+xml;utf8,${encodeURIComponent(
   </svg>`
 )}`;
 
+const applyToolPhotoWithFallback = ({
+  img,
+  orgFolder,
+  toolNumber,
+  hasPhoto,
+}) => {
+  if (!(img instanceof HTMLImageElement)) return;
+  const candidates = hasPhoto
+    ? buildToolPhotoCandidates(orgFolder, toolNumber)
+    : [];
+  let candidateIndex = 0;
+  const fallbackToDirectoryListing = async () => {
+    if (!hasPhoto || !orgFolder || !toolNumber) return;
+    const resolved = await resolvePhotoUrlFromDirectoryListing(
+      orgFolder,
+      toolNumber
+    );
+    if (resolved) {
+      img.src = resolved;
+      img.classList.remove("is-placeholder");
+    }
+  };
+  const setPlaceholder = () => {
+    img.onerror = null;
+    img.onload = null;
+    img.src = toolPhotoPlaceholder;
+    img.classList.add("is-placeholder");
+    fallbackToDirectoryListing();
+  };
+  const tryCandidate = () => {
+    if (candidateIndex >= candidates.length) {
+      setPlaceholder();
+      return;
+    }
+    const next = candidates[candidateIndex];
+    candidateIndex += 1;
+    img.src = next;
+  };
+  img.onerror = () => {
+    tryCandidate();
+  };
+  img.onload = () => {
+    img.classList.remove("is-placeholder");
+  };
+  if (candidates.length) {
+    tryCandidate();
+  } else {
+    setPlaceholder();
+  }
+};
+
 function parseInitDataUser(initData) {
   if (!initData) return null;
 
@@ -5239,31 +5290,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     media.className = "tools-card__media";
     const img = document.createElement("img");
     img.alt = infoLine || "Инструмент";
-
-    const candidates = hasPhoto
-      ? buildToolPhotoCandidates(orgFolder, photoNumber)
-      : [];
-    let candidateIndex = 0;
-    const tryCandidate = () => {
-      if (candidateIndex >= candidates.length) {
-        img.onerror = null;
-        img.onload = null;
-        img.src = toolPhotoPlaceholder;
-        return;
-      }
-      const next = candidates[candidateIndex];
-      candidateIndex += 1;
-      img.src = next;
-    };
-    img.onerror = () => {
-      tryCandidate();
-    };
-    img.onload = () => {};
-    if (candidates.length) {
-      tryCandidate();
-    } else {
-      img.src = toolPhotoPlaceholder;
-    }
+    applyToolPhotoWithFallback({
+      img,
+      orgFolder,
+      toolNumber: photoNumber,
+      hasPhoto,
+    });
 
     media.appendChild(img);
 
@@ -5339,34 +5371,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const img = document.createElement("img");
       img.className = "tools-table__thumb-image";
       img.alt = name || "Инструмент";
-      const candidates = hasPhoto
-        ? buildToolPhotoCandidates(toolsState.orgFolder, photoNumber)
-        : [];
-      let candidateIndex = 0;
-      const tryCandidate = () => {
-        if (candidateIndex >= candidates.length) {
-          img.onerror = null;
-          img.onload = null;
-          img.src = toolPhotoPlaceholder;
-          img.classList.add("is-placeholder");
-          return;
-        }
-        const next = candidates[candidateIndex];
-        candidateIndex += 1;
-        img.src = next;
-      };
-      img.onerror = () => {
-        tryCandidate();
-      };
-      img.onload = () => {
-        img.classList.remove("is-placeholder");
-      };
-      if (candidates.length) {
-        tryCandidate();
-      } else {
-        img.src = toolPhotoPlaceholder;
-        img.classList.add("is-placeholder");
-      }
+      applyToolPhotoWithFallback({
+        img,
+        orgFolder: toolsState.orgFolder,
+        toolNumber: photoNumber,
+        hasPhoto,
+      });
       thumb.appendChild(img);
       photoCell.appendChild(thumb);
       row.append(numberCell, infoCell, photoCell);
@@ -6912,34 +6922,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         String(tool?.["Номер"] ?? "").trim() ||
         String(tool?.["Бух.номер"] ?? "").trim() ||
         number;
-      const candidates = hasPhoto
-        ? buildToolPhotoCandidates(toolsState.orgFolder, photoNumber)
-        : [];
-      let candidateIndex = 0;
-      const tryCandidate = () => {
-        if (candidateIndex >= candidates.length) {
-          img.onerror = null;
-          img.onload = null;
-          img.src = toolPhotoPlaceholder;
-          img.classList.add("is-placeholder");
-          return;
-        }
-        const next = candidates[candidateIndex];
-        candidateIndex += 1;
-        img.src = next;
-      };
-      img.onerror = () => {
-        tryCandidate();
-      };
-      img.onload = () => {
-        img.classList.remove("is-placeholder");
-      };
-      if (candidates.length) {
-        tryCandidate();
-      } else {
-        img.src = toolPhotoPlaceholder;
-        img.classList.add("is-placeholder");
-      }
+      applyToolPhotoWithFallback({
+        img,
+        orgFolder: toolsState.orgFolder,
+        toolNumber: photoNumber,
+        hasPhoto,
+      });
       thumb.appendChild(img);
       photoCell.appendChild(thumb);
 
@@ -8375,37 +8363,23 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
   };
 
-  const buildRemovePhotoThumb = ({ candidates, altText }) => {
+  const buildRemovePhotoThumb = ({
+    orgFolder,
+    toolNumber,
+    hasPhoto,
+    altText,
+  }) => {
     const thumb = document.createElement("div");
     thumb.className = "tools-table__thumb remove-photo-thumb";
     const img = document.createElement("img");
     img.className = "tools-table__thumb-image";
     img.alt = altText;
-    let candidateIndex = 0;
-    const tryCandidate = () => {
-      if (candidateIndex >= candidates.length) {
-        img.onerror = null;
-        img.onload = null;
-        img.src = toolPhotoPlaceholder;
-        img.classList.add("is-placeholder");
-        return;
-      }
-      const next = candidates[candidateIndex];
-      candidateIndex += 1;
-      img.src = next;
-    };
-    img.onerror = () => {
-      tryCandidate();
-    };
-    img.onload = () => {
-      img.classList.remove("is-placeholder");
-    };
-    if (candidates.length) {
-      tryCandidate();
-    } else {
-      img.src = toolPhotoPlaceholder;
-      img.classList.add("is-placeholder");
-    }
+    applyToolPhotoWithFallback({
+      img,
+      orgFolder,
+      toolNumber,
+      hasPhoto,
+    });
     thumb.appendChild(img);
     return thumb;
   };
@@ -8450,11 +8424,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const photoCell = document.createElement("div");
       photoCell.className = "tools-table__cell tools-table__cell--thumb";
       const photoNumber = resolveToolPhotoNumber(tool);
-      const candidates = photoNumber
-        ? buildToolPhotoCandidates(removePhotoState.orgFolder, photoNumber)
-        : [];
       const thumb = buildRemovePhotoThumb({
-        candidates,
+        orgFolder: removePhotoState.orgFolder,
+        toolNumber: photoNumber,
+        hasPhoto: safeCount > 0,
         altText: name || "Инструмент",
       });
       photoCell.appendChild(thumb);

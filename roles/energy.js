@@ -203,7 +203,7 @@ export function renderRole(user) {
                       autocomplete="off"
                     />
                   </label>
-                  <label class="tools-quick-filter">
+                  <label class="tools-quick-filter" data-tools-status-filter>
                     <span>Статус</span>
                     <select class="form-input" data-tools-filter="status"></select>
                   </label>
@@ -290,7 +290,7 @@ export function renderRole(user) {
                     <span>Группа</span>
                     <select class="form-input" data-tools-filter="group"></select>
                   </label>
-                  <label class="tools-filter">
+                  <label class="tools-filter" data-tools-status-filter>
                     <span>Статус</span>
                     <select class="form-input" data-tools-filter="status"></select>
                   </label>

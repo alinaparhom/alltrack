@@ -3825,6 +3825,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const toolsTitleEl = contentEl.querySelector("[data-tools-title]");
   const toolsViewButtons = contentEl.querySelectorAll("[data-tools-view]");
   const toolsFilterEls = contentEl.querySelectorAll("[data-tools-filter]");
+  const toolsStatusFilterEls = contentEl.querySelectorAll(
+    "[data-tools-status-filter]"
+  );
   const toolsFiltersPanelEl = contentEl.querySelector(
     "[data-tools-filters-panel]"
   );
@@ -4826,6 +4829,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
   };
 
+  const setToolsStatusFilterVisibility = (isVisible) => {
+    toolsStatusFilterEls.forEach((element) => {
+      element.classList.toggle("is-hidden", !isVisible);
+    });
+  };
+
   const buildToolSelectionId = (tool, index) => {
     const number = String(tool?.["Номер"] ?? "").trim();
     if (number) return `number:${number}`;
@@ -5326,11 +5335,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       ) {
         return false;
       }
-      if (
-        toolsState.filters.status &&
-        String(tool?.["Статус"] ?? "").trim() !== toolsState.filters.status
-      ) {
-        return false;
+      if (toolsState.mode !== "base") {
+        if (
+          toolsState.filters.status &&
+          String(tool?.["Статус"] ?? "").trim() !== toolsState.filters.status
+        ) {
+          return false;
+        }
       }
       if (
         toolsState.filters.object &&
@@ -5564,6 +5575,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (!toolsModalEl) return;
     toolsState.mode = "user";
     setToolsTitle("Мои инструменты");
+    setToolsStatusFilterVisibility(true);
     toolsModalEl.classList.remove("is-hidden");
     document.body.style.overflow = "hidden";
     setToolsSubtitle("Загружаем список...");
@@ -5585,6 +5597,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (!toolsModalEl) return;
     toolsState.mode = "base";
     setToolsTitle("База");
+    toolsState.filters.status = "";
+    syncToolsFilterValue("status", "");
+    setToolsStatusFilterVisibility(false);
     toolsModalEl.classList.remove("is-hidden");
     document.body.style.overflow = "hidden";
     setToolsSubtitle("Загружаем список...");

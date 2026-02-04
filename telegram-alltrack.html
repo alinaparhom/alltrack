@@ -95,6 +95,8 @@
       body[data-theme="dark"] .writeoff-item,
       body[data-theme="dark"] .writeoff-confirm-item,
       body[data-theme="dark"] .writeoff-confirm-card,
+      body[data-theme="dark"] .tools-edit-photo-card,
+      body[data-theme="dark"] .tools-edit-actions,
       body[data-theme="dark"] .button-icon,
       body[data-theme="dark"] .button-secondary,
       body[data-theme="dark"] .registration-note,
@@ -2634,6 +2636,106 @@
         display: grid;
         gap: 14px;
         overflow: hidden;
+      }
+
+      .tools-edit-modal__panel {
+        width: min(640px, calc(100% - 20px));
+        max-height: calc(100vh - 20px);
+        border-radius: 22px;
+        grid-template-rows: auto minmax(0, 1fr);
+        background: linear-gradient(160deg, rgba(255, 255, 255, 0.98), rgba(255, 255, 255, 0.86));
+        border: 1px solid rgba(226, 232, 240, 0.85);
+        box-shadow: 0 24px 60px rgba(15, 23, 42, 0.16);
+        overflow: hidden;
+      }
+
+      .tools-edit-modal__body {
+        padding: 12px 18px 20px;
+      }
+
+      .tools-edit-form {
+        display: grid;
+        gap: 16px;
+      }
+
+      .tools-edit-grid {
+        display: grid;
+        gap: 12px;
+      }
+
+      .tools-edit-field--full {
+        grid-column: 1 / -1;
+      }
+
+      .tools-edit-photo-card {
+        display: grid;
+        gap: 10px;
+      }
+
+      .tools-edit-photo-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 15px;
+        font-weight: 600;
+        color: var(--text);
+      }
+
+      .tools-edit-photo-count {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 36px;
+        padding: 4px 10px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 600;
+        color: #1d4ed8;
+        background: rgba(219, 234, 254, 0.9);
+        border: 1px solid rgba(59, 130, 246, 0.3);
+      }
+
+      .tools-edit-photo-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      .tools-edit-photo-add {
+        position: relative;
+        overflow: hidden;
+      }
+
+      .tools-edit-photo-input {
+        position: absolute;
+        inset: 0;
+        opacity: 0;
+        cursor: pointer;
+      }
+
+      .tools-edit-actions {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+        padding: 10px 12px;
+        border-radius: 16px;
+        border: 1px solid rgba(226, 232, 240, 0.85);
+        background: rgba(255, 255, 255, 0.85);
+        box-shadow: 0 12px 26px rgba(15, 23, 42, 0.08);
+      }
+
+      .tools-edit-actions__main {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      @media (min-width: 720px) {
+        .tools-edit-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
       }
 
       .tools-controls {

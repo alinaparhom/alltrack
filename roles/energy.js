@@ -329,6 +329,155 @@ export function renderRole(user) {
             </div>
           </div>
         </div>
+        <div class="tools-modal settings-modal is-hidden" data-tools-edit-modal>
+          <div class="settings-modal__backdrop" data-tools-edit-backdrop></div>
+          <div
+            class="settings-modal__panel tools-edit-modal__panel"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Редактирование инструмента"
+          >
+            <div class="settings-modal__header tools-modal__header">
+              <div class="settings-modal__title">
+                <h2 data-tools-edit-title>Инструмент</h2>
+                <p data-tools-edit-subtitle>Редактирование</p>
+              </div>
+              <button
+                class="button-icon tools-modal__close"
+                type="button"
+                data-tools-edit-close
+                aria-label="Закрыть редактирование"
+              >
+                <span class="button-icon-emoji" aria-hidden="true">✕</span>
+              </button>
+            </div>
+            <div class="settings-modal__body tools-edit-modal__body">
+              <form class="tools-edit-form" data-tools-edit-form>
+                <div class="tools-edit-grid">
+                  <label class="form-field">
+                    <span class="form-label">Бух.номер</span>
+                    <input
+                      class="form-input"
+                      type="text"
+                      inputmode="text"
+                      data-tools-edit-accounting
+                    />
+                  </label>
+                  <label class="form-field">
+                    <span class="form-label">Наименование</span>
+                    <input
+                      class="form-input"
+                      type="text"
+                      inputmode="text"
+                      data-tools-edit-name
+                    />
+                  </label>
+                  <label class="form-field">
+                    <span class="form-label">Производитель</span>
+                    <input
+                      class="form-input"
+                      type="text"
+                      inputmode="text"
+                      data-tools-edit-manufacturer
+                    />
+                  </label>
+                  <label class="form-field">
+                    <span class="form-label">Модель</span>
+                    <input
+                      class="form-input"
+                      type="text"
+                      inputmode="text"
+                      data-tools-edit-model
+                    />
+                  </label>
+                  <label class="form-field tools-edit-field--full">
+                    <span class="form-label">Наименование по бухгалтерии</span>
+                    <input
+                      class="form-input"
+                      type="text"
+                      inputmode="text"
+                      data-tools-edit-accounting-name
+                    />
+                  </label>
+                  <label class="form-field">
+                    <span class="form-label">Серийный номер</span>
+                    <input
+                      class="form-input"
+                      type="text"
+                      inputmode="text"
+                      data-tools-edit-serial
+                    />
+                  </label>
+                  <label class="form-field">
+                    <span class="form-label">Граппа инструментов</span>
+                    <input
+                      class="form-input"
+                      type="text"
+                      inputmode="text"
+                      data-tools-edit-group
+                    />
+                  </label>
+                </div>
+                <div class="form-card tools-edit-photo-card">
+                  <div class="tools-edit-photo-header">
+                    Фото инструмента
+                    <span class="tools-edit-photo-count" data-tools-edit-photo-count>
+                      0
+                    </span>
+                  </div>
+                  <div class="tools-edit-photo-actions">
+                    <label class="action-secondary tools-edit-photo-add">
+                      Добавить фото
+                      <input
+                        class="tools-edit-photo-input"
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        data-tools-edit-photo-add
+                      />
+                    </label>
+                    <button
+                      class="action-secondary"
+                      type="button"
+                      data-tools-edit-photo-remove
+                    >
+                      Удалить фото
+                    </button>
+                  </div>
+                  <p class="form-hint">
+                    Фото сохраняются в карточке инструмента и доступны в базе.
+                  </p>
+                </div>
+                <div class="form-message" data-tools-edit-message></div>
+                <div class="tools-edit-actions">
+                  <button
+                    class="action-danger"
+                    type="button"
+                    data-tools-edit-delete
+                  >
+                    Удалить инструмент
+                  </button>
+                  <div class="tools-edit-actions__main">
+                    <button
+                      class="action-secondary"
+                      type="button"
+                      data-tools-edit-cancel
+                    >
+                      Закрыть
+                    </button>
+                    <button
+                      class="action-primary"
+                      type="submit"
+                      data-tools-edit-save
+                    >
+                      Сохранить
+                    </button>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
         <div class="settings-modal is-hidden writeoff-modal" data-writeoff-modal>
           <div class="settings-modal__backdrop" data-writeoff-backdrop></div>
           <div

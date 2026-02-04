@@ -29,6 +29,7 @@ const energyPendingStatEl = document.querySelector("[data-energy-pending-stat]")
 const energyPendingIconEl = document.querySelector("[data-energy-pending-icon]");
 const energyPendingCountEl = document.querySelector("[data-energy-pending-count]");
 const energyPendingWrapperEl = document.querySelector("[data-energy-pending-wrapper]");
+const energyPendingStatusEl = document.querySelector("[data-energy-pending-status]");
 const settingsBackButtonEl = document.querySelector(
   "[data-settings-back-header]"
 );
@@ -49,6 +50,8 @@ const defaultPreferences = {
   grouping: "free",
   theme: "telegram",
 };
+const quickAccessDefaults = ["demand", "tools", "info", "download"];
+const quickAccessLimit = 5;
 const energySettingsRoles = [
   responsibleRole,
   chiefEngineerRole,
@@ -2806,6 +2809,11 @@ function updateEnergyPendingStat({ count = 0, available = [] } = {}) {
   if (energyPendingIconEl) {
     energyPendingIconEl.textContent = isWaiting ? "⏳" : "✅";
   }
+  if (energyPendingStatusEl) {
+    energyPendingStatusEl.textContent = isWaiting
+      ? `На принятии: ${pendingCount}`
+      : "Все приняты";
+  }
   if (energyPendingCountEl) {
     energyPendingCountEl.textContent = String(pendingCount);
     energyPendingCountEl.classList.toggle("is-hidden", !isWaiting);
@@ -3936,6 +3944,18 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const createGroupButton = contentEl.querySelector("[data-energy-create-group]");
   const cancelGroupButton = contentEl.querySelector("[data-energy-cancel-group]");
   const selectedCountEl = contentEl.querySelector("[data-energy-selected-count]");
+  const quickAccessListEl = contentEl.querySelector("[data-quick-access-list]");
+  const quickAccessEmptyEl = contentEl.querySelector("[data-quick-access-empty]");
+  const quickAccessEditButton = contentEl.querySelector("[data-quick-access-edit]");
+  const quickAccessPickerEl = contentEl.querySelector("[data-quick-access-picker]");
+  const quickAccessPickerGridEl = contentEl.querySelector(
+    "[data-quick-access-picker-grid]"
+  );
+  const quickAccessCancelButton = contentEl.querySelector(
+    "[data-quick-access-cancel]"
+  );
+  const quickAccessSaveButton = contentEl.querySelector("[data-quick-access-save]");
+  const quickAccessMessageEl = contentEl.querySelector("[data-quick-access-message]");
   const settingsModalEl = contentEl.querySelector("[data-energy-settings-modal]");
   const settingsFormEl = contentEl.querySelector("[data-energy-settings-form]");
   const settingsBodyEl = contentEl.querySelector("[data-energy-settings-body]");
@@ -4619,19 +4639,96 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     groupingPreference
   );
 
-  gridEl.innerHTML = "";
-  layoutToRender.forEach((item) => {
-    if (item.type === "action") {
-      const action = actionsMap.get(item.id);
-      if (action) {
-        gridEl.appendChild(createEnergyActionCard(action));
-      }
-    } else if (item.type === "group") {
-      gridEl.appendChild(createEnergyGroupCard(item, actionsMap));
-    } else if (item.type === "toggle" && groupingPreference === "free") {
-      gridEl.appendChild(createEnergyGroupToggleCard());
+  const resolveQuickAccessIds = () => {
+    const saved = settingsData.users?.[context.userKey]?.energy?.quickAccess;
+    const baseList =
+      Array.isArray(saved) && saved.length > 0 ? saved : quickAccessDefaults;
+    const filtered = baseList.filter((id) => actionsMap.has(id));
+    if (filtered.length > 0) {
+      return filtered.slice(0, quickAccessLimit);
     }
-  });
+    const fallback = quickAccessDefaults.filter((id) => actionsMap.has(id));
+    if (fallback.length > 0) {
+      return fallback.slice(0, quickAccessLimit);
+    }
+    const firstAction = availableActions[0]?.id;
+    return firstAction ? [firstAction] : [];
+  };
+
+  let quickAccessIds = resolveQuickAccessIds();
+  let quickAccessDraft = [...quickAccessIds];
+
+  const createQuickAccessItem = (action) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "quick-access-item";
+    button.dataset.actionId = action.id;
+    button.dataset.energyItemType = "action";
+    button.setAttribute("aria-label", action.title);
+    button.innerHTML = `<span aria-hidden="true">${action.icon}</span>`;
+    return button;
+  };
+
+  const renderQuickAccessList = () => {
+    if (!quickAccessListEl) return;
+    quickAccessListEl.innerHTML = "";
+    quickAccessEmptyEl?.classList.toggle("is-hidden", quickAccessIds.length > 0);
+    quickAccessIds.forEach((actionId) => {
+      const action = actionsMap.get(actionId);
+      if (!action) return;
+      quickAccessListEl.appendChild(createQuickAccessItem(action));
+    });
+  };
+
+  const renderQuickAccessPicker = () => {
+    if (!quickAccessPickerGridEl) return;
+    quickAccessPickerGridEl.innerHTML = "";
+    availableActions.forEach((action) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "quick-access-option";
+      button.dataset.actionId = action.id;
+      if (quickAccessDraft.includes(action.id)) {
+        button.classList.add("is-selected");
+      }
+      button.innerHTML = `
+        <span class="quick-access-option__icon" aria-hidden="true">${action.icon}</span>
+        <span class="quick-access-option__title">${action.title}</span>
+        <span class="quick-access-option__check" aria-hidden="true">✓</span>
+      `;
+      quickAccessPickerGridEl.appendChild(button);
+    });
+  };
+
+  const setQuickAccessMessage = (message = "") => {
+    if (!quickAccessMessageEl) return;
+    quickAccessMessageEl.textContent = message;
+  };
+
+  const renderEnergyGrid = () => {
+    const quickAccessSet = new Set(quickAccessIds);
+    gridEl.innerHTML = "";
+    layoutToRender.forEach((item) => {
+      if (item.type === "action") {
+        if (quickAccessSet.has(item.id)) return;
+        const action = actionsMap.get(item.id);
+        if (action) {
+          gridEl.appendChild(createEnergyActionCard(action));
+        }
+      } else if (item.type === "group") {
+        const filteredItems = item.items.filter(
+          (actionId) => !quickAccessSet.has(actionId)
+        );
+        if (!filteredItems.length) return;
+        gridEl.appendChild(createEnergyGroupCard({ ...item, items: filteredItems }, actionsMap));
+      } else if (item.type === "toggle" && groupingPreference === "free") {
+        gridEl.appendChild(createEnergyGroupToggleCard());
+      }
+    });
+  };
+
+  renderEnergyGrid();
+  renderQuickAccessList();
 
   updateEnergyPendingStat({ count: pendingMoves.length, available: pendingMoves });
   fitActionTitleTexts(gridEl);
@@ -13471,6 +13568,122 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
   });
 
+  const openQuickAccessPicker = () => {
+    if (!quickAccessPickerEl) return;
+    quickAccessDraft = [...quickAccessIds];
+    renderQuickAccessPicker();
+    setQuickAccessMessage(`Выбрано ${quickAccessDraft.length} из ${quickAccessLimit}`);
+    quickAccessPickerEl.classList.remove("is-hidden");
+  };
+
+  const closeQuickAccessPicker = () => {
+    if (!quickAccessPickerEl) return;
+    quickAccessPickerEl.classList.add("is-hidden");
+    setQuickAccessMessage("");
+  };
+
+  const handleEnergyAction = (actionId) => {
+    if (!actionId) return false;
+    if (actionId === "settings") {
+      openSettingsModal();
+      return true;
+    }
+    if (actionId === "objects") {
+      openObjectsModal();
+      return true;
+    }
+    if (actionId === "users") {
+      openUsersDetailsModal();
+      return true;
+    }
+    if (actionId === "tools") {
+      openToolsModal();
+      return true;
+    }
+    if (actionId === "base") {
+      openBaseModal();
+      return true;
+    }
+    if (actionId === "add-photo") {
+      openAddPhotoModal();
+      return true;
+    }
+    if (actionId === "remove-photo") {
+      openRemovePhotoModal();
+      return true;
+    }
+    if (actionId === "add-tool") {
+      openAddToolModal();
+      return true;
+    }
+    if (actionId === "write-off") {
+      openWriteOffModal();
+      return true;
+    }
+    if (actionId === "repair") {
+      openRepairModal();
+      return true;
+    }
+    if (actionId === "breakdowns") {
+      openBreakdownsModal();
+      return true;
+    }
+    return false;
+  };
+
+  quickAccessEditButton?.addEventListener("click", openQuickAccessPicker);
+  quickAccessCancelButton?.addEventListener("click", closeQuickAccessPicker);
+  quickAccessPickerGridEl?.addEventListener("click", (event) => {
+    const option = event.target.closest("[data-action-id]");
+    if (!option) return;
+    const actionId = option.dataset.actionId;
+    if (!actionId) return;
+    const isSelected = quickAccessDraft.includes(actionId);
+    if (!isSelected && quickAccessDraft.length >= quickAccessLimit) {
+      setQuickAccessMessage(`Можно выбрать максимум ${quickAccessLimit} плашек.`);
+      return;
+    }
+    quickAccessDraft = isSelected
+      ? quickAccessDraft.filter((id) => id !== actionId)
+      : [...quickAccessDraft, actionId];
+    option.classList.toggle("is-selected", !isSelected);
+    setQuickAccessMessage(`Выбрано ${quickAccessDraft.length} из ${quickAccessLimit}`);
+  });
+
+  quickAccessSaveButton?.addEventListener("click", async () => {
+    if (quickAccessDraft.length === 0) {
+      setQuickAccessMessage("Нужно выбрать хотя бы одну плашку.");
+      return;
+    }
+    quickAccessIds = quickAccessDraft.slice(0, quickAccessLimit);
+    settingsData.users = settingsData.users ?? {};
+    const currentUserSettings = settingsData.users?.[context.userKey] ?? {};
+    settingsData.users[context.userKey] = {
+      ...currentUserSettings,
+      energy: {
+        ...(currentUserSettings.energy ?? {}),
+        quickAccess: quickAccessIds,
+      },
+    };
+    try {
+      setQuickAccessMessage("Сохраняем быстрый доступ...");
+      await saveJson(context.settingsPath, settingsData, { user });
+      renderQuickAccessList();
+      renderEnergyGrid();
+      fitActionTitleTexts(gridEl);
+      closeQuickAccessPicker();
+    } catch (error) {
+      console.error(error);
+      setQuickAccessMessage("Не удалось сохранить. Проверьте соединение.");
+    }
+  });
+
+  quickAccessListEl?.addEventListener("click", (event) => {
+    const quickButton = event.target.closest("[data-action-id]");
+    if (!quickButton) return;
+    handleEnergyAction(quickButton.dataset.actionId);
+  });
+
   gridEl.addEventListener("click", (event) => {
     if (blockClick) return;
     const targetCard = event.target.closest("[data-energy-item]");
@@ -13478,89 +13691,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (
       !isGrouping &&
       targetCard.dataset.energyItemType === "action" &&
-      targetCard.dataset.actionId === "settings"
+      handleEnergyAction(targetCard.dataset.actionId)
     ) {
-      openSettingsModal();
-      return;
-    }
-    if (
-      !isGrouping &&
-      targetCard.dataset.energyItemType === "action" &&
-      targetCard.dataset.actionId === "objects"
-    ) {
-      openObjectsModal();
-      return;
-    }
-    if (
-      !isGrouping &&
-      targetCard.dataset.energyItemType === "action" &&
-      targetCard.dataset.actionId === "users"
-    ) {
-      openUsersDetailsModal();
-      return;
-    }
-    if (
-      !isGrouping &&
-      targetCard.dataset.energyItemType === "action" &&
-      targetCard.dataset.actionId === "tools"
-    ) {
-      openToolsModal();
-      return;
-    }
-    if (
-      !isGrouping &&
-      targetCard.dataset.energyItemType === "action" &&
-      targetCard.dataset.actionId === "base"
-    ) {
-      openBaseModal();
-      return;
-    }
-    if (
-      !isGrouping &&
-      targetCard.dataset.energyItemType === "action" &&
-      targetCard.dataset.actionId === "add-photo"
-    ) {
-      openAddPhotoModal();
-      return;
-    }
-    if (
-      !isGrouping &&
-      targetCard.dataset.energyItemType === "action" &&
-      targetCard.dataset.actionId === "remove-photo"
-    ) {
-      openRemovePhotoModal();
-      return;
-    }
-    if (
-      !isGrouping &&
-      targetCard.dataset.energyItemType === "action" &&
-      targetCard.dataset.actionId === "add-tool"
-    ) {
-      openAddToolModal();
-      return;
-    }
-    if (
-      !isGrouping &&
-      targetCard.dataset.energyItemType === "action" &&
-      targetCard.dataset.actionId === "write-off"
-    ) {
-      openWriteOffModal();
-      return;
-    }
-    if (
-      !isGrouping &&
-      targetCard.dataset.energyItemType === "action" &&
-      targetCard.dataset.actionId === "repair"
-    ) {
-      openRepairModal();
-      return;
-    }
-    if (
-      !isGrouping &&
-      targetCard.dataset.energyItemType === "action" &&
-      targetCard.dataset.actionId === "breakdowns"
-    ) {
-      openBreakdownsModal();
       return;
     }
     if (blockClick || !isGrouping || !allowGrouping) return;

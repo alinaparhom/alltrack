@@ -1097,6 +1097,49 @@ function buildSendToRepairNotificationMessage(
   return lines.join("\n");
 }
 
+function buildRepairedNotificationMessage(
+  tool,
+  { repairDate, repairCost, repairedBy } = {}
+) {
+  const titleParts = [
+    formatNotificationValue(tool?.["Наименование"], ""),
+    formatNotificationValue(tool?.["Производитель"], ""),
+    formatNotificationValue(tool?.["Модель"], ""),
+  ]
+    .map((part) => part.trim())
+    .filter(Boolean);
+  const titleLine = titleParts.length ? titleParts.join(" ") : "—";
+  const lines = [
+    "✅✅✅<b><u>ИНСТРУМЕНТ ОТРЕМОНТИРОВАН</u></b>",
+    `1. Номер: ${escapeTelegramHtml(
+      formatNotificationValue(tool?.["Номер"])
+    )}`,
+    `2. Бух.номер: ${escapeTelegramHtml(
+      formatNotificationValue(tool?.["Бух.номер"])
+    )}`,
+    `3. ${escapeTelegramHtml(titleLine)}`,
+    `4. Ответственный: ${escapeTelegramHtml(
+      formatNotificationValue(tool?.["Ответственный"])
+    )}`,
+  ];
+  if (repairCost !== null && repairCost !== undefined && repairCost !== "") {
+    lines.push(
+      `5. Стоимость ремонта: ${escapeTelegramHtml(
+        formatNotificationCost(repairCost)
+      )}`
+    );
+  }
+  lines.push(
+    `6. Дата ремонта: ${escapeTelegramHtml(
+      formatNotificationValue(repairDate)
+    )}`,
+    `7. Вернул из ремонта: ${escapeTelegramHtml(
+      formatNotificationValue(repairedBy)
+    )}`
+  );
+  return lines.join("\n");
+}
+
 function buildMoveCancelResponsibleMessage(
   tool,
   { movedBy, canceledBy, targetObject, oldObject, moveReason } = {}
@@ -1221,6 +1264,34 @@ async function sendTelegramPhoto(chatId, photoUrl, caption) {
   return { ok: response.ok, status: response.status, errorText };
 }
 
+async function sendTelegramDocument(chatId, documentUrl, caption) {
+  if (!fallbackBotToken || !chatId || !documentUrl) {
+    return { ok: false, status: null, errorText: "некорректные данные" };
+  }
+  const response = await fetch(
+    `https://api.telegram.org/bot${fallbackBotToken}/sendDocument`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chat_id: chatId,
+        document: documentUrl,
+        caption: caption ?? "",
+        parse_mode: "HTML",
+      }),
+    }
+  );
+  const errorText = await parseTelegramError(response);
+  if (!response.ok) {
+    console.warn("Не удалось отправить документ в Telegram.", {
+      chatId,
+      status: response.status,
+      errorText,
+    });
+  }
+  return { ok: response.ok, status: response.status, errorText };
+}
+
 async function sendTelegramMediaGroup(chatId, media) {
   if (!fallbackBotToken || !chatId || !Array.isArray(media) || !media.length) {
     return { ok: false, status: null, errorText: "некорректные данные" };
@@ -1320,6 +1391,17 @@ function buildDeclinePhotoUrl(orgFolder, fileName) {
 function buildBreakdownPhotoUrl(orgFolder, fileName) {
   if (!orgFolder || !fileName) return "";
   const folderSegment = encodeURIComponent("Фото поломок");
+  const orgSegment = encodeURIComponent(orgFolder);
+  const fileSegment = encodeURIComponent(fileName);
+  return new URL(
+    `./${orgSegment}/${folderSegment}/${fileSegment}`,
+    window.location.href
+  ).toString();
+}
+
+function buildRepairActUrl(orgFolder, fileName) {
+  if (!orgFolder || !fileName) return "";
+  const folderSegment = encodeURIComponent("Акты ремонтов");
   const orgSegment = encodeURIComponent(orgFolder);
   const fileSegment = encodeURIComponent(fileName);
   return new URL(
@@ -1650,6 +1732,79 @@ async function notifySendToRepair({
     await Promise.all(groupIds.map((chatId) => sendToGroup(chatId)));
   } catch (error) {
     console.warn("Не удалось отправить уведомление об отправке в ремонт.", error);
+  }
+}
+
+async function notifyRepaired({
+  tool,
+  orgFolder,
+  repairDate,
+  repairCost,
+  repairedBy,
+  actFileUrl,
+} = {}) {
+  if (!tool || !orgFolder) return;
+  if (!fallbackBotToken) return;
+  const settingsPath = `./${orgFolder}/Настройки.json`;
+  try {
+    const settingsData = await loadJson(settingsPath);
+    const groupsEnabled = isNotificationEnabled(settingsData, "repaired");
+    const groupIds = groupsEnabled
+      ? extractNotificationGroups(settingsData, "repaired")
+      : [];
+    if (!groupsEnabled || !groupIds.length) return;
+    const message = buildRepairedNotificationMessage(tool, {
+      repairDate,
+      repairCost,
+      repairedBy,
+    });
+    const shouldAttach = isNotificationPhotoEnabled(settingsData, "repaired");
+    let toolPhotoUrl = "";
+    if (shouldAttach) {
+      const photoNumber = resolveToolPhotoNumberForNotification(tool);
+      const resolved = await resolveAvailablePhotoUrl(orgFolder, photoNumber);
+      if (resolved) toolPhotoUrl = resolved;
+    }
+    const sendToGroup = async (chatId) => {
+      if (actFileUrl) {
+        if (toolPhotoUrl) {
+          const media = [
+            {
+              type: "document",
+              media: actFileUrl,
+              caption: message,
+              parse_mode: "HTML",
+            },
+            {
+              type: "photo",
+              media: toolPhotoUrl,
+            },
+          ];
+          const result = await sendTelegramMediaGroup(chatId, media);
+          if (result.ok) return;
+        }
+        const docResult = await sendTelegramDocument(
+          chatId,
+          actFileUrl,
+          message
+        );
+        if (!docResult.ok) {
+          await sendTelegramMessage(chatId, message);
+        }
+        if (toolPhotoUrl) {
+          await sendTelegramPhoto(chatId, toolPhotoUrl, "");
+        }
+        return;
+      }
+      if (toolPhotoUrl) {
+        await sendTelegramPhoto(chatId, toolPhotoUrl, message);
+        return;
+      }
+      await sendTelegramMessage(chatId, message);
+    };
+    await Promise.all(groupIds.map((chatId) => sendToGroup(chatId)));
+  } catch (error) {
+    console.warn("Не удалось отправить уведомление о ремонте.", error);
   }
 }
 
@@ -3806,8 +3961,15 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const repairFormSubtitleEl = contentEl.querySelector(
     "[data-repair-form-subtitle]"
   );
+  const repairFormTitleEl = contentEl.querySelector("[data-repair-form-title]");
   const repairToolTitleEl = contentEl.querySelector("[data-repair-tool-title]");
   const repairToolMetaEl = contentEl.querySelector("[data-repair-tool-meta]");
+  const repairFormSendSection = contentEl.querySelector(
+    "[data-repair-form-send]"
+  );
+  const repairFormCompleteSection = contentEl.querySelector(
+    "[data-repair-form-complete]"
+  );
   const repairOrganizationInput = contentEl.querySelector(
     "[data-repair-organization]"
   );
@@ -3818,8 +3980,18 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     "[data-repair-description]"
   );
   const repairCostInput = contentEl.querySelector("[data-repair-cost]");
+  const repairFinalCostInput = contentEl.querySelector(
+    "[data-repair-final-cost]"
+  );
+  const repairActInput = contentEl.querySelector("[data-repair-act]");
+  const repairActPhotoInput = contentEl.querySelector(
+    "[data-repair-act-photo]"
+  );
   const repairFormMessageEl = contentEl.querySelector(
     "[data-repair-form-message]"
+  );
+  const repairFormSubmitButton = contentEl.querySelector(
+    "[data-repair-form-submit]"
   );
   const breakdownStatusModalEl = contentEl.querySelector(
     "[data-breakdown-status-modal]"
@@ -4386,6 +4558,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     selectedTool: null,
     organizations: [],
     isSaving: false,
+    mode: "send",
   };
   let addToolViewportListenersAttached = false;
   let breakdownViewportListenersAttached = false;
@@ -8388,7 +8561,17 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
   const isRepairSelectionBlocked = (tool) => {
     const tone = tool?.__statusTone ?? resolveToolStatusTone(tool);
+    return tone === "writeoff";
+  };
+
+  const isRepairSendBlocked = (tool) => {
+    const tone = tool?.__statusTone ?? resolveToolStatusTone(tool);
     return tone === "repair" || tone === "writeoff";
+  };
+
+  const isRepairCompletionAllowed = (tool) => {
+    const tone = tool?.__statusTone ?? resolveToolStatusTone(tool);
+    return tone === "repair";
   };
 
   const renderBreakdownsTable = (items) => {
@@ -8734,7 +8917,98 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const resetRepairForm = () => {
     repairFormEl?.reset();
     repairFormState.selectedTool = null;
+    repairFormState.mode = "send";
     setRepairFormMessage("");
+    if (repairActInput) {
+      repairActInput.value = "";
+    }
+    if (repairActPhotoInput) {
+      repairActPhotoInput.value = "";
+    }
+    if (repairFormCompleteSection) {
+      repairFormCompleteSection
+        .querySelectorAll(".form-file-option")
+        .forEach((option) => option.classList.remove("is-filled"));
+    }
+  };
+
+  const updateRepairActPickerState = () => {
+    if (!repairFormCompleteSection) return;
+    const fileOptions = repairFormCompleteSection.querySelectorAll(
+      ".form-file-option"
+    );
+    fileOptions.forEach((option) => {
+      const input = option.querySelector('input[type="file"]');
+      const isFilled =
+        input instanceof HTMLInputElement &&
+        input.files &&
+        input.files.length > 0;
+      option.classList.toggle("is-filled", isFilled);
+    });
+  };
+
+  const resolveRepairActFile = () => {
+    const photoFile =
+      repairActPhotoInput instanceof HTMLInputElement &&
+      repairActPhotoInput.files &&
+      repairActPhotoInput.files.length > 0
+        ? repairActPhotoInput.files[0]
+        : null;
+    if (photoFile) return photoFile;
+    const file =
+      repairActInput instanceof HTMLInputElement &&
+      repairActInput.files &&
+      repairActInput.files.length > 0
+        ? repairActInput.files[0]
+        : null;
+    return file || null;
+  };
+
+  const setRepairFormMode = (mode) => {
+    const resolvedMode = mode === "repaired" ? "repaired" : "send";
+    repairFormState.mode = resolvedMode;
+    repairFormSendSection?.classList.toggle(
+      "is-hidden",
+      resolvedMode !== "send"
+    );
+    repairFormCompleteSection?.classList.toggle(
+      "is-hidden",
+      resolvedMode !== "repaired"
+    );
+    if (repairFormTitleEl) {
+      repairFormTitleEl.textContent =
+        resolvedMode === "repaired" ? "Возврат из ремонта" : "Отправка в ремонт";
+    }
+    if (repairFormSubtitleEl) {
+      repairFormSubtitleEl.textContent =
+        resolvedMode === "repaired"
+          ? "Укажите стоимость и приложите акт"
+          : "Проверьте данные инструмента";
+    }
+    if (repairFormSubmitButton) {
+      repairFormSubmitButton.textContent =
+        resolvedMode === "repaired" ? "Сохранить" : "Отправить в ремонт";
+    }
+    if (repairOrganizationInput) {
+      repairOrganizationInput.required = resolvedMode === "send";
+      repairOrganizationInput.disabled = resolvedMode !== "send";
+    }
+    if (repairDescriptionInput) {
+      repairDescriptionInput.disabled = resolvedMode !== "send";
+    }
+    if (repairCostInput) {
+      repairCostInput.disabled = resolvedMode !== "send";
+    }
+    if (repairFinalCostInput) {
+      repairFinalCostInput.required = resolvedMode === "repaired";
+      repairFinalCostInput.disabled = resolvedMode !== "repaired";
+    }
+    if (repairActInput) {
+      repairActInput.disabled = resolvedMode !== "repaired";
+    }
+    if (repairActPhotoInput) {
+      repairActPhotoInput.disabled = resolvedMode !== "repaired";
+    }
   };
 
   const fillRepairToolInfo = (tool) => {
@@ -8767,13 +9041,23 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (!repairFormModalEl || !tool) return;
     resetRepairForm();
     repairFormState.selectedTool = tool;
+    const statusText = String(tool?.["Статус"] ?? "").trim().toLowerCase();
+    const mode = statusText === "в ремонте" ? "repaired" : "send";
+    setRepairFormMode(mode);
     fillRepairToolInfo(tool);
-    await loadRepairOrganizations();
+    if (mode === "send") {
+      await loadRepairOrganizations();
+    }
     setRepairFormMessage("");
+    updateRepairActPickerState();
     repairFormModalEl.classList.remove("is-hidden");
     document.body.style.overflow = "hidden";
     setTimeout(() => {
-      repairOrganizationInput?.focus();
+      if (mode === "repaired") {
+        repairFinalCostInput?.focus();
+      } else {
+        repairOrganizationInput?.focus();
+      }
     }, 0);
   };
 
@@ -9261,7 +9545,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const tool = repairState.toolMap.get(toolId);
       if (!tool) return;
       if (isRepairSelectionBlocked(tool)) {
-        setRepairMessage("Инструмент уже в ремонте или на списании.", "info");
+        setRepairMessage("Инструмент уже на списании.", "info");
         return;
       }
       openRepairFormModal(tool);
@@ -9658,6 +9942,23 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       }, 0);
     });
 
+    if (repairActInput) {
+      repairActInput.addEventListener("change", () => {
+        if (repairActPhotoInput) {
+          repairActPhotoInput.value = "";
+        }
+        updateRepairActPickerState();
+      });
+    }
+    if (repairActPhotoInput) {
+      repairActPhotoInput.addEventListener("change", () => {
+        if (repairActInput) {
+          repairActInput.value = "";
+        }
+        updateRepairActPickerState();
+      });
+    }
+
     repairFormEl.addEventListener("submit", async (event) => {
       event.preventDefault();
       if (repairFormState.isSaving) {
@@ -9669,24 +9970,50 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         setRepairFormMessage("Инструмент не выбран.", "error");
         return;
       }
-      if (isRepairSelectionBlocked(tool)) {
-        setRepairFormMessage("Инструмент уже в ремонте или на списании.", "info");
-        return;
-      }
       clearRepairFormFieldErrors();
-      const organization = String(repairOrganizationInput?.value ?? "").trim();
-      if (!organization) {
-        setRepairFormMessage("Выберите организацию.", "error");
-        repairOrganizationInput?.focus();
-        markRepairFormFieldError(repairOrganizationInput);
-        return;
-      }
-      const description = String(repairDescriptionInput?.value ?? "").trim();
-      const cost = String(repairCostInput?.value ?? "").trim();
       const orgFolder = repairState.orgFolder ?? "";
       if (!orgFolder) {
         setRepairFormMessage("Не удалось определить организацию.", "error");
         return;
+      }
+      const mode = repairFormState.mode ?? "send";
+      if (mode === "send") {
+        if (isRepairSendBlocked(tool)) {
+          setRepairFormMessage(
+            "Инструмент уже в ремонте или на списании.",
+            "info"
+          );
+          return;
+        }
+        const organization = String(repairOrganizationInput?.value ?? "").trim();
+        if (!organization) {
+          setRepairFormMessage("Выберите организацию.", "error");
+          repairOrganizationInput?.focus();
+          markRepairFormFieldError(repairOrganizationInput);
+          return;
+        }
+      } else if (!isRepairCompletionAllowed(tool)) {
+        setRepairFormMessage("Инструмент не в ремонте.", "error");
+        return;
+      }
+      const description = String(repairDescriptionInput?.value ?? "").trim();
+      const cost = String(repairCostInput?.value ?? "").trim();
+      const finalCostValue = normalizeCostValue(repairFinalCostInput?.value ?? "");
+      const actFile = mode === "repaired" ? resolveRepairActFile() : null;
+      if (mode === "repaired") {
+        if (finalCostValue === null) {
+          setRepairFormMessage("Введите корректную стоимость ремонта.", "error");
+          repairFinalCostInput?.focus();
+          markRepairFormFieldError(repairFinalCostInput);
+          return;
+        }
+        if (!actFile) {
+          setRepairFormMessage("Прикрепите акт ремонта.", "error");
+          markRepairFormFieldError(
+            repairActPhotoInput || repairActInput || repairFinalCostInput
+          );
+          return;
+        }
       }
       repairFormState.isSaving = true;
       setRepairFormMessage("Сохраняем данные...", "info");
@@ -9725,39 +10052,114 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         ).trim();
         const marker = markerRaw ? formatFullName(markerRaw) : "Пользователь";
         const updatedTools = [...tools];
-        updatedTools[toolIndex] = {
-          ...updatedTools[toolIndex],
-          "Статус": "В ремонте",
-        };
-        const repairEntry = {
-          "Номер": String(tool?.["Номер"] ?? "").trim(),
-          "Бух.номер": String(tool?.["Бух.номер"] ?? "").trim(),
-          "Ответственный": String(tool?.["Ответственный"] ?? "").trim(),
-          "Организация": organization,
-          "Предварительное описание ремонта": description,
-          "Предварительная стоимость ремонта": cost,
-          "Дата отправки в ремонт": dateValue,
-          "Пользователь, который отправил в ремонт": marker,
-        };
-        const updatedRepairs = [...repairs, repairEntry];
-        const meta = buildUploadUserMeta({ organizationName: context.orgFullName });
-        await saveEntries([
-          { path: toolsPath, data: updatedTools, ...meta },
-          { path: repairsPath, data: updatedRepairs, ...meta },
-        ]);
+        if (mode === "repaired") {
+          updatedTools[toolIndex] = {
+            ...updatedTools[toolIndex],
+            "Статус": "Рабочий",
+          };
+          const repairPayload = {
+            "Стоимость ремонта": finalCostValue,
+            "Дата ремонта": dateValue,
+            "Пользователь, который вернул из ремонта": marker,
+          };
+          const updatedRepairs = [...repairs];
+          let repairIndex = -1;
+          for (let index = updatedRepairs.length - 1; index >= 0; index -= 1) {
+            const entry = updatedRepairs[index];
+            const entryNumber = normalizeToolNumberValue(entry?.["Номер"] ?? "");
+            const entryAccounting = String(entry?.["Бух.номер"] ?? "").trim();
+            if (selectedNumber && entryNumber === selectedNumber) {
+              repairIndex = index;
+              break;
+            }
+            if (selectedAccounting && entryAccounting === selectedAccounting) {
+              repairIndex = index;
+              break;
+            }
+          }
+          if (repairIndex >= 0) {
+            updatedRepairs[repairIndex] = {
+              ...updatedRepairs[repairIndex],
+              ...repairPayload,
+            };
+          } else {
+            updatedRepairs.push({
+              "Номер": String(tool?.["Номер"] ?? "").trim(),
+              "Бух.номер": String(tool?.["Бух.номер"] ?? "").trim(),
+              "Ответственный": String(tool?.["Ответственный"] ?? "").trim(),
+              ...repairPayload,
+            });
+          }
+          const actName = buildRepairActFileName(
+            resolveToolNumberValue(tool) || "акт",
+            dateValue,
+            actFile?.name ?? ""
+          );
+          const actContent = await readFileAsBase64(actFile);
+          const meta = buildUploadUserMeta({
+            organizationName: context.orgFullName,
+          });
+          await saveEntriesViaEndpoint([
+            {
+              type: "file",
+              path: `${orgFolder}/Акты ремонтов/${actName}`,
+              content: actContent,
+              encoding: "base64",
+              mime: actFile?.type || "application/octet-stream",
+              ...meta,
+            },
+            { path: toolsPath, data: updatedTools, ...meta },
+            { path: repairsPath, data: updatedRepairs, ...meta },
+          ]);
+          const actFileUrl = buildRepairActUrl(orgFolder, actName);
+          await notifyRepaired({
+            tool: updatedTools[toolIndex],
+            orgFolder,
+            repairDate: dateValue,
+            repairCost: finalCostValue,
+            repairedBy: marker,
+            actFileUrl,
+          });
+          syncToolStatusInStates(updatedTools[toolIndex], "Рабочий");
+          setRepairMessage("Инструмент отремонтирован.", "success");
+        } else {
+          const organization = String(repairOrganizationInput?.value ?? "").trim();
+          updatedTools[toolIndex] = {
+            ...updatedTools[toolIndex],
+            "Статус": "В ремонте",
+          };
+          const repairEntry = {
+            "Номер": String(tool?.["Номер"] ?? "").trim(),
+            "Бух.номер": String(tool?.["Бух.номер"] ?? "").trim(),
+            "Ответственный": String(tool?.["Ответственный"] ?? "").trim(),
+            "Организация": organization,
+            "Предварительное описание ремонта": description,
+            "Предварительная стоимость ремонта": cost,
+            "Дата отправки в ремонт": dateValue,
+            "Пользователь, который отправил в ремонт": marker,
+          };
+          const updatedRepairs = [...repairs, repairEntry];
+          const meta = buildUploadUserMeta({
+            organizationName: context.orgFullName,
+          });
+          await saveEntries([
+            { path: toolsPath, data: updatedTools, ...meta },
+            { path: repairsPath, data: updatedRepairs, ...meta },
+          ]);
 
-        await notifySendToRepair({
-          tool: updatedTools[toolIndex],
-          orgFolder,
-          organizationName: organization,
-          description,
-          cost,
-          repairDate: dateValue,
-          markedBy: marker,
-        });
+          await notifySendToRepair({
+            tool: updatedTools[toolIndex],
+            orgFolder,
+            organizationName: organization,
+            description,
+            cost,
+            repairDate: dateValue,
+            markedBy: marker,
+          });
 
-        syncToolStatusInStates(updatedTools[toolIndex], "В ремонте");
-        setRepairMessage("Инструмент отправлен в ремонт.", "success");
+          syncToolStatusInStates(updatedTools[toolIndex], "В ремонте");
+          setRepairMessage("Инструмент отправлен в ремонт.", "success");
+        }
         closeRepairFormModal();
         await loadRepairTools();
       } catch (error) {
@@ -10545,6 +10947,20 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const randomSuffix = buildRandomSuffix(3);
     const baseName = `${toolNumber}_${dateValue}_${randomSuffix}`;
     const rawName = extension ? `${baseName}.${extension}` : baseName;
+    return sanitizePhotoFileName(rawName);
+  };
+
+  const buildRepairActFileName = (toolNumber, dateValue, originalName = "") => {
+    const safeNumber = sanitizeFileName(String(toolNumber ?? "акт"));
+    let extension = originalName.includes(".")
+      ? originalName.split(".").pop()
+      : "";
+    if (!extension) {
+      extension = "file";
+    }
+    const randomSuffix = buildRandomSuffix(2);
+    const baseName = `${safeNumber}_${dateValue}_${randomSuffix}`;
+    const rawName = `${baseName}.${extension}`;
     return sanitizePhotoFileName(rawName);
   };
 

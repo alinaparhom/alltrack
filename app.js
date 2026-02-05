@@ -2835,6 +2835,35 @@ function updateEnergyPendingStat({ count = 0, available = [] } = {}) {
     energyPendingWrapperEl.dataset.pendingMoves = JSON.stringify(available || []);
     energyPendingWrapperEl.dataset.pendingCount = String(pendingCount);
   }
+
+  const quickAccessPendingIcons = document.querySelectorAll(
+    "[data-quick-access-pending-icon]"
+  );
+  quickAccessPendingIcons.forEach((iconEl) => {
+    iconEl.textContent = isWaiting ? "⏳" : "✅";
+  });
+
+  const quickAccessPendingCounts = document.querySelectorAll(
+    "[data-quick-access-pending-count]"
+  );
+  quickAccessPendingCounts.forEach((countEl) => {
+    countEl.textContent = String(pendingCount);
+    countEl.classList.toggle("is-hidden", !isWaiting);
+  });
+
+  const quickAccessPendingButtons = document.querySelectorAll(
+    "[data-quick-access-pending]"
+  );
+  quickAccessPendingButtons.forEach((button) => {
+    button.setAttribute(
+      "title",
+      isWaiting ? `Перемещения: ${pendingCount}` : "Перемещения: все приняты"
+    );
+    button.setAttribute(
+      "aria-label",
+      isWaiting ? `Перемещения: ${pendingCount}` : "Перемещения: все приняты"
+    );
+  });
 }
 
 function applyGroupingPreference(layout, actions, preference) {
@@ -3988,6 +4017,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
   if (energyPendingStatEl) {
     energyPendingStatEl.classList.add("pending-stat--grid", "action-card");
+    energyPendingStatEl.dataset.energyItem = "";
+    energyPendingStatEl.dataset.energyItemType = "pending";
+    energyPendingStatEl.dataset.actionId = "pending";
     if (!gridEl.contains(energyPendingStatEl)) {
       gridEl.prepend(energyPendingStatEl);
     }
@@ -4698,6 +4730,15 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     ? energyActions.filter((action) => accessList.includes(action.id))
     : energyActions;
   const actionsMap = new Map(availableActions.map((action) => [action.id, action]));
+  const pendingQuickAccessOption = {
+    id: "pending",
+    title: "Перемещения",
+    icon: "🚚",
+  };
+  const quickAccessOptions = [pendingQuickAccessOption, ...availableActions];
+  const quickAccessOptionsMap = new Map(
+    quickAccessOptions.map((action) => [action.id, action])
+  );
   const savedLayout = settingsData.users?.[context.userKey]?.energy?.layout;
   const pendingMoves = await loadUserPendingMoves(context.orgFolderName, user);
   const layoutCustomized =
@@ -4718,11 +4759,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const saved = settingsData.users?.[context.userKey]?.energy?.quickAccess;
     const baseList =
       Array.isArray(saved) && saved.length > 0 ? saved : quickAccessDefaults;
-    const filtered = baseList.filter((id) => actionsMap.has(id));
+    const filtered = baseList.filter((id) => quickAccessOptionsMap.has(id));
     if (filtered.length > 0) {
       return filtered.slice(0, quickAccessLimit);
     }
-    const fallback = quickAccessDefaults.filter((id) => actionsMap.has(id));
+    const fallback = quickAccessDefaults.filter((id) => quickAccessOptionsMap.has(id));
     if (fallback.length > 0) {
       return fallback.slice(0, quickAccessLimit);
     }
@@ -4751,16 +4792,54 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     return button;
   };
 
+  const createQuickAccessPendingItem = (action) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "quick-access-item quick-access-item--pending";
+    button.dataset.actionId = action.id;
+    button.dataset.energyItemType = "pending";
+    button.dataset.quickAccessPending = "true";
+    button.setAttribute("aria-label", action.title);
+    button.innerHTML = `
+      <span class="quick-access-item__icon" data-quick-access-pending-icon aria-hidden="true">
+        🚚
+      </span>
+      <span class="quick-access-item__badge is-hidden" data-quick-access-pending-count>
+        0
+      </span>
+    `;
+    return button;
+  };
+
+  const syncQuickAccessPendingIndicator = () => {
+    if (!energyPendingWrapperEl) return;
+    const pendingCount = Number(energyPendingWrapperEl.dataset.pendingCount ?? 0);
+    let pendingMoves = [];
+    if (energyPendingWrapperEl.dataset.pendingMoves) {
+      try {
+        pendingMoves = JSON.parse(energyPendingWrapperEl.dataset.pendingMoves);
+      } catch (error) {
+        pendingMoves = [];
+      }
+    }
+    updateEnergyPendingStat({ count: pendingCount, available: pendingMoves });
+  };
+
   const renderQuickAccessList = () => {
     if (!quickAccessListEl) return;
     quickAccessListEl.innerHTML = "";
     quickAccessEmptyEl?.classList.toggle("is-hidden", quickAccessIds.length > 0);
     quickAccessIds.forEach((actionId) => {
-      const action = actionsMap.get(actionId);
+      const action = quickAccessOptionsMap.get(actionId);
       if (!action) return;
+      if (actionId === "pending") {
+        quickAccessListEl.appendChild(createQuickAccessPendingItem(action));
+        return;
+      }
       quickAccessListEl.appendChild(createQuickAccessItem(action));
     });
     updateQuickAccessOffset();
+    syncQuickAccessPendingIndicator();
   };
 
   const scrollToQuickAccess = () => {
@@ -4776,7 +4855,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const renderQuickAccessPicker = () => {
     if (!quickAccessPickerGridEl) return;
     quickAccessPickerGridEl.innerHTML = "";
-    availableActions.forEach((action) => {
+    quickAccessOptions.forEach((action) => {
       const button = document.createElement("button");
       button.type = "button";
       button.className = "quick-access-option";
@@ -4803,10 +4882,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     gridEl.innerHTML = "";
     layoutToRender.forEach((item) => {
       if (item.type === "pending") {
+        if (quickAccessSet.has("pending")) return;
         if (!energyPendingStatEl) return;
         energyPendingStatEl.classList.add("pending-stat--grid", "action-card");
         energyPendingStatEl.dataset.energyItem = "";
         energyPendingStatEl.dataset.energyItemType = "pending";
+        energyPendingStatEl.dataset.actionId = "pending";
         gridEl.appendChild(energyPendingStatEl);
       } else if (item.type === "action") {
         if (quickAccessSet.has(item.id)) return;
@@ -14123,6 +14204,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
   const handleEnergyAction = (actionId) => {
     if (!actionId) return false;
+    if (actionId === "pending") {
+      openPendingMovesModal();
+      return true;
+    }
     if (actionId === "settings") {
       openSettingsModal();
       return true;
@@ -14546,13 +14631,33 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     fitActionTitleTexts(gridEl);
   };
 
+  const insertPendingIntoGrid = (clientX, clientY) => {
+    if (!energyPendingStatEl) return;
+    const card = energyPendingStatEl;
+    card.classList.add("pending-stat--grid", "action-card");
+    card.dataset.energyItem = "";
+    card.dataset.energyItemType = "pending";
+    card.dataset.actionId = "pending";
+    const target = document
+      .elementsFromPoint(clientX, clientY)
+      .map((element) => element.closest?.("[data-energy-item]"))
+      .find((element) => element && gridEl.contains(element));
+    if (target) {
+      const rect = target.getBoundingClientRect();
+      const shouldInsertAfter = clientY > rect.top + rect.height / 2;
+      gridEl.insertBefore(card, shouldInsertAfter ? target.nextSibling : target);
+    } else {
+      gridEl.appendChild(card);
+    }
+  };
+
   const handleDrop = async () => {
     if (!dragState.isDragging || !dragState.item) return;
     const dropZone = resolveDropZone(dragState.lastPointerX, dragState.lastPointerY);
     const actionId = dragState.item.dataset.actionId;
     const itemType = dragState.item.dataset.energyItemType;
     if (dragState.source === "grid" && dropZone === "quick") {
-      if (itemType !== "action" || !actionId) return;
+      if (!actionId || (itemType !== "action" && itemType !== "pending")) return;
       if (quickAccessIds.includes(actionId)) return;
       if (quickAccessIds.length >= quickAccessLimit) {
         setQuickAccessMessage(`Можно выбрать максимум ${quickAccessLimit} плашек.`);
@@ -14566,9 +14671,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (dragState.source === "quick" && dropZone === "grid") {
       if (!actionId) return;
       if (!quickAccessIds.includes(actionId)) return;
-      const action = actionsMap.get(actionId);
       const nextQuickAccess = quickAccessIds.filter((id) => id !== actionId);
-      insertActionIntoGrid(action, dragState.lastPointerX, dragState.lastPointerY);
+      if (actionId === "pending") {
+        insertPendingIntoGrid(dragState.lastPointerX, dragState.lastPointerY);
+      } else {
+        const action = actionsMap.get(actionId);
+        insertActionIntoGrid(action, dragState.lastPointerX, dragState.lastPointerY);
+      }
       scheduleLayoutSave();
       await persistQuickAccessIds(nextQuickAccess);
     }

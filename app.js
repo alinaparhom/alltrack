@@ -8646,7 +8646,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const tool = toolsState.toolMap.get(item.dataset.toolId);
       if (!toolsState.isSelecting) {
         if (tool) {
-          openToolsEditModal(tool);
+          openToolsInfoModal(tool);
         }
         return;
       }

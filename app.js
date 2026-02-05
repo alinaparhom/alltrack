@@ -2727,6 +2727,7 @@ function normalizeEnergyLayout(layout, actions, options = {}) {
   const normalized = [];
   const usedIds = new Set();
   let hasToggle = false;
+  let hasPending = false;
 
   if (Array.isArray(layout)) {
     layout.forEach((item) => {
@@ -2736,6 +2737,13 @@ function normalizeEnergyLayout(layout, actions, options = {}) {
         if (actionIds.has(actionId) && !usedIds.has(actionId)) {
           normalized.push({ type: "action", id: actionId });
           usedIds.add(actionId);
+        }
+        return;
+      }
+      if (item.type === "pending") {
+        if (!hasPending) {
+          normalized.push({ type: "pending" });
+          hasPending = true;
         }
         return;
       }
@@ -2769,6 +2777,11 @@ function normalizeEnergyLayout(layout, actions, options = {}) {
       normalized.push({ type: "action", id: action.id });
     }
   });
+
+  if (!hasPending) {
+    normalized.unshift({ type: "pending" });
+    hasPending = true;
+  }
 
   if (!hasToggle) {
     normalized.push({ type: "toggle" });
@@ -2855,10 +2868,14 @@ function updateEnergyPendingStat({ count = 0, available = [] } = {}) {
 
 function applyGroupingPreference(layout, actions, preference) {
   if (preference === "none") {
-    return actions.map((action) => ({ type: "action", id: action.id }));
+    return [
+      { type: "pending" },
+      ...actions.map((action) => ({ type: "action", id: action.id })),
+    ];
   }
   if (preference === "all-group") {
     return [
+      { type: "pending" },
       {
         type: "group",
         id: "group-all",
@@ -3998,6 +4015,15 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     );
   };
 
+  if (energyPendingStatEl) {
+    energyPendingStatEl.classList.add("pending-stat--grid", "action-card");
+    energyPendingStatEl.dataset.energyItem = "";
+    energyPendingStatEl.dataset.energyItemType = "pending";
+    energyPendingStatEl.dataset.actionId = "pending";
+    if (!gridEl.contains(energyPendingStatEl)) {
+      gridEl.prepend(energyPendingStatEl);
+    }
+  }
   const settingsModalEl = contentEl.querySelector("[data-energy-settings-modal]");
   const settingsFormEl = contentEl.querySelector("[data-energy-settings-form]");
   const settingsBodyEl = contentEl.querySelector("[data-energy-settings-body]");
@@ -4704,7 +4730,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     ? energyActions.filter((action) => accessList.includes(action.id))
     : energyActions;
   const actionsMap = new Map(availableActions.map((action) => [action.id, action]));
-  const quickAccessOptions = [...availableActions];
+  const pendingQuickAccessOption = {
+    id: "pending",
+    title: "Перемещения",
+    icon: "🚚",
+  };
+  const quickAccessOptions = [pendingQuickAccessOption, ...availableActions];
   const quickAccessOptionsMap = new Map(
     quickAccessOptions.map((action) => [action.id, action])
   );
@@ -4850,7 +4881,15 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const quickAccessSet = new Set(quickAccessIds);
     gridEl.innerHTML = "";
     layoutToRender.forEach((item) => {
-      if (item.type === "action") {
+      if (item.type === "pending") {
+        if (quickAccessSet.has("pending")) return;
+        if (!energyPendingStatEl) return;
+        energyPendingStatEl.classList.add("pending-stat--grid", "action-card");
+        energyPendingStatEl.dataset.energyItem = "";
+        energyPendingStatEl.dataset.energyItemType = "pending";
+        energyPendingStatEl.dataset.actionId = "pending";
+        gridEl.appendChild(energyPendingStatEl);
+      } else if (item.type === "action") {
         if (quickAccessSet.has(item.id)) return;
         const action = actionsMap.get(item.id);
         if (action) {

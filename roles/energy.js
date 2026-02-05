@@ -10,7 +10,6 @@ export const energyActions = [
   { id: "breakdowns", title: "Летучка", icon: "⚠️" },
   { id: "demand", title: "Потребность", icon: "📌" },
   { id: "objects", title: "Объекты", icon: "🏢" },
-  { id: "move", title: "Перемещения", icon: "🚚" },
   { id: "info", title: "Информация", icon: "ℹ️" },
   { id: "download", title: "Выгрузить данные", icon: "📤" },
   { id: "add-photo", title: "Добавить фото", icon: "📷" },

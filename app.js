@@ -4730,12 +4730,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     ? energyActions.filter((action) => accessList.includes(action.id))
     : energyActions;
   const actionsMap = new Map(availableActions.map((action) => [action.id, action]));
-  const pendingQuickAccessOption = {
-    id: "pending",
-    title: "Перемещения",
-    icon: "🚚",
-  };
-  const quickAccessOptions = [pendingQuickAccessOption, ...availableActions];
+  const quickAccessOptions = [...availableActions];
   const quickAccessOptionsMap = new Map(
     quickAccessOptions.map((action) => [action.id, action])
   );

@@ -4173,7 +4173,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const demandUnitInput = contentEl.querySelector("[data-demand-unit]");
   const demandObjectInput = contentEl.querySelector("[data-demand-object]");
   const demandObjectsListEl = contentEl.querySelector("[data-demand-objects-list]");
-  const demandToolsListEl = contentEl.querySelector("[data-demand-tools-list]");
+  const demandToolsSuggestionsEl = contentEl.querySelector(
+    "[data-demand-tools-suggestions]"
+  );
   const demandPriorityInputs = contentEl.querySelectorAll("[data-demand-priority]");
   const demandNoteInput = contentEl.querySelector("[data-demand-note]");
   const demandMessageEl = contentEl.querySelector("[data-demand-message]");
@@ -5669,13 +5671,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       .join("");
   };
 
-  const renderDemandToolsDatalist = () => {
-    if (!demandToolsListEl) return;
-    demandToolsListEl.innerHTML = demandState.toolSuggestions
-      .map((value) => `<option value="${escapeHtml(value)}"></option>`)
-      .join("");
-  };
-
   const renderDemandList = () => {
     if (!demandListEl) return;
     applyDemandFilters();
@@ -5801,7 +5796,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         .sort((a, b) => a.name.localeCompare(b.name, "ru"));
       renderDemandFilterOptions();
       renderDemandObjectsDatalist();
-      renderDemandToolsDatalist();
     } catch (error) {
       console.warn("Не удалось загрузить справочники потребностей.", error);
     }
@@ -13233,6 +13227,18 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     return filterSuggestions(values, query, 6);
   };
 
+  const getDemandToolSuggestions = (query) => {
+    const values = [
+      ...(demandState.items ?? []).map((item) => item.item),
+      ...(demandState.toolSuggestions ?? []),
+    ].filter(Boolean);
+    if (!values.length) return [];
+    if (!normalizeSuggestionValue(query)) {
+      return buildCommonSuggestions(values, 6);
+    }
+    return filterSuggestions(values, query, 6);
+  };
+
   const getSelectableSuggestions = (options, query) =>
     filterSelectableOptions(options, query, 8);
 
@@ -13248,6 +13254,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     inputEl: addToolNameInput,
     containerEl: addToolNameSuggestionsEl,
     getItems: getToolNameSuggestions,
+  });
+
+  attachDynamicSuggestions({
+    inputEl: demandItemInput,
+    containerEl: demandToolsSuggestionsEl,
+    getItems: getDemandToolSuggestions,
+    showOnFocus: true,
   });
 
   attachDynamicSuggestions({

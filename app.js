@@ -5760,10 +5760,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       toolsList.forEach((tool) => {
         if (!tool || typeof tool !== "object") return;
         const name = String(tool["Наименование"] ?? "").trim();
-        const manufacturer = String(tool["Производитель"] ?? "").trim();
-        const model = String(tool["Модель"] ?? "").trim();
-        const title = [name, manufacturer, model].filter(Boolean).join(" ");
-        if (title) toolSuggestions.add(title);
+        if (name) toolSuggestions.add(name);
       });
       demandState.toolSuggestions = Array.from(toolSuggestions).sort((a, b) =>
         a.localeCompare(b, "ru")
@@ -5879,13 +5876,22 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     event.preventDefault();
     if (!demandFormEl) return;
     const title = sanitizeDemandLabel(demandItemInput?.value ?? "");
-    const object = sanitizeDemandLabel(demandObjectInput?.value ?? "");
+    const objectRaw = sanitizeDemandLabel(demandObjectInput?.value ?? "");
+    const object = findOptionMatch(objectRaw, demandState.objects);
     const quantity = normalizeNumber(demandQuantityInput?.value ?? 0, 0);
     const unit = sanitizeDemandLabel(demandUnitInput?.value ?? "шт") || "шт";
     const note = sanitizeDemandLabel(demandNoteInput?.value ?? "");
     const priority = getSelectedDemandPriority();
-    if (!title || !object || quantity <= 0) {
-      setDemandMessage("Заполните название, объект и количество.");
+    if (!title || quantity <= 0) {
+      setDemandMessage("Заполните название и количество.");
+      return;
+    }
+    if (!object) {
+      setDemandMessage(
+        demandState.objects.length
+          ? "Выберите объект из списка."
+          : "В организации нет объектов."
+      );
       return;
     }
     const userKey = buildUserKey(user);

@@ -5407,11 +5407,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   };
 
   const isToolSelectableForMove = (tool) => {
-    if (
-      toolsState.mode === "base" ||
-      toolsState.mode === "search" ||
-      toolsState.mode === "move-other"
-    )
+    if (toolsState.mode === "base" || toolsState.mode === "search")
       return false;
     if (!tool) return false;
     if (tool.__pendingMove) return false;
@@ -5421,11 +5417,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   };
 
   const updateToolsSelectionUi = () => {
-    if (
-      toolsState.mode === "base" ||
-      toolsState.mode === "search" ||
-      toolsState.mode === "move-other"
-    ) {
+    if (toolsState.mode === "base" || toolsState.mode === "search") {
       toolsState.isSelecting = false;
       toolsState.selectedIds.clear();
       if (toolsMoveButtonEl) {
@@ -8616,11 +8608,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
   if (toolsListEl) {
     toolsListEl.addEventListener("pointerdown", (event) => {
-      if (
-        toolsState.mode === "base" ||
-        toolsState.mode === "search" ||
-        toolsState.mode === "move-other"
-      )
+      if (toolsState.mode === "base" || toolsState.mode === "search")
         return;
       if (toolsState.isSelecting) return;
       const item = event.target.closest("[data-tools-item]");
@@ -8668,7 +8656,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         }
         return;
       }
-      if (toolsState.mode === "search" || toolsState.mode === "move-other") {
+      if (toolsState.mode === "search") {
         const tool = toolsState.toolMap.get(item.dataset.toolId);
         if (tool) {
           openToolsInfoModal(tool);

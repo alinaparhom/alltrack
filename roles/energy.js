@@ -289,52 +289,65 @@ export function renderRole(user) {
                 <div class="form-message" data-demand-message></div>
               </form>
               <div class="demand-filters">
-                <label class="demand-search">
-                  <input
-                    class="form-input"
-                    type="search"
-                    placeholder="Поиск по названию, объекту, автору..."
-                    data-demand-search
-                  />
-                </label>
-                <div class="demand-filter-row">
-                  <label class="demand-filter">
-                    <span>Объект</span>
-                    <select class="form-input" data-demand-filter-object>
-                      <option value="">Все объекты</option>
-                    </select>
+                <div class="demand-filters__bar">
+                  <label class="demand-search">
+                    <input
+                      class="form-input"
+                      type="search"
+                      placeholder="Поиск по названию, объекту, автору..."
+                      data-demand-search
+                    />
                   </label>
-                  <label class="demand-filter">
-                    <span>Автор</span>
-                    <select class="form-input" data-demand-filter-user>
-                      <option value="">Все пользователи</option>
-                    </select>
-                  </label>
+                  <button
+                    class="demand-filters__toggle"
+                    type="button"
+                    data-demand-filters-toggle
+                    aria-label="Фильтры"
+                    aria-expanded="false"
+                  >
+                    <span aria-hidden="true">⛃</span>
+                  </button>
                 </div>
-                <div class="demand-filter-row demand-filter-row--secondary">
-                  <label class="demand-filter">
-                    <span>Статус</span>
-                    <select class="form-input" data-demand-filter-status>
-                      <option value="open" selected>Актуальные</option>
-                      <option value="done">Закрытые</option>
-                      <option value="all">Все</option>
-                    </select>
-                  </label>
-                  <div class="demand-toggle" data-demand-filter-view>
-                    <button
-                      class="demand-toggle__button is-active"
-                      type="button"
-                      data-demand-view="all"
-                    >
-                      Все
-                    </button>
-                    <button
-                      class="demand-toggle__button"
-                      type="button"
-                      data-demand-view="mine"
-                    >
-                      Мои
-                    </button>
+                <div class="demand-filters__panel is-hidden" data-demand-filters-panel>
+                  <div class="demand-filter-row">
+                    <label class="demand-filter">
+                      <span>Объект</span>
+                      <select class="form-input" data-demand-filter-object>
+                        <option value="">Все объекты</option>
+                      </select>
+                    </label>
+                    <label class="demand-filter">
+                      <span>Автор</span>
+                      <select class="form-input" data-demand-filter-user>
+                        <option value="">Все пользователи</option>
+                      </select>
+                    </label>
+                  </div>
+                  <div class="demand-filter-row demand-filter-row--secondary">
+                    <label class="demand-filter">
+                      <span>Статус</span>
+                      <select class="form-input" data-demand-filter-status>
+                        <option value="open" selected>Актуальные</option>
+                        <option value="done">Закрытые</option>
+                        <option value="all">Все</option>
+                      </select>
+                    </label>
+                    <div class="demand-toggle" data-demand-filter-view>
+                      <button
+                        class="demand-toggle__button is-active"
+                        type="button"
+                        data-demand-view="all"
+                      >
+                        Все
+                      </button>
+                      <button
+                        class="demand-toggle__button"
+                        type="button"
+                        data-demand-view="mine"
+                      >
+                        Мои
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>

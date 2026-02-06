@@ -4158,6 +4158,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const demandSubmitButton = contentEl.querySelector("[data-demand-submit]");
   const demandCancelButton = contentEl.querySelector("[data-demand-cancel]");
   const demandSearchInput = contentEl.querySelector("[data-demand-search]");
+  const demandFiltersToggle = contentEl.querySelector("[data-demand-filters-toggle]");
+  const demandFiltersPanel = contentEl.querySelector("[data-demand-filters-panel]");
   const demandFilterObjectEl = contentEl.querySelector("[data-demand-filter-object]");
   const demandFilterUserEl = contentEl.querySelector("[data-demand-filter-user]");
   const demandFilterStatusEl = contentEl.querySelector("[data-demand-filter-status]");
@@ -5487,6 +5489,14 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       demandItemInput?.focus();
     }
   };
+  const setDemandFiltersVisibility = (isOpen) => {
+    if (!demandFiltersPanel) return;
+    demandFiltersPanel.classList.toggle("is-hidden", !isOpen);
+    if (demandFiltersToggle) {
+      demandFiltersToggle.classList.toggle("is-active", isOpen);
+      demandFiltersToggle.setAttribute("aria-expanded", String(isOpen));
+    }
+  };
 
   const setDemandSubmitButton = (mode = "add") => {
     if (!demandSubmitButton) return;
@@ -5751,6 +5761,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         context.orgFullName ?? context.orgShortName ?? context.orgFolderName ?? "";
     }
     setDemandFormVisibility(false);
+    setDemandFiltersVisibility(false);
     demandModalEl.classList.remove("is-hidden");
     document.body.style.overflow = "hidden";
     resetDemandForm();
@@ -5763,6 +5774,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     demandModalEl.classList.add("is-hidden");
     document.body.style.overflow = "";
     setDemandFormVisibility(false);
+    setDemandFiltersVisibility(false);
     resetDemandForm();
     setDemandMessage("");
   };
@@ -5773,6 +5785,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (!demandFormEl) return;
     const isOpen = !demandFormEl.classList.contains("is-hidden");
     setDemandFormVisibility(!isOpen);
+  });
+  demandFiltersToggle?.addEventListener("click", () => {
+    if (!demandFiltersPanel) return;
+    const isOpen = !demandFiltersPanel.classList.contains("is-hidden");
+    setDemandFiltersVisibility(!isOpen);
   });
 
   demandCancelButton?.addEventListener("click", () => {

@@ -5407,7 +5407,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   };
 
   const isToolSelectableForMove = (tool) => {
-    if (toolsState.mode === "base" || toolsState.mode === "search") return false;
+    if (
+      toolsState.mode === "base" ||
+      toolsState.mode === "search" ||
+      toolsState.mode === "move-other"
+    )
+      return false;
     if (!tool) return false;
     if (tool.__pendingMove) return false;
     const photoCount = Number.parseInt(tool?.["Количество фото"] ?? 0, 10);
@@ -5416,7 +5421,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   };
 
   const updateToolsSelectionUi = () => {
-    if (toolsState.mode === "base" || toolsState.mode === "search") {
+    if (
+      toolsState.mode === "base" ||
+      toolsState.mode === "search" ||
+      toolsState.mode === "move-other"
+    ) {
       toolsState.isSelecting = false;
       toolsState.selectedIds.clear();
       if (toolsMoveButtonEl) {
@@ -6135,6 +6144,28 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (!toolsModalEl) return;
     toolsState.mode = "search";
     setToolsTitle("Поиск");
+    setToolsResponsibleFilterVisibility(true);
+    toolsModalEl.classList.remove("is-hidden");
+    document.body.style.overflow = "hidden";
+    setToolsSubtitle("Загружаем список...");
+    const numberConfig = await resolveToolsNumberConfig();
+    updateToolsNumberConfig(numberConfig);
+    await loadBaseTools();
+    syncToolsViewButtons();
+    if (
+      toolsSearchInput &&
+      (typeof window === "undefined" ||
+        !window.matchMedia ||
+        !window.matchMedia("(max-width: 520px)").matches)
+    ) {
+      toolsSearchInput.focus();
+    }
+  };
+
+  const openMoveOtherModal = async () => {
+    if (!toolsModalEl) return;
+    toolsState.mode = "move-other";
+    setToolsTitle("Переместить за других");
     setToolsResponsibleFilterVisibility(true);
     toolsModalEl.classList.remove("is-hidden");
     document.body.style.overflow = "hidden";
@@ -8585,7 +8616,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
   if (toolsListEl) {
     toolsListEl.addEventListener("pointerdown", (event) => {
-      if (toolsState.mode === "base" || toolsState.mode === "search") return;
+      if (
+        toolsState.mode === "base" ||
+        toolsState.mode === "search" ||
+        toolsState.mode === "move-other"
+      )
+        return;
       if (toolsState.isSelecting) return;
       const item = event.target.closest("[data-tools-item]");
       if (!item) return;
@@ -8632,7 +8668,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         }
         return;
       }
-      if (toolsState.mode === "search") {
+      if (toolsState.mode === "search" || toolsState.mode === "move-other") {
         const tool = toolsState.toolMap.get(item.dataset.toolId);
         if (tool) {
           openToolsInfoModal(tool);
@@ -14228,8 +14264,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       openBaseModal();
       return true;
     }
-    if (actionId === "search" || actionId === "move-other") {
+    if (actionId === "search") {
       openSearchModal();
+      return true;
+    }
+    if (actionId === "move-other") {
+      openMoveOtherModal();
       return true;
     }
     if (actionId === "add-photo") {

@@ -172,6 +172,168 @@ export function renderRole(user) {
             </div>
           </div>
         </div>
+        <div class="demand-modal settings-modal is-hidden" data-demand-modal>
+          <div class="settings-modal__backdrop" data-demand-backdrop></div>
+          <div
+            class="settings-modal__panel demand-modal__panel"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Потребность"
+          >
+            <div class="settings-modal__header demand-modal__header">
+              <div class="settings-modal__title">
+                <h2>Потребность</h2>
+                <p data-demand-subtitle>Собираем потребности по объектам</p>
+              </div>
+              <button
+                class="button-icon demand-modal__close"
+                type="button"
+                data-demand-close
+                aria-label="Закрыть окно потребностей"
+              >
+                <span class="button-icon-emoji" aria-hidden="true">✕</span>
+              </button>
+            </div>
+            <div class="settings-modal__body demand-modal__body">
+              <div class="demand-summary" data-demand-summary>
+                <div class="demand-summary__main">
+                  <span class="demand-summary__count" data-demand-open-count>0</span>
+                  <span class="demand-summary__label">актуальных заявок</span>
+                </div>
+                <div class="demand-summary__meta">
+                  <span data-demand-total-count>0</span> всего ·
+                  <span data-demand-objects-count>0</span> объектов ·
+                  <span data-demand-shown-count>0</span> показано
+                </div>
+              </div>
+              <form class="demand-form form-card" data-demand-form>
+                <div class="demand-form__grid">
+                  <label class="form-field">
+                    <span class="form-label">Что нужно</span>
+                    <input
+                      class="form-input"
+                      type="text"
+                      placeholder="Например, перфоратор"
+                      data-demand-item
+                      required
+                    />
+                  </label>
+                  <label class="form-field demand-form__quantity">
+                    <span class="form-label">Количество</span>
+                    <div class="demand-quantity">
+                      <input
+                        class="form-input"
+                        type="number"
+                        min="1"
+                        step="1"
+                        placeholder="1"
+                        data-demand-quantity
+                        required
+                      />
+                      <select class="form-input" data-demand-unit>
+                        <option value="шт" selected>шт</option>
+                        <option value="компл">компл</option>
+                        <option value="м">м</option>
+                        <option value="м²">м²</option>
+                        <option value="м³">м³</option>
+                        <option value="кг">кг</option>
+                        <option value="л">л</option>
+                      </select>
+                    </div>
+                  </label>
+                  <label class="form-field">
+                    <span class="form-label">Объект</span>
+                    <input
+                      class="form-input"
+                      type="text"
+                      placeholder="Выберите объект"
+                      list="demand-objects-list"
+                      data-demand-object
+                      required
+                    />
+                    <datalist id="demand-objects-list" data-demand-objects-list></datalist>
+                  </label>
+                </div>
+                <label class="form-field">
+                  <span class="form-label">Комментарий</span>
+                  <textarea
+                    class="form-input demand-form__note"
+                    rows="2"
+                    placeholder="Срок, приоритет, особенности..."
+                    data-demand-note
+                  ></textarea>
+                </label>
+                <div class="demand-form__actions">
+                  <button
+                    class="action-secondary is-hidden"
+                    type="button"
+                    data-demand-cancel
+                  >
+                    Отмена
+                  </button>
+                  <button class="action-primary" type="submit" data-demand-submit>
+                    Добавить
+                  </button>
+                </div>
+                <div class="form-message" data-demand-message></div>
+              </form>
+              <div class="demand-filters">
+                <label class="demand-search">
+                  <input
+                    class="form-input"
+                    type="search"
+                    placeholder="Поиск по названию, объекту, автору..."
+                    data-demand-search
+                  />
+                </label>
+                <div class="demand-filter-row">
+                  <label class="demand-filter">
+                    <span>Объект</span>
+                    <select class="form-input" data-demand-filter-object>
+                      <option value="">Все объекты</option>
+                    </select>
+                  </label>
+                  <label class="demand-filter">
+                    <span>Автор</span>
+                    <select class="form-input" data-demand-filter-user>
+                      <option value="">Все пользователи</option>
+                    </select>
+                  </label>
+                </div>
+                <div class="demand-filter-row demand-filter-row--secondary">
+                  <label class="demand-filter">
+                    <span>Статус</span>
+                    <select class="form-input" data-demand-filter-status>
+                      <option value="open" selected>Актуальные</option>
+                      <option value="done">Закрытые</option>
+                      <option value="all">Все</option>
+                    </select>
+                  </label>
+                  <div class="demand-toggle" data-demand-filter-view>
+                    <button
+                      class="demand-toggle__button is-active"
+                      type="button"
+                      data-demand-view="all"
+                    >
+                      Все
+                    </button>
+                    <button
+                      class="demand-toggle__button"
+                      type="button"
+                      data-demand-view="mine"
+                    >
+                      Мои
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div class="demand-list" data-demand-list></div>
+              <div class="demand-empty is-hidden" data-demand-empty>
+                Пока нет потребностей. Добавьте первую заявку сверху.
+              </div>
+            </div>
+          </div>
+        </div>
         <div class="tools-modal settings-modal is-hidden" data-tools-modal>
           <div class="settings-modal__backdrop" data-tools-backdrop></div>
           <div

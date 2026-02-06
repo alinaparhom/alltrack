@@ -217,6 +217,82 @@ export function renderRole(user) {
                   <span data-demand-shown-count>0</span> показано
                 </div>
               </div>
+              <div class="demand-filters">
+                <div class="demand-filters__bar">
+                  <label class="demand-search">
+                    <input
+                      class="form-input"
+                      type="search"
+                      placeholder="Поиск по названию, объекту, автору..."
+                      data-demand-search
+                    />
+                  </label>
+                  <button
+                    class="demand-filters__toggle"
+                    type="button"
+                    data-demand-filters-toggle
+                    aria-label="Фильтры"
+                    aria-expanded="false"
+                  >
+                    <span class="demand-filters__icon" aria-hidden="true">
+                      <svg viewBox="0 0 24 24" role="presentation" focusable="false">
+                        <path
+                          d="M4 6h16l-6.5 7.5v3.5l-3 1.5v-5L4 6z"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="1.6"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                        />
+                      </svg>
+                    </span>
+                  </button>
+                </div>
+                <div class="demand-filters__tabs">
+                  <div class="demand-toggle" data-demand-filter-view>
+                    <button
+                      class="demand-toggle__button is-active"
+                      type="button"
+                      data-demand-view="all"
+                    >
+                      Все
+                    </button>
+                    <button
+                      class="demand-toggle__button"
+                      type="button"
+                      data-demand-view="mine"
+                    >
+                      Мои
+                    </button>
+                  </div>
+                </div>
+                <div class="demand-filters__panel is-hidden" data-demand-filters-panel>
+                  <div class="demand-filter-row">
+                    <label class="demand-filter">
+                      <span>Объект</span>
+                      <select class="form-input" data-demand-filter-object>
+                        <option value="">Все объекты</option>
+                      </select>
+                    </label>
+                    <label class="demand-filter">
+                      <span>Автор</span>
+                      <select class="form-input" data-demand-filter-user>
+                        <option value="">Все пользователи</option>
+                      </select>
+                    </label>
+                  </div>
+                  <div class="demand-filter-row demand-filter-row--secondary">
+                    <label class="demand-filter">
+                      <span>Статус</span>
+                      <select class="form-input" data-demand-filter-status>
+                        <option value="open" selected>Актуальные</option>
+                        <option value="done">Закрытые</option>
+                        <option value="all">Все</option>
+                      </select>
+                    </label>
+                  </div>
+                </div>
+              </div>
               <form class="demand-form form-card is-hidden" data-demand-form>
                 <div class="demand-form__grid">
                   <label class="form-field">
@@ -288,69 +364,6 @@ export function renderRole(user) {
                 </div>
                 <div class="form-message" data-demand-message></div>
               </form>
-              <div class="demand-filters">
-                <div class="demand-filters__bar">
-                  <label class="demand-search">
-                    <input
-                      class="form-input"
-                      type="search"
-                      placeholder="Поиск по названию, объекту, автору..."
-                      data-demand-search
-                    />
-                  </label>
-                  <button
-                    class="demand-filters__toggle"
-                    type="button"
-                    data-demand-filters-toggle
-                    aria-label="Фильтры"
-                    aria-expanded="false"
-                  >
-                    <span aria-hidden="true">⛃</span>
-                  </button>
-                </div>
-                <div class="demand-filters__panel is-hidden" data-demand-filters-panel>
-                  <div class="demand-filter-row">
-                    <label class="demand-filter">
-                      <span>Объект</span>
-                      <select class="form-input" data-demand-filter-object>
-                        <option value="">Все объекты</option>
-                      </select>
-                    </label>
-                    <label class="demand-filter">
-                      <span>Автор</span>
-                      <select class="form-input" data-demand-filter-user>
-                        <option value="">Все пользователи</option>
-                      </select>
-                    </label>
-                  </div>
-                  <div class="demand-filter-row demand-filter-row--secondary">
-                    <label class="demand-filter">
-                      <span>Статус</span>
-                      <select class="form-input" data-demand-filter-status>
-                        <option value="open" selected>Актуальные</option>
-                        <option value="done">Закрытые</option>
-                        <option value="all">Все</option>
-                      </select>
-                    </label>
-                    <div class="demand-toggle" data-demand-filter-view>
-                      <button
-                        class="demand-toggle__button is-active"
-                        type="button"
-                        data-demand-view="all"
-                      >
-                        Все
-                      </button>
-                      <button
-                        class="demand-toggle__button"
-                        type="button"
-                        data-demand-view="mine"
-                      >
-                        Мои
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
               <div class="demand-list" data-demand-list></div>
               <div class="demand-empty is-hidden" data-demand-empty>
                 Пока нет потребностей. Добавьте первую заявку сверху.

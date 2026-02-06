@@ -483,6 +483,18 @@
         box-shadow: 0 16px 34px rgba(0, 0, 0, 0.35);
       }
 
+      body[data-theme="dark"] .demand-summary__add {
+        background: rgba(123, 178, 255, 0.18);
+        border-color: rgba(123, 178, 255, 0.45);
+        color: var(--accent);
+        box-shadow: 0 14px 28px rgba(0, 0, 0, 0.35);
+      }
+
+      body[data-theme="dark"] .demand-summary__add.is-active {
+        background: rgba(123, 178, 255, 0.45);
+        color: #0b1220;
+      }
+
       body[data-theme="dark"] .demand-toggle__button.is-active {
         background: rgba(123, 178, 255, 0.24);
         color: var(--text);
@@ -2994,15 +3006,52 @@
       }
 
       .demand-summary {
-        display: flex;
-        flex-wrap: wrap;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
         align-items: center;
-        justify-content: space-between;
         gap: 8px 16px;
         padding: 14px 16px;
         border-radius: 18px;
         background: var(--glass);
         border: 1px solid rgba(148, 163, 184, 0.2);
+      }
+
+      .demand-summary__main {
+        display: grid;
+        gap: 4px;
+      }
+
+      .demand-summary__actions {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+      }
+
+      .demand-summary__add {
+        width: 44px;
+        height: 44px;
+        border-radius: 14px;
+        border: 1px solid rgba(59, 125, 255, 0.2);
+        background: var(--accent-soft);
+        color: var(--accent);
+        font-size: 24px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 12px 24px rgba(59, 125, 255, 0.16);
+        transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+        cursor: pointer;
+      }
+
+      .demand-summary__add:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 16px 30px rgba(59, 125, 255, 0.2);
+      }
+
+      .demand-summary__add.is-active {
+        background: var(--accent);
+        color: #fff;
       }
 
       .demand-summary__count {
@@ -3018,6 +3067,7 @@
       }
 
       .demand-summary__meta {
+        grid-column: 1 / -1;
         font-size: 13px;
         color: var(--muted);
       }

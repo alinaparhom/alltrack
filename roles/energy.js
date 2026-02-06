@@ -200,13 +200,24 @@ export function renderRole(user) {
                   <span class="demand-summary__count" data-demand-open-count>0</span>
                   <span class="demand-summary__label">актуальных заявок</span>
                 </div>
+                <div class="demand-summary__actions">
+                  <button
+                    class="demand-summary__add"
+                    type="button"
+                    data-demand-toggle-form
+                    aria-label="Добавить заявку"
+                    aria-expanded="false"
+                  >
+                    +
+                  </button>
+                </div>
                 <div class="demand-summary__meta">
                   <span data-demand-total-count>0</span> всего ·
                   <span data-demand-objects-count>0</span> объектов ·
                   <span data-demand-shown-count>0</span> показано
                 </div>
               </div>
-              <form class="demand-form form-card" data-demand-form>
+              <form class="demand-form form-card is-hidden" data-demand-form>
                 <div class="demand-form__grid">
                   <label class="form-field">
                     <span class="form-label">Что нужно</span>

@@ -4172,7 +4172,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const demandQuantityInput = contentEl.querySelector("[data-demand-quantity]");
   const demandUnitInput = contentEl.querySelector("[data-demand-unit]");
   const demandObjectInput = contentEl.querySelector("[data-demand-object]");
-  const demandObjectsListEl = contentEl.querySelector("[data-demand-objects-list]");
+  const demandObjectSuggestionsEl = contentEl.querySelector(
+    "[data-demand-object-suggestions]"
+  );
   const demandToolsSuggestionsEl = contentEl.querySelector(
     "[data-demand-tools-suggestions]"
   );
@@ -5664,13 +5666,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
   };
 
-  const renderDemandObjectsDatalist = () => {
-    if (!demandObjectsListEl) return;
-    demandObjectsListEl.innerHTML = demandState.objects
-      .map((value) => `<option value="${escapeHtml(value)}"></option>`)
-      .join("");
-  };
-
   const renderDemandList = () => {
     if (!demandListEl) return;
     applyDemandFilters();
@@ -5795,7 +5790,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         .filter((entry) => entry.name)
         .sort((a, b) => a.name.localeCompare(b.name, "ru"));
       renderDemandFilterOptions();
-      renderDemandObjectsDatalist();
     } catch (error) {
       console.warn("Не удалось загрузить справочники потребностей.", error);
     }
@@ -13260,6 +13254,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     inputEl: demandItemInput,
     containerEl: demandToolsSuggestionsEl,
     getItems: getDemandToolSuggestions,
+    showOnFocus: true,
+  });
+
+  attachDynamicSuggestions({
+    inputEl: demandObjectInput,
+    containerEl: demandObjectSuggestionsEl,
+    getItems: (query) => getSelectableSuggestions(demandState.objects, query),
     showOnFocus: true,
   });
 

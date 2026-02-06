@@ -367,15 +367,20 @@ export function renderRole(user) {
                   </label>
                   <label class="form-field">
                     <span class="form-label">Объект</span>
-                    <input
-                      class="form-input"
-                      type="text"
-                      placeholder="Выберите объект"
-                      list="demand-objects-list"
-                      data-demand-object
-                      required
-                    />
-                    <datalist id="demand-objects-list" data-demand-objects-list></datalist>
+                    <div class="suggestions-field">
+                      <input
+                        class="form-input"
+                        type="text"
+                        placeholder="Выберите объект"
+                        data-demand-object
+                        autocomplete="off"
+                        required
+                      />
+                      <div
+                        class="suggestions is-hidden"
+                        data-demand-object-suggestions
+                      ></div>
+                    </div>
                   </label>
                 </div>
                 <label class="form-field">

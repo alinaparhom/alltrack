@@ -293,7 +293,37 @@ export function renderRole(user) {
                   </div>
                 </div>
               </div>
-              <form class="demand-form form-card is-hidden" data-demand-form>
+              <div class="demand-list" data-demand-list></div>
+              <div class="demand-empty is-hidden" data-demand-empty>
+                Пока нет потребностей. Добавьте первую заявку сверху.
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="demand-form-modal settings-modal is-hidden" data-demand-form-modal>
+          <div class="settings-modal__backdrop" data-demand-form-backdrop></div>
+          <div
+            class="settings-modal__panel demand-form-modal__panel"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Заявка"
+          >
+            <div class="settings-modal__header demand-form-modal__header">
+              <div class="settings-modal__title">
+                <h2 data-demand-form-title>Новая заявка</h2>
+                <p>Заполните нужный инструмент и детали</p>
+              </div>
+              <button
+                class="button-icon demand-form-modal__close"
+                type="button"
+                data-demand-form-close
+                aria-label="Закрыть окно заявки"
+              >
+                <span class="button-icon-emoji" aria-hidden="true">✕</span>
+              </button>
+            </div>
+            <div class="settings-modal__body demand-form-modal__body">
+              <form class="demand-form form-card" data-demand-form>
                 <div class="demand-form__grid">
                   <label class="form-field">
                     <span class="form-label">Что нужно</span>
@@ -301,9 +331,11 @@ export function renderRole(user) {
                       class="form-input"
                       type="text"
                       placeholder="Например, перфоратор"
+                      list="demand-tools-list"
                       data-demand-item
                       required
                     />
+                    <datalist id="demand-tools-list" data-demand-tools-list></datalist>
                   </label>
                   <label class="form-field demand-form__quantity">
                     <span class="form-label">Количество</span>
@@ -342,20 +374,49 @@ export function renderRole(user) {
                   </label>
                 </div>
                 <label class="form-field">
+                  <span class="form-label">Приоритет</span>
+                  <div class="demand-priority">
+                    <label class="demand-priority__option demand-priority__option--red">
+                      <input
+                        type="radio"
+                        name="demand-priority"
+                        value="red"
+                        data-demand-priority
+                      />
+                      <span>Высокий</span>
+                    </label>
+                    <label class="demand-priority__option demand-priority__option--yellow">
+                      <input
+                        type="radio"
+                        name="demand-priority"
+                        value="yellow"
+                        data-demand-priority
+                      />
+                      <span>Средний</span>
+                    </label>
+                    <label class="demand-priority__option demand-priority__option--green">
+                      <input
+                        type="radio"
+                        name="demand-priority"
+                        value="green"
+                        data-demand-priority
+                        checked
+                      />
+                      <span>Низкий</span>
+                    </label>
+                  </div>
+                </label>
+                <label class="form-field">
                   <span class="form-label">Комментарий</span>
                   <textarea
                     class="form-input demand-form__note"
                     rows="2"
-                    placeholder="Срок, приоритет, особенности..."
+                    placeholder="Срок, особенности, пояснения..."
                     data-demand-note
                   ></textarea>
                 </label>
                 <div class="demand-form__actions">
-                  <button
-                    class="action-secondary is-hidden"
-                    type="button"
-                    data-demand-cancel
-                  >
+                  <button class="action-secondary" type="button" data-demand-cancel>
                     Отмена
                   </button>
                   <button class="action-primary" type="submit" data-demand-submit>
@@ -364,10 +425,6 @@ export function renderRole(user) {
                 </div>
                 <div class="form-message" data-demand-message></div>
               </form>
-              <div class="demand-list" data-demand-list></div>
-              <div class="demand-empty is-hidden" data-demand-empty>
-                Пока нет потребностей. Добавьте первую заявку сверху.
-              </div>
             </div>
           </div>
         </div>

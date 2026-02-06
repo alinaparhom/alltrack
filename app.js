@@ -3292,6 +3292,14 @@ function buildObjectId() {
   return `obj-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
 }
 
+function sanitizeDemandLabel(value = "") {
+  return String(value).trim().replace(/\s+/g, " ");
+}
+
+function buildDemandId() {
+  return `demand-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
+}
+
 function normalizeObjectsData(raw) {
   const rawItems = Array.isArray(raw)
     ? raw
@@ -3318,6 +3326,52 @@ function normalizeObjectsData(raw) {
       }
       ids.add(id);
       return { id, name };
+    })
+    .filter(Boolean);
+}
+
+function normalizeDemandData(raw) {
+  const rawItems = Array.isArray(raw)
+    ? raw
+    : raw && typeof raw === "object"
+      ? raw.demands ?? raw.items ?? raw.requests
+      : [];
+  if (!Array.isArray(rawItems)) return [];
+  const ids = new Set();
+  return rawItems
+    .map((item) => {
+      if (!item || typeof item !== "object") return null;
+      const title = sanitizeDemandLabel(item.item ?? item.title ?? item.name ?? "");
+      const object = sanitizeDemandLabel(item.object ?? item.location ?? "");
+      if (!title || !object) return null;
+      let id = String(item.id ?? "").trim();
+      if (!id || ids.has(id)) {
+        id = buildDemandId();
+      }
+      ids.add(id);
+      const quantity = normalizeNumber(item.quantity ?? item.count ?? item.qty ?? 1, 1);
+      const unit = sanitizeDemandLabel(item.unit ?? item.units ?? "шт") || "шт";
+      const requestedBy = sanitizeDemandLabel(item.requestedBy ?? item.user ?? "");
+      const requestedById = sanitizeDemandLabel(
+        item.requestedById ?? item.userId ?? ""
+      );
+      const note = sanitizeDemandLabel(item.note ?? item.comment ?? "");
+      const status = item.status === "done" ? "done" : "open";
+      const createdAt = sanitizeDemandLabel(item.createdAt ?? item.date ?? "") || getToday();
+      const updatedAt = sanitizeDemandLabel(item.updatedAt ?? "");
+      return {
+        id,
+        item: title,
+        object,
+        quantity,
+        unit,
+        requestedBy,
+        requestedById,
+        note,
+        status,
+        createdAt,
+        updatedAt,
+      };
     })
     .filter(Boolean);
 }
@@ -3960,6 +4014,7 @@ async function resolveUserSettingsContext(user) {
     sanitizeOrganizationFolderName(orgShortName) || "Организация";
   const settingsPath = `./${orgFolderName}/Настройки.json`;
   const objectsPath = `./${orgFolderName}/Объекты.json`;
+  const demandPath = `./${orgFolderName}/Потребность.json`;
   const userKey = buildUserKey(user);
   const settingsData = ensureSettingsData(
     await loadJson(settingsPath).catch(() => ({ users: {} }))
@@ -3970,6 +4025,7 @@ async function resolveUserSettingsContext(user) {
     orgFolderName,
     settingsPath,
     objectsPath,
+    demandPath,
     userKey,
     settingsData,
   };
@@ -4087,6 +4143,31 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const objectsEmptyEl = contentEl.querySelector("[data-energy-objects-empty]");
   const objectsCountEl = contentEl.querySelector("[data-energy-objects-count]");
   const objectsSubtitleEl = contentEl.querySelector("[data-energy-objects-subtitle]");
+  const demandModalEl = contentEl.querySelector("[data-demand-modal]");
+  const demandBackdropEl = contentEl.querySelector("[data-demand-backdrop]");
+  const demandCloseButton = contentEl.querySelector("[data-demand-close]");
+  const demandFormEl = contentEl.querySelector("[data-demand-form]");
+  const demandItemInput = contentEl.querySelector("[data-demand-item]");
+  const demandQuantityInput = contentEl.querySelector("[data-demand-quantity]");
+  const demandUnitInput = contentEl.querySelector("[data-demand-unit]");
+  const demandObjectInput = contentEl.querySelector("[data-demand-object]");
+  const demandObjectsListEl = contentEl.querySelector("[data-demand-objects-list]");
+  const demandNoteInput = contentEl.querySelector("[data-demand-note]");
+  const demandMessageEl = contentEl.querySelector("[data-demand-message]");
+  const demandSubmitButton = contentEl.querySelector("[data-demand-submit]");
+  const demandCancelButton = contentEl.querySelector("[data-demand-cancel]");
+  const demandSearchInput = contentEl.querySelector("[data-demand-search]");
+  const demandFilterObjectEl = contentEl.querySelector("[data-demand-filter-object]");
+  const demandFilterUserEl = contentEl.querySelector("[data-demand-filter-user]");
+  const demandFilterStatusEl = contentEl.querySelector("[data-demand-filter-status]");
+  const demandFilterViewEl = contentEl.querySelector("[data-demand-filter-view]");
+  const demandListEl = contentEl.querySelector("[data-demand-list]");
+  const demandEmptyEl = contentEl.querySelector("[data-demand-empty]");
+  const demandSubtitleEl = contentEl.querySelector("[data-demand-subtitle]");
+  const demandOpenCountEl = contentEl.querySelector("[data-demand-open-count]");
+  const demandTotalCountEl = contentEl.querySelector("[data-demand-total-count]");
+  const demandObjectsCountEl = contentEl.querySelector("[data-demand-objects-count]");
+  const demandShownCountEl = contentEl.querySelector("[data-demand-shown-count]");
   const toolsModalEl = contentEl.querySelector("[data-tools-modal]");
   const toolsPanelEl = contentEl.querySelector("[data-tools-panel]");
   const toolsBackdropEl = contentEl.querySelector("[data-tools-backdrop]");
@@ -5018,6 +5099,21 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     editingId: null,
     isSaving: false,
   };
+  const demandState = {
+    items: [],
+    filtered: [],
+    objects: [],
+    users: [],
+    editingId: null,
+    isSaving: false,
+    filters: {
+      search: "",
+      object: "",
+      user: "",
+      status: "open",
+      view: "all",
+    },
+  };
   const usersState = {
     users: [],
   };
@@ -5225,6 +5321,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     breakdownViewportListenersAttached = false;
   };
   const objectsPath = context.objectsPath ?? `./${context.orgFolderName}/Объекты.json`;
+  const demandPath = context.demandPath ?? `./${context.orgFolderName}/Потребность.json`;
   const objectsNameInput = objectsFormEl?.querySelector("[name='object-name']");
   let selectedUsersOrgName = "";
   let selectedUsersOrgDisplayName = "";
@@ -5371,6 +5468,412 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   if (objectsCloseButton) {
     objectsCloseButton.addEventListener("click", closeObjectsModal);
   }
+
+  const setDemandMessage = (message = "") => {
+    if (demandMessageEl) {
+      demandMessageEl.textContent = message;
+    }
+  };
+
+  const setDemandSubmitButton = (mode = "add") => {
+    if (!demandSubmitButton) return;
+    const isEdit = mode === "edit";
+    demandSubmitButton.textContent = isEdit ? "Сохранить" : "Добавить";
+  };
+
+  const resetDemandForm = () => {
+    if (demandFormEl) {
+      demandFormEl.reset();
+    }
+    demandState.editingId = null;
+    setDemandSubmitButton("add");
+    demandCancelButton?.classList.add("is-hidden");
+  };
+
+  const startEditDemand = (entry) => {
+    if (!entry) return;
+    demandState.editingId = entry.id;
+    if (demandItemInput) demandItemInput.value = entry.item;
+    if (demandQuantityInput) demandQuantityInput.value = String(entry.quantity);
+    if (demandUnitInput) demandUnitInput.value = entry.unit;
+    if (demandObjectInput) demandObjectInput.value = entry.object;
+    if (demandNoteInput) demandNoteInput.value = entry.note ?? "";
+    setDemandSubmitButton("edit");
+    demandCancelButton?.classList.remove("is-hidden");
+    demandItemInput?.focus();
+  };
+
+  const updateDemandSummary = (shownCount = null) => {
+    const total = demandState.items.length;
+    const openCount = demandState.items.filter((item) => item.status === "open").length;
+    const objects = new Set(
+      demandState.items.map((item) => item.object).filter(Boolean)
+    );
+    if (demandOpenCountEl) demandOpenCountEl.textContent = String(openCount);
+    if (demandTotalCountEl) demandTotalCountEl.textContent = String(total);
+    if (demandObjectsCountEl) demandObjectsCountEl.textContent = String(objects.size);
+    if (demandShownCountEl) {
+      demandShownCountEl.textContent =
+        shownCount === null ? String(total) : String(shownCount);
+    }
+  };
+
+  const applyDemandFilters = () => {
+    const query = demandState.filters.search.trim().toLowerCase();
+    const objectFilter = demandState.filters.object;
+    const userFilter = demandState.filters.user;
+    const statusFilter = demandState.filters.status;
+    const viewFilter = demandState.filters.view;
+    const currentUserKey = buildUserKey(user);
+    demandState.filtered = demandState.items.filter((item) => {
+      if (statusFilter !== "all" && item.status !== statusFilter) return false;
+      if (objectFilter && item.object !== objectFilter) return false;
+      if (userFilter && item.requestedBy !== userFilter) return false;
+      if (viewFilter === "mine" && item.requestedById !== currentUserKey) {
+        return false;
+      }
+      if (!query) return true;
+      const haystack = [
+        item.item,
+        item.object,
+        item.requestedBy,
+        item.note,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+      return haystack.includes(query);
+    });
+    demandState.filtered.sort((a, b) => {
+      if (a.status !== b.status) {
+        return a.status === "open" ? -1 : 1;
+      }
+      return String(b.createdAt).localeCompare(String(a.createdAt), "ru");
+    });
+  };
+
+  const renderDemandFilterOptions = () => {
+    if (demandFilterObjectEl) {
+      const options = Array.from(
+        new Set([
+          ...demandState.objects,
+          ...demandState.items.map((item) => item.object),
+        ])
+      ).filter(Boolean);
+      demandFilterObjectEl.innerHTML = `
+        <option value="">Все объекты</option>
+        ${options
+          .sort((a, b) => a.localeCompare(b, "ru"))
+          .map((value) => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`)
+          .join("")}
+      `;
+      demandFilterObjectEl.value = demandState.filters.object;
+    }
+    if (demandFilterUserEl) {
+      const options = Array.from(
+        new Set([
+          ...demandState.users.map((item) => item.name),
+          ...demandState.items.map((item) => item.requestedBy),
+        ])
+      ).filter(Boolean);
+      demandFilterUserEl.innerHTML = `
+        <option value="">Все пользователи</option>
+        ${options
+          .sort((a, b) => a.localeCompare(b, "ru"))
+          .map((value) => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`)
+          .join("")}
+      `;
+      demandFilterUserEl.value = demandState.filters.user;
+    }
+  };
+
+  const renderDemandObjectsDatalist = () => {
+    if (!demandObjectsListEl) return;
+    demandObjectsListEl.innerHTML = demandState.objects
+      .map((value) => `<option value="${escapeHtml(value)}"></option>`)
+      .join("");
+  };
+
+  const renderDemandList = () => {
+    if (!demandListEl) return;
+    applyDemandFilters();
+    demandListEl.innerHTML = "";
+    demandEmptyEl?.classList.toggle("is-hidden", demandState.filtered.length > 0);
+    demandState.filtered.forEach((item) => {
+      const card = document.createElement("div");
+      card.className = "demand-card";
+      if (item.status === "done") {
+        card.classList.add("is-done");
+      }
+      const title = document.createElement("div");
+      title.className = "demand-card__title";
+      title.textContent = item.item;
+
+      const meta = document.createElement("div");
+      meta.className = "demand-card__meta";
+      meta.textContent = `${item.quantity} ${item.unit} · ${item.object} · ${
+        item.requestedBy || "Без автора"
+      } · ${item.createdAt}`;
+
+      const tags = document.createElement("div");
+      tags.className = "demand-card__tags";
+
+      const statusChip = document.createElement("span");
+      statusChip.className = "demand-chip";
+      statusChip.textContent =
+        item.status === "open" ? "Актуально" : "Закрыто";
+      if (item.status === "done") {
+        statusChip.classList.add("demand-chip--done");
+      }
+      tags.appendChild(statusChip);
+
+      const objectChip = document.createElement("span");
+      objectChip.className = "demand-chip";
+      objectChip.textContent = item.object;
+      tags.appendChild(objectChip);
+
+      const note = document.createElement("div");
+      note.className = "demand-card__note";
+      note.textContent = item.note || "Комментарий не добавлен.";
+
+      const actions = document.createElement("div");
+      actions.className = "demand-card__actions";
+      const toggleButton = document.createElement("button");
+      toggleButton.type = "button";
+      toggleButton.className = "demand-action demand-action--primary";
+      toggleButton.dataset.demandAction = "toggle";
+      toggleButton.dataset.demandId = item.id;
+      toggleButton.textContent =
+        item.status === "open" ? "Закрыть" : "Вернуть в работу";
+      const editButton = document.createElement("button");
+      editButton.type = "button";
+      editButton.className = "demand-action";
+      editButton.dataset.demandAction = "edit";
+      editButton.dataset.demandId = item.id;
+      editButton.textContent = "Изменить";
+      const deleteButton = document.createElement("button");
+      deleteButton.type = "button";
+      deleteButton.className = "demand-action demand-action--danger";
+      deleteButton.dataset.demandAction = "delete";
+      deleteButton.dataset.demandId = item.id;
+      deleteButton.textContent = "Удалить";
+      actions.append(toggleButton, editButton, deleteButton);
+
+      card.append(title, meta, tags, note, actions);
+      demandListEl.appendChild(card);
+    });
+    updateDemandSummary(demandState.filtered.length);
+  };
+
+  const loadDemandReferences = async () => {
+    try {
+      const [objectsRaw, usersData, orgsData] = await Promise.all([
+        loadJson(objectsPath).catch(() => []),
+        loadJson(usersFilePath).catch(() => ({ users: [] })),
+        loadJson(orgFilePath).catch(() => ({ organizations: [] })),
+      ]);
+      demandState.objects = normalizeObjectsData(objectsRaw)
+        .map((item) => item.name)
+        .filter(Boolean)
+        .sort((a, b) => a.localeCompare(b, "ru"));
+      const organizationName =
+        context.orgFullName ??
+        context.orgShortName ??
+        context.orgFolderName ??
+        currentUser?.organization ??
+        "";
+      const orgRecord = findOrganizationRecord(orgsData, organizationName);
+      const orgNames = orgRecord ? getOrgNames(orgRecord) : [organizationName];
+      const normalizedOrgNames = orgNames
+        .map((name) => String(name ?? "").trim())
+        .filter(Boolean);
+      demandState.users = (usersData.users ?? [])
+        .filter((entry) =>
+          normalizedOrgNames.includes(String(entry?.organization ?? "").trim())
+        )
+        .map((entry) => ({
+          name: String(entry?.full_name ?? "").trim(),
+          role: String(entry?.role ?? "").trim(),
+        }))
+        .filter((entry) => entry.name)
+        .sort((a, b) => a.name.localeCompare(b.name, "ru"));
+      renderDemandFilterOptions();
+      renderDemandObjectsDatalist();
+    } catch (error) {
+      console.warn("Не удалось загрузить справочники потребностей.", error);
+    }
+  };
+
+  const loadDemandItems = async () => {
+    try {
+      const raw = await loadJson(demandPath);
+      demandState.items = normalizeDemandData(raw);
+    } catch (error) {
+      demandState.items = [];
+    }
+    renderDemandFilterOptions();
+    renderDemandList();
+  };
+
+  const saveDemandItems = async () => {
+    if (demandState.isSaving) return;
+    demandState.isSaving = true;
+    setDemandMessage("Сохраняем изменения...");
+    try {
+      await saveJson(demandPath, demandState.items, { user });
+      setDemandMessage("Готово! Потребности обновлены.");
+    } catch (error) {
+      console.error(error);
+      setDemandMessage("Не удалось сохранить. Проверьте сервер.");
+    } finally {
+      demandState.isSaving = false;
+    }
+  };
+
+  const openDemandModal = async () => {
+    if (!demandModalEl) return;
+    if (demandSubtitleEl) {
+      demandSubtitleEl.textContent =
+        context.orgFullName ?? context.orgShortName ?? context.orgFolderName ?? "";
+    }
+    demandModalEl.classList.remove("is-hidden");
+    document.body.style.overflow = "hidden";
+    resetDemandForm();
+    await loadDemandReferences();
+    await loadDemandItems();
+    demandItemInput?.focus();
+  };
+
+  const closeDemandModal = () => {
+    if (!demandModalEl) return;
+    demandModalEl.classList.add("is-hidden");
+    document.body.style.overflow = "";
+    resetDemandForm();
+    setDemandMessage("");
+  };
+
+  demandBackdropEl?.addEventListener("click", closeDemandModal);
+  demandCloseButton?.addEventListener("click", closeDemandModal);
+
+  demandCancelButton?.addEventListener("click", () => {
+    resetDemandForm();
+  });
+
+  demandFormEl?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    if (!demandFormEl) return;
+    const title = sanitizeDemandLabel(demandItemInput?.value ?? "");
+    const object = sanitizeDemandLabel(demandObjectInput?.value ?? "");
+    const quantity = normalizeNumber(demandQuantityInput?.value ?? 0, 0);
+    const unit = sanitizeDemandLabel(demandUnitInput?.value ?? "шт") || "шт";
+    const note = sanitizeDemandLabel(demandNoteInput?.value ?? "");
+    if (!title || !object || quantity <= 0) {
+      setDemandMessage("Заполните название, объект и количество.");
+      return;
+    }
+    const userKey = buildUserKey(user);
+    const userName = currentUser?.full_name ?? currentUser?.fullName ?? "Пользователь";
+    const now = getToday();
+    if (demandState.editingId) {
+      demandState.items = demandState.items.map((item) =>
+        item.id === demandState.editingId
+          ? {
+              ...item,
+              item: title,
+              object,
+              quantity,
+              unit,
+              note,
+              updatedAt: now,
+            }
+          : item
+      );
+    } else {
+      demandState.items.unshift({
+        id: buildDemandId(),
+        item: title,
+        object,
+        quantity,
+        unit,
+        note,
+        status: "open",
+        requestedBy: userName,
+        requestedById: userKey,
+        createdAt: now,
+        updatedAt: "",
+      });
+    }
+    resetDemandForm();
+    await saveDemandItems();
+    renderDemandFilterOptions();
+    renderDemandList();
+  });
+
+  demandSearchInput?.addEventListener("input", (event) => {
+    demandState.filters.search = String(event.target.value ?? "");
+    renderDemandList();
+  });
+
+  demandFilterObjectEl?.addEventListener("change", (event) => {
+    demandState.filters.object = String(event.target.value ?? "");
+    renderDemandList();
+  });
+
+  demandFilterUserEl?.addEventListener("change", (event) => {
+    demandState.filters.user = String(event.target.value ?? "");
+    renderDemandList();
+  });
+
+  demandFilterStatusEl?.addEventListener("change", (event) => {
+    demandState.filters.status = String(event.target.value ?? "open");
+    renderDemandList();
+  });
+
+  demandFilterViewEl?.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-demand-view]");
+    if (!button) return;
+    const view = button.dataset.demandView;
+    if (!view) return;
+    demandState.filters.view = view;
+    demandFilterViewEl
+      .querySelectorAll("[data-demand-view]")
+      .forEach((element) =>
+        element.classList.toggle("is-active", element === button)
+      );
+    renderDemandList();
+  });
+
+  demandListEl?.addEventListener("click", async (event) => {
+    const action = event.target.closest("[data-demand-action]");
+    if (!action) return;
+    const id = action.dataset.demandId;
+    const type = action.dataset.demandAction;
+    if (!id || !type) return;
+    const entry = demandState.items.find((item) => item.id === id);
+    if (!entry) return;
+    if (type === "edit") {
+      startEditDemand(entry);
+      return;
+    }
+    if (type === "toggle") {
+      const nextStatus = entry.status === "open" ? "done" : "open";
+      demandState.items = demandState.items.map((item) =>
+        item.id === id
+          ? { ...item, status: nextStatus, updatedAt: getToday() }
+          : item
+      );
+      await saveDemandItems();
+      renderDemandList();
+      return;
+    }
+    if (type === "delete") {
+      const confirmDelete = window.confirm("Удалить эту потребность?");
+      if (!confirmDelete) return;
+      demandState.items = demandState.items.filter((item) => item.id !== id);
+      await saveDemandItems();
+      renderDemandList();
+    }
+  });
 
   const setToolsSubtitle = (text) => {
     if (toolsSubtitleEl) {
@@ -14673,6 +15176,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
     if (actionId === "breakdowns") {
       openBreakdownsModal();
+      return true;
+    }
+    if (actionId === "demand") {
+      openDemandModal();
       return true;
     }
     return false;

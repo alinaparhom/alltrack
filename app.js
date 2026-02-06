@@ -4147,6 +4147,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const demandBackdropEl = contentEl.querySelector("[data-demand-backdrop]");
   const demandCloseButton = contentEl.querySelector("[data-demand-close]");
   const demandFormEl = contentEl.querySelector("[data-demand-form]");
+  const demandToggleButton = contentEl.querySelector("[data-demand-toggle-form]");
   const demandItemInput = contentEl.querySelector("[data-demand-item]");
   const demandQuantityInput = contentEl.querySelector("[data-demand-quantity]");
   const demandUnitInput = contentEl.querySelector("[data-demand-unit]");
@@ -5475,6 +5476,18 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
   };
 
+  const setDemandFormVisibility = (isOpen) => {
+    if (!demandFormEl) return;
+    demandFormEl.classList.toggle("is-hidden", !isOpen);
+    if (demandToggleButton) {
+      demandToggleButton.classList.toggle("is-active", isOpen);
+      demandToggleButton.setAttribute("aria-expanded", String(isOpen));
+    }
+    if (isOpen) {
+      demandItemInput?.focus();
+    }
+  };
+
   const setDemandSubmitButton = (mode = "add") => {
     if (!demandSubmitButton) return;
     const isEdit = mode === "edit";
@@ -5493,6 +5506,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const startEditDemand = (entry) => {
     if (!entry) return;
     demandState.editingId = entry.id;
+    setDemandFormVisibility(true);
     if (demandItemInput) demandItemInput.value = entry.item;
     if (demandQuantityInput) demandQuantityInput.value = String(entry.quantity);
     if (demandUnitInput) demandUnitInput.value = entry.unit;
@@ -5736,27 +5750,34 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       demandSubtitleEl.textContent =
         context.orgFullName ?? context.orgShortName ?? context.orgFolderName ?? "";
     }
+    setDemandFormVisibility(false);
     demandModalEl.classList.remove("is-hidden");
     document.body.style.overflow = "hidden";
     resetDemandForm();
     await loadDemandReferences();
     await loadDemandItems();
-    demandItemInput?.focus();
   };
 
   const closeDemandModal = () => {
     if (!demandModalEl) return;
     demandModalEl.classList.add("is-hidden");
     document.body.style.overflow = "";
+    setDemandFormVisibility(false);
     resetDemandForm();
     setDemandMessage("");
   };
 
   demandBackdropEl?.addEventListener("click", closeDemandModal);
   demandCloseButton?.addEventListener("click", closeDemandModal);
+  demandToggleButton?.addEventListener("click", () => {
+    if (!demandFormEl) return;
+    const isOpen = !demandFormEl.classList.contains("is-hidden");
+    setDemandFormVisibility(!isOpen);
+  });
 
   demandCancelButton?.addEventListener("click", () => {
     resetDemandForm();
+    setDemandFormVisibility(false);
   });
 
   demandFormEl?.addEventListener("submit", async (event) => {

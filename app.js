@@ -4230,6 +4230,28 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const addPhotoFiltersToggleEl = contentEl.querySelector(
     "[data-add-photo-filters-toggle]"
   );
+  const noPhotoModalEl = contentEl.querySelector("[data-no-photo-modal]");
+  const noPhotoBackdropEl = contentEl.querySelector(
+    "[data-no-photo-backdrop]"
+  );
+  const noPhotoCloseButton = contentEl.querySelector("[data-no-photo-close]");
+  const noPhotoSearchInput = contentEl.querySelector(
+    "[data-no-photo-search]"
+  );
+  const noPhotoListEl = contentEl.querySelector("[data-no-photo-list]");
+  const noPhotoEmptyEl = contentEl.querySelector("[data-no-photo-empty]");
+  const noPhotoSubtitleEl = contentEl.querySelector(
+    "[data-no-photo-subtitle]"
+  );
+  const noPhotoFilterEls = contentEl.querySelectorAll(
+    "[data-no-photo-filter]"
+  );
+  const noPhotoFiltersPanelEl = contentEl.querySelector(
+    "[data-no-photo-filters-panel]"
+  );
+  const noPhotoFiltersToggleEl = contentEl.querySelector(
+    "[data-no-photo-filters-toggle]"
+  );
   const removePhotoModalEl = contentEl.querySelector("[data-remove-photo-modal]");
   const removePhotoBackdropEl = contentEl.querySelector(
     "[data-remove-photo-backdrop]"
@@ -5083,6 +5105,20 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     },
     search: "",
     orgFolder: "",
+  };
+  const noPhotoState = {
+    tools: [],
+    filtered: [],
+    filters: {
+      group: "",
+      status: "",
+      object: "",
+      manufacturer: "",
+      model: "",
+    },
+    search: "",
+    orgFolder: "",
+    toolMap: new Map(),
   };
   const removePhotoState = {
     tools: [],
@@ -9195,6 +9231,308 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       applyAddPhotoFilters();
     });
   });
+
+  const setNoPhotoSubtitle = (text) => {
+    if (noPhotoSubtitleEl) {
+      noPhotoSubtitleEl.textContent = text;
+    }
+  };
+
+  const clearNoPhotoList = () => {
+    if (noPhotoListEl) {
+      noPhotoListEl.innerHTML = "";
+    }
+  };
+
+  const renderNoPhotoTable = (items) => {
+    const table = document.createElement("div");
+    table.className = "tools-table tools-table--no-photo";
+
+    items.forEach((tool) => {
+      const row = document.createElement("div");
+      row.className = "tools-table__row tools-table__row--no-photo";
+      row.dataset.noPhotoId = tool.__noPhotoId;
+
+      const numberCell = document.createElement("div");
+      numberCell.className = "tools-table__cell tools-table__cell--number";
+      const number = String(tool?.["Номер"] ?? "").trim();
+      numberCell.textContent = number || "—";
+
+      const infoCell = document.createElement("div");
+      infoCell.className = "tools-table__cell";
+      const title = document.createElement("div");
+      title.className = "tools-table__title";
+      const name = String(tool?.["Наименование"] ?? "").trim();
+      title.textContent = name || "Без названия";
+
+      const meta = document.createElement("div");
+      meta.className = "tools-table__meta tools-table__meta--stack";
+      const accountingNumber = String(tool?.["Бух.номер"] ?? "").trim();
+      const manufacturer = String(tool?.["Производитель"] ?? "").trim();
+      const model = String(tool?.["Модель"] ?? "").trim();
+      const status = String(tool?.["Статус"] ?? "").trim();
+
+      const accountingLine = document.createElement("div");
+      accountingLine.textContent = `Бух.номер: ${accountingNumber || "—"}`;
+      const detailsLine = document.createElement("div");
+      detailsLine.textContent = [
+        `Производитель: ${manufacturer || "—"}`,
+        `Модель: ${model || "—"}`,
+        status ? `Статус: ${status}` : "",
+      ]
+        .filter(Boolean)
+        .join(" · ");
+      meta.append(accountingLine, detailsLine);
+      infoCell.append(title, meta);
+
+      const actionCell = document.createElement("div");
+      actionCell.className = "tools-table__cell tools-table__cell--action";
+      const actionButton = document.createElement("button");
+      actionButton.className = "action-secondary";
+      actionButton.type = "button";
+      actionButton.dataset.noPhotoOpen = "true";
+      actionButton.textContent = "Карточка";
+      actionCell.appendChild(actionButton);
+
+      row.append(numberCell, infoCell, actionCell);
+      table.appendChild(row);
+    });
+
+    return table;
+  };
+
+  const renderNoPhotoList = () => {
+    if (!noPhotoListEl) return;
+    clearNoPhotoList();
+    noPhotoListEl.classList.add("is-table");
+    const items = noPhotoState.filtered;
+    noPhotoListEl.appendChild(renderNoPhotoTable(items));
+    if (noPhotoEmptyEl) {
+      noPhotoEmptyEl.classList.toggle("is-hidden", items.length > 0);
+    }
+    setNoPhotoSubtitle(
+      `Показано ${items.length} из ${noPhotoState.tools.length}`
+    );
+  };
+
+  const applyNoPhotoFilters = () => {
+    const search = noPhotoState.search.trim();
+    const tokens = search ? search.split(/\s+/).filter(Boolean) : [];
+    noPhotoState.filtered = noPhotoState.tools.filter((tool) => {
+      if (
+        noPhotoState.filters.group &&
+        String(tool?.["Граппа инструментов"] ?? "").trim() !==
+          noPhotoState.filters.group
+      ) {
+        return false;
+      }
+      if (
+        noPhotoState.filters.status &&
+        String(tool?.["Статус"] ?? "").trim() !== noPhotoState.filters.status
+      ) {
+        return false;
+      }
+      if (
+        noPhotoState.filters.object &&
+        String(tool?.["Объект"] ?? "").trim() !== noPhotoState.filters.object
+      ) {
+        return false;
+      }
+      if (
+        noPhotoState.filters.manufacturer &&
+        String(tool?.["Производитель"] ?? "").trim() !==
+          noPhotoState.filters.manufacturer
+      ) {
+        return false;
+      }
+      if (
+        noPhotoState.filters.model &&
+        String(tool?.["Модель"] ?? "").trim() !== noPhotoState.filters.model
+      ) {
+        return false;
+      }
+      if (tokens.length) {
+        const searchLine = tool.__searchLine ?? "";
+        return tokens.every((token) => searchLine.includes(token));
+      }
+      return true;
+    });
+    renderNoPhotoList();
+  };
+
+  const fillNoPhotoFilterOptions = (key, values) => {
+    const selectEl = contentEl.querySelector(
+      `[data-no-photo-filter="${key}"]`
+    );
+    if (!selectEl) return;
+    selectEl.innerHTML = "";
+    const allOption = document.createElement("option");
+    allOption.value = "";
+    allOption.textContent = "Все";
+    selectEl.appendChild(allOption);
+    values.forEach((value) => {
+      const option = document.createElement("option");
+      option.value = value;
+      option.textContent = value;
+      selectEl.appendChild(option);
+    });
+    selectEl.value = noPhotoState.filters[key] ?? "";
+  };
+
+  const prepareNoPhotoFilters = () => {
+    const collectValues = (field) => {
+      const set = new Set();
+      noPhotoState.tools.forEach((tool) => {
+        const value = String(tool?.[field] ?? "").trim();
+        if (value) set.add(value);
+      });
+      return Array.from(set).sort((a, b) =>
+        a.localeCompare(b, "ru", { numeric: true })
+      );
+    };
+    fillNoPhotoFilterOptions("group", collectValues("Граппа инструментов"));
+    fillNoPhotoFilterOptions("status", collectValues("Статус"));
+    fillNoPhotoFilterOptions("object", collectValues("Объект"));
+    fillNoPhotoFilterOptions("manufacturer", collectValues("Производитель"));
+    fillNoPhotoFilterOptions("model", collectValues("Модель"));
+  };
+
+  const loadNoPhotoTools = async () => {
+    const orgFolder = context.orgFolderName ?? "";
+    noPhotoState.orgFolder = orgFolder;
+    if (!orgFolder) {
+      noPhotoState.tools = [];
+      noPhotoState.filtered = [];
+      noPhotoState.toolMap.clear();
+      setNoPhotoSubtitle("Не удалось определить организацию.");
+      renderNoPhotoList();
+      return;
+    }
+    const toolsPath = `./${orgFolder}/База с инструментами.json`;
+    let rawTools = [];
+    try {
+      const raw = await loadJson(toolsPath);
+      rawTools = Array.isArray(raw) ? raw : Array.isArray(raw?.tools) ? raw.tools : [];
+    } catch (error) {
+      console.warn("Не удалось загрузить базу инструментов.", error);
+      rawTools = [];
+    }
+    noPhotoState.toolMap.clear();
+    noPhotoState.tools = rawTools
+      .filter((tool) => {
+        const photoCount = Number.parseInt(tool?.["Количество фото"] ?? 0, 10);
+        return !(Number.isFinite(photoCount) && photoCount > 0);
+      })
+      .map((tool, index) => {
+        const selectionId = buildToolSelectionId(tool, index);
+        const entry = {
+          ...tool,
+          __searchLine: buildAddPhotoSearchLine(tool),
+          __noPhotoId: selectionId,
+        };
+        noPhotoState.toolMap.set(selectionId, entry);
+        return entry;
+      })
+      .sort((a, b) =>
+        String(a?.["Номер"] ?? "").localeCompare(String(b?.["Номер"] ?? ""), "ru", {
+          numeric: true,
+        })
+      );
+    prepareNoPhotoFilters();
+    applyNoPhotoFilters();
+  };
+
+  const openNoPhotoModal = async () => {
+    if (!noPhotoModalEl) return;
+    noPhotoModalEl.classList.remove("is-hidden");
+    document.body.style.overflow = "hidden";
+    setNoPhotoSubtitle("Загружаем список...");
+    await loadNoPhotoTools();
+    if (
+      noPhotoSearchInput &&
+      (typeof window === "undefined" ||
+        !window.matchMedia ||
+        !window.matchMedia("(max-width: 520px)").matches)
+    ) {
+      noPhotoSearchInput.focus();
+    }
+  };
+
+  const closeNoPhotoModal = () => {
+    if (!noPhotoModalEl) return;
+    noPhotoModalEl.classList.add("is-hidden");
+    document.body.style.overflow = "";
+  };
+
+  if (noPhotoBackdropEl) {
+    noPhotoBackdropEl.addEventListener("click", closeNoPhotoModal);
+  }
+  if (noPhotoCloseButton) {
+    noPhotoCloseButton.addEventListener("click", closeNoPhotoModal);
+  }
+  noPhotoModalEl?.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      closeNoPhotoModal();
+    }
+  });
+
+  if (noPhotoSearchInput) {
+    noPhotoSearchInput.addEventListener("input", (event) => {
+      noPhotoState.search = String(event.target.value ?? "").toLowerCase();
+      applyNoPhotoFilters();
+    });
+  }
+
+  const setNoPhotoFiltersOpen = (isOpen) => {
+    if (noPhotoFiltersPanelEl) {
+      noPhotoFiltersPanelEl.classList.toggle("is-open", isOpen);
+    }
+    if (noPhotoFiltersToggleEl) {
+      noPhotoFiltersToggleEl.setAttribute("aria-expanded", String(isOpen));
+    }
+  };
+
+  if (noPhotoFiltersToggleEl) {
+    noPhotoFiltersToggleEl.addEventListener("click", () => {
+      const isOpen = noPhotoFiltersPanelEl?.classList.contains("is-open");
+      setNoPhotoFiltersOpen(!isOpen);
+    });
+  }
+
+  if (typeof window !== "undefined" && noPhotoFiltersPanelEl) {
+    const mediaQuery = window.matchMedia("(max-width: 520px)");
+    const syncFiltersVisibility = () => {
+      setNoPhotoFiltersOpen(!mediaQuery.matches);
+    };
+    syncFiltersVisibility();
+    if (mediaQuery.addEventListener) {
+      mediaQuery.addEventListener("change", syncFiltersVisibility);
+    } else if (mediaQuery.addListener) {
+      mediaQuery.addListener(syncFiltersVisibility);
+    }
+  }
+
+  noPhotoFilterEls.forEach((selectEl) => {
+    selectEl.addEventListener("change", (event) => {
+      const target = event.target;
+      const key = target?.dataset?.noPhotoFilter;
+      if (!key) return;
+      noPhotoState.filters[key] = String(target.value ?? "");
+      applyNoPhotoFilters();
+    });
+  });
+
+  if (noPhotoListEl) {
+    noPhotoListEl.addEventListener("click", (event) => {
+      const row = event.target.closest("[data-no-photo-id]");
+      if (!row) return;
+      const toolId = row.dataset.noPhotoId;
+      if (!toolId) return;
+      const tool = noPhotoState.toolMap.get(toolId);
+      if (!tool) return;
+      openToolsInfoModal(tool);
+    });
+  }
 
   const setRemovePhotoSubtitle = (text) => {
     if (removePhotoSubtitleEl) {
@@ -14311,6 +14649,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
     if (actionId === "add-photo") {
       openAddPhotoModal();
+      return true;
+    }
+    if (actionId === "no-photo") {
+      openNoPhotoModal();
       return true;
     }
     if (actionId === "remove-photo") {

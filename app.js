@@ -958,6 +958,39 @@ function buildMoveToolNotificationMessage(
   return lines.join("\n");
 }
 
+function buildMoveByEnergyNotificationMessage(
+  tool,
+  { movedBy, oldObject, targetObject, oldResponsible, newResponsible } = {}
+) {
+  const titleParts = [
+    formatNotificationValue(tool?.["Наименование"], ""),
+    formatNotificationValue(tool?.["Производитель"], ""),
+    formatNotificationValue(tool?.["Модель"], ""),
+  ]
+    .map((part) => part.trim())
+    .filter(Boolean);
+  const titleLine = titleParts.length ? titleParts.join(" ") : "—";
+  return [
+    "😤ПЕРЕМЕЩЕНИЕ ЭНЕРГЕТИКОМ",
+    `1. Номер: ${escapeTelegramHtml(formatNotificationValue(tool?.["Номер"]))}`,
+    `2. Бух.номер: ${escapeTelegramHtml(
+      formatNotificationValue(tool?.["Бух.номер"])
+    )}`,
+    `3. ${escapeTelegramHtml(titleLine)}`,
+    `4. Старый объект: ${escapeTelegramHtml(formatNotificationValue(oldObject))}`,
+    `5. Новый объект: ${escapeTelegramHtml(
+      formatNotificationValue(targetObject)
+    )}`,
+    `6. Прошлый ответственный: ${escapeTelegramHtml(
+      formatNotificationValue(oldResponsible)
+    )}`,
+    `7. Новый ответственный: ${escapeTelegramHtml(
+      formatNotificationValue(newResponsible)
+    )}`,
+    `Переместил: ${escapeTelegramHtml(formatNotificationValue(movedBy))}`,
+  ].join("\n");
+}
+
 function buildMoveToolResponsibleMessage(
   tool,
   { movedBy, oldObject, targetObject, fineNote, moveReason } = {}
@@ -2016,6 +2049,7 @@ async function notifyMoveTool({
   targetObject,
   movedBy,
   moveReason,
+  notificationId = "moveTool",
 }) {
   const result = {
     sent: false,
@@ -2032,18 +2066,28 @@ async function notifyMoveTool({
   const settingsPath = `./${orgFolder}/Настройки.json`;
   try {
     const settingsData = await loadJson(settingsPath);
-    const groupsEnabled = isNotificationEnabled(settingsData, "moveTool");
+    const groupsEnabled = isNotificationEnabled(settingsData, notificationId);
     const groupIds = groupsEnabled
-      ? extractNotificationGroups(settingsData, "moveTool")
+      ? extractNotificationGroups(settingsData, notificationId)
       : [];
     const oldObject = String(tool?.["Объект"] ?? "").trim();
-    const moveMessage = buildMoveToolNotificationMessage(tool, {
-      movedBy,
-      responsible: responsibleName,
-      targetObject,
-      oldObject,
-      moveReason,
-    });
+    const oldResponsible = String(tool?.["Ответственный"] ?? "").trim();
+    const moveMessage =
+      notificationId === "moveByEnergy"
+        ? buildMoveByEnergyNotificationMessage(tool, {
+            movedBy,
+            oldObject,
+            targetObject,
+            oldResponsible,
+            newResponsible: responsibleName,
+          })
+        : buildMoveToolNotificationMessage(tool, {
+            movedBy,
+            responsible: responsibleName,
+            targetObject,
+            oldObject,
+            moveReason,
+          });
     let groupSent = false;
     const groupErrors = [];
     if (!groupsEnabled) {
@@ -2051,7 +2095,7 @@ async function notifyMoveTool({
     } else if (!groupIds.length) {
       result.reasons.push("не выбраны группы для уведомлений");
     } else {
-      const shouldAttach = isNotificationPhotoEnabled(settingsData, "moveTool");
+      const shouldAttach = isNotificationPhotoEnabled(settingsData, notificationId);
       if (shouldAttach) {
         const photoNumber = resolveToolPhotoNumberForNotification(tool);
         const photoUrl = await resolveAvailablePhotoUrl(orgFolder, photoNumber);
@@ -8366,8 +8410,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const orgUsers = (usersData.users ?? []).filter(
       (entry) => normalizeOrg(entry.organization) === orgKey
     );
+    const includeCurrentUserInResponsibleList =
+      toolsState.mode === "move-other";
     const userOptions = orgUsers
       .filter((entry) => {
+        if (includeCurrentUserInResponsibleList) return true;
         const sameTelegram =
           currentTelegramId &&
           normalizeTelegramId(entry.telegram_id) === currentTelegramId;
@@ -8567,6 +8614,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
               targetObject,
               movedBy: String(user?.full_name ?? "").trim(),
               moveReason,
+              notificationId:
+                toolsState.mode === "move-other" ? "moveByEnergy" : "moveTool",
             })
           )
         );

@@ -473,6 +473,11 @@
         border-color: rgba(148, 170, 210, 0.35);
       }
 
+      body[data-theme="dark"] .demand-form-modal__panel {
+        background: linear-gradient(160deg, rgba(15, 23, 42, 0.98), rgba(17, 24, 39, 0.92));
+        border-color: rgba(148, 170, 210, 0.35);
+      }
+
       body[data-theme="dark"] .demand-summary,
       body[data-theme="dark"] .demand-form,
       body[data-theme="dark"] .demand-card,
@@ -522,6 +527,24 @@
         background: rgba(87, 224, 155, 0.18);
         color: var(--success);
         border-color: rgba(87, 224, 155, 0.35);
+      }
+
+      body[data-theme="dark"] .demand-chip--priority-red {
+        background: rgba(248, 113, 113, 0.18);
+        color: #fecaca;
+        border-color: rgba(248, 113, 113, 0.35);
+      }
+
+      body[data-theme="dark"] .demand-chip--priority-yellow {
+        background: rgba(251, 191, 36, 0.18);
+        color: #fde68a;
+        border-color: rgba(251, 191, 36, 0.35);
+      }
+
+      body[data-theme="dark"] .demand-chip--priority-green {
+        background: rgba(34, 197, 94, 0.18);
+        color: #bbf7d0;
+        border-color: rgba(34, 197, 94, 0.35);
       }
 
       body[data-theme="dark"] .tools-modal__panel,
@@ -2985,7 +3008,27 @@
         overflow: hidden;
       }
 
+      .demand-form-modal__panel {
+        width: min(640px, calc(100% - 20px));
+        max-height: calc(100vh - 20px);
+        border-radius: 22px;
+        grid-template-rows: auto minmax(0, 1fr);
+        background: linear-gradient(160deg, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.86));
+        border: 1px solid rgba(148, 163, 184, 0.25);
+        box-shadow: 0 24px 60px rgba(15, 23, 42, 0.16);
+        overflow: hidden;
+      }
+
       .demand-modal__header {
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: start;
+        gap: 8px;
+        padding: 16px 18px 10px;
+        border-bottom: 1px solid rgba(226, 232, 240, 0.85);
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0));
+      }
+
+      .demand-form-modal__header {
         grid-template-columns: minmax(0, 1fr) auto;
         align-items: start;
         gap: 8px;
@@ -3003,6 +3046,15 @@
         color: var(--muted);
       }
 
+      .demand-form-modal__header .settings-modal__title h2 {
+        font-size: 22px;
+      }
+
+      .demand-form-modal__header .settings-modal__title p {
+        font-size: 15px;
+        color: var(--muted);
+      }
+
       .demand-modal__close {
         margin-top: 0;
         width: 56px;
@@ -3010,7 +3062,21 @@
         border-radius: 18px;
       }
 
+      .demand-form-modal__close {
+        margin-top: 0;
+        width: 56px;
+        height: 56px;
+        border-radius: 18px;
+      }
+
       .demand-modal__body {
+        padding: 12px 16px 16px;
+        display: grid;
+        gap: 10px;
+        overflow: auto;
+      }
+
+      .demand-form-modal__body {
         padding: 12px 16px 16px;
         display: grid;
         gap: 10px;
@@ -3113,6 +3179,48 @@
         flex-wrap: wrap;
         gap: 10px;
         justify-content: flex-end;
+      }
+
+      .demand-priority {
+        display: grid;
+        gap: 10px;
+      }
+
+      .demand-priority__option {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 12px;
+        border-radius: 14px;
+        border: 1px solid rgba(148, 163, 184, 0.3);
+        background: rgba(255, 255, 255, 0.8);
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--text);
+      }
+
+      .demand-priority__option input {
+        accent-color: currentColor;
+        width: 16px;
+        height: 16px;
+      }
+
+      .demand-priority__option--red {
+        color: #dc2626;
+        background: rgba(248, 113, 113, 0.12);
+        border-color: rgba(248, 113, 113, 0.35);
+      }
+
+      .demand-priority__option--yellow {
+        color: #b45309;
+        background: rgba(251, 191, 36, 0.12);
+        border-color: rgba(251, 191, 36, 0.35);
+      }
+
+      .demand-priority__option--green {
+        color: #15803d;
+        background: rgba(34, 197, 94, 0.12);
+        border-color: rgba(34, 197, 94, 0.35);
       }
 
       .demand-filters {
@@ -3258,6 +3366,28 @@
         color: #1d4ed8;
         font-size: 12px;
         font-weight: 600;
+      }
+
+      .demand-chip--priority {
+        border-color: rgba(148, 163, 184, 0.3);
+      }
+
+      .demand-chip--priority-red {
+        background: rgba(248, 113, 113, 0.12);
+        color: #b91c1c;
+        border-color: rgba(248, 113, 113, 0.35);
+      }
+
+      .demand-chip--priority-yellow {
+        background: rgba(251, 191, 36, 0.12);
+        color: #92400e;
+        border-color: rgba(251, 191, 36, 0.35);
+      }
+
+      .demand-chip--priority-green {
+        background: rgba(34, 197, 94, 0.12);
+        color: #166534;
+        border-color: rgba(34, 197, 94, 0.35);
       }
 
       .demand-chip--done {

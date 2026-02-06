@@ -3296,6 +3296,20 @@ function sanitizeDemandLabel(value = "") {
   return String(value).trim().replace(/\s+/g, " ");
 }
 
+function normalizeDemandPriority(value = "") {
+  const normalized = String(value ?? "").trim().toLowerCase();
+  if (["red", "high", "urgent", "высокий", "красный"].includes(normalized)) {
+    return "red";
+  }
+  if (["yellow", "medium", "средний", "желтый", "жёлтый"].includes(normalized)) {
+    return "yellow";
+  }
+  if (["green", "low", "низкий", "зелёный", "зеленый"].includes(normalized)) {
+    return "green";
+  }
+  return "green";
+}
+
 function buildDemandId() {
   return `demand-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
 }
@@ -3356,6 +3370,7 @@ function normalizeDemandData(raw) {
         item.requestedById ?? item.userId ?? ""
       );
       const note = sanitizeDemandLabel(item.note ?? item.comment ?? "");
+      const priority = normalizeDemandPriority(item.priority ?? item.priorityColor ?? "");
       const status = item.status === "done" ? "done" : "open";
       const createdAt = sanitizeDemandLabel(item.createdAt ?? item.date ?? "") || getToday();
       const updatedAt = sanitizeDemandLabel(item.updatedAt ?? "");
@@ -3368,6 +3383,7 @@ function normalizeDemandData(raw) {
         requestedBy,
         requestedById,
         note,
+        priority,
         status,
         createdAt,
         updatedAt,
@@ -4146,6 +4162,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const demandModalEl = contentEl.querySelector("[data-demand-modal]");
   const demandBackdropEl = contentEl.querySelector("[data-demand-backdrop]");
   const demandCloseButton = contentEl.querySelector("[data-demand-close]");
+  const demandFormModalEl = contentEl.querySelector("[data-demand-form-modal]");
+  const demandFormBackdropEl = contentEl.querySelector("[data-demand-form-backdrop]");
+  const demandFormCloseButton = contentEl.querySelector("[data-demand-form-close]");
+  const demandFormTitleEl = contentEl.querySelector("[data-demand-form-title]");
   const demandFormEl = contentEl.querySelector("[data-demand-form]");
   const demandToggleButton = contentEl.querySelector("[data-demand-toggle-form]");
   const demandItemInput = contentEl.querySelector("[data-demand-item]");
@@ -4153,6 +4173,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const demandUnitInput = contentEl.querySelector("[data-demand-unit]");
   const demandObjectInput = contentEl.querySelector("[data-demand-object]");
   const demandObjectsListEl = contentEl.querySelector("[data-demand-objects-list]");
+  const demandToolsListEl = contentEl.querySelector("[data-demand-tools-list]");
+  const demandPriorityInputs = contentEl.querySelectorAll("[data-demand-priority]");
   const demandNoteInput = contentEl.querySelector("[data-demand-note]");
   const demandMessageEl = contentEl.querySelector("[data-demand-message]");
   const demandSubmitButton = contentEl.querySelector("[data-demand-submit]");
@@ -5107,6 +5129,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     filtered: [],
     objects: [],
     users: [],
+    toolSuggestions: [],
     editingId: null,
     isSaving: false,
     filters: {
@@ -5325,6 +5348,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   };
   const objectsPath = context.objectsPath ?? `./${context.orgFolderName}/Объекты.json`;
   const demandPath = context.demandPath ?? `./${context.orgFolderName}/Потребность.json`;
+  const toolsDatabasePath =
+    context.toolsDatabasePath ?? `./${context.orgFolderName}/База с инструментами.json`;
   const objectsNameInput = objectsFormEl?.querySelector("[name='object-name']");
   let selectedUsersOrgName = "";
   let selectedUsersOrgDisplayName = "";
@@ -5479,15 +5504,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   };
 
   const setDemandFormVisibility = (isOpen) => {
-    if (!demandFormEl) return;
-    demandFormEl.classList.toggle("is-hidden", !isOpen);
+    if (!demandFormModalEl) return;
+    demandFormModalEl.classList.toggle("is-hidden", !isOpen);
     if (demandToggleButton) {
       demandToggleButton.classList.toggle("is-active", isOpen);
       demandToggleButton.setAttribute("aria-expanded", String(isOpen));
     }
-    if (isOpen) {
-      demandItemInput?.focus();
-    }
+    if (isOpen) demandItemInput?.focus();
   };
   const setDemandFiltersVisibility = (isOpen) => {
     if (!demandFiltersPanel) return;
@@ -5498,10 +5521,37 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
   };
 
+  const demandPriorityLabels = {
+    red: "Высокий",
+    yellow: "Средний",
+    green: "Низкий",
+  };
+
+  const getSelectedDemandPriority = () => {
+    const selected = Array.from(demandPriorityInputs || []).find(
+      (input) => input.checked
+    );
+    return normalizeDemandPriority(selected?.value ?? "green");
+  };
+
+  const setDemandPriorityValue = (value) => {
+    const normalized = normalizeDemandPriority(value);
+    Array.from(demandPriorityInputs || []).forEach((input) => {
+      input.checked = input.value === normalized;
+    });
+  };
+
+  const setDemandFormTitle = (mode = "add") => {
+    if (!demandFormTitleEl) return;
+    demandFormTitleEl.textContent =
+      mode === "edit" ? "Редактирование заявки" : "Новая заявка";
+  };
+
   const setDemandSubmitButton = (mode = "add") => {
     if (!demandSubmitButton) return;
     const isEdit = mode === "edit";
     demandSubmitButton.textContent = isEdit ? "Сохранить" : "Добавить";
+    setDemandFormTitle(isEdit ? "edit" : "add");
   };
 
   const resetDemandForm = () => {
@@ -5510,7 +5560,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
     demandState.editingId = null;
     setDemandSubmitButton("add");
-    demandCancelButton?.classList.add("is-hidden");
+    setDemandPriorityValue("green");
   };
 
   const startEditDemand = (entry) => {
@@ -5522,8 +5572,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (demandUnitInput) demandUnitInput.value = entry.unit;
     if (demandObjectInput) demandObjectInput.value = entry.object;
     if (demandNoteInput) demandNoteInput.value = entry.note ?? "";
+    setDemandPriorityValue(entry.priority ?? "green");
     setDemandSubmitButton("edit");
-    demandCancelButton?.classList.remove("is-hidden");
     demandItemInput?.focus();
   };
 
@@ -5562,6 +5612,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         item.object,
         item.requestedBy,
         item.note,
+        demandPriorityLabels[normalizeDemandPriority(item.priority ?? "")],
       ]
         .filter(Boolean)
         .join(" ")
@@ -5618,6 +5669,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       .join("");
   };
 
+  const renderDemandToolsDatalist = () => {
+    if (!demandToolsListEl) return;
+    demandToolsListEl.innerHTML = demandState.toolSuggestions
+      .map((value) => `<option value="${escapeHtml(value)}"></option>`)
+      .join("");
+  };
+
   const renderDemandList = () => {
     if (!demandListEl) return;
     applyDemandFilters();
@@ -5650,6 +5708,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         statusChip.classList.add("demand-chip--done");
       }
       tags.appendChild(statusChip);
+
+      const priorityKey = normalizeDemandPriority(item.priority ?? "green");
+      const priorityChip = document.createElement("span");
+      priorityChip.className = `demand-chip demand-chip--priority demand-chip--priority-${priorityKey}`;
+      priorityChip.textContent = demandPriorityLabels[priorityKey] ?? "Низкий";
+      tags.appendChild(priorityChip);
 
       const objectChip = document.createElement("span");
       objectChip.className = "demand-chip";
@@ -5691,15 +5755,29 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
   const loadDemandReferences = async () => {
     try {
-      const [objectsRaw, usersData, orgsData] = await Promise.all([
+      const [objectsRaw, usersData, orgsData, toolsRaw] = await Promise.all([
         loadJson(objectsPath).catch(() => []),
         loadJson(usersFilePath).catch(() => ({ users: [] })),
         loadJson(orgFilePath).catch(() => ({ organizations: [] })),
+        loadJson(toolsDatabasePath).catch(() => []),
       ]);
       demandState.objects = normalizeObjectsData(objectsRaw)
         .map((item) => item.name)
         .filter(Boolean)
         .sort((a, b) => a.localeCompare(b, "ru"));
+      const toolsList = normalizeToolsData(toolsRaw);
+      const toolSuggestions = new Set();
+      toolsList.forEach((tool) => {
+        if (!tool || typeof tool !== "object") return;
+        const name = String(tool["Наименование"] ?? "").trim();
+        const manufacturer = String(tool["Производитель"] ?? "").trim();
+        const model = String(tool["Модель"] ?? "").trim();
+        const title = [name, manufacturer, model].filter(Boolean).join(" ");
+        if (title) toolSuggestions.add(title);
+      });
+      demandState.toolSuggestions = Array.from(toolSuggestions).sort((a, b) =>
+        a.localeCompare(b, "ru")
+      );
       const organizationName =
         context.orgFullName ??
         context.orgShortName ??
@@ -5723,6 +5801,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         .sort((a, b) => a.name.localeCompare(b.name, "ru"));
       renderDemandFilterOptions();
       renderDemandObjectsDatalist();
+      renderDemandToolsDatalist();
     } catch (error) {
       console.warn("Не удалось загрузить справочники потребностей.", error);
     }
@@ -5781,10 +5860,20 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
   demandBackdropEl?.addEventListener("click", closeDemandModal);
   demandCloseButton?.addEventListener("click", closeDemandModal);
+  demandFormBackdropEl?.addEventListener("click", () => {
+    resetDemandForm();
+    setDemandFormVisibility(false);
+    setDemandMessage("");
+  });
+  demandFormCloseButton?.addEventListener("click", () => {
+    resetDemandForm();
+    setDemandFormVisibility(false);
+    setDemandMessage("");
+  });
   demandToggleButton?.addEventListener("click", () => {
-    if (!demandFormEl) return;
-    const isOpen = !demandFormEl.classList.contains("is-hidden");
-    setDemandFormVisibility(!isOpen);
+    resetDemandForm();
+    setDemandMessage("");
+    setDemandFormVisibility(true);
   });
   demandFiltersToggle?.addEventListener("click", () => {
     if (!demandFiltersPanel) return;
@@ -5795,6 +5884,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   demandCancelButton?.addEventListener("click", () => {
     resetDemandForm();
     setDemandFormVisibility(false);
+    setDemandMessage("");
   });
 
   demandFormEl?.addEventListener("submit", async (event) => {
@@ -5805,6 +5895,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const quantity = normalizeNumber(demandQuantityInput?.value ?? 0, 0);
     const unit = sanitizeDemandLabel(demandUnitInput?.value ?? "шт") || "шт";
     const note = sanitizeDemandLabel(demandNoteInput?.value ?? "");
+    const priority = getSelectedDemandPriority();
     if (!title || !object || quantity <= 0) {
       setDemandMessage("Заполните название, объект и количество.");
       return;
@@ -5822,6 +5913,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
               quantity,
               unit,
               note,
+              priority,
               updatedAt: now,
             }
           : item
@@ -5834,6 +5926,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         quantity,
         unit,
         note,
+        priority,
         status: "open",
         requestedBy: userName,
         requestedById: userKey,
@@ -5842,6 +5935,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       });
     }
     resetDemandForm();
+    setDemandFormVisibility(false);
     await saveDemandItems();
     renderDemandFilterOptions();
     renderDemandList();

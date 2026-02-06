@@ -8,7 +8,7 @@ export const energyActions = [
   { id: "move-other", title: "Переместить за других", icon: "↔️" },
   { id: "write-off", title: "Списать", icon: "🧾" },
   { id: "repair", title: "Ремонт", icon: "🛠️" },
-  { id: "breakdowns", title: "Летучка", icon: "⚠️" },
+  { id: "breakdowns", title: "Поломки", icon: "⚠️" },
   { id: "demand", title: "Потребность", icon: "📌" },
   { id: "objects", title: "Объекты", icon: "🏢" },
   { id: "info", title: "Информация", icon: "ℹ️" },

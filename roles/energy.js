@@ -327,15 +327,20 @@ export function renderRole(user) {
                 <div class="demand-form__grid">
                   <label class="form-field">
                     <span class="form-label">Что нужно</span>
-                    <input
-                      class="form-input"
-                      type="text"
-                      placeholder="Например, перфоратор"
-                      list="demand-tools-list"
-                      data-demand-item
-                      required
-                    />
-                    <datalist id="demand-tools-list" data-demand-tools-list></datalist>
+                    <div class="suggestions-field">
+                      <input
+                        class="form-input"
+                        type="text"
+                        placeholder="Например, перфоратор"
+                        data-demand-item
+                        autocomplete="off"
+                        required
+                      />
+                      <div
+                        class="suggestions is-hidden"
+                        data-demand-tools-suggestions
+                      ></div>
+                    </div>
                   </label>
                   <label class="form-field demand-form__quantity">
                     <span class="form-label">Количество</span>

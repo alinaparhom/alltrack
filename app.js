@@ -14228,7 +14228,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       openBaseModal();
       return true;
     }
-    if (actionId === "search") {
+    if (actionId === "search" || actionId === "move-other") {
       openSearchModal();
       return true;
     }

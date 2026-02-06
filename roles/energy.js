@@ -5,6 +5,7 @@ export const energyActions = [
   { id: "add-tool", title: "Новая МТЦ", icon: "➕" },
   { id: "base", title: "База", icon: "🗂️" },
   { id: "search", title: "Поиск", icon: "🔍" },
+  { id: "move-other", title: "Переместить за других", icon: "↔️" },
   { id: "write-off", title: "Списать", icon: "🧾" },
   { id: "repair", title: "Ремонт", icon: "🛠️" },
   { id: "breakdowns", title: "Летучка", icon: "⚠️" },

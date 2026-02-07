@@ -5576,6 +5576,23 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     green: "Низкий",
   };
 
+  const pluralizeDemandDays = (count) => {
+    const mod10 = count % 10;
+    const mod100 = count % 100;
+    if (mod10 === 1 && mod100 !== 11) return "день";
+    if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return "дня";
+    return "дней";
+  };
+
+  const formatDemandCreatedLabel = (value) => {
+    const createdDate = parseIsoDateValue(value);
+    if (!createdDate) return "Создано: —";
+    const days = getDaysDifference(new Date(), createdDate);
+    return `Создано: ${formatDateValue(createdDate)} (${days} ${pluralizeDemandDays(
+      Math.abs(days)
+    )})`;
+  };
+
   const getSelectedDemandPriority = () => {
     const selected = Array.from(demandPriorityInputs || []).find(
       (input) => input.checked
@@ -5726,17 +5743,24 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       if (item.status === "done") {
         card.classList.add("is-done");
       }
+      const content = document.createElement("div");
+      content.className = "demand-card__content";
       const title = document.createElement("div");
       title.className = "demand-card__title";
-      title.textContent = item.item;
+      const titleName = document.createElement("span");
+      titleName.className = "demand-card__name";
+      titleName.textContent = item.item;
+      const titleQuantity = document.createElement("span");
+      titleQuantity.className = "demand-card__quantity";
+      titleQuantity.textContent = `${item.quantity} ${item.unit}`;
+      title.append(titleName, titleQuantity);
 
       const meta = document.createElement("div");
       meta.className = "demand-card__meta";
       const needDateLabel = formatDemandNeedDate(item.needDate);
       const needDateText = needDateLabel ? `Нужно: ${needDateLabel}` : "Нужно: не указано";
-      meta.textContent = `${item.quantity} ${item.unit} · ${
-        item.object
-      } · ${item.requestedBy || "Без автора"} · ${needDateText}`;
+      const createdLabel = formatDemandCreatedLabel(item.createdAt);
+      meta.textContent = `${item.object} · ${item.requestedBy || "Без автора"} · ${needDateText} · ${createdLabel}`;
 
       const note = document.createElement("div");
       note.className = "demand-card__note";
@@ -5784,9 +5808,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       actions.append(toggleButton, replyButton, editButton, deleteButton);
 
       if (!note.textContent) {
-        card.append(title, meta, actions);
+        content.append(title, meta);
+        card.append(content, actions);
       } else {
-        card.append(title, meta, note, actions);
+        content.append(title, meta, note);
+        card.append(content, actions);
       }
       demandListEl.appendChild(card);
     });

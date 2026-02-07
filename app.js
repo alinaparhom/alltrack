@@ -2046,6 +2046,7 @@ async function notifyMoveTool({
   orgFolder,
   organizationName,
   responsibleName,
+  responsibleTelegramId,
   targetObject,
   movedBy,
   moveReason,
@@ -2159,12 +2160,14 @@ async function notifyMoveTool({
     }
 
     const usersData = await loadJson(usersFilePath).catch(() => ({ users: [] }));
-    const responsibleTelegramId = findUserTelegramId(usersData, {
-      fullName: responsibleName,
-      organization: organizationName,
-    });
+    const resolvedResponsibleId =
+      normalizeTelegramId(responsibleTelegramId) ||
+      findUserTelegramId(usersData, {
+        fullName: responsibleName,
+        organization: organizationName,
+      });
     let responsibleSent = false;
-    if (responsibleTelegramId) {
+    if (resolvedResponsibleId) {
       const fineNote = buildLateReplyFineNote(settingsData);
       const responsibleMessage = buildMoveToolResponsibleMessage(tool, {
         movedBy,
@@ -2174,7 +2177,7 @@ async function notifyMoveTool({
         moveReason,
       });
       const responsibleResult = await sendTelegramMessage(
-        responsibleTelegramId,
+        resolvedResponsibleId,
         responsibleMessage
       );
       responsibleSent = responsibleResult.ok;
@@ -5218,6 +5221,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     responsibleOptions: [],
     objectOptions: [],
     responsibleRoles: new Map(),
+    responsibleTelegramIds: new Map(),
   };
   const addPhotoState = {
     tools: [],
@@ -9101,6 +9105,14 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         ])
         .filter(([name]) => name)
     );
+    toolsMoveState.responsibleTelegramIds = new Map(
+      orgUsers
+        .map((entry) => [
+          normalizePersonName(entry.full_name ?? ""),
+          normalizeTelegramId(entry.telegram_id),
+        ])
+        .filter(([name, id]) => name && id)
+    );
     if (toolsMoveResponsibleInput) {
       toolsMoveResponsibleInput.value = "";
       updateToolsMoveSelectState(
@@ -9193,6 +9205,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         setToolsMoveMessage("Выберите ответственного и объект.", "error");
         return;
       }
+      const responsibleTelegramId =
+        toolsMoveState.responsibleTelegramIds.get(
+          normalizePersonName(responsible)
+        ) ?? null;
       const moveReason = String(toolsMoveReasonInput?.value ?? "").trim();
       if (isEnergyResponsible(responsible) && !moveReason) {
         setToolsMoveMessage("Укажите причину перемещения.", "error");
@@ -9276,6 +9292,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
               orgFolder: context.orgFolderName,
               organizationName,
               responsibleName: responsible,
+              responsibleTelegramId,
               targetObject,
               movedBy: String(user?.full_name ?? "").trim(),
               moveReason,

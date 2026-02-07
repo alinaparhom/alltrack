@@ -5650,6 +5650,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const viewFilter = demandState.filters.view;
     const currentUserKey = buildUserKey(user);
     demandState.filtered = demandState.items.filter((item) => {
+      if (item.status !== "open") return false;
       if (statusFilter !== "all" && item.status !== statusFilter) return false;
       if (objectFilter && item.object !== objectFilter) return false;
       if (userFilter && item.requestedBy !== userFilter) return false;
@@ -5720,7 +5721,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     demandEmptyEl?.classList.toggle("is-hidden", demandState.filtered.length > 0);
     demandState.filtered.forEach((item) => {
       const card = document.createElement("div");
-      card.className = "demand-card";
+      const priorityKey = normalizeDemandPriority(item.priority ?? "green");
+      card.className = `demand-card demand-card--priority-${priorityKey}`;
       if (item.status === "done") {
         card.classList.add("is-done");
       }
@@ -5732,36 +5734,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       meta.className = "demand-card__meta";
       const needDateLabel = formatDemandNeedDate(item.needDate);
       const needDateText = needDateLabel ? `Нужно: ${needDateLabel}` : "Нужно: не указано";
-      meta.textContent = `${item.quantity} ${item.unit} · ${item.object} · ${
-        item.requestedBy || "Без автора"
-      } · ${needDateText} · ${item.createdAt}`;
-
-      const tags = document.createElement("div");
-      tags.className = "demand-card__tags";
-
-      const statusChip = document.createElement("span");
-      statusChip.className = "demand-chip";
-      statusChip.textContent =
-        item.status === "open" ? "Актуально" : "Закрыто";
-      if (item.status === "done") {
-        statusChip.classList.add("demand-chip--done");
-      }
-      tags.appendChild(statusChip);
-
-      const priorityKey = normalizeDemandPriority(item.priority ?? "green");
-      const priorityChip = document.createElement("span");
-      priorityChip.className = `demand-chip demand-chip--priority demand-chip--priority-${priorityKey}`;
-      priorityChip.textContent = demandPriorityLabels[priorityKey] ?? "Низкий";
-      tags.appendChild(priorityChip);
-
-      const objectChip = document.createElement("span");
-      objectChip.className = "demand-chip";
-      objectChip.textContent = item.object;
-      tags.appendChild(objectChip);
+      meta.textContent = `${item.quantity} ${item.unit} · ${
+        item.object
+      } · ${item.requestedBy || "Без автора"} · ${needDateText}`;
 
       const note = document.createElement("div");
       note.className = "demand-card__note";
-      note.textContent = item.note || "Комментарий не добавлен.";
+      note.textContent = item.note || "";
 
       const actions = document.createElement("div");
       actions.className = "demand-card__actions";
@@ -5770,23 +5749,45 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       toggleButton.className = "demand-action demand-action--primary";
       toggleButton.dataset.demandAction = "toggle";
       toggleButton.dataset.demandId = item.id;
-      toggleButton.textContent =
-        item.status === "open" ? "Закрыть" : "Вернуть в работу";
+      toggleButton.innerHTML =
+        item.status === "open" ? "✓" : "↺";
+      toggleButton.setAttribute(
+        "aria-label",
+        item.status === "open" ? "Закрыть заявку" : "Вернуть в работу"
+      );
+      toggleButton.title =
+        item.status === "open" ? "Закрыть заявку" : "Вернуть в работу";
+      const replyButton = document.createElement("button");
+      replyButton.type = "button";
+      replyButton.className = "demand-action";
+      replyButton.dataset.demandAction = "reply";
+      replyButton.dataset.demandId = item.id;
+      replyButton.innerHTML = "↩";
+      replyButton.setAttribute("aria-label", "Ответить на заявку");
+      replyButton.title = "Ответить на заявку";
       const editButton = document.createElement("button");
       editButton.type = "button";
       editButton.className = "demand-action";
       editButton.dataset.demandAction = "edit";
       editButton.dataset.demandId = item.id;
-      editButton.textContent = "Изменить";
+      editButton.innerHTML = "✎";
+      editButton.setAttribute("aria-label", "Изменить заявку");
+      editButton.title = "Изменить заявку";
       const deleteButton = document.createElement("button");
       deleteButton.type = "button";
       deleteButton.className = "demand-action demand-action--danger";
       deleteButton.dataset.demandAction = "delete";
       deleteButton.dataset.demandId = item.id;
-      deleteButton.textContent = "Удалить";
-      actions.append(toggleButton, editButton, deleteButton);
+      deleteButton.innerHTML = "✕";
+      deleteButton.setAttribute("aria-label", "Удалить заявку");
+      deleteButton.title = "Удалить заявку";
+      actions.append(toggleButton, replyButton, editButton, deleteButton);
 
-      card.append(title, meta, tags, note, actions);
+      if (!note.textContent) {
+        card.append(title, meta, actions);
+      } else {
+        card.append(title, meta, note, actions);
+      }
       demandListEl.appendChild(card);
     });
     updateDemandSummary(demandState.filtered.length);
@@ -6054,6 +6055,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       demandState.items = demandState.items.filter((item) => item.id !== id);
       await saveDemandItems();
       renderDemandList();
+      return;
+    }
+    if (type === "reply") {
+      window.prompt("Ответ на заявку", "");
     }
   });
 

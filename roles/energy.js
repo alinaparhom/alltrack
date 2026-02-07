@@ -382,6 +382,15 @@ export function renderRole(user) {
                       ></div>
                     </div>
                   </label>
+                  <label class="form-field demand-form__date">
+                    <span class="form-label">Когда нужно</span>
+                    <input
+                      class="form-input"
+                      type="date"
+                      data-demand-date
+                      required
+                    />
+                  </label>
                 </div>
                 <label class="form-field">
                   <span class="form-label">Приоритет</span>

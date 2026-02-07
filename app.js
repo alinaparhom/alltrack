@@ -149,6 +149,13 @@ function formatDateValue(date) {
   return `${day}.${month}.${date.getFullYear()}`;
 }
 
+function formatIsoDateValue(date) {
+  if (!(date instanceof Date) || Number.isNaN(date.getTime())) return "";
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  return `${date.getFullYear()}-${month}-${day}`;
+}
+
 function parseDateValue(value) {
   const text = String(value ?? "").trim();
   if (!text) return null;
@@ -159,6 +166,30 @@ function parseDateValue(value) {
   const parsed = new Date(year, month - 1, day);
   if (Number.isNaN(parsed.getTime())) return null;
   return parsed;
+}
+
+function parseIsoDateValue(value) {
+  const text = String(value ?? "").trim();
+  if (!text) return null;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(text)) {
+    const [year, month, day] = text.split("-").map((item) => Number(item));
+    const parsed = new Date(year, month - 1, day);
+    if (Number.isNaN(parsed.getTime())) return null;
+    return parsed;
+  }
+  return parseDateValue(text);
+}
+
+function normalizeDemandNeedDate(value) {
+  const parsed = parseIsoDateValue(value);
+  if (!parsed) return "";
+  return formatIsoDateValue(parsed);
+}
+
+function formatDemandNeedDate(value) {
+  const parsed = parseIsoDateValue(value);
+  if (!parsed) return "";
+  return formatDateValue(parsed);
 }
 
 function getDaysDifference(laterDate, earlierDate) {
@@ -3377,6 +3408,14 @@ function normalizeDemandData(raw) {
       const status = item.status === "done" ? "done" : "open";
       const createdAt = sanitizeDemandLabel(item.createdAt ?? item.date ?? "") || getToday();
       const updatedAt = sanitizeDemandLabel(item.updatedAt ?? "");
+      const needDate = normalizeDemandNeedDate(
+        item.needDate ??
+          item.neededDate ??
+          item.requiredDate ??
+          item.dueDate ??
+          item.deadline ??
+          ""
+      );
       return {
         id,
         item: title,
@@ -3388,6 +3427,7 @@ function normalizeDemandData(raw) {
         note,
         priority,
         status,
+        needDate,
         createdAt,
         updatedAt,
       };
@@ -4033,7 +4073,7 @@ async function resolveUserSettingsContext(user) {
     sanitizeOrganizationFolderName(orgShortName) || "Организация";
   const settingsPath = `./${orgFolderName}/Настройки.json`;
   const objectsPath = `./${orgFolderName}/Объекты.json`;
-  const demandPath = `./${orgFolderName}/Потребность.json`;
+  const demandPath = `./${orgFolderName}/Заявки.json`;
   const userKey = buildUserKey(user);
   const settingsData = ensureSettingsData(
     await loadJson(settingsPath).catch(() => ({ users: {} }))
@@ -4183,6 +4223,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   );
   const demandPriorityInputs = contentEl.querySelectorAll("[data-demand-priority]");
   const demandNoteInput = contentEl.querySelector("[data-demand-note]");
+  const demandDateInput = contentEl.querySelector("[data-demand-date]");
   const demandMessageEl = contentEl.querySelector("[data-demand-message]");
   const demandSubmitButton = contentEl.querySelector("[data-demand-submit]");
   const demandCancelButton = contentEl.querySelector("[data-demand-cancel]");
@@ -5355,7 +5396,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     breakdownViewportListenersAttached = false;
   };
   const objectsPath = context.objectsPath ?? `./${context.orgFolderName}/Объекты.json`;
-  const demandPath = context.demandPath ?? `./${context.orgFolderName}/Потребность.json`;
+  const demandPath = context.demandPath ?? `./${context.orgFolderName}/Заявки.json`;
   const toolsDatabasePath =
     context.toolsDatabasePath ?? `./${context.orgFolderName}/База с инструментами.json`;
   const objectsNameInput = objectsFormEl?.querySelector("[name='object-name']");
@@ -5579,6 +5620,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (demandQuantityInput) demandQuantityInput.value = String(entry.quantity);
     if (demandUnitInput) demandUnitInput.value = entry.unit;
     if (demandObjectInput) demandObjectInput.value = entry.object;
+    if (demandDateInput) demandDateInput.value = entry.needDate ?? "";
     if (demandNoteInput) demandNoteInput.value = entry.note ?? "";
     setDemandPriorityValue(entry.priority ?? "green");
     setDemandSubmitButton("edit");
@@ -5620,6 +5662,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         item.object,
         item.requestedBy,
         item.note,
+        item.needDate,
         demandPriorityLabels[normalizeDemandPriority(item.priority ?? "")],
       ]
         .filter(Boolean)
@@ -5687,9 +5730,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
       const meta = document.createElement("div");
       meta.className = "demand-card__meta";
+      const needDateLabel = formatDemandNeedDate(item.needDate);
+      const needDateText = needDateLabel ? `Нужно: ${needDateLabel}` : "Нужно: не указано";
       meta.textContent = `${item.quantity} ${item.unit} · ${item.object} · ${
         item.requestedBy || "Без автора"
-      } · ${item.createdAt}`;
+      } · ${needDateText} · ${item.createdAt}`;
 
       const tags = document.createElement("div");
       tags.className = "demand-card__tags";
@@ -5813,7 +5858,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     setDemandMessage("Сохраняем изменения...");
     try {
       await saveJson(demandPath, demandState.items, { user });
-      setDemandMessage("Готово! Потребности обновлены.");
+      setDemandMessage("Готово! Заявки обновлены.");
     } catch (error) {
       console.error(error);
       setDemandMessage("Не удалось сохранить. Проверьте сервер.");
@@ -5885,9 +5930,14 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const quantity = normalizeNumber(demandQuantityInput?.value ?? 0, 0);
     const unit = sanitizeDemandLabel(demandUnitInput?.value ?? "шт") || "шт";
     const note = sanitizeDemandLabel(demandNoteInput?.value ?? "");
+    const needDate = normalizeDemandNeedDate(demandDateInput?.value ?? "");
     const priority = getSelectedDemandPriority();
     if (!title || quantity <= 0) {
       setDemandMessage("Заполните название и количество.");
+      return;
+    }
+    if (!needDate) {
+      setDemandMessage("Укажите дату, когда нужно.");
       return;
     }
     if (!object) {
@@ -5912,6 +5962,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
               unit,
               note,
               priority,
+              needDate,
               updatedAt: now,
             }
           : item
@@ -5928,6 +5979,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         status: "open",
         requestedBy: userName,
         requestedById: userKey,
+        needDate,
         createdAt: now,
         updatedAt: "",
       });

@@ -5586,9 +5586,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
   const formatDemandCreatedLabel = (value) => {
     const createdDate = parseIsoDateValue(value);
-    if (!createdDate) return "Создано: —";
+    if (!createdDate) return "—";
     const days = getDaysDifference(new Date(), createdDate);
-    return `Создано: ${formatDateValue(createdDate)} (${days} ${pluralizeDemandDays(
+    return `${formatDateValue(createdDate)} (${days} ${pluralizeDemandDays(
       Math.abs(days)
     )})`;
   };
@@ -5758,9 +5758,20 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const meta = document.createElement("div");
       meta.className = "demand-card__meta";
       const needDateLabel = formatDemandNeedDate(item.needDate);
-      const needDateText = needDateLabel ? `Нужно: ${needDateLabel}` : "Нужно: не указано";
+      const needDateText = needDateLabel || "не указано";
       const createdLabel = formatDemandCreatedLabel(item.createdAt);
-      meta.textContent = `${item.object} · ${item.requestedBy || "Без автора"} · ${needDateText} · ${createdLabel}`;
+      const metaItems = [
+        { label: "Объект", value: item.object || "—" },
+        { label: "Ответственный", value: item.requestedBy || "Без автора" },
+        { label: "Нужно", value: needDateText },
+        { label: "Создано", value: createdLabel },
+      ];
+      metaItems.forEach(({ label, value }) => {
+        const line = document.createElement("div");
+        line.className = "demand-card__meta-line";
+        line.textContent = `${label}: ${value}`;
+        meta.appendChild(line);
+      });
 
       const note = document.createElement("div");
       note.className = "demand-card__note";

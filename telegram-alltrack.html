@@ -3322,11 +3322,9 @@
       }
 
       .demand-card {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) auto;
-        column-gap: 10px;
-        row-gap: 6px;
-        padding: 10px 12px 10px 14px;
+        position: relative;
+        display: block;
+        padding: 10px 56px 10px 14px;
         border-radius: 14px;
         background: var(--glass);
         border: 1px solid rgba(148, 163, 184, 0.18);
@@ -3377,9 +3375,17 @@
       }
 
       .demand-card__meta {
+        display: grid;
+        gap: 4px;
         font-size: 12px;
         color: var(--muted);
         line-height: 1.35;
+      }
+
+      .demand-card__meta-line {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
       }
 
       .demand-card__tags {
@@ -3439,6 +3445,9 @@
       }
 
       .demand-card__actions {
+        position: absolute;
+        top: 10px;
+        right: 10px;
         display: grid;
         gap: 6px;
         justify-items: end;

@@ -3473,6 +3473,45 @@ function normalizeToolsData(raw) {
   return [];
 }
 
+function buildToolsMapPoints(toolsList, objectsList, userName = "") {
+  const userKey = normalizePersonName(userName);
+  if (!userKey) return [];
+  const counts = new Map();
+  toolsList.forEach((tool) => {
+    if (!tool || typeof tool !== "object") return;
+    const responsible = normalizePersonName(
+      tool["Ответственный"] ?? tool.responsible ?? tool.user ?? tool.owner ?? ""
+    );
+    if (!responsible || responsible !== userKey) return;
+    const objectName = sanitizeObjectName(tool["Объект"] ?? tool.object ?? "");
+    if (!objectName) return;
+    const key = objectName.toLowerCase();
+    const current = counts.get(key) ?? { name: objectName, count: 0 };
+    current.count += 1;
+    counts.set(key, current);
+  });
+
+  return objectsList
+    .map((objectItem) => {
+      if (!objectItem || typeof objectItem !== "object") return null;
+      const objectName = sanitizeObjectName(objectItem.name ?? objectItem.title ?? "");
+      if (!objectName) return null;
+      const entry = counts.get(objectName.toLowerCase());
+      if (!entry) return null;
+      const coordinates = objectItem.coordinates;
+      if (!coordinates) return null;
+      const lat = Number(coordinates.lat);
+      const lng = Number(coordinates.lng);
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+      return {
+        name: objectName,
+        count: entry.count,
+        coordinates: { lat, lng },
+      };
+    })
+    .filter(Boolean);
+}
+
 function buildRoleKey(value = "") {
   return String(value)
     .trim()
@@ -4193,6 +4232,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   );
   const quickAccessSaveButton = contentEl.querySelector("[data-quick-access-save]");
   const quickAccessMessageEl = contentEl.querySelector("[data-quick-access-message]");
+  const toolsMapEl = contentEl.querySelector("[data-tools-map]");
+  const toolsMapCanvasEl = contentEl.querySelector("[data-tools-map-canvas]");
+  const toolsMapLegendEl = contentEl.querySelector("[data-tools-map-legend]");
+  const toolsMapCountEl = contentEl.querySelector("[data-tools-map-count]");
+  const toolsMapPlaceholderEl = contentEl.querySelector("[data-tools-map-placeholder]");
+  const toolsMapSubtitleEl = contentEl.querySelector("[data-tools-map-subtitle]");
   const updateQuickAccessOffset = () => {
     if (!quickAccessEl) return;
     const rect = quickAccessEl.getBoundingClientRect();
@@ -5484,6 +5529,94 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       context.orgFullName ?? context.orgShortName ?? context.orgFolderName ?? "";
     objectsSubtitleEl.textContent = orgLabel;
   }
+
+  const renderToolsMap = (points) => {
+    if (!toolsMapCanvasEl || !toolsMapEl) return;
+    const safePoints = Array.isArray(points) ? points : [];
+    const totalTools = safePoints.reduce((sum, item) => sum + (item.count ?? 0), 0);
+    if (toolsMapCountEl) {
+      toolsMapCountEl.textContent = `${safePoints.length} объектов`;
+    }
+    if (toolsMapSubtitleEl) {
+      toolsMapSubtitleEl.textContent = safePoints.length
+        ? `Ваши инструменты на карте: ${totalTools} шт.`
+        : "Точки показывают объекты с вашими инструментами.";
+    }
+    const existingDots = toolsMapCanvasEl.querySelectorAll(".tools-map-dot");
+    existingDots.forEach((dot) => dot.remove());
+    if (toolsMapLegendEl) {
+      toolsMapLegendEl.innerHTML = "";
+    }
+    if (!safePoints.length) {
+      toolsMapPlaceholderEl?.classList.remove("is-hidden");
+      return;
+    }
+    toolsMapPlaceholderEl?.classList.add("is-hidden");
+
+    const latValues = safePoints.map((point) => point.coordinates.lat);
+    const lngValues = safePoints.map((point) => point.coordinates.lng);
+    const minLat = Math.min(...latValues);
+    const maxLat = Math.max(...latValues);
+    const minLng = Math.min(...lngValues);
+    const maxLng = Math.max(...lngValues);
+    const latRange = maxLat - minLat || 1;
+    const lngRange = maxLng - minLng || 1;
+    const padding = 8;
+    const scale = (value, min, range) =>
+      padding + ((value - min) / range) * (100 - padding * 2);
+
+    safePoints.forEach((point) => {
+      const x = scale(point.coordinates.lng, minLng, lngRange);
+      const y =
+        padding +
+        (1 - (point.coordinates.lat - minLat) / latRange) * (100 - padding * 2);
+      const dot = document.createElement("div");
+      dot.className = "tools-map-dot";
+      dot.style.left = `${x}%`;
+      dot.style.top = `${y}%`;
+      dot.title = `${point.name} — ${point.count} шт.`;
+      dot.textContent = point.count > 1 ? String(point.count) : "";
+      toolsMapCanvasEl.appendChild(dot);
+    });
+
+    if (toolsMapLegendEl) {
+      toolsMapLegendEl.innerHTML = safePoints
+        .slice()
+        .sort((a, b) => b.count - a.count)
+        .map(
+          (point) => `
+            <div class="tools-map-legend-item">
+              <div>${escapeHtml(point.name)}</div>
+              <span>${point.count} шт.</span>
+            </div>
+          `
+        )
+        .join("");
+    }
+  };
+
+  const updateToolsMap = async () => {
+    if (!toolsMapEl || !toolsMapCanvasEl) return;
+    try {
+      const [toolsRaw, objectsRaw] = await Promise.all([
+        loadJson(toolsDatabasePath).catch(() => []),
+        loadJson(objectsPath).catch(() => []),
+      ]);
+      const toolsList = normalizeToolsData(toolsRaw);
+      const objectsList = normalizeObjectsData(objectsRaw);
+      const points = buildToolsMapPoints(
+        toolsList,
+        objectsList,
+        user.full_name ?? user.fullName ?? ""
+      );
+      renderToolsMap(points);
+    } catch (error) {
+      console.warn("Не удалось загрузить данные для карты инструментов.", error);
+      renderToolsMap([]);
+    }
+  };
+
+  updateToolsMap();
 
   const setObjectsMessage = (message = "") => {
     if (objectsMessageEl) {

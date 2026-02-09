@@ -5679,6 +5679,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       if (!query) return true;
       return item.name.toLowerCase().includes(query);
     });
+    const sortedItems = [...filteredItems].sort((a, b) => {
+      const aName = normalizeObjectCompare(a?.name ?? "");
+      const bName = normalizeObjectCompare(b?.name ?? "");
+      return aName.localeCompare(bName, "ru", { numeric: true, sensitivity: "base" });
+    });
     if (objectsCountEl) {
       objectsCountEl.textContent = query
         ? `${filteredItems.length}/${objectsState.items.length}`
@@ -5691,7 +5696,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         ? "По фильтру ничего не найдено."
         : "Пока нет объектов.";
     }
-    filteredItems.forEach((item) => {
+    sortedItems.forEach((item) => {
       const itemEl = document.createElement("div");
       itemEl.className = "objects-item";
       itemEl.dataset.objectId = item.id;

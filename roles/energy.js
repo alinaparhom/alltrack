@@ -64,6 +64,12 @@ export function renderRole(user) {
             <div class="tools-map-pill" data-tools-map-count>0</div>
           </div>
           <div class="tools-map-canvas" data-tools-map-canvas>
+            <img
+              class="tools-map-image is-hidden"
+              data-tools-map-image
+              alt="Карта объектов"
+              loading="lazy"
+            />
             <div class="tools-map-placeholder" data-tools-map-placeholder>
               Пока нет координат объектов.
             </div>

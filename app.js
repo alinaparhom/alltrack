@@ -4234,6 +4234,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const quickAccessMessageEl = contentEl.querySelector("[data-quick-access-message]");
   const toolsMapEl = contentEl.querySelector("[data-tools-map]");
   const toolsMapCanvasEl = contentEl.querySelector("[data-tools-map-canvas]");
+  const toolsMapImageEl = contentEl.querySelector("[data-tools-map-image]");
   const toolsMapLegendEl = contentEl.querySelector("[data-tools-map-legend]");
   const toolsMapCountEl = contentEl.querySelector("[data-tools-map-count]");
   const toolsMapPlaceholderEl = contentEl.querySelector("[data-tools-map-placeholder]");
@@ -5530,6 +5531,49 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     objectsSubtitleEl.textContent = orgLabel;
   }
 
+  const buildYandexStaticMapUrl = (points) => {
+    const safePoints = Array.isArray(points) ? points : [];
+    if (!safePoints.length) return "";
+    const width = 640;
+    const height = 420;
+    const markers = safePoints
+      .map((point) => {
+        const label = Math.min(99, Math.max(1, Number(point.count) || 1));
+        return `${point.coordinates.lng},${point.coordinates.lat},pm2rdm${label}`;
+      })
+      .join("~");
+
+    const params = new URLSearchParams({
+      lang: "ru_RU",
+      l: "map",
+      size: `${width},${height}`,
+      pt: markers,
+    });
+
+    if (safePoints.length === 1) {
+      const point = safePoints[0];
+      params.set("ll", `${point.coordinates.lng},${point.coordinates.lat}`);
+      params.set("z", "13");
+    } else {
+      const latValues = safePoints.map((point) => point.coordinates.lat);
+      const lngValues = safePoints.map((point) => point.coordinates.lng);
+      const minLat = Math.min(...latValues);
+      const maxLat = Math.max(...latValues);
+      const minLng = Math.min(...lngValues);
+      const maxLng = Math.max(...lngValues);
+      const latPadding = Math.max(0.01, (maxLat - minLat) * 0.2);
+      const lngPadding = Math.max(0.01, (maxLng - minLng) * 0.2);
+      const bbox = `${(minLng - lngPadding).toFixed(6)},${(
+        minLat - latPadding
+      ).toFixed(6)}~${(maxLng + lngPadding).toFixed(6)},${(
+        maxLat + latPadding
+      ).toFixed(6)}`;
+      params.set("bbox", bbox);
+    }
+
+    return `https://static-maps.yandex.ru/1.x/?${params.toString()}`;
+  };
+
   const renderToolsMap = (points) => {
     if (!toolsMapCanvasEl || !toolsMapEl) return;
     const safePoints = Array.isArray(points) ? points : [];
@@ -5549,35 +5593,20 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
     if (!safePoints.length) {
       toolsMapPlaceholderEl?.classList.remove("is-hidden");
+      toolsMapCanvasEl.classList.remove("tools-map-canvas--map");
+      if (toolsMapImageEl) {
+        toolsMapImageEl.classList.add("is-hidden");
+        toolsMapImageEl.removeAttribute("src");
+      }
       return;
     }
     toolsMapPlaceholderEl?.classList.add("is-hidden");
-
-    const latValues = safePoints.map((point) => point.coordinates.lat);
-    const lngValues = safePoints.map((point) => point.coordinates.lng);
-    const minLat = Math.min(...latValues);
-    const maxLat = Math.max(...latValues);
-    const minLng = Math.min(...lngValues);
-    const maxLng = Math.max(...lngValues);
-    const latRange = maxLat - minLat || 1;
-    const lngRange = maxLng - minLng || 1;
-    const padding = 8;
-    const scale = (value, min, range) =>
-      padding + ((value - min) / range) * (100 - padding * 2);
-
-    safePoints.forEach((point) => {
-      const x = scale(point.coordinates.lng, minLng, lngRange);
-      const y =
-        padding +
-        (1 - (point.coordinates.lat - minLat) / latRange) * (100 - padding * 2);
-      const dot = document.createElement("div");
-      dot.className = "tools-map-dot";
-      dot.style.left = `${x}%`;
-      dot.style.top = `${y}%`;
-      dot.title = `${point.name} — ${point.count} шт.`;
-      dot.textContent = point.count > 1 ? String(point.count) : "";
-      toolsMapCanvasEl.appendChild(dot);
-    });
+    toolsMapCanvasEl.classList.add("tools-map-canvas--map");
+    if (toolsMapImageEl) {
+      const mapUrl = buildYandexStaticMapUrl(safePoints);
+      toolsMapImageEl.src = mapUrl;
+      toolsMapImageEl.classList.remove("is-hidden");
+    }
 
     if (toolsMapLegendEl) {
       toolsMapLegendEl.innerHTML = safePoints

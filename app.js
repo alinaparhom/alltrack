@@ -5537,10 +5537,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const width = 640;
     const height = 420;
     const markers = safePoints
-      .map((point) => {
-        const label = Math.min(99, Math.max(1, Number(point.count) || 1));
-        return `${point.coordinates.lng},${point.coordinates.lat},pm2rdm${label}`;
-      })
+      .map(
+        (point) => `${point.coordinates.lng},${point.coordinates.lat},pm2rdm`
+      )
       .join("~");
 
     const params = new URLSearchParams({
@@ -5577,13 +5576,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const renderToolsMap = (points) => {
     if (!toolsMapCanvasEl || !toolsMapEl) return;
     const safePoints = Array.isArray(points) ? points : [];
-    const totalTools = safePoints.reduce((sum, item) => sum + (item.count ?? 0), 0);
     if (toolsMapCountEl) {
       toolsMapCountEl.textContent = `${safePoints.length} объектов`;
     }
     if (toolsMapSubtitleEl) {
       toolsMapSubtitleEl.textContent = safePoints.length
-        ? `Ваши инструменты на карте: ${totalTools} шт.`
+        ? "Объекты с вашими инструментами на карте."
         : "Точки показывают объекты с вашими инструментами.";
     }
     const existingDots = toolsMapCanvasEl.querySelectorAll(".tools-map-dot");
@@ -5616,7 +5614,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           (point) => `
             <div class="tools-map-legend-item">
               <div>${escapeHtml(point.name)}</div>
-              <span>${point.count} шт.</span>
             </div>
           `
         )

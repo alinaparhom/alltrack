@@ -788,7 +788,7 @@
       .app-header {
         display: grid;
         gap: 12px;
-        margin-bottom: 20px;
+        margin-bottom: 12px;
       }
 
       .app-title-row {
@@ -1014,7 +1014,7 @@
       }
 
       .role-card {
-        margin-top: 20px;
+        margin-top: 12px;
         display: grid;
         gap: 18px;
       }
@@ -1081,6 +1081,10 @@
         box-shadow: 0 16px 36px rgba(26, 31, 46, 0.08);
         display: grid;
         gap: 12px;
+        position: sticky;
+        top: 0;
+        z-index: 3;
+        backdrop-filter: blur(18px);
       }
 
       .tools-map-header {

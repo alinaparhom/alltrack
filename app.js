@@ -4238,9 +4238,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const demandEmptyEl = contentEl.querySelector("[data-demand-empty]");
   const demandSubtitleEl = contentEl.querySelector("[data-demand-subtitle]");
   const demandOpenCountEl = contentEl.querySelector("[data-demand-open-count]");
-  const demandTotalCountEl = contentEl.querySelector("[data-demand-total-count]");
-  const demandObjectsCountEl = contentEl.querySelector("[data-demand-objects-count]");
-  const demandShownCountEl = contentEl.querySelector("[data-demand-shown-count]");
   const toolsModalEl = contentEl.querySelector("[data-tools-modal]");
   const toolsPanelEl = contentEl.querySelector("[data-tools-panel]");
   const toolsBackdropEl = contentEl.querySelector("[data-tools-backdrop]");
@@ -5644,19 +5641,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     demandItemInput?.focus();
   };
 
-  const updateDemandSummary = (shownCount = null) => {
-    const total = demandState.items.length;
+  const updateDemandSummary = () => {
     const openCount = demandState.items.filter((item) => item.status === "open").length;
-    const objects = new Set(
-      demandState.items.map((item) => item.object).filter(Boolean)
-    );
     if (demandOpenCountEl) demandOpenCountEl.textContent = String(openCount);
-    if (demandTotalCountEl) demandTotalCountEl.textContent = String(total);
-    if (demandObjectsCountEl) demandObjectsCountEl.textContent = String(objects.size);
-    if (demandShownCountEl) {
-      demandShownCountEl.textContent =
-        shownCount === null ? String(total) : String(shownCount);
-    }
   };
 
   const applyDemandFilters = () => {
@@ -5827,7 +5814,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       }
       demandListEl.appendChild(card);
     });
-    updateDemandSummary(demandState.filtered.length);
+    updateDemandSummary();
   };
 
   const loadDemandReferences = async () => {

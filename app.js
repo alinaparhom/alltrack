@@ -5444,6 +5444,19 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     return counts;
   };
 
+  const formatObjectsToolsLabel = (count) => {
+    const safeCount = Number.isFinite(count) ? count : 0;
+    const mod10 = safeCount % 10;
+    const mod100 = safeCount % 100;
+    if (mod10 === 1 && mod100 !== 11) {
+      return `${safeCount} инструмент`;
+    }
+    if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) {
+      return `${safeCount} инструмента`;
+    }
+    return `${safeCount} инструментов`;
+  };
+
   const renderObjectsList = () => {
     if (!objectsItemsEl) return;
     objectsItemsEl.innerHTML = "";
@@ -5469,20 +5482,18 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       itemEl.className = "objects-item";
       itemEl.dataset.objectId = item.id;
 
+      const contentEl = document.createElement("div");
+      contentEl.className = "objects-item__content";
+
       const nameEl = document.createElement("div");
       nameEl.className = "objects-item__name";
       nameEl.textContent = item.name;
 
-      const metaEl = document.createElement("div");
-      metaEl.className = "objects-item__meta";
-      const countEl = document.createElement("span");
-      countEl.className = "objects-item__count";
       const countKey = sanitizeObjectName(item.name).toLowerCase();
       const toolCount = objectsState.toolsCount.get(countKey) ?? 0;
-      countEl.textContent = String(toolCount);
-      const labelEl = document.createElement("span");
-      labelEl.textContent = "инстр.";
-      metaEl.append(countEl, labelEl);
+      const toolsEl = document.createElement("div");
+      toolsEl.className = "objects-item__tools";
+      toolsEl.textContent = formatObjectsToolsLabel(toolCount);
 
       const actionsEl = document.createElement("div");
       actionsEl.className = "objects-item__actions";
@@ -5504,7 +5515,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       deleteButton.title = "Удалить";
 
       actionsEl.append(editButton, deleteButton);
-      itemEl.append(nameEl, metaEl, actionsEl);
+      contentEl.append(nameEl, toolsEl);
+      itemEl.append(contentEl, actionsEl);
       objectsItemsEl.appendChild(itemEl);
     });
   };

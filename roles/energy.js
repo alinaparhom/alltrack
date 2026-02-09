@@ -139,10 +139,10 @@ export function renderRole(user) {
                   <button
                     class="objects-form__submit"
                     type="button"
-                    data-energy-objects-clear
-                    aria-label="Очистить поиск"
+                    data-energy-objects-create
+                    aria-label="Создать новый объект"
                   >
-                    ✕
+                    +
                   </button>
                 </div>
                 <div class="form-message" data-energy-objects-message></div>
@@ -160,6 +160,103 @@ export function renderRole(user) {
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+        <div
+          class="objects-create-modal settings-modal is-hidden"
+          data-energy-objects-create-modal
+        >
+          <div
+            class="settings-modal__backdrop"
+            data-energy-objects-create-backdrop
+          ></div>
+          <div
+            class="settings-modal__panel objects-create-modal__panel"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Создание нового объекта"
+          >
+            <div class="settings-modal__header objects-create-modal__header">
+              <div class="settings-modal__title">
+                <h2>Новый объект</h2>
+                <p>Введите название и координаты на карте</p>
+              </div>
+              <button
+                class="button-icon objects-modal__close"
+                type="button"
+                data-energy-objects-create-close
+                aria-label="Закрыть окно создания объекта"
+              >
+                <span class="button-icon-emoji" aria-hidden="true">✕</span>
+              </button>
+            </div>
+            <form
+              class="objects-create-form form-card"
+              data-energy-objects-create-form
+            >
+              <div class="form-field">
+                <label class="form-label" for="objects-create-name">
+                  Название объекта
+                </label>
+                <input
+                  class="form-input"
+                  id="objects-create-name"
+                  name="object-name"
+                  placeholder="Например: Склад Ленина"
+                  autocomplete="off"
+                  required
+                />
+              </div>
+              <div class="objects-create-coordinates">
+                <div class="form-field">
+                  <label class="form-label" for="objects-create-lat">
+                    Широта
+                  </label>
+                  <input
+                    class="form-input"
+                    id="objects-create-lat"
+                    name="object-lat"
+                    type="number"
+                    step="0.000001"
+                    min="-90"
+                    max="90"
+                    placeholder="55.7558"
+                    inputmode="decimal"
+                    required
+                  />
+                </div>
+                <div class="form-field">
+                  <label class="form-label" for="objects-create-lng">
+                    Долгота
+                  </label>
+                  <input
+                    class="form-input"
+                    id="objects-create-lng"
+                    name="object-lng"
+                    type="number"
+                    step="0.000001"
+                    min="-180"
+                    max="180"
+                    placeholder="37.6173"
+                    inputmode="decimal"
+                    required
+                  />
+                </div>
+              </div>
+              <div class="objects-create-actions">
+                <button
+                  class="action-secondary"
+                  type="button"
+                  data-energy-objects-create-cancel
+                >
+                  Отмена
+                </button>
+                <button class="action-primary" type="submit">
+                  Сохранить
+                </button>
+              </div>
+              <div class="form-message" data-energy-objects-create-message></div>
+            </form>
           </div>
         </div>
         <div class="demand-modal settings-modal is-hidden" data-demand-modal>

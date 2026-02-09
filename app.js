@@ -3326,6 +3326,14 @@ function buildObjectId() {
   return `obj-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
 }
 
+function normalizeCoordinateValue(value) {
+  const raw = String(value ?? "").trim();
+  if (!raw) return null;
+  const cleaned = raw.replace(",", ".");
+  const parsed = Number.parseFloat(cleaned);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
 function sanitizeDemandLabel(value = "") {
   return String(value).trim().replace(/\s+/g, " ");
 }
@@ -3373,7 +3381,28 @@ function normalizeObjectsData(raw) {
         id = buildObjectId();
       }
       ids.add(id);
-      return { id, name };
+      const lat = normalizeCoordinateValue(
+        item.lat ??
+          item.latitude ??
+          item.coords?.lat ??
+          item.coordinates?.lat ??
+          item.coordinates?.latitude
+      );
+      const lng = normalizeCoordinateValue(
+        item.lng ??
+          item.lon ??
+          item.longitude ??
+          item.coords?.lng ??
+          item.coords?.lon ??
+          item.coordinates?.lng ??
+          item.coordinates?.lon ??
+          item.coordinates?.longitude
+      );
+      const coordinates =
+        lat !== null && lng !== null
+          ? { lat, lng }
+          : null;
+      return { id, name, coordinates };
     })
     .filter(Boolean);
 }
@@ -4194,13 +4223,31 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const objectsBackdropEl = contentEl.querySelector("[data-energy-objects-backdrop]");
   const objectsCloseButton = contentEl.querySelector("[data-energy-objects-close]");
   const objectsFormEl = contentEl.querySelector("[data-energy-objects-form]");
-  const objectsClearButton = contentEl.querySelector("[data-energy-objects-clear]");
+  const objectsCreateButton = contentEl.querySelector("[data-energy-objects-create]");
   const objectsMessageEl = contentEl.querySelector("[data-energy-objects-message]");
   const objectsListEl = contentEl.querySelector("[data-energy-objects-list]");
   const objectsItemsEl = contentEl.querySelector("[data-energy-objects-items]");
   const objectsEmptyEl = contentEl.querySelector("[data-energy-objects-empty]");
   const objectsCountEl = contentEl.querySelector("[data-energy-objects-count]");
   const objectsSubtitleEl = contentEl.querySelector("[data-energy-objects-subtitle]");
+  const objectsCreateModalEl = contentEl.querySelector(
+    "[data-energy-objects-create-modal]"
+  );
+  const objectsCreateBackdropEl = contentEl.querySelector(
+    "[data-energy-objects-create-backdrop]"
+  );
+  const objectsCreateCloseButton = contentEl.querySelector(
+    "[data-energy-objects-create-close]"
+  );
+  const objectsCreateCancelButton = contentEl.querySelector(
+    "[data-energy-objects-create-cancel]"
+  );
+  const objectsCreateFormEl = contentEl.querySelector(
+    "[data-energy-objects-create-form]"
+  );
+  const objectsCreateMessageEl = contentEl.querySelector(
+    "[data-energy-objects-create-message]"
+  );
   const demandModalEl = contentEl.querySelector("[data-demand-modal]");
   const demandBackdropEl = contentEl.querySelector("[data-demand-backdrop]");
   const demandCloseButton = contentEl.querySelector("[data-demand-close]");
@@ -5397,6 +5444,15 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const toolsDatabasePath =
     context.toolsDatabasePath ?? `./${context.orgFolderName}/База с инструментами.json`;
   const objectsFilterInput = objectsFormEl?.querySelector("[name='object-filter']");
+  const objectsCreateNameInput = objectsCreateFormEl?.querySelector(
+    "[name='object-name']"
+  );
+  const objectsCreateLatInput = objectsCreateFormEl?.querySelector(
+    "[name='object-lat']"
+  );
+  const objectsCreateLngInput = objectsCreateFormEl?.querySelector(
+    "[name='object-lng']"
+  );
   let selectedUsersOrgName = "";
   let selectedUsersOrgDisplayName = "";
   let selectedUsersOrgNames = [];
@@ -5413,23 +5469,29 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
   };
 
-  const updateObjectsClearState = () => {
-    if (objectsClearButton) {
-      objectsClearButton.disabled = !objectsState.filter;
-    }
-  };
-
   const setObjectsFilterValue = (value = "") => {
     objectsState.filter = String(value ?? "").trim();
     if (objectsFilterInput) {
       objectsFilterInput.value = objectsState.filter;
     }
-    updateObjectsClearState();
   };
 
   const resetObjectsForm = () => {
     setObjectsFilterValue("");
     setObjectsMessage("");
+  };
+
+  const setObjectsCreateMessage = (message = "") => {
+    if (objectsCreateMessageEl) {
+      objectsCreateMessageEl.textContent = message;
+    }
+  };
+
+  const resetObjectsCreateForm = () => {
+    if (objectsCreateFormEl) {
+      objectsCreateFormEl.reset();
+    }
+    setObjectsCreateMessage("");
   };
 
   const buildObjectsToolCounts = (toolsList) => {
@@ -5565,11 +5627,25 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     objectsFilterInput?.focus();
   };
 
+  const closeObjectsCreateModal = () => {
+    if (!objectsCreateModalEl) return;
+    objectsCreateModalEl.classList.add("is-hidden");
+    resetObjectsCreateForm();
+  };
+
+  const openObjectsCreateModal = () => {
+    if (!objectsCreateModalEl) return;
+    objectsCreateModalEl.classList.remove("is-hidden");
+    resetObjectsCreateForm();
+    objectsCreateNameInput?.focus();
+  };
+
   const closeObjectsModal = () => {
     if (!objectsModalEl) return;
     objectsModalEl.classList.add("is-hidden");
     resetObjectsForm();
     setObjectsMessage("");
+    closeObjectsCreateModal();
   };
 
   if (objectsBackdropEl) {
@@ -5577,6 +5653,15 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   }
   if (objectsCloseButton) {
     objectsCloseButton.addEventListener("click", closeObjectsModal);
+  }
+  if (objectsCreateBackdropEl) {
+    objectsCreateBackdropEl.addEventListener("click", closeObjectsCreateModal);
+  }
+  if (objectsCreateCloseButton) {
+    objectsCreateCloseButton.addEventListener("click", closeObjectsCreateModal);
+  }
+  if (objectsCreateCancelButton) {
+    objectsCreateCancelButton.addEventListener("click", closeObjectsCreateModal);
   }
 
   const setDemandMessage = (message = "") => {
@@ -12941,6 +13026,46 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     });
   }
 
+  if (objectsCreateFormEl) {
+    objectsCreateFormEl.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const nameRaw = objectsCreateNameInput?.value ?? "";
+      const name = sanitizeObjectName(nameRaw);
+      if (!name) {
+        setObjectsCreateMessage("Введите название объекта.");
+        objectsCreateNameInput?.focus();
+        return;
+      }
+      const latValue = normalizeCoordinateValue(objectsCreateLatInput?.value);
+      const lngValue = normalizeCoordinateValue(objectsCreateLngInput?.value);
+      if (latValue === null || lngValue === null) {
+        setObjectsCreateMessage("Введите корректные координаты.");
+        return;
+      }
+      if (latValue < -90 || latValue > 90 || lngValue < -180 || lngValue > 180) {
+        setObjectsCreateMessage("Координаты вне допустимого диапазона.");
+        return;
+      }
+      const duplicate = objectsState.items.some(
+        (item) => item.name.toLowerCase() === name.toLowerCase()
+      );
+      if (duplicate) {
+        setObjectsCreateMessage("Такой объект уже есть.");
+        return;
+      }
+      const newItem = {
+        id: buildObjectId(),
+        name,
+        coordinates: { lat: latValue, lng: lngValue },
+      };
+      objectsState.items = [...objectsState.items, newItem];
+      setObjectsFilterValue("");
+      renderObjectsList();
+      await saveObjects();
+      closeObjectsCreateModal();
+    });
+  }
+
   if (objectsFilterInput) {
     objectsFilterInput.addEventListener("input", (event) => {
       const value = event.target?.value ?? "";
@@ -12949,11 +13074,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     });
   }
 
-  if (objectsClearButton) {
-    objectsClearButton.addEventListener("click", () => {
-      setObjectsFilterValue("");
-      renderObjectsList();
-      objectsFilterInput?.focus();
+  if (objectsCreateButton) {
+    objectsCreateButton.addEventListener("click", () => {
+      openObjectsCreateModal();
     });
   }
 

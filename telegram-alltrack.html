@@ -91,6 +91,8 @@
       body[data-theme="dark"] .settings-day-groups,
       body[data-theme="dark"] .settings-telegram-group,
       body[data-theme="dark"] .settings-empty-note,
+      body[data-theme="dark"] .tools-map-card,
+      body[data-theme="dark"] .tools-map-legend-item,
       body[data-theme="dark"] .remove-photo-card,
       body[data-theme="dark"] .remove-photo-tool,
       body[data-theme="dark"] .remove-photo-actions,
@@ -1069,6 +1071,178 @@
         display: grid;
         gap: var(--space);
         grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .tools-map-card {
+        padding: var(--space);
+        border-radius: var(--radius-card);
+        background: rgba(255, 255, 255, 0.86);
+        border: 1px solid rgba(226, 232, 240, 0.9);
+        box-shadow: 0 16px 36px rgba(26, 31, 46, 0.08);
+        display: grid;
+        gap: 12px;
+      }
+
+      .tools-map-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .tools-map-title {
+        margin: 0;
+        font-size: var(--text-lg);
+        font-weight: 700;
+        color: var(--text);
+      }
+
+      .tools-map-subtitle {
+        margin: 6px 0 0;
+        font-size: var(--text-sm);
+        color: var(--muted);
+      }
+
+      .tools-map-pill {
+        padding: 6px 12px;
+        border-radius: 999px;
+        background: rgba(59, 125, 255, 0.14);
+        color: var(--accent);
+        font-size: var(--text-sm);
+        font-weight: 700;
+        white-space: nowrap;
+      }
+
+      .tools-map-canvas {
+        position: relative;
+        height: calc(5 * 72px + 4 * var(--grid-gap));
+        border-radius: 20px;
+        background: linear-gradient(145deg, rgba(255, 255, 255, 0.95), rgba(235, 242, 255, 0.75));
+        border: 1px solid rgba(216, 227, 248, 0.9);
+        overflow: hidden;
+      }
+
+      body[data-theme="dark"] .tools-map-canvas {
+        background: linear-gradient(
+          145deg,
+          rgba(22, 30, 50, 0.95),
+          rgba(15, 20, 34, 0.8)
+        );
+        border-color: rgba(148, 170, 210, 0.3);
+      }
+
+      body[data-theme="dark"] .tools-map-canvas::before {
+        background-image: linear-gradient(
+            to right,
+            rgba(123, 178, 255, 0.18) 1px,
+            transparent 1px
+          ),
+          linear-gradient(
+            to bottom,
+            rgba(123, 178, 255, 0.18) 1px,
+            transparent 1px
+          );
+        opacity: 0.35;
+      }
+
+      .tools-map-canvas::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background-image: linear-gradient(
+            to right,
+            rgba(104, 130, 190, 0.12) 1px,
+            transparent 1px
+          ),
+          linear-gradient(
+            to bottom,
+            rgba(104, 130, 190, 0.12) 1px,
+            transparent 1px
+          );
+        background-size: 48px 48px;
+        opacity: 0.6;
+        pointer-events: none;
+      }
+
+      .tools-map-placeholder {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+        text-align: center;
+        font-size: var(--text-md);
+        color: var(--muted);
+      }
+
+      .tools-map-dot {
+        position: absolute;
+        width: 16px;
+        height: 16px;
+        border-radius: 999px;
+        background: var(--accent);
+        box-shadow: 0 0 0 6px rgba(59, 125, 255, 0.2);
+        transform: translate(-50%, -50%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #fff;
+        font-size: 10px;
+        font-weight: 700;
+      }
+
+      .tools-map-dot::after {
+        content: "";
+        position: absolute;
+        inset: -8px;
+        border-radius: 999px;
+        background: rgba(59, 125, 255, 0.12);
+        animation: mapPulse 2.6s ease-in-out infinite;
+        z-index: -1;
+      }
+
+      @keyframes mapPulse {
+        0% {
+          transform: scale(0.6);
+          opacity: 0.8;
+        }
+        70% {
+          transform: scale(1.4);
+          opacity: 0;
+        }
+        100% {
+          opacity: 0;
+        }
+      }
+
+      .tools-map-legend {
+        display: grid;
+        gap: 8px;
+      }
+
+      .tools-map-legend-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 10px 12px;
+        border-radius: 14px;
+        background: rgba(255, 255, 255, 0.68);
+        border: 1px solid rgba(226, 232, 240, 0.8);
+        font-size: var(--text-sm);
+        color: var(--text);
+      }
+
+      .tools-map-legend-item span {
+        color: var(--muted);
+        font-weight: 600;
+      }
+
+      @media (max-width: 420px) {
+        .tools-map-canvas {
+          height: calc(5 * 68px + 4 * var(--grid-gap));
+        }
       }
 
       .stat-card {

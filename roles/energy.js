@@ -53,6 +53,23 @@ export function renderRole(user) {
   return `
     <section class="role-card">
       <div class="dashboard energy-dashboard">
+        <div class="tools-map-card" data-tools-map>
+          <div class="tools-map-header">
+            <div>
+              <h3 class="tools-map-title">Карта инструментов</h3>
+              <p class="tools-map-subtitle" data-tools-map-subtitle>
+                Точки показывают объекты с вашими инструментами.
+              </p>
+            </div>
+            <div class="tools-map-pill" data-tools-map-count>0</div>
+          </div>
+          <div class="tools-map-canvas" data-tools-map-canvas>
+            <div class="tools-map-placeholder" data-tools-map-placeholder>
+              Пока нет координат объектов.
+            </div>
+          </div>
+          <div class="tools-map-legend" data-tools-map-legend></div>
+        </div>
         <div class="action-grid energy-grid" data-energy-grid>
           ${actionsMarkup}
           ${groupToggleMarkup}

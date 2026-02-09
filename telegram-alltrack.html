@@ -1122,6 +1122,19 @@
         overflow: hidden;
       }
 
+      .tools-map-canvas--map::before {
+        opacity: 0;
+      }
+
+      .tools-map-image {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: inherit;
+      }
+
       body[data-theme="dark"] .tools-map-canvas {
         background: linear-gradient(
           145deg,
@@ -1143,6 +1156,10 @@
             transparent 1px
           );
         opacity: 0.35;
+      }
+
+      body[data-theme="dark"] .tools-map-canvas--map::before {
+        opacity: 0;
       }
 
       .tools-map-canvas::before {

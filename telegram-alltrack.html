@@ -2945,16 +2945,17 @@
       }
 
       .objects-modal__panel {
-        width: min(560px, calc(100% - 20px));
-        height: auto;
-        max-height: calc(100vh - 20px);
-        border-radius: 22px;
+        width: 100vw;
+        height: 100vh;
+        max-height: 100vh;
+        border-radius: 0;
         grid-template-rows: auto minmax(0, 1fr);
         background: linear-gradient(160deg, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.78));
         border: 1px solid rgba(148, 163, 184, 0.25);
         box-shadow: 0 24px 60px rgba(15, 23, 42, 0.16);
         backdrop-filter: blur(12px);
         overflow-y: auto;
+        font-size: 14px;
       }
 
       .objects-modal__header {
@@ -2967,24 +2968,24 @@
       }
 
       .objects-modal__header .settings-modal__title h2 {
-        font-size: 24px;
+        font-size: 20px;
       }
 
       .objects-modal__header .settings-modal__title p {
-        font-size: 17px;
+        font-size: 14px;
         line-height: 1.4;
         color: var(--muted);
       }
 
       .objects-modal__close {
         margin-top: 0;
-        width: 56px;
-        height: 56px;
-        border-radius: 18px;
+        width: 48px;
+        height: 48px;
+        border-radius: 14px;
       }
 
       .objects-modal__close .button-icon-emoji {
-        font-size: 24px;
+        font-size: 20px;
       }
 
       .objects-modal__body {
@@ -2994,7 +2995,7 @@
 
       .objects-modal__body .form-message {
         min-height: 0;
-        font-size: 16px;
+        font-size: 14px;
       }
 
       .demand-modal__panel {
@@ -6345,9 +6346,9 @@
       .objects-form__input .form-input {
         flex: 1;
         height: auto;
-        padding: 10px 14px;
+        padding: 9px 12px;
         border-radius: 14px;
-        font-size: 18px;
+        font-size: 15px;
         border: 1px solid rgba(226, 232, 240, 0.9);
         background: rgba(255, 255, 255, 0.92);
         box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.05);
@@ -6357,11 +6358,11 @@
         border: 1px solid rgba(59, 125, 255, 0.25);
         background: linear-gradient(135deg, rgba(59, 125, 255, 0.2), rgba(255, 255, 255, 0.9));
         color: var(--accent);
-        width: 46px;
-        height: 46px;
+        width: 42px;
+        height: 42px;
         padding: 0;
         border-radius: 14px;
-        font-size: 22px;
+        font-size: 18px;
         font-weight: 700;
         display: grid;
         place-items: center;
@@ -6393,7 +6394,7 @@
 
       .objects-form__actions .action-secondary {
         padding: 8px 14px;
-        font-size: 16px;
+        font-size: 14px;
         border-radius: 12px;
       }
 
@@ -6410,7 +6411,7 @@
       }
 
       .objects-list__title {
-        font-size: 17px;
+        font-size: 15px;
         font-weight: 700;
         color: var(--text);
       }
@@ -6420,7 +6421,7 @@
         border-radius: 999px;
         background: rgba(59, 125, 255, 0.12);
         color: var(--accent);
-        font-size: 14px;
+        font-size: 12px;
         font-weight: 700;
       }
 
@@ -6455,7 +6456,7 @@
       }
 
       .objects-item__name {
-        font-size: 16px;
+        font-size: 14px;
         font-weight: 600;
         color: var(--text);
         flex: 1;
@@ -6475,10 +6476,10 @@
         border: 1px solid rgba(226, 232, 240, 0.9);
         background: rgba(255, 255, 255, 0.78);
         color: var(--title-muted);
-        font-size: 21px;
+        font-size: 18px;
         font-weight: 600;
-        width: 38px;
-        height: 38px;
+        width: 34px;
+        height: 34px;
         border-radius: 12px;
         display: grid;
         place-items: center;
@@ -6506,7 +6507,7 @@
         border-radius: 14px;
         border: 1px dashed rgba(226, 232, 240, 0.9);
         background: rgba(255, 255, 255, 0.6);
-        font-size: 16px;
+        font-size: 14px;
         color: var(--muted);
         text-align: center;
       }

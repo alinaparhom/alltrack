@@ -211,11 +211,6 @@ export function renderRole(user) {
                     +
                   </button>
                 </div>
-                <div class="demand-summary__meta">
-                  <span data-demand-total-count>0</span> всего ·
-                  <span data-demand-objects-count>0</span> объектов ·
-                  <span data-demand-shown-count>0</span> показано
-                </div>
               </div>
               <div class="demand-filters">
                 <div class="demand-filters__bar">

@@ -130,29 +130,19 @@ export function renderRole(user) {
                 <div class="form-field objects-form__input">
                   <input
                     class="form-input"
-                    id="objects-name-input"
-                    name="object-name"
-                    placeholder="Название объекта"
-                    aria-label="Название объекта"
+                    id="objects-filter-input"
+                    name="object-filter"
+                    placeholder="Поиск по объектам"
+                    aria-label="Быстрый поиск по объектам"
                     autocomplete="off"
-                    required
                   />
                   <button
                     class="objects-form__submit"
-                    type="submit"
-                    data-energy-objects-submit
-                    aria-label="Добавить объект"
-                  >
-                    +
-                  </button>
-                </div>
-                <div class="objects-form__actions">
-                  <button
-                    class="action-secondary is-hidden"
                     type="button"
-                    data-energy-objects-cancel
+                    data-energy-objects-clear
+                    aria-label="Очистить поиск"
                   >
-                    Отмена
+                    ✕
                   </button>
                 </div>
                 <div class="form-message" data-energy-objects-message></div>
@@ -166,7 +156,7 @@ export function renderRole(user) {
                   <div class="objects-list__grid" data-energy-objects-items></div>
                 </div>
                 <div class="objects-empty is-hidden" data-energy-objects-empty>
-                  Пока нет объектов. Добавьте первый объект выше.
+                  Пока нет объектов.
                 </div>
               </div>
             </div>

@@ -6371,9 +6371,9 @@
       }
 
       .objects-form__submit {
-        border: 1px solid rgba(59, 125, 255, 0.25);
-        background: linear-gradient(135deg, rgba(59, 125, 255, 0.14), rgba(255, 255, 255, 0.95));
-        color: var(--accent);
+        border: 1px solid rgba(47, 158, 103, 0.35);
+        background: linear-gradient(135deg, rgba(47, 158, 103, 0.2), rgba(255, 255, 255, 0.95));
+        color: var(--success);
         width: 36px;
         height: 100%;
         flex: 0 0 36px;
@@ -6388,9 +6388,9 @@
       }
 
       .objects-form__submit[data-mode="edit"] {
-        color: var(--success);
-        border-color: rgba(16, 185, 129, 0.35);
-        background: linear-gradient(135deg, rgba(16, 185, 129, 0.22), rgba(255, 255, 255, 0.9));
+        color: var(--accent);
+        border-color: rgba(59, 125, 255, 0.35);
+        background: linear-gradient(135deg, rgba(59, 125, 255, 0.2), rgba(255, 255, 255, 0.9));
       }
 
       .objects-form__submit:hover {
@@ -6539,6 +6539,28 @@
         font-size: 14px;
         color: var(--muted);
         text-align: center;
+      }
+
+      .objects-create-modal__panel {
+        max-width: 420px;
+      }
+
+      .objects-create-form {
+        display: grid;
+        gap: 12px;
+        padding: 16px;
+      }
+
+      .objects-create-coordinates {
+        display: grid;
+        gap: 12px;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      }
+
+      .objects-create-actions {
+        display: grid;
+        gap: 10px;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
       }
 
       .settings-tag-grid {

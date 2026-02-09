@@ -422,7 +422,9 @@
         color: var(--text);
       }
 
-      body[data-theme="dark"] .objects-modal__panel {
+      body[data-theme="dark"] .objects-modal__panel,
+      body[data-theme="dark"] .objects-edit-modal__panel,
+      body[data-theme="dark"] .objects-create-modal__panel {
         background: linear-gradient(160deg, rgba(15, 23, 42, 0.98), rgba(17, 24, 39, 0.92));
         border-color: rgba(148, 170, 210, 0.35);
       }
@@ -462,6 +464,18 @@
         background: rgba(255, 107, 107, 0.18);
         border-color: rgba(255, 107, 107, 0.35);
         color: #ffb3b3;
+      }
+
+      body[data-theme="dark"] .objects-item--empty {
+        background: rgba(32, 40, 64, 0.8);
+        border-color: rgba(148, 170, 210, 0.35);
+        box-shadow: 0 12px 26px rgba(15, 23, 42, 0.45);
+      }
+
+      body[data-theme="dark"] .objects-item--missing {
+        background: rgba(102, 40, 40, 0.85);
+        border-color: rgba(255, 129, 129, 0.45);
+        box-shadow: 0 14px 30px rgba(255, 107, 107, 0.25);
       }
 
       body[data-theme="dark"] .objects-form__submit {
@@ -6470,6 +6484,18 @@
         box-shadow: 0 8px 18px rgba(15, 23, 42, 0.05);
       }
 
+      .objects-item--empty {
+        background: rgba(148, 163, 184, 0.2);
+        border-color: rgba(148, 163, 184, 0.5);
+        box-shadow: 0 10px 20px rgba(148, 163, 184, 0.25);
+      }
+
+      .objects-item--missing {
+        background: rgba(255, 107, 107, 0.12);
+        border-color: rgba(255, 107, 107, 0.4);
+        box-shadow: 0 12px 24px rgba(255, 107, 107, 0.2);
+      }
+
       .objects-item__content {
         display: grid;
         gap: 2px;
@@ -6531,6 +6557,13 @@
         border-color: rgba(214, 69, 69, 0.3);
       }
 
+      .objects-item__button:disabled {
+        cursor: default;
+        opacity: 0.45;
+        box-shadow: none;
+        transform: none;
+      }
+
       .objects-empty {
         padding: 14px;
         border-radius: 14px;
@@ -6541,20 +6574,16 @@
         text-align: center;
       }
 
-      .objects-create-modal__panel {
+      .objects-create-modal__panel,
+      .objects-edit-modal__panel {
         max-width: 420px;
       }
 
-      .objects-create-form {
+      .objects-create-form,
+      .objects-edit-form {
         display: grid;
         gap: 12px;
         padding: 16px;
-      }
-
-      .objects-create-coordinates {
-        display: grid;
-        gap: 12px;
-        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
       }
 
       .objects-create-actions {

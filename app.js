@@ -4194,8 +4194,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const objectsBackdropEl = contentEl.querySelector("[data-energy-objects-backdrop]");
   const objectsCloseButton = contentEl.querySelector("[data-energy-objects-close]");
   const objectsFormEl = contentEl.querySelector("[data-energy-objects-form]");
-  const objectsSubmitButton = contentEl.querySelector("[data-energy-objects-submit]");
-  const objectsCancelButton = contentEl.querySelector("[data-energy-objects-cancel]");
+  const objectsClearButton = contentEl.querySelector("[data-energy-objects-clear]");
   const objectsMessageEl = contentEl.querySelector("[data-energy-objects-message]");
   const objectsListEl = contentEl.querySelector("[data-energy-objects-list]");
   const objectsItemsEl = contentEl.querySelector("[data-energy-objects-items]");
@@ -5166,8 +5165,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
   const objectsState = {
     items: [],
-    editingId: null,
+    filter: "",
     isSaving: false,
+    toolsCount: new Map(),
   };
   const demandState = {
     items: [],
@@ -5396,7 +5396,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const demandPath = context.demandPath ?? `./${context.orgFolderName}/Заявки.json`;
   const toolsDatabasePath =
     context.toolsDatabasePath ?? `./${context.orgFolderName}/База с инструментами.json`;
-  const objectsNameInput = objectsFormEl?.querySelector("[name='object-name']");
+  const objectsFilterInput = objectsFormEl?.querySelector("[name='object-filter']");
   let selectedUsersOrgName = "";
   let selectedUsersOrgDisplayName = "";
   let selectedUsersOrgNames = [];
@@ -5413,49 +5413,58 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
   };
 
-  const setObjectsSubmitButton = (mode = "add") => {
-    if (!objectsSubmitButton) return;
-    const isEdit = mode === "edit";
-    const label = isEdit ? "Сохранить изменения" : "Добавить объект";
-    objectsSubmitButton.dataset.mode = isEdit ? "edit" : "add";
-    objectsSubmitButton.textContent = isEdit ? "✓" : "+";
-    objectsSubmitButton.setAttribute("aria-label", label);
-    objectsSubmitButton.title = label;
+  const updateObjectsClearState = () => {
+    if (objectsClearButton) {
+      objectsClearButton.disabled = !objectsState.filter;
+    }
+  };
+
+  const setObjectsFilterValue = (value = "") => {
+    objectsState.filter = String(value ?? "").trim();
+    if (objectsFilterInput) {
+      objectsFilterInput.value = objectsState.filter;
+    }
+    updateObjectsClearState();
   };
 
   const resetObjectsForm = () => {
-    if (objectsFormEl) {
-      objectsFormEl.reset();
-    }
-    objectsState.editingId = null;
-    setObjectsSubmitButton("add");
-    if (objectsCancelButton) {
-      objectsCancelButton.classList.add("is-hidden");
-    }
+    setObjectsFilterValue("");
+    setObjectsMessage("");
   };
 
-  const startEditObject = (item) => {
-    objectsState.editingId = item.id;
-    if (objectsNameInput) {
-      objectsNameInput.value = item.name;
-      objectsNameInput.focus();
-    }
-    setObjectsSubmitButton("edit");
-    if (objectsCancelButton) {
-      objectsCancelButton.classList.remove("is-hidden");
-    }
+  const buildObjectsToolCounts = (toolsList) => {
+    const counts = new Map();
+    toolsList.forEach((tool) => {
+      if (!tool || typeof tool !== "object") return;
+      const objectName = sanitizeObjectName(tool["Объект"] ?? tool.object ?? "");
+      if (!objectName) return;
+      const key = objectName.toLowerCase();
+      counts.set(key, (counts.get(key) ?? 0) + 1);
+    });
+    return counts;
   };
 
   const renderObjectsList = () => {
     if (!objectsItemsEl) return;
     objectsItemsEl.innerHTML = "";
+    const query = objectsState.filter.toLowerCase();
+    const filteredItems = objectsState.items.filter((item) => {
+      if (!query) return true;
+      return item.name.toLowerCase().includes(query);
+    });
     if (objectsCountEl) {
-      objectsCountEl.textContent = String(objectsState.items.length);
+      objectsCountEl.textContent = query
+        ? `${filteredItems.length}/${objectsState.items.length}`
+        : String(objectsState.items.length);
     }
     if (objectsEmptyEl) {
-      objectsEmptyEl.classList.toggle("is-hidden", objectsState.items.length > 0);
+      const isEmpty = filteredItems.length === 0;
+      objectsEmptyEl.classList.toggle("is-hidden", !isEmpty);
+      objectsEmptyEl.textContent = query
+        ? "По фильтру ничего не найдено."
+        : "Пока нет объектов.";
     }
-    objectsState.items.forEach((item) => {
+    filteredItems.forEach((item) => {
       const itemEl = document.createElement("div");
       itemEl.className = "objects-item";
       itemEl.dataset.objectId = item.id;
@@ -5463,6 +5472,17 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const nameEl = document.createElement("div");
       nameEl.className = "objects-item__name";
       nameEl.textContent = item.name;
+
+      const metaEl = document.createElement("div");
+      metaEl.className = "objects-item__meta";
+      const countEl = document.createElement("span");
+      countEl.className = "objects-item__count";
+      const countKey = sanitizeObjectName(item.name).toLowerCase();
+      const toolCount = objectsState.toolsCount.get(countKey) ?? 0;
+      countEl.textContent = String(toolCount);
+      const labelEl = document.createElement("span");
+      labelEl.textContent = "инстр.";
+      metaEl.append(countEl, labelEl);
 
       const actionsEl = document.createElement("div");
       actionsEl.className = "objects-item__actions";
@@ -5484,7 +5504,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       deleteButton.title = "Удалить";
 
       actionsEl.append(editButton, deleteButton);
-      itemEl.append(nameEl, actionsEl);
+      itemEl.append(nameEl, metaEl, actionsEl);
       objectsItemsEl.appendChild(itemEl);
     });
   };
@@ -5493,12 +5513,18 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (!objectsItemsEl) return;
     setObjectsMessage("Загружаем список объектов...");
     try {
-      const raw = await loadJson(objectsPath);
-      objectsState.items = normalizeObjectsData(raw);
+      const [objectsRaw, toolsRaw] = await Promise.all([
+        loadJson(objectsPath),
+        loadJson(toolsDatabasePath).catch(() => []),
+      ]);
+      objectsState.items = normalizeObjectsData(objectsRaw);
+      const toolsList = normalizeToolsData(toolsRaw);
+      objectsState.toolsCount = buildObjectsToolCounts(toolsList);
       setObjectsMessage("");
     } catch (error) {
       console.warn("Не удалось загрузить объекты.", error);
       objectsState.items = [];
+      objectsState.toolsCount = new Map();
       setObjectsMessage("Не удалось загрузить список объектов.");
     }
     renderObjectsList();
@@ -5524,9 +5550,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     objectsModalEl.classList.remove("is-hidden");
     resetObjectsForm();
     await loadObjects();
-    if (objectsNameInput) {
-      objectsNameInput.focus();
-    }
+    objectsFilterInput?.focus();
   };
 
   const closeObjectsModal = () => {
@@ -12899,37 +12923,25 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     });
   }
 
-  if (objectsCancelButton) {
-    objectsCancelButton.addEventListener("click", () => {
-      resetObjectsForm();
-      setObjectsMessage("");
+  if (objectsFormEl) {
+    objectsFormEl.addEventListener("submit", (event) => {
+      event.preventDefault();
     });
   }
 
-  if (objectsFormEl) {
-    objectsFormEl.addEventListener("submit", async (event) => {
-      event.preventDefault();
-      if (!objectsNameInput) return;
-      const name = sanitizeObjectName(objectsNameInput.value);
-      if (!name) {
-        setObjectsMessage("Введите название объекта.");
-        return;
-      }
-
-      if (objectsState.editingId) {
-        const target = objectsState.items.find(
-          (item) => item.id === objectsState.editingId
-        );
-        if (target) {
-          target.name = name;
-        }
-      } else {
-        objectsState.items.unshift({ id: buildObjectId(), name });
-      }
-
+  if (objectsFilterInput) {
+    objectsFilterInput.addEventListener("input", (event) => {
+      const value = event.target?.value ?? "";
+      setObjectsFilterValue(value);
       renderObjectsList();
-      await saveObjects();
-      resetObjectsForm();
+    });
+  }
+
+  if (objectsClearButton) {
+    objectsClearButton.addEventListener("click", () => {
+      setObjectsFilterValue("");
+      renderObjectsList();
+      objectsFilterInput?.focus();
     });
   }
 
@@ -12945,7 +12957,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
       const action = actionButton.dataset.objectAction;
       if (action === "edit") {
-        startEditObject(item);
+        const nextName = window.prompt("Новое название объекта:", item.name);
+        if (!nextName) return;
+        const sanitized = sanitizeObjectName(nextName);
+        if (!sanitized) return;
+        item.name = sanitized;
+        renderObjectsList();
+        await saveObjects();
         return;
       }
       if (action === "delete") {

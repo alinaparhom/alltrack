@@ -4235,10 +4235,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const toolsMapEl = contentEl.querySelector("[data-tools-map]");
   const toolsMapCanvasEl = contentEl.querySelector("[data-tools-map-canvas]");
   const toolsMapImageEl = contentEl.querySelector("[data-tools-map-image]");
-  const toolsMapLegendEl = contentEl.querySelector("[data-tools-map-legend]");
   const toolsMapCountEl = contentEl.querySelector("[data-tools-map-count]");
   const toolsMapPlaceholderEl = contentEl.querySelector("[data-tools-map-placeholder]");
-  const toolsMapSubtitleEl = contentEl.querySelector("[data-tools-map-subtitle]");
   const updateQuickAccessOffset = () => {
     if (!quickAccessEl) return;
     const rect = quickAccessEl.getBoundingClientRect();
@@ -5531,46 +5529,58 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     objectsSubtitleEl.textContent = orgLabel;
   }
 
-  const buildYandexStaticMapUrl = (points) => {
+  const buildToolsMapBounds = (points) => {
+    const safePoints = Array.isArray(points) ? points : [];
+    if (!safePoints.length) return null;
+    const latValues = safePoints.map((point) => point.coordinates.lat);
+    const lngValues = safePoints.map((point) => point.coordinates.lng);
+    const minLat = Math.min(...latValues);
+    const maxLat = Math.max(...latValues);
+    const minLng = Math.min(...lngValues);
+    const maxLng = Math.max(...lngValues);
+    const latPadding = Math.max(0.01, (maxLat - minLat) * 0.2);
+    const lngPadding = Math.max(0.01, (maxLng - minLng) * 0.2);
+    return {
+      minLat: minLat - latPadding,
+      maxLat: maxLat + latPadding,
+      minLng: minLng - lngPadding,
+      maxLng: maxLng + lngPadding,
+    };
+  };
+
+  const buildYandexStaticMapUrl = (points, bounds) => {
     const safePoints = Array.isArray(points) ? points : [];
     if (!safePoints.length) return "";
     const width = 640;
     const height = 420;
-    const markers = safePoints
-      .map(
-        (point) => `${point.coordinates.lng},${point.coordinates.lat},pm2rdm`
-      )
-      .join("~");
 
     const params = new URLSearchParams({
       lang: "ru_RU",
       l: "map",
       size: `${width},${height}`,
-      pt: markers,
     });
 
-    if (safePoints.length === 1) {
-      const point = safePoints[0];
-      params.set("ll", `${point.coordinates.lng},${point.coordinates.lat}`);
-      params.set("z", "13");
-    } else {
-      const latValues = safePoints.map((point) => point.coordinates.lat);
-      const lngValues = safePoints.map((point) => point.coordinates.lng);
-      const minLat = Math.min(...latValues);
-      const maxLat = Math.max(...latValues);
-      const minLng = Math.min(...lngValues);
-      const maxLng = Math.max(...lngValues);
-      const latPadding = Math.max(0.01, (maxLat - minLat) * 0.2);
-      const lngPadding = Math.max(0.01, (maxLng - minLng) * 0.2);
-      const bbox = `${(minLng - lngPadding).toFixed(6)},${(
-        minLat - latPadding
-      ).toFixed(6)}~${(maxLng + lngPadding).toFixed(6)},${(
-        maxLat + latPadding
-      ).toFixed(6)}`;
+    if (bounds) {
+      const bbox = `${bounds.minLng.toFixed(6)},${bounds.minLat.toFixed(
+        6
+      )}~${bounds.maxLng.toFixed(6)},${bounds.maxLat.toFixed(6)}`;
       params.set("bbox", bbox);
     }
 
     return `https://static-maps.yandex.ru/1.x/?${params.toString()}`;
+  };
+
+  const projectToolsMapPoint = (point, bounds) => {
+    if (!bounds) return { x: 0.5, y: 0.5 };
+    const lngRange = bounds.maxLng - bounds.minLng || 0.001;
+    const latRange = bounds.maxLat - bounds.minLat || 0.001;
+    const rawX = (point.coordinates.lng - bounds.minLng) / lngRange;
+    const rawY = 1 - (point.coordinates.lat - bounds.minLat) / latRange;
+    const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
+    return {
+      x: clamp(rawX, 0.04, 0.96),
+      y: clamp(rawY, 0.06, 0.94),
+    };
   };
 
   const renderToolsMap = (points) => {
@@ -5579,16 +5589,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (toolsMapCountEl) {
       toolsMapCountEl.textContent = `${safePoints.length} объектов`;
     }
-    if (toolsMapSubtitleEl) {
-      toolsMapSubtitleEl.textContent = safePoints.length
-        ? "Объекты с вашими инструментами на карте."
-        : "Точки показывают объекты с вашими инструментами.";
-    }
     const existingDots = toolsMapCanvasEl.querySelectorAll(".tools-map-dot");
     existingDots.forEach((dot) => dot.remove());
-    if (toolsMapLegendEl) {
-      toolsMapLegendEl.innerHTML = "";
-    }
     if (!safePoints.length) {
       toolsMapPlaceholderEl?.classList.remove("is-hidden");
       toolsMapCanvasEl.classList.remove("tools-map-canvas--map");
@@ -5600,25 +5602,24 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
     toolsMapPlaceholderEl?.classList.add("is-hidden");
     toolsMapCanvasEl.classList.add("tools-map-canvas--map");
+    const bounds = buildToolsMapBounds(safePoints);
     if (toolsMapImageEl) {
-      const mapUrl = buildYandexStaticMapUrl(safePoints);
+      const mapUrl = buildYandexStaticMapUrl(safePoints, bounds);
       toolsMapImageEl.src = mapUrl;
       toolsMapImageEl.classList.remove("is-hidden");
     }
-
-    if (toolsMapLegendEl) {
-      toolsMapLegendEl.innerHTML = safePoints
-        .slice()
-        .sort((a, b) => b.count - a.count)
-        .map(
-          (point) => `
-            <div class="tools-map-legend-item">
-              <div>${escapeHtml(point.name)}</div>
-            </div>
-          `
-        )
-        .join("");
-    }
+    safePoints.forEach((point) => {
+      const position = projectToolsMapPoint(point, bounds);
+      const dot = document.createElement("div");
+      dot.className = "tools-map-dot";
+      dot.style.left = `${(position.x * 100).toFixed(2)}%`;
+      dot.style.top = `${(position.y * 100).toFixed(2)}%`;
+      dot.innerHTML = `
+        <span class="tools-map-dot__title">${escapeHtml(point.name)}</span>
+        <span class="tools-map-dot__count">${point.count}</span>
+      `;
+      toolsMapCanvasEl.appendChild(dot);
+    });
   };
 
   const updateToolsMap = async () => {

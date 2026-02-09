@@ -179,7 +179,7 @@ export function renderRole(user) {
             <div class="settings-modal__header objects-create-modal__header">
               <div class="settings-modal__title">
                 <h2>Новый объект</h2>
-                <p>Введите название и координаты на карте</p>
+                <p>Введите название и координаты объекта</p>
               </div>
               <button
                 class="button-icon objects-modal__close"
@@ -207,41 +207,21 @@ export function renderRole(user) {
                   required
                 />
               </div>
-              <div class="objects-create-coordinates">
-                <div class="form-field">
-                  <label class="form-label" for="objects-create-lat">
-                    Широта
-                  </label>
-                  <input
-                    class="form-input"
-                    id="objects-create-lat"
-                    name="object-lat"
-                    type="number"
-                    step="0.000001"
-                    min="-90"
-                    max="90"
-                    placeholder="55.7558"
-                    inputmode="decimal"
-                    required
-                  />
-                </div>
-                <div class="form-field">
-                  <label class="form-label" for="objects-create-lng">
-                    Долгота
-                  </label>
-                  <input
-                    class="form-input"
-                    id="objects-create-lng"
-                    name="object-lng"
-                    type="number"
-                    step="0.000001"
-                    min="-180"
-                    max="180"
-                    placeholder="37.6173"
-                    inputmode="decimal"
-                    required
-                  />
-                </div>
+              <div class="form-field">
+                <label class="form-label" for="objects-create-coordinates">
+                  Координаты (широта, долгота)
+                </label>
+                <input
+                  class="form-input"
+                  id="objects-create-coordinates"
+                  name="object-coordinates"
+                  placeholder="53.912103, 27.572346"
+                  autocomplete="off"
+                  inputmode="decimal"
+                />
+                <span class="form-hint">
+                  Можно оставить пустым — объект будет подсвечен красным.
+                </span>
               </div>
               <div class="objects-create-actions">
                 <button
@@ -256,6 +236,83 @@ export function renderRole(user) {
                 </button>
               </div>
               <div class="form-message" data-energy-objects-create-message></div>
+            </form>
+          </div>
+        </div>
+        <div
+          class="objects-edit-modal settings-modal is-hidden"
+          data-energy-objects-edit-modal
+        >
+          <div
+            class="settings-modal__backdrop"
+            data-energy-objects-edit-backdrop
+          ></div>
+          <div
+            class="settings-modal__panel objects-edit-modal__panel"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Редактирование объекта"
+          >
+            <div class="settings-modal__header objects-create-modal__header">
+              <div class="settings-modal__title">
+                <h2>Редактирование объекта</h2>
+                <p>Исправьте название или координаты</p>
+              </div>
+              <button
+                class="button-icon objects-modal__close"
+                type="button"
+                data-energy-objects-edit-close
+                aria-label="Закрыть окно редактирования объекта"
+              >
+                <span class="button-icon-emoji" aria-hidden="true">✕</span>
+              </button>
+            </div>
+            <form
+              class="objects-edit-form form-card"
+              data-energy-objects-edit-form
+            >
+              <div class="form-field">
+                <label class="form-label" for="objects-edit-name">
+                  Название объекта
+                </label>
+                <input
+                  class="form-input"
+                  id="objects-edit-name"
+                  name="object-name"
+                  placeholder="Например: Склад Ленина"
+                  autocomplete="off"
+                  required
+                />
+              </div>
+              <div class="form-field">
+                <label class="form-label" for="objects-edit-coordinates">
+                  Координаты (широта, долгота)
+                </label>
+                <input
+                  class="form-input"
+                  id="objects-edit-coordinates"
+                  name="object-coordinates"
+                  placeholder="53.912103, 27.572346"
+                  autocomplete="off"
+                  inputmode="decimal"
+                />
+                <span class="form-hint">
+                  Оставьте пустым, если координаты неизвестны.
+                </span>
+              </div>
+              <div class="objects-create-actions">
+                <button
+                  class="action-secondary"
+                  type="button"
+                  data-energy-objects-edit-cancel
+                >
+                  Отмена
+                </button>
+                <button class="action-primary" type="submit">
+                  Сохранить
+                </button>
+              </div>
+              <div class="form-message" data-energy-objects-edit-message></div>
             </form>
           </div>
         </div>

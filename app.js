@@ -4233,20 +4233,38 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const objectsCreateModalEl = contentEl.querySelector(
     "[data-energy-objects-create-modal]"
   );
+  const objectsEditModalEl = contentEl.querySelector(
+    "[data-energy-objects-edit-modal]"
+  );
   const objectsCreateBackdropEl = contentEl.querySelector(
     "[data-energy-objects-create-backdrop]"
+  );
+  const objectsEditBackdropEl = contentEl.querySelector(
+    "[data-energy-objects-edit-backdrop]"
   );
   const objectsCreateCloseButton = contentEl.querySelector(
     "[data-energy-objects-create-close]"
   );
+  const objectsEditCloseButton = contentEl.querySelector(
+    "[data-energy-objects-edit-close]"
+  );
   const objectsCreateCancelButton = contentEl.querySelector(
     "[data-energy-objects-create-cancel]"
+  );
+  const objectsEditCancelButton = contentEl.querySelector(
+    "[data-energy-objects-edit-cancel]"
   );
   const objectsCreateFormEl = contentEl.querySelector(
     "[data-energy-objects-create-form]"
   );
+  const objectsEditFormEl = contentEl.querySelector(
+    "[data-energy-objects-edit-form]"
+  );
   const objectsCreateMessageEl = contentEl.querySelector(
     "[data-energy-objects-create-message]"
+  );
+  const objectsEditMessageEl = contentEl.querySelector(
+    "[data-energy-objects-edit-message]"
   );
   const demandModalEl = contentEl.querySelector("[data-demand-modal]");
   const demandBackdropEl = contentEl.querySelector("[data-demand-backdrop]");
@@ -5215,6 +5233,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     filter: "",
     isSaving: false,
     toolsCount: new Map(),
+    editingId: null,
   };
   const demandState = {
     items: [],
@@ -5447,11 +5466,14 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const objectsCreateNameInput = objectsCreateFormEl?.querySelector(
     "[name='object-name']"
   );
-  const objectsCreateLatInput = objectsCreateFormEl?.querySelector(
-    "[name='object-lat']"
+  const objectsCreateCoordinatesInput = objectsCreateFormEl?.querySelector(
+    "[name='object-coordinates']"
   );
-  const objectsCreateLngInput = objectsCreateFormEl?.querySelector(
-    "[name='object-lng']"
+  const objectsEditNameInput = objectsEditFormEl?.querySelector(
+    "[name='object-name']"
+  );
+  const objectsEditCoordinatesInput = objectsEditFormEl?.querySelector(
+    "[name='object-coordinates']"
   );
   let selectedUsersOrgName = "";
   let selectedUsersOrgDisplayName = "";
@@ -5487,11 +5509,62 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
   };
 
+  const setObjectsEditMessage = (message = "") => {
+    if (objectsEditMessageEl) {
+      objectsEditMessageEl.textContent = message;
+    }
+  };
+
   const resetObjectsCreateForm = () => {
     if (objectsCreateFormEl) {
       objectsCreateFormEl.reset();
     }
     setObjectsCreateMessage("");
+  };
+
+  const resetObjectsEditForm = () => {
+    if (objectsEditFormEl) {
+      objectsEditFormEl.reset();
+    }
+    objectsState.editingId = null;
+    setObjectsEditMessage("");
+  };
+
+  const formatCoordinatesInput = (coordinates) => {
+    if (!coordinates) return "";
+    const lat = Number.isFinite(coordinates.lat) ? coordinates.lat : null;
+    const lng = Number.isFinite(coordinates.lng) ? coordinates.lng : null;
+    if (lat === null || lng === null) return "";
+    return `${lat}, ${lng}`;
+  };
+
+  const parseCoordinatesInput = (value = "") => {
+    const raw = String(value ?? "").trim();
+    if (!raw) {
+      return { coordinates: null, error: "" };
+    }
+    const parts = raw
+      .split(",")
+      .map((part) => part.trim())
+      .filter(Boolean);
+    if (parts.length !== 2) {
+      return {
+        coordinates: null,
+        error: "Введите координаты в формате: 53.912103, 27.572346",
+      };
+    }
+    const latValue = normalizeCoordinateValue(parts[0]);
+    const lngValue = normalizeCoordinateValue(parts[1]);
+    if (latValue === null || lngValue === null) {
+      return { coordinates: null, error: "Введите корректные координаты." };
+    }
+    if (latValue < -90 || latValue > 90 || lngValue < -180 || lngValue > 180) {
+      return {
+        coordinates: null,
+        error: "Координаты вне допустимого диапазона.",
+      };
+    }
+    return { coordinates: { lat: latValue, lng: lngValue }, error: "" };
   };
 
   const buildObjectsToolCounts = (toolsList) => {
@@ -5504,6 +5577,85 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       counts.set(key, (counts.get(key) ?? 0) + 1);
     });
     return counts;
+  };
+
+  const normalizeObjectCompare = (value = "") =>
+    sanitizeObjectName(value).toLowerCase();
+
+  const isObjectKeyName = (key = "") => {
+    const normalized = String(key ?? "").trim().toLowerCase();
+    if (!normalized) return false;
+    return normalized.includes("объект") || ["object", "location"].includes(normalized);
+  };
+
+  const updateObjectNameInData = (data, oldName, newName) => {
+    const oldNormalized = normalizeObjectCompare(oldName);
+    if (!oldNormalized) return { data, changed: false };
+    const updateNode = (node) => {
+      if (Array.isArray(node)) {
+        let changed = false;
+        const next = node.map((item) => {
+          const result = updateNode(item);
+          if (result.changed) changed = true;
+          return result.value;
+        });
+        return { value: changed ? next : node, changed };
+      }
+      if (node && typeof node === "object") {
+        let changed = false;
+        const next = { ...node };
+        Object.entries(node).forEach(([key, value]) => {
+          if (typeof value === "string" && isObjectKeyName(key)) {
+            if (normalizeObjectCompare(value) === oldNormalized) {
+              next[key] = newName;
+              changed = true;
+              return;
+            }
+          }
+          if (value && typeof value === "object") {
+            const result = updateNode(value);
+            if (result.changed) {
+              next[key] = result.value;
+              changed = true;
+            }
+          }
+        });
+        return { value: changed ? next : node, changed };
+      }
+      return { value: node, changed: false };
+    };
+    const result = updateNode(data);
+    return { data: result.value, changed: result.changed };
+  };
+
+  const replaceObjectNameInList = (list, oldName, newName) => {
+    const oldNormalized = normalizeObjectCompare(oldName);
+    return list.map((item) => {
+      if (normalizeObjectCompare(item) === oldNormalized) {
+        return newName;
+      }
+      return item;
+    });
+  };
+
+  const replaceObjectNameInToolsList = (list, oldName, newName) => {
+    const oldNormalized = normalizeObjectCompare(oldName);
+    return list.map((tool) => {
+      if (!tool || typeof tool !== "object") return tool;
+      const currentName = String(tool?.["Объект"] ?? "").trim();
+      if (normalizeObjectCompare(currentName) !== oldNormalized) return tool;
+      return { ...tool, "Объект": newName };
+    });
+  };
+
+  const replaceObjectNameInDemands = (list, oldName, newName) => {
+    const oldNormalized = normalizeObjectCompare(oldName);
+    return list.map((entry) => {
+      if (!entry || typeof entry !== "object") return entry;
+      const currentName = String(entry.object ?? "").trim();
+      if (normalizeObjectCompare(currentName) !== oldNormalized) return entry;
+      return { ...entry, object: newName };
+    });
   };
 
   const formatObjectsToolsLabel = (count) => {
@@ -5553,6 +5705,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
       const countKey = sanitizeObjectName(item.name).toLowerCase();
       const toolCount = objectsState.toolsCount.get(countKey) ?? 0;
+      if (toolCount === 0) {
+        itemEl.classList.add("objects-item--empty");
+      }
+      if (!item.coordinates) {
+        itemEl.classList.add("objects-item--missing");
+      }
       const toolsEl = document.createElement("div");
       toolsEl.className = "objects-item__tools";
       toolsEl.textContent = formatObjectsToolsLabel(toolCount);
@@ -5574,7 +5732,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       deleteButton.dataset.objectAction = "delete";
       deleteButton.textContent = "✕";
       deleteButton.setAttribute("aria-label", "Удалить");
-      deleteButton.title = "Удалить";
+      deleteButton.title =
+        toolCount > 0
+          ? "Нельзя удалить: на объекте есть инструменты"
+          : "Удалить";
+      deleteButton.disabled = toolCount > 0;
 
       actionsEl.append(editButton, deleteButton);
       contentEl.append(nameEl, toolsEl);
@@ -5640,12 +5802,33 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     objectsCreateNameInput?.focus();
   };
 
+  const closeObjectsEditModal = () => {
+    if (!objectsEditModalEl) return;
+    objectsEditModalEl.classList.add("is-hidden");
+    resetObjectsEditForm();
+  };
+
+  const openObjectsEditModal = (item) => {
+    if (!objectsEditModalEl || !item) return;
+    objectsState.editingId = item.id;
+    if (objectsEditNameInput) {
+      objectsEditNameInput.value = item.name ?? "";
+    }
+    if (objectsEditCoordinatesInput) {
+      objectsEditCoordinatesInput.value = formatCoordinatesInput(item.coordinates);
+    }
+    setObjectsEditMessage("");
+    objectsEditModalEl.classList.remove("is-hidden");
+    objectsEditNameInput?.focus();
+  };
+
   const closeObjectsModal = () => {
     if (!objectsModalEl) return;
     objectsModalEl.classList.add("is-hidden");
     resetObjectsForm();
     setObjectsMessage("");
     closeObjectsCreateModal();
+    closeObjectsEditModal();
   };
 
   if (objectsBackdropEl) {
@@ -5662,6 +5845,15 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   }
   if (objectsCreateCancelButton) {
     objectsCreateCancelButton.addEventListener("click", closeObjectsCreateModal);
+  }
+  if (objectsEditBackdropEl) {
+    objectsEditBackdropEl.addEventListener("click", closeObjectsEditModal);
+  }
+  if (objectsEditCloseButton) {
+    objectsEditCloseButton.addEventListener("click", closeObjectsEditModal);
+  }
+  if (objectsEditCancelButton) {
+    objectsEditCancelButton.addEventListener("click", closeObjectsEditModal);
   }
 
   const setDemandMessage = (message = "") => {
@@ -13036,14 +13228,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         objectsCreateNameInput?.focus();
         return;
       }
-      const latValue = normalizeCoordinateValue(objectsCreateLatInput?.value);
-      const lngValue = normalizeCoordinateValue(objectsCreateLngInput?.value);
-      if (latValue === null || lngValue === null) {
-        setObjectsCreateMessage("Введите корректные координаты.");
-        return;
-      }
-      if (latValue < -90 || latValue > 90 || lngValue < -180 || lngValue > 180) {
-        setObjectsCreateMessage("Координаты вне допустимого диапазона.");
+      const { coordinates, error } = parseCoordinatesInput(
+        objectsCreateCoordinatesInput?.value
+      );
+      if (error) {
+        setObjectsCreateMessage(error);
+        objectsCreateCoordinatesInput?.focus();
         return;
       }
       const duplicate = objectsState.items.some(
@@ -13056,13 +13246,146 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const newItem = {
         id: buildObjectId(),
         name,
-        coordinates: { lat: latValue, lng: lngValue },
+        coordinates: coordinates ?? null,
       };
       objectsState.items = [...objectsState.items, newItem];
       setObjectsFilterValue("");
       renderObjectsList();
       await saveObjects();
       closeObjectsCreateModal();
+    });
+  }
+
+  if (objectsEditFormEl) {
+    objectsEditFormEl.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      if (objectsState.isSaving) return;
+      const item = objectsState.items.find(
+        (entry) => entry.id === objectsState.editingId
+      );
+      if (!item) {
+        setObjectsEditMessage("Не удалось найти объект.");
+        return;
+      }
+      const nameRaw = objectsEditNameInput?.value ?? "";
+      const name = sanitizeObjectName(nameRaw);
+      if (!name) {
+        setObjectsEditMessage("Введите название объекта.");
+        objectsEditNameInput?.focus();
+        return;
+      }
+      const { coordinates, error } = parseCoordinatesInput(
+        objectsEditCoordinatesInput?.value
+      );
+      if (error) {
+        setObjectsEditMessage(error);
+        objectsEditCoordinatesInput?.focus();
+        return;
+      }
+      const duplicate = objectsState.items.some(
+        (entry) =>
+          entry.id !== item.id && entry.name.toLowerCase() === name.toLowerCase()
+      );
+      if (duplicate) {
+        setObjectsEditMessage("Такой объект уже есть.");
+        return;
+      }
+      const oldName = item.name;
+      objectsState.items = objectsState.items.map((entry) =>
+        entry.id === item.id
+          ? { ...entry, name, coordinates: coordinates ?? null }
+          : entry
+      );
+      const nameChanged = normalizeObjectCompare(oldName) !== normalizeObjectCompare(name);
+      if (nameChanged) {
+        const oldKey = normalizeObjectCompare(oldName);
+        const newKey = normalizeObjectCompare(name);
+        const count = objectsState.toolsCount.get(oldKey);
+        if (count !== undefined) {
+          objectsState.toolsCount.set(newKey, count);
+          objectsState.toolsCount.delete(oldKey);
+        }
+      }
+      objectsState.isSaving = true;
+      setObjectsEditMessage("Сохраняем изменения...");
+      try {
+        const entries = [];
+        const meta = { user };
+        entries.push({ path: objectsPath, data: objectsState.items, ...meta });
+        if (nameChanged) {
+          const orgFolder = context.orgFolderName ?? "";
+          const movesPath = orgFolder ? `./${orgFolder}/Перемещения.json` : "";
+          const updateTargets = [
+            { key: "tools", path: toolsDatabasePath },
+            { key: "demand", path: demandPath },
+            ...(movesPath ? [{ key: "moves", path: movesPath }] : []),
+          ];
+          const results = await Promise.allSettled(
+            updateTargets.map((target) => loadJson(target.path))
+          );
+          let updatedTools = null;
+          results.forEach((result, index) => {
+            if (result.status !== "fulfilled") return;
+            const target = updateTargets[index];
+            const update = updateObjectNameInData(result.value, oldName, name);
+            if (!update.changed) return;
+            entries.push({ path: target.path, data: update.data, ...meta });
+            if (target.key === "tools") {
+              updatedTools = update.data;
+            }
+          });
+          if (updatedTools) {
+            const normalizedTools = normalizeToolsData(updatedTools);
+            objectsState.toolsCount = buildObjectsToolCounts(normalizedTools);
+            toolsState.tools = replaceObjectNameInToolsList(
+              toolsState.tools,
+              oldName,
+              name
+            );
+            toolsState.filtered = replaceObjectNameInToolsList(
+              toolsState.filtered,
+              oldName,
+              name
+            );
+          }
+          demandState.items = replaceObjectNameInDemands(
+            demandState.items,
+            oldName,
+            name
+          );
+          demandState.filtered = replaceObjectNameInDemands(
+            demandState.filtered,
+            oldName,
+            name
+          );
+          demandState.objects = replaceObjectNameInList(
+            demandState.objects,
+            oldName,
+            name
+          );
+          addToolState.objectOptions = replaceObjectNameInList(
+            addToolState.objectOptions,
+            oldName,
+            name
+          );
+          toolsMoveState.objectOptions = replaceObjectNameInList(
+            toolsMoveState.objectOptions,
+            oldName,
+            name
+          );
+        }
+        await saveEntries(entries);
+        setObjectsEditMessage("Объект обновлён.");
+        renderObjectsList();
+        setTimeout(() => {
+          closeObjectsEditModal();
+        }, 400);
+      } catch (error) {
+        console.error(error);
+        setObjectsEditMessage("Не удалось сохранить изменения.");
+      } finally {
+        objectsState.isSaving = false;
+      }
     });
   }
 
@@ -13092,16 +13415,18 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
       const action = actionButton.dataset.objectAction;
       if (action === "edit") {
-        const nextName = window.prompt("Новое название объекта:", item.name);
-        if (!nextName) return;
-        const sanitized = sanitizeObjectName(nextName);
-        if (!sanitized) return;
-        item.name = sanitized;
-        renderObjectsList();
-        await saveObjects();
+        openObjectsEditModal(item);
         return;
       }
       if (action === "delete") {
+        const countKey = sanitizeObjectName(item.name).toLowerCase();
+        const toolCount = objectsState.toolsCount.get(countKey) ?? 0;
+        if (toolCount > 0) {
+          setObjectsMessage(
+            "Нельзя удалить объект, пока на нем есть инструменты."
+          );
+          return;
+        }
         const confirmDelete = window.confirm(
           `Удалить объект «${item.name}»?`
         );

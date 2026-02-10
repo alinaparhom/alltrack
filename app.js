@@ -5768,7 +5768,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         toolsMapLayerEl.innerHTML = "";
         toolsMapState.map = window.L.map(toolsMapLayerEl, {
           zoomControl: true,
-          attributionControl: true,
+          attributionControl: false,
           minZoom: 2,
           maxZoom: 19,
           tap: true,
@@ -5776,7 +5776,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
         window.L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
           maxZoom: 19,
-          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
         }).addTo(toolsMapState.map);
 
         toolsMapState.markersLayer = window.L.layerGroup().addTo(toolsMapState.map);

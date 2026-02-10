@@ -5657,85 +5657,99 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     activated: false,
     points: [],
     map: null,
-    markersLayer: null,
-    leafletPromise: null,
+    markers: [],
+    yandexPromise: null,
   };
 
-  const ensureLeafletLoaded = () => {
-    if (window.L?.map) {
-      return Promise.resolve(window.L);
+  const ensureYandexMapsLoaded = () => {
+    if (window.ymaps?.Map) {
+      return Promise.resolve(window.ymaps);
     }
 
-    if (toolsMapState.leafletPromise) {
-      return toolsMapState.leafletPromise;
+    if (toolsMapState.yandexPromise) {
+      return toolsMapState.yandexPromise;
     }
 
-    toolsMapState.leafletPromise = new Promise((resolve, reject) => {
-      if (!document.getElementById("leaflet-css")) {
-        const stylesheet = document.createElement("link");
-        stylesheet.id = "leaflet-css";
-        stylesheet.rel = "stylesheet";
-        stylesheet.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
-        stylesheet.integrity =
-          "sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=";
-        stylesheet.crossOrigin = "";
-        document.head.appendChild(stylesheet);
-      }
+    toolsMapState.yandexPromise = new Promise((resolve, reject) => {
+      const resolveWhenReady = () => {
+        if (!window.ymaps?.ready) {
+          reject(new Error("API Яндекс.Карт не готов"));
+          return;
+        }
+        window.ymaps.ready(() => resolve(window.ymaps));
+      };
 
-      const existingScript = document.getElementById("leaflet-js");
+      const existingScript = document.getElementById("yandex-maps-js");
       if (existingScript) {
-        existingScript.addEventListener("load", () => resolve(window.L), {
-          once: true,
-        });
+        existingScript.addEventListener("load", resolveWhenReady, { once: true });
         existingScript.addEventListener(
           "error",
-          () => reject(new Error("Не удалось загрузить Leaflet")),
+          () => reject(new Error("Не удалось загрузить API Яндекс.Карт")),
           { once: true }
         );
+        if (window.ymaps?.ready) {
+          resolveWhenReady();
+        }
         return;
       }
 
       const script = document.createElement("script");
-      script.id = "leaflet-js";
-      script.src = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
-      script.integrity = "sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=";
-      script.crossOrigin = "";
-      script.onload = () => resolve(window.L);
-      script.onerror = () => reject(new Error("Не удалось загрузить Leaflet"));
+      script.id = "yandex-maps-js";
+      script.src = "https://api-maps.yandex.ru/2.1/?lang=ru_RU";
+      script.onload = resolveWhenReady;
+      script.onerror = () => reject(new Error("Не удалось загрузить API Яндекс.Карт"));
       document.body.appendChild(script);
     });
 
-    return toolsMapState.leafletPromise;
+    return toolsMapState.yandexPromise;
   };
 
   const syncInteractiveToolsMap = () => {
-    if (!toolsMapState.map || !window.L || !toolsMapState.markersLayer) return;
+    if (!toolsMapState.map || !window.ymaps) return;
     const safePoints = Array.isArray(toolsMapState.points) ? toolsMapState.points : [];
-    toolsMapState.markersLayer.clearLayers();
+    toolsMapState.markers.forEach((marker) => {
+      toolsMapState.map?.geoObjects.remove(marker);
+    });
+    toolsMapState.markers = [];
 
     if (!safePoints.length) {
-      toolsMapState.map.setView([53.9, 27.56], 10);
+      toolsMapState.map.setCenter([53.9, 27.56], 10, {
+        duration: 240,
+      });
       return;
     }
 
-    const bounds = window.L.latLngBounds([]);
+    const bounds = [];
     safePoints.forEach((point) => {
       const lat = Number(point?.coordinates?.lat);
       const lng = Number(point?.coordinates?.lng);
       if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
 
-      bounds.extend([lat, lng]);
-      const marker = window.L.marker([lat, lng]);
-      marker.bindPopup(
-        `<strong>${escapeHtml(point.name)}</strong><br>Инструментов: ${Number(point.count) || 0}`
+      bounds.push([lat, lng]);
+      const marker = new window.ymaps.Placemark(
+        [lat, lng],
+        {
+          balloonContentHeader: escapeHtml(point.name),
+          balloonContentBody: `Инструментов: ${Number(point.count) || 0}`,
+          hintContent: `${escapeHtml(point.name)} · ${Number(point.count) || 0}`,
+        },
+        {
+          preset: "islands#blueCircleDotIcon",
+        }
       );
-      marker.addTo(toolsMapState.markersLayer);
+      toolsMapState.map.geoObjects.add(marker);
+      toolsMapState.markers.push(marker);
     });
 
-    if (bounds.isValid()) {
-      toolsMapState.map.fitBounds(bounds, {
-        padding: [30, 30],
-        maxZoom: 16,
+    if (bounds.length) {
+      if (bounds.length === 1) {
+        toolsMapState.map.setCenter(bounds[0], 15, { duration: 260 });
+        return;
+      }
+      toolsMapState.map.setBounds(bounds, {
+        checkZoomRange: true,
+        zoomMargin: [34, 34, 34, 34],
+        duration: 260,
       });
     }
   };
@@ -5751,7 +5765,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
 
     try {
-      await ensureLeafletLoaded();
+      await ensureYandexMapsLoaded();
       toolsMapState.activated = true;
       toolsMapCanvasEl.classList.add("tools-map-canvas--interactive");
       toolsMapCanvasEl.classList.add("tools-map-canvas--interactive-live");
@@ -5766,21 +5780,19 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
       if (!toolsMapState.map) {
         toolsMapLayerEl.innerHTML = "";
-        toolsMapState.map = window.L.map(toolsMapLayerEl, {
-          zoomControl: true,
-          attributionControl: false,
-          minZoom: 2,
-          maxZoom: 19,
-          tap: true,
-        });
-
-        window.L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-          maxZoom: 19,
-        }).addTo(toolsMapState.map);
-
-        toolsMapState.markersLayer = window.L.layerGroup().addTo(toolsMapState.map);
+        toolsMapState.map = new window.ymaps.Map(
+          toolsMapLayerEl,
+          {
+            center: [53.9, 27.56],
+            zoom: 10,
+            controls: ["zoomControl", "geolocationControl"],
+          },
+          {
+            suppressMapOpenBlock: true,
+          }
+        );
         window.setTimeout(() => {
-          toolsMapState.map?.invalidateSize();
+          toolsMapState.map?.container?.fitToViewport?.();
         }, 80);
       }
 

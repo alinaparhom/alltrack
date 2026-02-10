@@ -5724,17 +5724,20 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const lat = Number(point?.coordinates?.lat);
       const lng = Number(point?.coordinates?.lng);
       if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+      const safePointName = escapeHtml(point.name);
+      const toolsCount = Number(point.count) || 0;
 
       bounds.push([lat, lng]);
       const marker = new window.ymaps.Placemark(
         [lat, lng],
         {
-          balloonContentHeader: escapeHtml(point.name),
-          balloonContentBody: `Инструментов: ${Number(point.count) || 0}`,
-          hintContent: `${escapeHtml(point.name)} · ${Number(point.count) || 0}`,
+          balloonContentHeader: safePointName,
+          balloonContentBody: `Инструментов: ${toolsCount}`,
+          hintContent: `${safePointName} · ${toolsCount}`,
+          iconCaption: `${safePointName} · ${toolsCount}`,
         },
         {
-          preset: "islands#blueCircleDotIcon",
+          preset: "islands#blueCircleDotIconWithCaption",
         }
       );
       toolsMapState.map.geoObjects.add(marker);

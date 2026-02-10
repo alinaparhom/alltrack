@@ -5589,6 +5589,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const renderToolsMap = (points) => {
     if (!toolsMapCanvasEl || !toolsMapEl) return;
     const safePoints = Array.isArray(points) ? points : [];
+    toolsMapState.points = safePoints;
     if (toolsMapCountEl) {
       toolsMapCountEl.textContent = `${safePoints.length} объектов`;
     }
@@ -5601,6 +5602,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       if (toolsMapImageEl) {
         toolsMapImageEl.classList.add("is-hidden");
         toolsMapImageEl.removeAttribute("src");
+      }
+      if (toolsMapState.activated) {
+        syncInteractiveToolsMap();
       }
       return;
     }
@@ -5624,6 +5628,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       `;
       mapContentEl.appendChild(dot);
     });
+
+    if (toolsMapState.activated) {
+      syncInteractiveToolsMap();
+    }
   };
 
   const setToolsMapCollapsedState = (collapsed) => {
@@ -5647,80 +5655,149 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
   const toolsMapState = {
     activated: false,
-    scale: 1,
-    translateX: 0,
-    translateY: 0,
-    pointerId: null,
-    lastX: 0,
-    lastY: 0,
-    pinchStartDistance: 0,
-    pinchStartScale: 1,
-    activePointers: new Map(),
+    points: [],
+    map: null,
+    markersLayer: null,
+    leafletPromise: null,
   };
 
-  const clampToolsMapScale = (value) => Math.min(4, Math.max(0.7, value));
+  const ensureLeafletLoaded = () => {
+    if (window.L?.map) {
+      return Promise.resolve(window.L);
+    }
 
-  const clampToolsMapTranslation = () => {
-    if (!toolsMapCanvasEl) return;
-    const rect = toolsMapCanvasEl.getBoundingClientRect();
-    const maxTranslateX = Math.max(0, (rect.width * (toolsMapState.scale - 1)) / 2);
-    const maxTranslateY = Math.max(0, (rect.height * (toolsMapState.scale - 1)) / 2);
-    toolsMapState.translateX = Math.min(
-      maxTranslateX,
-      Math.max(-maxTranslateX, toolsMapState.translateX)
-    );
-    toolsMapState.translateY = Math.min(
-      maxTranslateY,
-      Math.max(-maxTranslateY, toolsMapState.translateY)
-    );
+    if (toolsMapState.leafletPromise) {
+      return toolsMapState.leafletPromise;
+    }
+
+    toolsMapState.leafletPromise = new Promise((resolve, reject) => {
+      if (!document.getElementById("leaflet-css")) {
+        const stylesheet = document.createElement("link");
+        stylesheet.id = "leaflet-css";
+        stylesheet.rel = "stylesheet";
+        stylesheet.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
+        stylesheet.integrity =
+          "sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=";
+        stylesheet.crossOrigin = "";
+        document.head.appendChild(stylesheet);
+      }
+
+      const existingScript = document.getElementById("leaflet-js");
+      if (existingScript) {
+        existingScript.addEventListener("load", () => resolve(window.L), {
+          once: true,
+        });
+        existingScript.addEventListener(
+          "error",
+          () => reject(new Error("Не удалось загрузить Leaflet")),
+          { once: true }
+        );
+        return;
+      }
+
+      const script = document.createElement("script");
+      script.id = "leaflet-js";
+      script.src = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
+      script.integrity = "sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=";
+      script.crossOrigin = "";
+      script.onload = () => resolve(window.L);
+      script.onerror = () => reject(new Error("Не удалось загрузить Leaflet"));
+      document.body.appendChild(script);
+    });
+
+    return toolsMapState.leafletPromise;
   };
 
-  const getPointerDistance = (first, second) => {
-    const dx = first.x - second.x;
-    const dy = first.y - second.y;
-    return Math.hypot(dx, dy);
-  };
+  const syncInteractiveToolsMap = () => {
+    if (!toolsMapState.map || !window.L || !toolsMapState.markersLayer) return;
+    const safePoints = Array.isArray(toolsMapState.points) ? toolsMapState.points : [];
+    toolsMapState.markersLayer.clearLayers();
 
-  const applyToolsMapTransform = () => {
-    if (!toolsMapLayerEl) return;
-    clampToolsMapTranslation();
-    toolsMapLayerEl.style.transform = `translate(${toolsMapState.translateX}px, ${toolsMapState.translateY}px) scale(${toolsMapState.scale})`;
-  };
-
-  const zoomToolsMapAtPoint = (targetScale, clientX, clientY) => {
-    if (!toolsMapCanvasEl) return;
-    const nextScale = clampToolsMapScale(targetScale);
-    const prevScale = toolsMapState.scale;
-    if (Math.abs(nextScale - prevScale) < 0.0001) return;
-
-    const rect = toolsMapCanvasEl.getBoundingClientRect();
-    const anchorX =
-      typeof clientX === "number" ? clientX - rect.left - rect.width / 2 : 0;
-    const anchorY =
-      typeof clientY === "number" ? clientY - rect.top - rect.height / 2 : 0;
-    const scaleRatio = nextScale / prevScale;
-
-    toolsMapState.translateX =
-      (toolsMapState.translateX - anchorX) * scaleRatio + anchorX;
-    toolsMapState.translateY =
-      (toolsMapState.translateY - anchorY) * scaleRatio + anchorY;
-    toolsMapState.scale = nextScale;
-    applyToolsMapTransform();
-  };
-
-  const activateToolsMapInteraction = () => {
-    if (!toolsMapCanvasEl || !toolsMapLayerEl || toolsMapState.activated || isToolsMapCollapsed) {
+    if (!safePoints.length) {
+      toolsMapState.map.setView([53.9, 27.56], 10);
       return;
     }
-    toolsMapState.activated = true;
-    toolsMapCanvasEl.classList.add("tools-map-canvas--interactive");
-    toolsMapCanvasEl.setAttribute("aria-label", "Карта активна. Перемещайте и меняйте масштаб жестами");
-    applyToolsMapTransform();
+
+    const bounds = window.L.latLngBounds([]);
+    safePoints.forEach((point) => {
+      const lat = Number(point?.coordinates?.lat);
+      const lng = Number(point?.coordinates?.lng);
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+
+      bounds.extend([lat, lng]);
+      const marker = window.L.marker([lat, lng]);
+      marker.bindPopup(
+        `<strong>${escapeHtml(point.name)}</strong><br>Инструментов: ${Number(point.count) || 0}`
+      );
+      marker.addTo(toolsMapState.markersLayer);
+    });
+
+    if (bounds.isValid()) {
+      toolsMapState.map.fitBounds(bounds, {
+        padding: [30, 30],
+        maxZoom: 16,
+      });
+    }
   };
 
-  const awakenToolsMap = () => {
+  const activateToolsMapInteraction = async () => {
+    if (
+      !toolsMapCanvasEl ||
+      !toolsMapLayerEl ||
+      toolsMapState.activated ||
+      isToolsMapCollapsed
+    ) {
+      return;
+    }
+
+    try {
+      await ensureLeafletLoaded();
+      toolsMapState.activated = true;
+      toolsMapCanvasEl.classList.add("tools-map-canvas--interactive");
+      toolsMapCanvasEl.classList.add("tools-map-canvas--interactive-live");
+      toolsMapCanvasEl.classList.add("tools-map-canvas--map");
+      toolsMapCanvasEl.setAttribute(
+        "aria-label",
+        "Карта активна. Перемещайте карту и меняйте масштаб"
+      );
+
+      toolsMapPlaceholderEl?.classList.add("is-hidden");
+      toolsMapImageEl?.classList.add("is-hidden");
+
+      if (!toolsMapState.map) {
+        toolsMapLayerEl.innerHTML = "";
+        toolsMapState.map = window.L.map(toolsMapLayerEl, {
+          zoomControl: true,
+          attributionControl: true,
+          minZoom: 2,
+          maxZoom: 19,
+          tap: true,
+        });
+
+        window.L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+          maxZoom: 19,
+          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+        }).addTo(toolsMapState.map);
+
+        toolsMapState.markersLayer = window.L.layerGroup().addTo(toolsMapState.map);
+        window.setTimeout(() => {
+          toolsMapState.map?.invalidateSize();
+        }, 80);
+      }
+
+      syncInteractiveToolsMap();
+    } catch (error) {
+      console.warn("Не удалось активировать интерактивную карту.", error);
+      toolsMapCanvasEl.setAttribute(
+        "aria-label",
+        "Не удалось загрузить интерактивную карту, попробуйте позже"
+      );
+    }
+  };
+
+  const awakenToolsMap = async () => {
     if (!toolsMapCanvasEl || isToolsMapCollapsed) return;
-    activateToolsMapInteraction();
+    await activateToolsMapInteraction();
     toolsMapCanvasEl.classList.remove("tools-map-canvas--alive");
     window.requestAnimationFrame(() => {
       toolsMapCanvasEl.classList.add("tools-map-canvas--alive");
@@ -5730,17 +5807,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     });
   };
 
-  const clearToolsMapPointer = (pointerId) => {
-    toolsMapState.activePointers.delete(pointerId);
-    if (toolsMapState.pointerId === pointerId) {
-      toolsMapState.pointerId = null;
-    }
-    if (toolsMapState.activePointers.size < 2) {
-      toolsMapState.pinchStartDistance = 0;
-      toolsMapState.pinchStartScale = toolsMapState.scale;
-    }
-  };
-
   if (toolsMapToggleEl) {
     toolsMapToggleEl.addEventListener("click", () => {
       setToolsMapCollapsedState(!isToolsMapCollapsed);
@@ -5748,86 +5814,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   }
 
   if (toolsMapCanvasEl) {
-    toolsMapCanvasEl.addEventListener("click", awakenToolsMap);
+    toolsMapCanvasEl.addEventListener("click", () => {
+      void awakenToolsMap();
+    });
     toolsMapCanvasEl.addEventListener("keydown", (event) => {
       if (event.key !== "Enter" && event.key !== " ") return;
       event.preventDefault();
-      awakenToolsMap();
-    });
-
-    toolsMapCanvasEl.addEventListener("wheel", (event) => {
-      if (!toolsMapLayerEl || isToolsMapCollapsed || !toolsMapState.activated) return;
-      event.preventDefault();
-      const delta = event.deltaY < 0 ? 0.12 : -0.12;
-      zoomToolsMapAtPoint(toolsMapState.scale + delta, event.clientX, event.clientY);
-    });
-
-    toolsMapCanvasEl.addEventListener("pointerdown", (event) => {
-      if (isToolsMapCollapsed || !toolsMapState.activated) return;
-      toolsMapCanvasEl.setPointerCapture(event.pointerId);
-      toolsMapState.activePointers.set(event.pointerId, {
-        x: event.clientX,
-        y: event.clientY,
-      });
-
-      if (toolsMapState.activePointers.size === 1) {
-        toolsMapState.pointerId = event.pointerId;
-        toolsMapState.lastX = event.clientX;
-        toolsMapState.lastY = event.clientY;
-        return;
-      }
-
-      if (toolsMapState.activePointers.size === 2) {
-        const [first, second] = [...toolsMapState.activePointers.values()];
-        toolsMapState.pinchStartDistance = getPointerDistance(first, second);
-        toolsMapState.pinchStartScale = toolsMapState.scale;
-      }
-    });
-
-    toolsMapCanvasEl.addEventListener("pointermove", (event) => {
-      if (!toolsMapState.activated || isToolsMapCollapsed) return;
-      if (!toolsMapState.activePointers.has(event.pointerId)) return;
-
-      toolsMapState.activePointers.set(event.pointerId, {
-        x: event.clientX,
-        y: event.clientY,
-      });
-
-      if (toolsMapState.activePointers.size >= 2) {
-        const [first, second] = [...toolsMapState.activePointers.values()];
-        const distance = getPointerDistance(first, second);
-        if (toolsMapState.pinchStartDistance > 0) {
-          const factor = distance / toolsMapState.pinchStartDistance;
-          zoomToolsMapAtPoint(
-            toolsMapState.pinchStartScale * factor,
-            (first.x + second.x) / 2,
-            (first.y + second.y) / 2
-          );
-        }
-        return;
-      }
-
-      if (toolsMapState.pointerId !== event.pointerId) return;
-      const dx = event.clientX - toolsMapState.lastX;
-      const dy = event.clientY - toolsMapState.lastY;
-      toolsMapState.lastX = event.clientX;
-      toolsMapState.lastY = event.clientY;
-      toolsMapState.translateX += dx;
-      toolsMapState.translateY += dy;
-      applyToolsMapTransform();
-    });
-
-    toolsMapCanvasEl.addEventListener("pointerup", (event) => {
-      clearToolsMapPointer(event.pointerId);
-      try {
-        toolsMapCanvasEl.releasePointerCapture(event.pointerId);
-      } catch (error) {
-        // ignore release errors for already released pointers
-      }
-    });
-
-    toolsMapCanvasEl.addEventListener("pointercancel", (event) => {
-      clearToolsMapPointer(event.pointerId);
+      void awakenToolsMap();
     });
   }
 

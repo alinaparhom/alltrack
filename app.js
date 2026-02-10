@@ -5655,6 +5655,15 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     lastY: 0,
     pinchStartDistance: 0,
     pinchStartScale: 1,
+    activePointers: new Map(),
+  };
+
+  const clampToolsMapScale = (value) => Math.min(4, Math.max(1, value));
+
+  const getPointerDistance = (first, second) => {
+    const dx = first.x - second.x;
+    const dy = first.y - second.y;
+    return Math.hypot(dx, dy);
   };
 
   const applyToolsMapTransform = () => {
@@ -5684,6 +5693,17 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     });
   };
 
+  const clearToolsMapPointer = (pointerId) => {
+    toolsMapState.activePointers.delete(pointerId);
+    if (toolsMapState.pointerId === pointerId) {
+      toolsMapState.pointerId = null;
+    }
+    if (toolsMapState.activePointers.size < 2) {
+      toolsMapState.pinchStartDistance = 0;
+      toolsMapState.pinchStartScale = toolsMapState.scale;
+    }
+  };
+
   if (toolsMapToggleEl) {
     toolsMapToggleEl.addEventListener("click", () => {
       setToolsMapCollapsedState(!isToolsMapCollapsed);
@@ -5699,27 +5719,55 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     });
 
     toolsMapCanvasEl.addEventListener("wheel", (event) => {
-      if (!toolsMapLayerEl || isToolsMapCollapsed) return;
+      if (!toolsMapLayerEl || isToolsMapCollapsed || !toolsMapState.activated) return;
       event.preventDefault();
-      activateToolsMapInteraction();
       const delta = event.deltaY < 0 ? 0.12 : -0.12;
-      toolsMapState.scale = Math.min(3, Math.max(1, toolsMapState.scale + delta));
+      toolsMapState.scale = clampToolsMapScale(toolsMapState.scale + delta);
       applyToolsMapTransform();
     });
 
     toolsMapCanvasEl.addEventListener("pointerdown", (event) => {
-      if (isToolsMapCollapsed) return;
-      activateToolsMapInteraction();
+      if (isToolsMapCollapsed || !toolsMapState.activated) return;
       toolsMapCanvasEl.setPointerCapture(event.pointerId);
-      if (toolsMapState.pointerId === null) {
+      toolsMapState.activePointers.set(event.pointerId, {
+        x: event.clientX,
+        y: event.clientY,
+      });
+
+      if (toolsMapState.activePointers.size === 1) {
         toolsMapState.pointerId = event.pointerId;
         toolsMapState.lastX = event.clientX;
         toolsMapState.lastY = event.clientY;
+        return;
+      }
+
+      if (toolsMapState.activePointers.size === 2) {
+        const [first, second] = [...toolsMapState.activePointers.values()];
+        toolsMapState.pinchStartDistance = getPointerDistance(first, second);
+        toolsMapState.pinchStartScale = toolsMapState.scale;
       }
     });
 
     toolsMapCanvasEl.addEventListener("pointermove", (event) => {
       if (!toolsMapState.activated || isToolsMapCollapsed) return;
+      if (!toolsMapState.activePointers.has(event.pointerId)) return;
+
+      toolsMapState.activePointers.set(event.pointerId, {
+        x: event.clientX,
+        y: event.clientY,
+      });
+
+      if (toolsMapState.activePointers.size >= 2) {
+        const [first, second] = [...toolsMapState.activePointers.values()];
+        const distance = getPointerDistance(first, second);
+        if (toolsMapState.pinchStartDistance > 0) {
+          const factor = distance / toolsMapState.pinchStartDistance;
+          toolsMapState.scale = clampToolsMapScale(toolsMapState.pinchStartScale * factor);
+          applyToolsMapTransform();
+        }
+        return;
+      }
+
       if (toolsMapState.pointerId !== event.pointerId) return;
       const dx = event.clientX - toolsMapState.lastX;
       const dy = event.clientY - toolsMapState.lastY;
@@ -5731,16 +5779,16 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     });
 
     toolsMapCanvasEl.addEventListener("pointerup", (event) => {
-      if (toolsMapState.pointerId === event.pointerId) {
-        toolsMapState.pointerId = null;
+      clearToolsMapPointer(event.pointerId);
+      try {
+        toolsMapCanvasEl.releasePointerCapture(event.pointerId);
+      } catch (error) {
+        // ignore release errors for already released pointers
       }
-      toolsMapCanvasEl.releasePointerCapture(event.pointerId);
     });
 
     toolsMapCanvasEl.addEventListener("pointercancel", (event) => {
-      if (toolsMapState.pointerId === event.pointerId) {
-        toolsMapState.pointerId = null;
-      }
+      clearToolsMapPointer(event.pointerId);
     });
   }
 

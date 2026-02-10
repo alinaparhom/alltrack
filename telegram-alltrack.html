@@ -1209,6 +1209,21 @@
         cursor: grab;
       }
 
+      .tools-map-canvas--interactive-live {
+        touch-action: pan-x pan-y;
+      }
+
+      .tools-map-canvas--interactive-live .tools-map-layer {
+        transform: none !important;
+      }
+
+      .tools-map-canvas--interactive-live .leaflet-container {
+        width: 100%;
+        height: 100%;
+        background: #eef3ff;
+        font-family: inherit;
+      }
+
       .tools-map-canvas--interactive:active {
         cursor: grabbing;
       }

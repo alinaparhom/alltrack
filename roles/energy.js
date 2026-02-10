@@ -624,6 +624,44 @@ export function renderRole(user) {
             </div>
           </div>
         </div>
+        <div class="demand-request-map-modal settings-modal is-hidden" data-demand-request-map-modal>
+          <div
+            class="settings-modal__backdrop"
+            data-demand-request-map-backdrop
+          ></div>
+          <div
+            class="settings-modal__panel demand-request-map-modal__panel"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Карта заявки"
+          >
+            <div class="settings-modal__header demand-request-map-modal__header">
+              <div class="settings-modal__title">
+                <h2 data-demand-request-map-title>Карта заявки</h2>
+                <p data-demand-request-map-subtitle>Загружаем объекты...</p>
+              </div>
+              <button
+                class="button-icon demand-request-map-modal__close"
+                type="button"
+                data-demand-request-map-close
+                aria-label="Закрыть карту заявки"
+              >
+                <span class="button-icon-emoji" aria-hidden="true">✕</span>
+              </button>
+            </div>
+            <div class="settings-modal__body demand-request-map-modal__body">
+              <div
+                class="tools-map-canvas demand-request-map__canvas"
+                data-demand-request-map-canvas
+                tabindex="0"
+                role="button"
+                aria-label="Карта активна. Перемещайте карту и меняйте масштаб"
+              >
+                <div class="tools-map-layer" data-demand-request-map-layer></div>
+              </div>
+            </div>
+          </div>
+        </div>
         <div class="tools-modal settings-modal is-hidden" data-tools-modal>
           <div class="settings-modal__backdrop" data-tools-backdrop></div>
           <div

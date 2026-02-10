@@ -496,6 +496,11 @@
         border-color: rgba(148, 170, 210, 0.35);
       }
 
+      body[data-theme="dark"] .demand-request-map-modal__panel {
+        background: linear-gradient(160deg, rgba(15, 23, 42, 0.98), rgba(17, 24, 39, 0.92));
+        border-color: rgba(148, 170, 210, 0.35);
+      }
+
       body[data-theme="dark"] .demand-summary,
       body[data-theme="dark"] .demand-form,
       body[data-theme="dark"] .demand-card,
@@ -3497,6 +3502,44 @@
         border: 1px solid rgba(148, 163, 184, 0.25);
         box-shadow: 0 24px 60px rgba(15, 23, 42, 0.16);
         overflow: hidden;
+      }
+
+      .demand-request-map-modal__panel {
+        width: min(860px, calc(100% - 20px));
+        max-height: calc(100vh - 20px);
+        border-radius: 22px;
+        grid-template-rows: auto minmax(0, 1fr);
+        background: linear-gradient(160deg, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.86));
+        border: 1px solid rgba(148, 163, 184, 0.25);
+        box-shadow: 0 24px 60px rgba(15, 23, 42, 0.16);
+        overflow: hidden;
+      }
+
+      .demand-request-map-modal__header {
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: start;
+        gap: 8px;
+        padding: 16px 18px 10px;
+        border-bottom: 1px solid rgba(226, 232, 240, 0.85);
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0));
+      }
+
+      .demand-request-map-modal__close {
+        margin-top: 0;
+        width: 56px;
+        height: 56px;
+        border-radius: 18px;
+      }
+
+      .demand-request-map-modal__body {
+        padding: 12px;
+        display: grid;
+        overflow: auto;
+      }
+
+      .demand-request-map__canvas {
+        min-height: min(62vh, 540px);
+        border-radius: 14px;
       }
 
       .demand-modal__header {

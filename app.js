@@ -7285,7 +7285,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (!toolsSearchMapCanvasEl) return;
     const safePoints = Array.isArray(points) ? points : [];
     toolsSearchMapState.points = safePoints;
-    const mapContentEl = toolsSearchMapLayerEl ?? toolsSearchMapCanvasEl;
+    const mapContentEl = toolsSearchMapCanvasEl;
     const existingDots = mapContentEl.querySelectorAll(".tools-map-dot");
     existingDots.forEach((dot) => dot.remove());
 
@@ -7324,9 +7324,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       dot.setAttribute("aria-label", `${point.name}: ${point.count} инструментов`);
       dot.style.left = `${(position.x * 100).toFixed(2)}%`;
       dot.style.top = `${(position.y * 100).toFixed(2)}%`;
-      dot.innerHTML = isFiltering
-        ? ""
-        : `
+      dot.innerHTML = `
         <span class="tools-map-dot__title">${escapeHtml(point.name)}</span>
         <span class="tools-map-dot__count">${point.count}</span>
       `;
@@ -7393,7 +7391,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
 
     const bounds = [];
-    const isFiltering = hasActiveToolsSearchFilters();
     safePoints.forEach((point) => {
       const lat = Number(point?.coordinates?.lat);
       const lng = Number(point?.coordinates?.lng);
@@ -7406,7 +7403,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         {
           balloonContentHeader: escapeHtml(point.name),
           balloonContentBody: `Инструментов: ${toolsCount}`,
-          hintContent: isFiltering ? "" : `${escapeHtml(point.name)} · ${toolsCount}`,
+          hintContent: `${escapeHtml(point.name)} · ${toolsCount}`,
           iconCaption: "",
         },
         {

@@ -7240,20 +7240,22 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     );
   };
 
+  const getVisibleToolsSearchPoints = (points) => {
+    const safePoints = Array.isArray(points) ? points : [];
+    const mapBounds = toolsSearchMapState.map?.getBounds?.();
+    if (!mapBounds) {
+      return safePoints;
+    }
+    return safePoints.filter((point) => isToolsPointInBounds(point, mapBounds));
+  };
+
   const updateToolsZoneSubtitle = () => {
     if (toolsState.view !== "map" || !toolsSearchMapState.map) {
       setToolsZoneSubtitle("");
       return;
     }
-    const mapBounds = toolsSearchMapState.map.getBounds?.();
-    if (!mapBounds) {
-      setToolsZoneSubtitle("");
-      return;
-    }
-
     const visibleObjectNames = new Set(
-      toolsSearchMapState.points
-        .filter((point) => isToolsPointInBounds(point, mapBounds))
+      getVisibleToolsSearchPoints(toolsSearchMapState.points)
         .map((point) => String(point.name ?? "").trim().toLowerCase())
         .filter(Boolean)
     );
@@ -7315,34 +7317,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       toolsSearchMapImageEl.classList.remove("is-hidden");
     }
 
-    const currentMapBounds = toolsSearchMapState.map?.getBounds?.();
-    const visiblePoints = currentMapBounds
-      ? safePoints.filter((point) => isToolsPointInBounds(point, currentMapBounds))
-      : safePoints;
-
-    visiblePoints.forEach((point) => {
-      const position = projectToolsMapPoint(point, bounds);
-      const dot = document.createElement("button");
-      dot.className = "tools-map-dot";
-      dot.classList.toggle("tools-map-dot--filtered", isFiltering);
-      dot.type = "button";
-      dot.setAttribute("aria-label", `${point.name}: ${point.count} инструментов`);
-      dot.style.left = `${(position.x * 100).toFixed(2)}%`;
-      dot.style.top = `${(position.y * 100).toFixed(2)}%`;
-      dot.innerHTML = `
-        <span class="tools-map-dot__title">${escapeHtml(point.name)}</span>
-        <span class="tools-map-dot__count">${point.count}</span>
-      `;
-      dot.addEventListener("click", (event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        toolsState.filters.object = point.name;
-        syncToolsFilterValue("object", point.name);
-        applyToolsFilters();
-      });
-      mapContentEl.appendChild(dot);
-    });
-
     void ensureToolsSearchMapReady();
   };
 
@@ -7351,7 +7325,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     interactive: false,
     points: [],
     map: null,
-    clusterer: null,
     markers: [],
     boundsListenerAttached: false,
   };
@@ -7371,7 +7344,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       : [];
 
     toolsSearchMapState.markers.forEach((marker) => {
-      toolsSearchMapState.clusterer?.remove(marker);
       toolsSearchMapState.map?.geoObjects.remove(marker);
     });
     toolsSearchMapState.markers = [];
@@ -7409,17 +7381,14 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       }
     }
 
-    const currentMapBounds = toolsSearchMapState.map.getBounds?.();
-    const visiblePoints = currentMapBounds
-      ? safePoints.filter((point) => isToolsPointInBounds(point, currentMapBounds))
-      : safePoints;
+    const visiblePoints = getVisibleToolsSearchPoints(safePoints);
 
     visiblePoints.forEach((point) => {
       const lat = Number(point?.coordinates?.lat);
       const lng = Number(point?.coordinates?.lng);
       if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
       const toolsCount = Number(point.count) || 0;
-      const label = `${point.name} · ${toolsCount}`;
+      const label = `${point.name} · ${toolsCount} шт.`;
 
       const marker = new window.ymaps.Placemark(
         [lat, lng],
@@ -7439,11 +7408,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         syncToolsFilterValue("object", point.name);
         applyToolsFilters();
       });
-      if (toolsSearchMapState.clusterer) {
-        toolsSearchMapState.clusterer.add(marker);
-      } else {
-        toolsSearchMapState.map.geoObjects.add(marker);
-      }
+      toolsSearchMapState.map.geoObjects.add(marker);
       toolsSearchMapState.markers.push(marker);
     });
 
@@ -7485,13 +7450,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
             suppressMapOpenBlock: true,
           }
         );
-        toolsSearchMapState.clusterer = new window.ymaps.Clusterer({
-          preset: "islands#invertedBlueClusterIcons",
-          groupByCoordinates: false,
-          clusterDisableClickZoom: false,
-          clusterOpenBalloonOnClick: true,
-        });
-        toolsSearchMapState.map.geoObjects.add(toolsSearchMapState.clusterer);
         window.setTimeout(() => {
           toolsSearchMapState.map?.container?.fitToViewport?.();
         }, 80);

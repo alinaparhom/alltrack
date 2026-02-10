@@ -442,15 +442,6 @@ export function renderRole(user) {
                       Мои
                     </button>
                   </div>
-                  <button
-                    class="demand-map-toggle"
-                    type="button"
-                    data-demand-map-toggle
-                    aria-label="Показать карту заявок"
-                    aria-pressed="false"
-                  >
-                    <span class="demand-map-toggle__icon" aria-hidden="true">🗺️</span>
-                  </button>
                 </div>
                 <div class="demand-filters__panel is-hidden" data-demand-filters-panel>
                   <div class="demand-filter-row">
@@ -480,23 +471,6 @@ export function renderRole(user) {
                 </div>
               </div>
               <div class="demand-list" data-demand-list></div>
-              <div class="demand-map is-hidden" data-demand-map>
-                <div
-                  class="tools-map-canvas demand-map__canvas"
-                  data-demand-map-canvas
-                  aria-label="Карта потребностей"
-                >
-                  <div class="tools-map-layer" data-demand-map-layer></div>
-                  <img
-                    class="tools-map-image is-hidden"
-                    data-demand-map-image
-                    alt="Карта заявок"
-                  />
-                  <div class="tools-map-placeholder" data-demand-map-placeholder>
-                    Нет объектов с координатами для карты.
-                  </div>
-                </div>
-              </div>
               <div class="demand-empty is-hidden" data-demand-empty>
                 Пока нет потребностей. Добавьте первую заявку сверху.
               </div>

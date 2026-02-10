@@ -1326,6 +1326,8 @@
       }
 
       .tools-map-dot {
+        appearance: none;
+        -webkit-appearance: none;
         position: absolute;
         transform: translate(-50%, -50%);
         display: flex;
@@ -1340,8 +1342,16 @@
         color: var(--text);
         font-size: 11px;
         font-weight: 600;
+        font-family: inherit;
+        line-height: 1.2;
+        cursor: pointer;
         backdrop-filter: blur(12px);
         max-width: 75%;
+      }
+
+      .tools-map-dot:focus-visible {
+        outline: 2px solid rgba(59, 125, 255, 0.55);
+        outline-offset: 2px;
       }
 
       .tools-map-dot::before {

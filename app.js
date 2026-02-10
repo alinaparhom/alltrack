@@ -7346,6 +7346,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     interactive: false,
     points: [],
     map: null,
+    clusterer: null,
     markers: [],
     boundsListenerAttached: false,
   };
@@ -7359,13 +7360,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const point = marker?.__toolsPoint;
       if (!point) return;
       const toolsCount = Number(point.count) || 0;
-      const isVisiblePoint = isToolsPointInBounds(point, mapBounds);
       const label = `${point.name} · ${toolsCount}`;
       marker.properties.set("hintContent", label);
-      marker.properties.set(
-        "iconCaption",
-        toolsSearchMapState.interactive && isVisiblePoint ? label : ""
-      );
     });
 
     updateToolsZoneSubtitle();
@@ -7378,6 +7374,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       : [];
 
     toolsSearchMapState.markers.forEach((marker) => {
+      toolsSearchMapState.clusterer?.remove(marker);
       toolsSearchMapState.map?.geoObjects.remove(marker);
     });
     toolsSearchMapState.markers = [];
@@ -7404,10 +7401,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           balloonContentHeader: escapeHtml(point.name),
           balloonContentBody: `Инструментов: ${toolsCount}`,
           hintContent: `${escapeHtml(point.name)} · ${toolsCount}`,
-          iconCaption: "",
         },
         {
-          preset: "islands#blueCircleDotIconWithCaption",
+          preset: "islands#blueCircleDotIcon",
         }
       );
       marker.__toolsPoint = point;
@@ -7416,7 +7412,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         syncToolsFilterValue("object", point.name);
         applyToolsFilters();
       });
-      toolsSearchMapState.map.geoObjects.add(marker);
+      if (toolsSearchMapState.clusterer) {
+        toolsSearchMapState.clusterer.add(marker);
+      } else {
+        toolsSearchMapState.map.geoObjects.add(marker);
+      }
       toolsSearchMapState.markers.push(marker);
     });
 
@@ -7471,6 +7471,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
             suppressMapOpenBlock: true,
           }
         );
+        toolsSearchMapState.clusterer = new window.ymaps.Clusterer({
+          preset: "islands#invertedBlueClusterIcons",
+          groupByCoordinates: false,
+          clusterDisableClickZoom: false,
+          clusterOpenBalloonOnClick: true,
+        });
+        toolsSearchMapState.map.geoObjects.add(toolsSearchMapState.clusterer);
         window.setTimeout(() => {
           toolsSearchMapState.map?.container?.fitToViewport?.();
         }, 80);

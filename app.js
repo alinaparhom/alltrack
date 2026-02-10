@@ -6615,9 +6615,17 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           name: objectName,
           coordinates,
           count: 0,
+          tools: [],
         });
       }
+      const responsible = String(
+        tool?.responsible ?? tool?.["Ответственный"] ?? ""
+      ).trim();
       grouped.get(objectName).count += 1;
+      grouped.get(objectName).tools.push({
+        name: String(tool?.name ?? "").trim(),
+        responsible: responsible || "Без ответственного",
+      });
     });
 
     const relatedPoints = Array.from(grouped.values())
@@ -6666,7 +6674,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         {
           hintContent: caption,
           iconCaption: caption,
-          balloonContentBody: `Найдено инструментов: ${point.count}`,
+          balloonContentBody: buildDemandRequestMapBalloonContent(point),
         },
         {
           preset: "islands#blueCircleDotIconWithCaption",
@@ -6741,6 +6749,49 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (!demandRequestMapState.map.controls.get("geolocationControl")) {
       demandRequestMapState.map.controls.add("geolocationControl");
     }
+  };
+
+  const buildDemandRequestMapBalloonContent = (point) => {
+    const tools = Array.isArray(point?.tools) ? point.tools : [];
+    const groupedByResponsible = new Map();
+
+    tools.forEach((tool) => {
+      const responsible = String(tool?.responsible ?? "").trim() || "Без ответственного";
+      if (!groupedByResponsible.has(responsible)) {
+        groupedByResponsible.set(responsible, []);
+      }
+      groupedByResponsible.get(responsible).push(String(tool?.name ?? "").trim() || "—");
+    });
+
+    const groupsMarkup = Array.from(groupedByResponsible.entries())
+      .sort((a, b) => a[0].localeCompare(b[0], "ru"))
+      .map(([responsible, names]) => {
+        const byName = new Map();
+        names.forEach((name) => {
+          byName.set(name, (byName.get(name) ?? 0) + 1);
+        });
+        const toolsText = Array.from(byName.entries())
+          .sort((a, b) => a[0].localeCompare(b[0], "ru"))
+          .map(([name, count]) => (count > 1 ? `${escapeHtml(name)} (${count})` : escapeHtml(name)))
+          .join(", ");
+        return `
+          <div class="demand-request-popup__group">
+            <div class="demand-request-popup__responsible">${escapeHtml(responsible)}</div>
+            <div class="demand-request-popup__tools">${toolsText || "—"}</div>
+          </div>
+        `;
+      })
+      .join("");
+
+    return `
+      <div class="demand-request-popup">
+        <div class="demand-request-popup__title">${escapeHtml(point?.name || "Объект")}</div>
+        <div class="demand-request-popup__subtitle">Интересующие инструменты: ${escapeHtml(
+          String(point?.count ?? tools.length)
+        )}</div>
+        <div class="demand-request-popup__list">${groupsMarkup || "<div class=\"demand-request-popup__empty\">Инструменты не найдены</div>"}</div>
+      </div>
+    `;
   };
 
   const buildDemandMapBalloonContent = (point) => {
@@ -7052,9 +7103,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           if (!tool || typeof tool !== "object") return null;
           const name = String(tool["Наименование"] ?? "").trim();
           const object = sanitizeObjectName(tool["Объект"] ?? tool.object ?? "");
+          const responsible = String(
+            tool["Ответственный"] ?? tool.responsible ?? tool.user ?? tool.owner ?? ""
+          ).trim();
           if (name) toolSuggestions.add(name);
           if (!name || !object) return null;
-          return { name, object };
+          return { name, object, responsible };
         })
         .filter(Boolean);
       demandState.toolSuggestions = Array.from(toolSuggestions).sort((a, b) =>

@@ -4388,7 +4388,7 @@
       .tools-actions {
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 6px;
         flex-wrap: wrap;
       }
 
@@ -4637,9 +4637,9 @@
       .tools-filters-toggle {
         display: inline-flex;
         align-items: center;
-        gap: 6px;
+        gap: 4px;
         border-radius: 999px;
-        padding: 6px 10px;
+        padding: 5px 8px;
         border: 1px solid rgba(226, 232, 240, 0.9);
         background: rgba(255, 255, 255, 0.86);
         font-size: 12px;
@@ -4660,8 +4660,8 @@
       }
 
       .tools-filters-toggle__icon {
-        width: 16px;
-        height: 16px;
+        width: 14px;
+        height: 14px;
         fill: currentColor;
       }
 
@@ -4708,10 +4708,10 @@
       .tools-view-toggle {
         display: inline-flex;
         align-items: center;
-        gap: 6px;
-        flex-wrap: wrap;
+        gap: 4px;
+        flex-wrap: nowrap;
         align-self: start;
-        padding: 6px;
+        padding: 4px;
         border-radius: 999px;
         background: rgba(255, 255, 255, 0.8);
         border: 1px solid rgba(226, 232, 240, 0.9);
@@ -4721,7 +4721,7 @@
       .tools-view-button {
         border: none;
         border-radius: 999px;
-        padding: 6px 12px;
+        padding: 6px 10px;
         font-size: 12px;
         font-weight: 600;
         color: var(--muted);
@@ -4731,9 +4731,9 @@
       }
 
       .tools-view-button--icon {
-        width: 36px;
-        min-width: 36px;
-        height: 36px;
+        width: 32px;
+        min-width: 32px;
+        height: 32px;
         padding: 0;
         display: inline-flex;
         align-items: center;
@@ -4741,8 +4741,8 @@
       }
 
       .tools-view-button__icon {
-        width: 18px;
-        height: 18px;
+        width: 16px;
+        height: 16px;
         fill: currentColor;
       }
 
@@ -5636,6 +5636,7 @@
         .tools-actions {
           justify-content: space-between;
           flex-wrap: nowrap;
+          gap: 4px;
           width: 100%;
         }
 
@@ -5653,8 +5654,10 @@
 
         .tools-filters-toggle {
           width: auto;
+          min-width: 34px;
           justify-content: center;
           margin-left: 0;
+          padding: 5px 6px;
         }
 
         .tools-filters {

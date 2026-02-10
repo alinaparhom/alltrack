@@ -7204,14 +7204,34 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
   };
 
+  const resolveToolsMapBounds = (mapBounds) => {
+    if (!mapBounds) return null;
+    if (Array.isArray(mapBounds) && mapBounds.length === 2) {
+      const southWest = mapBounds[0];
+      const northEast = mapBounds[1];
+      if (
+        Array.isArray(southWest) &&
+        southWest.length === 2 &&
+        Array.isArray(northEast) &&
+        northEast.length === 2
+      ) {
+        return { southWest, northEast };
+      }
+    }
+    const southWest = mapBounds.getSouthWest?.();
+    const northEast = mapBounds.getNorthEast?.();
+    if (!southWest || !northEast) return null;
+    return { southWest, northEast };
+  };
+
   const isToolsPointInBounds = (point, mapBounds) => {
     if (!point || !mapBounds) return false;
     const lat = Number(point?.coordinates?.lat);
     const lng = Number(point?.coordinates?.lng);
     if (!Number.isFinite(lat) || !Number.isFinite(lng)) return false;
-    const southWest = mapBounds.getSouthWest?.();
-    const northEast = mapBounds.getNorthEast?.();
-    if (!southWest || !northEast) return false;
+    const resolvedBounds = resolveToolsMapBounds(mapBounds);
+    if (!resolvedBounds) return false;
+    const { southWest, northEast } = resolvedBounds;
     return (
       lat >= southWest[0] &&
       lat <= northEast[0] &&
@@ -7221,7 +7241,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   };
 
   const updateToolsZoneSubtitle = () => {
-    if (toolsState.view !== "map" || !toolsSearchMapState.activated || !toolsSearchMapState.map) {
+    if (toolsState.view !== "map" || !toolsSearchMapState.map) {
       setToolsZoneSubtitle("");
       return;
     }
@@ -7304,13 +7324,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       mapContentEl.appendChild(dot);
     });
 
-    if (toolsSearchMapState.activated) {
-      syncInteractiveToolsSearchMap();
-    }
+    void ensureToolsSearchMapReady();
   };
 
   const toolsSearchMapState = {
     activated: false,
+    interactive: false,
     points: [],
     map: null,
     markers: [],
@@ -7327,8 +7346,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       if (!point) return;
       const toolsCount = Number(point.count) || 0;
       const isVisiblePoint = isToolsPointInBounds(point, mapBounds);
-      marker.properties.set("hintContent", isVisiblePoint ? `${escapeHtml(point.name)} · ${toolsCount}` : "");
-      marker.properties.set("iconCaption", isVisiblePoint ? `${point.name} · ${toolsCount}` : "");
+      const label = `${point.name} · ${toolsCount}`;
+      marker.properties.set("hintContent", label);
+      marker.properties.set(
+        "iconCaption",
+        toolsSearchMapState.interactive && isVisiblePoint ? label : ""
+      );
     });
 
     updateToolsZoneSubtitle();
@@ -7366,7 +7389,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         {
           balloonContentHeader: escapeHtml(point.name),
           balloonContentBody: `Инструментов: ${toolsCount}`,
-          hintContent: "",
+          hintContent: `${escapeHtml(point.name)} · ${toolsCount}`,
           iconCaption: "",
         },
         {
@@ -7402,22 +7425,21 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const activateToolsSearchMapInteraction = async () => {
     if (
       !toolsSearchMapCanvasEl ||
-      !toolsSearchMapLayerEl ||
-      toolsSearchMapState.activated
+      !toolsSearchMapLayerEl
     ) {
       return;
     }
 
+    await ensureToolsSearchMapReady({ interactive: true });
+  };
+
+  const ensureToolsSearchMapReady = async ({ interactive = false } = {}) => {
+    if (!toolsSearchMapCanvasEl || !toolsSearchMapLayerEl) return;
+
     try {
       await ensureYandexMapsLoaded();
       toolsSearchMapState.activated = true;
-      toolsSearchMapCanvasEl.classList.add("tools-map-canvas--interactive");
-      toolsSearchMapCanvasEl.classList.add("tools-map-canvas--interactive-live");
       toolsSearchMapCanvasEl.classList.add("tools-map-canvas--map");
-      toolsSearchMapCanvasEl.setAttribute(
-        "aria-label",
-        "Карта активна. Перемещайте карту и меняйте масштаб"
-      );
 
       toolsSearchMapPlaceholderEl?.classList.add("is-hidden");
       toolsSearchMapImageEl?.classList.add("is-hidden");
@@ -7440,6 +7462,43 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         }, 80);
       }
 
+      const interactiveBehaviors = [
+        "drag",
+        "scrollZoom",
+        "multiTouch",
+        "dblClickZoom",
+      ];
+      toolsSearchMapState.interactive = Boolean(interactive);
+      if (toolsSearchMapState.interactive) {
+        toolsSearchMapCanvasEl.classList.add("tools-map-canvas--interactive");
+        toolsSearchMapCanvasEl.classList.add("tools-map-canvas--interactive-live");
+        toolsSearchMapCanvasEl.setAttribute(
+          "aria-label",
+          "Карта активна. Перемещайте карту и меняйте масштаб"
+        );
+        interactiveBehaviors.forEach((behaviorName) => {
+          toolsSearchMapState.map?.behaviors?.enable?.(behaviorName);
+        });
+        if (!toolsSearchMapState.map.controls.get("zoomControl")) {
+          toolsSearchMapState.map.controls.add("zoomControl");
+        }
+        if (!toolsSearchMapState.map.controls.get("geolocationControl")) {
+          toolsSearchMapState.map.controls.add("geolocationControl");
+        }
+      } else {
+        toolsSearchMapCanvasEl.classList.remove("tools-map-canvas--interactive");
+        toolsSearchMapCanvasEl.classList.remove("tools-map-canvas--interactive-live");
+        toolsSearchMapCanvasEl.setAttribute(
+          "aria-label",
+          "Карта предварительного просмотра. Нажмите, чтобы включить перемещение"
+        );
+        interactiveBehaviors.forEach((behaviorName) => {
+          toolsSearchMapState.map?.behaviors?.disable?.(behaviorName);
+        });
+        toolsSearchMapState.map.controls.remove("zoomControl");
+        toolsSearchMapState.map.controls.remove("geolocationControl");
+      }
+
       if (!toolsSearchMapState.boundsListenerAttached) {
         toolsSearchMapState.map.events.add("boundschange", () => {
           refreshToolsSearchMapViewportInfo();
@@ -7449,7 +7508,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
       syncInteractiveToolsSearchMap();
     } catch (error) {
-      console.warn("Не удалось активировать интерактивную карту поиска.", error);
+      console.warn("Не удалось загрузить карту поиска.", error);
       toolsSearchMapCanvasEl.setAttribute(
         "aria-label",
         "Не удалось загрузить интерактивную карту, попробуйте позже"

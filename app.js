@@ -7271,6 +7271,16 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     setToolsZoneSubtitle(`В текущей зоне карты: ${visibleToolsCount} инструментов`);
   };
 
+  const hasActiveToolsSearchFilters = () => {
+    if (toolsState.search.trim()) {
+      return true;
+    }
+
+    return Object.values(toolsState.filters).some((value) =>
+      String(value ?? "").trim()
+    );
+  };
+
   const renderToolsSearchMap = (points) => {
     if (!toolsSearchMapCanvasEl) return;
     const safePoints = Array.isArray(points) ? points : [];
@@ -7283,6 +7293,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       setToolsZoneSubtitle("");
       toolsSearchMapPlaceholderEl?.classList.remove("is-hidden");
       toolsSearchMapCanvasEl.classList.remove("tools-map-canvas--map");
+      toolsSearchMapCanvasEl.classList.remove("tools-map-canvas--filtering");
       if (toolsSearchMapImageEl) {
         toolsSearchMapImageEl.classList.add("is-hidden");
         toolsSearchMapImageEl.removeAttribute("src");
@@ -7295,6 +7306,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
     toolsSearchMapPlaceholderEl?.classList.add("is-hidden");
     toolsSearchMapCanvasEl.classList.add("tools-map-canvas--map");
+    const isFiltering = hasActiveToolsSearchFilters();
+    toolsSearchMapCanvasEl.classList.toggle("tools-map-canvas--filtering", isFiltering);
     const bounds = buildToolsMapBounds(safePoints);
     if (toolsSearchMapImageEl) {
       const mapUrl = buildYandexStaticMapUrl(safePoints, bounds);
@@ -7306,11 +7319,14 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const position = projectToolsMapPoint(point, bounds);
       const dot = document.createElement("button");
       dot.className = "tools-map-dot";
+      dot.classList.toggle("tools-map-dot--filtered", isFiltering);
       dot.type = "button";
       dot.setAttribute("aria-label", `${point.name}: ${point.count} инструментов`);
       dot.style.left = `${(position.x * 100).toFixed(2)}%`;
       dot.style.top = `${(position.y * 100).toFixed(2)}%`;
-      dot.innerHTML = `
+      dot.innerHTML = isFiltering
+        ? ""
+        : `
         <span class="tools-map-dot__title">${escapeHtml(point.name)}</span>
         <span class="tools-map-dot__count">${point.count}</span>
       `;
@@ -7377,6 +7393,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
 
     const bounds = [];
+    const isFiltering = hasActiveToolsSearchFilters();
     safePoints.forEach((point) => {
       const lat = Number(point?.coordinates?.lat);
       const lng = Number(point?.coordinates?.lng);
@@ -7389,7 +7406,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         {
           balloonContentHeader: escapeHtml(point.name),
           balloonContentBody: `Инструментов: ${toolsCount}`,
-          hintContent: `${escapeHtml(point.name)} · ${toolsCount}`,
+          hintContent: isFiltering ? "" : `${escapeHtml(point.name)} · ${toolsCount}`,
           iconCaption: "",
         },
         {

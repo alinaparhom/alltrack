@@ -5658,7 +5658,22 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     activePointers: new Map(),
   };
 
-  const clampToolsMapScale = (value) => Math.min(4, Math.max(1, value));
+  const clampToolsMapScale = (value) => Math.min(4, Math.max(0.7, value));
+
+  const clampToolsMapTranslation = () => {
+    if (!toolsMapCanvasEl) return;
+    const rect = toolsMapCanvasEl.getBoundingClientRect();
+    const maxTranslateX = Math.max(0, (rect.width * (toolsMapState.scale - 1)) / 2);
+    const maxTranslateY = Math.max(0, (rect.height * (toolsMapState.scale - 1)) / 2);
+    toolsMapState.translateX = Math.min(
+      maxTranslateX,
+      Math.max(-maxTranslateX, toolsMapState.translateX)
+    );
+    toolsMapState.translateY = Math.min(
+      maxTranslateY,
+      Math.max(-maxTranslateY, toolsMapState.translateY)
+    );
+  };
 
   const getPointerDistance = (first, second) => {
     const dx = first.x - second.x;
@@ -5668,7 +5683,29 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
   const applyToolsMapTransform = () => {
     if (!toolsMapLayerEl) return;
+    clampToolsMapTranslation();
     toolsMapLayerEl.style.transform = `translate(${toolsMapState.translateX}px, ${toolsMapState.translateY}px) scale(${toolsMapState.scale})`;
+  };
+
+  const zoomToolsMapAtPoint = (targetScale, clientX, clientY) => {
+    if (!toolsMapCanvasEl) return;
+    const nextScale = clampToolsMapScale(targetScale);
+    const prevScale = toolsMapState.scale;
+    if (Math.abs(nextScale - prevScale) < 0.0001) return;
+
+    const rect = toolsMapCanvasEl.getBoundingClientRect();
+    const anchorX =
+      typeof clientX === "number" ? clientX - rect.left - rect.width / 2 : 0;
+    const anchorY =
+      typeof clientY === "number" ? clientY - rect.top - rect.height / 2 : 0;
+    const scaleRatio = nextScale / prevScale;
+
+    toolsMapState.translateX =
+      (toolsMapState.translateX - anchorX) * scaleRatio + anchorX;
+    toolsMapState.translateY =
+      (toolsMapState.translateY - anchorY) * scaleRatio + anchorY;
+    toolsMapState.scale = nextScale;
+    applyToolsMapTransform();
   };
 
   const activateToolsMapInteraction = () => {
@@ -5722,8 +5759,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       if (!toolsMapLayerEl || isToolsMapCollapsed || !toolsMapState.activated) return;
       event.preventDefault();
       const delta = event.deltaY < 0 ? 0.12 : -0.12;
-      toolsMapState.scale = clampToolsMapScale(toolsMapState.scale + delta);
-      applyToolsMapTransform();
+      zoomToolsMapAtPoint(toolsMapState.scale + delta, event.clientX, event.clientY);
     });
 
     toolsMapCanvasEl.addEventListener("pointerdown", (event) => {
@@ -5762,8 +5798,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         const distance = getPointerDistance(first, second);
         if (toolsMapState.pinchStartDistance > 0) {
           const factor = distance / toolsMapState.pinchStartDistance;
-          toolsMapState.scale = clampToolsMapScale(toolsMapState.pinchStartScale * factor);
-          applyToolsMapTransform();
+          zoomToolsMapAtPoint(
+            toolsMapState.pinchStartScale * factor,
+            (first.x + second.x) / 2,
+            (first.y + second.y) / 2
+          );
         }
         return;
       }

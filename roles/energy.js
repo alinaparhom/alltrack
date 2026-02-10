@@ -637,6 +637,7 @@ export function renderRole(user) {
               <div class="settings-modal__title">
                 <h2 data-tools-title>Мои инструменты</h2>
                 <p data-tools-subtitle>Загружаем список...</p>
+                <p class="tools-zone-subtitle is-hidden" data-tools-zone-subtitle></p>
               </div>
               <button
                 class="button-icon tools-modal__close"

@@ -4402,6 +4402,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   );
   const toolsEmptyEl = contentEl.querySelector("[data-tools-empty]");
   const toolsSubtitleEl = contentEl.querySelector("[data-tools-subtitle]");
+  const toolsZoneSubtitleEl = contentEl.querySelector("[data-tools-zone-subtitle]");
   const toolsTitleEl = contentEl.querySelector("[data-tools-title]");
   const toolsViewButtons = contentEl.querySelectorAll("[data-tools-view]");
   const toolsFilterEls = contentEl.querySelectorAll("[data-tools-filter]");
@@ -5799,6 +5800,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           preset: "islands#blueCircleDotIconWithCaption",
         }
       );
+      marker.__toolsPoint = point;
       marker.events.add("click", () => {
         void openToolsModalWithObjectFilter(point.name);
       });
@@ -6848,6 +6850,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
   };
 
+  const setToolsZoneSubtitle = (text = "") => {
+    if (!toolsZoneSubtitleEl) return;
+    toolsZoneSubtitleEl.textContent = text;
+    toolsZoneSubtitleEl.classList.toggle("is-hidden", !text);
+  };
+
   const setToolsTitle = (text) => {
     if (toolsTitleEl) {
       toolsTitleEl.textContent = text;
@@ -7196,6 +7204,53 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
   };
 
+  const isToolsPointInBounds = (point, mapBounds) => {
+    if (!point || !mapBounds) return false;
+    const lat = Number(point?.coordinates?.lat);
+    const lng = Number(point?.coordinates?.lng);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return false;
+    const southWest = mapBounds.getSouthWest?.();
+    const northEast = mapBounds.getNorthEast?.();
+    if (!southWest || !northEast) return false;
+    return (
+      lat >= southWest[0] &&
+      lat <= northEast[0] &&
+      lng >= southWest[1] &&
+      lng <= northEast[1]
+    );
+  };
+
+  const updateToolsZoneSubtitle = () => {
+    if (toolsState.view !== "map" || !toolsSearchMapState.activated || !toolsSearchMapState.map) {
+      setToolsZoneSubtitle("");
+      return;
+    }
+    const mapBounds = toolsSearchMapState.map.getBounds?.();
+    if (!mapBounds) {
+      setToolsZoneSubtitle("");
+      return;
+    }
+
+    const visibleObjectNames = new Set(
+      toolsSearchMapState.points
+        .filter((point) => isToolsPointInBounds(point, mapBounds))
+        .map((point) => String(point.name ?? "").trim().toLowerCase())
+        .filter(Boolean)
+    );
+
+    if (!visibleObjectNames.size) {
+      setToolsZoneSubtitle("В текущей зоне карты: 0 инструментов");
+      return;
+    }
+
+    const visibleToolsCount = toolsState.filtered.reduce((sum, tool) => {
+      const objectName = sanitizeObjectName(tool?.["Объект"] ?? tool?.object ?? "").toLowerCase();
+      return visibleObjectNames.has(objectName) ? sum + 1 : sum;
+    }, 0);
+
+    setToolsZoneSubtitle(`В текущей зоне карты: ${visibleToolsCount} инструментов`);
+  };
+
   const renderToolsSearchMap = (points) => {
     if (!toolsSearchMapCanvasEl) return;
     const safePoints = Array.isArray(points) ? points : [];
@@ -7205,6 +7260,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     existingDots.forEach((dot) => dot.remove());
 
     if (!safePoints.length) {
+      setToolsZoneSubtitle("");
       toolsSearchMapPlaceholderEl?.classList.remove("is-hidden");
       toolsSearchMapCanvasEl.classList.remove("tools-map-canvas--map");
       if (toolsSearchMapImageEl) {
@@ -7258,6 +7314,24 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     points: [],
     map: null,
     markers: [],
+    boundsListenerAttached: false,
+  };
+
+  const refreshToolsSearchMapViewportInfo = () => {
+    if (!toolsSearchMapState.map || !window.ymaps) return;
+    const mapBounds = toolsSearchMapState.map.getBounds?.();
+    if (!mapBounds) return;
+
+    toolsSearchMapState.markers.forEach((marker) => {
+      const point = marker?.__toolsPoint;
+      if (!point) return;
+      const toolsCount = Number(point.count) || 0;
+      const isVisiblePoint = isToolsPointInBounds(point, mapBounds);
+      marker.properties.set("hintContent", isVisiblePoint ? `${escapeHtml(point.name)} · ${toolsCount}` : "");
+      marker.properties.set("iconCaption", isVisiblePoint ? `${point.name} · ${toolsCount}` : "");
+    });
+
+    updateToolsZoneSubtitle();
   };
 
   const syncInteractiveToolsSearchMap = () => {
@@ -7275,6 +7349,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       toolsSearchMapState.map.setCenter([53.9, 27.56], 10, {
         duration: 240,
       });
+      updateToolsZoneSubtitle();
       return;
     }
 
@@ -7283,22 +7358,22 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const lat = Number(point?.coordinates?.lat);
       const lng = Number(point?.coordinates?.lng);
       if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
-      const safePointName = escapeHtml(point.name);
       const toolsCount = Number(point.count) || 0;
 
       bounds.push([lat, lng]);
       const marker = new window.ymaps.Placemark(
         [lat, lng],
         {
-          balloonContentHeader: safePointName,
+          balloonContentHeader: escapeHtml(point.name),
           balloonContentBody: `Инструментов: ${toolsCount}`,
-          hintContent: `${safePointName} · ${toolsCount}`,
-          iconCaption: `${safePointName} · ${toolsCount}`,
+          hintContent: "",
+          iconCaption: "",
         },
         {
           preset: "islands#blueCircleDotIconWithCaption",
         }
       );
+      marker.__toolsPoint = point;
       marker.events.add("click", () => {
         toolsState.filters.object = point.name;
         syncToolsFilterValue("object", point.name);
@@ -7311,6 +7386,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (bounds.length) {
       if (bounds.length === 1) {
         toolsSearchMapState.map.setCenter(bounds[0], 15, { duration: 260 });
+        refreshToolsSearchMapViewportInfo();
         return;
       }
       toolsSearchMapState.map.setBounds(bounds, {
@@ -7319,6 +7395,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         duration: 260,
       });
     }
+
+    refreshToolsSearchMapViewportInfo();
   };
 
   const activateToolsSearchMapInteraction = async () => {
@@ -7360,6 +7438,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         window.setTimeout(() => {
           toolsSearchMapState.map?.container?.fitToViewport?.();
         }, 80);
+      }
+
+      if (!toolsSearchMapState.boundsListenerAttached) {
+        toolsSearchMapState.map.events.add("boundschange", () => {
+          refreshToolsSearchMapViewportInfo();
+        });
+        toolsSearchMapState.boundsListenerAttached = true;
       }
 
       syncInteractiveToolsSearchMap();
@@ -7581,6 +7666,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     setToolsSubtitle(
       `Показано ${items.length} из ${toolsState.tools.length}`
     );
+    if (!isMapView || !toolsSearchMapState.activated) {
+      setToolsZoneSubtitle("");
+    } else {
+      updateToolsZoneSubtitle();
+    }
     syncToolsViewButtons();
     updateToolsSelectionUi();
   };

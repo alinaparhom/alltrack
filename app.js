@@ -5573,6 +5573,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     return `https://static-maps.yandex.ru/1.x/?${params.toString()}`;
   };
 
+  const openToolsModalWithObjectFilter = async (objectName) => {
+    const safeObjectName = sanitizeObjectName(objectName);
+    await openToolsModal({ objectFilter: safeObjectName });
+  };
+
   const projectToolsMapPoint = (point, bounds) => {
     if (!bounds) return { x: 0.5, y: 0.5 };
     const lngRange = bounds.maxLng - bounds.minLng || 0.001;
@@ -5618,14 +5623,21 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
     safePoints.forEach((point) => {
       const position = projectToolsMapPoint(point, bounds);
-      const dot = document.createElement("div");
+      const dot = document.createElement("button");
       dot.className = "tools-map-dot";
+      dot.type = "button";
+      dot.setAttribute("aria-label", `${point.name}: ${point.count} инструментов`);
       dot.style.left = `${(position.x * 100).toFixed(2)}%`;
       dot.style.top = `${(position.y * 100).toFixed(2)}%`;
       dot.innerHTML = `
         <span class="tools-map-dot__title">${escapeHtml(point.name)}</span>
         <span class="tools-map-dot__count">${point.count}</span>
       `;
+      dot.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        void openToolsModalWithObjectFilter(point.name);
+      });
       mapContentEl.appendChild(dot);
     });
 
@@ -5740,6 +5752,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           preset: "islands#blueCircleDotIconWithCaption",
         }
       );
+      marker.events.add("click", () => {
+        void openToolsModalWithObjectFilter(point.name);
+      });
       toolsMapState.map.geoObjects.add(marker);
       toolsMapState.markers.push(marker);
     });
@@ -7574,12 +7589,15 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
   };
 
-  const openToolsModal = async () => {
+  const openToolsModal = async (options = {}) => {
     if (!toolsModalEl) return;
+    const objectFilter = sanitizeObjectName(options.objectFilter ?? "");
     toolsState.mode = "user";
     setToolsTitle("Мои инструменты");
     toolsState.filters.responsible = "";
+    toolsState.filters.object = "";
     syncToolsFilterValue("responsible", "");
+    syncToolsFilterValue("object", "");
     setToolsResponsibleFilterVisibility(false);
     toolsModalEl.classList.remove("is-hidden");
     document.body.style.overflow = "hidden";
@@ -7587,6 +7605,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const numberConfig = await resolveToolsNumberConfig();
     updateToolsNumberConfig(numberConfig);
     await loadUserTools();
+    if (objectFilter) {
+      toolsState.filters.object = objectFilter;
+      syncToolsFilterValue("object", objectFilter);
+      applyToolsFilters();
+    }
     syncToolsViewButtons();
     if (
       toolsSearchInput &&

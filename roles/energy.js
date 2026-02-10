@@ -696,6 +696,23 @@ export function renderRole(user) {
                       </button>
                     </div>
                     <button
+                      class="tools-view-button tools-view-button--icon is-hidden"
+                      type="button"
+                      data-tools-view="map"
+                      data-tools-search-map-view
+                      aria-label="Карта"
+                      title="Карта"
+                    >
+                      <svg
+                        class="tools-view-button__icon"
+                        aria-hidden="true"
+                        viewBox="0 0 24 24"
+                        focusable="false"
+                      >
+                        <path d="M9 4.5 3.8 6.4a1 1 0 0 0-.8.96V18a1 1 0 0 0 1.34.94L9 17.2l6 1.8 5.2-1.9a1 1 0 0 0 .8-.96V5.5a1 1 0 0 0-1.34-.94L15 6.3 9 4.5Zm1 2.15 4 1.2v9.5l-4-1.2v-9.5Zm-2 .05v9.45l-3 .98V7.67l3-.97Zm8 1.17 3-.98v9.45l-3 .97V7.87Z" />
+                      </svg>
+                    </button>
+                    <button
                       class="action-primary tools-move-button"
                       type="button"
                       data-tools-move-trigger
@@ -775,6 +792,25 @@ export function renderRole(user) {
                 </div>
               </div>
               <div class="tools-list" data-tools-list></div>
+              <div class="tools-search-map is-hidden" data-tools-search-map>
+                <div
+                  class="tools-map-canvas tools-search-map__canvas"
+                  role="button"
+                  tabindex="0"
+                  data-tools-search-map-canvas
+                  aria-label="Карта с найденными инструментами"
+                >
+                  <img
+                    class="tools-map-image is-hidden"
+                    data-tools-search-map-image
+                    alt="Карта объектов"
+                  />
+                  <div class="tools-map-layer" data-tools-search-map-layer></div>
+                  <div class="tools-map-placeholder" data-tools-search-map-placeholder>
+                    Нет объектов с координатами для выбранных фильтров.
+                  </div>
+                </div>
+              </div>
               <div class="tools-empty is-hidden" data-tools-empty>
                 Инструменты не найдены. Попробуйте сбросить фильтры или поиск.
               </div>

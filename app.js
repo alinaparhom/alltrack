@@ -3512,6 +3512,39 @@ function buildToolsMapPoints(toolsList, objectsList, userName = "") {
     .filter(Boolean);
 }
 
+function buildToolsMapPointsByObjects(toolsList, objectsList) {
+  const counts = new Map();
+  toolsList.forEach((tool) => {
+    if (!tool || typeof tool !== "object") return;
+    const objectName = sanitizeObjectName(tool["Объект"] ?? tool.object ?? "");
+    if (!objectName) return;
+    const key = objectName.toLowerCase();
+    const current = counts.get(key) ?? { name: objectName, count: 0 };
+    current.count += 1;
+    counts.set(key, current);
+  });
+
+  return objectsList
+    .map((objectItem) => {
+      if (!objectItem || typeof objectItem !== "object") return null;
+      const objectName = sanitizeObjectName(objectItem.name ?? objectItem.title ?? "");
+      if (!objectName) return null;
+      const entry = counts.get(objectName.toLowerCase());
+      if (!entry) return null;
+      const coordinates = objectItem.coordinates;
+      if (!coordinates) return null;
+      const lat = Number(coordinates.lat);
+      const lng = Number(coordinates.lng);
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+      return {
+        name: objectName,
+        count: entry.count,
+        coordinates: { lat, lng },
+      };
+    })
+    .filter(Boolean);
+}
+
 function buildRoleKey(value = "") {
   return String(value)
     .trim()
@@ -4355,6 +4388,18 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const toolsCloseButton = contentEl.querySelector("[data-tools-close]");
   const toolsSearchInput = contentEl.querySelector("[data-tools-search]");
   const toolsListEl = contentEl.querySelector("[data-tools-list]");
+  const toolsSearchMapEl = contentEl.querySelector("[data-tools-search-map]");
+  const toolsSearchMapCanvasEl = contentEl.querySelector(
+    "[data-tools-search-map-canvas]"
+  );
+  const toolsSearchMapLayerEl = contentEl.querySelector("[data-tools-search-map-layer]");
+  const toolsSearchMapImageEl = contentEl.querySelector("[data-tools-search-map-image]");
+  const toolsSearchMapPlaceholderEl = contentEl.querySelector(
+    "[data-tools-search-map-placeholder]"
+  );
+  const toolsSearchMapViewButtonEl = contentEl.querySelector(
+    "[data-tools-search-map-view]"
+  );
   const toolsEmptyEl = contentEl.querySelector("[data-tools-empty]");
   const toolsSubtitleEl = contentEl.querySelector("[data-tools-subtitle]");
   const toolsTitleEl = contentEl.querySelector("[data-tools-title]");
@@ -5311,7 +5356,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     numberType: "",
     isSaving: false,
   };
-  const toolsViewOptions = new Set(["large", "compact", "list", "table"]);
+  const toolsViewOptions = new Set(["large", "compact", "list", "table", "map"]);
   const normalizeToolsView = (value) =>
     toolsViewOptions.has(value) ? value : "table";
   const savedToolsView = normalizeToolsView(
@@ -5320,7 +5365,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const toolsState = {
     tools: [],
     filtered: [],
+    objects: [],
     view: savedToolsView,
+    previousView: savedToolsView,
     mode: "user",
     filters: {
       group: "",
@@ -7135,12 +7182,60 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         button.dataset.toolsView === toolsState.view
       );
     });
+    if (toolsSearchMapViewButtonEl) {
+      toolsSearchMapViewButtonEl.classList.toggle(
+        "is-active",
+        toolsState.view === "map"
+      );
+    }
   };
 
   const clearToolsList = () => {
     if (toolsListEl) {
       toolsListEl.innerHTML = "";
     }
+  };
+
+  const renderToolsSearchMap = (points) => {
+    if (!toolsSearchMapCanvasEl) return;
+    const safePoints = Array.isArray(points) ? points : [];
+    const mapContentEl = toolsSearchMapLayerEl ?? toolsSearchMapCanvasEl;
+    const existingDots = mapContentEl.querySelectorAll(".tools-map-dot");
+    existingDots.forEach((dot) => dot.remove());
+
+    if (!safePoints.length) {
+      toolsSearchMapPlaceholderEl?.classList.remove("is-hidden");
+      toolsSearchMapCanvasEl.classList.remove("tools-map-canvas--map");
+      if (toolsSearchMapImageEl) {
+        toolsSearchMapImageEl.classList.add("is-hidden");
+        toolsSearchMapImageEl.removeAttribute("src");
+      }
+      return;
+    }
+
+    toolsSearchMapPlaceholderEl?.classList.add("is-hidden");
+    toolsSearchMapCanvasEl.classList.add("tools-map-canvas--map");
+    const bounds = buildToolsMapBounds(safePoints);
+    if (toolsSearchMapImageEl) {
+      const mapUrl = buildYandexStaticMapUrl(safePoints, bounds);
+      toolsSearchMapImageEl.src = mapUrl;
+      toolsSearchMapImageEl.classList.remove("is-hidden");
+    }
+
+    safePoints.forEach((point) => {
+      const position = projectToolsMapPoint(point, bounds);
+      const dot = document.createElement("button");
+      dot.className = "tools-map-dot";
+      dot.type = "button";
+      dot.setAttribute("aria-label", `${point.name}: ${point.count} инструментов`);
+      dot.style.left = `${(position.x * 100).toFixed(2)}%`;
+      dot.style.top = `${(position.y * 100).toFixed(2)}%`;
+      dot.innerHTML = `
+        <span class="tools-map-dot__title">${escapeHtml(point.name)}</span>
+        <span class="tools-map-dot__count">${point.count}</span>
+      `;
+      mapContentEl.appendChild(dot);
+    });
   };
 
   const renderToolCard = (tool, viewMode, orgFolder) => {
@@ -7312,12 +7407,20 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (!toolsListEl) return;
     clearToolsList();
     const viewMode = toolsState.view;
+    const isMapView = viewMode === "map";
     toolsListEl.classList.toggle("is-large", viewMode === "large");
     toolsListEl.classList.toggle("is-compact", viewMode === "compact");
     toolsListEl.classList.toggle("is-list", viewMode === "list");
     toolsListEl.classList.toggle("is-table", viewMode === "table");
+    toolsListEl.classList.toggle("is-hidden", isMapView);
+    if (toolsSearchMapEl) {
+      toolsSearchMapEl.classList.toggle("is-hidden", !isMapView);
+    }
     const items = toolsState.filtered;
-    if (viewMode === "table") {
+    if (isMapView) {
+      const points = buildToolsMapPointsByObjects(items, toolsState.objects);
+      renderToolsSearchMap(points);
+    } else if (viewMode === "table") {
       toolsListEl.appendChild(renderToolsTable(items));
     } else {
       items.forEach((tool) => {
@@ -7327,7 +7430,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       });
     }
     if (toolsEmptyEl) {
-      toolsEmptyEl.classList.toggle("is-hidden", items.length > 0);
+      toolsEmptyEl.classList.toggle("is-hidden", isMapView || items.length > 0);
     }
     setToolsSubtitle(
       `Показано ${items.length} из ${toolsState.tools.length}`
@@ -7476,13 +7579,26 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       return;
     }
     const toolsPath = `./${orgFolder}/База с инструментами.json`;
+    const objectsPathLocal = `./${orgFolder}/Объекты.json`;
     let rawTools = [];
+    let rawObjects = [];
     try {
       const raw = await loadJson(toolsPath);
       rawTools = Array.isArray(raw) ? raw : Array.isArray(raw?.tools) ? raw.tools : [];
     } catch (error) {
       console.warn("Не удалось загрузить базу инструментов.", error);
       rawTools = [];
+    }
+    try {
+      const raw = await loadJson(objectsPathLocal);
+      rawObjects = Array.isArray(raw)
+        ? raw
+        : Array.isArray(raw?.objects)
+          ? raw.objects
+          : [];
+    } catch (error) {
+      console.warn("Не удалось загрузить список объектов.", error);
+      rawObjects = [];
     }
     const userNameKey = normalizePersonName(user?.full_name ?? "");
     const { pendingNumbers, pendingAccountingNumbers } =
@@ -7515,6 +7631,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     toolsState.toolMap = new Map(
       toolsState.tools.map((tool) => [tool.__selectionId, tool])
     );
+    toolsState.objects = normalizeObjectsData(rawObjects);
     resetToolsSelection();
     prepareToolsFilters();
     applyToolsFilters();
@@ -7531,13 +7648,26 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       return;
     }
     const toolsPath = `./${orgFolder}/База с инструментами.json`;
+    const objectsPathLocal = `./${orgFolder}/Объекты.json`;
     let rawTools = [];
+    let rawObjects = [];
     try {
       const raw = await loadJson(toolsPath);
       rawTools = Array.isArray(raw) ? raw : Array.isArray(raw?.tools) ? raw.tools : [];
     } catch (error) {
       console.warn("Не удалось загрузить базу инструментов.", error);
       rawTools = [];
+    }
+    try {
+      const raw = await loadJson(objectsPathLocal);
+      rawObjects = Array.isArray(raw)
+        ? raw
+        : Array.isArray(raw?.objects)
+          ? raw.objects
+          : [];
+    } catch (error) {
+      console.warn("Не удалось загрузить список объектов.", error);
+      rawObjects = [];
     }
     const { pendingNumbers, pendingAccountingNumbers } =
       await loadPendingMoves(orgFolder);
@@ -7565,6 +7695,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     toolsState.toolMap = new Map(
       toolsState.tools.map((tool) => [tool.__selectionId, tool])
     );
+    toolsState.objects = normalizeObjectsData(rawObjects);
     resetToolsSelection();
     prepareToolsFilters();
     applyToolsFilters();
@@ -7596,9 +7727,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     setToolsTitle("Мои инструменты");
     toolsState.filters.responsible = "";
     toolsState.filters.object = "";
+    toolsState.view = normalizeToolsView(toolsState.previousView);
     syncToolsFilterValue("responsible", "");
     syncToolsFilterValue("object", "");
     setToolsResponsibleFilterVisibility(false);
+    toolsSearchMapViewButtonEl?.classList.add("is-hidden");
     toolsModalEl.classList.remove("is-hidden");
     document.body.style.overflow = "hidden";
     setToolsSubtitle("Загружаем список...");
@@ -7624,8 +7757,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const openBaseModal = async () => {
     if (!toolsModalEl) return;
     toolsState.mode = "base";
+    toolsState.view = normalizeToolsView(toolsState.previousView);
     setToolsTitle("База");
     setToolsResponsibleFilterVisibility(true);
+    toolsSearchMapViewButtonEl?.classList.add("is-hidden");
     toolsModalEl.classList.remove("is-hidden");
     document.body.style.overflow = "hidden";
     setToolsSubtitle("Загружаем список...");
@@ -7646,8 +7781,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const openSearchModal = async () => {
     if (!toolsModalEl) return;
     toolsState.mode = "search";
+    toolsState.view = "table";
     setToolsTitle("Поиск");
     setToolsResponsibleFilterVisibility(true);
+    toolsSearchMapViewButtonEl?.classList.remove("is-hidden");
     toolsModalEl.classList.remove("is-hidden");
     document.body.style.overflow = "hidden";
     setToolsSubtitle("Загружаем список...");
@@ -7668,8 +7805,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const openMoveOtherModal = async () => {
     if (!toolsModalEl) return;
     toolsState.mode = "move-other";
+    toolsState.view = normalizeToolsView(toolsState.previousView);
     setToolsTitle("Переместить за других");
     setToolsResponsibleFilterVisibility(true);
+    toolsSearchMapViewButtonEl?.classList.add("is-hidden");
     toolsModalEl.classList.remove("is-hidden");
     document.body.style.overflow = "hidden";
     setToolsSubtitle("Загружаем список...");
@@ -9850,11 +9989,27 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const view = button.dataset.toolsView;
       if (!view) return;
       toolsState.view = normalizeToolsView(view);
+      if (toolsState.view !== "map") {
+        toolsState.previousView = toolsState.view;
+      }
       syncToolsViewButtons();
       renderToolsList();
       saveToolsViewPreference(view);
     });
   });
+
+  if (toolsSearchMapViewButtonEl) {
+    toolsSearchMapViewButtonEl.addEventListener("click", () => {
+      if (toolsState.mode !== "search") return;
+      if (toolsState.view === "map") {
+        toolsState.view = normalizeToolsView(toolsState.previousView);
+      } else {
+        toolsState.view = "map";
+      }
+      syncToolsViewButtons();
+      renderToolsList();
+    });
+  }
 
   function closeToolsMoveModal() {
     if (!toolsMoveModalEl) return;

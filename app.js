@@ -4234,6 +4234,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const quickAccessMessageEl = contentEl.querySelector("[data-quick-access-message]");
   const toolsMapEl = contentEl.querySelector("[data-tools-map]");
   const toolsMapCanvasEl = contentEl.querySelector("[data-tools-map-canvas]");
+  const toolsMapLayerEl = contentEl.querySelector("[data-tools-map-layer]");
   const toolsMapImageEl = contentEl.querySelector("[data-tools-map-image]");
   const toolsMapCountEl = contentEl.querySelector("[data-tools-map-count]");
   const toolsMapPlaceholderEl = contentEl.querySelector("[data-tools-map-placeholder]");
@@ -5591,7 +5592,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (toolsMapCountEl) {
       toolsMapCountEl.textContent = `${safePoints.length} объектов`;
     }
-    const existingDots = toolsMapCanvasEl.querySelectorAll(".tools-map-dot");
+    const mapContentEl = toolsMapLayerEl ?? toolsMapCanvasEl;
+    const existingDots = mapContentEl.querySelectorAll(".tools-map-dot");
     existingDots.forEach((dot) => dot.remove());
     if (!safePoints.length) {
       toolsMapPlaceholderEl?.classList.remove("is-hidden");
@@ -5620,7 +5622,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         <span class="tools-map-dot__title">${escapeHtml(point.name)}</span>
         <span class="tools-map-dot__count">${point.count}</span>
       `;
-      toolsMapCanvasEl.appendChild(dot);
+      mapContentEl.appendChild(dot);
     });
   };
 
@@ -5628,16 +5630,51 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (!toolsMapEl || !toolsMapToggleEl) return;
     isToolsMapCollapsed = Boolean(collapsed);
     toolsMapEl.classList.toggle("tools-map-card--collapsed", isToolsMapCollapsed);
-    toolsMapToggleEl.textContent = isToolsMapCollapsed ? "Развернуть" : "Свернуть";
+    toolsMapToggleEl.innerHTML = '<span aria-hidden="true">▾</span>';
+    toolsMapToggleEl.classList.toggle("is-collapsed", isToolsMapCollapsed);
     toolsMapToggleEl.setAttribute("aria-expanded", String(!isToolsMapCollapsed));
     toolsMapToggleEl.setAttribute(
       "aria-label",
       isToolsMapCollapsed ? "Развернуть карту" : "Свернуть карту"
     );
+    if (!isToolsMapCollapsed && !toolsMapState.activated) {
+      toolsMapCanvasEl?.setAttribute(
+        "aria-label",
+        "Нажмите, чтобы оживить карту, масштабировать и перемещать"
+      );
+    }
+  };
+
+  const toolsMapState = {
+    activated: false,
+    scale: 1,
+    translateX: 0,
+    translateY: 0,
+    pointerId: null,
+    lastX: 0,
+    lastY: 0,
+    pinchStartDistance: 0,
+    pinchStartScale: 1,
+  };
+
+  const applyToolsMapTransform = () => {
+    if (!toolsMapLayerEl) return;
+    toolsMapLayerEl.style.transform = `translate(${toolsMapState.translateX}px, ${toolsMapState.translateY}px) scale(${toolsMapState.scale})`;
+  };
+
+  const activateToolsMapInteraction = () => {
+    if (!toolsMapCanvasEl || !toolsMapLayerEl || toolsMapState.activated || isToolsMapCollapsed) {
+      return;
+    }
+    toolsMapState.activated = true;
+    toolsMapCanvasEl.classList.add("tools-map-canvas--interactive");
+    toolsMapCanvasEl.setAttribute("aria-label", "Карта активна. Перемещайте и меняйте масштаб жестами");
+    applyToolsMapTransform();
   };
 
   const awakenToolsMap = () => {
     if (!toolsMapCanvasEl || isToolsMapCollapsed) return;
+    activateToolsMapInteraction();
     toolsMapCanvasEl.classList.remove("tools-map-canvas--alive");
     window.requestAnimationFrame(() => {
       toolsMapCanvasEl.classList.add("tools-map-canvas--alive");
@@ -5659,6 +5696,51 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       if (event.key !== "Enter" && event.key !== " ") return;
       event.preventDefault();
       awakenToolsMap();
+    });
+
+    toolsMapCanvasEl.addEventListener("wheel", (event) => {
+      if (!toolsMapLayerEl || isToolsMapCollapsed) return;
+      event.preventDefault();
+      activateToolsMapInteraction();
+      const delta = event.deltaY < 0 ? 0.12 : -0.12;
+      toolsMapState.scale = Math.min(3, Math.max(1, toolsMapState.scale + delta));
+      applyToolsMapTransform();
+    });
+
+    toolsMapCanvasEl.addEventListener("pointerdown", (event) => {
+      if (isToolsMapCollapsed) return;
+      activateToolsMapInteraction();
+      toolsMapCanvasEl.setPointerCapture(event.pointerId);
+      if (toolsMapState.pointerId === null) {
+        toolsMapState.pointerId = event.pointerId;
+        toolsMapState.lastX = event.clientX;
+        toolsMapState.lastY = event.clientY;
+      }
+    });
+
+    toolsMapCanvasEl.addEventListener("pointermove", (event) => {
+      if (!toolsMapState.activated || isToolsMapCollapsed) return;
+      if (toolsMapState.pointerId !== event.pointerId) return;
+      const dx = event.clientX - toolsMapState.lastX;
+      const dy = event.clientY - toolsMapState.lastY;
+      toolsMapState.lastX = event.clientX;
+      toolsMapState.lastY = event.clientY;
+      toolsMapState.translateX += dx;
+      toolsMapState.translateY += dy;
+      applyToolsMapTransform();
+    });
+
+    toolsMapCanvasEl.addEventListener("pointerup", (event) => {
+      if (toolsMapState.pointerId === event.pointerId) {
+        toolsMapState.pointerId = null;
+      }
+      toolsMapCanvasEl.releasePointerCapture(event.pointerId);
+    });
+
+    toolsMapCanvasEl.addEventListener("pointercancel", (event) => {
+      if (toolsMapState.pointerId === event.pointerId) {
+        toolsMapState.pointerId = null;
+      }
     });
   }
 

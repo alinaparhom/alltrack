@@ -55,9 +55,7 @@ export function renderRole(user) {
       <div class="dashboard energy-dashboard">
         <div class="tools-map-card" data-tools-map>
           <div class="tools-map-header">
-            <div>
-              <h3 class="tools-map-title">Карта инструментов</h3>
-            </div>
+            <h3 class="tools-map-title">Карта инструментов</h3>
             <div class="tools-map-header-actions">
               <div class="tools-map-pill" data-tools-map-count>0</div>
               <button
@@ -67,7 +65,7 @@ export function renderRole(user) {
                 aria-expanded="true"
                 aria-label="Свернуть карту"
               >
-                Свернуть
+                <span aria-hidden="true">▾</span>
               </button>
             </div>
           </div>
@@ -76,16 +74,18 @@ export function renderRole(user) {
             data-tools-map-canvas
             tabindex="0"
             role="button"
-            aria-label="Нажмите, чтобы оживить карту"
+            aria-label="Нажмите, чтобы оживить карту, масштабировать и перемещать"
           >
-            <img
-              class="tools-map-image is-hidden"
-              data-tools-map-image
-              alt="Карта объектов"
-              loading="lazy"
-            />
-            <div class="tools-map-placeholder" data-tools-map-placeholder>
-              Пока нет координат объектов.
+            <div class="tools-map-layer" data-tools-map-layer>
+              <img
+                class="tools-map-image is-hidden"
+                data-tools-map-image
+                alt="Карта объектов"
+                loading="lazy"
+              />
+              <div class="tools-map-placeholder" data-tools-map-placeholder>
+                Пока нет координат объектов.
+              </div>
             </div>
           </div>
         </div>

@@ -787,8 +787,13 @@
 
       .app-header {
         display: grid;
-        gap: 12px;
-        margin-bottom: 12px;
+        gap: 8px;
+        margin-bottom: 8px;
+        position: sticky;
+        top: 0;
+        z-index: 4;
+        padding-bottom: 4px;
+        backdrop-filter: blur(14px);
       }
 
       .app-title-row {
@@ -1080,24 +1085,26 @@
         border: 1px solid rgba(226, 232, 240, 0.9);
         box-shadow: 0 16px 36px rgba(26, 31, 46, 0.08);
         display: grid;
-        gap: 12px;
+        gap: 10px;
         position: sticky;
-        top: 0;
+        top: 56px;
         z-index: 3;
         backdrop-filter: blur(18px);
       }
 
       .tools-map-header {
         display: flex;
-        align-items: flex-start;
+        align-items: center;
         justify-content: space-between;
         gap: 12px;
+        flex-wrap: nowrap;
       }
 
       .tools-map-header-actions {
         display: inline-flex;
         align-items: center;
         gap: 8px;
+        flex-shrink: 0;
       }
 
       .tools-map-title {
@@ -1129,10 +1136,15 @@
         border-radius: 999px;
         background: rgba(255, 255, 255, 0.74);
         color: var(--accent);
-        font-size: 12px;
+        width: 34px;
+        height: 34px;
+        font-size: 15px;
         font-weight: 700;
         line-height: 1;
-        padding: 9px 12px;
+        padding: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
         cursor: pointer;
         backdrop-filter: blur(10px);
         transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
@@ -1141,6 +1153,14 @@
       .tools-map-toggle:hover {
         transform: translateY(-1px);
         box-shadow: 0 8px 18px rgba(26, 31, 46, 0.12);
+      }
+
+      .tools-map-toggle span {
+        transition: transform 0.24s ease;
+      }
+
+      .tools-map-toggle.is-collapsed span {
+        transform: rotate(-180deg);
       }
 
       .tools-map-toggle:focus-visible {
@@ -1156,6 +1176,7 @@
         border: 1px solid rgba(216, 227, 248, 0.9);
         overflow: hidden;
         cursor: pointer;
+        touch-action: none;
         transform: translateZ(0);
         transition: transform 0.32s ease, box-shadow 0.32s ease, opacity 0.28s ease, max-height 0.32s ease, margin 0.32s ease;
       }
@@ -1163,6 +1184,21 @@
       .tools-map-canvas:focus-visible {
         outline: 2px solid var(--accent);
         outline-offset: 2px;
+      }
+
+      .tools-map-layer {
+        position: absolute;
+        inset: 0;
+        transform-origin: center center;
+        will-change: transform;
+      }
+
+      .tools-map-canvas--interactive {
+        cursor: grab;
+      }
+
+      .tools-map-canvas--interactive:active {
+        cursor: grabbing;
       }
 
       .tools-map-canvas--alive {
@@ -1204,11 +1240,10 @@
         object-fit: cover;
         border-radius: inherit;
         filter: saturate(0.35) contrast(1.12) brightness(1.08) hue-rotate(178deg) grayscale(0.25);
-        transition: transform 0.45s ease, filter 0.45s ease;
+        transition: filter 0.45s ease;
       }
 
       .tools-map-canvas--alive .tools-map-image {
-        transform: scale(1.04);
         filter: saturate(0.5) contrast(1.16) brightness(1.1) hue-rotate(182deg) grayscale(0.2);
       }
 
@@ -1396,13 +1431,17 @@
 
       @media (max-width: 420px) {
         .tools-map-header {
-          align-items: stretch;
-          flex-direction: column;
+          align-items: center;
+          gap: 8px;
         }
 
-        .tools-map-header-actions {
-          justify-content: space-between;
-          width: 100%;
+        .tools-map-title {
+          font-size: 15px;
+        }
+
+        .tools-map-pill {
+          padding: 5px 10px;
+          font-size: 12px;
         }
 
         .tools-map-canvas {
@@ -1603,7 +1642,7 @@
       .energy-dashboard {
         display: flex;
         flex-direction: column;
-        gap: 18px;
+        gap: 10px;
         min-height: 100%;
         justify-content: flex-end;
       }

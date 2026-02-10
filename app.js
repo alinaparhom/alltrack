@@ -7315,7 +7315,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       toolsSearchMapImageEl.classList.remove("is-hidden");
     }
 
-    safePoints.forEach((point) => {
+    const currentMapBounds = toolsSearchMapState.map?.getBounds?.();
+    const visiblePoints = currentMapBounds
+      ? safePoints.filter((point) => isToolsPointInBounds(point, currentMapBounds))
+      : safePoints;
+
+    visiblePoints.forEach((point) => {
       const position = projectToolsMapPoint(point, bounds);
       const dot = document.createElement("button");
       dot.className = "tools-map-dot";
@@ -7356,18 +7361,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const mapBounds = toolsSearchMapState.map.getBounds?.();
     if (!mapBounds) return;
 
-    toolsSearchMapState.markers.forEach((marker) => {
-      const point = marker?.__toolsPoint;
-      if (!point) return;
-      const toolsCount = Number(point.count) || 0;
-      const label = `${point.name} · ${toolsCount}`;
-      marker.properties.set("hintContent", label);
-    });
-
-    updateToolsZoneSubtitle();
+    syncInteractiveToolsSearchMap({ fitViewport: false });
   };
 
-  const syncInteractiveToolsSearchMap = () => {
+  const syncInteractiveToolsSearchMap = ({ fitViewport = true } = {}) => {
     if (!toolsSearchMapState.map || !window.ymaps) return;
     const safePoints = Array.isArray(toolsSearchMapState.points)
       ? toolsSearchMapState.points
@@ -7380,6 +7377,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     toolsSearchMapState.markers = [];
 
     if (!safePoints.length) {
+      if (!fitViewport) {
+        updateToolsZoneSubtitle();
+        return;
+      }
       toolsSearchMapState.map.setCenter([53.9, 27.56], 10, {
         duration: 240,
       });
@@ -7387,23 +7388,49 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       return;
     }
 
-    const bounds = [];
-    safePoints.forEach((point) => {
+    const bounds = safePoints
+      .map((point) => {
+        const lat = Number(point?.coordinates?.lat);
+        const lng = Number(point?.coordinates?.lng);
+        if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+        return [lat, lng];
+      })
+      .filter(Boolean);
+
+    if (fitViewport && bounds.length) {
+      if (bounds.length === 1) {
+        toolsSearchMapState.map.setCenter(bounds[0], 15, { duration: 260 });
+      } else {
+        toolsSearchMapState.map.setBounds(bounds, {
+          checkZoomRange: true,
+          zoomMargin: [34, 34, 34, 34],
+          duration: 260,
+        });
+      }
+    }
+
+    const currentMapBounds = toolsSearchMapState.map.getBounds?.();
+    const visiblePoints = currentMapBounds
+      ? safePoints.filter((point) => isToolsPointInBounds(point, currentMapBounds))
+      : safePoints;
+
+    visiblePoints.forEach((point) => {
       const lat = Number(point?.coordinates?.lat);
       const lng = Number(point?.coordinates?.lng);
       if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
       const toolsCount = Number(point.count) || 0;
+      const label = `${point.name} · ${toolsCount}`;
 
-      bounds.push([lat, lng]);
       const marker = new window.ymaps.Placemark(
         [lat, lng],
         {
           balloonContentHeader: escapeHtml(point.name),
           balloonContentBody: `Инструментов: ${toolsCount}`,
-          hintContent: `${escapeHtml(point.name)} · ${toolsCount}`,
+          hintContent: label,
+          iconCaption: label,
         },
         {
-          preset: "islands#blueCircleDotIcon",
+          preset: "islands#blueCircleDotIconWithCaption",
         }
       );
       marker.__toolsPoint = point;
@@ -7420,20 +7447,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       toolsSearchMapState.markers.push(marker);
     });
 
-    if (bounds.length) {
-      if (bounds.length === 1) {
-        toolsSearchMapState.map.setCenter(bounds[0], 15, { duration: 260 });
-        refreshToolsSearchMapViewportInfo();
-        return;
-      }
-      toolsSearchMapState.map.setBounds(bounds, {
-        checkZoomRange: true,
-        zoomMargin: [34, 34, 34, 34],
-        duration: 260,
-      });
-    }
-
-    refreshToolsSearchMapViewportInfo();
+    updateToolsZoneSubtitle();
   };
 
   const activateToolsSearchMapInteraction = async () => {

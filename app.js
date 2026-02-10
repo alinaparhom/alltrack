@@ -6540,20 +6540,183 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name, "ru"));
   };
 
+  const demandMapState = {
+    activated: false,
+    interactive: false,
+    points: [],
+    map: null,
+    markers: [],
+  };
+
+  const buildDemandMapBalloonContent = (point) => {
+    const lines = point.items
+      .slice(0, 8)
+      .map((entry) => {
+        const requestedBy = escapeHtml(entry.requestedBy || "Без автора");
+        const item = escapeHtml(entry.item || "—");
+        const quantity = escapeHtml(String(entry.quantity ?? ""));
+        const unit = escapeHtml(String(entry.unit ?? ""));
+        return `<div class="demand-map-popup__item">Кому: ${requestedBy} · Нужно: ${item} · Кол-во: ${quantity} ${unit}</div>`;
+      })
+      .join("");
+    const moreLine =
+      point.items.length > 8
+        ? `<div class="demand-map-popup__more">Ещё ${point.items.length - 8} заявок...</div>`
+        : "";
+    return `
+      <div class="demand-map-popup">
+        <div class="demand-map-popup__title">${escapeHtml(point.name)}</div>
+        <div class="demand-map-popup__list">${lines}${moreLine}</div>
+      </div>
+    `;
+  };
+
+  const syncInteractiveDemandMap = ({ fitViewport = true } = {}) => {
+    if (!demandMapState.map || !window.ymaps) return;
+    const safePoints = Array.isArray(demandMapState.points) ? demandMapState.points : [];
+
+    demandMapState.markers.forEach((marker) => {
+      demandMapState.map?.geoObjects.remove(marker);
+    });
+    demandMapState.markers = [];
+
+    if (!safePoints.length) {
+      if (fitViewport) {
+        demandMapState.map.setCenter([53.9, 27.56], 10, { duration: 240 });
+      }
+      return;
+    }
+
+    const bounds = safePoints
+      .map((point) => {
+        const lat = Number(point?.coordinates?.lat);
+        const lng = Number(point?.coordinates?.lng);
+        if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+        return [lat, lng];
+      })
+      .filter(Boolean);
+
+    if (fitViewport && bounds.length) {
+      if (bounds.length === 1) {
+        demandMapState.map.setCenter(bounds[0], 15, { duration: 260 });
+      } else {
+        demandMapState.map.setBounds(bounds, {
+          checkZoomRange: true,
+          zoomMargin: [34, 34, 34, 34],
+          duration: 260,
+        });
+      }
+    }
+
+    safePoints.forEach((point) => {
+      const lat = Number(point?.coordinates?.lat);
+      const lng = Number(point?.coordinates?.lng);
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+      const label = `${point.name} · ${point.count} заявок`;
+      const marker = new window.ymaps.Placemark(
+        [lat, lng],
+        {
+          balloonContentBody: buildDemandMapBalloonContent(point),
+          hintContent: label,
+          iconCaption: String(point.count),
+        },
+        {
+          preset: "islands#blueCircleDotIconWithCaption",
+        }
+      );
+      demandMapState.map.geoObjects.add(marker);
+      demandMapState.markers.push(marker);
+    });
+  };
+
+  const ensureDemandMapReady = async ({ interactive = false } = {}) => {
+    if (!demandMapCanvasEl || !demandMapLayerEl) return;
+
+    try {
+      await ensureYandexMapsLoaded();
+      demandMapState.activated = true;
+      demandMapCanvasEl.classList.add("tools-map-canvas--map");
+      demandMapPlaceholderEl?.classList.add("is-hidden");
+      demandMapImageEl?.classList.add("is-hidden");
+
+      if (!demandMapState.map) {
+        demandMapLayerEl.innerHTML = "";
+        demandMapState.map = new window.ymaps.Map(
+          demandMapLayerEl,
+          {
+            center: [53.9, 27.56],
+            zoom: 10,
+            controls: ["zoomControl", "geolocationControl"],
+          },
+          {
+            suppressMapOpenBlock: true,
+          }
+        );
+        window.setTimeout(() => {
+          demandMapState.map?.container?.fitToViewport?.();
+        }, 80);
+      }
+
+      const interactiveBehaviors = ["drag", "scrollZoom", "multiTouch", "dblClickZoom"];
+      demandMapState.interactive = Boolean(interactive);
+      if (demandMapState.interactive) {
+        demandMapCanvasEl.classList.add("tools-map-canvas--interactive");
+        demandMapCanvasEl.classList.add("tools-map-canvas--interactive-live");
+        demandMapCanvasEl.setAttribute(
+          "aria-label",
+          "Карта активна. Перемещайте карту и меняйте масштаб"
+        );
+        interactiveBehaviors.forEach((behaviorName) => {
+          demandMapState.map?.behaviors?.enable?.(behaviorName);
+        });
+      } else {
+        demandMapCanvasEl.classList.remove("tools-map-canvas--interactive");
+        demandMapCanvasEl.classList.remove("tools-map-canvas--interactive-live");
+        demandMapCanvasEl.setAttribute(
+          "aria-label",
+          "Карта предварительного просмотра. Нажмите, чтобы включить перемещение"
+        );
+        interactiveBehaviors.forEach((behaviorName) => {
+          demandMapState.map?.behaviors?.disable?.(behaviorName);
+        });
+      }
+
+      syncInteractiveDemandMap();
+    } catch (error) {
+      console.warn("Не удалось загрузить карту потребности.", error);
+      demandMapCanvasEl.setAttribute(
+        "aria-label",
+        "Не удалось загрузить интерактивную карту, попробуйте позже"
+      );
+    }
+  };
+
+  const awakenDemandMap = async () => {
+    if (!demandMapCanvasEl) return;
+    await ensureDemandMapReady({ interactive: true });
+    demandMapCanvasEl.classList.remove("tools-map-canvas--alive");
+    window.requestAnimationFrame(() => {
+      demandMapCanvasEl.classList.add("tools-map-canvas--alive");
+      window.setTimeout(() => {
+        demandMapCanvasEl.classList.remove("tools-map-canvas--alive");
+      }, 720);
+    });
+  };
+
   const renderDemandMap = () => {
     if (!demandMapCanvasEl) return;
-    const mapContentEl = demandMapLayerEl ?? demandMapCanvasEl;
-    mapContentEl
-      .querySelectorAll(".demand-map-dot, .demand-map-popup")
-      .forEach((element) => element.remove());
-
     const points = buildDemandMapPoints();
+    demandMapState.points = points;
+
     if (!points.length) {
       demandMapPlaceholderEl?.classList.remove("is-hidden");
       demandMapCanvasEl.classList.remove("tools-map-canvas--map");
       if (demandMapImageEl) {
         demandMapImageEl.classList.add("is-hidden");
         demandMapImageEl.removeAttribute("src");
+      }
+      if (demandMapState.activated) {
+        syncInteractiveDemandMap({ fitViewport: true });
       }
       return;
     }
@@ -6566,61 +6729,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       demandMapImageEl.classList.remove("is-hidden");
     }
 
-    points.forEach((point) => {
-      const position = projectToolsMapPoint(point, bounds);
-      const dot = document.createElement("button");
-      dot.type = "button";
-      dot.className = "tools-map-dot demand-map-dot";
-      dot.style.left = `${(position.x * 100).toFixed(2)}%`;
-      dot.style.top = `${(position.y * 100).toFixed(2)}%`;
-      dot.setAttribute("aria-label", `${point.name}: ${point.count} заявок`);
-      dot.innerHTML = `
-        <span class="tools-map-dot__title">${escapeHtml(point.name)}</span>
-        <span class="tools-map-dot__count">${point.count}</span>
-      `;
-
-      const popup = document.createElement("div");
-      popup.className = "demand-map-popup is-hidden";
-      popup.innerHTML = `
-        <div class="demand-map-popup__title">${escapeHtml(point.name)}</div>
-        <div class="demand-map-popup__list"></div>
-      `;
-      const popupList = popup.querySelector(".demand-map-popup__list");
-      point.items.slice(0, 8).forEach((entry) => {
-        const line = document.createElement("div");
-        line.className = "demand-map-popup__item";
-        line.textContent = `Кому: ${entry.requestedBy || "Без автора"} · Нужно: ${entry.item} · Кол-во: ${entry.quantity} ${entry.unit}`;
-        popupList?.appendChild(line);
-      });
-      if (point.items.length > 8) {
-        const more = document.createElement("div");
-        more.className = "demand-map-popup__more";
-        more.textContent = `Ещё ${point.items.length - 8} заявок...`;
-        popupList?.appendChild(more);
-      }
-
-      dot.addEventListener("click", (event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        mapContentEl
-          .querySelectorAll(".demand-map-popup")
-          .forEach((element) => element.classList.add("is-hidden"));
-        popup.classList.toggle("is-hidden");
-      });
-
-      mapContentEl.append(dot, popup);
-      popup.style.left = `calc(${(position.x * 100).toFixed(2)}% + 14px)`;
-      popup.style.top = `calc(${(position.y * 100).toFixed(2)}% - 12px)`;
-    });
-
-    demandMapCanvasEl.onclick = (event) => {
-      if (event.target.closest(".demand-map-dot") || event.target.closest(".demand-map-popup")) {
-        return;
-      }
-      mapContentEl
-        .querySelectorAll(".demand-map-popup")
-        .forEach((element) => element.classList.add("is-hidden"));
-    };
+    void ensureDemandMapReady();
   };
 
   const renderDemandList = () => {
@@ -6969,8 +7078,20 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     setDemandContentView(nextView);
     if (nextView === "map") {
       renderDemandMap();
+      void awakenDemandMap();
     }
   });
+
+  if (demandMapCanvasEl) {
+    demandMapCanvasEl.addEventListener("click", () => {
+      void awakenDemandMap();
+    });
+    demandMapCanvasEl.addEventListener("keydown", (event) => {
+      if (event.key !== "Enter" && event.key !== " ") return;
+      event.preventDefault();
+      void awakenDemandMap();
+    });
+  }
 
   demandListEl?.addEventListener("click", async (event) => {
     const action = event.target.closest("[data-demand-action]");

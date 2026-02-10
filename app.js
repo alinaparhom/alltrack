@@ -4385,6 +4385,27 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const demandMapLayerEl = contentEl.querySelector("[data-demand-map-layer]");
   const demandMapImageEl = contentEl.querySelector("[data-demand-map-image]");
   const demandMapPlaceholderEl = contentEl.querySelector("[data-demand-map-placeholder]");
+  const demandRequestMapModalEl = contentEl.querySelector(
+    "[data-demand-request-map-modal]"
+  );
+  const demandRequestMapBackdropEl = contentEl.querySelector(
+    "[data-demand-request-map-backdrop]"
+  );
+  const demandRequestMapCloseButton = contentEl.querySelector(
+    "[data-demand-request-map-close]"
+  );
+  const demandRequestMapCanvasEl = contentEl.querySelector(
+    "[data-demand-request-map-canvas]"
+  );
+  const demandRequestMapLayerEl = contentEl.querySelector(
+    "[data-demand-request-map-layer]"
+  );
+  const demandRequestMapTitleEl = contentEl.querySelector(
+    "[data-demand-request-map-title]"
+  );
+  const demandRequestMapSubtitleEl = contentEl.querySelector(
+    "[data-demand-request-map-subtitle]"
+  );
   const demandEmptyEl = contentEl.querySelector("[data-demand-empty]");
   const demandSubtitleEl = contentEl.querySelector("[data-demand-subtitle]");
   const demandOpenCountEl = contentEl.querySelector("[data-demand-open-count]");
@@ -5340,6 +5361,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     objects: [],
     users: [],
     toolSuggestions: [],
+    toolsCatalog: [],
     objectCoordinates: new Map(),
     editingId: null,
     isSaving: false,
@@ -6548,6 +6570,179 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     markers: [],
   };
 
+  const demandRequestMapState = {
+    map: null,
+    markers: [],
+    selectedDemandId: "",
+  };
+
+  const clearDemandRequestMapMarkers = () => {
+    if (!demandRequestMapState.map) return;
+    demandRequestMapState.markers.forEach((marker) => {
+      demandRequestMapState.map?.geoObjects.remove(marker);
+    });
+    demandRequestMapState.markers = [];
+  };
+
+  const getDemandRequestMatchQuery = (demandItem) =>
+    String(demandItem?.item ?? "").trim().toLowerCase();
+
+  const buildDemandRequestMapData = (demandItem) => {
+    if (!demandItem) return null;
+    const normalizedCoordinates = new Map(
+      Array.from(demandState.objectCoordinates.entries()).map(([name, coordinates]) => [
+        String(name ?? "").trim().toLowerCase(),
+        coordinates,
+      ])
+    );
+    const targetObjectName = String(demandItem.object ?? "").trim();
+    const targetCoordinates = getDemandObjectCoordinates(
+      targetObjectName,
+      normalizedCoordinates
+    );
+    const query = getDemandRequestMatchQuery(demandItem);
+
+    const grouped = new Map();
+    demandState.toolsCatalog.forEach((tool) => {
+      const toolName = String(tool?.name ?? "").trim().toLowerCase();
+      if (!toolName || !query || !toolName.includes(query)) return;
+      const objectName = String(tool?.object ?? "").trim();
+      if (!objectName) return;
+      const coordinates = getDemandObjectCoordinates(objectName, normalizedCoordinates);
+      if (!coordinates) return;
+      if (!grouped.has(objectName)) {
+        grouped.set(objectName, {
+          name: objectName,
+          coordinates,
+          count: 0,
+        });
+      }
+      grouped.get(objectName).count += 1;
+    });
+
+    const relatedPoints = Array.from(grouped.values())
+      .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name, "ru"));
+
+    const targetPoint =
+      targetObjectName && targetCoordinates
+        ? {
+            name: targetObjectName,
+            coordinates: targetCoordinates,
+          }
+        : null;
+
+    return {
+      query,
+      targetPoint,
+      relatedPoints,
+    };
+  };
+
+  const renderDemandRequestMap = (data) => {
+    if (!demandRequestMapState.map || !window.ymaps) return;
+    clearDemandRequestMapMarkers();
+    if (!data) {
+      demandRequestMapState.map.setCenter([53.9, 27.56], 10, { duration: 240 });
+      return;
+    }
+
+    const boundsPoints = [];
+    const pushBoundsPoint = (point) => {
+      const lat = Number(point?.coordinates?.lat);
+      const lng = Number(point?.coordinates?.lng);
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+      boundsPoints.push([lat, lng]);
+      return [lat, lng];
+    };
+
+    const targetCoordinates = data.targetPoint ? pushBoundsPoint(data.targetPoint) : null;
+
+    data.relatedPoints.forEach((point) => {
+      const coordinates = pushBoundsPoint(point);
+      if (!coordinates) return;
+      const caption = `${point.name} · ${point.count} шт.`;
+      const marker = new window.ymaps.Placemark(
+        coordinates,
+        {
+          hintContent: caption,
+          iconCaption: caption,
+          balloonContentBody: `Найдено инструментов: ${point.count}`,
+        },
+        {
+          preset: "islands#blueCircleDotIconWithCaption",
+        }
+      );
+      demandRequestMapState.map.geoObjects.add(marker);
+      demandRequestMapState.markers.push(marker);
+    });
+
+    if (targetCoordinates) {
+      const targetMarker = new window.ymaps.Placemark(
+        targetCoordinates,
+        {
+          hintContent: `${data.targetPoint.name} · объект заявки`,
+          iconCaption: "Объект заявки",
+          balloonContentBody: "Объект, на который оформлена заявка",
+        },
+        {
+          preset: "islands#redCircleDotIconWithCaption",
+        }
+      );
+      demandRequestMapState.map.geoObjects.add(targetMarker);
+      demandRequestMapState.markers.push(targetMarker);
+    }
+
+    if (!boundsPoints.length) {
+      demandRequestMapState.map.setCenter([53.9, 27.56], 10, { duration: 240 });
+      return;
+    }
+
+    if (boundsPoints.length === 1) {
+      demandRequestMapState.map.setCenter(boundsPoints[0], 15, { duration: 260 });
+      return;
+    }
+
+    demandRequestMapState.map.setBounds(boundsPoints, {
+      checkZoomRange: true,
+      zoomMargin: [34, 34, 34, 34],
+      duration: 260,
+    });
+  };
+
+  const ensureDemandRequestMapReady = async () => {
+    if (!demandRequestMapCanvasEl || !demandRequestMapLayerEl) return;
+
+    await ensureYandexMapsLoaded();
+
+    if (!demandRequestMapState.map) {
+      demandRequestMapLayerEl.innerHTML = "";
+      demandRequestMapState.map = new window.ymaps.Map(
+        demandRequestMapLayerEl,
+        {
+          center: [53.9, 27.56],
+          zoom: 10,
+          controls: ["zoomControl", "geolocationControl"],
+        },
+        {
+          suppressMapOpenBlock: true,
+        }
+      );
+      window.setTimeout(() => {
+        demandRequestMapState.map?.container?.fitToViewport?.();
+      }, 80);
+    }
+
+    ["drag", "scrollZoom", "multiTouch", "dblClickZoom"].forEach((behaviorName) => {
+      demandRequestMapState.map?.behaviors?.enable?.(behaviorName);
+    });
+    if (!demandRequestMapState.map.controls.get("zoomControl")) {
+      demandRequestMapState.map.controls.add("zoomControl");
+    }
+    if (!demandRequestMapState.map.controls.get("geolocationControl")) {
+      demandRequestMapState.map.controls.add("geolocationControl");
+    }
+  };
+
   const buildDemandMapBalloonContent = (point) => {
     const lines = point.items
       .slice(0, 8)
@@ -6792,14 +6987,14 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       );
       toggleButton.title =
         item.status === "open" ? "Закрыть заявку" : "Вернуть в работу";
-      const replyButton = document.createElement("button");
-      replyButton.type = "button";
-      replyButton.className = "demand-action";
-      replyButton.dataset.demandAction = "reply";
-      replyButton.dataset.demandId = item.id;
-      replyButton.innerHTML = "↩";
-      replyButton.setAttribute("aria-label", "Ответить на заявку");
-      replyButton.title = "Ответить на заявку";
+      const requestMapButton = document.createElement("button");
+      requestMapButton.type = "button";
+      requestMapButton.className = "demand-action";
+      requestMapButton.dataset.demandAction = "map";
+      requestMapButton.dataset.demandId = item.id;
+      requestMapButton.innerHTML = "🗺️";
+      requestMapButton.setAttribute("aria-label", "Открыть карту заявки");
+      requestMapButton.title = "Открыть карту заявки";
       const editButton = document.createElement("button");
       editButton.type = "button";
       editButton.className = "demand-action";
@@ -6816,7 +7011,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       deleteButton.innerHTML = "✕";
       deleteButton.setAttribute("aria-label", "Удалить заявку");
       deleteButton.title = "Удалить заявку";
-      actions.append(toggleButton, replyButton, editButton, deleteButton);
+      actions.append(toggleButton, requestMapButton, editButton, deleteButton);
 
       if (!note.textContent) {
         content.append(title, meta);
@@ -6852,11 +7047,16 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       );
       const toolsList = normalizeToolsData(toolsRaw);
       const toolSuggestions = new Set();
-      toolsList.forEach((tool) => {
-        if (!tool || typeof tool !== "object") return;
-        const name = String(tool["Наименование"] ?? "").trim();
-        if (name) toolSuggestions.add(name);
-      });
+      demandState.toolsCatalog = toolsList
+        .map((tool) => {
+          if (!tool || typeof tool !== "object") return null;
+          const name = String(tool["Наименование"] ?? "").trim();
+          const object = sanitizeObjectName(tool["Объект"] ?? tool.object ?? "");
+          if (name) toolSuggestions.add(name);
+          if (!name || !object) return null;
+          return { name, object };
+        })
+        .filter(Boolean);
       demandState.toolSuggestions = Array.from(toolSuggestions).sort((a, b) =>
         a.localeCompare(b, "ru")
       );
@@ -6936,12 +7136,62 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     setDemandFormVisibility(false);
     setDemandFiltersVisibility(false);
     setDemandContentView("list");
+    closeDemandRequestMapModal();
     resetDemandForm();
     setDemandMessage("");
   };
 
+  const closeDemandRequestMapModal = () => {
+    if (!demandRequestMapModalEl) return;
+    demandRequestMapModalEl.classList.add("is-hidden");
+    document.body.style.overflow = "hidden";
+  };
+
+  const openDemandRequestMapModal = async (demandItem) => {
+    if (!demandRequestMapModalEl || !demandItem) return;
+    demandRequestMapState.selectedDemandId = demandItem.id;
+
+    const mapData = buildDemandRequestMapData(demandItem);
+    if (demandRequestMapTitleEl) {
+      demandRequestMapTitleEl.textContent = `Карта: ${demandItem.item || "заявка"}`;
+    }
+    if (demandRequestMapSubtitleEl) {
+      const relatedCount = mapData?.relatedPoints?.length ?? 0;
+      const baseText = mapData?.query
+        ? `Совпадения по "${mapData.query}" на ${relatedCount} объектах`
+        : "Нет названия инструмента для поиска";
+      demandRequestMapSubtitleEl.textContent = mapData?.targetPoint
+        ? `${baseText}. Красная метка — объект заявки.`
+        : `${baseText}. Объект заявки без координат.`;
+    }
+
+    demandRequestMapModalEl.classList.remove("is-hidden");
+    document.body.style.overflow = "hidden";
+
+    try {
+      await ensureDemandRequestMapReady();
+      renderDemandRequestMap(mapData);
+      window.setTimeout(() => {
+        demandRequestMapState.map?.container?.fitToViewport?.();
+      }, 120);
+    } catch (error) {
+      console.warn("Не удалось открыть карту заявки.", error);
+      if (demandRequestMapSubtitleEl) {
+        demandRequestMapSubtitleEl.textContent =
+          "Не удалось загрузить карту. Попробуйте позже.";
+      }
+    }
+  };
+
   demandBackdropEl?.addEventListener("click", closeDemandModal);
   demandCloseButton?.addEventListener("click", closeDemandModal);
+  demandRequestMapBackdropEl?.addEventListener("click", closeDemandRequestMapModal);
+  demandRequestMapCloseButton?.addEventListener("click", closeDemandRequestMapModal);
+  demandRequestMapModalEl?.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      closeDemandRequestMapModal();
+    }
+  });
   demandFormBackdropEl?.addEventListener("click", () => {
     resetDemandForm();
     setDemandFormVisibility(false);
@@ -7124,8 +7374,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       renderDemandList();
       return;
     }
-    if (type === "reply") {
-      window.prompt("Ответ на заявку", "");
+    if (type === "map") {
+      await openDemandRequestMapModal(entry);
     }
   });
 

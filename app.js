@@ -6501,12 +6501,27 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
   };
 
+  const getDemandObjectCoordinates = (objectName, normalizedCoordinates) => {
+    const safeName = String(objectName ?? "").trim();
+    if (!safeName) return null;
+    const direct = demandState.objectCoordinates.get(safeName);
+    if (direct) return direct;
+    return normalizedCoordinates.get(safeName.toLowerCase()) ?? null;
+  };
+
   const buildDemandMapPoints = () => {
+    const normalizedCoordinates = new Map(
+      Array.from(demandState.objectCoordinates.entries()).map(([name, coordinates]) => [
+        String(name ?? "").trim().toLowerCase(),
+        coordinates,
+      ])
+    );
     const grouped = new Map();
-    demandState.filtered.forEach((item) => {
+    demandState.items.forEach((item) => {
+      if (item.status !== "open") return;
       const objectName = String(item.object ?? "").trim();
       if (!objectName) return;
-      const coordinates = demandState.objectCoordinates.get(objectName);
+      const coordinates = getDemandObjectCoordinates(objectName, normalizedCoordinates);
       if (!coordinates) return;
       if (!grouped.has(objectName)) {
         grouped.set(objectName, {
@@ -6571,16 +6586,16 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         <div class="demand-map-popup__list"></div>
       `;
       const popupList = popup.querySelector(".demand-map-popup__list");
-      point.items.slice(0, 6).forEach((entry) => {
+      point.items.slice(0, 8).forEach((entry) => {
         const line = document.createElement("div");
         line.className = "demand-map-popup__item";
-        line.textContent = `${entry.requestedBy || "Без автора"}: ${entry.item} — ${entry.quantity} ${entry.unit}`;
+        line.textContent = `Кому: ${entry.requestedBy || "Без автора"} · Нужно: ${entry.item} · Кол-во: ${entry.quantity} ${entry.unit}`;
         popupList?.appendChild(line);
       });
-      if (point.items.length > 6) {
+      if (point.items.length > 8) {
         const more = document.createElement("div");
         more.className = "demand-map-popup__more";
-        more.textContent = `Ещё ${point.items.length - 6} заявок...`;
+        more.textContent = `Ещё ${point.items.length - 8} заявок...`;
         popupList?.appendChild(more);
       }
 

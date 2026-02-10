@@ -9986,6 +9986,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
   toolsViewButtons.forEach((button) => {
     button.addEventListener("click", () => {
+      if (button === toolsSearchMapViewButtonEl) {
+        return;
+      }
       const view = button.dataset.toolsView;
       if (!view) return;
       toolsState.view = normalizeToolsView(view);

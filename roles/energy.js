@@ -89,22 +89,24 @@ export function renderRole(user) {
             </div>
           </div>
         </div>
-        <div class="action-grid energy-grid" data-energy-grid>
-          ${actionsMarkup}
-          ${groupToggleMarkup}
-        </div>
-        <div class="energy-group-panel is-hidden" data-energy-group-panel>
-          <div class="energy-group-info">
-            <div class="energy-group-count" data-energy-selected-count>0</div>
-            <div class="energy-group-text">Выберите минимум 2 плашки</div>
+        <div class="energy-actions-scroll" data-energy-actions-scroll>
+          <div class="action-grid energy-grid" data-energy-grid>
+            ${actionsMarkup}
+            ${groupToggleMarkup}
           </div>
-          <div class="energy-group-actions">
-            <button class="action-primary" type="button" data-energy-create-group disabled>
-              Создать группу
-            </button>
-            <button class="action-secondary" type="button" data-energy-cancel-group>
-              Отмена
-            </button>
+          <div class="energy-group-panel is-hidden" data-energy-group-panel>
+            <div class="energy-group-info">
+              <div class="energy-group-count" data-energy-selected-count>0</div>
+              <div class="energy-group-text">Выберите минимум 2 плашки</div>
+            </div>
+            <div class="energy-group-actions">
+              <button class="action-primary" type="button" data-energy-create-group disabled>
+                Создать группу
+              </button>
+              <button class="action-secondary" type="button" data-energy-cancel-group>
+                Отмена
+              </button>
+            </div>
           </div>
         </div>
         <div class="quick-access" data-quick-access>

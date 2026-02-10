@@ -1031,6 +1031,9 @@
 
       body.is-energy-role .role-card {
         margin-top: 0;
+        min-height: 100%;
+        display: flex;
+        flex-direction: column;
       }
 
       .role-header h1 {
@@ -1648,12 +1651,33 @@
         }
       }
 
+      body.is-energy-role .app-scroll {
+        overflow: hidden;
+      }
+
+      body.is-energy-role .app-scroll > [data-content] {
+        height: 100%;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+      }
+
       .energy-dashboard {
         display: flex;
         flex-direction: column;
         gap: 10px;
         min-height: 100%;
-        justify-content: flex-end;
+      }
+
+      .energy-actions-scroll {
+        display: grid;
+        gap: 12px;
+        min-height: 0;
+        flex: 1 1 auto;
+        overflow-y: auto;
+        overscroll-behavior-y: contain;
+        -webkit-overflow-scrolling: touch;
+        padding-bottom: calc(var(--quick-access-offset, 120px) + env(safe-area-inset-bottom));
       }
 
       .energy-grid {
@@ -1662,8 +1686,7 @@
         gap: var(--grid-gap);
         touch-action: pan-y;
         user-select: none;
-        align-content: flex-end;
-        margin-top: auto;
+        align-content: flex-start;
       }
 
       .energy-grid .action-card {

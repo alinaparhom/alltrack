@@ -58,24 +58,6 @@ export function renderRole(user) {
             <h3 class="tools-map-title">Карта инструментов</h3>
             <div class="tools-map-header-actions">
               <div class="tools-map-pill" data-tools-map-count>0</div>
-              <div class="tools-map-zoom" aria-label="Управление масштабом карты">
-                <button
-                  class="tools-map-zoom-button"
-                  type="button"
-                  data-tools-map-zoom-out
-                  aria-label="Уменьшить карту"
-                >
-                  −
-                </button>
-                <button
-                  class="tools-map-zoom-button"
-                  type="button"
-                  data-tools-map-zoom-in
-                  aria-label="Увеличить карту"
-                >
-                  +
-                </button>
-              </div>
               <button
                 class="tools-map-toggle"
                 type="button"
@@ -107,9 +89,6 @@ export function renderRole(user) {
             </div>
           </div>
         </div>
-        <div class="quick-access" data-quick-access>
-          <div class="quick-access-list" data-quick-access-list></div>
-        </div>
         <div class="action-grid energy-grid" data-energy-grid>
           ${actionsMarkup}
           ${groupToggleMarkup}
@@ -127,6 +106,9 @@ export function renderRole(user) {
               Отмена
             </button>
           </div>
+        </div>
+        <div class="quick-access" data-quick-access>
+          <div class="quick-access-list" data-quick-access-list></div>
         </div>
         <div class="settings-modal is-hidden" data-energy-settings-modal>
           <div class="settings-modal__backdrop" data-energy-settings-backdrop></div>

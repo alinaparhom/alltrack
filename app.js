@@ -4239,9 +4239,16 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const toolsMapCountEl = contentEl.querySelector("[data-tools-map-count]");
   const toolsMapPlaceholderEl = contentEl.querySelector("[data-tools-map-placeholder]");
   const toolsMapToggleEl = contentEl.querySelector("[data-tools-map-toggle]");
-  const toolsMapZoomInEl = contentEl.querySelector("[data-tools-map-zoom-in]");
-  const toolsMapZoomOutEl = contentEl.querySelector("[data-tools-map-zoom-out]");
   let isToolsMapCollapsed = false;
+  const updateQuickAccessOffset = () => {
+    if (!quickAccessEl) return;
+    const rect = quickAccessEl.getBoundingClientRect();
+    const offset = Math.max(96, Math.ceil(rect.height) + 16);
+    document.documentElement.style.setProperty(
+      "--quick-access-offset",
+      `${offset}px`
+    );
+  };
 
   if (energyPendingStatEl) {
     energyPendingStatEl.classList.add("pending-stat--grid", "action-card");
@@ -5159,6 +5166,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       }
       quickAccessListEl.appendChild(createQuickAccessItem(action));
     });
+    updateQuickAccessOffset();
     syncQuickAccessPendingIndicator();
   };
 
@@ -5232,6 +5240,18 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   requestAnimationFrame(() => {
     scrollToQuickAccess();
   });
+
+  if (quickAccessEl && typeof ResizeObserver !== "undefined") {
+    if (!quickAccessEl.dataset.offsetObserverAttached) {
+      const quickAccessObserver = new ResizeObserver(() => {
+        updateQuickAccessOffset();
+      });
+      quickAccessObserver.observe(quickAccessEl);
+      quickAccessEl.dataset.offsetObserverAttached = "true";
+    }
+  } else {
+    updateQuickAccessOffset();
+  }
 
   updateEnergyPendingStat({ count: pendingMoves.length, available: pendingMoves });
   fitActionTitleTexts(gridEl);
@@ -5636,39 +5656,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     pinchStartDistance: 0,
     pinchStartScale: 1,
   };
-  const toolsMapPointers = new Map();
-  const TOOLS_MAP_MIN_SCALE = 1;
-  const TOOLS_MAP_MAX_SCALE = 3;
-
-
-  const clampToolsMapScale = (value) =>
-    Math.min(TOOLS_MAP_MAX_SCALE, Math.max(TOOLS_MAP_MIN_SCALE, value));
-
-  const updateToolsMapZoomButtons = () => {
-    if (toolsMapZoomInEl) {
-      toolsMapZoomInEl.disabled = toolsMapState.scale >= TOOLS_MAP_MAX_SCALE;
-    }
-    if (toolsMapZoomOutEl) {
-      toolsMapZoomOutEl.disabled = toolsMapState.scale <= TOOLS_MAP_MIN_SCALE;
-    }
-  };
-
-  const setToolsMapScale = (nextScale) => {
-    const clampedScale = clampToolsMapScale(nextScale);
-    if (Math.abs(clampedScale - toolsMapState.scale) < 0.001) {
-      updateToolsMapZoomButtons();
-      return;
-    }
-    toolsMapState.scale = clampedScale;
-    applyToolsMapTransform();
-    updateToolsMapZoomButtons();
-  };
-
-  const calculatePointerDistance = (first, second) => {
-    const dx = first.clientX - second.clientX;
-    const dy = first.clientY - second.clientY;
-    return Math.hypot(dx, dy);
-  };
 
   const applyToolsMapTransform = () => {
     if (!toolsMapLayerEl) return;
@@ -5703,24 +5690,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     });
   }
 
-  if (toolsMapZoomInEl) {
-    toolsMapZoomInEl.addEventListener("click", () => {
-      if (isToolsMapCollapsed) return;
-      activateToolsMapInteraction();
-      setToolsMapScale(toolsMapState.scale + 0.2);
-    });
-  }
-
-  if (toolsMapZoomOutEl) {
-    toolsMapZoomOutEl.addEventListener("click", () => {
-      if (isToolsMapCollapsed) return;
-      activateToolsMapInteraction();
-      setToolsMapScale(toolsMapState.scale - 0.2);
-    });
-  }
-
-  updateToolsMapZoomButtons();
-
   if (toolsMapCanvasEl) {
     toolsMapCanvasEl.addEventListener("click", awakenToolsMap);
     toolsMapCanvasEl.addEventListener("keydown", (event) => {
@@ -5734,48 +5703,23 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       event.preventDefault();
       activateToolsMapInteraction();
       const delta = event.deltaY < 0 ? 0.12 : -0.12;
-      setToolsMapScale(toolsMapState.scale + delta);
+      toolsMapState.scale = Math.min(3, Math.max(1, toolsMapState.scale + delta));
+      applyToolsMapTransform();
     });
 
     toolsMapCanvasEl.addEventListener("pointerdown", (event) => {
       if (isToolsMapCollapsed) return;
       activateToolsMapInteraction();
       toolsMapCanvasEl.setPointerCapture(event.pointerId);
-      toolsMapPointers.set(event.pointerId, {
-        clientX: event.clientX,
-        clientY: event.clientY,
-      });
-      if (toolsMapPointers.size === 1) {
+      if (toolsMapState.pointerId === null) {
         toolsMapState.pointerId = event.pointerId;
         toolsMapState.lastX = event.clientX;
         toolsMapState.lastY = event.clientY;
-      }
-      if (toolsMapPointers.size === 2) {
-        const [first, second] = Array.from(toolsMapPointers.values());
-        toolsMapState.pinchStartDistance = calculatePointerDistance(first, second);
-        toolsMapState.pinchStartScale = toolsMapState.scale;
       }
     });
 
     toolsMapCanvasEl.addEventListener("pointermove", (event) => {
       if (!toolsMapState.activated || isToolsMapCollapsed) return;
-      if (!toolsMapPointers.has(event.pointerId)) return;
-      toolsMapPointers.set(event.pointerId, {
-        clientX: event.clientX,
-        clientY: event.clientY,
-      });
-
-      if (toolsMapPointers.size >= 2) {
-        const [first, second] = Array.from(toolsMapPointers.values());
-        const distance = calculatePointerDistance(first, second);
-        if (toolsMapState.pinchStartDistance > 0) {
-          const nextScale =
-            toolsMapState.pinchStartScale * (distance / toolsMapState.pinchStartDistance);
-          setToolsMapScale(nextScale);
-        }
-        return;
-      }
-
       if (toolsMapState.pointerId !== event.pointerId) return;
       const dx = event.clientX - toolsMapState.lastX;
       const dy = event.clientY - toolsMapState.lastY;
@@ -5786,28 +5730,18 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       applyToolsMapTransform();
     });
 
-    const releaseToolsMapPointer = (event) => {
-      toolsMapPointers.delete(event.pointerId);
-      if (toolsMapPointers.size < 2) {
-        toolsMapState.pinchStartDistance = 0;
-      }
+    toolsMapCanvasEl.addEventListener("pointerup", (event) => {
       if (toolsMapState.pointerId === event.pointerId) {
-        const nextPointerId = toolsMapPointers.keys().next();
-        if (!nextPointerId.done) {
-          const nextId = nextPointerId.value;
-          const nextPoint = toolsMapPointers.get(nextId);
-          toolsMapState.pointerId = nextId;
-          toolsMapState.lastX = nextPoint?.clientX ?? 0;
-          toolsMapState.lastY = nextPoint?.clientY ?? 0;
-        } else {
-          toolsMapState.pointerId = null;
-        }
+        toolsMapState.pointerId = null;
       }
       toolsMapCanvasEl.releasePointerCapture(event.pointerId);
-    };
+    });
 
-    toolsMapCanvasEl.addEventListener("pointerup", releaseToolsMapPointer);
-    toolsMapCanvasEl.addEventListener("pointercancel", releaseToolsMapPointer);
+    toolsMapCanvasEl.addEventListener("pointercancel", (event) => {
+      if (toolsMapState.pointerId === event.pointerId) {
+        toolsMapState.pointerId = null;
+      }
+    });
   }
 
   const updateToolsMap = async () => {

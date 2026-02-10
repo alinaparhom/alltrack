@@ -58,9 +58,26 @@ export function renderRole(user) {
             <div>
               <h3 class="tools-map-title">Карта инструментов</h3>
             </div>
-            <div class="tools-map-pill" data-tools-map-count>0</div>
+            <div class="tools-map-header-actions">
+              <div class="tools-map-pill" data-tools-map-count>0</div>
+              <button
+                class="tools-map-toggle"
+                type="button"
+                data-tools-map-toggle
+                aria-expanded="true"
+                aria-label="Свернуть карту"
+              >
+                Свернуть
+              </button>
+            </div>
           </div>
-          <div class="tools-map-canvas" data-tools-map-canvas>
+          <div
+            class="tools-map-canvas"
+            data-tools-map-canvas
+            tabindex="0"
+            role="button"
+            aria-label="Нажмите, чтобы оживить карту"
+          >
             <img
               class="tools-map-image is-hidden"
               data-tools-map-image

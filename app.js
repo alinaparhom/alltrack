@@ -4237,6 +4237,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const toolsMapImageEl = contentEl.querySelector("[data-tools-map-image]");
   const toolsMapCountEl = contentEl.querySelector("[data-tools-map-count]");
   const toolsMapPlaceholderEl = contentEl.querySelector("[data-tools-map-placeholder]");
+  const toolsMapToggleEl = contentEl.querySelector("[data-tools-map-toggle]");
+  let isToolsMapCollapsed = false;
   const updateQuickAccessOffset = () => {
     if (!quickAccessEl) return;
     const rect = quickAccessEl.getBoundingClientRect();
@@ -5621,6 +5623,44 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       toolsMapCanvasEl.appendChild(dot);
     });
   };
+
+  const setToolsMapCollapsedState = (collapsed) => {
+    if (!toolsMapEl || !toolsMapToggleEl) return;
+    isToolsMapCollapsed = Boolean(collapsed);
+    toolsMapEl.classList.toggle("tools-map-card--collapsed", isToolsMapCollapsed);
+    toolsMapToggleEl.textContent = isToolsMapCollapsed ? "Развернуть" : "Свернуть";
+    toolsMapToggleEl.setAttribute("aria-expanded", String(!isToolsMapCollapsed));
+    toolsMapToggleEl.setAttribute(
+      "aria-label",
+      isToolsMapCollapsed ? "Развернуть карту" : "Свернуть карту"
+    );
+  };
+
+  const awakenToolsMap = () => {
+    if (!toolsMapCanvasEl || isToolsMapCollapsed) return;
+    toolsMapCanvasEl.classList.remove("tools-map-canvas--alive");
+    window.requestAnimationFrame(() => {
+      toolsMapCanvasEl.classList.add("tools-map-canvas--alive");
+      window.setTimeout(() => {
+        toolsMapCanvasEl.classList.remove("tools-map-canvas--alive");
+      }, 720);
+    });
+  };
+
+  if (toolsMapToggleEl) {
+    toolsMapToggleEl.addEventListener("click", () => {
+      setToolsMapCollapsedState(!isToolsMapCollapsed);
+    });
+  }
+
+  if (toolsMapCanvasEl) {
+    toolsMapCanvasEl.addEventListener("click", awakenToolsMap);
+    toolsMapCanvasEl.addEventListener("keydown", (event) => {
+      if (event.key !== "Enter" && event.key !== " ") return;
+      event.preventDefault();
+      awakenToolsMap();
+    });
+  }
 
   const updateToolsMap = async () => {
     if (!toolsMapEl || !toolsMapCanvasEl) return;

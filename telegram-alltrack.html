@@ -1230,18 +1230,7 @@
       }
 
       .tools-map-canvas--map::after {
-        content: "";
-        position: absolute;
-        inset: 0;
-        background: linear-gradient(
-            135deg,
-            rgba(59, 125, 255, 0.16),
-            rgba(255, 255, 255, 0.08)
-          ),
-          radial-gradient(circle at top right, rgba(255, 255, 255, 0.35), transparent 55%);
-        mix-blend-mode: screen;
-        opacity: 0.65;
-        pointer-events: none;
+        display: none;
       }
 
       .tools-map-image {
@@ -1251,12 +1240,12 @@
         height: 100%;
         object-fit: cover;
         border-radius: inherit;
-        filter: saturate(0.35) contrast(1.12) brightness(1.08) hue-rotate(178deg) grayscale(0.25);
-        transition: filter 0.45s ease;
+        filter: none;
+        transition: none;
       }
 
       .tools-map-canvas--alive .tools-map-image {
-        filter: saturate(0.5) contrast(1.16) brightness(1.1) hue-rotate(182deg) grayscale(0.2);
+        filter: none;
       }
 
       body[data-theme="dark"] .tools-map-canvas {
@@ -1287,13 +1276,7 @@
       }
 
       body[data-theme="dark"] .tools-map-canvas--map::after {
-        background: linear-gradient(
-            135deg,
-            rgba(56, 115, 226, 0.25),
-            rgba(8, 12, 22, 0.4)
-          ),
-          radial-gradient(circle at top right, rgba(59, 125, 255, 0.45), transparent 55%);
-        opacity: 0.5;
+        display: none;
       }
 
       .tools-map-canvas::before {

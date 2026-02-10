@@ -7199,6 +7199,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const renderToolsSearchMap = (points) => {
     if (!toolsSearchMapCanvasEl) return;
     const safePoints = Array.isArray(points) ? points : [];
+    toolsSearchMapState.points = safePoints;
     const mapContentEl = toolsSearchMapLayerEl ?? toolsSearchMapCanvasEl;
     const existingDots = mapContentEl.querySelectorAll(".tools-map-dot");
     existingDots.forEach((dot) => dot.remove());
@@ -7209,6 +7210,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       if (toolsSearchMapImageEl) {
         toolsSearchMapImageEl.classList.add("is-hidden");
         toolsSearchMapImageEl.removeAttribute("src");
+      }
+      if (toolsSearchMapState.activated) {
+        syncInteractiveToolsSearchMap();
       }
       return;
     }
@@ -7234,7 +7238,149 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         <span class="tools-map-dot__title">${escapeHtml(point.name)}</span>
         <span class="tools-map-dot__count">${point.count}</span>
       `;
+      dot.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        toolsState.filters.object = point.name;
+        syncToolsFilterValue("object", point.name);
+        applyToolsFilters();
+      });
       mapContentEl.appendChild(dot);
+    });
+
+    if (toolsSearchMapState.activated) {
+      syncInteractiveToolsSearchMap();
+    }
+  };
+
+  const toolsSearchMapState = {
+    activated: false,
+    points: [],
+    map: null,
+    markers: [],
+  };
+
+  const syncInteractiveToolsSearchMap = () => {
+    if (!toolsSearchMapState.map || !window.ymaps) return;
+    const safePoints = Array.isArray(toolsSearchMapState.points)
+      ? toolsSearchMapState.points
+      : [];
+
+    toolsSearchMapState.markers.forEach((marker) => {
+      toolsSearchMapState.map?.geoObjects.remove(marker);
+    });
+    toolsSearchMapState.markers = [];
+
+    if (!safePoints.length) {
+      toolsSearchMapState.map.setCenter([53.9, 27.56], 10, {
+        duration: 240,
+      });
+      return;
+    }
+
+    const bounds = [];
+    safePoints.forEach((point) => {
+      const lat = Number(point?.coordinates?.lat);
+      const lng = Number(point?.coordinates?.lng);
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+      const safePointName = escapeHtml(point.name);
+      const toolsCount = Number(point.count) || 0;
+
+      bounds.push([lat, lng]);
+      const marker = new window.ymaps.Placemark(
+        [lat, lng],
+        {
+          balloonContentHeader: safePointName,
+          balloonContentBody: `Инструментов: ${toolsCount}`,
+          hintContent: `${safePointName} · ${toolsCount}`,
+          iconCaption: `${safePointName} · ${toolsCount}`,
+        },
+        {
+          preset: "islands#blueCircleDotIconWithCaption",
+        }
+      );
+      marker.events.add("click", () => {
+        toolsState.filters.object = point.name;
+        syncToolsFilterValue("object", point.name);
+        applyToolsFilters();
+      });
+      toolsSearchMapState.map.geoObjects.add(marker);
+      toolsSearchMapState.markers.push(marker);
+    });
+
+    if (bounds.length) {
+      if (bounds.length === 1) {
+        toolsSearchMapState.map.setCenter(bounds[0], 15, { duration: 260 });
+        return;
+      }
+      toolsSearchMapState.map.setBounds(bounds, {
+        checkZoomRange: true,
+        zoomMargin: [34, 34, 34, 34],
+        duration: 260,
+      });
+    }
+  };
+
+  const activateToolsSearchMapInteraction = async () => {
+    if (
+      !toolsSearchMapCanvasEl ||
+      !toolsSearchMapLayerEl ||
+      toolsSearchMapState.activated
+    ) {
+      return;
+    }
+
+    try {
+      await ensureYandexMapsLoaded();
+      toolsSearchMapState.activated = true;
+      toolsSearchMapCanvasEl.classList.add("tools-map-canvas--interactive");
+      toolsSearchMapCanvasEl.classList.add("tools-map-canvas--interactive-live");
+      toolsSearchMapCanvasEl.classList.add("tools-map-canvas--map");
+      toolsSearchMapCanvasEl.setAttribute(
+        "aria-label",
+        "Карта активна. Перемещайте карту и меняйте масштаб"
+      );
+
+      toolsSearchMapPlaceholderEl?.classList.add("is-hidden");
+      toolsSearchMapImageEl?.classList.add("is-hidden");
+
+      if (!toolsSearchMapState.map) {
+        toolsSearchMapLayerEl.innerHTML = "";
+        toolsSearchMapState.map = new window.ymaps.Map(
+          toolsSearchMapLayerEl,
+          {
+            center: [53.9, 27.56],
+            zoom: 10,
+            controls: ["zoomControl", "geolocationControl"],
+          },
+          {
+            suppressMapOpenBlock: true,
+          }
+        );
+        window.setTimeout(() => {
+          toolsSearchMapState.map?.container?.fitToViewport?.();
+        }, 80);
+      }
+
+      syncInteractiveToolsSearchMap();
+    } catch (error) {
+      console.warn("Не удалось активировать интерактивную карту поиска.", error);
+      toolsSearchMapCanvasEl.setAttribute(
+        "aria-label",
+        "Не удалось загрузить интерактивную карту, попробуйте позже"
+      );
+    }
+  };
+
+  const awakenToolsSearchMap = async () => {
+    if (!toolsSearchMapCanvasEl) return;
+    await activateToolsSearchMapInteraction();
+    toolsSearchMapCanvasEl.classList.remove("tools-map-canvas--alive");
+    window.requestAnimationFrame(() => {
+      toolsSearchMapCanvasEl.classList.add("tools-map-canvas--alive");
+      window.setTimeout(() => {
+        toolsSearchMapCanvasEl.classList.remove("tools-map-canvas--alive");
+      }, 720);
     });
   };
 
@@ -10011,6 +10157,17 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       }
       syncToolsViewButtons();
       renderToolsList();
+    });
+  }
+
+  if (toolsSearchMapCanvasEl) {
+    toolsSearchMapCanvasEl.addEventListener("click", () => {
+      void awakenToolsSearchMap();
+    });
+    toolsSearchMapCanvasEl.addEventListener("keydown", (event) => {
+      if (event.key !== "Enter" && event.key !== " ") return;
+      event.preventDefault();
+      void awakenToolsSearchMap();
     });
   }
 

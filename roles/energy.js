@@ -798,7 +798,7 @@ export function renderRole(user) {
                   role="button"
                   tabindex="0"
                   data-tools-search-map-canvas
-                  aria-label="Карта с найденными инструментами"
+                  aria-label="Нажмите, чтобы оживить карту, масштабировать и перемещать"
                 >
                   <img
                     class="tools-map-image is-hidden"

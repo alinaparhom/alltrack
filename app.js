@@ -4378,7 +4378,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const demandFilterUserEl = contentEl.querySelector("[data-demand-filter-user]");
   const demandFilterStatusEl = contentEl.querySelector("[data-demand-filter-status]");
   const demandFilterViewEl = contentEl.querySelector("[data-demand-filter-view]");
+  const demandMapToggleEl = contentEl.querySelector("[data-demand-map-toggle]");
   const demandListEl = contentEl.querySelector("[data-demand-list]");
+  const demandMapEl = contentEl.querySelector("[data-demand-map]");
+  const demandMapCanvasEl = contentEl.querySelector("[data-demand-map-canvas]");
+  const demandMapLayerEl = contentEl.querySelector("[data-demand-map-layer]");
+  const demandMapImageEl = contentEl.querySelector("[data-demand-map-image]");
+  const demandMapPlaceholderEl = contentEl.querySelector("[data-demand-map-placeholder]");
   const demandEmptyEl = contentEl.querySelector("[data-demand-empty]");
   const demandSubtitleEl = contentEl.querySelector("[data-demand-subtitle]");
   const demandOpenCountEl = contentEl.querySelector("[data-demand-open-count]");
@@ -5334,8 +5340,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     objects: [],
     users: [],
     toolSuggestions: [],
+    objectCoordinates: new Map(),
     editingId: null,
     isSaving: false,
+    mapView: "list",
     filters: {
       search: "",
       object: "",
@@ -6476,11 +6484,134 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
   };
 
+  const setDemandContentView = (view = "list") => {
+    demandState.mapView = view === "map" ? "map" : "list";
+    const isMap = demandState.mapView === "map";
+    demandListEl?.classList.toggle("is-hidden", isMap);
+    demandMapEl?.classList.toggle("is-hidden", !isMap);
+    demandEmptyEl?.classList.toggle("is-hidden", isMap || demandState.filtered.length > 0);
+    if (demandMapToggleEl) {
+      demandMapToggleEl.classList.toggle("is-active", isMap);
+      demandMapToggleEl.setAttribute("aria-pressed", String(isMap));
+      demandMapToggleEl.setAttribute(
+        "aria-label",
+        isMap ? "Показать список заявок" : "Показать карту заявок"
+      );
+      demandMapToggleEl.title = isMap ? "Показать список" : "Показать карту";
+    }
+  };
+
+  const buildDemandMapPoints = () => {
+    const grouped = new Map();
+    demandState.filtered.forEach((item) => {
+      const objectName = String(item.object ?? "").trim();
+      if (!objectName) return;
+      const coordinates = demandState.objectCoordinates.get(objectName);
+      if (!coordinates) return;
+      if (!grouped.has(objectName)) {
+        grouped.set(objectName, {
+          name: objectName,
+          coordinates,
+          items: [],
+        });
+      }
+      grouped.get(objectName).items.push(item);
+    });
+    return Array.from(grouped.values())
+      .map((entry) => ({
+        ...entry,
+        count: entry.items.length,
+      }))
+      .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name, "ru"));
+  };
+
+  const renderDemandMap = () => {
+    if (!demandMapCanvasEl) return;
+    const mapContentEl = demandMapLayerEl ?? demandMapCanvasEl;
+    mapContentEl
+      .querySelectorAll(".demand-map-dot, .demand-map-popup")
+      .forEach((element) => element.remove());
+
+    const points = buildDemandMapPoints();
+    if (!points.length) {
+      demandMapPlaceholderEl?.classList.remove("is-hidden");
+      demandMapCanvasEl.classList.remove("tools-map-canvas--map");
+      if (demandMapImageEl) {
+        demandMapImageEl.classList.add("is-hidden");
+        demandMapImageEl.removeAttribute("src");
+      }
+      return;
+    }
+
+    demandMapPlaceholderEl?.classList.add("is-hidden");
+    demandMapCanvasEl.classList.add("tools-map-canvas--map");
+    const bounds = buildToolsMapBounds(points);
+    if (demandMapImageEl) {
+      demandMapImageEl.src = buildYandexStaticMapUrl(points, bounds);
+      demandMapImageEl.classList.remove("is-hidden");
+    }
+
+    points.forEach((point) => {
+      const position = projectToolsMapPoint(point, bounds);
+      const dot = document.createElement("button");
+      dot.type = "button";
+      dot.className = "tools-map-dot demand-map-dot";
+      dot.style.left = `${(position.x * 100).toFixed(2)}%`;
+      dot.style.top = `${(position.y * 100).toFixed(2)}%`;
+      dot.setAttribute("aria-label", `${point.name}: ${point.count} заявок`);
+      dot.innerHTML = `
+        <span class="tools-map-dot__title">${escapeHtml(point.name)}</span>
+        <span class="tools-map-dot__count">${point.count}</span>
+      `;
+
+      const popup = document.createElement("div");
+      popup.className = "demand-map-popup is-hidden";
+      popup.innerHTML = `
+        <div class="demand-map-popup__title">${escapeHtml(point.name)}</div>
+        <div class="demand-map-popup__list"></div>
+      `;
+      const popupList = popup.querySelector(".demand-map-popup__list");
+      point.items.slice(0, 6).forEach((entry) => {
+        const line = document.createElement("div");
+        line.className = "demand-map-popup__item";
+        line.textContent = `${entry.requestedBy || "Без автора"}: ${entry.item} — ${entry.quantity} ${entry.unit}`;
+        popupList?.appendChild(line);
+      });
+      if (point.items.length > 6) {
+        const more = document.createElement("div");
+        more.className = "demand-map-popup__more";
+        more.textContent = `Ещё ${point.items.length - 6} заявок...`;
+        popupList?.appendChild(more);
+      }
+
+      dot.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        mapContentEl
+          .querySelectorAll(".demand-map-popup")
+          .forEach((element) => element.classList.add("is-hidden"));
+        popup.classList.toggle("is-hidden");
+      });
+
+      mapContentEl.append(dot, popup);
+      popup.style.left = `calc(${(position.x * 100).toFixed(2)}% + 14px)`;
+      popup.style.top = `calc(${(position.y * 100).toFixed(2)}% - 12px)`;
+    });
+
+    demandMapCanvasEl.onclick = (event) => {
+      if (event.target.closest(".demand-map-dot") || event.target.closest(".demand-map-popup")) {
+        return;
+      }
+      mapContentEl
+        .querySelectorAll(".demand-map-popup")
+        .forEach((element) => element.classList.add("is-hidden"));
+    };
+  };
+
   const renderDemandList = () => {
     if (!demandListEl) return;
     applyDemandFilters();
     demandListEl.innerHTML = "";
-    demandEmptyEl?.classList.toggle("is-hidden", demandState.filtered.length > 0);
     demandState.filtered.forEach((item) => {
       const card = document.createElement("div");
       const priorityKey = normalizeDemandPriority(item.priority ?? "green");
@@ -6573,6 +6704,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       demandListEl.appendChild(card);
     });
     updateDemandSummary();
+    setDemandContentView(demandState.mapView);
+    renderDemandMap();
   };
 
   const loadDemandReferences = async () => {
@@ -6583,10 +6716,16 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         loadJson(orgFilePath).catch(() => ({ organizations: [] })),
         loadJson(toolsDatabasePath).catch(() => []),
       ]);
-      demandState.objects = normalizeObjectsData(objectsRaw)
+      const objectEntries = normalizeObjectsData(objectsRaw);
+      demandState.objects = objectEntries
         .map((item) => item.name)
         .filter(Boolean)
         .sort((a, b) => a.localeCompare(b, "ru"));
+      demandState.objectCoordinates = new Map(
+        objectEntries
+          .filter((item) => item.name && item.coordinates)
+          .map((item) => [item.name, item.coordinates])
+      );
       const toolsList = normalizeToolsData(toolsRaw);
       const toolSuggestions = new Set();
       toolsList.forEach((tool) => {
@@ -6658,6 +6797,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
     setDemandFormVisibility(false);
     setDemandFiltersVisibility(false);
+    setDemandContentView("list");
     demandModalEl.classList.remove("is-hidden");
     document.body.style.overflow = "hidden";
     resetDemandForm();
@@ -6671,6 +6811,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     document.body.style.overflow = "";
     setDemandFormVisibility(false);
     setDemandFiltersVisibility(false);
+    setDemandContentView("list");
     resetDemandForm();
     setDemandMessage("");
   };
@@ -6806,6 +6947,14 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         element.classList.toggle("is-active", element === button)
       );
     renderDemandList();
+  });
+
+  demandMapToggleEl?.addEventListener("click", () => {
+    const nextView = demandState.mapView === "map" ? "list" : "map";
+    setDemandContentView(nextView);
+    if (nextView === "map") {
+      renderDemandMap();
+    }
   });
 
   demandListEl?.addEventListener("click", async (event) => {

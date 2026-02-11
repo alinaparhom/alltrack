@@ -68,6 +68,11 @@ const energyFineOptions = [
     defaultAmount: 0,
   },
 ];
+const fineTitleBySettingKey = {
+  lateReply: "Поздний ответ",
+  noPhoto: "Нет фото",
+  movedByEnergy: "Перемещение энергетиком",
+};
 const energyMailingOptions = [
   {
     id: "awaitingReply",
@@ -4966,6 +4971,45 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const usersDetailsEmptyEl = contentEl.querySelector(
     "[data-users-details-empty]"
   );
+  const usersVacationModalEl = contentEl.querySelector(
+    "[data-users-vacation-modal]"
+  );
+  const usersVacationBackdropEl = contentEl.querySelector(
+    "[data-users-vacation-backdrop]"
+  );
+  const usersVacationCloseButton = contentEl.querySelector(
+    "[data-users-vacation-close]"
+  );
+  const usersVacationNameEl = contentEl.querySelector(
+    "[data-users-vacation-name]"
+  );
+  const usersVacationRoleEl = contentEl.querySelector(
+    "[data-users-vacation-role]"
+  );
+  const usersVacationToolsCountEl = contentEl.querySelector(
+    "[data-users-vacation-tools-count]"
+  );
+  const usersVacationFinesEl = contentEl.querySelector(
+    "[data-users-vacation-fines]"
+  );
+  const usersVacationTriggerButton = contentEl.querySelector(
+    "[data-users-vacation-trigger]"
+  );
+  const usersVacationReplaceBox = contentEl.querySelector(
+    "[data-users-vacation-replace]"
+  );
+  const usersVacationReplacerSelect = contentEl.querySelector(
+    "[data-users-vacation-replacer]"
+  );
+  const usersVacationConfirmButton = contentEl.querySelector(
+    "[data-users-vacation-confirm]"
+  );
+  const usersVacationCancelButton = contentEl.querySelector(
+    "[data-users-vacation-cancel]"
+  );
+  const usersVacationMessageEl = contentEl.querySelector(
+    "[data-users-vacation-message]"
+  );
   const usersInviteBox = contentEl.querySelector("[data-users-invite-box]");
   const usersInviteHintEl = contentEl.querySelector("[data-users-invite-hint]");
   const usersInviteNoteEl = contentEl.querySelector("[data-users-invite-note]");
@@ -5613,6 +5657,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   let selectedUsersOrgName = "";
   let selectedUsersOrgDisplayName = "";
   let selectedUsersOrgNames = [];
+  let selectedVacationUser = null;
 
   if (objectsSubtitleEl) {
     const orgLabel =
@@ -16582,6 +16627,134 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     });
   };
 
+  const getFineBalanceByTitle = (rawFines, userName, fineTitle) => {
+    const summaryByUsers =
+      rawFines && typeof rawFines === "object" && !Array.isArray(rawFines)
+        ? rawFines["Штрафы по пользователям"]
+        : null;
+    if (!summaryByUsers || typeof summaryByUsers !== "object") return 0;
+    const targetName = normalizePersonName(userName);
+    const matchedEntry = Object.entries(summaryByUsers).find(([name]) => {
+      return normalizePersonName(name) === targetName;
+    });
+    if (!matchedEntry) return 0;
+    const userSummary = matchedEntry[1];
+    const typeSummary =
+      userSummary && typeof userSummary === "object" ? userSummary[fineTitle] : null;
+    return normalizeCostValue(typeSummary?.["Остаток"] ?? 0) || 0;
+  };
+
+  const loadResponsibleVacationStats = async (entry) => {
+    const fullName = String(entry?.full_name ?? "").trim();
+    if (!fullName || !context.orgFolderName) {
+      return { toolsCount: 0, fineItems: [] };
+    }
+    const settingsPath = `./${context.orgFolderName}/Настройки.json`;
+    const finesPath = `./${context.orgFolderName}/Штрафы.json`;
+    const toolsPath = `./${context.orgFolderName}/База с инструментами.json`;
+    const [rawTools, settingsData, rawFines] = await Promise.all([
+      loadJson(toolsPath).catch(() => []),
+      loadJson(settingsPath).catch(() => ({})),
+      loadJson(finesPath).catch(() => ({})),
+    ]);
+    const tools = normalizeToolsData(rawTools);
+    const toolsCount = tools.filter((tool) => {
+      return (
+        normalizePersonName(tool?.["Ответственный"] ?? "") ===
+        normalizePersonName(fullName)
+      );
+    }).length;
+
+    const fineSettings = settingsData?.organization?.fines ?? {};
+    const fineItems = Object.entries(fineSettings)
+      .filter(([, config]) => Boolean(config?.enabled))
+      .map(([key]) => {
+        const title = fineTitleBySettingKey[key] ?? key;
+        return {
+          key,
+          title,
+          balance: getFineBalanceByTitle(rawFines, fullName, title),
+        };
+      });
+
+    return { toolsCount, fineItems };
+  };
+
+  const fillVacationReplacers = (entry) => {
+    if (!usersVacationReplacerSelect) return;
+    usersVacationReplacerSelect.innerHTML = '<option value="">Выберите сотрудника</option>';
+    const options = filterOrgUsers(usersState.users, selectedUsersOrgNames).filter((item) => {
+      const role = String(item?.role ?? "").trim();
+      return (
+        (role === energyRole || role === responsibleRole) &&
+        normalizePersonName(item?.full_name ?? "") !==
+          normalizePersonName(entry?.full_name ?? "")
+      );
+    });
+    options.forEach((item) => {
+      const option = document.createElement("option");
+      option.value = String(item?.full_name ?? "").trim();
+      option.textContent = `${formatFullName(option.value)} · ${String(
+        item?.role ?? ""
+      ).trim()}`;
+      usersVacationReplacerSelect.appendChild(option);
+    });
+  };
+
+  const setVacationMessage = (message = "", type = "") => {
+    if (!usersVacationMessageEl) return;
+    usersVacationMessageEl.textContent = message;
+    usersVacationMessageEl.dataset.type = type;
+  };
+
+  const closeUsersVacationModal = () => {
+    if (!usersVacationModalEl) return;
+    usersVacationModalEl.classList.add("is-hidden");
+    if (usersVacationReplaceBox) {
+      usersVacationReplaceBox.classList.add("is-hidden");
+    }
+    selectedVacationUser = null;
+    setVacationMessage("");
+  };
+
+  const openUsersVacationModal = async (entry) => {
+    if (!usersVacationModalEl || !entry) return;
+    selectedVacationUser = entry;
+    const roleName = String(entry?.role ?? "").trim();
+    if (usersVacationNameEl) {
+      usersVacationNameEl.textContent = formatFullName(String(entry?.full_name ?? ""));
+    }
+    if (usersVacationRoleEl) {
+      usersVacationRoleEl.textContent = roleName || "Роль не указана";
+    }
+    const stats = await loadResponsibleVacationStats(entry);
+    if (usersVacationToolsCountEl) {
+      usersVacationToolsCountEl.textContent = String(stats.toolsCount);
+    }
+    if (usersVacationFinesEl) {
+      usersVacationFinesEl.innerHTML = "";
+      if (!stats.fineItems.length) {
+        const empty = document.createElement("div");
+        empty.className = "users-vacation__fine-empty";
+        empty.textContent = "Нет включённых типов штрафов.";
+        usersVacationFinesEl.appendChild(empty);
+      } else {
+        stats.fineItems.forEach((item) => {
+          const row = document.createElement("div");
+          row.className = "users-vacation__fine-row";
+          row.innerHTML = `<span>${item.title}</span><strong>Остаток: ${item.balance}</strong>`;
+          usersVacationFinesEl.appendChild(row);
+        });
+      }
+    }
+    if (usersVacationReplaceBox) {
+      usersVacationReplaceBox.classList.add("is-hidden");
+    }
+    fillVacationReplacers(entry);
+    setVacationMessage("");
+    usersVacationModalEl.classList.remove("is-hidden");
+  };
+
   const renderUsersDetails = (orgUsers) => {
     if (!usersDetailsListEl) return;
     usersDetailsListEl.innerHTML = "";
@@ -16613,33 +16786,38 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const telegramStatus = document.createElement("span");
       telegramStatus.className = "users-details__status";
       const hasTelegramId = Boolean(normalizeTelegramId(entry?.telegram_id));
-      const canInvite = roleName === responsibleRole && !hasTelegramId;
-      telegramStatus.textContent = hasTelegramId
-        ? "ID привязан"
-        : canInvite
-          ? "ID не привязан · нажмите, чтобы пригласить"
-          : "ID не привязан";
+      const isResponsible = roleName === responsibleRole;
+      const isVacation = Boolean(entry?.on_vacation);
+      const vacationReplacer = String(entry?.vacation_replacer ?? "").trim();
+      telegramStatus.textContent = hasTelegramId ? "ID привязан" : "ID не привязан";
       telegramStatus.classList.toggle("is-linked", hasTelegramId);
       meta.append(roleTag, telegramStatus);
 
+      if (isVacation) {
+        card.classList.add("is-vacation");
+        const vacationTag = document.createElement("span");
+        vacationTag.className = "users-details__status is-vacation";
+        vacationTag.textContent = vacationReplacer
+          ? `В отпуске · заменяет: ${formatFullName(vacationReplacer)}`
+          : "В отпуске";
+        meta.appendChild(vacationTag);
+      }
+
       info.append(name, meta);
       card.append(initials, info);
-      if (canInvite) {
+      if (isResponsible) {
         card.classList.add("is-actionable");
         card.setAttribute("role", "button");
         card.setAttribute("tabindex", "0");
-        card.setAttribute(
-          "aria-label",
-          `Пригласить ответственного ${name.textContent}`
-        );
-        const handleInvite = () => {
-          createResponsibleInvite(entry);
+        card.setAttribute("aria-label", `Управление отпуском: ${name.textContent}`);
+        const handleOpenVacation = () => {
+          openUsersVacationModal(entry);
         };
-        card.addEventListener("click", handleInvite);
+        card.addEventListener("click", handleOpenVacation);
         card.addEventListener("keydown", (event) => {
           if (event.key === "Enter" || event.key === " ") {
             event.preventDefault();
-            handleInvite();
+            handleOpenVacation();
           }
         });
       }
@@ -16708,8 +16886,60 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (usersAddModalEl) {
       usersAddModalEl.classList.add("is-hidden");
     }
+    closeUsersVacationModal();
     resetUsersInvite();
     document.body.style.overflow = "";
+  };
+
+  const applyResponsibleVacation = async () => {
+    if (!selectedVacationUser) return;
+    const replacerName = String(usersVacationReplacerSelect?.value ?? "").trim();
+    if (!replacerName) {
+      setVacationMessage("Выберите, кто заменяет ответственного.", "error");
+      return;
+    }
+    const sourceName = String(selectedVacationUser?.full_name ?? "").trim();
+    if (!sourceName) return;
+    const isConfirmed = window.confirm(
+      `Отправить в отпуск ${formatFullName(sourceName)} и назначить замену: ${formatFullName(
+        replacerName
+      )}?`
+    );
+    if (!isConfirmed) return;
+
+    try {
+      setVacationMessage("Сохраняем изменения...", "info");
+      const usersData = await loadJson(usersFilePath).catch(() => ({ users: [] }));
+      const nextUsers = Array.isArray(usersData?.users) ? [...usersData.users] : [];
+      const targetIndex = nextUsers.findIndex((item) => {
+        return (
+          normalizePersonName(item?.full_name ?? "") ===
+            normalizePersonName(sourceName) &&
+          normalizeOrganizationName(item?.organization ?? "") ===
+            normalizeOrganizationName(selectedVacationUser?.organization ?? "")
+        );
+      });
+      if (targetIndex < 0) {
+        setVacationMessage("Не удалось найти пользователя в users.json.", "error");
+        return;
+      }
+      nextUsers[targetIndex] = {
+        ...nextUsers[targetIndex],
+        on_vacation: true,
+        vacation_replacer: replacerName,
+        vacation_start_at: new Date().toISOString(),
+      };
+      await saveJson(usersFilePath, { users: nextUsers }, { user });
+      usersState.users = nextUsers;
+      updateUsersDetailsView();
+      setVacationMessage("Готово. Ответственный отправлен в отпуск.", "success");
+      setTimeout(() => {
+        closeUsersVacationModal();
+      }, 500);
+    } catch (error) {
+      console.error(error);
+      setVacationMessage("Не удалось сохранить отпуск. Попробуйте позже.", "error");
+    }
   };
 
   const createResponsibleInvite = async (entry) => {
@@ -16805,6 +17035,17 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
   usersDetailsBackdropEl?.addEventListener("click", closeUsersDetailsModal);
   usersDetailsCloseButton?.addEventListener("click", closeUsersDetailsModal);
+  usersVacationBackdropEl?.addEventListener("click", closeUsersVacationModal);
+  usersVacationCloseButton?.addEventListener("click", closeUsersVacationModal);
+  usersVacationTriggerButton?.addEventListener("click", () => {
+    usersVacationReplaceBox?.classList.remove("is-hidden");
+    setVacationMessage("");
+  });
+  usersVacationCancelButton?.addEventListener("click", () => {
+    usersVacationReplaceBox?.classList.add("is-hidden");
+    setVacationMessage("");
+  });
+  usersVacationConfirmButton?.addEventListener("click", applyResponsibleVacation);
   usersAddButton?.addEventListener("click", openUsersAddModal);
   usersAddBackdropEl?.addEventListener("click", closeUsersAddModal);
   usersAddCloseButton?.addEventListener("click", closeUsersAddModal);

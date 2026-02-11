@@ -5430,6 +5430,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     pendingItems: [],
     allMoves: [],
     toolMap: new Map(),
+    fineConfig: {},
     isSaving: false,
   };
   const toolsCancelMoveState = {
@@ -10377,6 +10378,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const orgFolder = context.orgFolderName ?? "";
     pendingMovesState.pendingItems = [];
     pendingMovesState.allMoves = [];
+    pendingMovesState.fineConfig = {};
     if (!orgFolder) {
       setPendingMovesSubtitle("Организация не найдена.");
       renderPendingMovesList();
@@ -10402,6 +10404,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
     const userName = normalizePersonName(user?.full_name ?? "");
     const fineConfig = settingsData?.organization?.fines?.lateReply ?? {};
+    pendingMovesState.fineConfig = fineConfig;
     const pendingItems = moves
       .map((move, index) => ({ move, moveIndex: index }))
       .filter(({ move }) => {
@@ -10537,7 +10540,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     moveIndexes.forEach((index) => {
       const move = updatedMoves[index];
       if (!move) return;
-      const fineAmount = resolveMoveFineAmount(move);
+      const fineAmount =
+        resolveMoveFineAmount(move) ||
+        (decision === "Принял"
+          ? resolveLateReplyFine(move, pendingMovesState.fineConfig)
+          : 0);
       if (fineAmount > 0) {
         fineEntries.push(
           buildMoveFineEntry(move, fineAmount, responseDate, decision, declineReason)
@@ -10555,6 +10562,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           }
           updatedMoves[index] = {
             ...move,
+            "Штраф за ответ": fineAmount,
             "Штраф по отвеченному перемещению": fineAmount,
             "Тип штрафа": fineType,
           };

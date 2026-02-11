@@ -191,6 +191,98 @@ async function sendTelegramMessage(chatId, text) {
   }
 }
 
+function splitTelegramMessage(text, limit = 3900) {
+  const source = String(text ?? '');
+  if (source.length <= limit) return [source];
+
+  const parts = [];
+  const lines = source.split('\n');
+  let chunk = '';
+
+  for (const line of lines) {
+    const next = chunk ? `${chunk}\n${line}` : line;
+    if (next.length <= limit) {
+      chunk = next;
+      continue;
+    }
+
+    if (chunk) {
+      parts.push(chunk);
+      chunk = '';
+    }
+
+    if (line.length <= limit) {
+      chunk = line;
+      continue;
+    }
+
+    for (let i = 0; i < line.length; i += limit) {
+      parts.push(line.slice(i, i + limit));
+    }
+  }
+
+  if (chunk) parts.push(chunk);
+  return parts.filter(Boolean);
+}
+
+async function sendTelegramInChunks(chatId, text) {
+  const chunks = splitTelegramMessage(text);
+  for (const chunk of chunks) {
+    await sendTelegramMessage(chatId, chunk);
+  }
+}
+
+function resolveMailingTelegramIds(settings) {
+  const mailing = settings?.organization?.mailings?.awaitingReply ?? {};
+  const schedule = mailing.telegramSchedule ?? {};
+  const idsFromSchedule = Object.keys(schedule)
+    .map((id) => String(id ?? '').trim())
+    .filter(Boolean);
+
+  if (idsFromSchedule.length) return idsFromSchedule;
+
+  return (settings?.organization?.telegramGroups ?? [])
+    .map((group) => String(group?.telegramId ?? '').trim())
+    .filter(Boolean);
+}
+
+function buildErrorMessage(orgFolder, error) {
+  return [
+    `<b>Ошибка рассылки awaitingReply · ${escapeHtml(orgFolder)}</b>`,
+    `Не удалось сформировать/отправить уведомление.`,
+    '',
+    `<b>Причина:</b> ${escapeHtml(error?.message || String(error))}`,
+  ].join('\n');
+}
+
+async function notifyMailingError(orgFolder, error) {
+  try {
+    const settingsPath = path.join(orgFolder, 'Настройки.json');
+    const settings = await loadJson(settingsPath);
+    const telegramIds = resolveMailingTelegramIds(settings);
+    if (!telegramIds.length) {
+      console.error('Нет Telegram-групп для отправки ошибки рассылки awaitingReply');
+      return;
+    }
+
+    const message = buildErrorMessage(orgFolder, error);
+    await Promise.all(
+      telegramIds.map(async (chatId) => {
+        try {
+          await sendTelegramInChunks(chatId, message);
+        } catch (notifyError) {
+          console.error(
+            `Не удалось отправить ошибку рассылки awaitingReply в группу ${chatId}:`,
+            notifyError
+          );
+        }
+      })
+    );
+  } catch (notifySetupError) {
+    console.error('Не удалось подготовить отправку ошибки рассылки awaitingReply:', notifySetupError);
+  }
+}
+
 async function main() {
   const settingsPath = path.join(ORG_FOLDER, 'Настройки.json');
   const movesPath = path.join(ORG_FOLDER, 'Перемещения.json');
@@ -210,10 +302,9 @@ async function main() {
     (mailing.toolGroups ?? []).map((item) => normalizeKey(item)).filter(Boolean)
   );
 
-  const telegramIds = (settings?.organization?.telegramGroups ?? [])
-    .map((group) => String(group?.telegramId ?? '').trim())
-    .filter(Boolean)
-    .filter((id) => mailing.telegramSchedule?.[id]);
+  const telegramIds = resolveMailingTelegramIds(settings).filter(
+    (id) => mailing.telegramSchedule?.[id]
+  );
 
   if (!telegramIds.length) {
     console.log('Нет групп Telegram в awaitingReply.telegramSchedule');
@@ -276,12 +367,13 @@ async function main() {
   }
 
   for (const chatId of telegramIds) {
-    await sendTelegramMessage(chatId, message);
+    await sendTelegramInChunks(chatId, message);
     console.log(`Отправлено в группу ${chatId}`);
   }
 }
 
-main().catch((error) => {
+main().catch(async (error) => {
   console.error(error);
+  await notifyMailingError(ORG_FOLDER, error);
   process.exitCode = 1;
 });

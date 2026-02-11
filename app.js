@@ -10495,7 +10495,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         return;
       }
     }
-    const fineEntries = [];
     const acceptedFineSummaryUpdates = new Map();
     let toolsPayload = null;
     let toolsNormalized = null;
@@ -10537,9 +10536,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           ? resolveLateReplyFine(move, pendingMovesState.fineConfig)
           : 0);
       if (fineAmount > 0) {
-        fineEntries.push(
-          buildMoveFineEntry(move, fineAmount, responseDate, decision, declineReason)
-        );
         if (decision === "Принял") {
           const acceptedBy = String(move?.["Принял"] ?? "").trim();
           const fineType = normalizeMoveFineType(move);
@@ -10611,20 +10607,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         : toolsNormalized.items;
     }
     let finesPayload = null;
-    if (fineEntries.length || acceptedFineSummaryUpdates.size) {
+    if (acceptedFineSummaryUpdates.size) {
       const finesPath = `./${context.orgFolderName}/Штрафы.json`;
       try {
         const rawFines = await loadJson(finesPath);
-        const finesWithSummary = applyMoveFinesSummaryUpdates(
-          rawFines,
-          acceptedFineSummaryUpdates
-        );
-        finesWithSummary.fines.push(...fineEntries);
-        finesPayload = finesWithSummary;
+        finesPayload = applyMoveFinesSummaryUpdates(rawFines, acceptedFineSummaryUpdates);
       } catch (error) {
-        const fallback = applyMoveFinesSummaryUpdates({}, acceptedFineSummaryUpdates);
-        fallback.fines.push(...fineEntries);
-        finesPayload = fallback;
+        finesPayload = applyMoveFinesSummaryUpdates({}, acceptedFineSummaryUpdates);
       }
     }
     try {

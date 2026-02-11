@@ -43,6 +43,8 @@ const fallbackBotToken = "8549452123:AAGxveuJSVf-xpNHQYTDKDmuMmHjGRVeDj0";
 const botUsernameCacheKey = "alltrack-bot-username";
 const initDataCacheKey = "alltrack-init-data";
 const initDataLocalCacheKey = "alltrack-init-data-local";
+const awaitingReplyMailingCacheKey = "alltrack-awaiting-reply-mailing-history";
+const awaitingReplyMailingIntervalMs = 30000;
 const cacheBuster =
   window.ALLTRACK_CACHE_BUSTER || new Date().toISOString().replace(/\D/g, "");
 const defaultPreferences = {
@@ -113,6 +115,7 @@ let currentUserLabel = "";
 let currentPreferences = { ...defaultPreferences };
 let currentSettingsContext = null;
 let pendingGroupingStart = false;
+let awaitingReplyMailingTimerId = null;
 const buildUploadUserMeta = ({ organizationName } = {}) => {
   if (!organizationName && !currentUser) return {};
   return {
@@ -891,6 +894,211 @@ function isNotificationPhotoEnabled(settingsData, notificationId) {
     settingsData?.notifications?.[notificationId]?.attachPhoto ??
     settingsData?.organization?.notifications?.[notificationId]?.attachPhoto;
   return Boolean(value);
+}
+
+function getWeekDayShortName(date = new Date()) {
+  const weekDayIndex = date.getDay();
+  const map = ["Вс", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"];
+  return map[weekDayIndex] ?? "";
+}
+
+function loadAwaitingReplyMailingHistory() {
+  try {
+    const raw = localStorage.getItem(awaitingReplyMailingCacheKey);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return {};
+    return parsed;
+  } catch (error) {
+    return {};
+  }
+}
+
+function saveAwaitingReplyMailingHistory(history) {
+  try {
+    localStorage.setItem(
+      awaitingReplyMailingCacheKey,
+      JSON.stringify(history ?? {})
+    );
+  } catch (error) {
+    console.warn("Не удалось сохранить историю рассылки.", error);
+  }
+}
+
+function buildAwaitingReplyMailingMessage(items, { orgFullName } = {}) {
+  const organizationLine = orgFullName
+    ? `Организация: ${escapeTelegramHtml(formatNotificationValue(orgFullName))}`
+    : "";
+  const header = [
+    "⏳ <b><u>ОЖИДАЮТ ПРИНЯТИЯ</u></b>",
+    organizationLine,
+    `Всего инструментов: <b>${items.length}</b>`,
+    "",
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  const maxRows = 20;
+  const rows = items.slice(0, maxRows).map((item, index) => {
+    const title = [
+      formatNotificationValue(item?.tool?.["Наименование"], ""),
+      formatNotificationValue(item?.tool?.["Производитель"], ""),
+      formatNotificationValue(item?.tool?.["Модель"], ""),
+    ]
+      .map((part) => part.trim())
+      .filter(Boolean)
+      .join(" ");
+    const responsible = formatNotificationValue(item?.move?.["Принял"]);
+    const objectName = formatNotificationValue(item?.move?.["Новый объект"]);
+    const moveDate = formatNotificationValue(item?.move?.["Дата перемещения"]);
+    return [
+      `${index + 1}. №${escapeTelegramHtml(formatNotificationValue(item?.move?.["Номер"]))} | Бух: ${escapeTelegramHtml(
+        formatNotificationValue(item?.move?.["Бух.номер"])
+      )}`,
+      `• ${escapeTelegramHtml(title || "Без названия")}`,
+      `• Принять: ${escapeTelegramHtml(responsible)}`,
+      `• Объект: ${escapeTelegramHtml(objectName)}`,
+      `• Дата перемещения: ${escapeTelegramHtml(moveDate)}`,
+    ].join("\n");
+  });
+
+  const hiddenCount = Math.max(0, items.length - maxRows);
+  const footer = hiddenCount
+    ? `\n\n... и ещё ${hiddenCount} инструмент(ов).`
+    : "";
+  return `${header}${rows.join("\n\n")}${footer}`.trim();
+}
+
+async function loadAwaitingReplyItemsForMailing(orgFolderName, selectedToolGroups = []) {
+  if (!orgFolderName) return [];
+  const movesPath = `./${orgFolderName}/Перемещения.json`;
+  const toolsPath = `./${orgFolderName}/База с инструментами.json`;
+  let moves = [];
+  let tools = [];
+
+  try {
+    const rawMoves = await loadJson(movesPath);
+    moves = Array.isArray(rawMoves)
+      ? rawMoves
+      : Array.isArray(rawMoves?.moves)
+        ? rawMoves.moves
+        : [];
+  } catch (error) {
+    console.warn("Не удалось загрузить перемещения для рассылки.", error);
+  }
+
+  try {
+    const rawTools = await loadJson(toolsPath);
+    tools = Array.isArray(rawTools)
+      ? rawTools
+      : Array.isArray(rawTools?.tools)
+        ? rawTools.tools
+        : [];
+  } catch (error) {
+    console.warn("Не удалось загрузить базу инструментов для рассылки.", error);
+  }
+
+  const toolMap = new Map();
+  tools.forEach((tool) => {
+    const number = String(tool?.["Номер"] ?? "").trim();
+    const accounting = String(tool?.["Бух.номер"] ?? "").trim();
+    if (number) toolMap.set(`n:${number}`, tool);
+    if (accounting) toolMap.set(`a:${accounting}`, tool);
+  });
+
+  const allowedGroups = new Set(
+    Array.isArray(selectedToolGroups)
+      ? selectedToolGroups.map((group) => String(group ?? "").trim()).filter(Boolean)
+      : []
+  );
+
+  return moves
+    .filter((move) => {
+      const responseDate = String(move?.["Дата ответа"] ?? "").trim();
+      if (responseDate) return false;
+      const acceptedBy = normalizePersonName(move?.["Принял"] ?? "");
+      return Boolean(acceptedBy);
+    })
+    .map((move) => {
+      const number = String(move?.["Номер"] ?? "").trim();
+      const accounting = String(move?.["Бух.номер"] ?? "").trim();
+      const tool = toolMap.get(`n:${number}`) ?? toolMap.get(`a:${accounting}`) ?? null;
+      return { move, tool };
+    })
+    .filter((entry) => {
+      if (!allowedGroups.size) return true;
+      const toolGroup = String(entry.tool?.["Граппа инструментов"] ?? "").trim();
+      return toolGroup ? allowedGroups.has(toolGroup) : false;
+    });
+}
+
+async function runAwaitingReplyMailingTick(context) {
+  if (!context?.orgFolderName || !context?.settingsPath) return;
+  const now = new Date();
+  const weekday = getWeekDayShortName(now);
+  const currentTime = `${String(now.getHours()).padStart(2, "0")}:${String(
+    now.getMinutes()
+  ).padStart(2, "0")}`;
+
+  let settingsData;
+  try {
+    settingsData = ensureSettingsData(await loadJson(context.settingsPath));
+  } catch (error) {
+    console.warn("Не удалось загрузить настройки для рассылки.", error);
+    return;
+  }
+
+  const organizationSettings = getEnergyOrganizationSettings(settingsData);
+  const mailingConfig = organizationSettings.mailings?.awaitingReply ?? {};
+  if (!mailingConfig.enabled) return;
+
+  const history = loadAwaitingReplyMailingHistory();
+  const dayStamp = formatIsoDateValue(now);
+  const selectedToolGroups = Array.isArray(mailingConfig.toolGroups)
+    ? mailingConfig.toolGroups
+    : [];
+
+  const scheduleEntries = Object.entries(mailingConfig.telegramSchedule ?? {});
+  for (const [groupIdRaw, schedule] of scheduleEntries) {
+    const groupId = normalizeTelegramId(groupIdRaw);
+    if (!groupId) continue;
+    const days = Array.isArray(schedule?.days) ? schedule.days : [];
+    const time = normalizeTime(schedule?.time, "");
+    if (!days.includes(weekday) || time !== currentTime) continue;
+
+    const historyKey = `${context.orgFolderName}|awaitingReply|${groupId}|${dayStamp}|${time}`;
+    if (history[historyKey]) continue;
+
+    const items = await loadAwaitingReplyItemsForMailing(
+      context.orgFolderName,
+      selectedToolGroups
+    );
+    const message = buildAwaitingReplyMailingMessage(items, {
+      orgFullName: context.orgFullName,
+    });
+    const result = await sendTelegramMessage(groupId, message);
+    if (result.ok) {
+      history[historyKey] = now.toISOString();
+      saveAwaitingReplyMailingHistory(history);
+    } else {
+      console.warn("Не удалось отправить рассылку по ожидающим принятия.", {
+        groupId,
+        error: formatTelegramSendError(result),
+      });
+    }
+  }
+}
+
+function startAwaitingReplyMailingScheduler(context) {
+  if (awaitingReplyMailingTimerId) {
+    window.clearInterval(awaitingReplyMailingTimerId);
+    awaitingReplyMailingTimerId = null;
+  }
+  if (!context) return;
+  void runAwaitingReplyMailingTick(context);
+  awaitingReplyMailingTimerId = window.setInterval(() => {
+    void runAwaitingReplyMailingTick(context);
+  }, awaitingReplyMailingIntervalMs);
 }
 
 function buildNewToolNotificationMessage(
@@ -20658,6 +20866,12 @@ async function loadUser() {
       ...defaultPreferences,
       ...savedPreferences,
     });
+
+    if (user.role === energyRole) {
+      startAwaitingReplyMailingScheduler(currentSettingsContext);
+    } else {
+      startAwaitingReplyMailingScheduler(null);
+    }
 
     await renderUserRoleView();
     void appendAuthLog("role_rendered", {

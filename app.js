@@ -46,6 +46,7 @@ const botUsernameCacheKey = "alltrack-bot-username";
 const initDataCacheKey = "alltrack-init-data";
 const initDataLocalCacheKey = "alltrack-init-data-local";
 const awaitingReplyMailingCacheKey = "alltrack-awaiting-reply-mailing-history";
+const awaitingReplyTickLogCacheKey = "alltrack-awaiting-reply-last-tick-log";
 const awaitingReplyMailingIntervalMs = 30000;
 const cacheBuster =
   window.ALLTRACK_CACHE_BUSTER || new Date().toISOString().replace(/\D/g, "");
@@ -813,6 +814,23 @@ async function appendMailingErrorLog(detail = {}) {
   }
 }
 
+function shouldLogAwaitingReplyTick(now = new Date()) {
+  const minuteStamp = `${formatIsoDateValue(now)} ${String(now.getHours()).padStart(
+    2,
+    "0"
+  )}:${String(now.getMinutes()).padStart(2, "0")}`;
+  try {
+    const previousMinute = localStorage.getItem(awaitingReplyTickLogCacheKey);
+    if (previousMinute === minuteStamp) {
+      return false;
+    }
+    localStorage.setItem(awaitingReplyTickLogCacheKey, minuteStamp);
+    return true;
+  } catch (error) {
+    return true;
+  }
+}
+
 function getTelegramBotUsername() {
   const webApp = window.Telegram?.WebApp;
   return (
@@ -1103,6 +1121,18 @@ async function runAwaitingReplyMailingTick(context) {
     now.getMinutes()
   ).padStart(2, "0")}`;
 
+  if (shouldLogAwaitingReplyTick(now)) {
+    await appendMailingErrorLog({
+      mailing: "awaitingReply",
+      stage: "tick",
+      type: "info",
+      orgFolderName: context.orgFolderName,
+      orgFullName: context.orgFullName ?? "",
+      weekday,
+      time: currentTime,
+    });
+  }
+
   let settingsData;
   try {
     settingsData = ensureSettingsData(await loadJson(context.settingsPath));
@@ -1120,7 +1150,16 @@ async function runAwaitingReplyMailingTick(context) {
 
   const organizationSettings = getEnergyOrganizationSettings(settingsData);
   const mailingConfig = organizationSettings.mailings?.awaitingReply ?? {};
-  if (!mailingConfig.enabled) return;
+  if (!mailingConfig.enabled) {
+    await appendMailingErrorLog({
+      mailing: "awaitingReply",
+      stage: "mailing-disabled",
+      type: "warning",
+      orgFolderName: context.orgFolderName,
+      orgFullName: context.orgFullName ?? "",
+    });
+    return;
+  }
 
   const history = loadAwaitingReplyMailingHistory();
   const dayStamp = formatIsoDateValue(now);
@@ -1129,6 +1168,16 @@ async function runAwaitingReplyMailingTick(context) {
     : [];
 
   const scheduleEntries = Object.entries(mailingConfig.telegramSchedule ?? {});
+  if (!scheduleEntries.length) {
+    await appendMailingErrorLog({
+      mailing: "awaitingReply",
+      stage: "empty-telegram-schedule",
+      type: "warning",
+      orgFolderName: context.orgFolderName,
+      orgFullName: context.orgFullName ?? "",
+    });
+    return;
+  }
   for (const [groupIdRaw, schedule] of scheduleEntries) {
     const groupId = normalizeTelegramId(groupIdRaw);
     if (!groupId) continue;
@@ -1141,6 +1190,16 @@ async function runAwaitingReplyMailingTick(context) {
 
     let result = null;
     try {
+      await appendMailingErrorLog({
+        mailing: "awaitingReply",
+        stage: "send-start",
+        type: "info",
+        orgFolderName: context.orgFolderName,
+        orgFullName: context.orgFullName ?? "",
+        groupId,
+        weekday,
+        time,
+      });
       const items = await loadAwaitingReplyItemsForMailing(
         context.orgFolderName,
         selectedToolGroups
@@ -1180,6 +1239,14 @@ async function runAwaitingReplyMailingTick(context) {
     }
 
     if (result?.ok) {
+      await appendMailingErrorLog({
+        mailing: "awaitingReply",
+        stage: "send-success",
+        type: "info",
+        orgFolderName: context.orgFolderName,
+        orgFullName: context.orgFullName ?? "",
+        groupId,
+      });
       history[historyKey] = now.toISOString();
       saveAwaitingReplyMailingHistory(history);
       continue;
@@ -1201,6 +1268,14 @@ async function runAwaitingReplyMailingTick(context) {
       stage: "send-fallback-error-message",
     });
     if (fallbackResult?.ok) {
+      await appendMailingErrorLog({
+        mailing: "awaitingReply",
+        stage: "send-fallback-success",
+        type: "warning",
+        orgFolderName: context.orgFolderName,
+        orgFullName: context.orgFullName ?? "",
+        groupId,
+      });
       history[historyKey] = now.toISOString();
       saveAwaitingReplyMailingHistory(history);
     } else {
@@ -1218,8 +1293,26 @@ async function runAwaitingReplyMailingTick(context) {
         parseMode: null,
       });
       if (emergencyResult?.ok) {
+        await appendMailingErrorLog({
+          mailing: "awaitingReply",
+          stage: "send-emergency-success",
+          type: "warning",
+          orgFolderName: context.orgFolderName,
+          orgFullName: context.orgFullName ?? "",
+          groupId,
+        });
         history[historyKey] = now.toISOString();
         saveAwaitingReplyMailingHistory(history);
+      } else {
+        await appendMailingErrorLog({
+          mailing: "awaitingReply",
+          stage: "send-emergency-failed",
+          type: "error",
+          orgFolderName: context.orgFolderName,
+          orgFullName: context.orgFullName ?? "",
+          groupId,
+          error: formatTelegramSendError(emergencyResult ?? {}),
+        });
       }
     }
   }

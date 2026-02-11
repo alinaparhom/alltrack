@@ -13,6 +13,34 @@ if (!is_array($payload)) {
 
 $allowedFiles = ["organizations.json", "users.json", "pending-registrations.json", "telegram-mailing-errors.json"];
 
+function appendMailingLog(string $level, string $message, array $context = []): void {
+  $logPath = __DIR__ . DIRECTORY_SEPARATOR . "telegram-mailing-errors.json";
+  $existing = readJsonFile($logPath, ["logs" => []]);
+  $logs = [];
+  if (isset($existing["logs"]) && is_array($existing["logs"])) {
+    $logs = $existing["logs"];
+  }
+
+  $timezone = new DateTimeZone("Europe/Moscow");
+  $entry = [
+    "timestamp" => (new DateTimeImmutable("now", $timezone))->format(DateTimeInterface::ATOM),
+    "level" => $level,
+    "message" => $message,
+    "context" => $context,
+  ];
+
+  $logs[] = $entry;
+  if (count($logs) > 1000) {
+    $logs = array_slice($logs, -1000);
+  }
+
+  $encoded = json_encode(["logs" => $logs], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+  if ($encoded === false) {
+    return;
+  }
+  file_put_contents($logPath, $encoded . PHP_EOL, LOCK_EX);
+}
+
 function readJsonFile(string $path, $default) {
   if (!file_exists($path)) {
     return $default;
@@ -682,7 +710,7 @@ function extractPendingMoveLines(array $moves): array {
   return $lines;
 }
 
-function sendTelegramTextMessage(string $botToken, string $chatId, string $text): bool {
+function sendTelegramTextMessage(string $botToken, string $chatId, string $text): array {
   $apiUrl = "https://api.telegram.org/bot" . rawurlencode($botToken) . "/sendMessage";
   $payload = [
     "chat_id" => $chatId,
@@ -702,11 +730,48 @@ function sendTelegramTextMessage(string $botToken, string $chatId, string $text)
 
   $context = stream_context_create($options);
   $response = @file_get_contents($apiUrl, false, $context);
-  if ($response === false) {
-    return false;
+  $statusCode = 0;
+  if (!empty($http_response_header) && is_array($http_response_header)) {
+    foreach ($http_response_header as $headerLine) {
+      if (preg_match('/^HTTP\/\S+\s+(\d{3})/', (string) $headerLine, $matches)) {
+        $statusCode = (int) $matches[1];
+        break;
+      }
+    }
   }
+
+  if ($response === false) {
+    return [
+      "ok" => false,
+      "error" => "Не удалось подключиться к Telegram API",
+      "statusCode" => $statusCode,
+    ];
+  }
+
   $decoded = json_decode($response, true);
-  return is_array($decoded) && !empty($decoded["ok"]);
+  if (!is_array($decoded)) {
+    return [
+      "ok" => false,
+      "error" => "Некорректный JSON ответ от Telegram",
+      "statusCode" => $statusCode,
+      "response" => mb_substr($response, 0, 800),
+    ];
+  }
+
+  if (!empty($decoded["ok"])) {
+    return [
+      "ok" => true,
+      "statusCode" => $statusCode,
+      "response" => $decoded,
+    ];
+  }
+
+  return [
+    "ok" => false,
+    "error" => (string) ($decoded["description"] ?? "Неизвестная ошибка Telegram API"),
+    "statusCode" => $statusCode,
+    "response" => $decoded,
+  ];
 }
 
 function runDailyPendingMovesMailingIfNeeded(): void {
@@ -715,6 +780,7 @@ function runDailyPendingMovesMailingIfNeeded(): void {
     $botToken = "8549452123:AAGxveuJSVf-xpNHQYTDKDmuMmHjGRVeDj0";
   }
   if ($botToken === "") {
+    appendMailingLog("error", "Рассылка не запущена: не найден токен Telegram-бота.");
     return;
   }
 
@@ -735,6 +801,7 @@ function runDailyPendingMovesMailingIfNeeded(): void {
 
   $orgEntries = @scandir(__DIR__);
   if (!is_array($orgEntries)) {
+    appendMailingLog("error", "Рассылка не запущена: не удалось прочитать список папок организаций.");
     return;
   }
 
@@ -751,6 +818,13 @@ function runDailyPendingMovesMailingIfNeeded(): void {
     $settingsPath = $orgPath . DIRECTORY_SEPARATOR . "Настройки.json";
     $movesPath = $orgPath . DIRECTORY_SEPARATOR . "Перемещения.json";
     if (!file_exists($settingsPath) || !file_exists($movesPath)) {
+      if (file_exists($settingsPath) || file_exists($movesPath)) {
+        appendMailingLog("warning", "Пропущена организация с неполными файлами для рассылки.", [
+          "organization" => $orgFolder,
+          "settingsExists" => file_exists($settingsPath),
+          "movesExists" => file_exists($movesPath),
+        ]);
+      }
       continue;
     }
 
@@ -762,6 +836,9 @@ function runDailyPendingMovesMailingIfNeeded(): void {
       $telegramGroups = $settings["organization"]["telegramGroups"];
     }
     if (!is_array($telegramGroups) || empty($telegramGroups)) {
+      appendMailingLog("warning", "В организации не настроены Telegram-группы для рассылки.", [
+        "organization" => $orgFolder,
+      ]);
       continue;
     }
 
@@ -786,10 +863,19 @@ function runDailyPendingMovesMailingIfNeeded(): void {
 
     foreach ($telegramGroups as $group) {
       if (!is_array($group)) {
+        appendMailingLog("warning", "Пропущена некорректная запись Telegram-группы.", [
+          "organization" => $orgFolder,
+          "group" => $group,
+        ]);
         continue;
       }
       $telegramId = normalizeTelegramGroupId($group["telegramId"] ?? null);
       if (!$telegramId) {
+        appendMailingLog("warning", "У Telegram-группы отсутствует корректный telegramId.", [
+          "organization" => $orgFolder,
+          "groupName" => (string) ($group["name"] ?? ""),
+          "telegramId" => $group["telegramId"] ?? null,
+        ]);
         continue;
       }
 
@@ -798,9 +884,19 @@ function runDailyPendingMovesMailingIfNeeded(): void {
         continue;
       }
 
-      if (sendTelegramTextMessage($botToken, $telegramId, $message)) {
+      $sendResult = sendTelegramTextMessage($botToken, $telegramId, $message);
+      if (!empty($sendResult["ok"])) {
         $sentMap[$groupKey] = $todayKey;
         $stateChanged = true;
+      } else {
+        appendMailingLog("error", "Не удалось отправить ежедневную рассылку в Telegram-группу.", [
+          "organization" => $orgFolder,
+          "telegramId" => $telegramId,
+          "pendingCount" => $pendingCount,
+          "error" => $sendResult["error"] ?? "Неизвестная ошибка",
+          "statusCode" => $sendResult["statusCode"] ?? 0,
+          "response" => $sendResult["response"] ?? null,
+        ]);
       }
     }
   }
@@ -812,7 +908,12 @@ function runDailyPendingMovesMailingIfNeeded(): void {
     ];
     $encoded = json_encode($nextState, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
     if ($encoded !== false) {
-      file_put_contents($statePath, $encoded . PHP_EOL, LOCK_EX);
+      $saved = file_put_contents($statePath, $encoded . PHP_EOL, LOCK_EX);
+      if ($saved === false) {
+        appendMailingLog("error", "Не удалось записать состояние ежедневной рассылки.", [
+          "statePath" => $statePath,
+        ]);
+      }
     }
   }
 }

@@ -601,6 +601,213 @@ function saveEntry(array $entry, array $allowedFiles): void {
   }
 }
 
+function readJsonArrayFile(string $path): array {
+  if (!file_exists($path)) {
+    return [];
+  }
+  $raw = file_get_contents($path);
+  if ($raw === false) {
+    return [];
+  }
+  $decoded = json_decode($raw, true);
+  return is_array($decoded) ? $decoded : [];
+}
+
+function isMoveAwaitingReply($move): bool {
+  if (!is_array($move)) {
+    return false;
+  }
+  $replyDate = trim((string) ($move["Дата ответа"] ?? ""));
+  return $replyDate === "";
+}
+
+function normalizeTelegramGroupId($value): ?string {
+  $normalized = normalizeTelegramId($value);
+  if (!$normalized) {
+    return null;
+  }
+  return $normalized;
+}
+
+function extractPendingMoveLines(array $moves): array {
+  $lines = [];
+  foreach ($moves as $index => $move) {
+    if (!isMoveAwaitingReply($move)) {
+      continue;
+    }
+    $toolName = trim((string) ($move["Название"] ?? $move["Инструмент"] ?? ""));
+    $inventoryNumber = trim((string) ($move["Бухгалтерский номер"] ?? $move["Бух. номер"] ?? ""));
+    $fromObject = trim((string) ($move["С объекта"] ?? $move["Объект"] ?? ""));
+    $toObject = trim((string) ($move["На объект"] ?? ""));
+    $moveDate = trim((string) ($move["Дата"] ?? $move["Дата перемещения"] ?? ""));
+
+    $titleParts = [];
+    if ($toolName !== "") {
+      $titleParts[] = $toolName;
+    }
+    if ($inventoryNumber !== "") {
+      $titleParts[] = "№ " . $inventoryNumber;
+    }
+    $title = trim(implode(" · ", $titleParts));
+    if ($title === "") {
+      $title = "Перемещение #" . ($index + 1);
+    }
+
+    $routeParts = [];
+    if ($fromObject !== "") {
+      $routeParts[] = "с: " . $fromObject;
+    }
+    if ($toObject !== "") {
+      $routeParts[] = "на: " . $toObject;
+    }
+
+    $details = [];
+    if (!empty($routeParts)) {
+      $details[] = implode(", ", $routeParts);
+    }
+    if ($moveDate !== "") {
+      $details[] = "дата: " . $moveDate;
+    }
+
+    $line = "• " . $title;
+    if (!empty($details)) {
+      $line .= " (" . implode("; ", $details) . ")";
+    }
+    $lines[] = $line;
+  }
+  return $lines;
+}
+
+function sendTelegramTextMessage(string $botToken, string $chatId, string $text): bool {
+  $apiUrl = "https://api.telegram.org/bot" . rawurlencode($botToken) . "/sendMessage";
+  $payload = [
+    "chat_id" => $chatId,
+    "text" => $text,
+    "disable_web_page_preview" => true,
+  ];
+
+  $options = [
+    "http" => [
+      "method" => "POST",
+      "header" => "Content-Type: application/json; charset=utf-8\r\n",
+      "content" => json_encode($payload, JSON_UNESCAPED_UNICODE),
+      "timeout" => 12,
+      "ignore_errors" => true,
+    ],
+  ];
+
+  $context = stream_context_create($options);
+  $response = @file_get_contents($apiUrl, false, $context);
+  if ($response === false) {
+    return false;
+  }
+  $decoded = json_decode($response, true);
+  return is_array($decoded) && !empty($decoded["ok"]);
+}
+
+function runDailyPendingMovesMailingIfNeeded(): void {
+  $botToken = getenv("ALLTRACK_BOT_TOKEN") ?: "";
+  if ($botToken === "") {
+    $botToken = "8549452123:AAGxveuJSVf-xpNHQYTDKDmuMmHjGRVeDj0";
+  }
+  if ($botToken === "") {
+    return;
+  }
+
+  $timezone = new DateTimeZone("Europe/Moscow");
+  $now = new DateTimeImmutable("now", $timezone);
+  $currentTime = $now->format("H:i");
+  if ($currentTime < "14:45") {
+    return;
+  }
+
+  $todayKey = $now->format("Y-m-d");
+  $statePath = __DIR__ . DIRECTORY_SEPARATOR . "telegram-daily-pending-moves-state.json";
+  $state = readJsonArrayFile($statePath);
+  $sentMap = [];
+  if (isset($state["sent"]) && is_array($state["sent"])) {
+    $sentMap = $state["sent"];
+  }
+
+  $orgEntries = @scandir(__DIR__);
+  if (!is_array($orgEntries)) {
+    return;
+  }
+
+  $stateChanged = false;
+  foreach ($orgEntries as $orgFolder) {
+    if ($orgFolder === "." || $orgFolder === "..") {
+      continue;
+    }
+    $orgPath = __DIR__ . DIRECTORY_SEPARATOR . $orgFolder;
+    if (!is_dir($orgPath)) {
+      continue;
+    }
+
+    $settingsPath = $orgPath . DIRECTORY_SEPARATOR . "Настройки.json";
+    $movesPath = $orgPath . DIRECTORY_SEPARATOR . "Перемещения.json";
+    if (!file_exists($settingsPath) || !file_exists($movesPath)) {
+      continue;
+    }
+
+    $settings = readJsonArrayFile($settingsPath);
+    $telegramGroups = $settings["organization"]["telegramGroups"] ?? [];
+    if (!is_array($telegramGroups) || empty($telegramGroups)) {
+      continue;
+    }
+
+    $moves = readJsonArrayFile($movesPath);
+    $moveList = [];
+    if (isset($moves["moves"]) && is_array($moves["moves"])) {
+      $moveList = $moves["moves"];
+    } elseif (array_values($moves) === $moves) {
+      $moveList = $moves;
+    }
+
+    $pendingLines = extractPendingMoveLines($moveList);
+    $pendingCount = count($pendingLines);
+    $header = "📦 " . $orgFolder . "\nНеотвеченные перемещения: " . $pendingCount;
+    $body = $pendingCount > 0
+      ? implode("\n", array_slice($pendingLines, 0, 50))
+      : "✅ Все перемещения с ответом.";
+    if ($pendingCount > 50) {
+      $body .= "\n… и ещё " . ($pendingCount - 50) . " шт.";
+    }
+    $message = $header . "\n\n" . $body;
+
+    foreach ($telegramGroups as $group) {
+      if (!is_array($group)) {
+        continue;
+      }
+      $telegramId = normalizeTelegramGroupId($group["telegramId"] ?? null);
+      if (!$telegramId) {
+        continue;
+      }
+
+      $groupKey = $orgFolder . "::" . $telegramId;
+      if (($sentMap[$groupKey] ?? "") === $todayKey) {
+        continue;
+      }
+
+      if (sendTelegramTextMessage($botToken, $telegramId, $message)) {
+        $sentMap[$groupKey] = $todayKey;
+        $stateChanged = true;
+      }
+    }
+  }
+
+  if ($stateChanged) {
+    $nextState = [
+      "sent" => $sentMap,
+      "updatedAt" => $now->format(DateTimeInterface::ATOM),
+    ];
+    $encoded = json_encode($nextState, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+    if ($encoded !== false) {
+      file_put_contents($statePath, $encoded . PHP_EOL, LOCK_EX);
+    }
+  }
+}
+
 $entries = buildEntries($payload);
 if (count($entries) === 1 && ($entries[0]["type"] ?? "") === "list-photos") {
   $files = listPhotoFiles($entries[0]);
@@ -615,5 +822,7 @@ foreach ($entries as $entry) {
   }
   saveEntry($entry, $allowedFiles);
 }
+
+runDailyPendingMovesMailingIfNeeded();
 
 echo json_encode(["success" => true]);

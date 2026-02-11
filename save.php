@@ -10,7 +10,7 @@ if (!is_array($payload)) {
   exit;
 }
 
-$allowedFiles = ["organizations.json", "users.json", "pending-registrations.json"];
+$allowedFiles = ["organizations.json", "users.json", "pending-registrations.json", "telegram-mailing-errors.json"];
 
 function readJsonFile(string $path, $default) {
   if (!file_exists($path)) {

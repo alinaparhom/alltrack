@@ -38,7 +38,9 @@ const usersFilePath = "./users.json";
 const pendingRegistrationsFilePath = "./pending-registrations.json";
 const saveEndpoint = "./save.php";
 const authLogFilePath = "./auth-log.json";
+const mailingErrorLogFilePath = "./telegram-mailing-errors.json";
 const authLogLimit = 200;
+const mailingErrorLogLimit = 500;
 const fallbackBotToken = "8549452123:AAGxveuJSVf-xpNHQYTDKDmuMmHjGRVeDj0";
 const botUsernameCacheKey = "alltrack-bot-username";
 const initDataCacheKey = "alltrack-init-data";
@@ -795,6 +797,22 @@ async function appendAuthLog(step, detail = {}) {
   }
 }
 
+async function appendMailingErrorLog(detail = {}) {
+  const entry = {
+    timestamp: new Date().toISOString(),
+    detail,
+  };
+
+  try {
+    const current = await loadJson(mailingErrorLogFilePath).catch(() => ({ entries: [] }));
+    const entries = Array.isArray(current.entries) ? current.entries : [];
+    const nextEntries = [...entries, entry].slice(-mailingErrorLogLimit);
+    await saveEntries([{ path: mailingErrorLogFilePath, data: { entries: nextEntries } }]);
+  } catch (error) {
+    console.warn("Не удалось сохранить лог ошибок рассылки.", error);
+  }
+}
+
 function getTelegramBotUsername() {
   const webApp = window.Telegram?.WebApp;
   return (
@@ -986,30 +1004,25 @@ async function loadAwaitingReplyItemsForMailing(orgFolderName, selectedToolGroup
   if (!orgFolderName) return [];
   const movesPath = `./${orgFolderName}/Перемещения.json`;
   const toolsPath = `./${orgFolderName}/База с инструментами.json`;
-  let moves = [];
-  let tools = [];
+  const rawMoves = await loadJson(movesPath).catch((error) => {
+    throw new Error(`Не удалось загрузить перемещения (${movesPath}): ${error?.message || error}`);
+  });
+  const moves = Array.isArray(rawMoves)
+    ? rawMoves
+    : Array.isArray(rawMoves?.moves)
+      ? rawMoves.moves
+      : [];
 
-  try {
-    const rawMoves = await loadJson(movesPath);
-    moves = Array.isArray(rawMoves)
-      ? rawMoves
-      : Array.isArray(rawMoves?.moves)
-        ? rawMoves.moves
-        : [];
-  } catch (error) {
-    console.warn("Не удалось загрузить перемещения для рассылки.", error);
-  }
-
-  try {
-    const rawTools = await loadJson(toolsPath);
-    tools = Array.isArray(rawTools)
-      ? rawTools
-      : Array.isArray(rawTools?.tools)
-        ? rawTools.tools
-        : [];
-  } catch (error) {
-    console.warn("Не удалось загрузить базу инструментов для рассылки.", error);
-  }
+  const rawTools = await loadJson(toolsPath).catch((error) => {
+    throw new Error(
+      `Не удалось загрузить базу инструментов (${toolsPath}): ${error?.message || error}`
+    );
+  });
+  const tools = Array.isArray(rawTools)
+    ? rawTools
+    : Array.isArray(rawTools?.tools)
+      ? rawTools.tools
+      : [];
 
   const toolMap = new Map();
   tools.forEach((tool) => {
@@ -1058,6 +1071,13 @@ async function runAwaitingReplyMailingTick(context) {
     settingsData = ensureSettingsData(await loadJson(context.settingsPath));
   } catch (error) {
     console.warn("Не удалось загрузить настройки для рассылки.", error);
+    await appendMailingErrorLog({
+      mailing: "awaitingReply",
+      stage: "load-settings",
+      orgFolderName: context.orgFolderName,
+      orgFullName: context.orgFullName ?? "",
+      error: String(error?.message || error),
+    });
     return;
   }
 
@@ -1097,6 +1117,14 @@ async function runAwaitingReplyMailingTick(context) {
         groupId,
         error,
       });
+      await appendMailingErrorLog({
+        mailing: "awaitingReply",
+        stage: "build-message",
+        orgFolderName: context.orgFolderName,
+        orgFullName: context.orgFullName ?? "",
+        groupId,
+        error: String(error?.message || error),
+      });
       const errorMessage = buildAwaitingReplyMailingErrorMessage(error, {
         orgFullName: context.orgFullName,
         groupId,
@@ -1115,6 +1143,14 @@ async function runAwaitingReplyMailingTick(context) {
       groupId,
       error: sendError,
     });
+    await appendMailingErrorLog({
+      mailing: "awaitingReply",
+      stage: "send-main-message",
+      orgFolderName: context.orgFolderName,
+      orgFullName: context.orgFullName ?? "",
+      groupId,
+      error: String(sendError),
+    });
     const errorMessage = buildAwaitingReplyMailingErrorMessage(sendError, {
       orgFullName: context.orgFullName,
       groupId,
@@ -1124,9 +1160,18 @@ async function runAwaitingReplyMailingTick(context) {
       history[historyKey] = now.toISOString();
       saveAwaitingReplyMailingHistory(history);
     } else {
+      const fallbackError = formatTelegramSendError(fallbackResult ?? {});
       console.warn("Не удалось отправить даже сообщение об ошибке рассылки.", {
         groupId,
-        error: formatTelegramSendError(fallbackResult ?? {}),
+        error: fallbackError,
+      });
+      await appendMailingErrorLog({
+        mailing: "awaitingReply",
+        stage: "send-fallback-error-message",
+        orgFolderName: context.orgFolderName,
+        orgFullName: context.orgFullName ?? "",
+        groupId,
+        error: String(fallbackError),
       });
     }
   }

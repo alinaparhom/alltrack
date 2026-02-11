@@ -907,7 +907,7 @@ function runDailyPendingMovesMailing(array $options = []): void {
   $timezone = new DateTimeZone("Europe/Moscow");
   $now = new DateTimeImmutable("now", $timezone);
   $currentTime = $now->format("H:i");
-  if ($respectTime && $currentTime < "14:45") {
+  if ($respectTime && $currentTime !== "14:45") {
     return;
   }
 

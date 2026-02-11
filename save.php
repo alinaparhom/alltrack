@@ -1142,8 +1142,13 @@ $isCli = PHP_SAPI === "cli";
 if ($isCli) {
   $argvList = isset($argv) && is_array($argv) ? $argv : [];
   if (in_array("--run-daily-mailing", $argvList, true)) {
-    runDailyPendingMovesMailing(["respectTime" => false]);
-    echo json_encode(["success" => true, "mode" => "daily-mailing-cli"], JSON_UNESCAPED_UNICODE) . PHP_EOL;
+    $respectTime = !in_array("--ignore-time", $argvList, true);
+    runDailyPendingMovesMailing(["respectTime" => $respectTime]);
+    echo json_encode([
+      "success" => true,
+      "mode" => "daily-mailing-cli",
+      "respectTime" => $respectTime,
+    ], JSON_UNESCAPED_UNICODE) . PHP_EOL;
     exit;
   }
 }

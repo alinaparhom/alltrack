@@ -969,6 +969,19 @@ function buildAwaitingReplyMailingMessage(items, { orgFullName } = {}) {
   return `${header}${rows.join("\n\n")}${footer}`.trim();
 }
 
+function buildAwaitingReplyMailingErrorMessage(error, { orgFullName, groupId } = {}) {
+  const errorText =
+    (error && typeof error === "object" && "message" in error && error.message) ||
+    String(error ?? "Неизвестная ошибка");
+  const header = "⚠️ Рассылка по ожидающим принятия: ошибка";
+  const orgLine = `Организация: ${escapeTelegramHtml(
+    formatNotificationValue(orgFullName)
+  )}`;
+  const groupLine = `Группа: ${escapeTelegramHtml(formatNotificationValue(groupId))}`;
+  const detailsLine = `Причина: ${escapeTelegramHtml(errorText)}`;
+  return [header, orgLine, groupLine, detailsLine].join("\n");
+}
+
 async function loadAwaitingReplyItemsForMailing(orgFolderName, selectedToolGroups = []) {
   if (!orgFolderName) return [];
   const movesPath = `./${orgFolderName}/Перемещения.json`;
@@ -1069,21 +1082,51 @@ async function runAwaitingReplyMailingTick(context) {
     const historyKey = `${context.orgFolderName}|awaitingReply|${groupId}|${dayStamp}|${time}`;
     if (history[historyKey]) continue;
 
-    const items = await loadAwaitingReplyItemsForMailing(
-      context.orgFolderName,
-      selectedToolGroups
-    );
-    const message = buildAwaitingReplyMailingMessage(items, {
-      orgFullName: context.orgFullName,
+    let result = null;
+    try {
+      const items = await loadAwaitingReplyItemsForMailing(
+        context.orgFolderName,
+        selectedToolGroups
+      );
+      const message = buildAwaitingReplyMailingMessage(items, {
+        orgFullName: context.orgFullName,
+      });
+      result = await sendTelegramMessage(groupId, message);
+    } catch (error) {
+      console.warn("Ошибка подготовки рассылки по ожидающим принятия.", {
+        groupId,
+        error,
+      });
+      const errorMessage = buildAwaitingReplyMailingErrorMessage(error, {
+        orgFullName: context.orgFullName,
+        groupId,
+      });
+      result = await sendTelegramMessage(groupId, errorMessage);
+    }
+
+    if (result?.ok) {
+      history[historyKey] = now.toISOString();
+      saveAwaitingReplyMailingHistory(history);
+      continue;
+    }
+
+    const sendError = formatTelegramSendError(result ?? {});
+    console.warn("Не удалось отправить рассылку по ожидающим принятия.", {
+      groupId,
+      error: sendError,
     });
-    const result = await sendTelegramMessage(groupId, message);
-    if (result.ok) {
+    const errorMessage = buildAwaitingReplyMailingErrorMessage(sendError, {
+      orgFullName: context.orgFullName,
+      groupId,
+    });
+    const fallbackResult = await sendTelegramMessage(groupId, errorMessage);
+    if (fallbackResult?.ok) {
       history[historyKey] = now.toISOString();
       saveAwaitingReplyMailingHistory(history);
     } else {
-      console.warn("Не удалось отправить рассылку по ожидающим принятия.", {
+      console.warn("Не удалось отправить даже сообщение об ошибке рассылки.", {
         groupId,
-        error: formatTelegramSendError(result),
+        error: formatTelegramSendError(fallbackResult ?? {}),
       });
     }
   }

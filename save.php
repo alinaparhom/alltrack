@@ -19,6 +19,9 @@ function appendMailingLog(string $level, string $message, array $context = []): 
   $logs = [];
   if (isset($existing["logs"]) && is_array($existing["logs"])) {
     $logs = $existing["logs"];
+  } elseif (isset($existing["entries"]) && is_array($existing["entries"])) {
+    // Поддержка старого формата файла логов.
+    $logs = $existing["entries"];
   }
 
   $timezone = new DateTimeZone("Europe/Moscow");
@@ -775,6 +778,16 @@ function sendTelegramTextMessage(string $botToken, string $chatId, string $text)
 }
 
 function runDailyPendingMovesMailingIfNeeded(): void {
+  runDailyPendingMovesMailing([
+    "respectTime" => true,
+  ]);
+}
+
+function runDailyPendingMovesMailing(array $options = []): void {
+  $respectTime = array_key_exists("respectTime", $options)
+    ? (bool) $options["respectTime"]
+    : true;
+
   $botToken = getenv("ALLTRACK_BOT_TOKEN") ?: "";
   if ($botToken === "") {
     $botToken = "8549452123:AAGxveuJSVf-xpNHQYTDKDmuMmHjGRVeDj0";
@@ -787,7 +800,7 @@ function runDailyPendingMovesMailingIfNeeded(): void {
   $timezone = new DateTimeZone("Europe/Moscow");
   $now = new DateTimeImmutable("now", $timezone);
   $currentTime = $now->format("H:i");
-  if ($currentTime < "14:45") {
+  if ($respectTime && $currentTime < "14:45") {
     return;
   }
 
@@ -915,6 +928,16 @@ function runDailyPendingMovesMailingIfNeeded(): void {
         ]);
       }
     }
+  }
+}
+
+$isCli = PHP_SAPI === "cli";
+if ($isCli) {
+  $argvList = isset($argv) && is_array($argv) ? $argv : [];
+  if (in_array("--run-daily-mailing", $argvList, true)) {
+    runDailyPendingMovesMailing(["respectTime" => false]);
+    echo json_encode(["success" => true, "mode" => "daily-mailing-cli"], JSON_UNESCAPED_UNICODE) . PHP_EOL;
+    exit;
   }
 }
 

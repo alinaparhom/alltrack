@@ -1,0 +1,3 @@
+# Ежедневная рассылка в 14:45 по UTC+3 (Europe/Moscow)
+# Добавьте строку в crontab на сервере:
+45 14 * * * cd /workspace/alltrack && /usr/bin/php save.php --run-daily-mailing >> /workspace/alltrack/telegram-daily-mailing-cron.log 2>&1

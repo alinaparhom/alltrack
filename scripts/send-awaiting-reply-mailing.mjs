@@ -68,8 +68,23 @@ function resolveLateReplyFine(move, fineConfig) {
   if (!moveDate) return 0;
   const diffDays = daysDiff(moveDate, new Date());
   if (diffDays <= daysLimit) return 0;
-  const chargedDays = Math.max(0, diffDays - 1);
+  const chargedDays = Math.max(0, diffDays - daysLimit);
   return chargedDays * amount;
+}
+
+function resolveResponsible(move, tool) {
+  const candidates = [
+    move?.['Принял'],
+    move?.['Новый ответственный'],
+    move?.['Ответственный'],
+    tool?.['Ответственный'],
+  ];
+
+  return (
+    candidates
+      .map((value) => String(value ?? '').trim())
+      .find(Boolean) || 'Не назначен'
+  );
 }
 
 function buildToolIndex(tools) {
@@ -224,7 +239,7 @@ async function main() {
       return {
         move,
         number: number || accounting,
-        responsible: String(move?.['Принял'] ?? 'Не назначен').trim() || 'Не назначен',
+        responsible: resolveResponsible(move, tool),
         fine: resolveLateReplyFine(move, fineConfig),
         name: String(tool?.['Наименование'] ?? '').trim(),
         oldObject: String(move?.['Старый объект'] ?? '').trim(),

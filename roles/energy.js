@@ -2739,17 +2739,19 @@ export function renderRole(user) {
                   >
                     <div class="settings-modal__header users-vacation-modal__header">
                       <div class="settings-modal__title users-vacation-modal__title">
-                        <h3 data-users-vacation-name>Ответственный</h3>
+                        <div class="users-vacation-modal__headline">
+                          <h3 data-users-vacation-name>Ответственный</h3>
+                          <button
+                            class="button-icon users-vacation-modal__close"
+                            type="button"
+                            data-users-vacation-close
+                            aria-label="Закрыть окно отпуска"
+                          >
+                            <span class="button-icon-emoji" aria-hidden="true">✕</span>
+                          </button>
+                        </div>
                         <p data-users-vacation-role>—</p>
                       </div>
-                      <button
-                        class="button-icon users-vacation-modal__close"
-                        type="button"
-                        data-users-vacation-close
-                        aria-label="Закрыть окно отпуска"
-                      >
-                        <span class="button-icon-emoji" aria-hidden="true">✕</span>
-                      </button>
                     </div>
                     <div class="settings-modal__body users-vacation-modal__body">
                       <div class="users-vacation__stats">
@@ -2771,6 +2773,14 @@ export function renderRole(user) {
                           <label class="form-label" for="users-vacation-replacer">
                             Кто заменяет
                           </label>
+                          <input
+                            class="form-input users-vacation__search"
+                            type="search"
+                            id="users-vacation-replacer-search"
+                            data-users-vacation-replacer-search
+                            placeholder="Быстрый поиск по ФИО"
+                            autocomplete="off"
+                          />
                           <select
                             class="form-input"
                             id="users-vacation-replacer"
@@ -2778,6 +2788,10 @@ export function renderRole(user) {
                           >
                             <option value="">Выберите сотрудника</option>
                           </select>
+                          <div
+                            class="users-vacation__search-results is-hidden"
+                            data-users-vacation-search-results
+                          ></div>
                           <div class="users-vacation__actions">
                             <button
                               class="action-primary"

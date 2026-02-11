@@ -652,8 +652,58 @@ function isMoveAwaitingReply($move): bool {
   if (!is_array($move)) {
     return false;
   }
-  $replyDate = trim((string) ($move["Дата ответа"] ?? ""));
+  $replyDate = "";
+  $candidateKeys = ["Дата ответа", "дата ответа", "Дата Ответа", "Ответ", "Дата принятия"];
+  foreach ($candidateKeys as $key) {
+    if (array_key_exists($key, $move)) {
+      $replyDate = trim((string) $move[$key]);
+      break;
+    }
+  }
+  if ($replyDate === "") {
+    foreach ($move as $key => $value) {
+      $normalizedKey = mb_strtolower(trim((string) $key), "UTF-8");
+      if (str_contains($normalizedKey, "ответ")) {
+        $replyDate = trim((string) $value);
+        break;
+      }
+    }
+  }
   return $replyDate === "";
+}
+
+function extractMoveList(array $movesData): array {
+  if (isset($movesData["moves"]) && is_array($movesData["moves"])) {
+    return $movesData["moves"];
+  }
+  if (isset($movesData["Перемещения"]) && is_array($movesData["Перемещения"])) {
+    return $movesData["Перемещения"];
+  }
+  if (array_values($movesData) === $movesData) {
+    return $movesData;
+  }
+  return [];
+}
+
+function extractTelegramGroups(array $settings): array {
+  if (isset($settings["telegramGroups"]) && is_array($settings["telegramGroups"])) {
+    return $settings["telegramGroups"];
+  }
+  if (isset($settings["organization"]) && is_array($settings["organization"])) {
+    $organization = $settings["organization"];
+    if (isset($organization["telegramGroups"]) && is_array($organization["telegramGroups"])) {
+      return $organization["telegramGroups"];
+    }
+    if (
+      isset($organization["telegram"]) &&
+      is_array($organization["telegram"]) &&
+      isset($organization["telegram"]["groups"]) &&
+      is_array($organization["telegram"]["groups"])
+    ) {
+      return $organization["telegram"]["groups"];
+    }
+  }
+  return [];
 }
 
 function normalizeTelegramGroupId($value): ?string {
@@ -720,6 +770,63 @@ function sendTelegramTextMessage(string $botToken, string $chatId, string $text)
     "text" => $text,
     "disable_web_page_preview" => true,
   ];
+
+  if (function_exists("curl_init")) {
+    $curl = curl_init($apiUrl);
+    if ($curl === false) {
+      return [
+        "ok" => false,
+        "error" => "Не удалось инициализировать cURL",
+        "statusCode" => 0,
+      ];
+    }
+
+    curl_setopt_array($curl, [
+      CURLOPT_POST => true,
+      CURLOPT_RETURNTRANSFER => true,
+      CURLOPT_HTTPHEADER => ["Content-Type: application/json; charset=utf-8"],
+      CURLOPT_POSTFIELDS => json_encode($payload, JSON_UNESCAPED_UNICODE),
+      CURLOPT_TIMEOUT => 12,
+    ]);
+
+    $response = curl_exec($curl);
+    $statusCode = (int) curl_getinfo($curl, CURLINFO_HTTP_CODE);
+    $curlError = curl_error($curl);
+    curl_close($curl);
+
+    if ($response === false) {
+      return [
+        "ok" => false,
+        "error" => $curlError !== "" ? $curlError : "Не удалось подключиться к Telegram API",
+        "statusCode" => $statusCode,
+      ];
+    }
+
+    $decoded = json_decode($response, true);
+    if (!is_array($decoded)) {
+      return [
+        "ok" => false,
+        "error" => "Некорректный JSON ответ от Telegram",
+        "statusCode" => $statusCode,
+        "response" => mb_substr((string) $response, 0, 800),
+      ];
+    }
+
+    if (!empty($decoded["ok"])) {
+      return [
+        "ok" => true,
+        "statusCode" => $statusCode,
+        "response" => $decoded,
+      ];
+    }
+
+    return [
+      "ok" => false,
+      "error" => (string) ($decoded["description"] ?? "Неизвестная ошибка Telegram API"),
+      "statusCode" => $statusCode,
+      "response" => $decoded,
+    ];
+  }
 
   $options = [
     "http" => [
@@ -818,7 +925,14 @@ function runDailyPendingMovesMailing(array $options = []): void {
     return;
   }
 
+  appendMailingLog("info", "Запуск ежедневной Telegram-рассылки по неотвеченным перемещениям.", [
+    "respectTime" => $respectTime,
+    "currentTime" => $currentTime,
+    "date" => $todayKey,
+  ]);
+
   $stateChanged = false;
+  $sentCount = 0;
   foreach ($orgEntries as $orgFolder) {
     if ($orgFolder === "." || $orgFolder === "..") {
       continue;
@@ -842,12 +956,7 @@ function runDailyPendingMovesMailing(array $options = []): void {
     }
 
     $settings = readJsonArrayFile($settingsPath);
-    $telegramGroups = [];
-    if (isset($settings["telegramGroups"]) && is_array($settings["telegramGroups"])) {
-      $telegramGroups = $settings["telegramGroups"];
-    } elseif (isset($settings["organization"]["telegramGroups"]) && is_array($settings["organization"]["telegramGroups"])) {
-      $telegramGroups = $settings["organization"]["telegramGroups"];
-    }
+    $telegramGroups = extractTelegramGroups($settings);
     if (!is_array($telegramGroups) || empty($telegramGroups)) {
       appendMailingLog("warning", "В организации не настроены Telegram-группы для рассылки.", [
         "organization" => $orgFolder,
@@ -856,12 +965,7 @@ function runDailyPendingMovesMailing(array $options = []): void {
     }
 
     $moves = readJsonArrayFile($movesPath);
-    $moveList = [];
-    if (isset($moves["moves"]) && is_array($moves["moves"])) {
-      $moveList = $moves["moves"];
-    } elseif (array_values($moves) === $moves) {
-      $moveList = $moves;
-    }
+    $moveList = extractMoveList($moves);
 
     $pendingLines = extractPendingMoveLines($moveList);
     $pendingCount = count($pendingLines);
@@ -901,6 +1005,12 @@ function runDailyPendingMovesMailing(array $options = []): void {
       if (!empty($sendResult["ok"])) {
         $sentMap[$groupKey] = $todayKey;
         $stateChanged = true;
+        $sentCount++;
+        appendMailingLog("info", "Ежедневная рассылка отправлена в Telegram-группу.", [
+          "organization" => $orgFolder,
+          "telegramId" => $telegramId,
+          "pendingCount" => $pendingCount,
+        ]);
       } else {
         appendMailingLog("error", "Не удалось отправить ежедневную рассылку в Telegram-группу.", [
           "organization" => $orgFolder,
@@ -913,6 +1023,11 @@ function runDailyPendingMovesMailing(array $options = []): void {
       }
     }
   }
+
+  appendMailingLog("info", "Ежедневная Telegram-рассылка завершена.", [
+    "date" => $todayKey,
+    "sentCount" => $sentCount,
+  ]);
 
   if ($stateChanged) {
     $nextState = [

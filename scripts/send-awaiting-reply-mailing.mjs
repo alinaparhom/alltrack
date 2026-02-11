@@ -9,6 +9,13 @@ const DEFAULT_BOT_TOKEN =
 const ORG_FOLDER = process.argv[2] || 'СУ-21';
 const DRY_RUN = process.argv.includes('--dry-run');
 
+function normalizeKey(value) {
+  return String(value ?? '')
+    .trim()
+    .replace(/\s+/g, ' ')
+    .toLocaleLowerCase('ru');
+}
+
 function normalizeNumber(value, fallback = 0) {
   const parsed = Number.parseFloat(String(value ?? '').replace(',', '.'));
   return Number.isFinite(parsed) ? parsed : fallback;
@@ -68,13 +75,34 @@ function resolveLateReplyFine(move, fineConfig) {
 function buildToolIndex(tools) {
   const byNumber = new Map();
   const byAccounting = new Map();
+  const byNumberNormalized = new Map();
+  const byAccountingNormalized = new Map();
   for (const tool of tools) {
     const number = String(tool?.['Номер'] ?? '').trim();
     const accounting = String(tool?.['Бух.номер'] ?? '').trim();
     if (number) byNumber.set(number, tool);
     if (accounting) byAccounting.set(accounting, tool);
+    const numberKey = normalizeKey(number);
+    const accountingKey = normalizeKey(accounting);
+    if (numberKey) byNumberNormalized.set(numberKey, tool);
+    if (accountingKey) byAccountingNormalized.set(accountingKey, tool);
   }
-  return { byNumber, byAccounting };
+  return { byNumber, byAccounting, byNumberNormalized, byAccountingNormalized };
+}
+
+function resolveToolGroup(move, tool) {
+  const direct = [
+    tool?.['Граппа инструментов'],
+    tool?.['Группа инструментов'],
+    tool?.['Группа'],
+    move?.['Группа инструментов'],
+    move?.['Граппа инструментов'],
+    move?.['Группа'],
+  ]
+    .map((value) => String(value ?? '').trim())
+    .find(Boolean);
+
+  return direct || '';
 }
 
 function buildMessage(orgFolder, grouped, totalFine, moveCount) {
@@ -164,7 +192,7 @@ async function main() {
   }
 
   const selectedToolGroups = new Set(
-    (mailing.toolGroups ?? []).map((item) => String(item ?? '').trim()).filter(Boolean)
+    (mailing.toolGroups ?? []).map((item) => normalizeKey(item)).filter(Boolean)
   );
 
   const telegramIds = (settings?.organization?.telegramGroups ?? [])
@@ -177,7 +205,8 @@ async function main() {
     return;
   }
 
-  const { byNumber, byAccounting } = buildToolIndex(allTools);
+  const { byNumber, byAccounting, byNumberNormalized, byAccountingNormalized } =
+    buildToolIndex(allTools);
   const fineConfig = settings?.organization?.fines?.lateReply ?? {};
 
   const pending = allMoves
@@ -185,10 +214,13 @@ async function main() {
     .map((move) => {
       const number = String(move?.['Номер'] ?? '').trim();
       const accounting = String(move?.['Бух.номер'] ?? '').trim();
-      const tool = byNumber.get(number) || byAccounting.get(accounting) || null;
-      const toolGroup = String(
-        tool?.['Граппа инструментов'] ?? tool?.['Группа инструментов'] ?? ''
-      ).trim();
+      const tool =
+        byNumber.get(number) ||
+        byAccounting.get(accounting) ||
+        byNumberNormalized.get(normalizeKey(number)) ||
+        byAccountingNormalized.get(normalizeKey(accounting)) ||
+        null;
+      const toolGroup = resolveToolGroup(move, tool);
       return {
         move,
         number: number || accounting,
@@ -201,7 +233,11 @@ async function main() {
         toolGroup,
       };
     })
-    .filter((item) => !selectedToolGroups.size || selectedToolGroups.has(item.toolGroup));
+    .filter(
+      (item) =>
+        !selectedToolGroups.size ||
+        selectedToolGroups.has(normalizeKey(item.toolGroup))
+    );
 
   const map = new Map();
   for (const item of pending) {

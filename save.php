@@ -801,16 +801,34 @@ function shouldSendAwaitingReplyMailingNow(
     return true;
   }
 
-  $time = '14:45';
+  $time = '09:00';
   $days = [];
 
+  $groupSchedule = null;
   if (
     isset($awaitingReply['telegramSchedule']) &&
-    is_array($awaitingReply['telegramSchedule']) &&
-    isset($awaitingReply['telegramSchedule'][$telegramId]) &&
-    is_array($awaitingReply['telegramSchedule'][$telegramId])
+    is_array($awaitingReply['telegramSchedule'])
   ) {
-    $groupSchedule = $awaitingReply['telegramSchedule'][$telegramId];
+    if (
+      isset($awaitingReply['telegramSchedule'][$telegramId]) &&
+      is_array($awaitingReply['telegramSchedule'][$telegramId])
+    ) {
+      $groupSchedule = $awaitingReply['telegramSchedule'][$telegramId];
+    } else {
+      foreach ($awaitingReply['telegramSchedule'] as $scheduleTelegramId => $scheduleEntry) {
+        if (!is_array($scheduleEntry)) {
+          continue;
+        }
+        $normalizedScheduleTelegramId = normalizeTelegramGroupId($scheduleTelegramId);
+        if ($normalizedScheduleTelegramId === $telegramId) {
+          $groupSchedule = $scheduleEntry;
+          break;
+        }
+      }
+    }
+  }
+
+  if (is_array($groupSchedule)) {
     $parsedTime = normalizeScheduleTime($groupSchedule['time'] ?? null);
     if ($parsedTime !== null) {
       $time = $parsedTime;

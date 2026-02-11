@@ -10255,17 +10255,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       Ответственный: String(move?.["Принял"] ?? "").trim(),
       Сумма: amount,
       Причина: baseReason,
-      Номер: String(move?.["Номер"] ?? "").trim(),
-      "Бух.номер": String(move?.["Бух.номер"] ?? "").trim(),
-      Объект: String(
-        move?.["Новый объект"] ?? move?.["Старый объект"] ?? ""
-      ).trim(),
       "Тип штрафа": fineType,
-      Решение: decision,
     };
-    if (reason) {
-      entry["Причина отказа"] = reason;
-    }
     return entry;
   };
 

@@ -744,6 +744,37 @@ function getRussianWeekdayShort(DateTimeImmutable $now): string {
   return $weekdays[$dayNumber] ?? '';
 }
 
+function normalizeRussianWeekdayLabel(string $value): string {
+  $normalized = mb_strtolower(trim($value), 'UTF-8');
+  if ($normalized === '') {
+    return '';
+  }
+
+  $aliases = [
+    'пн' => 'Пн',
+    'понедельник' => 'Пн',
+    'вт' => 'Вт',
+    'вторник' => 'Вт',
+    'ср' => 'Ср',
+    'среда' => 'Ср',
+    'чт' => 'Чт',
+    'четверг' => 'Чт',
+    'пт' => 'Пт',
+    'пятница' => 'Пт',
+    'сб' => 'Сб',
+    'суббота' => 'Сб',
+    'вс' => 'Вс',
+    'воскресенье' => 'Вс',
+  ];
+
+  if (isset($aliases[$normalized])) {
+    return $aliases[$normalized];
+  }
+
+  $short = mb_substr($normalized, 0, 2, 'UTF-8');
+  return $aliases[$short] ?? '';
+}
+
 function shouldSendAwaitingReplyMailingNow(
   array $settings,
   string $telegramId,
@@ -786,7 +817,7 @@ function shouldSendAwaitingReplyMailingNow(
     }
     if (isset($groupSchedule['days']) && is_array($groupSchedule['days'])) {
       foreach ($groupSchedule['days'] as $dayLabel) {
-        $day = trim((string) $dayLabel);
+        $day = normalizeRussianWeekdayLabel((string) $dayLabel);
         if ($day !== '') {
           $days[] = $day;
         }
@@ -795,7 +826,7 @@ function shouldSendAwaitingReplyMailingNow(
   }
 
   if (!empty($days)) {
-    $todayDay = getRussianWeekdayShort($now);
+    $todayDay = normalizeRussianWeekdayLabel(getRussianWeekdayShort($now));
     if ($todayDay === '' || !in_array($todayDay, $days, true)) {
       return false;
     }

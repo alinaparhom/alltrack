@@ -2724,6 +2724,87 @@ export function renderRole(user) {
                   В этой организации ещё нет пользователей.
                 </div>
                 <div
+                  class="settings-modal users-vacation-modal is-hidden"
+                  data-users-vacation-modal
+                >
+                  <div
+                    class="settings-modal__backdrop"
+                    data-users-vacation-backdrop
+                  ></div>
+                  <div
+                    class="settings-modal__panel users-vacation-modal__panel"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-label="Управление отпуском ответственного"
+                  >
+                    <div class="settings-modal__header users-vacation-modal__header">
+                      <div class="settings-modal__title users-vacation-modal__title">
+                        <h3 data-users-vacation-name>Ответственный</h3>
+                        <p data-users-vacation-role>—</p>
+                      </div>
+                      <button
+                        class="button-icon users-vacation-modal__close"
+                        type="button"
+                        data-users-vacation-close
+                        aria-label="Закрыть окно отпуска"
+                      >
+                        <span class="button-icon-emoji" aria-hidden="true">✕</span>
+                      </button>
+                    </div>
+                    <div class="settings-modal__body users-vacation-modal__body">
+                      <div class="users-vacation__stats">
+                        <div class="users-vacation__stat-card">
+                          <span class="users-vacation__stat-label">Инструментов</span>
+                          <strong data-users-vacation-tools-count>0</strong>
+                        </div>
+                        <div class="users-vacation__fines" data-users-vacation-fines></div>
+                      </div>
+                      <div class="users-vacation__controls">
+                        <button
+                          class="action-primary users-vacation__trigger"
+                          type="button"
+                          data-users-vacation-trigger
+                        >
+                          Отпуск
+                        </button>
+                        <div class="users-vacation__replace is-hidden" data-users-vacation-replace>
+                          <label class="form-label" for="users-vacation-replacer">
+                            Кто заменяет
+                          </label>
+                          <select
+                            class="form-input"
+                            id="users-vacation-replacer"
+                            data-users-vacation-replacer
+                          >
+                            <option value="">Выберите сотрудника</option>
+                          </select>
+                          <div class="users-vacation__actions">
+                            <button
+                              class="action-primary"
+                              type="button"
+                              data-users-vacation-confirm
+                            >
+                              Подтвердить
+                            </button>
+                            <button
+                              class="action-secondary"
+                              type="button"
+                              data-users-vacation-cancel
+                            >
+                              Отмена
+                            </button>
+                          </div>
+                        </div>
+                        <div
+                          class="form-message users-vacation__message"
+                          role="status"
+                          data-users-vacation-message
+                        ></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div
                   class="registration-box users-details__invite is-hidden"
                   data-users-invite-box
                 >

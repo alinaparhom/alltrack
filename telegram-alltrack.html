@@ -292,6 +292,24 @@
         box-shadow: 0 12px 24px rgba(8, 12, 22, 0.35);
       }
 
+      body[data-theme="dark"] .users-details__card.is-vacation {
+        background: rgba(89, 68, 0, 0.42);
+        border-color: rgba(250, 204, 21, 0.6);
+      }
+
+      body[data-theme="dark"] .users-vacation__stat-card,
+      body[data-theme="dark"] .users-vacation__fine-row,
+      body[data-theme="dark"] .users-vacation__fine-empty,
+      body[data-theme="dark"] .users-vacation__replace {
+        background: rgba(23, 31, 52, 0.9);
+        border-color: rgba(148, 170, 210, 0.25);
+      }
+
+      body[data-theme="dark"] .users-details__status.is-vacation {
+        background: rgba(250, 204, 21, 0.22);
+        color: #facc15;
+      }
+
       body[data-theme="dark"] .users-orgs__count {
         background: rgba(123, 178, 255, 0.22);
         color: var(--text);
@@ -6794,6 +6812,12 @@
         transform: translateY(0);
       }
 
+      .users-details__card.is-vacation {
+        border-color: rgba(250, 204, 21, 0.58);
+        background: rgba(255, 250, 205, 0.92);
+        box-shadow: 0 14px 26px rgba(250, 204, 21, 0.22);
+      }
+
       .users-details__initials {
         width: 52px;
         height: 52px;
@@ -6853,6 +6877,90 @@
 
       .users-details__status.is-linked {
         background: rgba(34, 197, 94, 0.14);
+        color: #16a34a;
+      }
+
+      .users-details__status.is-vacation {
+        background: rgba(250, 204, 21, 0.2);
+        color: #a16207;
+      }
+
+      .users-vacation-modal__panel {
+        width: min(560px, calc(100vw - 18px));
+      }
+
+      .users-vacation__stats {
+        display: grid;
+        gap: 10px;
+      }
+
+      .users-vacation__stat-card {
+        border: 1px solid rgba(226, 232, 240, 0.8);
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.75);
+        backdrop-filter: blur(12px);
+        padding: 12px;
+        display: grid;
+        gap: 4px;
+      }
+
+      .users-vacation__stat-label {
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .users-vacation__fines {
+        display: grid;
+        gap: 8px;
+      }
+
+      .users-vacation__fine-row,
+      .users-vacation__fine-empty {
+        border: 1px solid rgba(226, 232, 240, 0.75);
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.72);
+        padding: 10px 12px;
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+        font-size: 13px;
+      }
+
+      .users-vacation__fine-empty {
+        justify-content: flex-start;
+        color: var(--muted);
+      }
+
+      .users-vacation__controls {
+        margin-top: 10px;
+        display: grid;
+        gap: 10px;
+      }
+
+      .users-vacation__trigger {
+        width: 100%;
+      }
+
+      .users-vacation__replace {
+        border: 1px solid rgba(226, 232, 240, 0.7);
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.64);
+        padding: 10px;
+        display: grid;
+        gap: 10px;
+      }
+
+      .users-vacation__actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+      }
+
+      .users-vacation__message[data-type="error"] {
+        color: #dc2626;
+      }
+
+      .users-vacation__message[data-type="success"] {
         color: #16a34a;
       }
 

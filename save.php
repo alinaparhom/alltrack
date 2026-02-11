@@ -714,6 +714,97 @@ function normalizeTelegramGroupId($value): ?string {
   return $normalized;
 }
 
+function normalizeScheduleTime($value): ?string {
+  $raw = trim((string) $value);
+  if ($raw === "") {
+    return null;
+  }
+  if (!preg_match('/^(\d{1,2}):(\d{2})$/', $raw, $matches)) {
+    return null;
+  }
+  $hours = (int) $matches[1];
+  $minutes = (int) $matches[2];
+  if ($hours < 0 || $hours > 23 || $minutes < 0 || $minutes > 59) {
+    return null;
+  }
+  return sprintf('%02d:%02d', $hours, $minutes);
+}
+
+function getRussianWeekdayShort(DateTimeImmutable $now): string {
+  $weekdays = [
+    1 => 'Пн',
+    2 => 'Вт',
+    3 => 'Ср',
+    4 => 'Чт',
+    5 => 'Пт',
+    6 => 'Сб',
+    7 => 'Вс',
+  ];
+  $dayNumber = (int) $now->format('N');
+  return $weekdays[$dayNumber] ?? '';
+}
+
+function shouldSendAwaitingReplyMailingNow(
+  array $settings,
+  string $telegramId,
+  DateTimeImmutable $now,
+  bool $respectTime
+): bool {
+  $awaitingReply = [];
+  if (
+    isset($settings['organization']) &&
+    is_array($settings['organization']) &&
+    isset($settings['organization']['mailings']) &&
+    is_array($settings['organization']['mailings']) &&
+    isset($settings['organization']['mailings']['awaitingReply']) &&
+    is_array($settings['organization']['mailings']['awaitingReply'])
+  ) {
+    $awaitingReply = $settings['organization']['mailings']['awaitingReply'];
+  }
+
+  if (array_key_exists('enabled', $awaitingReply) && !$awaitingReply['enabled']) {
+    return false;
+  }
+
+  if (!$respectTime) {
+    return true;
+  }
+
+  $time = '14:45';
+  $days = [];
+
+  if (
+    isset($awaitingReply['telegramSchedule']) &&
+    is_array($awaitingReply['telegramSchedule']) &&
+    isset($awaitingReply['telegramSchedule'][$telegramId]) &&
+    is_array($awaitingReply['telegramSchedule'][$telegramId])
+  ) {
+    $groupSchedule = $awaitingReply['telegramSchedule'][$telegramId];
+    $parsedTime = normalizeScheduleTime($groupSchedule['time'] ?? null);
+    if ($parsedTime !== null) {
+      $time = $parsedTime;
+    }
+    if (isset($groupSchedule['days']) && is_array($groupSchedule['days'])) {
+      foreach ($groupSchedule['days'] as $dayLabel) {
+        $day = trim((string) $dayLabel);
+        if ($day !== '') {
+          $days[] = $day;
+        }
+      }
+    }
+  }
+
+  if (!empty($days)) {
+    $todayDay = getRussianWeekdayShort($now);
+    if ($todayDay === '' || !in_array($todayDay, $days, true)) {
+      return false;
+    }
+  }
+
+  $currentTime = $now->format('H:i');
+  return strcmp($currentTime, $time) >= 0;
+}
+
 function extractPendingMoveLines(array $moves): array {
   $lines = [];
   foreach ($moves as $index => $move) {
@@ -907,9 +998,6 @@ function runDailyPendingMovesMailing(array $options = []): void {
   $timezone = new DateTimeZone("Europe/Moscow");
   $now = new DateTimeImmutable("now", $timezone);
   $currentTime = $now->format("H:i");
-  if ($respectTime && $currentTime !== "14:45") {
-    return;
-  }
 
   $todayKey = $now->format("Y-m-d");
   $statePath = __DIR__ . DIRECTORY_SEPARATOR . "telegram-daily-pending-moves-state.json";
@@ -998,6 +1086,10 @@ function runDailyPendingMovesMailing(array $options = []): void {
 
       $groupKey = $orgFolder . "::" . $telegramId;
       if (($sentMap[$groupKey] ?? "") === $todayKey) {
+        continue;
+      }
+
+      if (!shouldSendAwaitingReplyMailingNow($settings, $telegramId, $now, $respectTime)) {
         continue;
       }
 

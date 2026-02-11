@@ -246,6 +246,29 @@ function resolveMailingTelegramIds(settings) {
     .filter(Boolean);
 }
 
+function resolveAwaitingReplyTelegramIds(settings) {
+  const mailing = settings?.organization?.mailings?.awaitingReply ?? {};
+  const schedule = mailing?.telegramSchedule;
+
+  if (!schedule || typeof schedule !== 'object') {
+    throw new Error(
+      'Не заполнено поле organization.mailings.awaitingReply.telegramSchedule в Настройки.json'
+    );
+  }
+
+  const ids = Object.keys(schedule)
+    .map((value) => String(value ?? '').trim())
+    .filter(Boolean);
+
+  if (!ids.length) {
+    throw new Error(
+      'В organization.mailings.awaitingReply.telegramSchedule не указаны Telegram-группы'
+    );
+  }
+
+  return ids;
+}
+
 function buildErrorMessage(orgFolder, error) {
   return [
     `<b>Ошибка рассылки awaitingReply · ${escapeHtml(orgFolder)}</b>`,
@@ -302,14 +325,7 @@ async function main() {
     (mailing.toolGroups ?? []).map((item) => normalizeKey(item)).filter(Boolean)
   );
 
-  const telegramIds = resolveMailingTelegramIds(settings).filter(
-    (id) => mailing.telegramSchedule?.[id]
-  );
-
-  if (!telegramIds.length) {
-    console.log('Нет групп Telegram в awaitingReply.telegramSchedule');
-    return;
-  }
+  const telegramIds = resolveAwaitingReplyTelegramIds(settings);
 
   const { byNumber, byAccounting, byNumberNormalized, byAccountingNormalized } =
     buildToolIndex(allTools);

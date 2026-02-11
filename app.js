@@ -10141,7 +10141,111 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     return 0;
   };
 
+  const fineMoveTypeTitles = [
+    "Поздний ответ",
+    "Нет фото",
+    "Перемещения энергетиком",
+  ];
+
+  const normalizeMoveFineType = (move) => {
+    const rawType = String(
+      move?.["Тип штрафа"] ?? move?.["Вид штрафа"] ?? ""
+    )
+      .trim()
+      .toLowerCase();
+    const rawReason = String(
+      move?.["Причина штрафа"] ?? move?.["Причина"] ?? ""
+    )
+      .trim()
+      .toLowerCase();
+    const source = `${rawType} ${rawReason}`;
+    if (source.includes("фото")) return "Нет фото";
+    if (source.includes("энерг") && source.includes("перемещ")) {
+      return "Перемещения энергетиком";
+    }
+    if (source.includes("позд") || source.includes("ответ")) {
+      return "Поздний ответ";
+    }
+    return "Поздний ответ";
+  };
+
+  const createMoveFineSummary = () => ({
+    "Штрафы по отвеченным перемещениям": 0,
+    "Выставленные штрафы": 0,
+    Простили: 0,
+    Остаток: 0,
+  });
+
+  const createMoveFineSummaryByType = () => {
+    const summaryByType = {};
+    fineMoveTypeTitles.forEach((title) => {
+      summaryByType[title] = createMoveFineSummary();
+    });
+    return summaryByType;
+  };
+
+  const applyMoveFinesSummaryUpdates = (rawFines, summaryUpdates) => {
+    const fallbackBase =
+      rawFines && typeof rawFines === "object" && !Array.isArray(rawFines)
+        ? { ...rawFines }
+        : {};
+    const finesList = Array.isArray(rawFines)
+      ? [...rawFines]
+      : Array.isArray(fallbackBase.fines)
+      ? [...fallbackBase.fines]
+      : [];
+    const summaryByUser =
+      fallbackBase["Штрафы по пользователям"] &&
+      typeof fallbackBase["Штрафы по пользователям"] === "object"
+        ? { ...fallbackBase["Штрафы по пользователям"] }
+        : {};
+
+    summaryUpdates.forEach((userFineMap, userName) => {
+      const normalizedUserName = String(userName ?? "").trim();
+      if (!normalizedUserName) return;
+      const userSummary =
+        summaryByUser[normalizedUserName] &&
+        typeof summaryByUser[normalizedUserName] === "object"
+          ? { ...summaryByUser[normalizedUserName] }
+          : createMoveFineSummaryByType();
+
+      fineMoveTypeTitles.forEach((title) => {
+        const currentTypeSummary =
+          userSummary[title] && typeof userSummary[title] === "object"
+            ? {
+                ...createMoveFineSummary(),
+                ...userSummary[title],
+              }
+            : createMoveFineSummary();
+        const increase = normalizeCostValue(userFineMap.get(title)) || 0;
+        if (increase > 0) {
+          currentTypeSummary["Штрафы по отвеченным перемещениям"] =
+            (
+              normalizeCostValue(
+                currentTypeSummary["Штрафы по отвеченным перемещениям"]
+              ) || 0
+            ) + increase;
+          currentTypeSummary["Остаток"] =
+            (normalizeCostValue(currentTypeSummary["Остаток"]) || 0) + increase;
+        }
+        currentTypeSummary["Выставленные штрафы"] =
+          normalizeCostValue(currentTypeSummary["Выставленные штрафы"]) || 0;
+        currentTypeSummary["Простили"] =
+          normalizeCostValue(currentTypeSummary["Простили"]) || 0;
+        userSummary[title] = currentTypeSummary;
+      });
+      summaryByUser[normalizedUserName] = userSummary;
+    });
+
+    return {
+      ...fallbackBase,
+      fines: finesList,
+      "Штрафы по пользователям": summaryByUser,
+    };
+  };
+
   const buildMoveFineEntry = (move, amount, responseDate, decision, reason) => {
+    const fineType = normalizeMoveFineType(move);
     const baseReason =
       String(move?.["Причина штрафа"] ?? move?.["Причина"] ?? "").trim() ||
       "Штраф за ответ";
@@ -10155,6 +10259,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       Объект: String(
         move?.["Новый объект"] ?? move?.["Старый объект"] ?? ""
       ).trim(),
+      "Тип штрафа": fineType,
       Решение: decision,
     };
     if (reason) {
@@ -10397,6 +10502,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       }
     }
     const fineEntries = [];
+    const acceptedFineSummaryUpdates = new Map();
     let toolsPayload = null;
     let toolsNormalized = null;
     let toolsIndexMap = null;
@@ -10436,6 +10542,23 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         fineEntries.push(
           buildMoveFineEntry(move, fineAmount, responseDate, decision, declineReason)
         );
+        if (decision === "Принял") {
+          const acceptedBy = String(move?.["Принял"] ?? "").trim();
+          const fineType = normalizeMoveFineType(move);
+          if (acceptedBy) {
+            if (!acceptedFineSummaryUpdates.has(acceptedBy)) {
+              acceptedFineSummaryUpdates.set(acceptedBy, new Map());
+            }
+            const userFineMap = acceptedFineSummaryUpdates.get(acceptedBy);
+            const current = normalizeCostValue(userFineMap.get(fineType)) || 0;
+            userFineMap.set(fineType, current + fineAmount);
+          }
+          updatedMoves[index] = {
+            ...move,
+            "Штраф по отвеченному перемещению": fineAmount,
+            "Тип штрафа": fineType,
+          };
+        }
       }
       if (decision === "Принял" && toolsNormalized && toolsIndexMap) {
         const number = String(move?.["Номер"] ?? "").trim();
@@ -10453,7 +10576,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         }
       }
       updatedMoves[index] = {
-        ...move,
+        ...updatedMoves[index],
         "Дата ответа": responseDate,
         Ответ: decision,
       };
@@ -10489,17 +10612,20 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         : toolsNormalized.items;
     }
     let finesPayload = null;
-    if (fineEntries.length) {
+    if (fineEntries.length || acceptedFineSummaryUpdates.size) {
       const finesPath = `./${context.orgFolderName}/Штрафы.json`;
       try {
         const rawFines = await loadJson(finesPath);
-        const finesNormalized = normalizeCollectionPayload(rawFines, "fines");
-        finesNormalized.items.push(...fineEntries);
-        finesPayload = finesNormalized.wrapper
-          ? { ...finesNormalized.wrapper, [finesNormalized.key]: finesNormalized.items }
-          : finesNormalized.items;
+        const finesWithSummary = applyMoveFinesSummaryUpdates(
+          rawFines,
+          acceptedFineSummaryUpdates
+        );
+        finesWithSummary.fines.push(...fineEntries);
+        finesPayload = finesWithSummary;
       } catch (error) {
-        finesPayload = fineEntries;
+        const fallback = applyMoveFinesSummaryUpdates({}, acceptedFineSummaryUpdates);
+        fallback.fines.push(...fineEntries);
+        finesPayload = fallback;
       }
     }
     try {

@@ -5,11 +5,7 @@
                 "layout": [
                     {
                         "type": "action",
-                        "id": "tools"
-                    },
-                    {
-                        "type": "action",
-                        "id": "move"
+                        "id": "write-off"
                     },
                     {
                         "type": "action",
@@ -17,7 +13,23 @@
                     },
                     {
                         "type": "action",
-                        "id": "add-photo"
+                        "id": "repair"
+                    },
+                    {
+                        "type": "action",
+                        "id": "users"
+                    },
+                    {
+                        "type": "action",
+                        "id": "base"
+                    },
+                    {
+                        "type": "action",
+                        "id": "objects"
+                    },
+                    {
+                        "type": "action",
+                        "id": "settings"
                     },
                     {
                         "type": "action",
@@ -29,19 +41,7 @@
                     },
                     {
                         "type": "action",
-                        "id": "write-off"
-                    },
-                    {
-                        "type": "action",
-                        "id": "info"
-                    },
-                    {
-                        "type": "action",
-                        "id": "repair"
-                    },
-                    {
-                        "type": "action",
-                        "id": "base"
+                        "id": "add-photo"
                     },
                     {
                         "type": "action",
@@ -49,11 +49,10 @@
                     },
                     {
                         "type": "action",
-                        "id": "users"
+                        "id": "fines"
                     },
                     {
-                        "type": "action",
-                        "id": "demand"
+                        "type": "toggle"
                     },
                     {
                         "type": "action",
@@ -61,22 +60,18 @@
                     },
                     {
                         "type": "action",
-                        "id": "fines"
-                    },
-                    {
-                        "type": "action",
-                        "id": "settings"
-                    },
-                    {
-                        "type": "action",
-                        "id": "objects"
-                    },
-                    {
-                        "type": "toggle"
+                        "id": "move-other"
                     }
                 ],
                 "layoutCustomized": true,
-                "toolsView": "table"
+                "toolsView": "large",
+                "quickAccess": [
+                    "info",
+                    "search",
+                    "demand",
+                    "tools",
+                    "pending"
+                ]
             },
             "preferences": {
                 "iconStyle": "icon-title",
@@ -105,6 +100,7 @@
             "Ответственный": [
                 "tools",
                 "add-tool",
+                "search",
                 "breakdowns",
                 "demand",
                 "info",
@@ -174,12 +170,24 @@
                 ],
                 "telegramSchedule": {
                     "-1001994739583": {
-                        "days": [],
-                        "time": "09:00"
+                        "days": [
+                            "Пн",
+                            "Вт",
+                            "Ср",
+                            "Чт",
+                            "Пт"
+                        ],
+                        "time": "09:07"
                     },
                     "-5145416273": {
-                        "days": [],
-                        "time": "09:00"
+                        "days": [
+                            "Пн",
+                            "Вт",
+                            "Ср",
+                            "Чт",
+                            "Пт"
+                        ],
+                        "time": "09:07"
                     }
                 }
             },
@@ -190,8 +198,14 @@
                 ],
                 "telegramSchedule": {
                     "-1001994739583": {
-                        "days": [],
-                        "time": "10:00"
+                        "days": [
+                            "Пн",
+                            "Вт",
+                            "Ср",
+                            "Чт",
+                            "Пт"
+                        ],
+                        "time": "17:05"
                     },
                     "-5145416273": {
                         "days": [],
@@ -207,12 +221,25 @@
                 ],
                 "telegramSchedule": {
                     "-1001994739583": {
-                        "days": [],
-                        "time": "11:00"
+                        "days": [
+                            "Пн",
+                            "Вт",
+                            "Ср",
+                            "Чт",
+                            "Пт",
+                            "Сб"
+                        ],
+                        "time": "17:10"
                     },
                     "-5145416273": {
-                        "days": [],
-                        "time": "11:00"
+                        "days": [
+                            "Пн",
+                            "Вт",
+                            "Ср",
+                            "Чт",
+                            "Пт"
+                        ],
+                        "time": "17:10"
                     }
                 }
             },
@@ -225,8 +252,14 @@
                 ],
                 "telegramSchedule": {
                     "-1001994739583": {
-                        "days": [],
-                        "time": "12:00"
+                        "days": [
+                            "Пн",
+                            "Вт",
+                            "Ср",
+                            "Чт",
+                            "Пт"
+                        ],
+                        "time": "17:15"
                     },
                     "-5145416273": {
                         "days": [],
@@ -256,7 +289,7 @@
                 "groups": [
                     "-1001994739583"
                 ],
-                "attachPhoto": false
+                "attachPhoto": true
             },
             "declineTool": {
                 "enabled": true,
@@ -264,7 +297,7 @@
                     "-1001994739583",
                     "-5145416273"
                 ],
-                "attachPhoto": false
+                "attachPhoto": true
             },
             "moveByEnergy": {
                 "enabled": true,
@@ -292,14 +325,14 @@
                 "groups": [
                     "-1001994739583"
                 ],
-                "attachPhoto": false
+                "attachPhoto": true
             },
             "repaired": {
                 "enabled": true,
                 "groups": [
                     "-1001994739583"
                 ],
-                "attachPhoto": false
+                "attachPhoto": true
             },
             "writeOff": {
                 "enabled": true,

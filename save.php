@@ -2,7 +2,8 @@
 header("Content-Type: application/json; charset=utf-8");
 
 $rawInput = file_get_contents("php://input");
-$payload = json_decode($rawInput, true);
+$hasBody = is_string($rawInput) && trim($rawInput) !== "";
+$payload = $hasBody ? json_decode($rawInput, true) : [];
 
 if (!is_array($payload)) {
   http_response_code(400);
@@ -31,6 +32,9 @@ function buildEntries(array $payload): array {
   }
   $path = $payload["path"] ?? "";
   $data = $payload["data"] ?? null;
+  if (trim((string) $path) === "") {
+    return [];
+  }
   return [["path" => $path, "data" => $data]];
 }
 function sanitizeFolderName(string $name): string {
@@ -751,7 +755,12 @@ function runDailyPendingMovesMailingIfNeeded(): void {
     }
 
     $settings = readJsonArrayFile($settingsPath);
-    $telegramGroups = $settings["organization"]["telegramGroups"] ?? [];
+    $telegramGroups = [];
+    if (isset($settings["telegramGroups"]) && is_array($settings["telegramGroups"])) {
+      $telegramGroups = $settings["telegramGroups"];
+    } elseif (isset($settings["organization"]["telegramGroups"]) && is_array($settings["organization"]["telegramGroups"])) {
+      $telegramGroups = $settings["organization"]["telegramGroups"];
+    }
     if (!is_array($telegramGroups) || empty($telegramGroups)) {
       continue;
     }

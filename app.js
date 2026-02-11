@@ -1000,6 +1000,43 @@ function buildAwaitingReplyMailingErrorMessage(error, { orgFullName, groupId } =
   return [header, orgLine, groupLine, detailsLine].join("\n");
 }
 
+async function sendAwaitingReplyMailingMessage({
+  groupId,
+  text,
+  context,
+  stage,
+  parseMode = "HTML",
+}) {
+  try {
+    const result = await sendTelegramMessage(groupId, text, { parseMode });
+    if (!result?.ok) {
+      await appendMailingErrorLog({
+        mailing: "awaitingReply",
+        stage,
+        orgFolderName: context?.orgFolderName,
+        orgFullName: context?.orgFullName ?? "",
+        groupId,
+        error: String(formatTelegramSendError(result ?? {})),
+      });
+    }
+    return result;
+  } catch (error) {
+    await appendMailingErrorLog({
+      mailing: "awaitingReply",
+      stage,
+      orgFolderName: context?.orgFolderName,
+      orgFullName: context?.orgFullName ?? "",
+      groupId,
+      error: String(error?.message || error),
+    });
+    return {
+      ok: false,
+      status: null,
+      errorText: String(error?.message || error),
+    };
+  }
+}
+
 async function loadAwaitingReplyItemsForMailing(orgFolderName, selectedToolGroups = []) {
   if (!orgFolderName) return [];
   const movesPath = `./${orgFolderName}/Перемещения.json`;
@@ -1111,7 +1148,12 @@ async function runAwaitingReplyMailingTick(context) {
       const message = buildAwaitingReplyMailingMessage(items, {
         orgFullName: context.orgFullName,
       });
-      result = await sendTelegramMessage(groupId, message);
+      result = await sendAwaitingReplyMailingMessage({
+        groupId,
+        text: message,
+        context,
+        stage: "send-main-message",
+      });
     } catch (error) {
       console.warn("Ошибка подготовки рассылки по ожидающим принятия.", {
         groupId,
@@ -1129,7 +1171,12 @@ async function runAwaitingReplyMailingTick(context) {
         orgFullName: context.orgFullName,
         groupId,
       });
-      result = await sendTelegramMessage(groupId, errorMessage);
+      result = await sendAwaitingReplyMailingMessage({
+        groupId,
+        text: errorMessage,
+        context,
+        stage: "send-build-error-message",
+      });
     }
 
     if (result?.ok) {
@@ -1143,19 +1190,16 @@ async function runAwaitingReplyMailingTick(context) {
       groupId,
       error: sendError,
     });
-    await appendMailingErrorLog({
-      mailing: "awaitingReply",
-      stage: "send-main-message",
-      orgFolderName: context.orgFolderName,
-      orgFullName: context.orgFullName ?? "",
-      groupId,
-      error: String(sendError),
-    });
     const errorMessage = buildAwaitingReplyMailingErrorMessage(sendError, {
       orgFullName: context.orgFullName,
       groupId,
     });
-    const fallbackResult = await sendTelegramMessage(groupId, errorMessage);
+    const fallbackResult = await sendAwaitingReplyMailingMessage({
+      groupId,
+      text: errorMessage,
+      context,
+      stage: "send-fallback-error-message",
+    });
     if (fallbackResult?.ok) {
       history[historyKey] = now.toISOString();
       saveAwaitingReplyMailingHistory(history);
@@ -1165,14 +1209,18 @@ async function runAwaitingReplyMailingTick(context) {
         groupId,
         error: fallbackError,
       });
-      await appendMailingErrorLog({
-        mailing: "awaitingReply",
-        stage: "send-fallback-error-message",
-        orgFolderName: context.orgFolderName,
-        orgFullName: context.orgFullName ?? "",
+      const emergencyText = `Ошибка рассылки (аварийный режим). Группа: ${groupId}. Причина: ${fallbackError}`;
+      const emergencyResult = await sendAwaitingReplyMailingMessage({
         groupId,
-        error: String(fallbackError),
+        text: emergencyText.slice(0, 3500),
+        context,
+        stage: "send-emergency-plain-message",
+        parseMode: null,
       });
+      if (emergencyResult?.ok) {
+        history[historyKey] = now.toISOString();
+        saveAwaitingReplyMailingHistory(history);
+      }
     }
   }
 }
@@ -1712,21 +1760,24 @@ function formatTelegramSendError({ status, errorText } = {}) {
   return parts.join(": ").trim() || "неизвестная ошибка Telegram API";
 }
 
-async function sendTelegramMessage(chatId, text) {
+async function sendTelegramMessage(chatId, text, { parseMode = "HTML" } = {}) {
   if (!fallbackBotToken || !chatId || !text) {
     return { ok: false, status: null, errorText: "некорректные данные" };
+  }
+  const payload = {
+    chat_id: chatId,
+    text,
+    disable_web_page_preview: true,
+  };
+  if (parseMode) {
+    payload.parse_mode = parseMode;
   }
   const response = await fetch(
     `https://api.telegram.org/bot${fallbackBotToken}/sendMessage`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        chat_id: chatId,
-        text,
-        parse_mode: "HTML",
-        disable_web_page_preview: true,
-      }),
+      body: JSON.stringify(payload),
     }
   );
   const errorText = await parseTelegramError(response);

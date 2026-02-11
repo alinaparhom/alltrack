@@ -5001,6 +5001,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const usersVacationReplacerSelect = contentEl.querySelector(
     "[data-users-vacation-replacer]"
   );
+  const usersVacationReplacerSearchInput = contentEl.querySelector(
+    "[data-users-vacation-replacer-search]"
+  );
+  const usersVacationSearchResultsEl = contentEl.querySelector(
+    "[data-users-vacation-search-results]"
+  );
   const usersVacationConfirmButton = contentEl.querySelector(
     "[data-users-vacation-confirm]"
   );
@@ -16680,6 +16686,48 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     return { toolsCount, fineItems };
   };
 
+  const renderVacationSearchResults = (options, query = "") => {
+    if (!usersVacationSearchResultsEl) return;
+    usersVacationSearchResultsEl.innerHTML = "";
+    const normalizedQuery = normalizePersonName(query);
+    const filtered = !normalizedQuery
+      ? options
+      : options.filter((item) => {
+          const fullName = normalizePersonName(item?.full_name ?? "");
+          const roleName = normalizePersonName(item?.role ?? "");
+          return fullName.includes(normalizedQuery) || roleName.includes(normalizedQuery);
+        });
+    if (!filtered.length) {
+      usersVacationSearchResultsEl.classList.remove("is-hidden");
+      const empty = document.createElement("div");
+      empty.className = "users-vacation__search-empty";
+      empty.textContent = "Никого не нашли. Попробуйте другой запрос.";
+      usersVacationSearchResultsEl.appendChild(empty);
+      return;
+    }
+    filtered.forEach((item) => {
+      const optionButton = document.createElement("button");
+      optionButton.type = "button";
+      optionButton.className = "users-vacation__search-option";
+      optionButton.innerHTML = `<strong>${formatFullName(
+        String(item?.full_name ?? "")
+      )}</strong><span>${String(item?.role ?? "").trim()}</span>`;
+      optionButton.addEventListener("click", () => {
+        const fullName = String(item?.full_name ?? "").trim();
+        if (usersVacationReplacerSelect) {
+          usersVacationReplacerSelect.value = fullName;
+        }
+        if (usersVacationReplacerSearchInput) {
+          usersVacationReplacerSearchInput.value = formatFullName(fullName);
+          usersVacationReplacerSearchInput.focus();
+        }
+        usersVacationSearchResultsEl.classList.add("is-hidden");
+      });
+      usersVacationSearchResultsEl.appendChild(optionButton);
+    });
+    usersVacationSearchResultsEl.classList.remove("is-hidden");
+  };
+
   const fillVacationReplacers = (entry) => {
     if (!usersVacationReplacerSelect) return;
     usersVacationReplacerSelect.innerHTML = '<option value="">Выберите сотрудника</option>';
@@ -16691,6 +16739,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           normalizePersonName(entry?.full_name ?? "")
       );
     });
+    usersVacationReplacerSelect.dataset.available = JSON.stringify(
+      options.map((item) => ({
+        full_name: String(item?.full_name ?? "").trim(),
+        role: String(item?.role ?? "").trim(),
+      }))
+    );
     options.forEach((item) => {
       const option = document.createElement("option");
       option.value = String(item?.full_name ?? "").trim();
@@ -16699,6 +16753,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       ).trim()}`;
       usersVacationReplacerSelect.appendChild(option);
     });
+    if (usersVacationReplacerSearchInput) {
+      usersVacationReplacerSearchInput.value = "";
+    }
+    if (usersVacationSearchResultsEl) {
+      usersVacationSearchResultsEl.classList.add("is-hidden");
+      usersVacationSearchResultsEl.innerHTML = "";
+    }
   };
 
   const setVacationMessage = (message = "", type = "") => {
@@ -16714,6 +16775,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       usersVacationReplaceBox.classList.add("is-hidden");
     }
     selectedVacationUser = null;
+    if (usersVacationReplacerSearchInput) {
+      usersVacationReplacerSearchInput.value = "";
+    }
+    if (usersVacationSearchResultsEl) {
+      usersVacationSearchResultsEl.classList.add("is-hidden");
+      usersVacationSearchResultsEl.innerHTML = "";
+    }
     setVacationMessage("");
   };
 
@@ -16805,11 +16873,17 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
       info.append(name, meta);
       card.append(initials, info);
-      if (isResponsible) {
+      const isCurrentUserCard =
+        normalizePersonName(entry?.full_name ?? "") ===
+        normalizePersonName(currentUser?.full_name ?? currentUser?.fullName ?? "");
+      if (isResponsible || isCurrentUserCard) {
         card.classList.add("is-actionable");
         card.setAttribute("role", "button");
         card.setAttribute("tabindex", "0");
-        card.setAttribute("aria-label", `Управление отпуском: ${name.textContent}`);
+        card.setAttribute(
+          "aria-label",
+          `Открыть карточку пользователя: ${name.textContent}`
+        );
         const handleOpenVacation = () => {
           openUsersVacationModal(entry);
         };
@@ -17044,6 +17118,29 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   usersVacationCancelButton?.addEventListener("click", () => {
     usersVacationReplaceBox?.classList.add("is-hidden");
     setVacationMessage("");
+  });
+  usersVacationReplacerSearchInput?.addEventListener("input", () => {
+    let options = [];
+    try {
+      options = JSON.parse(usersVacationReplacerSelect?.dataset.available ?? "[]");
+    } catch (error) {
+      options = [];
+    }
+    renderVacationSearchResults(options, usersVacationReplacerSearchInput.value);
+  });
+  usersVacationReplacerSearchInput?.addEventListener("focus", () => {
+    let options = [];
+    try {
+      options = JSON.parse(usersVacationReplacerSelect?.dataset.available ?? "[]");
+    } catch (error) {
+      options = [];
+    }
+    renderVacationSearchResults(options, usersVacationReplacerSearchInput.value);
+  });
+  usersVacationReplacerSearchInput?.addEventListener("blur", () => {
+    window.setTimeout(() => {
+      usersVacationSearchResultsEl?.classList.add("is-hidden");
+    }, 120);
   });
   usersVacationConfirmButton?.addEventListener("click", applyResponsibleVacation);
   usersAddButton?.addEventListener("click", openUsersAddModal);

@@ -300,7 +300,9 @@
       body[data-theme="dark"] .users-vacation__stat-card,
       body[data-theme="dark"] .users-vacation__fine-row,
       body[data-theme="dark"] .users-vacation__fine-empty,
-      body[data-theme="dark"] .users-vacation__replace {
+      body[data-theme="dark"] .users-vacation__replace,
+      body[data-theme="dark"] .users-vacation__search-results,
+      body[data-theme="dark"] .users-vacation__search-option {
         background: rgba(23, 31, 52, 0.9);
         border-color: rgba(148, 170, 210, 0.25);
       }
@@ -6888,6 +6890,25 @@
       .users-vacation-modal__panel {
         width: min(560px, calc(100vw - 18px));
       }
+      .users-vacation-modal__headline {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 10px;
+      }
+
+      .users-vacation-modal__headline h3 {
+        margin: 0;
+      }
+
+      .users-vacation-modal__title {
+        width: 100%;
+      }
+
+      .users-vacation-modal__close {
+        flex-shrink: 0;
+      }
+
 
       .users-vacation__stats {
         display: grid;
@@ -6949,6 +6970,47 @@
         display: grid;
         gap: 10px;
       }
+      .users-vacation__search {
+        width: 100%;
+      }
+
+      .users-vacation__search-results {
+        max-height: 180px;
+        overflow: auto;
+        border: 1px solid rgba(226, 232, 240, 0.75);
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.78);
+        backdrop-filter: blur(12px);
+        display: grid;
+        gap: 6px;
+        padding: 8px;
+      }
+
+      .users-vacation__search-option {
+        border: 1px solid rgba(226, 232, 240, 0.8);
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.85);
+        padding: 9px 10px;
+        display: grid;
+        justify-items: start;
+        gap: 2px;
+        text-align: left;
+        color: var(--text);
+      }
+
+      .users-vacation__search-option span {
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      .users-vacation__search-empty {
+        border: 1px dashed rgba(226, 232, 240, 0.8);
+        border-radius: 10px;
+        padding: 10px;
+        font-size: 12px;
+        color: var(--muted);
+      }
+
 
       .users-vacation__actions {
         display: grid;

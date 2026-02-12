@@ -11164,6 +11164,14 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (!toolsMoveModalEl) return;
     if (toolsState.mode === "base") return;
     if (toolsState.selectedIds.size === 0) return;
+    const selectedTools = Array.from(toolsState.selectedIds)
+      .map((id) => toolsState.toolMap.get(id))
+      .filter(Boolean);
+    const selectedResponsibleNames = new Set(
+      selectedTools
+        .map((tool) => normalizePersonName(tool?.["Ответственный"] ?? ""))
+        .filter(Boolean)
+    );
     setToolsMoveMessage("");
     updateToolsSelectionUi();
     const usersData = await loadJson(usersFilePath).catch(() => ({ users: [] }));
@@ -11175,16 +11183,14 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const orgUsers = (usersData.users ?? []).filter(
       (entry) => normalizeOrg(entry.organization) === orgKey
     );
-    const includeCurrentUserInResponsibleList =
-      toolsState.mode === "move-other";
     const shouldSkipCurrentUser = (entry) => {
-      if (includeCurrentUserInResponsibleList) return false;
+      const normalizedEntryName = normalizePersonName(entry?.full_name ?? "");
+      const isToolOwner = selectedResponsibleNames.has(normalizedEntryName);
       const sameTelegram =
         currentTelegramId &&
         normalizeTelegramId(entry?.telegram_id) === currentTelegramId;
-      const sameName =
-        normalizePersonName(entry?.full_name ?? "") === currentUserName;
-      return Boolean(sameTelegram || sameName);
+      const sameName = normalizedEntryName === currentUserName;
+      return Boolean(isToolOwner || sameTelegram || sameName);
     };
     const vacationReplacementNames = new Set(
       orgUsers
@@ -11330,9 +11336,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         return;
       }
 
-      const selectedTools = Array.from(toolsState.selectedIds)
-        .map((id) => toolsState.toolMap.get(id))
-        .filter(Boolean);
       if (!selectedTools.length) {
         setToolsMoveMessage("Сначала выберите инструменты.", "error");
         return;

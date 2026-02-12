@@ -11287,6 +11287,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   if (toolsMoveFormEl) {
     toolsMoveFormEl.addEventListener("submit", async (event) => {
       event.preventDefault();
+      const selectedTools = Array.from(toolsState.selectedIds)
+        .map((id) => toolsState.toolMap.get(id))
+        .filter(Boolean);
       const responsibleRaw = String(
         toolsMoveResponsibleInput?.value ?? ""
       ).trim();

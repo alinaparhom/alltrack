@@ -3527,6 +3527,54 @@
         font-size: 12px;
       }
 
+      .feedback-modal__panel {
+        width: min(680px, calc(100% - 20px));
+        max-height: calc(100vh - 20px);
+        border-radius: 22px;
+        grid-template-rows: auto minmax(0, 1fr);
+        background: linear-gradient(160deg, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.82));
+        border: 1px solid rgba(148, 163, 184, 0.25);
+        box-shadow: 0 24px 60px rgba(15, 23, 42, 0.16);
+        overflow: hidden;
+      }
+
+      .feedback-modal__header {
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: start;
+        gap: 8px;
+        padding: 16px 18px 10px;
+      }
+
+      .feedback-modal__body {
+        gap: 10px;
+        padding: 8px 18px 16px;
+      }
+
+      .feedback-modal__anonymous {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+        color: var(--title);
+      }
+
+      .feedback-modal__hint {
+        margin: 0;
+        font-size: 13px;
+        color: var(--muted);
+      }
+
+      .feedback-modal__files {
+        margin-top: 8px;
+        font-size: 12px;
+        color: var(--muted);
+        white-space: pre-wrap;
+      }
+
+      .feedback-modal__form .form-message {
+        min-height: 18px;
+      }
+
       .demand-modal__panel {
         width: min(760px, calc(100% - 20px));
         max-height: calc(100vh - 20px);

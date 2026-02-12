@@ -5183,12 +5183,48 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const context = contextOverride || (await resolveUserSettingsContext(user));
   const settingsData = context.settingsData;
   const organizationSettings = getEnergyOrganizationSettings(settingsData);
+  const resolveVacationReplacement = async () => {
+    try {
+      const usersData = await loadJson(usersFilePath);
+      const usersList = Array.isArray(usersData?.users) ? usersData.users : [];
+      const replacerName = normalizePersonName(user?.full_name ?? user?.fullName ?? "");
+      const replacerOrg = normalizeOrganizationName(user?.organization ?? "");
+      if (!replacerName) return null;
+      const replacementUser = usersList.find((entry) => {
+        const isVacation = Boolean(entry?.on_vacation);
+        if (!isVacation) return false;
+        const entryOrg = normalizeOrganizationName(entry?.organization ?? "");
+        if (replacerOrg && entryOrg && replacerOrg !== entryOrg) return false;
+        return (
+          normalizePersonName(entry?.vacation_replacer ?? "") === replacerName
+        );
+      });
+      if (!replacementUser) return null;
+      return {
+        fullName: String(replacementUser?.full_name ?? "").trim(),
+      };
+    } catch (error) {
+      console.warn("Не удалось определить замещаемого сотрудника.", error);
+      return null;
+    }
+  };
+  const vacationReplacement = await resolveVacationReplacement();
   const accessRole = resolveEnergyAccessRole(user.role);
   const accessList = organizationSettings.access?.[accessRole];
   const hasAccessConfig = Array.isArray(accessList);
-  const availableActions = hasAccessConfig
+  let availableActions = hasAccessConfig
     ? energyActions.filter((action) => accessList.includes(action.id))
     : energyActions;
+  if (vacationReplacement?.fullName && availableActions.some((action) => action.id === "tools")) {
+    availableActions = [
+      ...availableActions,
+      {
+        id: "tools-replacement",
+        title: `Инструменты ${formatFullName(vacationReplacement.fullName)}`,
+        icon: "🧰",
+      },
+    ];
+  }
   const pendingQuickAccessOption = {
     id: "pending",
     title: "Перемещения",
@@ -5475,6 +5511,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     isSelecting: false,
     selectedIds: new Set(),
     toolMap: new Map(),
+    replacementResponsible: vacationReplacement?.fullName ?? "",
   };
   const pendingMovesState = {
     pendingItems: [],
@@ -8538,7 +8575,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       console.warn("Не удалось загрузить список объектов.", error);
       rawObjects = [];
     }
-    const userNameKey = normalizePersonName(user?.full_name ?? "");
+    const sourceResponsible =
+      toolsState.mode === "replacement" && toolsState.replacementResponsible
+        ? toolsState.replacementResponsible
+        : user?.full_name ?? "";
+    const userNameKey = normalizePersonName(sourceResponsible);
     const { pendingNumbers, pendingAccountingNumbers } =
       await loadPendingMoves(orgFolder);
     toolsState.tools = rawTools
@@ -8681,6 +8722,34 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       syncToolsFilterValue("object", objectFilter);
       applyToolsFilters();
     }
+    syncToolsViewButtons();
+    if (
+      toolsSearchInput &&
+      (typeof window === "undefined" ||
+        !window.matchMedia ||
+        !window.matchMedia("(max-width: 520px)").matches)
+    ) {
+      toolsSearchInput.focus();
+    }
+  };
+
+  const openReplacementToolsModal = async () => {
+    if (!toolsModalEl || !toolsState.replacementResponsible) return;
+    toolsState.mode = "replacement";
+    toolsState.filters.responsible = "";
+    toolsState.filters.object = "";
+    toolsState.view = normalizeToolsView(toolsState.previousView);
+    syncToolsFilterValue("responsible", "");
+    syncToolsFilterValue("object", "");
+    setToolsResponsibleFilterVisibility(false);
+    setToolsTitle(`Инструменты ${formatFullName(toolsState.replacementResponsible)}`);
+    toolsSearchMapViewButtonEl?.classList.add("is-hidden");
+    toolsModalEl.classList.remove("is-hidden");
+    document.body.style.overflow = "hidden";
+    setToolsSubtitle("Загружаем список...");
+    const numberConfig = await resolveToolsNumberConfig();
+    updateToolsNumberConfig(numberConfig);
+    await loadUserTools();
     syncToolsViewButtons();
     if (
       toolsSearchInput &&
@@ -17775,6 +17844,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
     if (actionId === "tools") {
       openToolsModal();
+      return true;
+    }
+    if (actionId === "tools-replacement") {
+      openReplacementToolsModal();
       return true;
     }
     if (actionId === "base") {

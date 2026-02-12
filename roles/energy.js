@@ -141,6 +141,71 @@ export function renderRole(user) {
             </form>
           </div>
         </div>
+        <div class="feedback-modal settings-modal is-hidden" data-energy-feedback-modal>
+          <div class="settings-modal__backdrop" data-energy-feedback-backdrop></div>
+          <div
+            class="settings-modal__panel feedback-modal__panel"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Обратная связь"
+          >
+            <div class="settings-modal__header feedback-modal__header">
+              <div class="settings-modal__title">
+                <h2>Обратная связь</h2>
+                <p>Напишите пожелание, проблему или предложение</p>
+              </div>
+              <button
+                class="button-icon"
+                type="button"
+                data-energy-feedback-close
+                aria-label="Закрыть окно обратной связи"
+              >
+                <span class="button-icon-emoji" aria-hidden="true">✕</span>
+              </button>
+            </div>
+            <form class="settings-modal__form feedback-modal__form" data-energy-feedback-form>
+              <div class="settings-modal__body feedback-modal__body">
+                <label class="feedback-modal__anonymous">
+                  <input type="checkbox" data-energy-feedback-anonymous />
+                  <span>Отправить анонимно</span>
+                </label>
+                <p class="feedback-modal__hint" data-energy-feedback-hint>
+                  Если отправите анонимно, ответ на обращение получить не получится.
+                </p>
+                <div class="form-field">
+                  <label for="feedback-message">Текст обращения</label>
+                  <textarea
+                    id="feedback-message"
+                    class="form-input"
+                    data-energy-feedback-message
+                    rows="5"
+                    placeholder="Например: неудобный экран, нет нужной функции, есть идея..."
+                    required
+                  ></textarea>
+                </div>
+                <div class="form-field">
+                  <label for="feedback-photos">Фото (можно несколько)</label>
+                  <input
+                    id="feedback-photos"
+                    class="form-input"
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    data-energy-feedback-photos
+                  />
+                  <div class="feedback-modal__files" data-energy-feedback-files></div>
+                </div>
+                <div class="form-message" data-energy-feedback-message-status></div>
+              </div>
+              <div class="settings-modal__footer">
+                <button class="action-secondary" type="button" data-energy-feedback-cancel>
+                  Отмена
+                </button>
+                <button class="action-primary" type="submit">Отправить</button>
+              </div>
+            </form>
+          </div>
+        </div>
         <div class="objects-modal settings-modal is-hidden" data-energy-objects-modal>
           <div class="settings-modal__backdrop" data-energy-objects-backdrop></div>
           <div

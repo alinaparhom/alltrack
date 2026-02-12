@@ -606,6 +606,10 @@ function saveEntry(array $entry, array $allowedFiles): void {
     deleteFileEntry($entry);
     return;
   }
+  if (($entry["type"] ?? "") === "feedback-request") {
+    saveFeedbackRequest($entry);
+    return;
+  }
   $path = $entry["path"] ?? "";
   $data = $entry["data"] ?? null;
   $fileName = basename((string) $path);
@@ -1022,6 +1026,205 @@ function sendTelegramTextMessage(string $botToken, string $chatId, string $text)
     "statusCode" => $statusCode,
     "response" => $decoded,
   ];
+}
+
+function sendTelegramPhotoMessage(string $botToken, string $chatId, string $photoPath, string $caption = ""): array {
+  if (!function_exists("curl_init")) {
+    return [
+      "ok" => false,
+      "error" => "На сервере недоступен cURL для отправки фото.",
+      "statusCode" => 0,
+    ];
+  }
+
+  $apiUrl = "https://api.telegram.org/bot" . rawurlencode($botToken) . "/sendPhoto";
+  $postFields = [
+    "chat_id" => $chatId,
+    "photo" => new CURLFile($photoPath),
+  ];
+  if ($caption !== "") {
+    $postFields["caption"] = $caption;
+  }
+
+  $curl = curl_init($apiUrl);
+  if ($curl === false) {
+    return [
+      "ok" => false,
+      "error" => "Не удалось инициализировать cURL",
+      "statusCode" => 0,
+    ];
+  }
+
+  curl_setopt_array($curl, [
+    CURLOPT_POST => true,
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_POSTFIELDS => $postFields,
+    CURLOPT_TIMEOUT => 20,
+  ]);
+
+  $response = curl_exec($curl);
+  $statusCode = (int) curl_getinfo($curl, CURLINFO_HTTP_CODE);
+  $curlError = curl_error($curl);
+  curl_close($curl);
+
+  if ($response === false) {
+    return [
+      "ok" => false,
+      "error" => $curlError !== "" ? $curlError : "Не удалось подключиться к Telegram API",
+      "statusCode" => $statusCode,
+    ];
+  }
+
+  $decoded = json_decode($response, true);
+  if (!is_array($decoded)) {
+    return [
+      "ok" => false,
+      "error" => "Некорректный JSON ответ от Telegram",
+      "statusCode" => $statusCode,
+      "response" => mb_substr((string) $response, 0, 800),
+    ];
+  }
+
+  if (!empty($decoded["ok"])) {
+    return [
+      "ok" => true,
+      "statusCode" => $statusCode,
+      "response" => $decoded,
+    ];
+  }
+
+  return [
+    "ok" => false,
+    "error" => (string) ($decoded["description"] ?? "Неизвестная ошибка Telegram API"),
+    "statusCode" => $statusCode,
+    "response" => $decoded,
+  ];
+}
+
+function saveFeedbackRequest(array $entry): void {
+  $text = trim((string) ($entry["text"] ?? ""));
+  if ($text === "") {
+    http_response_code(400);
+    echo json_encode(["error" => "Текст обращения обязателен."]);
+    exit;
+  }
+
+  $isAnonymous = !empty($entry["anonymous"]);
+  $organization = trim((string) ($entry["organization"] ?? ""));
+  $createdBy = is_array($entry["createdBy"] ?? null) ? $entry["createdBy"] : [];
+
+  $feedbackFile = __DIR__ . DIRECTORY_SEPARATOR . "feedback-requests.json";
+  $feedbackPhotosDir = __DIR__ . DIRECTORY_SEPARATOR . "feedback-photos";
+  if (!ensureDirectory($feedbackPhotosDir)) {
+    http_response_code(500);
+    echo json_encode(["error" => "Не удалось создать папку для фото обратной связи."]);
+    exit;
+  }
+
+  $data = readJsonFile($feedbackFile, ["lastId" => 0, "requests" => []]);
+  $lastId = (int) ($data["lastId"] ?? 0);
+  $newId = $lastId + 1;
+
+  $photos = is_array($entry["photos"] ?? null) ? $entry["photos"] : [];
+  $savedPhotoNames = [];
+  foreach ($photos as $index => $photoEntry) {
+    if (!is_array($photoEntry)) {
+      continue;
+    }
+    $encoded = (string) ($photoEntry["content"] ?? "");
+    if ($encoded === "") {
+      continue;
+    }
+    $decoded = base64_decode($encoded, true);
+    if ($decoded === false) {
+      continue;
+    }
+    $extensionRaw = strtolower((string) ($photoEntry["extension"] ?? "jpg"));
+    $extension = preg_replace('/[^a-z0-9]+/', '', $extensionRaw);
+    if ($extension === '') {
+      $extension = 'jpg';
+    }
+    $photoName = $newId . '_' . ($index + 1) . '.' . $extension;
+    $targetPath = $feedbackPhotosDir . DIRECTORY_SEPARATOR . $photoName;
+    if (file_put_contents($targetPath, $decoded, LOCK_EX) !== false) {
+      $savedPhotoNames[] = $photoName;
+    }
+  }
+
+  $timezone = new DateTimeZone("Europe/Moscow");
+  $requestEntry = [
+    "id" => $newId,
+    "createdAt" => (new DateTimeImmutable("now", $timezone))->format(DateTimeInterface::ATOM),
+    "organization" => $organization,
+    "anonymous" => $isAnonymous,
+    "text" => $text,
+    "photos" => $savedPhotoNames,
+    "createdBy" => $isAnonymous
+      ? ["label" => "Анонимно"]
+      : [
+          "telegram_id" => $createdBy["telegram_id"] ?? null,
+          "full_name" => (string) ($createdBy["full_name"] ?? ""),
+          "role" => (string) ($createdBy["role"] ?? ""),
+          "organization" => (string) ($createdBy["organization"] ?? ""),
+        ],
+  ];
+
+  $requests = is_array($data["requests"] ?? null) ? $data["requests"] : [];
+  $requests[] = $requestEntry;
+  $data["lastId"] = $newId;
+  $data["requests"] = $requests;
+
+  $encoded = json_encode($data, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+  if ($encoded === false || file_put_contents($feedbackFile, $encoded . PHP_EOL, LOCK_EX) === false) {
+    http_response_code(500);
+    echo json_encode(["error" => "Не удалось сохранить обращение."]);
+    exit;
+  }
+
+  $usersData = readJsonFile(__DIR__ . DIRECTORY_SEPARATOR . "users.json", ["users" => []]);
+  $botToken = getenv("ALLTRACK_BOT_TOKEN") ?: "";
+  if ($botToken === "") {
+    $botToken = "8549452123:AAGxveuJSVf-xpNHQYTDKDmuMmHjGRVeDj0";
+  }
+
+  $superAdmins = [];
+  foreach (($usersData["users"] ?? []) as $userItem) {
+    if (!is_array($userItem)) {
+      continue;
+    }
+    $role = trim((string) ($userItem["role"] ?? ""));
+    if ($role !== "Супер-администратор") {
+      continue;
+    }
+    $tgId = normalizeTelegramId($userItem["telegram_id"] ?? null);
+    if ($tgId) {
+      $superAdmins[] = $tgId;
+    }
+  }
+  $superAdmins = array_values(array_unique($superAdmins));
+
+  if ($botToken !== "" && !empty($superAdmins)) {
+    $authorLine = $isAnonymous
+      ? "👤 Отправитель: Анонимно"
+      : "👤 Отправитель: " . trim((string) ($createdBy["full_name"] ?? "Не указан"));
+    $message = "💬 Новая обратная связь\n"
+      . "№ обращения: " . $newId . "\n"
+      . "🏢 Организация: " . ($organization !== "" ? $organization : "Не указана") . "\n"
+      . $authorLine . "\n\n"
+      . "📝 Текст:\n" . $text;
+
+    foreach ($superAdmins as $chatId) {
+      sendTelegramTextMessage($botToken, $chatId, $message);
+      foreach ($savedPhotoNames as $photoIndex => $photoName) {
+        $photoPath = $feedbackPhotosDir . DIRECTORY_SEPARATOR . $photoName;
+        if (!is_file($photoPath)) {
+          continue;
+        }
+        $caption = $photoIndex === 0 ? "Фото к обращению №" . $newId : "";
+        sendTelegramPhotoMessage($botToken, $chatId, $photoPath, $caption);
+      }
+    }
+  }
 }
 
 function runDailyPendingMovesMailingIfNeeded(): void {

@@ -2811,6 +2811,17 @@ function readFileAsBase64(file) {
   });
 }
 
+function getFileExtensionFromName(name = "") {
+  const fileName = String(name).trim();
+  const extension = fileName.includes(".") ? fileName.split(".").pop() : "";
+  const safeExtension = String(extension ?? "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "")
+    .slice(0, 10);
+  return safeExtension || "jpg";
+}
+
+
 function isDefaultEnergyLayout(layout, actions) {
   if (!Array.isArray(layout) || layout.length === 0) return true;
   const hasGroup = layout.some((item) => item?.type === "group");
@@ -4337,6 +4348,17 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const settingsCloseButton = contentEl.querySelector("[data-energy-settings-close]");
   const settingsCancelButton = contentEl.querySelector("[data-energy-settings-cancel]");
   const settingsBackdropEl = contentEl.querySelector("[data-energy-settings-backdrop]");
+  const feedbackModalEl = contentEl.querySelector("[data-energy-feedback-modal]");
+  const feedbackFormEl = contentEl.querySelector("[data-energy-feedback-form]");
+  const feedbackBackdropEl = contentEl.querySelector("[data-energy-feedback-backdrop]");
+  const feedbackCloseButton = contentEl.querySelector("[data-energy-feedback-close]");
+  const feedbackCancelButton = contentEl.querySelector("[data-energy-feedback-cancel]");
+  const feedbackAnonymousEl = contentEl.querySelector("[data-energy-feedback-anonymous]");
+  const feedbackHintEl = contentEl.querySelector("[data-energy-feedback-hint]");
+  const feedbackMessageEl = contentEl.querySelector("[data-energy-feedback-message]");
+  const feedbackPhotosEl = contentEl.querySelector("[data-energy-feedback-photos]");
+  const feedbackFilesEl = contentEl.querySelector("[data-energy-feedback-files]");
+  const feedbackStatusEl = contentEl.querySelector("[data-energy-feedback-message-status]");
   const objectsModalEl = contentEl.querySelector("[data-energy-objects-modal]");
   const objectsBackdropEl = contentEl.querySelector("[data-energy-objects-backdrop]");
   const objectsCloseButton = contentEl.querySelector("[data-energy-objects-close]");
@@ -18003,6 +18025,111 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (settingsMessageEl) settingsMessageEl.textContent = "";
   };
 
+  const renderFeedbackFiles = () => {
+    if (!feedbackFilesEl || !feedbackPhotosEl) return;
+    const files = Array.from(feedbackPhotosEl.files ?? []);
+    if (!files.length) {
+      feedbackFilesEl.textContent = "Фото не выбраны.";
+      return;
+    }
+    feedbackFilesEl.textContent = files
+      .map((file, index) => `${index + 1}. ${file.name}`)
+      .join("\n");
+  };
+
+  const syncFeedbackAnonymousHint = () => {
+    if (!feedbackHintEl || !feedbackAnonymousEl) return;
+    feedbackHintEl.textContent = feedbackAnonymousEl.checked
+      ? "Обращение отправится анонимно. Ответ от администраторов вы не получите."
+      : "Обращение отправится с вашими данными, чтобы вам могли ответить.";
+  };
+
+  const closeFeedbackModal = () => {
+    if (!feedbackModalEl) return;
+    feedbackModalEl.classList.add("is-hidden");
+    document.body.style.overflow = "";
+    feedbackFormEl?.reset();
+    if (feedbackStatusEl) feedbackStatusEl.textContent = "";
+    renderFeedbackFiles();
+    syncFeedbackAnonymousHint();
+  };
+
+  const openFeedbackModal = () => {
+    if (!feedbackModalEl) return;
+    feedbackModalEl.classList.remove("is-hidden");
+    document.body.style.overflow = "hidden";
+    syncFeedbackAnonymousHint();
+    renderFeedbackFiles();
+  };
+
+  feedbackBackdropEl?.addEventListener("click", closeFeedbackModal);
+  feedbackCloseButton?.addEventListener("click", closeFeedbackModal);
+  feedbackCancelButton?.addEventListener("click", closeFeedbackModal);
+  feedbackAnonymousEl?.addEventListener("change", syncFeedbackAnonymousHint);
+  feedbackPhotosEl?.addEventListener("change", renderFeedbackFiles);
+  feedbackModalEl?.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      closeFeedbackModal();
+    }
+  });
+
+  feedbackFormEl?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const message = String(feedbackMessageEl?.value ?? "").trim();
+    const isAnonymous = Boolean(feedbackAnonymousEl?.checked);
+    const photoFiles = Array.from(feedbackPhotosEl?.files ?? []);
+
+    if (!message) {
+      if (feedbackStatusEl) feedbackStatusEl.textContent = "Напишите текст обращения.";
+      return;
+    }
+
+    if (feedbackStatusEl) {
+      feedbackStatusEl.textContent = "Сохраняем обращение...";
+    }
+
+    try {
+      const photos = [];
+      for (const file of photoFiles) {
+        const content = await readFileAsBase64(file);
+        photos.push({
+          content,
+          extension: getFileExtensionFromName(file.name),
+        });
+      }
+
+      const payload = {
+        type: "feedback-request",
+        text: message,
+        anonymous: isAnonymous,
+        organization: currentUser?.organization ?? user?.organization ?? "",
+        createdBy: {
+          telegram_id: currentUser?.telegram_id ?? null,
+          full_name: currentUser?.full_name ?? currentUser?.fullName ?? user?.full_name ?? "",
+          role: currentUser?.role ?? user?.role ?? "",
+          organization: currentUser?.organization ?? user?.organization ?? "",
+        },
+        photos,
+      };
+
+      await saveEntriesViaEndpoint([payload]);
+      if (feedbackStatusEl) {
+        feedbackStatusEl.textContent = "Спасибо! Обращение отправлено.";
+      }
+      setTimeout(() => {
+        closeFeedbackModal();
+      }, 700);
+    } catch (error) {
+      console.error(error);
+      if (feedbackStatusEl) {
+        feedbackStatusEl.textContent =
+          error instanceof Error
+            ? error.message
+            : "Не удалось отправить обращение. Попробуйте ещё раз.";
+      }
+    }
+  });
+
   settingsBackdropEl?.addEventListener("click", closeSettingsModal);
   settingsCloseButton?.addEventListener("click", closeSettingsModal);
   settingsCancelButton?.addEventListener("click", closeSettingsModal);
@@ -18257,6 +18384,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (blockClick) return;
     const targetCard = event.target.closest("[data-energy-item]");
     if (!targetCard) return;
+    if (!isGrouping && Object.prototype.hasOwnProperty.call(targetCard.dataset, "energyFeedback")) {
+      openFeedbackModal();
+      return;
+    }
     if (
       !isGrouping &&
       targetCard.dataset.energyItemType === "action" &&

@@ -2995,10 +2995,14 @@ function createEnergyActionCard(action) {
   button.dataset.energyItem = "";
   button.dataset.energyItemType = "action";
   button.dataset.actionId = action.id;
+  const replacementBadge =
+    action.id === "tools-replacement"
+      ? '<span class="action-card__badge is-hidden" data-tools-replacement-count></span>'
+      : "";
   button.innerHTML = `
     <span class="action-icon">${action.icon}</span>
     <div class="action-title action-title--fit">${action.title}</div>
-    <span class="action-card__badge is-hidden" data-tools-replacement-count></span>
+    ${replacementBadge}
   `;
   return button;
 }

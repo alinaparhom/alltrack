@@ -2770,6 +2770,12 @@ export function renderRole(user) {
                           Отпуск
                         </button>
                         <div class="users-vacation__replace is-hidden" data-users-vacation-replace>
+                          <div
+                            class="users-vacation__replacer-pending-note"
+                            data-users-vacation-replacer-pending-note
+                          >
+                            Инструментов другого пользователя на принятии: 0
+                          </div>
                           <label class="form-label" for="users-vacation-replacer">
                             Кто заменяет
                           </label>

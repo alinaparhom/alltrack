@@ -5013,6 +5013,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const usersVacationReplacerSearchInput = contentEl.querySelector(
     "[data-users-vacation-replacer-search]"
   );
+  const usersVacationReplacerPendingNoteEl = contentEl.querySelector(
+    "[data-users-vacation-replacer-pending-note]"
+  );
   const usersVacationSearchResultsEl = contentEl.querySelector(
     "[data-users-vacation-search-results]"
   );
@@ -16807,11 +16810,28 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           usersVacationReplacerSearchInput.value = formatFullName(fullName);
           usersVacationReplacerSearchInput.focus();
         }
+        void updateVacationReplacerPendingNote();
         usersVacationSearchResultsEl.classList.add("is-hidden");
       });
       usersVacationSearchResultsEl.appendChild(optionButton);
     });
     usersVacationSearchResultsEl.classList.remove("is-hidden");
+  };
+
+  const updateVacationReplacerPendingNote = async () => {
+    if (!usersVacationReplacerPendingNoteEl) return;
+    let replacerName = String(usersVacationReplacerSelect?.value ?? "").trim();
+    if (!replacerName) {
+      replacerName = String(usersVacationReplacerSearchInput?.value ?? "").trim();
+    }
+    let pendingCount = 0;
+    if (replacerName && context?.orgFolderName) {
+      pendingCount = await loadUserPendingMovesCount(context.orgFolderName, {
+        full_name: replacerName,
+      });
+    }
+    usersVacationReplacerPendingNoteEl.textContent =
+      `Инструментов другого пользователя на принятии: ${pendingCount}`;
   };
 
   const fillVacationReplacers = (entry) => {
@@ -16846,6 +16866,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       usersVacationSearchResultsEl.classList.add("is-hidden");
       usersVacationSearchResultsEl.innerHTML = "";
     }
+    void updateVacationReplacerPendingNote();
   };
 
   const setVacationMessage = (message = "", type = "") => {
@@ -17213,6 +17234,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       options = [];
     }
     renderVacationSearchResults(options, usersVacationReplacerSearchInput.value);
+    void updateVacationReplacerPendingNote();
   });
   usersVacationReplacerSearchInput?.addEventListener("focus", () => {
     let options = [];
@@ -17227,6 +17249,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     window.setTimeout(() => {
       usersVacationSearchResultsEl?.classList.add("is-hidden");
     }, 120);
+  });
+  usersVacationReplacerSelect?.addEventListener("change", () => {
+    void updateVacationReplacerPendingNote();
   });
   usersVacationConfirmButton?.addEventListener("click", applyResponsibleVacation);
   usersAddButton?.addEventListener("click", openUsersAddModal);

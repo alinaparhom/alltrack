@@ -16825,13 +16825,19 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       replacerName = String(usersVacationReplacerSearchInput?.value ?? "").trim();
     }
     let pendingCount = 0;
+    let replacedUserPendingCount = 0;
     if (replacerName && context?.orgFolderName) {
       pendingCount = await loadUserPendingMovesCount(context.orgFolderName, {
         full_name: replacerName,
       });
     }
+    if (selectedVacationUser?.full_name && context?.orgFolderName) {
+      replacedUserPendingCount = await loadUserPendingMovesCount(context.orgFolderName, {
+        full_name: String(selectedVacationUser.full_name).trim(),
+      });
+    }
     usersVacationReplacerPendingNoteEl.textContent =
-      `Инструментов другого пользователя на принятии: ${pendingCount}`;
+      `Инструментов другого пользователя на принятии: ${pendingCount}. У заменяемого сотрудника на принятии: ${replacedUserPendingCount}`;
   };
 
   const fillVacationReplacers = (entry) => {

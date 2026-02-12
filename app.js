@@ -4441,6 +4441,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const toolsPanelEl = contentEl.querySelector("[data-tools-panel]");
   const toolsBackdropEl = contentEl.querySelector("[data-tools-backdrop]");
   const toolsCloseButton = contentEl.querySelector("[data-tools-close]");
+  const toolsOpenReplacementPendingButton = contentEl.querySelector(
+    "[data-tools-open-replacement-pending]"
+  );
   const toolsSearchInput = contentEl.querySelector("[data-tools-search]");
   const toolsListEl = contentEl.querySelector("[data-tools-list]");
   const toolsSearchMapEl = contentEl.querySelector("[data-tools-search-map]");
@@ -7602,6 +7605,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
   };
 
+  const updateToolsReplacementPendingLinkVisibility = () => {
+    if (!toolsOpenReplacementPendingButton) return;
+    const shouldShow =
+      toolsState.mode === "replacement" && Boolean(toolsState.replacementResponsible);
+    toolsOpenReplacementPendingButton.classList.toggle("is-hidden", !shouldShow);
+  };
+
   const setToolsResponsibleFilterVisibility = (isVisible) => {
     toolsResponsibleFilterEls.forEach((element) => {
       element.classList.toggle("is-hidden", !isVisible);
@@ -8760,6 +8770,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     syncToolsFilterValue("responsible", "");
     syncToolsFilterValue("object", "");
     setToolsResponsibleFilterVisibility(false);
+    updateToolsReplacementPendingLinkVisibility();
     toolsSearchMapViewButtonEl?.classList.add("is-hidden");
     toolsModalEl.classList.remove("is-hidden");
     document.body.style.overflow = "hidden";
@@ -8793,6 +8804,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     syncToolsFilterValue("object", "");
     setToolsResponsibleFilterVisibility(false);
     setToolsTitle(`Инструменты ${formatFullName(toolsState.replacementResponsible)}`);
+    updateToolsReplacementPendingLinkVisibility();
     toolsSearchMapViewButtonEl?.classList.add("is-hidden");
     toolsModalEl.classList.remove("is-hidden");
     document.body.style.overflow = "hidden";
@@ -8817,6 +8829,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     toolsState.view = normalizeToolsView(toolsState.previousView);
     setToolsTitle("База");
     setToolsResponsibleFilterVisibility(true);
+    updateToolsReplacementPendingLinkVisibility();
     toolsSearchMapViewButtonEl?.classList.add("is-hidden");
     toolsModalEl.classList.remove("is-hidden");
     document.body.style.overflow = "hidden";
@@ -8841,6 +8854,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     toolsState.view = "table";
     setToolsTitle("Поиск");
     setToolsResponsibleFilterVisibility(true);
+    updateToolsReplacementPendingLinkVisibility();
     toolsSearchMapViewButtonEl?.classList.remove("is-hidden");
     toolsModalEl.classList.remove("is-hidden");
     document.body.style.overflow = "hidden";
@@ -8865,6 +8879,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     toolsState.view = normalizeToolsView(toolsState.previousView);
     setToolsTitle("Переместить за других");
     setToolsResponsibleFilterVisibility(true);
+    updateToolsReplacementPendingLinkVisibility();
     toolsSearchMapViewButtonEl?.classList.add("is-hidden");
     toolsModalEl.classList.remove("is-hidden");
     document.body.style.overflow = "hidden";
@@ -8886,6 +8901,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const closeToolsModal = () => {
     if (!toolsModalEl) return;
     toolsModalEl.classList.add("is-hidden");
+    updateToolsReplacementPendingLinkVisibility();
     toolsModalEl.classList.remove("tools-modal--searching");
     document.body.style.overflow = "";
     resetToolsSelection();
@@ -10535,7 +10551,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     pendingMovesListEl.appendChild(table);
   };
 
-  const loadPendingMovesList = async () => {
+  const loadPendingMovesList = async (options = {}) => {
     const orgFolder = context.orgFolderName ?? "";
     pendingMovesState.pendingItems = [];
     pendingMovesState.allMoves = [];
@@ -10563,7 +10579,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     pendingMovesState.allMoves = moves;
     pendingMovesState.toolMap = await buildPendingToolsMap(orgFolder);
 
-    const userName = normalizePersonName(user?.full_name ?? "");
+    const targetFullName = String(options?.targetFullName ?? "").trim();
+    const pendingUserName = targetFullName || String(user?.full_name ?? "").trim();
+    const userName = normalizePersonName(pendingUserName);
     const fineConfig = settingsData?.organization?.fines?.lateReply ?? {};
     pendingMovesState.fineConfig = fineConfig;
     const pendingItems = moves
@@ -10603,7 +10621,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       });
 
     pendingMovesState.pendingItems = pendingItems;
-    setPendingMovesSubtitle(`Ожидают ответа: ${pendingItems.length}`);
+    const subtitlePrefix = targetFullName
+      ? `Ожидают ответа за ${formatFullName(targetFullName)}`
+      : "Ожидают ответа";
+    setPendingMovesSubtitle(`${subtitlePrefix}: ${pendingItems.length}`);
     renderPendingMovesList();
   };
 
@@ -10622,11 +10643,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
   };
 
-  const openPendingMovesModal = async () => {
+  const openPendingMovesModal = async (options = {}) => {
     if (!pendingMovesModalEl) return;
     pendingMovesModalEl.classList.remove("is-hidden");
     document.body.style.overflow = "hidden";
-    await loadPendingMovesList();
+    await loadPendingMovesList(options);
   };
 
   const applyPendingMovesDecision = async ({ moveIndexes, decision }) => {
@@ -10848,6 +10869,14 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   }
   if (toolsCloseButton) {
     toolsCloseButton.addEventListener("click", closeToolsModal);
+  }
+
+  if (toolsOpenReplacementPendingButton) {
+    toolsOpenReplacementPendingButton.addEventListener("click", () => {
+      if (!toolsState.replacementResponsible) return;
+      closeToolsModal();
+      openPendingMovesModal({ targetFullName: toolsState.replacementResponsible });
+    });
   }
   toolsModalEl?.addEventListener("keydown", (event) => {
     if (event.key === "Escape") {

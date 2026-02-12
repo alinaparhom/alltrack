@@ -677,14 +677,25 @@ export function renderRole(user) {
                 <p data-tools-subtitle>Загружаем список...</p>
                 <p class="tools-zone-subtitle is-hidden" data-tools-zone-subtitle></p>
               </div>
-              <button
-                class="button-icon tools-modal__close"
-                type="button"
-                data-tools-close
-                aria-label="Закрыть список инструментов"
-              >
-                <span class="button-icon-emoji" aria-hidden="true">✕</span>
-              </button>
+              <div class="tools-modal__header-actions">
+                <button
+                  class="button-icon tools-modal__pending-link is-hidden"
+                  type="button"
+                  data-tools-open-replacement-pending
+                  aria-label="Открыть принятие перемещений за сотрудника в отпуске"
+                  title="Принятие за сотрудника в отпуске"
+                >
+                  <span class="button-icon-emoji" aria-hidden="true">📥</span>
+                </button>
+                <button
+                  class="button-icon tools-modal__close"
+                  type="button"
+                  data-tools-close
+                  aria-label="Закрыть список инструментов"
+                >
+                  <span class="button-icon-emoji" aria-hidden="true">✕</span>
+                </button>
+              </div>
             </div>
             <div class="settings-modal__body tools-modal__body">
               <div class="tools-controls">

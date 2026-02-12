@@ -11178,41 +11178,19 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const orgName = findUserOrganizationName(user, usersData);
     const normalizeOrg = (value) => String(value ?? "").trim().toLowerCase();
     const orgKey = normalizeOrg(orgName);
-    const currentUserName = normalizePersonName(user?.full_name ?? "");
-    const currentTelegramId = normalizeTelegramId(user?.telegram_id);
     const orgUsers = (usersData.users ?? []).filter(
       (entry) => normalizeOrg(entry.organization) === orgKey
     );
-    const shouldSkipCurrentUser = (entry) => {
+    const shouldSkipToolOwner = (entry) => {
       const normalizedEntryName = normalizePersonName(entry?.full_name ?? "");
-      const isToolOwner = selectedResponsibleNames.has(normalizedEntryName);
-      const sameTelegram =
-        currentTelegramId &&
-        normalizeTelegramId(entry?.telegram_id) === currentTelegramId;
-      const sameName = normalizedEntryName === currentUserName;
-      return Boolean(isToolOwner || sameTelegram || sameName);
+      return Boolean(
+        normalizedEntryName && selectedResponsibleNames.has(normalizedEntryName)
+      );
     };
-    const vacationReplacementNames = new Set(
-      orgUsers
-        .filter((entry) => Boolean(entry?.on_vacation))
-        .map((entry) => String(entry?.vacation_replacer ?? "").trim())
-        .filter(Boolean)
-    );
-    const activeUsers = orgUsers.filter((entry) => !Boolean(entry?.on_vacation));
-    const userOptions = activeUsers
-      .filter((entry) => !shouldSkipCurrentUser(entry))
+    const userOptions = orgUsers
+      .filter((entry) => !shouldSkipToolOwner(entry))
       .map((entry) => String(entry?.full_name ?? "").trim())
       .filter(Boolean);
-
-    vacationReplacementNames.forEach((replacementName) => {
-      const replacementEntry = orgUsers.find(
-        (entry) =>
-          normalizePersonName(entry?.full_name ?? "") ===
-          normalizePersonName(replacementName)
-      );
-      if (!replacementEntry || shouldSkipCurrentUser(replacementEntry)) return;
-      userOptions.push(String(replacementEntry?.full_name ?? replacementName).trim());
-    });
 
     toolsMoveState.responsibleOptions = Array.from(new Set(userOptions)).sort(
       (a, b) => a.localeCompare(b, "ru")

@@ -2780,6 +2780,13 @@ export function renderRole(user) {
                         >
                           Отпуск
                         </button>
+                        <button
+                          class="action-secondary users-vacation__return is-hidden"
+                          type="button"
+                          data-users-vacation-return
+                        >
+                          Вернуть из отпуска
+                        </button>
                         <div class="users-vacation__replace is-hidden" data-users-vacation-replace>
                           <div
                             class="users-vacation__replacer-pending-note"

@@ -5012,6 +5012,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const usersVacationTriggerButton = contentEl.querySelector(
     "[data-users-vacation-trigger]"
   );
+  const usersVacationReturnButton = contentEl.querySelector(
+    "[data-users-vacation-return]"
+  );
   const usersVacationReplaceBox = contentEl.querySelector(
     "[data-users-vacation-replace]"
   );
@@ -17099,6 +17102,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (usersVacationReplaceBox) {
       usersVacationReplaceBox.classList.add("is-hidden");
     }
+    const isVacation = Boolean(entry?.on_vacation);
+    usersVacationTriggerButton?.classList.toggle("is-hidden", isVacation);
+    usersVacationReturnButton?.classList.toggle("is-hidden", !isVacation);
     fillVacationReplacers(entry);
     setVacationMessage("");
     usersVacationModalEl.classList.remove("is-hidden");
@@ -17244,6 +17250,50 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     closeUsersVacationModal();
     resetUsersInvite();
     document.body.style.overflow = "";
+  };
+
+  const returnResponsibleFromVacation = async () => {
+    if (!selectedVacationUser) return;
+    const sourceName = String(selectedVacationUser?.full_name ?? "").trim();
+    if (!sourceName) return;
+    const isConfirmed = window.confirm(
+      `Вернуть из отпуска ${formatFullName(sourceName)}?`
+    );
+    if (!isConfirmed) return;
+
+    try {
+      setVacationMessage("Сохраняем изменения...", "info");
+      const usersData = await loadJson(usersFilePath).catch(() => ({ users: [] }));
+      const nextUsers = Array.isArray(usersData?.users) ? [...usersData.users] : [];
+      const targetIndex = nextUsers.findIndex((item) => {
+        return (
+          normalizePersonName(item?.full_name ?? "") ===
+            normalizePersonName(sourceName) &&
+          normalizeOrganizationName(item?.organization ?? "") ===
+            normalizeOrganizationName(selectedVacationUser?.organization ?? "")
+        );
+      });
+      if (targetIndex < 0) {
+        setVacationMessage("Не удалось найти пользователя в users.json.", "error");
+        return;
+      }
+      nextUsers[targetIndex] = {
+        ...nextUsers[targetIndex],
+        on_vacation: false,
+        vacation_replacer: "",
+        vacation_start_at: "",
+      };
+      await saveJson(usersFilePath, { users: nextUsers }, { user });
+      usersState.users = nextUsers;
+      updateUsersDetailsView();
+      setVacationMessage("Готово. Сотрудник возвращён из отпуска.", "success");
+      setTimeout(() => {
+        closeUsersVacationModal();
+      }, 500);
+    } catch (error) {
+      console.error(error);
+      setVacationMessage("Не удалось вернуть сотрудника из отпуска.", "error");
+    }
   };
 
   const applyResponsibleVacation = async () => {
@@ -17400,6 +17450,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     usersVacationReplaceBox?.classList.add("is-hidden");
     setVacationMessage("");
   });
+  usersVacationReturnButton?.addEventListener("click", returnResponsibleFromVacation);
   usersVacationReplacerSearchInput?.addEventListener("input", () => {
     let options = [];
     try {

@@ -953,7 +953,7 @@ function buildNewToolNotificationMessage(
 
 function buildMoveToolNotificationMessage(
   tool,
-  { movedBy, responsible, targetObject, oldObject, moveReason } = {}
+  { movedBy, responsible, targetObject, oldObject, moveReason, vacationNote } = {}
 ) {
   const titleParts = [
     formatNotificationValue(tool?.["Наименование"], ""),
@@ -997,6 +997,9 @@ function buildMoveToolNotificationMessage(
       formatNotificationValue(movedBy)
     )}`
   );
+  if (vacationNote) {
+    lines.push(escapeTelegramHtml(formatNotificationValue(vacationNote)));
+  }
   return lines.join("\n");
 }
 
@@ -1035,7 +1038,7 @@ function buildMoveByEnergyNotificationMessage(
 
 function buildMoveToolResponsibleMessage(
   tool,
-  { movedBy, oldObject, targetObject, fineNote, moveReason } = {}
+  { movedBy, oldObject, targetObject, fineNote, moveReason, vacationNote } = {}
 ) {
   const titleParts = [
     formatNotificationValue(tool?.["Наименование"], ""),
@@ -1076,6 +1079,9 @@ function buildMoveToolResponsibleMessage(
       formatNotificationValue(movedBy)
     )}`
   );
+  if (vacationNote) {
+    lines.push(escapeTelegramHtml(formatNotificationValue(vacationNote)));
+  }
   if (fineNote) {
     lines.push("", escapeTelegramHtml(fineNote));
   }
@@ -2095,6 +2101,7 @@ async function notifyMoveTool({
   targetObject,
   movedBy,
   moveReason,
+  vacationNote,
   notificationId = "moveTool",
 }) {
   const result = {
@@ -2133,6 +2140,7 @@ async function notifyMoveTool({
             targetObject,
             oldObject,
             moveReason,
+            vacationNote,
           });
     let groupSent = false;
     const groupErrors = [];
@@ -2220,6 +2228,7 @@ async function notifyMoveTool({
         targetObject,
         fineNote: fineNote || "",
         moveReason,
+        vacationNote,
       });
       const responsibleResult = await sendTelegramMessage(
         resolvedResponsibleId,
@@ -11314,6 +11323,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const now = new Date();
       const eligibleEntries = [];
       const eligibleTools = [];
+      const isMoveByReplacement = toolsState.mode === "replacement";
+      const vacationNote = isMoveByReplacement
+        ? "Отправлено другим пользователем, так как ответственный в отпуске"
+        : "";
       let skippedCount = 0;
 
       selectedTools.forEach((tool) => {
@@ -11338,6 +11351,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           "Старый объект": String(tool?.["Объект"] ?? "").trim(),
           "Новый объект": targetObject,
           "Причина перемещения": moveReason,
+          "Примечание к отправке": vacationNote,
           Статус: String(tool?.["Статус"] ?? "").trim(),
         });
       });
@@ -11383,6 +11397,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
               targetObject,
               movedBy: String(user?.full_name ?? "").trim(),
               moveReason,
+              vacationNote,
               notificationId:
                 toolsState.mode === "move-other" ? "moveByEnergy" : "moveTool",
             })

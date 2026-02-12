@@ -1629,6 +1629,7 @@
         --drag-y: 0px;
         --drag-scale: 1;
         --hover-lift: 0px;
+        position: relative;
         text-align: left;
         padding: var(--space);
         border-radius: var(--radius-card);
@@ -1651,6 +1652,25 @@
       .action-card:hover {
         --hover-lift: -2px;
         box-shadow: 0 16px 40px rgba(26, 31, 46, 0.12);
+      }
+
+      .action-card__badge {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        min-width: 20px;
+        height: 20px;
+        padding: 0 6px;
+        border-radius: 999px;
+        background: rgba(59, 125, 255, 0.9);
+        color: #fff;
+        font-size: 10px;
+        font-weight: 700;
+        line-height: 1;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 6px 12px rgba(59, 125, 255, 0.28);
       }
 
       .action-card.is-selected {

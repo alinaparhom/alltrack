@@ -2998,6 +2998,7 @@ function createEnergyActionCard(action) {
   button.innerHTML = `
     <span class="action-icon">${action.icon}</span>
     <div class="action-title action-title--fit">${action.title}</div>
+    <span class="action-card__badge is-hidden" data-tools-replacement-count></span>
   `;
   return button;
 }
@@ -5221,6 +5222,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
   };
   const vacationReplacement = await resolveVacationReplacement();
+  const replacementPendingCount =
+    vacationReplacement?.fullName && context?.orgFolderName
+      ? await loadUserPendingMovesCount(context.orgFolderName, {
+          full_name: vacationReplacement.fullName,
+        })
+      : 0;
   const accessRole = resolveEnergyAccessRole(user.role);
   const accessList = organizationSettings.access?.[accessRole];
   const hasAccessConfig = Array.isArray(accessList);
@@ -5296,8 +5303,33 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     button.dataset.actionId = action.id;
     button.dataset.energyItemType = "action";
     button.setAttribute("aria-label", action.title);
-    button.innerHTML = `<span aria-hidden="true">${action.icon}</span>`;
+    const replacementBadge =
+      action.id === "tools-replacement"
+        ? '<span class="quick-access-item__badge is-hidden" data-tools-replacement-count></span>'
+        : "";
+    button.innerHTML = `<span aria-hidden="true">${action.icon}</span>${replacementBadge}`;
     return button;
+  };
+
+  const updateToolsReplacementIndicator = (count = 0) => {
+    const normalizedCount = Number.isFinite(Number(count))
+      ? Math.max(0, Number(count))
+      : 0;
+    const hasPending = normalizedCount > 0;
+    const indicatorElements = document.querySelectorAll("[data-tools-replacement-count]");
+    indicatorElements.forEach((element) => {
+      element.textContent = String(normalizedCount);
+      element.classList.toggle("is-hidden", !hasPending);
+    });
+
+    const replacementButtons = document.querySelectorAll('[data-action-id="tools-replacement"]');
+    replacementButtons.forEach((button) => {
+      const title = hasPending
+        ? `Инструменты замещаемого сотрудника: на принятии ${normalizedCount}`
+        : "Инструменты замещаемого сотрудника: все приняты";
+      button.setAttribute("title", title);
+      button.setAttribute("aria-label", title);
+    });
   };
 
   const createQuickAccessPendingItem = (action) => {
@@ -5348,6 +5380,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     });
     updateQuickAccessOffset();
     syncQuickAccessPendingIndicator();
+    updateToolsReplacementIndicator(replacementPendingCount);
   };
 
   const scrollToQuickAccess = () => {
@@ -5417,6 +5450,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
   renderEnergyGrid();
   renderQuickAccessList();
+  updateToolsReplacementIndicator(replacementPendingCount);
   requestAnimationFrame(() => {
     scrollToQuickAccess();
   });

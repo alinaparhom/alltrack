@@ -5222,6 +5222,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       if (!replacementUser) return null;
       return {
         fullName: String(replacementUser?.full_name ?? "").trim(),
+        vacationStartAt: String(replacementUser?.vacation_start_at ?? "").trim(),
       };
     } catch (error) {
       console.warn("Не удалось определить замещаемого сотрудника.", error);
@@ -5314,7 +5315,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       action.id === "tools-replacement"
         ? '<span class="quick-access-item__badge is-hidden" data-tools-replacement-count></span>'
         : "";
-    button.innerHTML = `<span aria-hidden="true">${action.icon}</span>${replacementBadge}`;
+    const iconMarkup =
+      action.id === "tools-replacement"
+        ? `<span aria-hidden="true" data-tools-replacement-icon>${action.icon}</span>`
+        : `<span aria-hidden="true">${action.icon}</span>`;
+    button.innerHTML = `${iconMarkup}${replacementBadge}`;
     return button;
   };
 
@@ -5331,6 +5336,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
     const replacementButtons = document.querySelectorAll('[data-action-id="tools-replacement"]');
     replacementButtons.forEach((button) => {
+      const iconEl = button.querySelector("[data-tools-replacement-icon]");
+      if (iconEl) {
+        iconEl.textContent = hasPending ? "⏳" : "🧰";
+      }
       const title = hasPending
         ? `Инструменты замещаемого сотрудника: на принятии ${normalizedCount}`
         : "Инструменты замещаемого сотрудника: все приняты";
@@ -5571,6 +5580,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     allMoves: [],
     toolMap: new Map(),
     fineConfig: {},
+    targetFullName: "",
+    replacementMode: false,
+    vacationStartAt: "",
     isSaving: false,
   };
   const toolsCancelMoveState = {
@@ -10327,6 +10339,50 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
     return 0;
   };
+  const splitMoveFineByVacation = (move, totalFine, vacationStartAt) => {
+    const normalizedFine = normalizeCostValue(totalFine) || 0;
+    if (!normalizedFine) {
+      return { beforeVacation: 0, afterVacation: 0 };
+    }
+    const vacationStartDate = parseDateValue(vacationStartAt);
+    const moveDate = parseDateValue(move?.["Дата перемещения"]);
+    const responseDate = parseDateValue(move?.["Дата ответа"]) ?? new Date();
+    if (!vacationStartDate || !moveDate || !responseDate) {
+      return { beforeVacation: normalizedFine, afterVacation: 0 };
+    }
+
+    const daysLimit = normalizeNumber(pendingMovesState.fineConfig?.days, 0);
+    const amountPerDay = normalizeNumber(pendingMovesState.fineConfig?.amount, 0);
+    if (!amountPerDay) {
+      return { beforeVacation: normalizedFine, afterVacation: 0 };
+    }
+
+    const startFineAt = new Date(moveDate);
+    startFineAt.setDate(startFineAt.getDate() + Math.max(0, daysLimit + 1));
+
+    const chargedDaysTotal = Math.max(0, Math.round(normalizedFine / amountPerDay));
+    if (!chargedDaysTotal) {
+      return { beforeVacation: 0, afterVacation: 0 };
+    }
+
+    let beforeDays = 0;
+    for (let dayIndex = 0; dayIndex < chargedDaysTotal; dayIndex += 1) {
+      const dayDate = new Date(startFineAt);
+      dayDate.setDate(startFineAt.getDate() + dayIndex);
+      if (dayDate >= responseDate) break;
+      if (dayDate < vacationStartDate) {
+        beforeDays += 1;
+      }
+    }
+    const afterDays = Math.max(0, chargedDaysTotal - beforeDays);
+    const beforeVacation = beforeDays * amountPerDay;
+    const afterVacation = normalizedFine - beforeVacation;
+    return {
+      beforeVacation: Math.max(0, beforeVacation),
+      afterVacation: Math.max(0, afterVacation),
+    };
+  };
+
 
   const fineMoveTypeTitles = [
     "Поздний ответ",
@@ -10583,7 +10639,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const pendingUserName = targetFullName || String(user?.full_name ?? "").trim();
     const userName = normalizePersonName(pendingUserName);
     const fineConfig = settingsData?.organization?.fines?.lateReply ?? {};
+    const replacementMode = Boolean(options?.replacementMode);
+    const vacationStartAt = String(options?.vacationStartAt ?? "").trim();
     pendingMovesState.fineConfig = fineConfig;
+    pendingMovesState.targetFullName = targetFullName;
+    pendingMovesState.replacementMode = replacementMode;
+    pendingMovesState.vacationStartAt = vacationStartAt;
     const pendingItems = moves
       .map((move, index) => ({ move, moveIndex: index }))
       .filter(({ move }) => {
@@ -10730,16 +10791,48 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         if (decision === "Принял") {
           const acceptedBy = String(move?.["Принял"] ?? "").trim();
           const fineType = normalizeMoveFineType(move);
-          if (acceptedBy) {
-            if (!acceptedFineSummaryUpdates.has(acceptedBy)) {
-              acceptedFineSummaryUpdates.set(acceptedBy, new Map());
-            }
-            const userFineMap = acceptedFineSummaryUpdates.get(acceptedBy);
-            const current = normalizeCostValue(userFineMap.get(fineType)) || 0;
-            userFineMap.set(fineType, current + fineAmount);
+          const isReplacementMode =
+            pendingMovesState.replacementMode &&
+            Boolean(pendingMovesState.targetFullName) &&
+            Boolean(pendingMovesState.vacationStartAt);
+          let acceptedFineAmount = fineAmount;
+          let replacementFineAmount = 0;
+
+          if (isReplacementMode) {
+            const splitFine = splitMoveFineByVacation(
+              move,
+              fineAmount,
+              pendingMovesState.vacationStartAt
+            );
+            acceptedFineAmount = splitFine.beforeVacation;
+            replacementFineAmount = splitFine.afterVacation;
+            updatedMoves[index] = {
+              ...move,
+              "Штраф до отпуска": acceptedFineAmount,
+              "Штраф в отпуске": replacementFineAmount,
+              "Ответственный в отпуске": pendingMovesState.targetFullName,
+            };
           }
+
+          const addFineToUserSummary = (fullName, amount) => {
+            const normalizedUser = String(fullName ?? "").trim();
+            const normalizedAmount = normalizeCostValue(amount) || 0;
+            if (!normalizedUser || !normalizedAmount) return;
+            if (!acceptedFineSummaryUpdates.has(normalizedUser)) {
+              acceptedFineSummaryUpdates.set(normalizedUser, new Map());
+            }
+            const userFineMap = acceptedFineSummaryUpdates.get(normalizedUser);
+            const current = normalizeCostValue(userFineMap.get(fineType)) || 0;
+            userFineMap.set(fineType, current + normalizedAmount);
+          };
+
+          addFineToUserSummary(acceptedBy, acceptedFineAmount);
+          if (replacementFineAmount > 0) {
+            addFineToUserSummary(pendingMovesState.targetFullName, replacementFineAmount);
+          }
+
           updatedMoves[index] = {
-            ...move,
+            ...updatedMoves[index],
             "Штраф за ответ": fineAmount,
             "Штраф по отвеченному перемещению": fineAmount,
             "Тип штрафа": fineType,
@@ -10854,7 +10947,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           });
         })
       );
-      await loadPendingMovesList();
+      await loadPendingMovesList({
+        targetFullName: pendingMovesState.targetFullName,
+        replacementMode: pendingMovesState.replacementMode,
+        vacationStartAt: pendingMovesState.vacationStartAt,
+      });
       await refreshPendingMovesIndicator();
     } catch (error) {
       console.error(error);
@@ -10875,7 +10972,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     toolsOpenReplacementPendingButton.addEventListener("click", () => {
       if (!toolsState.replacementResponsible) return;
       closeToolsModal();
-      openPendingMovesModal({ targetFullName: toolsState.replacementResponsible });
+      openPendingMovesModal({
+        targetFullName: toolsState.replacementResponsible,
+        replacementMode: true,
+        vacationStartAt: vacationReplacement?.vacationStartAt ?? "",
+      });
     });
   }
   toolsModalEl?.addEventListener("keydown", (event) => {

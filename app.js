@@ -5387,7 +5387,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     });
     updateQuickAccessOffset();
     syncQuickAccessPendingIndicator();
-    updateToolsReplacementIndicator(replacementPendingCount);
+    updateToolsReplacementIndicator(toolsState.replacementPendingCount);
   };
 
   const scrollToQuickAccess = () => {
@@ -5457,7 +5457,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
   renderEnergyGrid();
   renderQuickAccessList();
-  updateToolsReplacementIndicator(replacementPendingCount);
+  updateToolsReplacementIndicator(toolsState.replacementPendingCount);
   requestAnimationFrame(() => {
     scrollToQuickAccess();
   });
@@ -5565,12 +5565,14 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     selectedIds: new Set(),
     toolMap: new Map(),
     replacementResponsible: vacationReplacement?.fullName ?? "",
+    replacementPendingCount: replacementPendingCount,
   };
   const pendingMovesState = {
     pendingItems: [],
     allMoves: [],
     toolMap: new Map(),
     fineConfig: {},
+    vacationFineContext: null,
     isSaving: false,
   };
   const toolsCancelMoveState = {
@@ -7610,6 +7612,35 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const shouldShow =
       toolsState.mode === "replacement" && Boolean(toolsState.replacementResponsible);
     toolsOpenReplacementPendingButton.classList.toggle("is-hidden", !shouldShow);
+    if (!shouldShow) return;
+    const iconEl = toolsOpenReplacementPendingButton.querySelector(".button-icon-emoji");
+    const pendingCount = Number.isFinite(Number(toolsState.replacementPendingCount))
+      ? Math.max(0, Number(toolsState.replacementPendingCount))
+      : 0;
+    const hasPending = pendingCount > 0;
+    if (iconEl) {
+      iconEl.textContent = hasPending ? "⏳" : "📥";
+    }
+    const title = hasPending
+      ? `Ожидают ответа: ${pendingCount}`
+      : "Принятие за сотрудника в отпуске";
+    toolsOpenReplacementPendingButton.title = title;
+    toolsOpenReplacementPendingButton.setAttribute("aria-label", title);
+  };
+
+  const refreshReplacementPendingState = async () => {
+    if (!toolsState.replacementResponsible || !context?.orgFolderName) {
+      toolsState.replacementPendingCount = 0;
+      updateToolsReplacementPendingLinkVisibility();
+      updateToolsReplacementIndicator(0);
+      return;
+    }
+    const count = await loadUserPendingMovesCount(context.orgFolderName, {
+      full_name: toolsState.replacementResponsible,
+    });
+    toolsState.replacementPendingCount = count;
+    updateToolsReplacementPendingLinkVisibility();
+    updateToolsReplacementIndicator(count);
   };
 
   const setToolsResponsibleFilterVisibility = (isVisible) => {
@@ -7898,17 +7929,35 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     return { pendingNumbers, pendingAccountingNumbers };
   };
 
-  const resolveLateReplyFine = (move, fineConfig) => {
+  const resolveLateReplyFine = (move, fineConfig, asOfDate = new Date()) => {
     if (!fineConfig?.enabled) return 0;
     const daysLimit = normalizeNumber(fineConfig.days, 0);
     const amount = normalizeNumber(fineConfig.amount, 0);
     if (!amount) return 0;
     const moveDate = parseDateValue(move?.["Дата перемещения"]);
     if (!moveDate) return 0;
-    const diffDays = getDaysDifference(new Date(), moveDate);
+    const referenceDate =
+      asOfDate instanceof Date && !Number.isNaN(asOfDate.getTime())
+        ? asOfDate
+        : new Date();
+    const diffDays = getDaysDifference(referenceDate, moveDate);
     if (diffDays <= daysLimit) return 0;
     const chargedDays = Math.max(0, diffDays - 1);
     return chargedDays * amount;
+  };
+
+  const parseVacationStartDate = (value) => {
+    const text = String(value ?? "").trim();
+    if (!text) return null;
+    const parsedIso = parseIsoDateValue(text);
+    if (parsedIso) return parsedIso;
+    const parsedNative = new Date(text);
+    if (Number.isNaN(parsedNative.getTime())) return null;
+    return new Date(
+      parsedNative.getFullYear(),
+      parsedNative.getMonth(),
+      parsedNative.getDate()
+    );
   };
 
   const buildPendingToolsMap = async (orgFolder) => {
@@ -10556,6 +10605,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     pendingMovesState.pendingItems = [];
     pendingMovesState.allMoves = [];
     pendingMovesState.fineConfig = {};
+    pendingMovesState.vacationFineContext = null;
     if (!orgFolder) {
       setPendingMovesSubtitle("Организация не найдена.");
       renderPendingMovesList();
@@ -10619,6 +10669,31 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           String(b.move?.["Бух.номер"] ?? "").trim();
         return numA.localeCompare(numB, "ru", { numeric: true });
       });
+
+    if (targetFullName) {
+      try {
+        const usersData = await loadJson(usersFilePath);
+        const usersList = Array.isArray(usersData?.users) ? usersData.users : [];
+        const targetUser = usersList.find(
+          (entry) =>
+            normalizePersonName(entry?.full_name ?? "") ===
+            normalizePersonName(targetFullName)
+        );
+        if (
+          targetUser?.on_vacation &&
+          normalizePersonName(targetUser?.vacation_replacer ?? "") ===
+            normalizePersonName(user?.full_name ?? "")
+        ) {
+          pendingMovesState.vacationFineContext = {
+            vacationUser: String(targetUser?.full_name ?? "").trim(),
+            replacerUser: String(user?.full_name ?? "").trim(),
+            vacationStartDate: parseVacationStartDate(targetUser?.vacation_start_at),
+          };
+        }
+      } catch (error) {
+        console.warn("Не удалось определить отпускной контекст для штрафа.", error);
+      }
+    }
 
     pendingMovesState.pendingItems = pendingItems;
     const subtitlePrefix = targetFullName
@@ -10718,6 +10793,46 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       );
     };
 
+    const resolveAcceptedMoveFineDistribution = (move, fineAmount) => {
+      const acceptedBy = String(move?.["Принял"] ?? "").trim();
+      const fallback = [{ userName: acceptedBy, amount: fineAmount }];
+      if (!acceptedBy || fineAmount <= 0) return [];
+      const vacationContext = pendingMovesState.vacationFineContext;
+      if (!vacationContext) return fallback;
+      if (
+        normalizePersonName(vacationContext.vacationUser) !==
+        normalizePersonName(acceptedBy)
+      ) {
+        return fallback;
+      }
+      const vacationStartDate = vacationContext.vacationStartDate;
+      if (!(vacationStartDate instanceof Date) || Number.isNaN(vacationStartDate.getTime())) {
+        return fallback;
+      }
+      const fineBeforeVacation = Math.max(
+        0,
+        Math.min(
+          fineAmount,
+          resolveLateReplyFine(move, pendingMovesState.fineConfig, vacationStartDate)
+        )
+      );
+      const fineDuringVacation = Math.max(0, fineAmount - fineBeforeVacation);
+      const distribution = [];
+      if (fineBeforeVacation > 0) {
+        distribution.push({
+          userName: vacationContext.vacationUser,
+          amount: fineBeforeVacation,
+        });
+      }
+      if (fineDuringVacation > 0 && vacationContext.replacerUser) {
+        distribution.push({
+          userName: vacationContext.replacerUser,
+          amount: fineDuringVacation,
+        });
+      }
+      return distribution.length ? distribution : fallback;
+    };
+
     moveIndexes.forEach((index) => {
       const move = updatedMoves[index];
       if (!move) return;
@@ -10728,21 +10843,34 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           : 0);
       if (fineAmount > 0) {
         if (decision === "Принял") {
-          const acceptedBy = String(move?.["Принял"] ?? "").trim();
           const fineType = normalizeMoveFineType(move);
-          if (acceptedBy) {
-            if (!acceptedFineSummaryUpdates.has(acceptedBy)) {
-              acceptedFineSummaryUpdates.set(acceptedBy, new Map());
+          const fineDistribution = resolveAcceptedMoveFineDistribution(move, fineAmount);
+          fineDistribution.forEach(({ userName, amount }) => {
+            if (!userName || amount <= 0) return;
+            if (!acceptedFineSummaryUpdates.has(userName)) {
+              acceptedFineSummaryUpdates.set(userName, new Map());
             }
-            const userFineMap = acceptedFineSummaryUpdates.get(acceptedBy);
+            const userFineMap = acceptedFineSummaryUpdates.get(userName);
             const current = normalizeCostValue(userFineMap.get(fineType)) || 0;
-            userFineMap.set(fineType, current + fineAmount);
-          }
+            userFineMap.set(fineType, current + amount);
+          });
+          const vacationFinePart = fineDistribution.find(
+            (entry) =>
+              normalizePersonName(entry.userName) ===
+              normalizePersonName(pendingMovesState.vacationFineContext?.vacationUser ?? "")
+          );
+          const replacerFinePart = fineDistribution.find(
+            (entry) =>
+              normalizePersonName(entry.userName) ===
+              normalizePersonName(pendingMovesState.vacationFineContext?.replacerUser ?? "")
+          );
           updatedMoves[index] = {
             ...move,
             "Штраф за ответ": fineAmount,
             "Штраф по отвеченному перемещению": fineAmount,
             "Тип штрафа": fineType,
+            "Штраф до отпуска": vacationFinePart?.amount ?? 0,
+            "Штраф во время отпуска": replacerFinePart?.amount ?? 0,
           };
         }
       }
@@ -10856,6 +10984,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       );
       await loadPendingMovesList();
       await refreshPendingMovesIndicator();
+      await refreshReplacementPendingState();
     } catch (error) {
       console.error(error);
       setPendingMovesMessage("Не удалось сохранить ответы.", "error");

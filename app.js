@@ -52,6 +52,7 @@ const defaultPreferences = {
 };
 const quickAccessDefaults = ["breakdowns", "info", "search", "tools", "move"];
 const quickAccessLimit = 5;
+const toolsReplacementActionPrefix = "tools-replacement:";
 const energySettingsRoles = [
   responsibleRole,
   chiefEngineerRole,
@@ -2988,6 +2989,12 @@ function applyGroupingPreference(layout, actions, preference) {
   return layout;
 }
 
+function isToolsReplacementActionId(actionId) {
+  return (
+    typeof actionId === "string" && actionId.startsWith(toolsReplacementActionPrefix)
+  );
+}
+
 function createEnergyActionCard(action) {
   const button = document.createElement("button");
   button.type = "button";
@@ -2995,9 +3002,12 @@ function createEnergyActionCard(action) {
   button.dataset.energyItem = "";
   button.dataset.energyItemType = "action";
   button.dataset.actionId = action.id;
+  if (isToolsReplacementActionId(action.id)) {
+    button.dataset.toolsReplacementActionId = action.id;
+  }
   const replacementBadge =
-    action.id === "tools-replacement"
-      ? '<span class="action-card__badge is-hidden" data-tools-replacement-count></span>'
+    isToolsReplacementActionId(action.id)
+      ? `<span class="action-card__badge is-hidden" data-tools-replacement-count data-tools-replacement-action-id="${action.id}"></span>`
       : "";
   button.innerHTML = `
     <span class="action-icon">${action.icon}</span>
@@ -5206,54 +5216,60 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const context = contextOverride || (await resolveUserSettingsContext(user));
   const settingsData = context.settingsData;
   const organizationSettings = getEnergyOrganizationSettings(settingsData);
-  const resolveVacationReplacement = async () => {
+  const resolveVacationReplacements = async () => {
     try {
       const usersData = await loadJson(usersFilePath);
       const usersList = Array.isArray(usersData?.users) ? usersData.users : [];
       const replacerName = normalizePersonName(user?.full_name ?? user?.fullName ?? "");
       const replacerOrg = normalizeOrganizationName(user?.organization ?? "");
-      if (!replacerName) return null;
-      const replacementUser = usersList.find((entry) => {
-        const isVacation = Boolean(entry?.on_vacation);
-        if (!isVacation) return false;
-        const entryOrg = normalizeOrganizationName(entry?.organization ?? "");
-        if (replacerOrg && entryOrg && replacerOrg !== entryOrg) return false;
-        return (
-          normalizePersonName(entry?.vacation_replacer ?? "") === replacerName
-        );
-      });
-      if (!replacementUser) return null;
-      return {
-        fullName: String(replacementUser?.full_name ?? "").trim(),
-        vacationStartAt: String(replacementUser?.vacation_start_at ?? "").trim(),
-      };
+      if (!replacerName) return [];
+      return usersList
+        .filter((entry) => {
+          const isVacation = Boolean(entry?.on_vacation);
+          if (!isVacation) return false;
+          const entryOrg = normalizeOrganizationName(entry?.organization ?? "");
+          if (replacerOrg && entryOrg && replacerOrg !== entryOrg) return false;
+          return normalizePersonName(entry?.vacation_replacer ?? "") === replacerName;
+        })
+        .map((entry) => ({
+          fullName: String(entry?.full_name ?? "").trim(),
+          vacationStartAt: String(entry?.vacation_start_at ?? "").trim(),
+        }))
+        .filter((entry) => Boolean(entry.fullName));
     } catch (error) {
-      console.warn("Не удалось определить замещаемого сотрудника.", error);
-      return null;
+      console.warn("Не удалось определить замещаемых сотрудников.", error);
+      return [];
     }
   };
-  const vacationReplacement = await resolveVacationReplacement();
-  const replacementPendingCount =
-    vacationReplacement?.fullName && context?.orgFolderName
-      ? await loadUserPendingMovesCount(context.orgFolderName, {
-          full_name: vacationReplacement.fullName,
-        })
-      : 0;
+  const vacationReplacements = await resolveVacationReplacements();
+  const replacementVacationStartMap = new Map(
+    vacationReplacements.map((entry) => [entry.fullName, entry.vacationStartAt])
+  );
+  const replacementPendingCountMap = new Map();
+  for (const replacement of vacationReplacements) {
+    const pendingCount =
+      replacement?.fullName && context?.orgFolderName
+        ? await loadUserPendingMovesCount(context.orgFolderName, {
+            full_name: replacement.fullName,
+          })
+        : 0;
+    replacementPendingCountMap.set(replacement.fullName, pendingCount);
+  }
   const accessRole = resolveEnergyAccessRole(user.role);
   const accessList = organizationSettings.access?.[accessRole];
   const hasAccessConfig = Array.isArray(accessList);
   let availableActions = hasAccessConfig
     ? energyActions.filter((action) => accessList.includes(action.id))
     : energyActions;
-  if (vacationReplacement?.fullName && availableActions.some((action) => action.id === "tools")) {
-    availableActions = [
-      ...availableActions,
-      {
-        id: "tools-replacement",
-        title: `Инструменты ${formatFullName(vacationReplacement.fullName)}`,
-        icon: "🧰",
-      },
-    ];
+  if (vacationReplacements.length > 0 && availableActions.some((action) => action.id === "tools")) {
+    const replacementActions = vacationReplacements.map((replacement) => ({
+      id: `${toolsReplacementActionPrefix}${replacement.fullName}`,
+      title: `Инструменты ${formatFullName(replacement.fullName)}`,
+      icon: "🧰",
+      replacementFullName: replacement.fullName,
+      vacationStartAt: replacement.vacationStartAt,
+    }));
+    availableActions = [...availableActions, ...replacementActions];
   }
   const pendingQuickAccessOption = {
     id: "pending",
@@ -5314,38 +5330,41 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     button.dataset.actionId = action.id;
     button.dataset.energyItemType = "action";
     button.setAttribute("aria-label", action.title);
-    const replacementBadge =
-      action.id === "tools-replacement"
-        ? '<span class="quick-access-item__badge is-hidden" data-tools-replacement-count></span>'
-        : "";
-    const iconMarkup =
-      action.id === "tools-replacement"
-        ? `<span aria-hidden="true" data-tools-replacement-icon>${action.icon}</span>`
-        : `<span aria-hidden="true">${action.icon}</span>`;
+    if (isToolsReplacementActionId(action.id)) {
+      button.dataset.toolsReplacementActionId = action.id;
+    }
+    const replacementBadge = isToolsReplacementActionId(action.id)
+      ? `<span class="quick-access-item__badge is-hidden" data-tools-replacement-count data-tools-replacement-action-id="${action.id}"></span>`
+      : "";
+    const iconMarkup = isToolsReplacementActionId(action.id)
+      ? `<span aria-hidden="true" data-tools-replacement-icon data-tools-replacement-action-id="${action.id}">${action.icon}</span>`
+      : `<span aria-hidden="true">${action.icon}</span>`;
     button.innerHTML = `${iconMarkup}${replacementBadge}`;
     return button;
   };
 
-  const updateToolsReplacementIndicator = (count = 0) => {
-    const normalizedCount = Number.isFinite(Number(count))
-      ? Math.max(0, Number(count))
-      : 0;
-    const hasPending = normalizedCount > 0;
-    const indicatorElements = document.querySelectorAll("[data-tools-replacement-count]");
-    indicatorElements.forEach((element) => {
-      element.textContent = String(normalizedCount);
-      element.classList.toggle("is-hidden", !hasPending);
-    });
-
-    const replacementButtons = document.querySelectorAll('[data-action-id="tools-replacement"]');
+  const updateToolsReplacementIndicator = () => {
+    const replacementButtons = document.querySelectorAll("button[data-tools-replacement-action-id]");
     replacementButtons.forEach((button) => {
+      const actionId = button.dataset.toolsReplacementActionId;
+      if (!actionId) return;
+      const replacementFullName = actionId.replace(toolsReplacementActionPrefix, "");
+      const normalizedCount = Number.isFinite(Number(replacementPendingCountMap.get(replacementFullName)))
+        ? Math.max(0, Number(replacementPendingCountMap.get(replacementFullName)))
+        : 0;
+      const hasPending = normalizedCount > 0;
       const iconEl = button.querySelector("[data-tools-replacement-icon]");
       if (iconEl) {
         iconEl.textContent = hasPending ? "⏳" : "🧰";
       }
+      const countElements = button.querySelectorAll("[data-tools-replacement-count]");
+      countElements.forEach((element) => {
+        element.textContent = String(normalizedCount);
+        element.classList.toggle("is-hidden", !hasPending);
+      });
       const title = hasPending
-        ? `Инструменты замещаемого сотрудника: на принятии ${normalizedCount}`
-        : "Инструменты замещаемого сотрудника: все приняты";
+        ? `Инструменты ${formatFullName(replacementFullName)}: на принятии ${normalizedCount}`
+        : `Инструменты ${formatFullName(replacementFullName)}: все приняты`;
       button.setAttribute("title", title);
       button.setAttribute("aria-label", title);
     });
@@ -5399,7 +5418,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     });
     updateQuickAccessOffset();
     syncQuickAccessPendingIndicator();
-    updateToolsReplacementIndicator(replacementPendingCount);
+    updateToolsReplacementIndicator();
   };
 
   const scrollToQuickAccess = () => {
@@ -5469,7 +5488,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
   renderEnergyGrid();
   renderQuickAccessList();
-  updateToolsReplacementIndicator(replacementPendingCount);
+  updateToolsReplacementIndicator();
   requestAnimationFrame(() => {
     scrollToQuickAccess();
   });
@@ -5576,7 +5595,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     isSelecting: false,
     selectedIds: new Set(),
     toolMap: new Map(),
-    replacementResponsible: vacationReplacement?.fullName ?? "",
+    activeReplacementResponsible: "",
   };
   const pendingMovesState = {
     pendingItems: [],
@@ -7623,7 +7642,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const updateToolsReplacementPendingLinkVisibility = () => {
     if (!toolsOpenReplacementPendingButton) return;
     const shouldShow =
-      toolsState.mode === "replacement" && Boolean(toolsState.replacementResponsible);
+      toolsState.mode === "replacement" && Boolean(toolsState.activeReplacementResponsible);
     toolsOpenReplacementPendingButton.classList.toggle("is-hidden", !shouldShow);
   };
 
@@ -8651,8 +8670,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       rawObjects = [];
     }
     const sourceResponsible =
-      toolsState.mode === "replacement" && toolsState.replacementResponsible
-        ? toolsState.replacementResponsible
+      toolsState.mode === "replacement" && toolsState.activeReplacementResponsible
+        ? toolsState.activeReplacementResponsible
         : user?.full_name ?? "";
     const userNameKey = normalizePersonName(sourceResponsible);
     const { pendingNumbers, pendingAccountingNumbers } =
@@ -8778,6 +8797,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (!toolsModalEl) return;
     const objectFilter = sanitizeObjectName(options.objectFilter ?? "");
     toolsState.mode = "user";
+    toolsState.activeReplacementResponsible = "";
     setToolsTitle("Мои инструменты");
     toolsState.filters.responsible = "";
     toolsState.filters.object = "";
@@ -8809,8 +8829,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
   };
 
-  const openReplacementToolsModal = async () => {
-    if (!toolsModalEl || !toolsState.replacementResponsible) return;
+  const openReplacementToolsModal = async (replacementFullName = "") => {
+    if (!toolsModalEl) return;
+    const normalizedFullName = String(replacementFullName ?? "").trim();
+    if (!normalizedFullName) return;
+    toolsState.activeReplacementResponsible = normalizedFullName;
     toolsState.mode = "replacement";
     toolsState.filters.responsible = "";
     toolsState.filters.object = "";
@@ -8818,7 +8841,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     syncToolsFilterValue("responsible", "");
     syncToolsFilterValue("object", "");
     setToolsResponsibleFilterVisibility(false);
-    setToolsTitle(`Инструменты ${formatFullName(toolsState.replacementResponsible)}`);
+    setToolsTitle(`Инструменты ${formatFullName(normalizedFullName)}`);
     updateToolsReplacementPendingLinkVisibility();
     toolsSearchMapViewButtonEl?.classList.add("is-hidden");
     toolsModalEl.classList.remove("is-hidden");
@@ -8841,6 +8864,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const openBaseModal = async () => {
     if (!toolsModalEl) return;
     toolsState.mode = "base";
+    toolsState.activeReplacementResponsible = "";
     toolsState.view = normalizeToolsView(toolsState.previousView);
     setToolsTitle("База");
     setToolsResponsibleFilterVisibility(true);
@@ -10973,12 +10997,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
   if (toolsOpenReplacementPendingButton) {
     toolsOpenReplacementPendingButton.addEventListener("click", () => {
-      if (!toolsState.replacementResponsible) return;
+      if (!toolsState.activeReplacementResponsible) return;
       closeToolsModal();
       openPendingMovesModal({
-        targetFullName: toolsState.replacementResponsible,
+        targetFullName: toolsState.activeReplacementResponsible,
         replacementMode: true,
-        vacationStartAt: vacationReplacement?.vacationStartAt ?? "",
+        vacationStartAt:
+          replacementVacationStartMap.get(toolsState.activeReplacementResponsible) ?? "",
       });
     });
   }
@@ -18113,8 +18138,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       openToolsModal();
       return true;
     }
-    if (actionId === "tools-replacement") {
-      openReplacementToolsModal();
+    if (isToolsReplacementActionId(actionId)) {
+      const replacementFullName = actionId.replace(toolsReplacementActionPrefix, "");
+      openReplacementToolsModal(replacementFullName);
       return true;
     }
     if (actionId === "base") {

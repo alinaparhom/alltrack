@@ -11177,21 +11177,39 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     );
     const includeCurrentUserInResponsibleList =
       toolsState.mode === "move-other";
-    const userOptions = orgUsers
-      .filter((entry) => {
-        if (includeCurrentUserInResponsibleList) return true;
-        const sameTelegram =
-          currentTelegramId &&
-          normalizeTelegramId(entry.telegram_id) === currentTelegramId;
-        const sameName =
-          normalizePersonName(entry.full_name ?? "") === currentUserName;
-        return !(sameTelegram || sameName);
-      })
-      .map((entry) => String(entry.full_name ?? "").trim())
+    const shouldSkipCurrentUser = (entry) => {
+      if (includeCurrentUserInResponsibleList) return false;
+      const sameTelegram =
+        currentTelegramId &&
+        normalizeTelegramId(entry?.telegram_id) === currentTelegramId;
+      const sameName =
+        normalizePersonName(entry?.full_name ?? "") === currentUserName;
+      return Boolean(sameTelegram || sameName);
+    };
+    const vacationReplacementNames = new Set(
+      orgUsers
+        .filter((entry) => Boolean(entry?.on_vacation))
+        .map((entry) => String(entry?.vacation_replacer ?? "").trim())
+        .filter(Boolean)
+    );
+    const activeUsers = orgUsers.filter((entry) => !Boolean(entry?.on_vacation));
+    const userOptions = activeUsers
+      .filter((entry) => !shouldSkipCurrentUser(entry))
+      .map((entry) => String(entry?.full_name ?? "").trim())
       .filter(Boolean);
 
-    toolsMoveState.responsibleOptions = userOptions.sort((a, b) =>
-      a.localeCompare(b, "ru")
+    vacationReplacementNames.forEach((replacementName) => {
+      const replacementEntry = orgUsers.find(
+        (entry) =>
+          normalizePersonName(entry?.full_name ?? "") ===
+          normalizePersonName(replacementName)
+      );
+      if (!replacementEntry || shouldSkipCurrentUser(replacementEntry)) return;
+      userOptions.push(String(replacementEntry?.full_name ?? replacementName).trim());
+    });
+
+    toolsMoveState.responsibleOptions = Array.from(new Set(userOptions)).sort(
+      (a, b) => a.localeCompare(b, "ru")
     );
     toolsMoveState.responsibleRoles = new Map(
       orgUsers

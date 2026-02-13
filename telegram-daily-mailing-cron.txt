@@ -1,3 +1,6 @@
 # Ежедневная рассылка в 14:45 по UTC+3 (Europe/Moscow)
 # Добавьте строку в crontab на сервере:
 45 14 * * * cd /workspace/alltrack && /usr/bin/php save.php --run-daily-mailing >> /workspace/alltrack/telegram-daily-mailing-cron.log 2>&1
+
+# Ежедневный пересчёт штрафов за отсутствие фото в 23:58 по UTC+3 (Europe/Moscow)
+58 23 * * * cd /workspace/alltrack && /usr/bin/php save.php --run-daily-no-photo-fines >> /workspace/alltrack/telegram-daily-no-photo-fines-cron.log 2>&1

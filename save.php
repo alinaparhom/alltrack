@@ -116,6 +116,184 @@ function normalizeTelegramId($value): ?string {
   return $cleaned;
 }
 
+function parseRuDateToDateTime(?string $value, DateTimeZone $timezone): ?DateTimeImmutable {
+  $raw = trim((string) $value);
+  if ($raw === "") {
+    return null;
+  }
+  $parsed = DateTimeImmutable::createFromFormat("d.m.Y", $raw, $timezone);
+  if (!$parsed) {
+    return null;
+  }
+  return $parsed->setTime(0, 0, 0);
+}
+
+function resolveOrganizationLaunchDateByFolder(string $orgFolder, array $orgData, DateTimeZone $timezone): ?DateTimeImmutable {
+  $targetFolder = normalizeOrganizationFolder($orgFolder);
+  $organizations = is_array($orgData["organizations"] ?? null) ? $orgData["organizations"] : [];
+
+  foreach ($organizations as $org) {
+    if (!is_array($org)) {
+      continue;
+    }
+    $fullName = (string) ($org["full_name"] ?? "");
+    $shortName = (string) ($org["short_name"] ?? "");
+    $candidates = array_values(array_filter([
+      normalizeOrganizationFolder($fullName),
+      normalizeOrganizationFolder($shortName),
+    ]));
+    if (in_array($targetFolder, $candidates, true)) {
+      return parseRuDateToDateTime((string) ($org["launch_date"] ?? ""), $timezone);
+    }
+  }
+
+  return null;
+}
+
+function calculateNoPhotoFineAmount(
+  ?DateTimeImmutable $purchaseDate,
+  ?DateTimeImmutable $launchDate,
+  DateTimeImmutable $now,
+  int $periodDays,
+  float $amountPerPeriod
+): float {
+  if ($purchaseDate === null || $launchDate === null || $periodDays <= 0 || $amountPerPeriod <= 0) {
+    return 0;
+  }
+
+  $baseDate = $purchaseDate < $launchDate ? $launchDate : $purchaseDate;
+  $daysDiff = (int) $baseDate->diff($now)->format("%r%a");
+  if ($daysDiff <= 0) {
+    return 0;
+  }
+
+  $periods = intdiv($daysDiff, $periodDays);
+  return $periods > 0 ? $periods * $amountPerPeriod : 0;
+}
+
+function runNoPhotoFineRecalculation(array $options = []): array {
+  $respectTime = array_key_exists("respectTime", $options)
+    ? (bool) $options["respectTime"]
+    : true;
+  $dryRun = !empty($options["dryRun"]);
+  $timezone = new DateTimeZone("Europe/Moscow");
+  $now = new DateTimeImmutable("now", $timezone);
+
+  if ($respectTime && $now->format("H:i") !== "23:58") {
+    return [
+      "success" => true,
+      "mode" => "daily-no-photo-fines-cli",
+      "skipped" => true,
+      "reason" => "outside-schedule",
+      "currentTime" => $now->format("H:i"),
+    ];
+  }
+
+  $orgData = readJsonFile(__DIR__ . DIRECTORY_SEPARATOR . "organizations.json", ["organizations" => []]);
+  $entries = @scandir(__DIR__);
+  if (!is_array($entries)) {
+    return [
+      "success" => false,
+      "mode" => "daily-no-photo-fines-cli",
+      "error" => "Не удалось прочитать список организаций.",
+    ];
+  }
+
+  $summary = [
+    "success" => true,
+    "mode" => "daily-no-photo-fines-cli",
+    "date" => $now->format("Y-m-d"),
+    "time" => $now->format("H:i"),
+    "dryRun" => $dryRun,
+    "organizationsChecked" => 0,
+    "organizationsUpdated" => 0,
+    "toolsUpdated" => 0,
+    "organizations" => [],
+  ];
+
+  foreach ($entries as $orgFolder) {
+    if ($orgFolder === "." || $orgFolder === "..") {
+      continue;
+    }
+    $orgPath = __DIR__ . DIRECTORY_SEPARATOR . $orgFolder;
+    if (!is_dir($orgPath)) {
+      continue;
+    }
+
+    $settingsPath = $orgPath . DIRECTORY_SEPARATOR . "Настройки.json";
+    $toolsPath = $orgPath . DIRECTORY_SEPARATOR . "База с инструментами.json";
+    if (!file_exists($settingsPath) || !file_exists($toolsPath)) {
+      continue;
+    }
+
+    $summary["organizationsChecked"]++;
+    $settings = readJsonFile($settingsPath, []);
+    $fineConfig = $settings["organization"]["fines"]["noPhoto"] ?? null;
+    if (!is_array($fineConfig) || empty($fineConfig["enabled"])) {
+      continue;
+    }
+
+    $periodDays = (int) ($fineConfig["days"] ?? 0);
+    $amountPerPeriod = (float) ($fineConfig["amount"] ?? 0);
+    if ($periodDays <= 0 || $amountPerPeriod <= 0) {
+      continue;
+    }
+
+    $launchDate = resolveOrganizationLaunchDateByFolder($orgFolder, $orgData, $timezone);
+    if ($launchDate === null) {
+      appendMailingLog("warning", "Не найден launch_date для перерасчета штрафов без фото.", [
+        "organization" => $orgFolder,
+      ]);
+      continue;
+    }
+
+    $tools = readJsonFile($toolsPath, []);
+    if (!is_array($tools)) {
+      continue;
+    }
+
+    $updatedInOrg = 0;
+    foreach ($tools as $index => $tool) {
+      if (!is_array($tool)) {
+        continue;
+      }
+      $photoCount = (int) ($tool["Количество фото"] ?? 0);
+      if ($photoCount !== 0) {
+        continue;
+      }
+
+      $purchaseDate = parseRuDateToDateTime((string) ($tool["Дата покупки"] ?? ""), $timezone);
+      $fineAmount = calculateNoPhotoFineAmount($purchaseDate, $launchDate, $now, $periodDays, $amountPerPeriod);
+      $currentStoredFine = (float) ($tool["Текущий штраф за отсутствие фото"] ?? 0);
+
+      if (abs($fineAmount - $currentStoredFine) < 0.0001) {
+        continue;
+      }
+
+      $tools[$index]["Текущий штраф за отсутствие фото"] = $fineAmount;
+      $updatedInOrg++;
+    }
+
+    if ($updatedInOrg > 0) {
+      $summary["organizationsUpdated"]++;
+      $summary["toolsUpdated"] += $updatedInOrg;
+      $summary["organizations"][] = [
+        "organization" => $orgFolder,
+        "updatedTools" => $updatedInOrg,
+      ];
+
+      if (!$dryRun) {
+        $encoded = json_encode($tools, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+        if ($encoded !== false) {
+          file_put_contents($toolsPath, $encoded . PHP_EOL, LOCK_EX);
+        }
+      }
+    }
+  }
+
+  return $summary;
+}
+
 function pickOrganizationShortName(array $orgData, string $orgName): string {
   if ($orgName === "") {
     return "Организация";
@@ -1401,6 +1579,16 @@ if ($isCli) {
       "mode" => "daily-mailing-cli",
       "respectTime" => $respectTime,
     ], JSON_UNESCAPED_UNICODE) . PHP_EOL;
+    exit;
+  }
+  if (in_array("--run-daily-no-photo-fines", $argvList, true)) {
+    $respectTime = !in_array("--ignore-time", $argvList, true);
+    $dryRun = in_array("--dry-run", $argvList, true);
+    $result = runNoPhotoFineRecalculation([
+      "respectTime" => $respectTime,
+      "dryRun" => $dryRun,
+    ]);
+    echo json_encode($result, JSON_UNESCAPED_UNICODE) . PHP_EOL;
     exit;
   }
 }

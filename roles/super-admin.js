@@ -25,16 +25,16 @@ export function renderRole(user) {
               <span class="stat-pill">активных</span>
             </div>
           </button>
-          <div class="stat-card">
+          <button class="stat-card stat-card--action" type="button" data-open-feedback>
             <div class="stat-card-header">
               <span class="stat-icon">💬</span>
               <div class="stat-label">Обратная связь</div>
             </div>
             <div class="stat-row">
-              <span class="stat-value">9</span>
-              <span class="stat-pill">в работе</span>
+              <span class="stat-value" data-feedback-pending-count>—</span>
+              <span class="stat-pill">не обработано</span>
             </div>
-          </div>
+          </button>
           <div class="stat-card">
             <div class="stat-card-header">
               <span class="stat-icon">🛡️</span>
@@ -220,6 +220,56 @@ export function renderRole(user) {
               </div>
             </div>
           </form>
+        </div>
+      </div>
+      <div class="settings-modal feedback-modal is-hidden" data-feedback-modal>
+        <div class="settings-modal__backdrop" data-feedback-backdrop></div>
+        <div
+          class="settings-modal__panel feedback-modal__panel"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Обращения пользователей"
+        >
+          <div class="settings-modal__header feedback-modal__header">
+            <div class="settings-modal__title">
+              <h2>Обратная связь</h2>
+              <p data-feedback-summary>Загружаем обращения...</p>
+            </div>
+            <button
+              class="button-icon feedback-modal__close"
+              type="button"
+              data-feedback-close
+              aria-label="Закрыть окно обратной связи"
+            >
+              <span class="button-icon-emoji" aria-hidden="true">✕</span>
+            </button>
+          </div>
+          <div class="settings-modal__body feedback-modal__body">
+            <div class="feedback-board" data-feedback-board>
+              <section class="feedback-column" data-feedback-column="new">
+                <div class="feedback-column__head">
+                  <h3>Новые без ответа</h3>
+                  <span class="feedback-column__count" data-feedback-count="new">0</span>
+                </div>
+                <div class="feedback-column__list" data-feedback-list="new"></div>
+              </section>
+              <section class="feedback-column" data-feedback-column="in-progress">
+                <div class="feedback-column__head">
+                  <h3>В работе</h3>
+                  <span class="feedback-column__count" data-feedback-count="in-progress">0</span>
+                </div>
+                <div class="feedback-column__list" data-feedback-list="in-progress"></div>
+              </section>
+              <section class="feedback-column" data-feedback-column="closed">
+                <div class="feedback-column__head">
+                  <h3>Закрыты</h3>
+                  <span class="feedback-column__count" data-feedback-count="closed">0</span>
+                </div>
+                <div class="feedback-column__list" data-feedback-list="closed"></div>
+              </section>
+            </div>
+            <div class="form-message" data-feedback-status></div>
+          </div>
         </div>
       </div>
       <div class="settings-modal orgs-modal is-hidden" data-orgs-modal>

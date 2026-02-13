@@ -36,6 +36,7 @@ const settingsBackButtonEl = document.querySelector(
 const orgFilePath = "./organizations.json";
 const usersFilePath = "./users.json";
 const pendingRegistrationsFilePath = "./pending-registrations.json";
+const feedbackRequestsFilePath = "./feedback-requests.json";
 const saveEndpoint = "./save.php";
 const authLogFilePath = "./auth-log.json";
 const authLogLimit = 200;
@@ -18837,6 +18838,15 @@ function setupSuperAdmin() {
   const telegramNoteEl = contentEl.querySelector("[data-telegram-note]");
   const openOrgsButtons = contentEl.querySelectorAll("[data-open-orgs]");
   const openUsersButtons = contentEl.querySelectorAll("[data-open-users]");
+  const openFeedbackButtons = contentEl.querySelectorAll("[data-open-feedback]");
+  const feedbackPendingCountEl = contentEl.querySelector(
+    "[data-feedback-pending-count]"
+  );
+  const feedbackModalEl = contentEl.querySelector("[data-feedback-modal]");
+  const feedbackBackdropEl = contentEl.querySelector("[data-feedback-backdrop]");
+  const feedbackCloseButton = contentEl.querySelector("[data-feedback-close]");
+  const feedbackSummaryEl = contentEl.querySelector("[data-feedback-summary]");
+  const feedbackStatusEl = contentEl.querySelector("[data-feedback-status]");
   const orgsModalEl = contentEl.querySelector("[data-orgs-modal]");
   const orgsBackdropEl = contentEl.querySelector("[data-orgs-backdrop]");
   const orgsCloseButton = contentEl.querySelector("[data-orgs-close]");
@@ -19057,10 +19067,12 @@ function setupSuperAdmin() {
       if (userCountEl) {
         userCountEl.textContent = getCollectionCount(usersData, "users");
       }
+      await loadFeedbackRequests();
     } catch (error) {
       console.error(error);
       if (orgCountEl) orgCountEl.textContent = "0";
       if (userCountEl) userCountEl.textContent = "0";
+      if (feedbackPendingCountEl) feedbackPendingCountEl.textContent = "0";
     }
   };
 
@@ -19108,6 +19120,202 @@ function setupSuperAdmin() {
     organizations: [],
     users: [],
   };
+  const feedbackState = {
+    requests: [],
+  };
+
+  const feedbackStatusMeta = {
+    new: { label: "Новые без ответа", tone: "new" },
+    "in-progress": { label: "В работе", tone: "progress" },
+    closed: { label: "Закрыто", tone: "closed" },
+  };
+
+  const normalizeFeedbackStatus = (value) => {
+    const normalized = String(value ?? "").trim().toLowerCase();
+    if (["new", "новый", "новые", "без ответа"].includes(normalized)) {
+      return "new";
+    }
+    if (["in-progress", "in_progress", "в работе", "work"].includes(normalized)) {
+      return "in-progress";
+    }
+    if (["closed", "закрыто", "закрыт", "done"].includes(normalized)) {
+      return "closed";
+    }
+    return "new";
+  };
+
+  const parseFeedbackDate = (value) => {
+    if (!value) return "";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "";
+    return date.toLocaleString("ru-RU", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  const getFeedbackAuthor = (request) => {
+    if (request?.anonymous) return "Анонимно";
+    const name = String(request?.createdBy?.full_name ?? "").trim();
+    return name || "Автор не указан";
+  };
+
+  const setFeedbackStatusMessage = (message = "", tone = "") => {
+    if (!feedbackStatusEl) return;
+    feedbackStatusEl.textContent = message;
+    feedbackStatusEl.classList.remove("is-success", "is-error");
+    if (tone === "success") feedbackStatusEl.classList.add("is-success");
+    if (tone === "error") feedbackStatusEl.classList.add("is-error");
+  };
+
+  const getFeedbackCounts = () => {
+    const counts = { new: 0, "in-progress": 0, closed: 0 };
+    feedbackState.requests.forEach((item) => {
+      const status = normalizeFeedbackStatus(item?.status);
+      counts[status] += 1;
+    });
+    return counts;
+  };
+
+  const updateFeedbackSummary = () => {
+    const counts = getFeedbackCounts();
+    const pending = counts.new + counts["in-progress"];
+    if (feedbackPendingCountEl) {
+      feedbackPendingCountEl.textContent = String(pending);
+    }
+    if (feedbackSummaryEl) {
+      feedbackSummaryEl.textContent = `Не обработано: ${pending} · Всего: ${feedbackState.requests.length}`;
+    }
+
+    ["new", "in-progress", "closed"].forEach((key) => {
+      const countEl = contentEl.querySelector(`[data-feedback-count="${key}"]`);
+      if (countEl) countEl.textContent = String(counts[key]);
+    });
+  };
+
+  const saveFeedbackStatus = async (requestId, nextStatus) => {
+    const nextRequests = feedbackState.requests.map((item) => {
+      if (Number(item?.id) !== Number(requestId)) return item;
+      return { ...item, status: nextStatus, updatedAt: new Date().toISOString() };
+    });
+    const lastId = nextRequests.reduce((max, item) => {
+      const id = Number(item?.id) || 0;
+      return Math.max(max, id);
+    }, 0);
+
+    await saveJson(feedbackRequestsFilePath, {
+      lastId,
+      requests: nextRequests,
+    }, { user: currentUser });
+
+    feedbackState.requests = nextRequests;
+    renderFeedbackBoard();
+  };
+
+  const renderFeedbackBoard = () => {
+    const grouped = {
+      new: [],
+      "in-progress": [],
+      closed: [],
+    };
+    feedbackState.requests.forEach((item) => {
+      const status = normalizeFeedbackStatus(item?.status);
+      grouped[status].push({ ...item, status });
+    });
+
+    ["new", "in-progress", "closed"].forEach((key) => {
+      const listEl = contentEl.querySelector(`[data-feedback-list="${key}"]`);
+      if (!listEl) return;
+      listEl.innerHTML = "";
+      const items = grouped[key];
+      if (!items.length) {
+        const emptyEl = document.createElement("div");
+        emptyEl.className = "feedback-empty";
+        emptyEl.textContent = "Пока пусто";
+        listEl.appendChild(emptyEl);
+        return;
+      }
+
+      items
+        .sort((a, b) => Number(b?.id ?? 0) - Number(a?.id ?? 0))
+        .forEach((request) => {
+          const card = document.createElement("article");
+          card.className = "feedback-item";
+
+          const top = document.createElement("div");
+          top.className = "feedback-item__top";
+
+          const idEl = document.createElement("div");
+          idEl.className = "feedback-item__id";
+          idEl.textContent = `#${request?.id ?? "—"}`;
+
+          const dateEl = document.createElement("div");
+          dateEl.className = "feedback-item__date";
+          dateEl.textContent = parseFeedbackDate(request?.createdAt) || "Дата не указана";
+
+          top.append(idEl, dateEl);
+
+          const orgEl = document.createElement("div");
+          orgEl.className = "feedback-item__org";
+          orgEl.textContent = String(request?.organization ?? "Организация не указана").trim() || "Организация не указана";
+
+          const authorEl = document.createElement("div");
+          authorEl.className = "feedback-item__author";
+          authorEl.textContent = `Автор: ${getFeedbackAuthor(request)}`;
+
+          const textEl = document.createElement("div");
+          textEl.className = "feedback-item__text";
+          textEl.textContent = String(request?.text ?? "").trim() || "Без текста";
+
+          const actions = document.createElement("div");
+          actions.className = "feedback-item__actions";
+
+          const select = document.createElement("select");
+          select.className = "form-input feedback-item__select";
+          select.setAttribute("aria-label", `Статус обращения №${request?.id ?? ""}`);
+          ["new", "in-progress", "closed"].forEach((statusKey) => {
+            const option = document.createElement("option");
+            option.value = statusKey;
+            option.textContent = feedbackStatusMeta[statusKey].label;
+            option.selected = request.status === statusKey;
+            select.appendChild(option);
+          });
+          select.addEventListener("change", async () => {
+            const nextStatus = normalizeFeedbackStatus(select.value);
+            setFeedbackStatusMessage("Сохраняем статус...");
+            try {
+              await saveFeedbackStatus(request.id, nextStatus);
+              setFeedbackStatusMessage("Статус обновлён.", "success");
+            } catch (error) {
+              console.error(error);
+              setFeedbackStatusMessage("Не удалось обновить статус.", "error");
+              select.value = request.status;
+            }
+          });
+
+          actions.appendChild(select);
+          card.append(top, orgEl, authorEl, textEl, actions);
+          listEl.appendChild(card);
+        });
+    });
+
+    updateFeedbackSummary();
+  };
+
+  const loadFeedbackRequests = async () => {
+    const data = await loadJson(feedbackRequestsFilePath).catch(() => ({ requests: [] }));
+    const requests = Array.isArray(data?.requests) ? data.requests : [];
+    feedbackState.requests = requests.map((item, index) => ({
+      ...item,
+      id: Number(item?.id) || index + 1,
+      status: normalizeFeedbackStatus(item?.status),
+    }));
+    renderFeedbackBoard();
+  };
+
   let selectedOrgName = "";
   let selectedUsersOrgName = "";
   let orgsGroupsContext = null;
@@ -20818,6 +21026,33 @@ function setupSuperAdmin() {
     }
   };
 
+  const openFeedbackModal = async () => {
+    if (!feedbackModalEl) return;
+    setFeedbackStatusMessage("");
+    if (feedbackSummaryEl) feedbackSummaryEl.textContent = "Загружаем обращения...";
+    try {
+      await loadFeedbackRequests();
+    } catch (error) {
+      console.error(error);
+      setFeedbackStatusMessage("Не удалось загрузить обращения.", "error");
+    }
+    feedbackModalEl.classList.remove("is-hidden");
+    document.body.style.overflow = "hidden";
+  };
+
+  const closeFeedbackModal = () => {
+    if (!feedbackModalEl) return;
+    feedbackModalEl.classList.add("is-hidden");
+    if (
+      (orgsModalEl && !orgsModalEl.classList.contains("is-hidden")) ||
+      (usersModalEl && !usersModalEl.classList.contains("is-hidden"))
+    ) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+  };
+
   openAddOrgButton?.addEventListener("click", showForm);
   backButton?.addEventListener("click", showDashboard);
   openOrgsButtons.forEach((button) => {
@@ -20825,6 +21060,9 @@ function setupSuperAdmin() {
   });
   openUsersButtons.forEach((button) => {
     button.addEventListener("click", openUsersModal);
+  });
+  openFeedbackButtons.forEach((button) => {
+    button.addEventListener("click", openFeedbackModal);
   });
   orgsBackdropEl?.addEventListener("click", closeOrgsModal);
   orgsCloseButton?.addEventListener("click", closeOrgsModal);
@@ -20910,6 +21148,13 @@ function setupSuperAdmin() {
   usersAddBackdropEl?.addEventListener("click", closeUsersAddModal);
   usersAddCloseButton?.addEventListener("click", closeUsersAddModal);
   usersAddCancelButton?.addEventListener("click", closeUsersAddModal);
+  feedbackBackdropEl?.addEventListener("click", closeFeedbackModal);
+  feedbackCloseButton?.addEventListener("click", closeFeedbackModal);
+  feedbackModalEl?.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      closeFeedbackModal();
+    }
+  });
   if (shareTelegramButton) shareTelegramButton.disabled = true;
   shareTelegramButton?.addEventListener("click", () => {
     const link = registrationLinkEl?.value?.trim();

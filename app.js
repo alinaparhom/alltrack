@@ -18873,6 +18873,15 @@ function setupSuperAdmin() {
   const feedbackDetailsStatusEl = contentEl.querySelector(
     "[data-feedback-details-status]"
   );
+  const feedbackPhotoViewerEl = contentEl.querySelector(
+    "[data-feedback-photo-viewer]"
+  );
+  const feedbackPhotoViewerImageEl = contentEl.querySelector(
+    "[data-feedback-photo-image]"
+  );
+  const feedbackPhotoViewerCloseButton = contentEl.querySelector(
+    "[data-feedback-photo-close]"
+  );
   const feedbackActionButtons = contentEl.querySelectorAll("[data-feedback-action]");
   const orgsModalEl = contentEl.querySelector("[data-orgs-modal]");
   const orgsBackdropEl = contentEl.querySelector("[data-orgs-backdrop]");
@@ -19295,6 +19304,31 @@ function setupSuperAdmin() {
     }
   };
 
+  const openFeedbackPhotoViewer = ({ src = "", alt = "" } = {}) => {
+    if (!feedbackPhotoViewerEl || !feedbackPhotoViewerImageEl || !src) return;
+    feedbackPhotoViewerImageEl.src = src;
+    feedbackPhotoViewerImageEl.alt = alt || "Фото обращения";
+    feedbackPhotoViewerEl.classList.remove("is-hidden");
+    document.body.style.overflow = "hidden";
+  };
+
+  const closeFeedbackPhotoViewer = () => {
+    if (!feedbackPhotoViewerEl || !feedbackPhotoViewerImageEl) return;
+    feedbackPhotoViewerEl.classList.add("is-hidden");
+    feedbackPhotoViewerImageEl.src = "";
+    feedbackPhotoViewerImageEl.alt = "";
+    if (
+      (feedbackDetailsModalEl && !feedbackDetailsModalEl.classList.contains("is-hidden")) ||
+      (feedbackModalEl && !feedbackModalEl.classList.contains("is-hidden")) ||
+      (orgsModalEl && !orgsModalEl.classList.contains("is-hidden")) ||
+      (usersModalEl && !usersModalEl.classList.contains("is-hidden"))
+    ) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+  };
+
   const renderFeedbackDetails = (requestId) => {
     const request = feedbackState.requests.find(
       (item) => Number(item?.id) === Number(requestId)
@@ -19326,6 +19360,17 @@ function setupSuperAdmin() {
           image.decoding = "async";
           image.src = withCacheBuster(`./feedback-photos/${encodeURIComponent(String(photoName))}`);
           image.alt = `Фото ${index + 1} к обращению #${request.id}`;
+          image.role = "button";
+          image.tabIndex = 0;
+          image.addEventListener("click", () => {
+            openFeedbackPhotoViewer({ src: image.src, alt: image.alt });
+          });
+          image.addEventListener("keydown", (event) => {
+            if (event.key === "Enter" || event.key === " ") {
+              event.preventDefault();
+              openFeedbackPhotoViewer({ src: image.src, alt: image.alt });
+            }
+          });
           feedbackDetailsPhotosEl.appendChild(image);
         });
       }
@@ -19354,6 +19399,7 @@ function setupSuperAdmin() {
 
   const closeFeedbackDetails = () => {
     if (!feedbackDetailsModalEl) return;
+    closeFeedbackPhotoViewer();
     feedbackDetailsModalEl.classList.add("is-hidden");
     feedbackState.activeRequestId = null;
     if (feedbackDetailsStatusEl) feedbackDetailsStatusEl.textContent = "";
@@ -21327,9 +21373,24 @@ function setupSuperAdmin() {
   feedbackCloseButton?.addEventListener("click", closeFeedbackModal);
   feedbackDetailsBackdropEl?.addEventListener("click", closeFeedbackDetails);
   feedbackDetailsCloseButton?.addEventListener("click", closeFeedbackDetails);
+  feedbackPhotoViewerCloseButton?.addEventListener("click", closeFeedbackPhotoViewer);
+  feedbackPhotoViewerEl?.addEventListener("click", (event) => {
+    if (event.target === feedbackPhotoViewerEl) {
+      closeFeedbackPhotoViewer();
+    }
+  });
+  feedbackPhotoViewerEl?.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      closeFeedbackPhotoViewer();
+    }
+  });
   feedbackDetailsModalEl?.addEventListener("keydown", (event) => {
     if (event.key === "Escape") {
-      closeFeedbackDetails();
+      if (feedbackPhotoViewerEl && !feedbackPhotoViewerEl.classList.contains("is-hidden")) {
+        closeFeedbackPhotoViewer();
+      } else {
+        closeFeedbackDetails();
+      }
     }
   });
   feedbackModalEl?.addEventListener("keydown", (event) => {

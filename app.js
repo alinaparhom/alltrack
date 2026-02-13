@@ -18847,6 +18847,7 @@ function setupSuperAdmin() {
   const feedbackCloseButton = contentEl.querySelector("[data-feedback-close]");
   const feedbackSummaryEl = contentEl.querySelector("[data-feedback-summary]");
   const feedbackStatusEl = contentEl.querySelector("[data-feedback-status]");
+  const feedbackTabButtons = contentEl.querySelectorAll("[data-feedback-tab]");
   const orgsModalEl = contentEl.querySelector("[data-orgs-modal]");
   const orgsBackdropEl = contentEl.querySelector("[data-orgs-backdrop]");
   const orgsCloseButton = contentEl.querySelector("[data-orgs-close]");
@@ -19125,9 +19126,9 @@ function setupSuperAdmin() {
   };
 
   const feedbackStatusMeta = {
-    new: { label: "Новые без ответа", tone: "new" },
+    new: { label: "Новые", tone: "new" },
     "in-progress": { label: "В работе", tone: "progress" },
-    closed: { label: "Закрыто", tone: "closed" },
+    closed: { label: "Закрытые", tone: "closed" },
   };
 
   const normalizeFeedbackStatus = (value) => {
@@ -19187,12 +19188,31 @@ function setupSuperAdmin() {
       feedbackPendingCountEl.textContent = String(pending);
     }
     if (feedbackSummaryEl) {
-      feedbackSummaryEl.textContent = `Не обработано: ${pending} · Всего: ${feedbackState.requests.length}`;
+      feedbackSummaryEl.textContent = `Не обработано: ${pending} · В работе: ${counts["in-progress"]} · Отработано: ${counts.closed} · Всего: ${feedbackState.requests.length}`;
     }
 
     ["new", "in-progress", "closed"].forEach((key) => {
       const countEl = contentEl.querySelector(`[data-feedback-count="${key}"]`);
       if (countEl) countEl.textContent = String(counts[key]);
+    });
+  };
+
+
+  const setActiveFeedbackTab = (status = "new") => {
+    const nextStatus = normalizeFeedbackStatus(status);
+    const tabButtons = Array.from(feedbackTabButtons || []);
+    tabButtons.forEach((button) => {
+      const isActive = button?.dataset?.feedbackTab === nextStatus;
+      button.classList.toggle("is-active", isActive);
+      button.setAttribute("aria-selected", isActive ? "true" : "false");
+    });
+
+    ["new", "in-progress", "closed"].forEach((key) => {
+      const columnEl = contentEl.querySelector(`[data-feedback-column="${key}"]`);
+      if (!columnEl) return;
+      const isActive = key === nextStatus;
+      columnEl.classList.toggle("is-active", isActive);
+      columnEl.setAttribute("aria-hidden", isActive ? "false" : "true");
     });
   };
 
@@ -21037,6 +21057,7 @@ function setupSuperAdmin() {
       setFeedbackStatusMessage("Не удалось загрузить обращения.", "error");
     }
     feedbackModalEl.classList.remove("is-hidden");
+    setActiveFeedbackTab("new");
     document.body.style.overflow = "hidden";
   };
 
@@ -21063,6 +21084,11 @@ function setupSuperAdmin() {
   });
   openFeedbackButtons.forEach((button) => {
     button.addEventListener("click", openFeedbackModal);
+  });
+  feedbackTabButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      setActiveFeedbackTab(button?.dataset?.feedbackTab || "new");
+    });
   });
   orgsBackdropEl?.addEventListener("click", closeOrgsModal);
   orgsCloseButton?.addEventListener("click", closeOrgsModal);

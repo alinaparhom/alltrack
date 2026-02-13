@@ -19293,30 +19293,11 @@ function setupSuperAdmin() {
           const actions = document.createElement("div");
           actions.className = "feedback-item__actions";
 
-          const select = document.createElement("select");
-          select.className = "form-input feedback-item__select";
-          select.setAttribute("aria-label", `Статус обращения №${request?.id ?? ""}`);
-          ["new", "in-progress", "closed"].forEach((statusKey) => {
-            const option = document.createElement("option");
-            option.value = statusKey;
-            option.textContent = feedbackStatusMeta[statusKey].label;
-            option.selected = request.status === statusKey;
-            select.appendChild(option);
-          });
-          select.addEventListener("change", async () => {
-            const nextStatus = normalizeFeedbackStatus(select.value);
-            setFeedbackStatusMessage("Сохраняем статус...");
-            try {
-              await saveFeedbackStatus(request.id, nextStatus);
-              setFeedbackStatusMessage("Статус обновлён.", "success");
-            } catch (error) {
-              console.error(error);
-              setFeedbackStatusMessage("Не удалось обновить статус.", "error");
-              select.value = request.status;
-            }
-          });
+          const statusLabel = document.createElement("span");
+          statusLabel.className = "feedback-item__status";
+          statusLabel.textContent = `Статус: ${feedbackStatusMeta[request.status]?.label ?? "Новые"}`;
 
-          actions.appendChild(select);
+          actions.appendChild(statusLabel);
           card.append(top, orgEl, authorEl, textEl, actions);
           listEl.appendChild(card);
         });

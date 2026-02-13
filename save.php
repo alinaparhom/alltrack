@@ -11,7 +11,7 @@ if (!is_array($payload)) {
   exit;
 }
 
-$allowedFiles = ["organizations.json", "users.json", "pending-registrations.json", "telegram-mailing-errors.json"];
+$allowedFiles = ["organizations.json", "users.json", "pending-registrations.json", "telegram-mailing-errors.json", "feedback-requests.json"];
 
 function appendMailingLog(string $level, string $message, array $context = []): void {
   $logPath = __DIR__ . DIRECTORY_SEPARATOR . "telegram-mailing-errors.json";

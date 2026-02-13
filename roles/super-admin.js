@@ -357,7 +357,7 @@ export function renderRole(user) {
           type="button"
           data-feedback-photo-close
           aria-label="Закрыть полноэкранное фото"
-          style="position:absolute;top:14px;right:14px;width:40px;height:40px;border-radius:12px;border:1px solid rgba(255,255,255,.45);background:rgba(255,255,255,.2);color:#fff;font-size:22px;line-height:1;"
+          style="position:absolute;right:max(14px,env(safe-area-inset-right));bottom:max(14px,env(safe-area-inset-bottom));min-width:56px;height:44px;padding:0 14px;border-radius:14px;border:1px solid rgba(255,255,255,.45);background:rgba(255,255,255,.2);backdrop-filter:blur(8px);color:#fff;font-size:22px;line-height:1;display:inline-flex;align-items:center;justify-content:center;"
         >
           ✕
         </button>

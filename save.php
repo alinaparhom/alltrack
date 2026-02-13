@@ -350,6 +350,52 @@ function runNoPhotoFineRecalculation(array $options = []): array {
   return $summary;
 }
 
+function runNoPhotoFineRecalculationIfNeeded(): void {
+  $timezone = new DateTimeZone("Europe/Moscow");
+  $now = new DateTimeImmutable("now", $timezone);
+  $todayKey = $now->format("Y-m-d");
+  $currentTime = $now->format("H:i");
+  $scheduleTime = "14:30";
+
+  if ($currentTime < $scheduleTime) {
+    return;
+  }
+
+  $statePath = __DIR__ . DIRECTORY_SEPARATOR . "telegram-daily-no-photo-fines-state.json";
+  $state = readJsonFile($statePath, []);
+  $lastRunDate = trim((string) ($state["lastRunDate"] ?? ""));
+  if ($lastRunDate === $todayKey) {
+    return;
+  }
+
+  $result = runNoPhotoFineRecalculation([
+    "respectTime" => false,
+    "dryRun" => false,
+  ]);
+
+  if (empty($result["success"])) {
+    appendMailingLog("error", "Не удалось выполнить ежедневный пересчёт штрафов за отсутствие фото.", [
+      "result" => $result,
+    ]);
+    return;
+  }
+
+  $nextState = [
+    "lastRunDate" => $todayKey,
+    "updatedAt" => $now->format(DateTimeInterface::ATOM),
+    "toolsUpdated" => (int) ($result["toolsUpdated"] ?? 0),
+  ];
+  $encoded = json_encode($nextState, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+  if ($encoded !== false) {
+    $saved = file_put_contents($statePath, $encoded . PHP_EOL, LOCK_EX);
+    if ($saved === false) {
+      appendMailingLog("warning", "Не удалось записать состояние ежедневного пересчёта штрафов за отсутствие фото.", [
+        "statePath" => $statePath,
+      ]);
+    }
+  }
+}
+
 function pickOrganizationShortName(array $orgData, string $orgName): string {
   if ($orgName === "") {
     return "Организация";
@@ -1727,5 +1773,6 @@ foreach ($entries as $entry) {
 }
 
 runDailyPendingMovesMailingIfNeeded();
+runNoPhotoFineRecalculationIfNeeded();
 
 echo json_encode(["success" => true]);

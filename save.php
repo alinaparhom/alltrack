@@ -143,8 +143,36 @@ function resolveOrganizationLaunchDateByFolder(string $orgFolder, array $orgData
       normalizeOrganizationFolder($shortName),
     ]));
     if (in_array($targetFolder, $candidates, true)) {
-      return parseRuDateToDateTime((string) ($org["launch_date"] ?? ""), $timezone);
+      $launchRaw = (string) ($org["launch_date"] ?? $org["launchDate"] ?? "");
+      return parseRuDateToDateTime($launchRaw, $timezone);
     }
+  }
+
+  return null;
+}
+
+function resolveNoPhotoFineConfig(array $settings): ?array {
+  $candidates = [
+    $settings["organization"]["fines"]["noPhoto"] ?? null,
+    $settings["fines"]["noPhoto"] ?? null,
+  ];
+
+  foreach ($candidates as $candidate) {
+    if (!is_array($candidate)) {
+      continue;
+    }
+
+    $enabled = !empty($candidate["enabled"]);
+    $periodDays = (int) ($candidate["days"] ?? 0);
+    $amountPerPeriod = (float) ($candidate["amount"] ?? 0);
+    if (!$enabled || $periodDays <= 0 || $amountPerPeriod <= 0) {
+      continue;
+    }
+
+    return [
+      "periodDays" => $periodDays,
+      "amountPerPeriod" => $amountPerPeriod,
+    ];
   }
 
   return null;
@@ -228,16 +256,13 @@ function runNoPhotoFineRecalculation(array $options = []): array {
 
     $summary["organizationsChecked"]++;
     $settings = readJsonFile($settingsPath, []);
-    $fineConfig = $settings["organization"]["fines"]["noPhoto"] ?? null;
-    if (!is_array($fineConfig) || empty($fineConfig["enabled"])) {
+    $fineConfig = resolveNoPhotoFineConfig($settings);
+    if ($fineConfig === null) {
       continue;
     }
 
-    $periodDays = (int) ($fineConfig["days"] ?? 0);
-    $amountPerPeriod = (float) ($fineConfig["amount"] ?? 0);
-    if ($periodDays <= 0 || $amountPerPeriod <= 0) {
-      continue;
-    }
+    $periodDays = (int) $fineConfig["periodDays"];
+    $amountPerPeriod = (float) $fineConfig["amountPerPeriod"];
 
     $launchDate = resolveOrganizationLaunchDateByFolder($orgFolder, $orgData, $timezone);
     if ($launchDate === null) {

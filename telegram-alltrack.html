@@ -7155,10 +7155,48 @@
         padding-top: 10px;
       }
 
+      .feedback-tabs {
+        display: flex;
+        gap: 8px;
+        overflow-x: auto;
+        padding-bottom: 2px;
+      }
+
+      .feedback-tab {
+        border: 1px solid rgba(59, 125, 255, 0.2);
+        background: rgba(255, 255, 255, 0.72);
+        backdrop-filter: blur(14px);
+        color: var(--text);
+        border-radius: 12px;
+        min-height: 38px;
+        padding: 8px 12px;
+        font-size: 13px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        white-space: nowrap;
+      }
+
+      .feedback-tab.is-active {
+        border-color: rgba(59, 125, 255, 0.4);
+        background: rgba(59, 125, 255, 0.14);
+        color: var(--accent);
+      }
+
+      .feedback-tab__count {
+        min-width: 22px;
+        padding: 2px 7px;
+        border-radius: 999px;
+        background: rgba(59, 125, 255, 0.14);
+        color: inherit;
+        font-size: 11px;
+        font-weight: 700;
+        text-align: center;
+      }
+
       .feedback-board {
         display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 12px;
       }
 
       .feedback-column {
@@ -7184,15 +7222,12 @@
         font-size: 14px;
       }
 
-      .feedback-column__count {
-        min-width: 24px;
-        padding: 3px 8px;
-        border-radius: 999px;
-        background: rgba(59, 125, 255, 0.14);
-        color: var(--accent);
-        font-size: 12px;
-        font-weight: 700;
-        text-align: center;
+      .feedback-column {
+        display: none;
+      }
+
+      .feedback-column.is-active {
+        display: grid;
       }
 
       .feedback-column__list {
@@ -7268,11 +7303,17 @@
         border-color: rgba(148, 170, 210, 0.35);
       }
 
-      @media (max-width: 920px) {
-        .feedback-board {
-          grid-template-columns: 1fr;
-        }
+      body[data-theme="dark"] .feedback-tab {
+        background: rgba(23, 31, 52, 0.92);
+        border-color: rgba(148, 170, 210, 0.3);
+      }
 
+      body[data-theme="dark"] .feedback-tab.is-active {
+        background: rgba(59, 125, 255, 0.22);
+        border-color: rgba(119, 170, 255, 0.45);
+      }
+
+      @media (max-width: 920px) {
         .feedback-column__list {
           max-height: none;
         }

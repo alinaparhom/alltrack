@@ -245,25 +245,54 @@ export function renderRole(user) {
             </button>
           </div>
           <div class="settings-modal__body feedback-modal__body">
+            <div class="feedback-tabs" role="tablist" aria-label="Разделы обращений">
+              <button
+                class="feedback-tab is-active"
+                type="button"
+                role="tab"
+                aria-selected="true"
+                data-feedback-tab="new"
+              >
+                Новые
+                <span class="feedback-tab__count" data-feedback-count="new">0</span>
+              </button>
+              <button
+                class="feedback-tab"
+                type="button"
+                role="tab"
+                aria-selected="false"
+                data-feedback-tab="in-progress"
+              >
+                В работе
+                <span class="feedback-tab__count" data-feedback-count="in-progress">0</span>
+              </button>
+              <button
+                class="feedback-tab"
+                type="button"
+                role="tab"
+                aria-selected="false"
+                data-feedback-tab="closed"
+              >
+                Закрытые
+                <span class="feedback-tab__count" data-feedback-count="closed">0</span>
+              </button>
+            </div>
             <div class="feedback-board" data-feedback-board>
               <section class="feedback-column" data-feedback-column="new">
                 <div class="feedback-column__head">
-                  <h3>Новые без ответа</h3>
-                  <span class="feedback-column__count" data-feedback-count="new">0</span>
+                  <h3>Новые</h3>
                 </div>
                 <div class="feedback-column__list" data-feedback-list="new"></div>
               </section>
               <section class="feedback-column" data-feedback-column="in-progress">
                 <div class="feedback-column__head">
                   <h3>В работе</h3>
-                  <span class="feedback-column__count" data-feedback-count="in-progress">0</span>
                 </div>
                 <div class="feedback-column__list" data-feedback-list="in-progress"></div>
               </section>
               <section class="feedback-column" data-feedback-column="closed">
                 <div class="feedback-column__head">
-                  <h3>Закрыты</h3>
-                  <span class="feedback-column__count" data-feedback-count="closed">0</span>
+                  <h3>Закрытые</h3>
                 </div>
                 <div class="feedback-column__list" data-feedback-list="closed"></div>
               </section>

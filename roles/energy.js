@@ -109,9 +109,6 @@ export function renderRole(user) {
             </div>
           </div>
         </div>
-        <div class="quick-access" data-quick-access>
-          <div class="quick-access-list" data-quick-access-list></div>
-        </div>
         <div class="settings-modal is-hidden" data-energy-settings-modal>
           <div class="settings-modal__backdrop" data-energy-settings-backdrop></div>
           <div
@@ -3126,6 +3123,9 @@ export function renderRole(user) {
               </div>
             </div>
           </div>
+        </div>
+        <div class="quick-access" data-quick-access>
+          <div class="quick-access-list" data-quick-access-list></div>
         </div>
       </div>
     </section>

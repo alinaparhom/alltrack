@@ -154,7 +154,9 @@ function resolveOrganizationLaunchDateByFolder(string $orgFolder, array $orgData
 function resolveNoPhotoFineConfig(array $settings): ?array {
   $candidates = [
     $settings["organization"]["fines"]["noPhoto"] ?? null,
+    $settings["organization"]["fines"] ?? null,
     $settings["fines"]["noPhoto"] ?? null,
+    $settings["fines"] ?? null,
   ];
 
   foreach ($candidates as $candidate) {
@@ -207,13 +209,14 @@ function runNoPhotoFineRecalculation(array $options = []): array {
   $timezone = new DateTimeZone("Europe/Moscow");
   $now = new DateTimeImmutable("now", $timezone);
 
-  if ($respectTime && $now->format("H:i") !== "23:58") {
+  if ($respectTime && $now->format("H:i") !== "14:30") {
     return [
       "success" => true,
       "mode" => "daily-no-photo-fines-cli",
       "skipped" => true,
       "reason" => "outside-schedule",
       "currentTime" => $now->format("H:i"),
+      "expectedTime" => "14:30",
     ];
   }
 

@@ -311,17 +311,19 @@ export function renderRole(user) {
         >
           <div class="settings-modal__header feedback-details-modal__header">
             <div class="settings-modal__title">
-              <h2 data-feedback-details-title>Обращение</h2>
+              <div class="feedback-details-modal__title-row" style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;">
+                <h2 data-feedback-details-title>Обращение</h2>
+                <button
+                  class="button-icon feedback-details-modal__close"
+                  type="button"
+                  data-feedback-details-close
+                  aria-label="Закрыть детали обращения"
+                >
+                  <span class="button-icon-emoji" aria-hidden="true">✕</span>
+                </button>
+              </div>
               <p data-feedback-details-meta>Загрузка...</p>
             </div>
-            <button
-              class="button-icon feedback-details-modal__close"
-              type="button"
-              data-feedback-details-close
-              aria-label="Закрыть детали обращения"
-            >
-              <span class="button-icon-emoji" aria-hidden="true">✕</span>
-            </button>
           </div>
           <div class="settings-modal__body feedback-details-modal__body">
             <div class="feedback-details-card">
@@ -336,12 +338,34 @@ export function renderRole(user) {
                 Взять в работу
               </button>
               <button class="action-primary" type="button" data-feedback-action="close">
-                Закрыть
+                Закрыть задачу
               </button>
             </div>
             <div class="form-message" data-feedback-details-status></div>
           </div>
         </div>
+      </div>
+      <div
+        class="feedback-photo-viewer is-hidden"
+        data-feedback-photo-viewer
+        style="position:fixed;inset:0;z-index:1200;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(15,23,42,.72);backdrop-filter:blur(6px);"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Просмотр фото"
+      >
+        <button
+          type="button"
+          data-feedback-photo-close
+          aria-label="Закрыть полноэкранное фото"
+          style="position:absolute;top:14px;right:14px;width:40px;height:40px;border-radius:12px;border:1px solid rgba(255,255,255,.45);background:rgba(255,255,255,.2);color:#fff;font-size:22px;line-height:1;"
+        >
+          ✕
+        </button>
+        <img
+          data-feedback-photo-image
+          alt=""
+          style="max-width:min(100%,980px);max-height:calc(100vh - 32px);width:auto;height:auto;border-radius:16px;box-shadow:0 24px 48px rgba(15,23,42,.45);object-fit:contain;background:#fff;"
+        />
       </div>
       <div class="settings-modal orgs-modal is-hidden" data-orgs-modal>
         <div class="settings-modal__backdrop" data-orgs-backdrop></div>

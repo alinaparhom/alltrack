@@ -301,6 +301,48 @@ export function renderRole(user) {
           </div>
         </div>
       </div>
+      <div class="settings-modal feedback-details-modal is-hidden" data-feedback-details-modal>
+        <div class="settings-modal__backdrop" data-feedback-details-backdrop></div>
+        <div
+          class="settings-modal__panel feedback-details-modal__panel"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Детали обращения"
+        >
+          <div class="settings-modal__header feedback-details-modal__header">
+            <div class="settings-modal__title">
+              <h2 data-feedback-details-title>Обращение</h2>
+              <p data-feedback-details-meta>Загрузка...</p>
+            </div>
+            <button
+              class="button-icon feedback-details-modal__close"
+              type="button"
+              data-feedback-details-close
+              aria-label="Закрыть детали обращения"
+            >
+              <span class="button-icon-emoji" aria-hidden="true">✕</span>
+            </button>
+          </div>
+          <div class="settings-modal__body feedback-details-modal__body">
+            <div class="feedback-details-card">
+              <div class="feedback-details-card__text" data-feedback-details-text></div>
+              <div class="feedback-details-card__photos" data-feedback-details-photos></div>
+            </div>
+            <div class="feedback-details-actions">
+              <button class="action-secondary" type="button" data-feedback-action="reject">
+                Отклонить
+              </button>
+              <button class="action-secondary" type="button" data-feedback-action="in-progress">
+                Взять в работу
+              </button>
+              <button class="action-primary" type="button" data-feedback-action="close">
+                Закрыть
+              </button>
+            </div>
+            <div class="form-message" data-feedback-details-status></div>
+          </div>
+        </div>
+      </div>
       <div class="settings-modal orgs-modal is-hidden" data-orgs-modal>
         <div class="settings-modal__backdrop" data-orgs-backdrop></div>
         <div

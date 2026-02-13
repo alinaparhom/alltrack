@@ -18048,6 +18048,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const closeFeedbackModal = () => {
     if (!feedbackModalEl) return;
     feedbackModalEl.classList.add("is-hidden");
+    closeFeedbackDetails();
     document.body.style.overflow = "";
     feedbackFormEl?.reset();
     if (feedbackStatusEl) feedbackStatusEl.textContent = "";
@@ -18848,6 +18849,31 @@ function setupSuperAdmin() {
   const feedbackSummaryEl = contentEl.querySelector("[data-feedback-summary]");
   const feedbackStatusEl = contentEl.querySelector("[data-feedback-status]");
   const feedbackTabButtons = contentEl.querySelectorAll("[data-feedback-tab]");
+  const feedbackDetailsModalEl = contentEl.querySelector(
+    "[data-feedback-details-modal]"
+  );
+  const feedbackDetailsBackdropEl = contentEl.querySelector(
+    "[data-feedback-details-backdrop]"
+  );
+  const feedbackDetailsCloseButton = contentEl.querySelector(
+    "[data-feedback-details-close]"
+  );
+  const feedbackDetailsTitleEl = contentEl.querySelector(
+    "[data-feedback-details-title]"
+  );
+  const feedbackDetailsMetaEl = contentEl.querySelector(
+    "[data-feedback-details-meta]"
+  );
+  const feedbackDetailsTextEl = contentEl.querySelector(
+    "[data-feedback-details-text]"
+  );
+  const feedbackDetailsPhotosEl = contentEl.querySelector(
+    "[data-feedback-details-photos]"
+  );
+  const feedbackDetailsStatusEl = contentEl.querySelector(
+    "[data-feedback-details-status]"
+  );
+  const feedbackActionButtons = contentEl.querySelectorAll("[data-feedback-action]");
   const orgsModalEl = contentEl.querySelector("[data-orgs-modal]");
   const orgsBackdropEl = contentEl.querySelector("[data-orgs-backdrop]");
   const orgsCloseButton = contentEl.querySelector("[data-orgs-close]");
@@ -19123,12 +19149,14 @@ function setupSuperAdmin() {
   };
   const feedbackState = {
     requests: [],
+    activeRequestId: null,
   };
 
   const feedbackStatusMeta = {
     new: { label: "Новые", tone: "new" },
     "in-progress": { label: "В работе", tone: "progress" },
     closed: { label: "Закрытые", tone: "closed" },
+    rejected: { label: "Отклонено", tone: "closed" },
   };
 
   const normalizeFeedbackStatus = (value) => {
@@ -19141,6 +19169,9 @@ function setupSuperAdmin() {
     }
     if (["closed", "закрыто", "закрыт", "done"].includes(normalized)) {
       return "closed";
+    }
+    if (["rejected", "reject", "отклонено", "отклонить", "отклонен"].includes(normalized)) {
+      return "rejected";
     }
     return "new";
   };
@@ -19172,11 +19203,15 @@ function setupSuperAdmin() {
     if (tone === "error") feedbackStatusEl.classList.add("is-error");
   };
 
+  const getFeedbackBucket = (status) =>
+    status === "rejected" ? "closed" : status;
+
   const getFeedbackCounts = () => {
     const counts = { new: 0, "in-progress": 0, closed: 0 };
     feedbackState.requests.forEach((item) => {
       const status = normalizeFeedbackStatus(item?.status);
-      counts[status] += 1;
+      const bucket = getFeedbackBucket(status);
+      counts[bucket] += 1;
     });
     return counts;
   };
@@ -19188,7 +19223,7 @@ function setupSuperAdmin() {
       feedbackPendingCountEl.textContent = String(pending);
     }
     if (feedbackSummaryEl) {
-      feedbackSummaryEl.textContent = `Не обработано: ${pending} · В работе: ${counts["in-progress"]} · Отработано: ${counts.closed} · Всего: ${feedbackState.requests.length}`;
+      feedbackSummaryEl.textContent = `Не обработано: ${pending} · В работе: ${counts["in-progress"]} · Закрыто/отклонено: ${counts.closed} · Всего: ${feedbackState.requests.length}`;
     }
 
     ["new", "in-progress", "closed"].forEach((key) => {
@@ -19216,7 +19251,7 @@ function setupSuperAdmin() {
     });
   };
 
-  const saveFeedbackStatus = async (requestId, nextStatus) => {
+  const saveFeedbackStatus = async (requestId, nextStatus, { notifyUser = true } = {}) => {
     const nextRequests = feedbackState.requests.map((item) => {
       if (Number(item?.id) !== Number(requestId)) return item;
       return { ...item, status: nextStatus, updatedAt: new Date().toISOString() };
@@ -19233,6 +19268,104 @@ function setupSuperAdmin() {
 
     feedbackState.requests = nextRequests;
     renderFeedbackBoard();
+
+    const updatedRequest = nextRequests.find(
+      (item) => Number(item?.id) === Number(requestId)
+    );
+    if (
+      notifyUser &&
+      updatedRequest &&
+      !updatedRequest?.anonymous &&
+      updatedRequest?.createdBy?.telegram_id
+    ) {
+      try {
+        await saveEntriesViaEndpoint([
+          {
+            type: "feedback-status-update",
+            requestId: Number(updatedRequest.id),
+            status: nextStatus,
+            organization: updatedRequest.organization ?? "",
+            text: updatedRequest.text ?? "",
+            createdBy: updatedRequest.createdBy ?? {},
+          },
+        ]);
+      } catch (error) {
+        console.warn("Не удалось отправить уведомление пользователю по обращению.", error);
+      }
+    }
+  };
+
+  const renderFeedbackDetails = (requestId) => {
+    const request = feedbackState.requests.find(
+      (item) => Number(item?.id) === Number(requestId)
+    );
+    if (!request) return;
+
+    if (feedbackDetailsTitleEl) {
+      feedbackDetailsTitleEl.textContent = `Обращение #${request.id}`;
+    }
+    if (feedbackDetailsMetaEl) {
+      feedbackDetailsMetaEl.textContent = `${parseFeedbackDate(request?.createdAt) || "Дата не указана"} · ${getFeedbackAuthor(request)}`;
+    }
+    if (feedbackDetailsTextEl) {
+      feedbackDetailsTextEl.textContent = String(request?.text ?? "").trim() || "Без текста";
+    }
+    if (feedbackDetailsPhotosEl) {
+      feedbackDetailsPhotosEl.innerHTML = "";
+      const photos = Array.isArray(request?.photos) ? request.photos : [];
+      if (!photos.length) {
+        const empty = document.createElement("div");
+        empty.className = "feedback-empty";
+        empty.textContent = "Фото не прикреплены";
+        feedbackDetailsPhotosEl.appendChild(empty);
+      } else {
+        photos.forEach((photoName, index) => {
+          const image = document.createElement("img");
+          image.className = "feedback-details-photo";
+          image.loading = "lazy";
+          image.decoding = "async";
+          image.src = withCacheBuster(`./feedback-photos/${encodeURIComponent(String(photoName))}`);
+          image.alt = `Фото ${index + 1} к обращению #${request.id}`;
+          feedbackDetailsPhotosEl.appendChild(image);
+        });
+      }
+    }
+
+    feedbackActionButtons.forEach((button) => {
+      const action = button?.dataset?.feedbackAction;
+      if (!action) return;
+      let mappedStatus = "new";
+      if (action === "reject") mappedStatus = "rejected";
+      if (action === "in-progress") mappedStatus = "in-progress";
+      if (action === "close") mappedStatus = "closed";
+      const currentStatus = normalizeFeedbackStatus(request?.status);
+      button.disabled = mappedStatus === currentStatus;
+    });
+  };
+
+  const openFeedbackDetails = (requestId) => {
+    if (!feedbackDetailsModalEl) return;
+    feedbackState.activeRequestId = Number(requestId);
+    if (feedbackDetailsStatusEl) feedbackDetailsStatusEl.textContent = "";
+    renderFeedbackDetails(requestId);
+    feedbackDetailsModalEl.classList.remove("is-hidden");
+    document.body.style.overflow = "hidden";
+  };
+
+  const closeFeedbackDetails = () => {
+    if (!feedbackDetailsModalEl) return;
+    feedbackDetailsModalEl.classList.add("is-hidden");
+    feedbackState.activeRequestId = null;
+    if (feedbackDetailsStatusEl) feedbackDetailsStatusEl.textContent = "";
+    if (
+      (feedbackModalEl && !feedbackModalEl.classList.contains("is-hidden")) ||
+      (orgsModalEl && !orgsModalEl.classList.contains("is-hidden")) ||
+      (usersModalEl && !usersModalEl.classList.contains("is-hidden"))
+    ) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
   };
 
   const renderFeedbackBoard = () => {
@@ -19243,7 +19376,8 @@ function setupSuperAdmin() {
     };
     feedbackState.requests.forEach((item) => {
       const status = normalizeFeedbackStatus(item?.status);
-      grouped[status].push({ ...item, status });
+      const bucket = getFeedbackBucket(status);
+      grouped[bucket].push({ ...item, status });
     });
 
     ["new", "in-progress", "closed"].forEach((key) => {
@@ -19264,6 +19398,8 @@ function setupSuperAdmin() {
         .forEach((request) => {
           const card = document.createElement("article");
           card.className = "feedback-item";
+          card.role = "button";
+          card.tabIndex = 0;
 
           const top = document.createElement("div");
           top.className = "feedback-item__top";
@@ -19292,12 +19428,16 @@ function setupSuperAdmin() {
 
           const actions = document.createElement("div");
           actions.className = "feedback-item__actions";
+          actions.textContent = "Открыть →";
 
-          const statusLabel = document.createElement("span");
-          statusLabel.className = "feedback-item__status";
-          statusLabel.textContent = `Статус: ${feedbackStatusMeta[request.status]?.label ?? "Новые"}`;
+          card.addEventListener("click", () => openFeedbackDetails(request.id));
+          card.addEventListener("keydown", (event) => {
+            if (event.key === "Enter" || event.key === " ") {
+              event.preventDefault();
+              openFeedbackDetails(request.id);
+            }
+          });
 
-          actions.appendChild(statusLabel);
           card.append(top, orgEl, authorEl, textEl, actions);
           listEl.appendChild(card);
         });
@@ -21045,6 +21185,7 @@ function setupSuperAdmin() {
   const closeFeedbackModal = () => {
     if (!feedbackModalEl) return;
     feedbackModalEl.classList.add("is-hidden");
+    closeFeedbackDetails();
     if (
       (orgsModalEl && !orgsModalEl.classList.contains("is-hidden")) ||
       (usersModalEl && !usersModalEl.classList.contains("is-hidden"))
@@ -21069,6 +21210,33 @@ function setupSuperAdmin() {
   feedbackTabButtons.forEach((button) => {
     button.addEventListener("click", () => {
       setActiveFeedbackTab(button?.dataset?.feedbackTab || "new");
+    });
+  });
+  feedbackActionButtons.forEach((button) => {
+    button.addEventListener("click", async () => {
+      const requestId = feedbackState.activeRequestId;
+      if (!requestId) return;
+      const action = button?.dataset?.feedbackAction;
+      let nextStatus = "new";
+      if (action === "reject") nextStatus = "rejected";
+      if (action === "in-progress") nextStatus = "in-progress";
+      if (action === "close") nextStatus = "closed";
+      if (feedbackDetailsStatusEl) {
+        feedbackDetailsStatusEl.textContent = "Сохраняем статус...";
+      }
+      try {
+        await saveFeedbackStatus(requestId, nextStatus);
+        renderFeedbackDetails(requestId);
+        setActiveFeedbackTab(getFeedbackBucket(nextStatus));
+        if (feedbackDetailsStatusEl) {
+          feedbackDetailsStatusEl.textContent = `Статус изменён: ${feedbackStatusMeta[nextStatus]?.label ?? "обновлено"}.`;
+        }
+      } catch (error) {
+        console.error(error);
+        if (feedbackDetailsStatusEl) {
+          feedbackDetailsStatusEl.textContent = "Не удалось изменить статус.";
+        }
+      }
     });
   });
   orgsBackdropEl?.addEventListener("click", closeOrgsModal);
@@ -21157,6 +21325,13 @@ function setupSuperAdmin() {
   usersAddCancelButton?.addEventListener("click", closeUsersAddModal);
   feedbackBackdropEl?.addEventListener("click", closeFeedbackModal);
   feedbackCloseButton?.addEventListener("click", closeFeedbackModal);
+  feedbackDetailsBackdropEl?.addEventListener("click", closeFeedbackDetails);
+  feedbackDetailsCloseButton?.addEventListener("click", closeFeedbackDetails);
+  feedbackDetailsModalEl?.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      closeFeedbackDetails();
+    }
+  });
   feedbackModalEl?.addEventListener("keydown", (event) => {
     if (event.key === "Escape") {
       closeFeedbackModal();

@@ -788,6 +788,10 @@ function saveEntry(array $entry, array $allowedFiles): void {
     saveFeedbackRequest($entry);
     return;
   }
+  if (($entry["type"] ?? "") === "feedback-status-update") {
+    sendFeedbackStatusNotification($entry);
+    return;
+  }
   $path = $entry["path"] ?? "";
   $data = $entry["data"] ?? null;
   $fileName = basename((string) $path);
@@ -1403,6 +1407,64 @@ function saveFeedbackRequest(array $entry): void {
       }
     }
   }
+}
+
+
+function mapFeedbackStatusLabel(string $status): string {
+  $normalized = mb_strtolower(trim($status), "UTF-8");
+  if ($normalized === "in-progress" || $normalized === "in_progress" || $normalized === "в работе") {
+    return "В работе";
+  }
+  if ($normalized === "closed" || $normalized === "закрыто" || $normalized === "закрыт") {
+    return "Закрыто";
+  }
+  if ($normalized === "rejected" || $normalized === "reject" || $normalized === "отклонено") {
+    return "Отклонено";
+  }
+  return "Новое";
+}
+
+function sendFeedbackStatusNotification(array $entry): void {
+  $createdBy = is_array($entry["createdBy"] ?? null) ? $entry["createdBy"] : [];
+  $telegramId = normalizeTelegramId($createdBy["telegram_id"] ?? null);
+  if (!$telegramId) {
+    return;
+  }
+
+  $botToken = getenv("ALLTRACK_BOT_TOKEN") ?: "";
+  if ($botToken === "") {
+    $botToken = "8549452123:AAGxveuJSVf-xpNHQYTDKDmuMmHjGRVeDj0";
+  }
+  if ($botToken === "") {
+    return;
+  }
+
+  $requestId = (int) ($entry["requestId"] ?? 0);
+  $statusLabel = mapFeedbackStatusLabel((string) ($entry["status"] ?? ""));
+  $organization = trim((string) ($entry["organization"] ?? ""));
+  $text = trim((string) ($entry["text"] ?? ""));
+  if ($text !== "" && mb_strlen($text, "UTF-8") > 250) {
+    $text = mb_substr($text, 0, 250, "UTF-8") . "…";
+  }
+
+  $message = "📬 Обновление по вашему обращению
+"
+    . "№ обращения: " . ($requestId > 0 ? (string) $requestId : "—") . "
+"
+    . "Статус: " . $statusLabel;
+
+  if ($organization !== "") {
+    $message .= "
+🏢 Организация: " . $organization;
+  }
+  if ($text !== "") {
+    $message .= "
+
+📝 Ваш текст:
+" . $text;
+  }
+
+  sendTelegramTextMessage($botToken, $telegramId, $message);
 }
 
 function runDailyPendingMovesMailingIfNeeded(): void {

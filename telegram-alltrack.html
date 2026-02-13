@@ -1766,18 +1766,19 @@
       .energy-actions-scroll {
         display: flex;
         flex-direction: column;
-        justify-content: flex-end;
+        justify-content: flex-start;
         gap: 12px;
         min-height: 0;
         flex: 1 1 auto;
         overflow-y: auto;
+        padding-right: 2px;
         overscroll-behavior-y: contain;
         -webkit-overflow-scrolling: touch;
       }
 
       .energy-grid {
         display: flex;
-        flex-wrap: wrap-reverse;
+        flex-wrap: wrap;
         gap: var(--grid-gap);
         touch-action: pan-y;
         user-select: none;
@@ -1853,12 +1854,16 @@
       .quick-access {
         display: grid;
         gap: 12px;
-        padding: 12px;
+        padding: 12px 12px calc(12px + env(safe-area-inset-bottom));
         border-radius: var(--radius-card);
         background: rgba(255, 255, 255, 0.9);
         border: 1px solid rgba(226, 232, 240, 0.9);
         box-shadow: 0 12px 26px rgba(26, 31, 46, 0.08);
-        margin-bottom: env(safe-area-inset-bottom);
+        margin-bottom: 0;
+        position: sticky;
+        bottom: 0;
+        z-index: 7;
+        backdrop-filter: blur(18px);
       }
 
       .quick-access-header {

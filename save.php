@@ -116,16 +116,45 @@ function normalizeTelegramId($value): ?string {
   return $cleaned;
 }
 
-function parseRuDateToDateTime(?string $value, DateTimeZone $timezone): ?DateTimeImmutable {
+function parseDateToDateTime(?string $value, DateTimeZone $timezone): ?DateTimeImmutable {
   $raw = trim((string) $value);
   if ($raw === "") {
     return null;
   }
-  $parsed = DateTimeImmutable::createFromFormat("d.m.Y", $raw, $timezone);
-  if (!$parsed) {
+
+  $formats = ["d.m.Y", "Y-m-d", DateTimeInterface::ATOM];
+  foreach ($formats as $format) {
+    $parsed = DateTimeImmutable::createFromFormat($format, $raw, $timezone);
+    if ($parsed !== false) {
+      return $parsed->setTime(0, 0, 0);
+    }
+  }
+
+  $timestamp = strtotime($raw);
+  if ($timestamp === false) {
     return null;
   }
-  return $parsed->setTime(0, 0, 0);
+
+  return (new DateTimeImmutable("@" . $timestamp))
+    ->setTimezone($timezone)
+    ->setTime(0, 0, 0);
+}
+
+function folderMatchesOrganization(string $targetFolder, string $candidate): bool {
+  $candidateFolder = normalizeOrganizationFolder($candidate);
+  if ($candidateFolder === "") {
+    return false;
+  }
+
+  if ($candidateFolder === $targetFolder) {
+    return true;
+  }
+
+  if (preg_match('/(^|\s)' . preg_quote($targetFolder, '/') . '(\s|$)/u', $candidateFolder)) {
+    return true;
+  }
+
+  return str_ends_with($candidateFolder, " " . $targetFolder);
 }
 
 function resolveOrganizationLaunchDateByFolder(string $orgFolder, array $orgData, DateTimeZone $timezone): ?DateTimeImmutable {
@@ -138,13 +167,12 @@ function resolveOrganizationLaunchDateByFolder(string $orgFolder, array $orgData
     }
     $fullName = (string) ($org["full_name"] ?? "");
     $shortName = (string) ($org["short_name"] ?? "");
-    $candidates = array_values(array_filter([
-      normalizeOrganizationFolder($fullName),
-      normalizeOrganizationFolder($shortName),
-    ]));
-    if (in_array($targetFolder, $candidates, true)) {
+    if (
+      folderMatchesOrganization($targetFolder, $fullName) ||
+      folderMatchesOrganization($targetFolder, $shortName)
+    ) {
       $launchRaw = (string) ($org["launch_date"] ?? $org["launchDate"] ?? "");
-      return parseRuDateToDateTime($launchRaw, $timezone);
+      return parseDateToDateTime($launchRaw, $timezone);
     }
   }
 
@@ -290,7 +318,7 @@ function runNoPhotoFineRecalculation(array $options = []): array {
         continue;
       }
 
-      $purchaseDate = parseRuDateToDateTime((string) ($tool["Дата покупки"] ?? ""), $timezone);
+      $purchaseDate = parseDateToDateTime((string) ($tool["Дата покупки"] ?? ""), $timezone);
       $fineAmount = calculateNoPhotoFineAmount($purchaseDate, $launchDate, $now, $periodDays, $amountPerPeriod);
       $currentStoredFine = (float) ($tool["Текущий штраф за отсутствие фото"] ?? 0);
 

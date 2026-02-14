@@ -4830,8 +4830,8 @@
       }
 
       .tools-move-modal__panel {
-        width: min(680px, calc(100vw - 16px));
-        max-width: min(680px, calc(100vw - 16px));
+        width: 100vw;
+        max-width: 100vw;
         max-height: calc(100vh - 20px);
         border-radius: 22px;
         grid-template-rows: auto minmax(0, 1fr);
@@ -4875,7 +4875,7 @@
       }
 
       .tools-move-modal .form-field {
-        gap: 6px;
+        gap: 2px;
       }
 
       .tools-move-modal .form-field--required .form-label {
@@ -4955,6 +4955,12 @@
       @media (max-width: 520px) {
         .tools-move-modal .settings-modal__header {
           padding: calc(52px + env(safe-area-inset-top)) 64px 18px 24px;
+        }
+
+        .tools-move-modal .settings-modal__footer {
+          flex-direction: row;
+          align-items: center;
+          justify-content: flex-end;
         }
       }
 

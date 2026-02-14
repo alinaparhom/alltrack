@@ -4856,6 +4856,10 @@
         overflow: visible;
       }
 
+      .tools-move-modal .settings-modal__form {
+        padding: 6px 0 10px;
+      }
+
       .tools-move-modal__close {
         position: absolute;
         top: 16px;
@@ -4866,8 +4870,9 @@
       }
 
       .tools-move-modal .form-card {
-        padding: 12px;
-        border-radius: 16px;
+        width: 100%;
+        padding: 12px 16px;
+        border-radius: 0;
       }
 
       .tools-move-modal .form-grid {
@@ -4875,7 +4880,11 @@
       }
 
       .tools-move-modal .form-field {
-        gap: 2px;
+        gap: 0;
+      }
+
+      .tools-move-modal .form-field--required .form-label {
+        margin-bottom: 8px;
       }
 
       .tools-move-modal .form-field--required .form-label {
@@ -4926,7 +4935,7 @@
       }
 
       .tools-move-modal .settings-modal__body {
-        padding: 0 24px 12px;
+        padding: 0 0 12px;
       }
 
       .tools-move-modal .settings-modal__footer {

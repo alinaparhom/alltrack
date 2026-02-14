@@ -19670,6 +19670,19 @@ function setupSuperAdmin() {
     };
   };
 
+  const loadToolsData = async (orgFolder) => {
+    if (!orgFolder) return [];
+    const toolsPath = `./${orgFolder}/База с инструментами.json`;
+    try {
+      const raw = await loadJson(toolsPath);
+      if (Array.isArray(raw)) return raw;
+      if (Array.isArray(raw?.tools)) return raw.tools;
+    } catch (error) {
+      console.warn("Не удалось загрузить базу инструментов организации.", error);
+    }
+    return [];
+  };
+
   const normalizePurchaseDate = (value) => {
     if (!value) return "";
     if (value instanceof Date && !Number.isNaN(value.getTime())) {

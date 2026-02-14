@@ -4847,8 +4847,7 @@
       }
 
       .tools-move-modal .settings-modal__header {
-        padding-top: calc(36px + env(safe-area-inset-top));
-        padding-right: 56px;
+        padding: calc(52px + env(safe-area-inset-top)) 64px 18px 24px;
       }
 
       .tools-move-modal .settings-modal__form,
@@ -4859,24 +4858,24 @@
 
       .tools-move-modal__close {
         position: absolute;
-        top: 12px;
-        right: 12px;
+        top: 16px;
+        right: 16px;
         width: 36px;
         height: 36px;
         border-radius: 12px;
       }
 
       .tools-move-modal .form-card {
-        padding: 8px;
+        padding: 12px;
         border-radius: 16px;
       }
 
       .tools-move-modal .form-grid {
-        gap: 6px;
+        gap: 10px;
       }
 
       .tools-move-modal .form-field {
-        gap: 2px;
+        gap: 6px;
       }
 
       .tools-move-modal .form-field--required .form-label {
@@ -4889,8 +4888,8 @@
         width: 150px;
         min-width: 150px;
         max-width: 150px;
-        min-height: 24px;
-        height: 24px;
+        min-height: 44px;
+        height: 44px;
         box-sizing: border-box;
         border-radius: 999px;
         white-space: nowrap;
@@ -4926,6 +4925,19 @@
         font-size: 14px;
       }
 
+      .tools-move-modal .settings-modal__body {
+        padding: 0 24px 12px;
+      }
+
+      .tools-move-modal .settings-modal__footer {
+        display: flex;
+        flex-wrap: nowrap;
+        gap: 10px;
+        align-items: center;
+        justify-content: flex-end;
+        padding: 12px 24px calc(16px + env(safe-area-inset-bottom));
+      }
+
       .tools-move-modal .suggestions {
         top: calc(100% + 4px);
         padding: 6px;
@@ -4942,7 +4954,7 @@
 
       @media (max-width: 520px) {
         .tools-move-modal .settings-modal__header {
-          padding-top: calc(36px + env(safe-area-inset-top));
+          padding: calc(52px + env(safe-area-inset-top)) 64px 18px 24px;
         }
       }
 

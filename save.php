@@ -491,6 +491,19 @@ function resolveOrganizationFolderForEntry(array $entry): ?string {
   return $folder !== "" ? $folder : null;
 }
 
+function resolveOrganizationFolderName(string $name): ?string {
+  $orgName = trim($name);
+  if ($orgName === "") {
+    return null;
+  }
+
+  $orgsPath = __DIR__ . DIRECTORY_SEPARATOR . "organizations.json";
+  $orgsData = readJsonFile($orgsPath, ["organizations" => []]);
+  $shortName = pickOrganizationShortName($orgsData, $orgName);
+  $folder = sanitizeFolderName($shortName ?: $orgName);
+  return $folder !== "" ? $folder : null;
+}
+
 function ensureDirectory(string $path): bool {
   if (is_dir($path)) {
     return true;
@@ -632,8 +645,8 @@ function resolveTargetPath(array $entry, array $allowedFiles): string {
     exit;
   }
 
-  $orgFolder = sanitizeFolderName($segments[0]);
-  if ($orgFolder === "" || $orgFolder !== $segments[0]) {
+  $orgFolder = resolveOrganizationFolderName($segments[0]);
+  if ($orgFolder === null) {
     http_response_code(403);
     echo json_encode(["error" => "Доступ запрещен."]);
     exit;
@@ -677,8 +690,8 @@ function resolveFilePathValue(string $path, array $entry): string {
   }
 
   [$orgFolder, $photoFolder, $fileName] = $segments;
-  $orgFolderSafe = sanitizeFolderName($orgFolder);
-  if ($orgFolderSafe === "" || $orgFolderSafe !== $orgFolder) {
+  $orgFolderSafe = resolveOrganizationFolderName($orgFolder);
+  if ($orgFolderSafe === null) {
     http_response_code(403);
     echo json_encode(["error" => "Доступ запрещен."]);
     exit;
@@ -756,8 +769,8 @@ function resolvePhotoFolderPath(array $entry): string {
   }
 
   [$orgFolder, $photoFolder] = $segments;
-  $orgFolderSafe = sanitizeFolderName($orgFolder);
-  if ($orgFolderSafe === "" || $orgFolderSafe !== $orgFolder) {
+  $orgFolderSafe = resolveOrganizationFolderName($orgFolder);
+  if ($orgFolderSafe === null) {
     http_response_code(403);
     echo json_encode(["error" => "Доступ запрещен."]);
     exit;

@@ -1486,7 +1486,7 @@ export function renderRole(user) {
             <form class="settings-modal__form" data-tools-move-form>
               <div class="settings-modal__body">
                 <div class="form-card form-grid">
-                  <label class="form-field form-field--required">
+                  <label class="form-field form-field--required tools-move-modal__fixed-field">
                     <span class="form-label">Ответственный</span>
                     <input
                       class="form-input"
@@ -1502,7 +1502,7 @@ export function renderRole(user) {
                       data-tools-move-responsible-suggestions
                     ></div>
                   </label>
-                  <label class="form-field form-field--required">
+                  <label class="form-field form-field--required tools-move-modal__fixed-field">
                     <span class="form-label">Объект</span>
                     <input
                       class="form-input"

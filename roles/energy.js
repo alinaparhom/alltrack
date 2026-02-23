@@ -825,6 +825,13 @@ export function renderRole(user) {
                       Выбрано: 0
                     </div>
                     <button
+                      class="action-secondary tools-select-all-button"
+                      type="button"
+                      data-tools-selection-select-all
+                    >
+                      Выделить всё
+                    </button>
+                    <button
                       class="action-secondary tools-cancel-button"
                       type="button"
                       data-tools-selection-cancel

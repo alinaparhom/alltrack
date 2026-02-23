@@ -801,21 +801,14 @@ export function renderRole(user) {
                       </button>
                     </div>
                     <button
-                      class="tools-view-button tools-view-button--icon is-hidden"
+                      class="tools-view-button is-hidden"
                       type="button"
                       data-tools-view="map"
                       data-tools-search-map-view
                       aria-label="Карта"
                       title="Карта"
                     >
-                      <svg
-                        class="tools-view-button__icon"
-                        aria-hidden="true"
-                        viewBox="0 0 24 24"
-                        focusable="false"
-                      >
-                        <path d="M12 2.5a7.5 7.5 0 0 0-7.5 7.5c0 5.48 6.52 11.13 6.8 11.37a1 1 0 0 0 1.4 0c.28-.24 6.8-5.89 6.8-11.37A7.5 7.5 0 0 0 12 2.5Zm0 9.5A2.5 2.5 0 1 1 12 7a2.5 2.5 0 0 1 0 5Z" />
-                      </svg>
+                      Карта
                     </button>
                     <button
                       class="action-primary tools-move-button"

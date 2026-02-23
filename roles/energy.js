@@ -825,18 +825,20 @@ export function renderRole(user) {
                       Выбрано: 0
                     </div>
                     <button
-                      class="action-secondary tools-select-all-button"
-                      type="button"
-                      data-tools-selection-select-all
-                    >
-                      Выделить всё
-                    </button>
-                    <button
                       class="action-secondary tools-cancel-button"
                       type="button"
                       data-tools-selection-cancel
                     >
                       Отменить
+                    </button>
+                    <button
+                      class="action-secondary tools-select-all-button"
+                      type="button"
+                      data-tools-selection-select-all
+                      aria-label="Выделить все доступные для перемещения инструменты"
+                      title="Выделить все доступные для перемещения инструменты"
+                    >
+                      <span class="tools-select-all-check" aria-hidden="true"></span>
                     </button>
                     <button
                       class="tools-filters-toggle"

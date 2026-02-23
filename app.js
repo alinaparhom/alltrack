@@ -3908,7 +3908,7 @@ function buildEnergySettingsMarkup(settings) {
       const fine = settings.fines?.[option.id] ?? {};
       const hasDaysField = option.id !== "movedByEnergy";
       return `
-        <div class="settings-fine-card">
+        <div class="settings-fine-card ${fine.enabled ? "" : "is-disabled"}" data-settings-card>
           <div class="settings-fine-card__header">
             <label class="settings-inline">
               <input
@@ -4037,7 +4037,7 @@ function buildEnergySettingsMarkup(settings) {
               .join("")
           : `<div class="settings-empty-note">Сначала добавьте Telegram‑группы в настройках организации.</div>`;
       return `
-        <div class="settings-mailing-card">
+        <div class="settings-mailing-card ${mailing.enabled ? "" : "is-disabled"}" data-settings-card>
           <div class="settings-mailing-card__header">
             <label class="settings-inline">
               <input
@@ -4095,7 +4095,7 @@ function buildEnergySettingsMarkup(settings) {
               .join("")
           : `<div class="settings-empty-note">Добавьте Telegram‑группы в настройках организации.</div>`;
       return `
-        <div class="settings-notification-card">
+        <div class="settings-notification-card ${notification.enabled ? "" : "is-disabled"}" data-settings-card>
           <div class="settings-notification-card__header">
             <label class="settings-inline settings-notification-card__title">
               <input
@@ -18271,6 +18271,24 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         renderGroupList();
       });
     }
+
+    const syncCardState = (input) => {
+      if (!input?.matches('input[type="checkbox"]')) return;
+      if (!/(^fine-.*-enabled$|^mailing-.*-enabled$|^notification-.*-enabled$)/.test(input.name)) {
+        return;
+      }
+      const card = input.closest("[data-settings-card]");
+      if (!card) return;
+      card.classList.toggle("is-disabled", !input.checked);
+    };
+
+    settingsBodyEl
+      .querySelectorAll('input[type="checkbox"]')
+      .forEach((input) => syncCardState(input));
+
+    settingsBodyEl.addEventListener("change", (event) => {
+      syncCardState(event.target);
+    });
   };
 
   const openSettingsModal = () => {

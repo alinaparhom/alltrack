@@ -8424,6 +8424,35 @@
         color: var(--muted);
       }
 
+      .settings-fine-card.is-disabled,
+      .settings-mailing-card.is-disabled,
+      .settings-notification-card.is-disabled,
+      .settings-mailing-card.is-disabled .settings-telegram-group {
+        color: var(--title-muted);
+      }
+
+      .settings-fine-card.is-disabled .settings-fine-card__header,
+      .settings-mailing-card.is-disabled .settings-mailing-card__header,
+      .settings-notification-card.is-disabled .settings-notification-card__header,
+      .settings-mailing-card.is-disabled .settings-telegram-group__title,
+      .settings-mailing-card.is-disabled .settings-fine-field,
+      .settings-mailing-card.is-disabled .settings-mailing-field,
+      .settings-notification-card.is-disabled .settings-notification-field,
+      .settings-fine-card.is-disabled .settings-fine-field {
+        color: var(--title-muted);
+      }
+
+      .settings-fine-card.is-disabled,
+      .settings-mailing-card.is-disabled,
+      .settings-notification-card.is-disabled,
+      .settings-mailing-card.is-disabled .settings-telegram-group,
+      .settings-fine-card.is-disabled .settings-group-chip,
+      .settings-mailing-card.is-disabled .settings-group-chip,
+      .settings-mailing-card.is-disabled .settings-day-chip,
+      .settings-notification-card.is-disabled .settings-group-chip {
+        opacity: 0.62;
+      }
+
       @media (max-width: 520px) {
         .settings-modal__panel {
           border-radius: 0;

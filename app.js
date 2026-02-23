@@ -4506,6 +4506,18 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const toolsFiltersToggleEl = contentEl.querySelector(
     "[data-tools-filters-toggle]"
   );
+  if (toolsFiltersPanelEl) {
+    const hasStatus = toolsFiltersPanelEl.querySelector("[data-tools-filters-status]");
+    if (!hasStatus) {
+      const controls = document.createElement("div");
+      controls.className = "tools-filters-controls";
+      controls.innerHTML = `
+        <div class="tools-filters-status" data-tools-filters-status>Фильтры не выбраны</div>
+        <button type="button" class="btn btn-ghost btn-small is-hidden" data-tools-filters-reset>Сбросить всё</button>
+      `;
+      toolsFiltersPanelEl.appendChild(controls);
+    }
+  }
   const toolsViewToggleEl = contentEl.querySelector("[data-tools-view-toggle]");
   const toolsMoveButtonEl = contentEl.querySelector("[data-tools-move-trigger]");
   const toolsSelectionCancelButtonEl = contentEl.querySelector(
@@ -5603,13 +5615,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     previousView: savedToolsView,
     mode: "user",
     filters: {
-      group: "",
-      object: "",
-      status: "",
-      responsible: "",
-      manufacturer: "",
-      model: "",
-      photo: "",
+      group: [],
+      object: [],
+      status: [],
+      responsible: [],
+      manufacturer: [],
+      model: [],
+      photo: [],
     },
     search: "",
     orgFolder: "",
@@ -8616,6 +8628,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     setToolsSubtitle(
       `Показано ${items.length} из ${toolsState.tools.length}`
     );
+    updateToolsFiltersUi();
     if (!isMapView || !toolsSearchMapState.activated) {
       setToolsZoneSubtitle("");
     } else {
@@ -8629,53 +8642,59 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const search = toolsState.search.trim();
     const tokens = search ? search.split(/\s+/).filter(Boolean) : [];
     toolsState.filtered = toolsState.tools.filter((tool) => {
+      const hasSelected = (key) =>
+        Array.isArray(toolsState.filters[key]) && toolsState.filters[key].length > 0;
+      const includesSelected = (key, value) =>
+        toolsState.filters[key].includes(String(value ?? "").trim());
       if (
-        toolsState.filters.group &&
-        String(tool?.["Граппа инструментов"] ?? "").trim() !==
-          toolsState.filters.group
+        hasSelected("group") &&
+        !includesSelected("group", tool?.["Граппа инструментов"])
       ) {
         return false;
       }
       if (
-        toolsState.filters.object &&
-        String(tool?.["Объект"] ?? "").trim() !== toolsState.filters.object
+        hasSelected("object") &&
+        !includesSelected("object", tool?.["Объект"])
       ) {
         return false;
       }
       if (
-        toolsState.filters.status &&
-        String(tool?.["Статус"] ?? "").trim() !== toolsState.filters.status
+        hasSelected("status") &&
+        !includesSelected("status", tool?.["Статус"])
       ) {
         return false;
       }
       if (
-        toolsState.filters.responsible &&
-        String(tool?.["Ответственный"] ?? "").trim() !==
-          toolsState.filters.responsible
+        hasSelected("responsible") &&
+        !includesSelected("responsible", tool?.["Ответственный"])
       ) {
         return false;
       }
       if (
-        toolsState.filters.manufacturer &&
-        String(tool?.["Производитель"] ?? "").trim() !==
-          toolsState.filters.manufacturer
+        hasSelected("manufacturer") &&
+        !includesSelected("manufacturer", tool?.["Производитель"])
       ) {
         return false;
       }
       if (
-        toolsState.filters.model &&
-        String(tool?.["Модель"] ?? "").trim() !== toolsState.filters.model
+        hasSelected("model") &&
+        !includesSelected("model", tool?.["Модель"])
       ) {
         return false;
       }
-      if (toolsState.filters.photo) {
-        const count = Number.parseInt(tool?.["Количество фото"] ?? 0, 10);
-        const hasPhoto = Number.isFinite(count) && count > 0;
-        if (toolsState.filters.photo === "with" && !hasPhoto) {
-          return false;
-        }
-        if (toolsState.filters.photo === "without" && hasPhoto) {
-          return false;
+      if (hasSelected("photo")) {
+        const photoFilters = toolsState.filters.photo;
+        const hasWith = photoFilters.includes("with");
+        const hasWithout = photoFilters.includes("without");
+        if (hasWith !== hasWithout) {
+          const count = Number.parseInt(tool?.["Количество фото"] ?? 0, 10);
+          const hasPhoto = Number.isFinite(count) && count > 0;
+          if (hasWith && !hasPhoto) {
+            return false;
+          }
+          if (hasWithout && hasPhoto) {
+            return false;
+          }
         }
       }
       if (tokens.length) {
@@ -8692,32 +8711,68 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       `[data-tools-filter="${key}"]`
     );
     if (!selectEls.length) return;
-    const currentValue = toolsState.filters[key] ?? "";
+    const currentValues = Array.isArray(toolsState.filters[key])
+      ? toolsState.filters[key]
+      : [];
     selectEls.forEach((selectEl) => {
+      selectEl.multiple = true;
+      selectEl.size = 5;
       selectEl.innerHTML = "";
-      const allOption = document.createElement("option");
-      allOption.value = "";
-      allOption.textContent = "Все";
-      selectEl.appendChild(allOption);
       values.forEach((value) => {
         const option = document.createElement("option");
         option.value = value;
         option.textContent = value;
+        option.selected = currentValues.includes(value);
         selectEl.appendChild(option);
       });
-      selectEl.value = currentValue;
     });
   };
 
-  const syncToolsFilterValue = (key, value) => {
+  const syncToolsFilterValue = (key, values) => {
+    const selectedValues = Array.isArray(values) ? values : [];
     const selectEls = contentEl.querySelectorAll(
       `[data-tools-filter="${key}"]`
     );
     selectEls.forEach((selectEl) => {
-      if (selectEl.value !== value) {
-        selectEl.value = value;
-      }
+      const options = Array.from(selectEl.options ?? []);
+      options.forEach((option) => {
+        option.selected = selectedValues.includes(option.value);
+      });
     });
+  };
+
+  const countAppliedToolsFilters = () =>
+    Object.values(toolsState.filters).reduce((total, value) => {
+      if (!Array.isArray(value)) return total;
+      return total + value.length;
+    }, 0);
+
+  const updateToolsFiltersUi = () => {
+    const appliedCount = countAppliedToolsFilters();
+    if (toolsFiltersToggleEl) {
+      toolsFiltersToggleEl.classList.toggle("is-active", appliedCount > 0);
+      toolsFiltersToggleEl.dataset.appliedCount = String(appliedCount);
+    }
+    const statusEl = contentEl.querySelector("[data-tools-filters-status]");
+    if (statusEl) {
+      statusEl.textContent =
+        appliedCount > 0
+          ? `Фильтры: ${appliedCount} выбр.`
+          : "Фильтры не выбраны";
+      statusEl.classList.toggle("is-active", appliedCount > 0);
+    }
+    const resetButtonEl = contentEl.querySelector("[data-tools-filters-reset]");
+    if (resetButtonEl) {
+      resetButtonEl.classList.toggle("is-hidden", appliedCount === 0);
+    }
+  };
+
+  const resetToolsFilters = () => {
+    Object.keys(toolsState.filters).forEach((key) => {
+      toolsState.filters[key] = [];
+      syncToolsFilterValue(key, []);
+    });
+    applyToolsFilters();
   };
 
   const prepareToolsFilters = () => {
@@ -8739,19 +8794,21 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     fillToolsFilterOptions("model", collectValues("Модель"));
     const photoSelect = contentEl.querySelector('[data-tools-filter="photo"]');
     if (photoSelect) {
+      photoSelect.multiple = true;
+      photoSelect.size = 3;
       photoSelect.innerHTML = "";
       [
-        { value: "", label: "Все" },
         { value: "with", label: "С фото" },
         { value: "without", label: "Без фото" },
       ].forEach((option) => {
         const opt = document.createElement("option");
         opt.value = option.value;
         opt.textContent = option.label;
+        opt.selected = toolsState.filters.photo.includes(option.value);
         photoSelect.appendChild(opt);
       });
-      photoSelect.value = toolsState.filters.photo ?? "";
     }
+    updateToolsFiltersUi();
   };
 
   const loadUserTools = async () => {
@@ -8916,11 +8973,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     toolsState.mode = "user";
     toolsState.activeReplacementResponsible = "";
     setToolsTitle("Мои инструменты");
-    toolsState.filters.responsible = "";
-    toolsState.filters.object = "";
+    toolsState.filters.responsible = [];
+    toolsState.filters.object = [];
     toolsState.view = normalizeToolsView(toolsState.previousView);
-    syncToolsFilterValue("responsible", "");
-    syncToolsFilterValue("object", "");
+    syncToolsFilterValue("responsible", []);
+    syncToolsFilterValue("object", []);
     setToolsResponsibleFilterVisibility(false);
     updateToolsReplacementPendingLinkVisibility();
     toolsSearchMapViewButtonEl?.classList.add("is-hidden");
@@ -8931,8 +8988,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     updateToolsNumberConfig(numberConfig);
     await loadUserTools();
     if (objectFilter) {
-      toolsState.filters.object = objectFilter;
-      syncToolsFilterValue("object", objectFilter);
+      toolsState.filters.object = [objectFilter];
+      syncToolsFilterValue("object", [objectFilter]);
       applyToolsFilters();
     }
     syncToolsViewButtons();
@@ -8952,11 +9009,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (!normalizedFullName) return;
     toolsState.activeReplacementResponsible = normalizedFullName;
     toolsState.mode = "replacement";
-    toolsState.filters.responsible = "";
-    toolsState.filters.object = "";
+    toolsState.filters.responsible = [];
+    toolsState.filters.object = [];
     toolsState.view = normalizeToolsView(toolsState.previousView);
-    syncToolsFilterValue("responsible", "");
-    syncToolsFilterValue("object", "");
+    syncToolsFilterValue("responsible", []);
+    syncToolsFilterValue("object", []);
     setToolsResponsibleFilterVisibility(false);
     setToolsTitle(`Инструменты ${formatFullName(normalizedFullName)}`);
     updateToolsReplacementPendingLinkVisibility();
@@ -11404,6 +11461,15 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     });
   }
 
+  const toolsFiltersResetButtonEl = contentEl.querySelector(
+    "[data-tools-filters-reset]"
+  );
+  if (toolsFiltersResetButtonEl) {
+    toolsFiltersResetButtonEl.addEventListener("click", () => {
+      resetToolsFilters();
+    });
+  }
+
   if (typeof window !== "undefined" && toolsFiltersPanelEl) {
     const mediaQuery = window.matchMedia("(max-width: 520px)");
     const syncFiltersVisibility = () => {
@@ -11422,9 +11488,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const target = event.target;
       const key = target?.dataset?.toolsFilter;
       if (!key) return;
-      const value = String(target.value ?? "");
-      toolsState.filters[key] = value;
-      syncToolsFilterValue(key, value);
+      const selectedValues = Array.from(target?.selectedOptions ?? [])
+        .map((option) => String(option.value ?? "").trim())
+        .filter(Boolean);
+      toolsState.filters[key] = selectedValues;
+      syncToolsFilterValue(key, selectedValues);
       applyToolsFilters();
     });
   });
@@ -11476,8 +11544,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       if (!trigger) return;
       const objectName = String(trigger.dataset.toolsMapObject ?? "").trim();
       if (!objectName) return;
-      toolsState.filters.object = objectName;
-      syncToolsFilterValue("object", objectName);
+      toolsState.filters.object = [objectName];
+      syncToolsFilterValue("object", [objectName]);
       applyToolsFilters();
       toolsSearchMapState.map?.balloon?.close?.();
     });

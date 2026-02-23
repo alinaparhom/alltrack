@@ -4528,6 +4528,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const toolsSelectionCancelButtonEl = contentEl.querySelector(
     "[data-tools-selection-cancel]"
   );
+  const toolsSelectionSelectAllButtonEl = contentEl.querySelector(
+    "[data-tools-selection-select-all]"
+  );
   const toolsSelectionCountEl = contentEl.querySelector(
     "[data-tools-selection-count]"
   );
@@ -7795,6 +7798,19 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     return hasPhoto;
   };
 
+  const selectAllToolsForMove = () => {
+    if (toolsState.mode === "base" || toolsState.mode === "search") return;
+    const selectableIds = toolsState.filtered
+      .filter((tool) => isToolSelectableForMove(tool))
+      .map((tool) => String(tool?.__id ?? "").trim())
+      .filter(Boolean);
+    if (!selectableIds.length) return;
+    toolsState.isSelecting = true;
+    selectableIds.forEach((id) => toolsState.selectedIds.add(id));
+    updateToolsSelectionUi();
+    renderToolsList();
+  };
+
   const updateToolsSelectionUi = () => {
     if (toolsState.mode === "base" || toolsState.mode === "search") {
       toolsState.isSelecting = false;
@@ -7804,6 +7820,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       }
       if (toolsSelectionCancelButtonEl) {
         toolsSelectionCancelButtonEl.disabled = true;
+      }
+      if (toolsSelectionSelectAllButtonEl) {
+        toolsSelectionSelectAllButtonEl.disabled = true;
       }
       if (toolsSelectionCountEl) {
         toolsSelectionCountEl.classList.add("is-hidden");
@@ -7819,6 +7838,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
     if (toolsSelectionCancelButtonEl) {
       toolsSelectionCancelButtonEl.disabled = count === 0;
+    }
+    if (toolsSelectionSelectAllButtonEl) {
+      const selectableCount = toolsState.filtered.filter((tool) =>
+        isToolSelectableForMove(tool)
+      ).length;
+      toolsSelectionSelectAllButtonEl.disabled = selectableCount === 0;
     }
     if (toolsSelectionCountEl) {
       toolsSelectionCountEl.textContent = `Выбрано: ${count}`;
@@ -11765,6 +11790,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     toolsSelectionCancelButtonEl.addEventListener("click", () => {
       resetToolsSelection();
       renderToolsList();
+    });
+  }
+  if (toolsSelectionSelectAllButtonEl) {
+    toolsSelectionSelectAllButtonEl.addEventListener("click", () => {
+      selectAllToolsForMove();
     });
   }
 

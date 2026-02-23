@@ -4496,7 +4496,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const toolsZoneSubtitleEl = contentEl.querySelector("[data-tools-zone-subtitle]");
   const toolsTitleEl = contentEl.querySelector("[data-tools-title]");
   const toolsViewButtons = contentEl.querySelectorAll("[data-tools-view]");
-  const toolsFilterEls = contentEl.querySelectorAll("[data-tools-filter]");
+  const toolsFilterEls = contentEl.querySelectorAll(".tools-filter-dropdown[data-tools-filter]");
   const toolsResponsibleFilterEls = contentEl.querySelectorAll(
     "[data-tools-responsible-filter]"
   );
@@ -8706,39 +8706,73 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     renderToolsList();
   };
 
+  const renderToolsFilterTriggerLabel = (containerEl, selectedValues) => {
+    if (!containerEl) return;
+    const triggerEl = containerEl.querySelector("[data-tools-filter-trigger]");
+    if (!triggerEl) return;
+    const key = String(containerEl.dataset.toolsFilter ?? "").trim();
+    const safeValues = Array.isArray(selectedValues) ? selectedValues : [];
+    const displayValues =
+      key === "photo"
+        ? safeValues.map((value) => (value === "with" ? "С фото" : "Без фото"))
+        : safeValues;
+    if (!displayValues.length) {
+      triggerEl.textContent = "Все";
+      triggerEl.classList.remove("is-active");
+      return;
+    }
+    triggerEl.classList.add("is-active");
+    triggerEl.textContent =
+      displayValues.length === 1
+        ? displayValues[0]
+        : `Выбрано: ${displayValues.length}`;
+  };
+
   const fillToolsFilterOptions = (key, values) => {
-    const selectEls = contentEl.querySelectorAll(
-      `[data-tools-filter="${key}"]`
+    const containerEls = contentEl.querySelectorAll(
+      `.tools-filter-dropdown[data-tools-filter="${key}"]`
     );
-    if (!selectEls.length) return;
+    if (!containerEls.length) return;
     const currentValues = Array.isArray(toolsState.filters[key])
       ? toolsState.filters[key]
       : [];
-    selectEls.forEach((selectEl) => {
-      selectEl.multiple = false;
-      selectEl.innerHTML = "";
-      const allOption = document.createElement("option");
-      allOption.value = "";
-      allOption.textContent = "Все";
-      allOption.selected = currentValues.length === 0;
-      selectEl.appendChild(allOption);
-      values.forEach((value) => {
-        const option = document.createElement("option");
-        option.value = value;
-        option.textContent = value;
-        option.selected = currentValues[0] === value;
-        selectEl.appendChild(option);
+    containerEls.forEach((containerEl) => {
+      const optionsEl = containerEl.querySelector("[data-tools-filter-options]");
+      if (!optionsEl) return;
+      optionsEl.innerHTML = "";
+      values.forEach((value, index) => {
+        const id = `tools-filter-${key}-${index}`;
+        const optionLabelEl = document.createElement("label");
+        optionLabelEl.className = "tools-filter-dropdown__option";
+        optionLabelEl.setAttribute("for", id);
+        const checkboxEl = document.createElement("input");
+        checkboxEl.type = "checkbox";
+        checkboxEl.id = id;
+        checkboxEl.value = value;
+        checkboxEl.checked = currentValues.includes(value);
+        checkboxEl.dataset.toolsFilterCheckbox = key;
+        const textEl = document.createElement("span");
+        textEl.textContent = value;
+        optionLabelEl.append(checkboxEl, textEl);
+        optionsEl.appendChild(optionLabelEl);
       });
+      renderToolsFilterTriggerLabel(containerEl, currentValues);
     });
   };
 
   const syncToolsFilterValue = (key, values) => {
     const selectedValues = Array.isArray(values) ? values : [];
-    const selectEls = contentEl.querySelectorAll(
-      `[data-tools-filter="${key}"]`
+    const containerEls = contentEl.querySelectorAll(
+      `.tools-filter-dropdown[data-tools-filter="${key}"]`
     );
-    selectEls.forEach((selectEl) => {
-      selectEl.value = selectedValues[0] ?? "";
+    containerEls.forEach((containerEl) => {
+      const checkboxes = containerEl.querySelectorAll(
+        'input[type="checkbox"][data-tools-filter-checkbox]'
+      );
+      checkboxes.forEach((checkboxEl) => {
+        checkboxEl.checked = selectedValues.includes(String(checkboxEl.value ?? "").trim());
+      });
+      renderToolsFilterTriggerLabel(containerEl, selectedValues);
     });
   };
 
@@ -8793,25 +8827,26 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     fillToolsFilterOptions("responsible", collectValues("Ответственный"));
     fillToolsFilterOptions("manufacturer", collectValues("Производитель"));
     fillToolsFilterOptions("model", collectValues("Модель"));
-    const photoSelect = contentEl.querySelector('[data-tools-filter="photo"]');
-    if (photoSelect) {
-      photoSelect.multiple = false;
-      photoSelect.innerHTML = "";
-      const allOption = document.createElement("option");
-      allOption.value = "";
-      allOption.textContent = "Все";
-      allOption.selected = toolsState.filters.photo.length === 0;
-      photoSelect.appendChild(allOption);
+    fillToolsFilterOptions(
+      "photo",
       [
         { value: "with", label: "С фото" },
         { value: "without", label: "Без фото" },
-      ].forEach((option) => {
-        const opt = document.createElement("option");
-        opt.value = option.value;
-        opt.textContent = option.label;
-        opt.selected = toolsState.filters.photo[0] === option.value;
-        photoSelect.appendChild(opt);
+      ].map((item) => item.label)
+    );
+    const photoContainerEl = contentEl.querySelector(
+      '.tools-filter-dropdown[data-tools-filter="photo"]'
+    );
+    if (photoContainerEl) {
+      const checkboxes = photoContainerEl.querySelectorAll(
+        'input[type="checkbox"][data-tools-filter-checkbox="photo"]'
+      );
+      checkboxes.forEach((checkboxEl) => {
+        const label = String(checkboxEl.value ?? "").trim();
+        checkboxEl.value = label === "С фото" ? "with" : "without";
+        checkboxEl.checked = toolsState.filters.photo.includes(checkboxEl.value);
       });
+      renderToolsFilterTriggerLabel(photoContainerEl, toolsState.filters.photo);
     }
     updateToolsFiltersUi();
   };
@@ -11488,19 +11523,61 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
   }
 
-  toolsFilterEls.forEach((selectEl) => {
-    selectEl.addEventListener("change", (event) => {
+  const closeAllToolsFilterDropdowns = () => {
+    toolsFilterEls.forEach((containerEl) => {
+      const menuEl = containerEl.querySelector("[data-tools-filter-menu]");
+      menuEl?.classList.add("is-hidden");
+      containerEl.classList.remove("is-open");
+    });
+  };
+
+  toolsFilterEls.forEach((containerEl) => {
+    const key = containerEl.dataset.toolsFilter;
+    const triggerEl = containerEl.querySelector("[data-tools-filter-trigger]");
+    const menuEl = containerEl.querySelector("[data-tools-filter-menu]");
+    const clearEl = containerEl.querySelector("[data-tools-filter-clear]");
+    if (triggerEl && menuEl) {
+      triggerEl.addEventListener("click", () => {
+        const isOpen = !menuEl.classList.contains("is-hidden");
+        closeAllToolsFilterDropdowns();
+        menuEl.classList.toggle("is-hidden", isOpen);
+        containerEl.classList.toggle("is-open", !isOpen);
+      });
+    }
+    if (clearEl && key) {
+      clearEl.addEventListener("click", () => {
+        toolsState.filters[key] = [];
+        syncToolsFilterValue(key, []);
+        applyToolsFilters();
+      });
+    }
+
+    containerEl.addEventListener("change", (event) => {
       const target = event.target;
-      const key = target?.dataset?.toolsFilter;
+      if (!(target instanceof HTMLInputElement) || target.type !== "checkbox") return;
       if (!key) return;
-      const selectedValues = Array.from(target?.selectedOptions ?? [])
-        .map((option) => String(option.value ?? "").trim())
+      const selectedValues = Array.from(
+        containerEl.querySelectorAll('input[type="checkbox"][data-tools-filter-checkbox]:checked')
+      )
+        .map((inputEl) => String(inputEl.value ?? "").trim())
         .filter(Boolean);
       toolsState.filters[key] = selectedValues;
-      syncToolsFilterValue(key, selectedValues);
+      if (key === "photo" && selectedValues.length > 1) {
+        toolsState.filters[key] = selectedValues;
+      }
+      syncToolsFilterValue(key, toolsState.filters[key]);
       applyToolsFilters();
     });
   });
+
+  if (typeof document !== "undefined") {
+    document.addEventListener("click", (event) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      if (target.closest(".tools-filter-dropdown")) return;
+      closeAllToolsFilterDropdowns();
+    });
+  }
 
   toolsViewButtons.forEach((button) => {
     button.addEventListener("click", () => {

@@ -4799,6 +4799,10 @@
 
       .tools-modal--selecting .tools-move-button {
         display: inline-flex;
+        min-height: auto;
+        padding: 8px 14px;
+        font-size: 12px;
+        font-weight: 600;
       }
 
       .tools-modal--selecting .tools-selection-count {
@@ -4808,6 +4812,13 @@
       .tools-modal--selecting .tools-select-all-button,
       .tools-modal--selecting .tools-cancel-button {
         display: inline-flex;
+      }
+
+      .tools-modal--selecting .tools-cancel-button {
+        min-height: auto;
+        padding: 8px 14px;
+        font-size: 12px;
+        font-weight: 600;
       }
 
       .tools-card.is-selected,
@@ -6298,15 +6309,14 @@
         }
 
         .tools-move-button {
-          flex: 1 1 auto;
           justify-content: center;
         }
 
         .tools-modal--selecting .tools-move-button,
         .tools-modal--selecting .tools-cancel-button {
-          min-height: 44px;
-          padding: 12px 18px;
-          font-size: 15px;
+          min-height: auto;
+          padding: 8px 14px;
+          font-size: 12px;
         }
 
         .tools-modal--selecting .tools-select-all-button {

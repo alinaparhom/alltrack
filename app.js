@@ -4513,7 +4513,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       controls.className = "tools-filters-controls";
       controls.innerHTML = `
         <div class="tools-filters-status" data-tools-filters-status>Фильтры не выбраны</div>
-        <button type="button" class="btn btn-ghost btn-small is-hidden" data-tools-filters-reset>Сбросить всё</button>
+        <button type="button" class="tools-filters-reset is-hidden" data-tools-filters-reset>Сбросить всё</button>
       `;
       toolsFiltersPanelEl.appendChild(controls);
     }
@@ -8715,14 +8715,18 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       ? toolsState.filters[key]
       : [];
     selectEls.forEach((selectEl) => {
-      selectEl.multiple = true;
-      selectEl.size = 5;
+      selectEl.multiple = false;
       selectEl.innerHTML = "";
+      const allOption = document.createElement("option");
+      allOption.value = "";
+      allOption.textContent = "Все";
+      allOption.selected = currentValues.length === 0;
+      selectEl.appendChild(allOption);
       values.forEach((value) => {
         const option = document.createElement("option");
         option.value = value;
         option.textContent = value;
-        option.selected = currentValues.includes(value);
+        option.selected = currentValues[0] === value;
         selectEl.appendChild(option);
       });
     });
@@ -8734,10 +8738,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       `[data-tools-filter="${key}"]`
     );
     selectEls.forEach((selectEl) => {
-      const options = Array.from(selectEl.options ?? []);
-      options.forEach((option) => {
-        option.selected = selectedValues.includes(option.value);
-      });
+      selectEl.value = selectedValues[0] ?? "";
     });
   };
 
@@ -8794,9 +8795,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     fillToolsFilterOptions("model", collectValues("Модель"));
     const photoSelect = contentEl.querySelector('[data-tools-filter="photo"]');
     if (photoSelect) {
-      photoSelect.multiple = true;
-      photoSelect.size = 3;
+      photoSelect.multiple = false;
       photoSelect.innerHTML = "";
+      const allOption = document.createElement("option");
+      allOption.value = "";
+      allOption.textContent = "Все";
+      allOption.selected = toolsState.filters.photo.length === 0;
+      photoSelect.appendChild(allOption);
       [
         { value: "with", label: "С фото" },
         { value: "without", label: "Без фото" },
@@ -8804,7 +8809,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         const opt = document.createElement("option");
         opt.value = option.value;
         opt.textContent = option.label;
-        opt.selected = toolsState.filters.photo.includes(option.value);
+        opt.selected = toolsState.filters.photo[0] === option.value;
         photoSelect.appendChild(opt);
       });
     }

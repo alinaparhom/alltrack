@@ -720,16 +720,14 @@
         background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 20 20'><path d='M5 7l5 6 5-6' fill='none' stroke='%23cbd5f5' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/></svg>");
       }
 
-      body[data-theme="dark"] .tools-filter select.form-input[multiple] {
-        background: rgba(15, 23, 42, 0.72);
-        border-color: rgba(148, 163, 184, 0.55);
-        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04),
-          0 10px 26px rgba(2, 6, 23, 0.48);
+      body[data-theme="dark"] .tools-filter select.form-input option {
+        color: #e2e8f0;
       }
 
-      body[data-theme="dark"] .tools-filter select.form-input[multiple] option:checked {
-        background: rgba(59, 130, 246, 0.34);
-        color: #e2e8f0;
+      body[data-theme="dark"] .tools-filters-reset {
+        color: #bfdbfe;
+        background: linear-gradient(140deg, rgba(30, 58, 138, 0.55), rgba(30, 64, 175, 0.45));
+        box-shadow: 0 10px 24px rgba(2, 6, 23, 0.45);
       }
 
       body[data-theme="dark"] .tools-view-button.is-active {
@@ -5061,25 +5059,7 @@
           0 10px 24px rgba(15, 23, 42, 0.08);
       }
 
-      .tools-filter select.form-input[multiple] {
-        min-height: 108px;
-        padding: 8px;
-        padding-right: 8px;
-        background-image: none;
-        border-radius: 12px;
-        border: 1px solid rgba(148, 163, 184, 0.35);
-        background: rgba(255, 255, 255, 0.84);
-        backdrop-filter: blur(8px);
-        overflow-y: auto;
-      }
-
-      .tools-filter select.form-input[multiple] option {
-        padding: 8px 10px;
-        border-radius: 8px;
-      }
-
-      .tools-filter select.form-input[multiple] option:checked {
-        background: rgba(59, 130, 246, 0.18);
+      .tools-filter select.form-input option {
         color: #0f172a;
       }
 
@@ -5101,6 +5081,28 @@
       .tools-filters-status.is-active {
         color: var(--text);
         font-weight: 600;
+      }
+
+      .tools-filters-reset {
+        border: none;
+        border-radius: 12px;
+        padding: 8px 12px;
+        font-size: 12px;
+        font-weight: 600;
+        color: #1d4ed8;
+        background: linear-gradient(140deg, rgba(239, 246, 255, 0.95), rgba(219, 234, 254, 0.92));
+        box-shadow: 0 8px 20px rgba(59, 130, 246, 0.2);
+        cursor: pointer;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      .tools-filters-reset:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 12px 24px rgba(59, 130, 246, 0.24);
+      }
+
+      .tools-filters-reset:active {
+        transform: translateY(0);
       }
 
       .tools-filters-toggle.is-active {

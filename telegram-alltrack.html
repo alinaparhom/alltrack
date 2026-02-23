@@ -1663,11 +1663,19 @@
         min-height: 72px;
         container-type: inline-size;
         cursor: pointer;
+        user-select: none;
+        -webkit-user-select: none;
+        -webkit-touch-callout: none;
         transition: transform 0.2s ease, box-shadow 0.2s ease;
         will-change: transform;
         transform: translate3d(var(--drag-x), var(--drag-y), 0)
           translateY(var(--hover-lift))
           scale(var(--drag-scale));
+      }
+
+      .action-card * {
+        user-select: none;
+        -webkit-user-select: none;
       }
 
       .action-card:hover {

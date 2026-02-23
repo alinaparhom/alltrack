@@ -855,37 +855,101 @@ export function renderRole(user) {
                 <div class="tools-filters" id="tools-filters-panel" data-tools-filters-panel>
                   <label class="tools-filter">
                     <span>Группа</span>
-                    <select class="form-input" data-tools-filter="group"></select>
+                    <div class="tools-filter-dropdown" data-tools-filter="group">
+                      <button type="button" class="form-input tools-filter-dropdown__trigger" data-tools-filter-trigger>
+                        Все
+                      </button>
+                      <div class="tools-filter-dropdown__menu is-hidden" data-tools-filter-menu>
+                        <button type="button" class="tools-filter-dropdown__clear" data-tools-filter-clear>
+                          Выбрать всё
+                        </button>
+                        <div class="tools-filter-dropdown__options" data-tools-filter-options></div>
+                      </div>
+                    </div>
                   </label>
                   <label class="tools-filter">
                     <span>Объект</span>
-                    <select class="form-input" data-tools-filter="object"></select>
+                    <div class="tools-filter-dropdown" data-tools-filter="object">
+                      <button type="button" class="form-input tools-filter-dropdown__trigger" data-tools-filter-trigger>
+                        Все
+                      </button>
+                      <div class="tools-filter-dropdown__menu is-hidden" data-tools-filter-menu>
+                        <button type="button" class="tools-filter-dropdown__clear" data-tools-filter-clear>
+                          Выбрать всё
+                        </button>
+                        <div class="tools-filter-dropdown__options" data-tools-filter-options></div>
+                      </div>
+                    </div>
                   </label>
                   <label class="tools-filter">
                     <span>Статус</span>
-                    <select class="form-input" data-tools-filter="status"></select>
+                    <div class="tools-filter-dropdown" data-tools-filter="status">
+                      <button type="button" class="form-input tools-filter-dropdown__trigger" data-tools-filter-trigger>
+                        Все
+                      </button>
+                      <div class="tools-filter-dropdown__menu is-hidden" data-tools-filter-menu>
+                        <button type="button" class="tools-filter-dropdown__clear" data-tools-filter-clear>
+                          Выбрать всё
+                        </button>
+                        <div class="tools-filter-dropdown__options" data-tools-filter-options></div>
+                      </div>
+                    </div>
                   </label>
                   <label class="tools-filter" data-tools-responsible-filter>
                     <span>Ответственны</span>
-                    <select
-                      class="form-input"
-                      data-tools-filter="responsible"
-                    ></select>
+                    <div class="tools-filter-dropdown" data-tools-filter="responsible">
+                      <button type="button" class="form-input tools-filter-dropdown__trigger" data-tools-filter-trigger>
+                        Все
+                      </button>
+                      <div class="tools-filter-dropdown__menu is-hidden" data-tools-filter-menu>
+                        <button type="button" class="tools-filter-dropdown__clear" data-tools-filter-clear>
+                          Выбрать всё
+                        </button>
+                        <div class="tools-filter-dropdown__options" data-tools-filter-options></div>
+                      </div>
+                    </div>
                   </label>
                   <label class="tools-filter">
                     <span>Производитель</span>
-                    <select
-                      class="form-input"
-                      data-tools-filter="manufacturer"
-                    ></select>
+                    <div class="tools-filter-dropdown" data-tools-filter="manufacturer">
+                      <button type="button" class="form-input tools-filter-dropdown__trigger" data-tools-filter-trigger>
+                        Все
+                      </button>
+                      <div class="tools-filter-dropdown__menu is-hidden" data-tools-filter-menu>
+                        <button type="button" class="tools-filter-dropdown__clear" data-tools-filter-clear>
+                          Выбрать всё
+                        </button>
+                        <div class="tools-filter-dropdown__options" data-tools-filter-options></div>
+                      </div>
+                    </div>
                   </label>
                   <label class="tools-filter">
                     <span>Модель</span>
-                    <select class="form-input" data-tools-filter="model"></select>
+                    <div class="tools-filter-dropdown" data-tools-filter="model">
+                      <button type="button" class="form-input tools-filter-dropdown__trigger" data-tools-filter-trigger>
+                        Все
+                      </button>
+                      <div class="tools-filter-dropdown__menu is-hidden" data-tools-filter-menu>
+                        <button type="button" class="tools-filter-dropdown__clear" data-tools-filter-clear>
+                          Выбрать всё
+                        </button>
+                        <div class="tools-filter-dropdown__options" data-tools-filter-options></div>
+                      </div>
+                    </div>
                   </label>
                   <label class="tools-filter">
                     <span>Фото</span>
-                    <select class="form-input" data-tools-filter="photo"></select>
+                    <div class="tools-filter-dropdown" data-tools-filter="photo">
+                      <button type="button" class="form-input tools-filter-dropdown__trigger" data-tools-filter-trigger>
+                        Все
+                      </button>
+                      <div class="tools-filter-dropdown__menu is-hidden" data-tools-filter-menu>
+                        <button type="button" class="tools-filter-dropdown__clear" data-tools-filter-clear>
+                          Выбрать всё
+                        </button>
+                        <div class="tools-filter-dropdown__options" data-tools-filter-options></div>
+                      </div>
+                    </div>
                   </label>
                 </div>
               </div>

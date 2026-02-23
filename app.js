@@ -7802,7 +7802,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (toolsState.mode === "base" || toolsState.mode === "search") return;
     const selectableIds = toolsState.filtered
       .filter((tool) => isToolSelectableForMove(tool))
-      .map((tool) => String(tool?.__id ?? "").trim())
+      .map((tool) => String(tool?.__selectionId ?? "").trim())
       .filter(Boolean);
     if (!selectableIds.length) return;
     toolsState.isSelecting = true;
@@ -7851,7 +7851,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (toolsSelectionSelectAllButtonEl) {
       const selectableIds = toolsState.filtered
         .filter((tool) => isToolSelectableForMove(tool))
-        .map((tool) => String(tool?.__id ?? "").trim())
+        .map((tool) => String(tool?.__selectionId ?? "").trim())
         .filter(Boolean);
       const selectableCount = selectableIds.length;
       toolsSelectionSelectAllButtonEl.disabled = selectableCount === 0;

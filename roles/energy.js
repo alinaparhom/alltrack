@@ -799,17 +799,17 @@ export function renderRole(user) {
                       >
                         Таблица
                       </button>
+                      <button
+                        class="tools-view-button is-hidden"
+                        type="button"
+                        data-tools-view="map"
+                        data-tools-search-map-view
+                        aria-label="Карта"
+                        title="Карта"
+                      >
+                        Карта
+                      </button>
                     </div>
-                    <button
-                      class="tools-view-button is-hidden"
-                      type="button"
-                      data-tools-view="map"
-                      data-tools-search-map-view
-                      aria-label="Карта"
-                      title="Карта"
-                    >
-                      Карта
-                    </button>
                     <button
                       class="action-primary tools-move-button"
                       type="button"

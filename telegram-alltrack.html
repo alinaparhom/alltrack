@@ -1773,23 +1773,24 @@
         min-height: 0;
         flex: 1 1 auto;
         overflow-y: auto;
-        padding-right: 2px;
+        padding-right: 0;
         overscroll-behavior-y: contain;
         -webkit-overflow-scrolling: touch;
       }
 
       .energy-grid {
-        display: flex;
-        flex-wrap: wrap;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: var(--grid-gap);
         touch-action: pan-y;
         user-select: none;
         align-content: flex-start;
+        width: 100%;
       }
 
       .energy-grid .action-card {
-        flex: 1 1 calc(50% - var(--grid-gap));
-        max-width: calc(50% - var(--grid-gap));
+        width: 100%;
+        max-width: 100%;
       }
 
       .energy-grid [data-energy-item] {

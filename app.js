@@ -7806,7 +7806,14 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       .filter(Boolean);
     if (!selectableIds.length) return;
     toolsState.isSelecting = true;
-    selectableIds.forEach((id) => toolsState.selectedIds.add(id));
+    const allAlreadySelected = selectableIds.every((id) =>
+      toolsState.selectedIds.has(id)
+    );
+    if (allAlreadySelected) {
+      selectableIds.forEach((id) => toolsState.selectedIds.delete(id));
+    } else {
+      selectableIds.forEach((id) => toolsState.selectedIds.add(id));
+    }
     updateToolsSelectionUi();
     renderToolsList();
   };
@@ -7823,6 +7830,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       }
       if (toolsSelectionSelectAllButtonEl) {
         toolsSelectionSelectAllButtonEl.disabled = true;
+        toolsSelectionSelectAllButtonEl.classList.remove("is-active");
+        toolsSelectionSelectAllButtonEl.setAttribute("aria-pressed", "false");
       }
       if (toolsSelectionCountEl) {
         toolsSelectionCountEl.classList.add("is-hidden");
@@ -7840,10 +7849,17 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       toolsSelectionCancelButtonEl.disabled = count === 0;
     }
     if (toolsSelectionSelectAllButtonEl) {
-      const selectableCount = toolsState.filtered.filter((tool) =>
-        isToolSelectableForMove(tool)
-      ).length;
+      const selectableIds = toolsState.filtered
+        .filter((tool) => isToolSelectableForMove(tool))
+        .map((tool) => String(tool?.__id ?? "").trim())
+        .filter(Boolean);
+      const selectableCount = selectableIds.length;
       toolsSelectionSelectAllButtonEl.disabled = selectableCount === 0;
+      const allSelected =
+        selectableCount > 0 &&
+        selectableIds.every((id) => toolsState.selectedIds.has(id));
+      toolsSelectionSelectAllButtonEl.classList.toggle("is-active", allSelected);
+      toolsSelectionSelectAllButtonEl.setAttribute("aria-pressed", allSelected ? "true" : "false");
     }
     if (toolsSelectionCountEl) {
       toolsSelectionCountEl.textContent = `Выбрано: ${count}`;

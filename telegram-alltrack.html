@@ -4740,21 +4740,59 @@
         white-space: nowrap;
       }
 
-      .tools-move-button {
+      .tools-move-button,
+      .tools-cancel-button {
         display: none;
-        padding: 6px 14px;
-        font-size: 12px;
+        min-height: 40px;
+        padding: 10px 18px;
+        font-size: 14px;
         border-radius: 999px;
         box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
       }
 
-      .tools-select-all-button,
-      .tools-cancel-button {
+      .tools-select-all-button {
         display: none;
-        padding: 6px 14px;
-        font-size: 12px;
-        border-radius: 999px;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        min-width: 40px;
+        min-height: 40px;
+        padding: 0;
+        border-radius: 12px;
         box-shadow: 0 10px 24px rgba(15, 23, 42, 0.1);
+      }
+
+      .tools-select-all-check {
+        width: 18px;
+        height: 18px;
+        border-radius: 5px;
+        border: 1.5px solid rgba(30, 41, 59, 0.35);
+        background: rgba(255, 255, 255, 0.92);
+        position: relative;
+        transition: all 0.2s ease;
+      }
+
+      .tools-select-all-check::after {
+        content: "";
+        position: absolute;
+        left: 4px;
+        top: 1px;
+        width: 6px;
+        height: 10px;
+        border-right: 2px solid #ffffff;
+        border-bottom: 2px solid #ffffff;
+        transform: rotate(45deg) scale(0);
+        transform-origin: center;
+        transition: transform 0.2s ease;
+      }
+
+      .tools-select-all-button.is-active .tools-select-all-check {
+        border-color: #2563eb;
+        background: linear-gradient(140deg, #3b82f6, #2563eb);
+      }
+
+      .tools-select-all-button.is-active .tools-select-all-check::after {
+        transform: rotate(45deg) scale(1);
       }
 
       .tools-modal--selecting .tools-view-toggle {
@@ -4763,9 +4801,6 @@
 
       .tools-modal--selecting .tools-move-button {
         display: inline-flex;
-        padding: 10px 18px;
-        min-height: 40px;
-        font-size: 14px;
       }
 
       .tools-modal--selecting .tools-selection-count {
@@ -4775,9 +4810,6 @@
       .tools-modal--selecting .tools-select-all-button,
       .tools-modal--selecting .tools-cancel-button {
         display: inline-flex;
-        padding: 10px 18px;
-        min-height: 40px;
-        font-size: 14px;
       }
 
       .tools-card.is-selected,
@@ -6273,11 +6305,17 @@
         }
 
         .tools-modal--selecting .tools-move-button,
-        .tools-modal--selecting .tools-select-all-button,
         .tools-modal--selecting .tools-cancel-button {
           min-height: 44px;
           padding: 12px 18px;
           font-size: 15px;
+        }
+
+        .tools-modal--selecting .tools-select-all-button {
+          min-width: 44px;
+          width: 44px;
+          min-height: 44px;
+          padding: 0;
         }
 
         .tools-filters-toggle {

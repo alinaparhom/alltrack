@@ -8218,6 +8218,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const safePoints = Array.isArray(toolsSearchMapState.points)
       ? toolsSearchMapState.points
       : [];
+    const openedPointName = toolsSearchMapState.markers
+      .find((marker) => marker?.balloon?.isOpen?.())
+      ?.__toolsPoint?.name;
 
     toolsSearchMapState.markers.forEach((marker) => {
       toolsSearchMapState.map?.geoObjects.remove(marker);
@@ -8279,7 +8282,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         }
       );
       marker.__toolsPoint = point;
-      marker.events.add("click", () => {
+      const applyPopupContent = () => {
         const popupHtml = buildToolsSearchMapPopupHtml(point);
         marker.properties.set("balloonContentHeader", escapeHtml(point.name));
         marker.properties.set("balloonContentBody", popupHtml);
@@ -8289,10 +8292,23 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
             point.name
           )}">Применить фильтр по объекту</button>`
         );
+      };
+
+      marker.events.add("click", () => {
+        applyPopupContent();
         marker.balloon.open();
       });
       toolsSearchMapState.map.geoObjects.add(marker);
       toolsSearchMapState.markers.push(marker);
+
+      if (
+        openedPointName &&
+        String(openedPointName).trim().toLowerCase() ===
+          String(point.name ?? "").trim().toLowerCase()
+      ) {
+        applyPopupContent();
+        marker.balloon.open();
+      }
     });
 
     updateToolsZoneSubtitle();

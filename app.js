@@ -5589,7 +5589,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     numberType: "",
     isSaving: false,
   };
-  const toolsViewOptions = new Set(["large", "compact", "list", "table", "map"]);
+  const toolsViewOptions = new Set(["large", "compact", "table", "map"]);
   const normalizeToolsView = (value) =>
     toolsViewOptions.has(value) ? value : "table";
   const savedToolsView = normalizeToolsView(
@@ -8497,7 +8497,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const isMapView = viewMode === "map";
     toolsListEl.classList.toggle("is-large", viewMode === "large");
     toolsListEl.classList.toggle("is-compact", viewMode === "compact");
-    toolsListEl.classList.toggle("is-list", viewMode === "list");
     toolsListEl.classList.toggle("is-table", viewMode === "table");
     toolsListEl.classList.toggle("is-hidden", isMapView);
     if (toolsSearchMapEl) {

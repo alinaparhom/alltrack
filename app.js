@@ -2147,7 +2147,8 @@ async function notifyMoveTool({
     let groupSent = false;
     const groupErrors = [];
     if (!groupsEnabled) {
-      result.reasons.push("уведомления в группах выключены в Настройки.json");
+      result.suppressedBySettings = true;
+      return result;
     } else if (!groupIds.length) {
       result.reasons.push("не выбраны группы для уведомлений");
     } else {
@@ -2431,9 +2432,13 @@ function buildNotificationSummary(results = []) {
 }
 
 function analyzeNotificationResults(results = []) {
-  const summary = buildNotificationSummary(results);
-  const sentCount = results.filter((entry) => entry?.sent).length;
-  const allSent = results.length > 0 && sentCount === results.length;
+  const activeResults = results.filter(
+    (entry) => !entry?.suppressedBySettings
+  );
+  const summary = buildNotificationSummary(activeResults);
+  const sentCount = activeResults.filter((entry) => entry?.sent).length;
+  const allSent =
+    activeResults.length === 0 || sentCount === activeResults.length;
   return {
     summary,
     allSent,

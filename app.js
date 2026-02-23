@@ -8077,6 +8077,78 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     setToolsZoneSubtitle(`В текущей зоне карты: ${visibleToolsCount} инструментов`);
   };
 
+  const collectFilteredToolsByObject = (objectName) => {
+    const targetObject = sanitizeObjectName(objectName ?? "").toLowerCase();
+    if (!targetObject) return [];
+    return (Array.isArray(toolsState.filtered) ? toolsState.filtered : []).filter(
+      (tool) =>
+        sanitizeObjectName(tool?.["Объект"] ?? tool?.object ?? "").toLowerCase() ===
+        targetObject
+    );
+  };
+
+  const buildToolsSearchMapPopupHtml = (point) => {
+    const objectName = String(point?.name ?? "").trim();
+    if (!objectName) {
+      return "<div class='tools-map-popup'><div class='tools-map-popup__empty'>Нет данных по объекту.</div></div>";
+    }
+
+    const objectTools = collectFilteredToolsByObject(objectName);
+    if (!objectTools.length) {
+      return `<div class='tools-map-popup'><div class='tools-map-popup__empty'>На объекте нет инструментов с учётом текущего поиска и фильтров.</div></div>`;
+    }
+
+    const groups = new Map();
+    objectTools.forEach((tool) => {
+      const responsible =
+        formatFullName(String(tool?.["Ответственный"] ?? "").trim()) || "Не назначен";
+      if (!groups.has(responsible)) {
+        groups.set(responsible, []);
+      }
+      groups.get(responsible).push(tool);
+    });
+
+    const groupsHtml = Array.from(groups.entries())
+      .sort((a, b) => a[0].localeCompare(b[0], "ru"))
+      .map(([responsible, tools]) => {
+        const toolsHtml = tools
+          .map((tool) => {
+            const number = resolveToolNumberValue(tool) || "Без номера";
+            const title = [
+              String(tool?.["Наименование"] ?? "").trim(),
+              String(tool?.["Производитель"] ?? "").trim(),
+              String(tool?.["Модель"] ?? "").trim(),
+            ]
+              .filter(Boolean)
+              .join(" ");
+            const status = String(tool?.["Статус"] ?? "").trim();
+            return `<li class='tools-map-popup__item'>
+              <span class='tools-map-popup__item-number'>${escapeHtml(number)}</span>
+              <span class='tools-map-popup__item-text'>${escapeHtml(
+                title || "Без названия"
+              )}</span>
+              ${
+                status
+                  ? `<span class='tools-map-popup__item-status'>${escapeHtml(status)}</span>`
+                  : ""
+              }
+            </li>`;
+          })
+          .join("");
+
+        return `<section class='tools-map-popup__group'>
+          <div class='tools-map-popup__group-header'>
+            <span class='tools-map-popup__group-title'>${escapeHtml(responsible)}</span>
+            <span class='tools-map-popup__group-count'>${tools.length}</span>
+          </div>
+          <ul class='tools-map-popup__list'>${toolsHtml}</ul>
+        </section>`;
+      })
+      .join("");
+
+    return `<div class='tools-map-popup'>${groupsHtml}</div>`;
+  };
+
   const hasActiveToolsSearchFilters = () => {
     if (toolsState.search.trim()) {
       return true;
@@ -8208,9 +8280,16 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       );
       marker.__toolsPoint = point;
       marker.events.add("click", () => {
-        toolsState.filters.object = point.name;
-        syncToolsFilterValue("object", point.name);
-        applyToolsFilters();
+        const popupHtml = buildToolsSearchMapPopupHtml(point);
+        marker.properties.set("balloonContentHeader", escapeHtml(point.name));
+        marker.properties.set("balloonContentBody", popupHtml);
+        marker.properties.set(
+          "balloonContentFooter",
+          `<button type="button" class="tools-map-popup__apply" data-tools-map-object="${escapeHtml(
+            point.name
+          )}">Применить фильтр по объекту</button>`
+        );
+        marker.balloon.open();
       });
       toolsSearchMapState.map.geoObjects.add(marker);
       toolsSearchMapState.markers.push(marker);
@@ -11372,6 +11451,19 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       if (event.key !== "Enter" && event.key !== " ") return;
       event.preventDefault();
       void awakenToolsSearchMap();
+    });
+  }
+
+  if (typeof document !== "undefined") {
+    document.addEventListener("click", (event) => {
+      const trigger = event.target?.closest?.("[data-tools-map-object]");
+      if (!trigger) return;
+      const objectName = String(trigger.dataset.toolsMapObject ?? "").trim();
+      if (!objectName) return;
+      toolsState.filters.object = objectName;
+      syncToolsFilterValue("object", objectName);
+      applyToolsFilters();
+      toolsSearchMapState.map?.balloon?.close?.();
     });
   }
 

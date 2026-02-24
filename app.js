@@ -7793,6 +7793,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       return false;
     if (!tool) return false;
     if (tool.__pendingMove) return false;
+    if (toolsState.mode === "move-other") return true;
     const photoCount = Number.parseInt(tool?.["Количество фото"] ?? 0, 10);
     const hasPhoto = Number.isFinite(photoCount) && photoCount > 0;
     return hasPhoto;
@@ -11856,6 +11857,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const eligibleEntries = [];
       const eligibleTools = [];
       const isMoveByReplacement = toolsState.mode === "replacement";
+      const allowMoveWithoutPhoto = toolsState.mode === "move-other";
       const vacationNote = isMoveByReplacement
         ? "Отправлено другим пользователем, так как ответственный в отпуске"
         : "";
@@ -11868,7 +11870,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           accountingNumber.toLowerCase() !== "нет номера";
         const photoCount = Number.parseInt(tool?.["Количество фото"] ?? 0, 10);
         const hasPhoto = Number.isFinite(photoCount) && photoCount > 0;
-        if (!hasAccountingNumber || !hasPhoto) {
+        const isEligibleByPhoto = allowMoveWithoutPhoto ? true : hasPhoto;
+        if (!hasAccountingNumber || !isEligibleByPhoto) {
           skippedCount += 1;
           return;
         }
@@ -11889,8 +11892,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       });
 
       if (!eligibleEntries.length) {
+        const requirementMessage = allowMoveWithoutPhoto
+          ? "Для перемещения нужен бух.номер."
+          : "Для перемещения нужен бух.номер и хотя бы одно фото.";
         setToolsMoveMessage(
-          "Для перемещения нужен бух.номер и хотя бы одно фото.",
+          requirementMessage,
           "error"
         );
         return;

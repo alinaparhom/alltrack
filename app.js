@@ -79,8 +79,8 @@ const energyMailingOptions = [
   {
     id: "awaitingReply",
     title: "Ожидают ответа",
-    defaultDays: ["Пн"],
-    defaultTime: "09:00",
+    defaultDays: ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"],
+    defaultTime: "22:40",
   },
   {
     id: "repairs",

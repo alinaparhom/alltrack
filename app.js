@@ -7846,7 +7846,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       toolsMoveButtonEl.disabled = count === 0;
     }
     if (toolsSelectionCancelButtonEl) {
-      toolsSelectionCancelButtonEl.disabled = count === 0;
+      toolsSelectionCancelButtonEl.disabled = false;
     }
     if (toolsSelectionSelectAllButtonEl) {
       const selectableIds = toolsState.filtered

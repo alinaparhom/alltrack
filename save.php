@@ -1785,7 +1785,6 @@ foreach ($entries as $entry) {
   saveEntry($entry, $allowedFiles);
 }
 
-runDailyPendingMovesMailingIfNeeded();
 runNoPhotoFineRecalculationIfNeeded();
 
 echo json_encode(["success" => true]);

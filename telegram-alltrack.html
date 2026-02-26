@@ -4930,7 +4930,11 @@
       }
 
       .tools-move-modal .settings-modal__header {
-        padding: calc(52px + env(safe-area-inset-top)) 64px 18px 24px;
+        padding: calc(72px + env(safe-area-inset-top)) 64px 10px 24px;
+      }
+
+      .tools-move-modal .settings-modal__title {
+        margin-top: 8px;
       }
 
       .tools-move-modal .settings-modal__form,
@@ -4942,7 +4946,7 @@
       .tools-move-modal .settings-modal__form {
         display: block;
         gap: 10px;
-        padding: 6px 0 calc(12px + env(safe-area-inset-bottom));
+        padding: 0 0 calc(12px + env(safe-area-inset-bottom));
         overflow: visible;
       }
 
@@ -4966,11 +4970,11 @@
       }
 
       .tools-move-modal .form-field {
-        gap: 0;
+        gap: 8px;
       }
 
       .tools-move-modal .tools-move-modal__fixed-field {
-        gap: 0;
+        gap: 8px;
       }
 
       .tools-move-modal .tools-move-modal__fixed-field .form-label {
@@ -4984,9 +4988,9 @@
         font-size: 13px;
         line-height: 1;
         padding: 0 10px;
-        width: 150px;
-        min-width: 150px;
-        max-width: 150px;
+        width: fit-content;
+        min-width: 0;
+        max-width: 100%;
         min-height: 44px;
         height: 44px;
         box-sizing: border-box;
@@ -5069,7 +5073,11 @@
 
       @media (max-width: 520px) {
         .tools-move-modal .settings-modal__header {
-          padding: calc(52px + env(safe-area-inset-top)) 64px 18px 24px;
+          padding: calc(76px + env(safe-area-inset-top)) 64px 8px 24px;
+        }
+
+        .tools-move-modal .settings-modal__title {
+          margin-top: 12px;
         }
 
         .tools-move-modal .settings-modal__footer {

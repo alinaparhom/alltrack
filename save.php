@@ -1102,7 +1102,7 @@ function shouldSendAwaitingReplyMailingNow(
     return true;
   }
 
-  $time = '22:40';
+  $time = '18:35';
   $days = [];
 
   $groupSchedule = null;

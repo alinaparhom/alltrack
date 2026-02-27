@@ -4930,7 +4930,9 @@
       }
 
       .tools-move-modal .settings-modal__header {
-        padding: calc(72px + env(safe-area-inset-top)) 64px 10px 24px;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: start;
+        padding: calc(56px + env(safe-area-inset-top)) 24px 10px;
       }
 
       .tools-move-modal .settings-modal__title {
@@ -4951,9 +4953,9 @@
       }
 
       .tools-move-modal__close {
-        position: absolute;
-        top: 16px;
-        right: 16px;
+        position: static;
+        align-self: start;
+        margin-top: 2px;
         width: 36px;
         height: 36px;
         border-radius: 12px;
@@ -5073,7 +5075,7 @@
 
       @media (max-width: 520px) {
         .tools-move-modal .settings-modal__header {
-          padding: calc(76px + env(safe-area-inset-top)) 64px 8px 24px;
+          padding: calc(56px + env(safe-area-inset-top)) 18px 8px;
         }
 
         .tools-move-modal .settings-modal__title {

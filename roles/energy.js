@@ -1162,6 +1162,21 @@ export function renderRole(user) {
             <div class="settings-modal__body tools-info-modal__body">
               <div class="tools-info-card">
                 <div class="tools-info-grid" data-tools-info-grid></div>
+                <div class="tools-info-kit is-hidden" data-tools-info-kit>
+                  <button
+                    class="button-secondary tools-info-kit__toggle"
+                    type="button"
+                    data-tools-info-kit-toggle
+                  >
+                    Показать комплектность
+                  </button>
+                  <div
+                    class="tools-info-kit__content is-hidden"
+                    data-tools-info-kit-content
+                  >
+                    <div class="tools-info-kit__list" data-tools-info-kit-list></div>
+                  </div>
+                </div>
               </div>
               <div class="tools-info-tabs" role="tablist" aria-label="История">
                 <button

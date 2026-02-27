@@ -107,6 +107,7 @@
       body[data-theme="dark"] .tools-info-card,
       body[data-theme="dark"] .tools-info-tab,
       body[data-theme="dark"] .tools-info-item,
+      body[data-theme="dark"] .tools-info-kit-item,
       body[data-theme="dark"] .button-icon,
       body[data-theme="dark"] .button-secondary,
       body[data-theme="dark"] .registration-note,
@@ -4499,6 +4500,49 @@
       .tools-info-grid {
         display: grid;
         gap: 12px;
+      }
+
+      .tools-info-kit {
+        margin-top: 14px;
+        display: grid;
+        gap: 10px;
+      }
+
+      .tools-info-kit__toggle {
+        width: 100%;
+        min-height: 38px;
+      }
+
+      .tools-info-kit__content {
+        display: grid;
+        gap: 8px;
+      }
+
+      .tools-info-kit__list {
+        display: grid;
+        gap: 8px;
+      }
+
+      .tools-info-kit-item {
+        border-radius: 14px;
+        border: 1px solid rgba(226, 232, 240, 0.85);
+        background: rgba(255, 255, 255, 0.86);
+        padding: 10px;
+        display: grid;
+        gap: 6px;
+      }
+
+      .tools-info-kit-item__name {
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--text);
+      }
+
+      .tools-info-kit-item__meta {
+        display: grid;
+        gap: 4px;
+        font-size: 12px;
+        color: var(--muted);
       }
 
       .tools-info-row {

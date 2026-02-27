@@ -11986,6 +11986,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       if (!item) return;
       const tool = toolsState.toolMap.get(item.dataset.toolId);
       if (!isToolSelectableForMove(tool)) return;
+      if (event.cancelable) {
+        event.preventDefault();
+      }
       toolsSelectState.startX = event.clientX;
       toolsSelectState.startY = event.clientY;
       toolsSelectState.suppressClick = false;

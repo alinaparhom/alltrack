@@ -5022,6 +5022,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const addToolGroupSuggestionsEl = contentEl.querySelector(
     "[data-tool-group-suggestions]"
   );
+  const addToolKitBlockEl = contentEl.querySelector("[data-add-tool-kit]");
+  const addToolKitToggleButton = contentEl.querySelector(
+    "[data-add-tool-kit-toggle]"
+  );
+  const addToolKitPanelEl = contentEl.querySelector("[data-add-tool-kit-panel]");
+  const addToolKitListEl = contentEl.querySelector("[data-add-tool-kit-list]");
+  const addToolKitAddButton = contentEl.querySelector("[data-add-tool-kit-add]");
   const usersDetailsModalEl = contentEl.querySelector("[data-users-details-modal]");
   const usersDetailsBackdropEl = contentEl.querySelector(
     "[data-users-details-backdrop]"
@@ -16282,6 +16289,70 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   let addToolCameraStream = null;
   let addToolCameraBlob = null;
   let bypassAddToolCameraPicker = false;
+  let addToolKitRowCounter = 0;
+
+  const setAddToolKitExpanded = (expanded) => {
+    if (!addToolKitToggleButton || !addToolKitPanelEl) return;
+    addToolKitToggleButton.setAttribute("aria-expanded", expanded ? "true" : "false");
+    addToolKitPanelEl.classList.toggle("is-hidden", !expanded);
+    addToolKitBlockEl?.classList.toggle("is-open", expanded);
+    addToolKitToggleButton.textContent = expanded
+      ? "Скрыть комплектацию"
+      : "Добавить комплектацию";
+  };
+
+  const createAddToolKitRow = () => {
+    if (!addToolKitListEl) return;
+    addToolKitRowCounter += 1;
+    const rowId = String(addToolKitRowCounter);
+    const rowEl = document.createElement("div");
+    rowEl.className = "add-tool-kit__row";
+    rowEl.dataset.kitRow = rowId;
+    rowEl.innerHTML = `
+      <label class="form-field form-field--required add-tool-kit__field add-tool-kit__field--name">
+        <span class="form-label">Позиция комплекта</span>
+        <input class="form-input" type="text" name="tool-kit-name-${rowId}" placeholder="Например, кейс" autocomplete="off" />
+      </label>
+      <label class="form-field add-tool-kit__field add-tool-kit__field--count">
+        <span class="form-label">Количество</span>
+        <input class="form-input" type="text" inputmode="numeric" name="tool-kit-count-${rowId}" placeholder="Необязательно" autocomplete="off" />
+      </label>
+      <label class="form-field add-tool-kit__field add-tool-kit__field--accounting">
+        <span class="form-label">Бух.номер</span>
+        <input class="form-input" type="text" inputmode="numeric" name="tool-kit-accounting-${rowId}" placeholder="Необязательно" autocomplete="off" />
+      </label>
+      <button class="button-icon add-tool-kit__remove" type="button" data-add-tool-kit-remove aria-label="Удалить позицию">
+        <span class="button-icon-emoji" aria-hidden="true">✕</span>
+      </button>
+    `;
+    addToolKitListEl.append(rowEl);
+  };
+
+  const clearAddToolKitRows = () => {
+    if (!addToolKitListEl) return;
+    addToolKitListEl.innerHTML = "";
+    addToolKitRowCounter = 0;
+  };
+
+  const collectAddToolKitItems = () => {
+    if (!addToolKitListEl) return [];
+    const rows = Array.from(addToolKitListEl.querySelectorAll("[data-kit-row]"));
+    return rows
+      .map((row) => {
+        const nameInput = row.querySelector('input[name^="tool-kit-name-"]');
+        const countInput = row.querySelector('input[name^="tool-kit-count-"]');
+        const accountingInput = row.querySelector(
+          'input[name^="tool-kit-accounting-"]'
+        );
+        return {
+          name: normalizeSuggestionValue(nameInput?.value ?? ""),
+          count: normalizeSuggestionValue(countInput?.value ?? ""),
+          accountingNumber: normalizeSuggestionValue(accountingInput?.value ?? ""),
+          nameInput,
+        };
+      })
+      .filter((item) => item.name || item.count || item.accountingNumber);
+  };
 
   const resetAddToolCameraUI = () => {
     if (addToolCameraVideoEl) {
@@ -16385,6 +16456,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     addToolResponsibleSuggestionsEl?.classList.add("is-hidden");
     addToolObjectSuggestionsEl?.classList.add("is-hidden");
     addToolGroupSuggestionsEl?.classList.add("is-hidden");
+    clearAddToolKitRows();
+    setAddToolKitExpanded(false);
     updateAddToolFilledStates();
   };
 
@@ -16827,6 +16900,37 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       closeAddToolSuccessModal
     );
   }
+  if (addToolKitToggleButton) {
+    addToolKitToggleButton.addEventListener("click", () => {
+      const isExpanded = addToolKitToggleButton.getAttribute("aria-expanded") === "true";
+      const nextExpanded = !isExpanded;
+      setAddToolKitExpanded(nextExpanded);
+      if (nextExpanded && !addToolKitListEl?.children.length) {
+        createAddToolKitRow();
+        updateAddToolFilledStates();
+      }
+    });
+  }
+  if (addToolKitAddButton) {
+    addToolKitAddButton.addEventListener("click", () => {
+      createAddToolKitRow();
+      updateAddToolFilledStates();
+    });
+  }
+  if (addToolKitListEl) {
+    addToolKitListEl.addEventListener("click", (event) => {
+      const target = event.target;
+      if (!(target instanceof HTMLElement)) return;
+      const removeButton = target.closest("[data-add-tool-kit-remove]");
+      if (!removeButton) return;
+      const row = removeButton.closest("[data-kit-row]");
+      row?.remove();
+      if (!addToolKitListEl.children.length) {
+        createAddToolKitRow();
+      }
+      updateAddToolFilledStates();
+    });
+  }
 
   if (addToolFormEl) {
     addToolFormEl.noValidate = true;
@@ -16927,6 +17031,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           invoicePhotoFile instanceof File && invoicePhotoFile.size > 0
             ? invoicePhotoFile
             : invoiceFile;
+        const kitItems = collectAddToolKitItems();
 
         const errors = [];
         let focusTarget = null;
@@ -17002,6 +17107,14 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         ) {
           pushError("Прикрепите накладную.", addToolInvoiceInput);
         }
+        kitItems.forEach((item) => {
+          if (!item.name) {
+            pushError(
+              "Для позиции комплектации заполните наименование.",
+              item.nameInput
+            );
+          }
+        });
 
         if (errors.length) {
           clearAddToolFieldErrors();
@@ -17062,6 +17175,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
             "Объект": objectName,
             "Серийный номер": serialNumber,
             "Граппа инструментов": groupName,
+            "Комплектация": kitItems.map((item) => ({
+              "Наименование": item.name,
+              "Количество": item.count,
+              "Бух.номер": item.accountingNumber,
+            })),
             "Статус": "Рабочий",
             "Количество фото": 0,
           };

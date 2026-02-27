@@ -2669,6 +2669,34 @@ export function renderRole(user) {
                       </label>
                     </div>
                   </div>
+                  <div class="add-tool-kit" data-add-tool-kit>
+                    <button
+                      class="action-secondary add-tool-kit__toggle"
+                      type="button"
+                      data-add-tool-kit-toggle
+                      aria-expanded="false"
+                    >
+                      Добавить комплектацию
+                    </button>
+                    <div
+                      class="add-tool-kit__panel is-hidden"
+                      data-add-tool-kit-panel
+                    >
+                      <div class="add-tool-kit__title">Комплектация</div>
+                      <p class="add-tool-kit__hint">
+                        Добавьте, что идёт в комплекте. Количество и бух.номер —
+                        необязательно.
+                      </p>
+                      <div class="add-tool-kit__list" data-add-tool-kit-list></div>
+                      <button
+                        class="action-secondary add-tool-kit__add"
+                        type="button"
+                        data-add-tool-kit-add
+                      >
+                        + Добавить позицию
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
               <div class="settings-modal__footer add-tool-modal__footer">

@@ -4574,6 +4574,14 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const toolsInfoTitleEl = contentEl.querySelector("[data-tools-info-title]");
   const toolsInfoSubtitleEl = contentEl.querySelector("[data-tools-info-subtitle]");
   const toolsInfoGridEl = contentEl.querySelector("[data-tools-info-grid]");
+  const toolsInfoKitEl = contentEl.querySelector("[data-tools-info-kit]");
+  const toolsInfoKitToggleButton = contentEl.querySelector(
+    "[data-tools-info-kit-toggle]"
+  );
+  const toolsInfoKitContentEl = contentEl.querySelector(
+    "[data-tools-info-kit-content]"
+  );
+  const toolsInfoKitListEl = contentEl.querySelector("[data-tools-info-kit-list]");
   const toolsInfoTabButtons = Array.from(
     contentEl.querySelectorAll("[data-tools-info-tab]")
   );
@@ -5678,6 +5686,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     moves: [],
     breakdowns: [],
     repairs: [],
+    kitExpanded: false,
   };
   let pendingMovesDeclineResolver = null;
   const toolsMoveState = {
@@ -9246,6 +9255,54 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     });
   };
 
+  const renderToolsInfoKit = (tool) => {
+    if (!toolsInfoKitEl || !toolsInfoKitToggleButton || !toolsInfoKitListEl) return;
+    const kit = Array.isArray(tool?.["Комплектация"]) ? tool["Комплектация"] : [];
+    const hasKit = kit.some((item) => {
+      const name = String(item?.["Наименование"] ?? "").trim();
+      const count = String(item?.["Количество"] ?? "").trim();
+      const accounting = String(item?.["Бух.номер"] ?? "").trim();
+      return Boolean(name || count || accounting);
+    });
+    toolsInfoKitEl.classList.toggle("is-hidden", !hasKit);
+    if (!hasKit) {
+      toolsInfoKitListEl.innerHTML = "";
+      toolsInfoState.kitExpanded = false;
+      toolsInfoKitContentEl?.classList.add("is-hidden");
+      toolsInfoKitToggleButton.textContent = "Показать комплектность";
+      return;
+    }
+
+    toolsInfoKitListEl.innerHTML = "";
+    kit.forEach((item) => {
+      const itemEl = document.createElement("div");
+      itemEl.className = "tools-info-kit-item";
+      const name = formatInfoValue(item?.["Наименование"]);
+      const count = formatInfoValue(item?.["Количество"]);
+      const accounting = formatInfoValue(item?.["Бух.номер"]);
+      itemEl.innerHTML = `
+        <div class="tools-info-kit-item__name">${escapeHtml(name)}</div>
+        <div class="tools-info-kit-item__meta">
+          <span>Кол-во: ${escapeHtml(count)}</span>
+          <span>Бух.номер: ${escapeHtml(accounting)}</span>
+        </div>
+      `;
+      toolsInfoKitListEl.appendChild(itemEl);
+    });
+    toolsInfoKitContentEl?.classList.toggle("is-hidden", !toolsInfoState.kitExpanded);
+    toolsInfoKitToggleButton.textContent = toolsInfoState.kitExpanded
+      ? "Скрыть комплектность"
+      : "Показать комплектность";
+  };
+
+  const toggleToolsInfoKit = () => {
+    if (toolsInfoKitEl?.classList.contains("is-hidden")) return;
+    toolsInfoState.kitExpanded = !toolsInfoState.kitExpanded;
+    if (toolsInfoState.tool) {
+      renderToolsInfoKit(toolsInfoState.tool);
+    }
+  };
+
   const renderToolsInfoGrid = (tool) => {
     if (!toolsInfoGridEl) return;
     toolsInfoGridEl.innerHTML = "";
@@ -9518,6 +9575,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     toolsInfoModalEl.classList.add("is-hidden");
     document.body.style.overflow = "";
     toolsInfoState.tool = null;
+    toolsInfoState.kitExpanded = false;
   };
 
   const openToolsInfoModal = async (tool) => {
@@ -9537,7 +9595,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (toolsInfoSubtitleEl) {
       toolsInfoSubtitleEl.textContent = `№${toolNumber}`;
     }
+    toolsInfoState.kitExpanded = false;
     renderToolsInfoGrid(tool);
+    renderToolsInfoKit(tool);
     if (toolsInfoMovesSummaryEl) {
       toolsInfoMovesSummaryEl.textContent = "Загружаем перемещения...";
     }
@@ -11305,6 +11365,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       closeToolsInfoModal();
     }
   });
+  if (toolsInfoKitToggleButton) {
+    toolsInfoKitToggleButton.addEventListener("click", toggleToolsInfoKit);
+  }
   if (toolsInfoTabButtons.length) {
     toolsInfoTabButtons.forEach((button) => {
       button.addEventListener("click", () => {

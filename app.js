@@ -77,12 +77,6 @@ const fineTitleBySettingKey = {
 };
 const energyMailingOptions = [
   {
-    id: "awaitingReply",
-    title: "Ожидают ответа",
-    defaultDays: ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"],
-    defaultTime: "22:40",
-  },
-  {
     id: "repairs",
     title: "Ремонты",
     defaultDays: ["Вт"],

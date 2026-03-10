@@ -685,6 +685,22 @@
         box-shadow: 0 12px 26px rgba(59, 130, 246, 0.22);
       }
 
+      body[data-theme="dark"] .tools-card.is-selected,
+      body[data-theme="dark"] .tools-row.is-selected,
+      body[data-theme="dark"] .tools-table__row.is-selected {
+        background: linear-gradient(
+          120deg,
+          rgba(18, 26, 46, 0.95),
+          rgba(22, 163, 74, 0.14),
+          rgba(18, 26, 46, 0.95)
+        );
+        border-color: rgba(74, 222, 128, 0.72);
+        box-shadow:
+          0 0 0 1px rgba(74, 222, 128, 0.35) inset,
+          0 0 22px rgba(74, 222, 128, 0.28),
+          0 14px 28px rgba(6, 95, 70, 0.34);
+      }
+
       body[data-theme="dark"] .tools-card.is-selected.tools-item--broken,
       body[data-theme="dark"] .tools-card.is-selected.tools-item--repair,
       body[data-theme="dark"] .tools-card.is-selected.tools-item--writeoff,
@@ -699,11 +715,15 @@
       body[data-theme="dark"] .tools-table__row.is-selected.tools-item--pending-response {
         background: linear-gradient(
           120deg,
-          rgba(21, 128, 61, 0.46),
-          rgba(18, 26, 46, 0.92)
+          rgba(18, 26, 46, 0.94),
+          rgba(22, 163, 74, 0.24),
+          rgba(18, 26, 46, 0.94)
         );
-        border-color: rgba(74, 222, 128, 0.7);
-        box-shadow: 0 14px 28px rgba(21, 128, 61, 0.32);
+        border-color: rgba(74, 222, 128, 0.76);
+        box-shadow:
+          0 0 0 1px rgba(74, 222, 128, 0.4) inset,
+          0 0 24px rgba(74, 222, 128, 0.32),
+          0 14px 28px rgba(6, 95, 70, 0.36);
       }
 
       body[data-theme="dark"] .tools-selection-count {

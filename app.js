@@ -18682,7 +18682,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       return;
     }
 
-    const downloadHref = serverFileUrl || blobUrl;
+    const downloadHref = blobUrl;
     const tempLink = document.createElement("a");
     tempLink.href = downloadHref;
     tempLink.download = fileName;
@@ -18691,6 +18691,15 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     document.body.append(tempLink);
     tempLink.click();
     tempLink.remove();
+
+    const isTelegramMiniApp = Boolean(window.Telegram?.WebApp?.initDataUnsafe);
+    if (serverFileUrl && isTelegramMiniApp) {
+      const normalizedServerUrl = new URL(serverFileUrl, window.location.href).href;
+      const telegramWebApp = window.Telegram?.WebApp;
+      if (telegramWebApp?.openLink) {
+        telegramWebApp.openLink(normalizedServerUrl);
+      }
+    }
 
     const isIos = /iPad|iPhone|iPod/i.test(navigator?.userAgent ?? "");
     if (isIos) {

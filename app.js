@@ -11168,11 +11168,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     moveIndexes.forEach((index) => {
       const move = updatedMoves[index];
       if (!move) return;
+      const lateReplyFineAmount =
+        decision === "Принял"
+          ? resolveLateReplyFine(move, pendingMovesState.fineConfig)
+          : 0;
       const fineAmount =
         resolveMoveFineAmount(move) ||
-        (decision === "Принял"
-          ? resolveLateReplyFine(move, pendingMovesState.fineConfig)
-          : 0);
+        lateReplyFineAmount;
       if (fineAmount > 0) {
         if (decision === "Принял") {
           const acceptedBy = String(move?.["Принял"] ?? "").trim();
@@ -11222,6 +11224,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
             "Штраф за ответ": fineAmount,
             "Штраф по отвеченному перемещению": fineAmount,
             "Тип штрафа": fineType,
+            ...(lateReplyFineAmount > 0
+              ? { "Штраф за поздний ответ": "Да" }
+              : {}),
           };
         }
       }

@@ -426,14 +426,34 @@ function normalizeWeekDayLabel(string $value): string {
   return $map[$normalized] ?? "";
 }
 
+function normalizeScheduleTimeLabel($value): string {
+  $raw = trim((string) $value);
+  if ($raw === "") {
+    return "";
+  }
+
+  $raw = str_replace([".", " "], [":", ""], $raw);
+  if (!preg_match('/^(\d{1,2}):(\d{1,2})$/', $raw, $matches)) {
+    return "";
+  }
+
+  $hour = (int) $matches[1];
+  $minute = (int) $matches[2];
+  if ($hour < 0 || $hour > 23 || $minute < 0 || $minute > 59) {
+    return "";
+  }
+
+  return sprintf('%02d:%02d', $hour, $minute);
+}
+
 function isMoveRepliesScheduleDue(array $schedule, DateTimeImmutable $now): bool {
   $daysRaw = $schedule["days"] ?? [];
   if (!is_array($daysRaw) || empty($daysRaw)) {
     return false;
   }
 
-  $timeRaw = trim((string) ($schedule["time"] ?? ""));
-  if (!preg_match('/^(?:[01]\d|2[0-3]):[0-5]\d$/', $timeRaw)) {
+  $timeRaw = normalizeScheduleTimeLabel($schedule["time"] ?? "");
+  if ($timeRaw === "") {
     return false;
   }
 
@@ -599,7 +619,10 @@ function runMoveRepliesMailing(array $options = []): array {
         continue;
       }
 
-      $scheduleTime = trim((string) ($schedule["time"] ?? ""));
+      $scheduleTime = normalizeScheduleTimeLabel($schedule["time"] ?? "");
+      if ($scheduleTime === "") {
+        continue;
+      }
       $stateKey = $orgFolder . "|" . $chatId . "|" . $now->format("Y-m-d") . "|" . $scheduleTime;
       if (!empty($sentState[$stateKey])) {
         continue;

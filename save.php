@@ -353,18 +353,18 @@ function runNoPhotoFineRecalculation(array $options = []): array {
 function runNoPhotoFineRecalculationIfNeeded(): void {
   $timezone = new DateTimeZone("Europe/Moscow");
   $now = new DateTimeImmutable("now", $timezone);
-  $todayKey = $now->format("Y-m-d");
-  $currentTime = $now->format("H:i");
   $scheduleTime = "14:30";
+  $currentMinuteStamp = $now->format("Y-m-d H:i");
+  $scheduledMinuteStamp = $now->format("Y-m-d") . " " . $scheduleTime;
 
-  if ($currentTime < $scheduleTime) {
+  if ($currentMinuteStamp !== $scheduledMinuteStamp) {
     return;
   }
 
   $statePath = __DIR__ . DIRECTORY_SEPARATOR . "telegram-daily-no-photo-fines-state.json";
   $state = readJsonFile($statePath, []);
-  $lastRunDate = trim((string) ($state["lastRunDate"] ?? ""));
-  if ($lastRunDate === $todayKey) {
+  $lastRunMinute = trim((string) ($state["lastRunMinute"] ?? ""));
+  if ($lastRunMinute === $currentMinuteStamp) {
     return;
   }
 
@@ -381,7 +381,7 @@ function runNoPhotoFineRecalculationIfNeeded(): void {
   }
 
   $nextState = [
-    "lastRunDate" => $todayKey,
+    "lastRunMinute" => $currentMinuteStamp,
     "updatedAt" => $now->format(DateTimeInterface::ATOM),
     "toolsUpdated" => (int) ($result["toolsUpdated"] ?? 0),
   ];
@@ -1649,6 +1649,18 @@ if ($isCli) {
     echo json_encode($result, JSON_UNESCAPED_UNICODE) . PHP_EOL;
     exit;
   }
+}
+
+$requestedAction = trim((string) ($_GET["action"] ?? $payload["action"] ?? ""));
+if ($requestedAction === "run-scheduled-mailings") {
+  runNoPhotoFineRecalculationIfNeeded();
+  runMoveRepliesMailingIfNeeded();
+  echo json_encode([
+    "success" => true,
+    "action" => "run-scheduled-mailings",
+    "serverTime" => (new DateTimeImmutable("now", new DateTimeZone("Europe/Moscow")))->format(DateTimeInterface::ATOM),
+  ], JSON_UNESCAPED_UNICODE);
+  exit;
 }
 
 $entries = buildEntries($payload);

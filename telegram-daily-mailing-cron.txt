@@ -1,18 +1,14 @@
-# Пример задач cron для рассылок Alltrack.
-# ВАЖНО: этот файл сам по себе ничего не запускает.
-# Команды нужно добавить в crontab на сервере (crontab -e) от пользователя, у которого есть доступ к проекту.
-
-# Рекомендуемая зона времени cron (иначе может сдвигаться время рассылки)
-CRON_TZ=Europe/Moscow
-
-# Штрафы "Без фото" — 1 раз в день в 14:30.
-30 14 * * * cd /var/www/www-root/data/www/bimmax.pro/js/alltrack && /usr/bin/php save.php --run-daily-no-photo-fines >> /var/www/www-root/data/www/bimmax.pro/js/alltrack/telegram-daily-no-photo-fines-cron.log 2>&1
-
-# Рассылка "Ответы на перемещения" — проверка каждую минуту.
-# Так рассылка уходит независимо от активности пользователей в приложении.
-* * * * * cd /var/www/www-root/data/www/bimmax.pro/js/alltrack && /usr/bin/php save.php --run-move-replies-mailing >> /var/www/www-root/data/www/bimmax.pro/js/alltrack/telegram-move-replies-mailing-cron.log 2>&1
-
-# Универсальный запуск всех запланированных рассылок каждую минуту.
-# Можно использовать вместо отдельных задач выше, чтобы все рассылки шли строго по времени
-# даже если в приложении никто не работал.
+# Рассылки Alltrack без дополнительных настроек сервера.
+# Достаточно вызывать URL (например, через UptimeRobot / cron-job.org / GitHub Actions):
+# https://<ваш-домен>/js/alltrack/save.php?action=run-scheduled-mailings
+#
+# Важно:
+# - Время проверяется строго по Москве (Europe/Moscow).
+# - Вызов делайте 1 раз в минуту, чтобы не пропустить нужную минуту.
+# - Рассылки уйдут только в точно заданную минуту из настроек.
+#
+# Пример для внешнего планировщика (каждую минуту):
+# GET https://<ваш-домен>/js/alltrack/save.php?action=run-scheduled-mailings
+#
+# Если нужен локальный cron на сервере, можно оставить этот вариант:
 # * * * * * cd /var/www/www-root/data/www/bimmax.pro/js/alltrack && /usr/bin/php save.php --run-scheduled-mailings >> /var/www/www-root/data/www/bimmax.pro/js/alltrack/telegram-scheduled-mailings-cron.log 2>&1

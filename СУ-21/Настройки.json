@@ -14,7 +14,7 @@
                     },
                     {
                         "type": "action",
-                        "id": "base"
+                        "id": "write-off"
                     },
                     {
                         "type": "action",
@@ -22,7 +22,7 @@
                     },
                     {
                         "type": "action",
-                        "id": "write-off"
+                        "id": "base"
                     },
                     {
                         "type": "action",
@@ -84,15 +84,15 @@
                 "toolsView": "table",
                 "layout": [
                     {
-                        "type": "action",
-                        "id": "demand"
+                        "type": "toggle"
                     },
                     {
                         "type": "action",
-                        "id": "search"
+                        "id": "tools"
                     },
                     {
-                        "type": "pending"
+                        "type": "action",
+                        "id": "no-photo"
                     },
                     {
                         "type": "action",
@@ -100,19 +100,17 @@
                     },
                     {
                         "type": "action",
-                        "id": "tools"
-                    },
-                    {
-                        "type": "toggle"
+                        "id": "search"
                     },
                     {
                         "type": "action",
-                        "id": "no-photo"
+                        "id": "demand"
                     }
                 ],
                 "layoutCustomized": true,
                 "quickAccess": [
                     "breakdowns",
+                    "pending",
                     "info"
                 ]
             }
@@ -295,7 +293,7 @@
                             "Чт",
                             "Пт"
                         ],
-                        "time": "14:00"
+                        "time": "00:05"
                     },
                     "-1001994739583": {
                         "days": [
@@ -305,21 +303,38 @@
                             "Чт",
                             "Пт"
                         ],
-                        "time": "14:00"
+                        "time": "00:05"
                     }
                 }
             },
             "repairs": {
-                "enabled": false,
-                "toolGroups": [],
+                "enabled": true,
+                "toolGroups": [
+                    "Инструмент",
+                    "Бытовки",
+                    "Формы",
+                    "Пропускная",
+                    "Геодезия"
+                ],
                 "telegramSchedule": {
                     "-5145416273": {
-                        "days": [],
-                        "time": "10:00"
+                        "days": [
+                            "Пн",
+                            "Вт",
+                            "Ср",
+                            "Чт",
+                            "Пт"
+                        ],
+                        "time": "00:15"
                     },
                     "-1001994739583": {
-                        "days": [],
-                        "time": "10:00"
+                        "days": [
+                            "Пн",
+                            "Вт",
+                            "Ср",
+                            "Чт"
+                        ],
+                        "time": "00:15"
                     }
                 }
             },

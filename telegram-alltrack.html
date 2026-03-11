@@ -848,13 +848,11 @@
       }
 
       body.is-telegram .screen {
-        padding-top: calc(
-          28px + var(--telegram-top-controls-offset) + env(safe-area-inset-top, 0px)
-        );
+        padding-top: calc(10px + env(safe-area-inset-top, 0px));
       }
 
       body.is-telegram.is-ios {
-        --telegram-top-controls-offset: 52px;
+        --telegram-top-controls-offset: 0px;
       }
 
       .screen::before {
@@ -1860,7 +1858,7 @@
       body.is-ios .energy-grid [data-energy-item],
       body.is-ios .quick-access-list,
       body.is-ios .quick-access-item {
-        touch-action: none;
+        touch-action: pan-y;
       }
 
       body.is-ios .action-card,

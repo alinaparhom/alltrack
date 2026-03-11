@@ -18674,7 +18674,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
   };
 
-  const triggerExcelDownload = async (fileBlob, blobUrl, fileName) => {
+  const triggerExcelDownload = async (fileBlob, blobUrl, fileName, serverFileUrl = "") => {
     if (!fileBlob || !blobUrl) return;
 
     if (typeof navigator !== "undefined" && typeof navigator.msSaveOrOpenBlob === "function") {
@@ -18682,8 +18682,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       return;
     }
 
+    const downloadHref = serverFileUrl || blobUrl;
     const tempLink = document.createElement("a");
-    tempLink.href = blobUrl;
+    tempLink.href = downloadHref;
     tempLink.download = fileName;
     tempLink.rel = "noopener";
     tempLink.style.display = "none";
@@ -18709,7 +18710,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
   };
 
-  const showDownloadReadyMessage = (fileBlob, blobUrl, fileName) => {
+  const showDownloadReadyMessage = (fileBlob, blobUrl, fileName, serverFileUrl = "") => {
     if (!downloadMessageEl) return;
     downloadMessageEl.innerHTML = "";
     const text = document.createElement("p");
@@ -18720,10 +18721,62 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     button.className = "download-ready-button";
     button.innerHTML = '<span aria-hidden="true">⬇️</span><span>Скачать Excel файл</span>';
     button.addEventListener("click", () => {
-      triggerExcelDownload(fileBlob, blobUrl, fileName);
+      triggerExcelDownload(fileBlob, blobUrl, fileName, serverFileUrl);
     });
 
     downloadMessageEl.append(text, button);
+  };
+
+  const blobToBase64 = async (blob) => {
+    const reader = new FileReader();
+    const dataUrl = await new Promise((resolve, reject) => {
+      reader.onloadend = () => resolve(String(reader.result ?? ""));
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+    const [, base64Part = ""] = String(dataUrl).split(",");
+    return base64Part;
+  };
+
+  const buildExportFileName = (currentUserName, date) => {
+    const sourceName = String(currentUserName ?? "").trim();
+    const nameParts = sourceName.split(/\s+/).filter(Boolean);
+    const surname = nameParts[0] || "Пользователь";
+    const timestamp = [
+      date.getFullYear(),
+      String(date.getMonth() + 1).padStart(2, "0"),
+      String(date.getDate()).padStart(2, "0"),
+    ].join("-")
+      + "_"
+      + [
+        String(date.getHours()).padStart(2, "0"),
+        String(date.getMinutes()).padStart(2, "0"),
+        String(date.getSeconds()).padStart(2, "0"),
+      ].join("-");
+    return `${surname}_${timestamp}.xlsx`;
+  };
+
+  const saveExportFileOnServer = async (orgFolder, fileName, fileBlob) => {
+    const contentBase64 = await blobToBase64(fileBlob);
+    const response = await fetch(saveEndpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        entries: [
+          {
+            type: "file",
+            path: `${orgFolder}/Выгрузки/${fileName}`,
+            content: contentBase64,
+            encoding: "base64",
+            ...buildUploadUserMeta({ organizationName: orgFolder }),
+          },
+        ],
+      }),
+    });
+    if (!response.ok) {
+      throw new Error(`save failed: ${response.status}`);
+    }
+    return `./${orgFolder}/Выгрузки/${encodeURIComponent(fileName)}`;
   };
 
   const downloadMyToolsExcel = async () => {
@@ -18810,12 +18863,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     window.XLSX.utils.book_append_sheet(workbook, sheet, "Мои инструменты");
 
     const exportDate = new Date();
-    const datePart = [
-      exportDate.getFullYear(),
-      String(exportDate.getMonth() + 1).padStart(2, "0"),
-      String(exportDate.getDate()).padStart(2, "0"),
-    ].join("-");
-    const fileName = `my-tools-${datePart}.xlsx`;
+    const fileName = buildExportFileName(user?.full_name, exportDate);
 
     try {
       const workbookArray = window.XLSX.write(workbook, {
@@ -18843,11 +18891,18 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         }
       }
 
+      let serverFileUrl = "";
+      try {
+        serverFileUrl = await saveExportFileOnServer(orgFolder, fileName, fileBlob);
+      } catch (error) {
+        console.warn("Не удалось сохранить выгрузку на сервере.", error);
+      }
+
       if (preparedDownloadUrl) {
         URL.revokeObjectURL(preparedDownloadUrl);
       }
       preparedDownloadUrl = URL.createObjectURL(fileBlob);
-      showDownloadReadyMessage(fileBlob, preparedDownloadUrl, fileName);
+      showDownloadReadyMessage(fileBlob, preparedDownloadUrl, fileName, serverFileUrl);
     } catch (error) {
       console.error("Не удалось скачать Excel файл.", error);
       if (downloadMessageEl) {

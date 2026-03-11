@@ -154,6 +154,49 @@ function sanitizeFileName(string $name): string {
   return trim($clean);
 }
 
+function cleanupOldExportFiles(string $folderPath, int $maxFiles = 20): void {
+  if ($maxFiles < 1 || !is_dir($folderPath)) {
+    return;
+  }
+
+  $items = scandir($folderPath);
+  if ($items === false) {
+    return;
+  }
+
+  $files = [];
+  foreach ($items as $item) {
+    if ($item === "." || $item === "..") {
+      continue;
+    }
+    $fullPath = $folderPath . DIRECTORY_SEPARATOR . $item;
+    if (!is_file($fullPath)) {
+      continue;
+    }
+    $mtime = @filemtime($fullPath);
+    $files[] = [
+      "path" => $fullPath,
+      "mtime" => $mtime !== false ? (int) $mtime : 0,
+    ];
+  }
+
+  if (count($files) <= $maxFiles) {
+    return;
+  }
+
+  usort($files, static function (array $a, array $b): int {
+    return ($a["mtime"] ?? 0) <=> ($b["mtime"] ?? 0);
+  });
+
+  $filesToDelete = array_slice($files, 0, count($files) - $maxFiles);
+  foreach ($filesToDelete as $fileInfo) {
+    $oldFilePath = (string) ($fileInfo["path"] ?? "");
+    if ($oldFilePath !== "" && file_exists($oldFilePath)) {
+      @unlink($oldFilePath);
+    }
+  }
+}
+
 function normalizeOrganizationName(string $value): string {
   $value = trim($value);
   $value = mb_strtolower($value, "UTF-8");
@@ -945,6 +988,7 @@ function createOrganizationFolders(array $newOrganizations): void {
     "Фото отказов",
     "Накладные покупка",
     "Накладные перемещения",
+    "Выгрузки",
   ];
 
   foreach ($newOrganizations as $orgShortName) {
@@ -1083,6 +1127,7 @@ function resolveFilePathValue(string $path, array $entry): string {
     "Акты списания",
     "Акты ремонтов",
     "Фото поломок",
+    "Выгрузки",
   ];
   if (!in_array($photoFolderSafe, $allowedFolders, true)) {
     http_response_code(403);
@@ -1162,6 +1207,7 @@ function resolvePhotoFolderPath(array $entry): string {
     "Акты списания",
     "Акты ремонтов",
     "Фото поломок",
+    "Выгрузки",
   ];
   if (!in_array($photoFolderSafe, $allowedFolders, true)) {
     http_response_code(403);
@@ -1215,6 +1261,11 @@ function saveFileEntry(array $entry): void {
     http_response_code(500);
     echo json_encode(["error" => "Не удалось сохранить файл."]);
     exit;
+  }
+
+  $targetDir = dirname($targetPath);
+  if (basename($targetDir) === "Выгрузки") {
+    cleanupOldExportFiles($targetDir, 20);
   }
 }
 

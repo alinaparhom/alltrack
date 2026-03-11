@@ -71,8 +71,8 @@
                 "layoutCustomized": true,
                 "quickAccess": [
                     "breakdowns",
-                    "info",
                     "search",
+                    "info",
                     "tools",
                     "pending"
                 ],
@@ -133,21 +133,68 @@
                     },
                     {
                         "type": "action",
+                        "id": "search"
+                    },
+                    {
+                        "type": "action",
+                        "id": "objects"
+                    },
+                    {
+                        "type": "action",
                         "id": "no-photo"
+                    },
+                    {
+                        "type": "action",
+                        "id": "add-tool"
+                    },
+                    {
+                        "type": "action",
+                        "id": "write-off"
+                    },
+                    {
+                        "type": "action",
+                        "id": "repair"
                     },
                     {
                         "type": "toggle"
                     },
                     {
                         "type": "action",
-                        "id": "search"
+                        "id": "move-other"
+                    },
+                    {
+                        "type": "action",
+                        "id": "base"
+                    },
+                    {
+                        "type": "action",
+                        "id": "add-photo"
+                    },
+                    {
+                        "type": "action",
+                        "id": "remove-photo"
+                    },
+                    {
+                        "type": "action",
+                        "id": "fines"
+                    },
+                    {
+                        "type": "action",
+                        "id": "users"
+                    },
+                    {
+                        "type": "action",
+                        "id": "settings"
+                    },
+                    {
+                        "type": "action",
+                        "id": "info"
                     }
                 ],
                 "layoutCustomized": true,
-                "toolsView": "table",
+                "toolsView": "compact",
                 "quickAccess": [
                     "breakdowns",
-                    "info",
                     "tools"
                 ]
             },
@@ -248,7 +295,7 @@
                             "Чт",
                             "Пт"
                         ],
-                        "time": "09:35"
+                        "time": "11:10"
                     },
                     "-1001994739583": {
                         "days": [
@@ -258,7 +305,7 @@
                             "Чт",
                             "Пт"
                         ],
-                        "time": "09:35"
+                        "time": "11:10"
                     }
                 }
             },

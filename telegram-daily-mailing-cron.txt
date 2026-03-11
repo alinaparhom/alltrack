@@ -1,17 +1,17 @@
-# Рассылки Alltrack без дополнительных настроек сервера для отдельных файлов.
-# Основной URL (рекомендуется):
-# https://<ваш-домен>/js/alltrack/save.php?action=run-scheduled-mailings
+# Рассылки Alltrack без cron и без дополнительных настроек сервера.
+# Планировщик можно запустить один раз, дальше он работает сам каждую минуту в фоне.
 #
-# Альтернатива (обёртка):
-# https://<ваш-домен>/js/alltrack/telegram-scheduler.php
+# Запуск фонового планировщика (один раз):
+# php telegram-scheduler.php --start-daemon
 #
-# Важно:
-# - Время проверяется строго по Москве (Europe/Moscow).
-# - Вызов должен быть каждую минуту.
-# - Рассылки уйдут только в точно заданную минуту из настроек.
+# Проверка статуса:
+# php telegram-scheduler.php --status
+# или
+# https://<ваш-домен>/js/alltrack/telegram-scheduler.php?action=status
 #
-# Пример для внешнего планировщика (каждую минуту):
-# GET https://<ваш-домен>/js/alltrack/save.php?action=run-scheduled-mailings
+# Запуск из браузера (один раз):
+# https://<ваш-домен>/js/alltrack/telegram-scheduler.php?action=start-daemon
 #
-# Локальный cron на сервере (каждую минуту):
-# * * * * * cd /var/www/www-root/data/www/bimmax.pro/js/alltrack && /usr/bin/php telegram-scheduler.php >> /var/www/www-root/data/www/bimmax.pro/js/alltrack/telegram-scheduled-mailings-cron.log 2>&1
+# Что запускается каждую минуту:
+# - save.php --run-scheduled-mailings
+# - рассылка "Ответы на перемещения" строго в заданную минуту по Москве (Europe/Moscow)

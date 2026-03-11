@@ -457,10 +457,9 @@ function isMoveRepliesScheduleDue(array $schedule, DateTimeImmutable $now): bool
   [$scheduleHour, $scheduleMinute] = array_map('intval', explode(':', $timeRaw));
   $scheduleTotalMinutes = ($scheduleHour * 60) + $scheduleMinute;
   $nowTotalMinutes = ((int) $now->format("H") * 60) + (int) $now->format("i");
-  $delta = $nowTotalMinutes - $scheduleTotalMinutes;
-  $gracePeriodMinutes = 15;
-
-  return $delta >= 0 && $delta < $gracePeriodMinutes;
+  // Рассылка должна уходить даже если задача запустилась позже нужной минуты.
+  // Повторную отправку в этот же день блокирует stateKey в runMoveRepliesMailing().
+  return $nowTotalMinutes >= $scheduleTotalMinutes;
 }
 
 function resolveMoveRepliesMailingConfig(array $settings): ?array {

@@ -53,6 +53,9 @@ const defaultPreferences = {
 };
 const quickAccessDefaults = ["breakdowns", "info", "search", "tools", "move"];
 const quickAccessLimit = 5;
+const isIosMobile =
+  /iP(ad|hone|od)/.test(navigator.userAgent) ||
+  (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 const toolsReplacementActionPrefix = "tools-replacement:";
 const energySettingsRoles = [
   responsibleRole,
@@ -143,6 +146,10 @@ const energyResponsibleAccessRoles = new Set([
   leaderRole,
   accountingRole,
 ]);
+
+if (isIosMobile) {
+  document.body?.classList.add("is-ios");
+}
 
 function withCacheBuster(path) {
   if (!cacheBuster) return path;
@@ -19059,6 +19066,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   };
 
   const startDrag = (event, card, source) => {
+    if (event.cancelable && event.pointerType === "touch") {
+      event.preventDefault();
+    }
     const rect = card.getBoundingClientRect();
     dragState.item = card;
     dragState.pointerId = event.pointerId;
@@ -19094,6 +19104,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
   const handleDragMove = (event) => {
     if (!dragState.item) return;
+    if (event.pointerId !== dragState.pointerId) return;
     dragState.lastPointerX = event.clientX;
     dragState.lastPointerY = event.clientY;
     if (!dragState.isDragging) {

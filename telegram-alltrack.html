@@ -1846,6 +1846,22 @@
         width: 100%;
       }
 
+      body.is-ios .energy-grid,
+      body.is-ios .energy-grid [data-energy-item],
+      body.is-ios .quick-access-list,
+      body.is-ios .quick-access-item {
+        touch-action: none;
+      }
+
+      body.is-ios .action-card,
+      body.is-ios .action-card *,
+      body.is-ios .quick-access-item,
+      body.is-ios .quick-access-item * {
+        user-select: none;
+        -webkit-user-select: none;
+        -webkit-touch-callout: none;
+      }
+
       .energy-grid .action-card {
         width: 100%;
         max-width: 100%;

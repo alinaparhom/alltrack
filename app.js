@@ -22963,7 +22963,16 @@ function updateTelegramTopControlsOffset() {
     0,
     Math.round(currentInnerHeight - viewportStableHeight)
   );
-  const topControlsOffset = chromeOffset > 6 ? Math.min(chromeOffset, 72) : 0;
+  const hasFullscreenFlag = typeof webApp.isFullscreen === "boolean";
+  const hasSystemCloseButton = hasFullscreenFlag ? webApp.isFullscreen : chromeOffset > 6;
+
+  let topControlsOffset = 0;
+  if (hasSystemCloseButton) {
+    const estimatedCloseButtonSize = isIosMobile ? 52 : 46;
+    topControlsOffset = Math.max(chromeOffset, estimatedCloseButtonSize);
+  }
+
+  topControlsOffset = Math.min(topControlsOffset, 72);
 
   document.body.style.setProperty("--telegram-top-controls-offset", `${topControlsOffset}px`);
 }

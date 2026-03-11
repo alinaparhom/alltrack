@@ -18674,19 +18674,56 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
   };
 
-  const showDownloadReadyMessage = (blobUrl, fileName) => {
+  const triggerExcelDownload = async (fileBlob, blobUrl, fileName) => {
+    if (!fileBlob || !blobUrl) return;
+
+    if (typeof navigator !== "undefined" && typeof navigator.msSaveOrOpenBlob === "function") {
+      navigator.msSaveOrOpenBlob(fileBlob, fileName);
+      return;
+    }
+
+    const tempLink = document.createElement("a");
+    tempLink.href = blobUrl;
+    tempLink.download = fileName;
+    tempLink.rel = "noopener";
+    tempLink.style.display = "none";
+    document.body.append(tempLink);
+    tempLink.click();
+    tempLink.remove();
+
+    const isIos = /iPad|iPhone|iPod/i.test(navigator?.userAgent ?? "");
+    if (isIos) {
+      try {
+        const fileReader = new FileReader();
+        const dataUrl = await new Promise((resolve, reject) => {
+          fileReader.onloadend = () => resolve(String(fileReader.result ?? ""));
+          fileReader.onerror = reject;
+          fileReader.readAsDataURL(fileBlob);
+        });
+        if (dataUrl) {
+          window.open(dataUrl, "_blank", "noopener,noreferrer");
+        }
+      } catch (error) {
+        console.warn("Не удалось открыть резервный сценарий загрузки для iOS.", error);
+      }
+    }
+  };
+
+  const showDownloadReadyMessage = (fileBlob, blobUrl, fileName) => {
     if (!downloadMessageEl) return;
     downloadMessageEl.innerHTML = "";
     const text = document.createElement("p");
     text.textContent = "Excel файл готов. Нажмите кнопку ниже, чтобы скачать.";
-    const link = document.createElement("a");
-    link.href = blobUrl;
-    link.download = fileName;
-    link.className = "download-option";
-    link.style.display = "inline-flex";
-    link.style.marginTop = "12px";
-    link.textContent = "Скачать Excel";
-    downloadMessageEl.append(text, link);
+
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "download-ready-button";
+    button.innerHTML = '<span aria-hidden="true">⬇️</span><span>Скачать Excel файл</span>';
+    button.addEventListener("click", () => {
+      triggerExcelDownload(fileBlob, blobUrl, fileName);
+    });
+
+    downloadMessageEl.append(text, button);
   };
 
   const downloadMyToolsExcel = async () => {
@@ -18810,7 +18847,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         URL.revokeObjectURL(preparedDownloadUrl);
       }
       preparedDownloadUrl = URL.createObjectURL(fileBlob);
-      showDownloadReadyMessage(preparedDownloadUrl, fileName);
+      showDownloadReadyMessage(fileBlob, preparedDownloadUrl, fileName);
     } catch (error) {
       console.error("Не удалось скачать Excel файл.", error);
       if (downloadMessageEl) {

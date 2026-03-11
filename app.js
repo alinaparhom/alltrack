@@ -4395,6 +4395,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const downloadCloseButton = contentEl.querySelector("[data-energy-download-close]");
   const downloadOptionsEl = contentEl.querySelector("[data-energy-download-modal]");
   const downloadMessageEl = contentEl.querySelector("[data-energy-download-message]");
+  let preparedDownloadUrl = "";
   const objectsModalEl = contentEl.querySelector("[data-energy-objects-modal]");
   const objectsBackdropEl = contentEl.querySelector("[data-energy-objects-backdrop]");
   const objectsCloseButton = contentEl.querySelector("[data-energy-objects-close]");
@@ -18655,6 +18656,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (!downloadModalEl) return;
     downloadModalEl.classList.add("is-hidden");
     document.body.style.overflow = "";
+    if (preparedDownloadUrl) {
+      URL.revokeObjectURL(preparedDownloadUrl);
+      preparedDownloadUrl = "";
+    }
     if (downloadMessageEl) {
       downloadMessageEl.textContent = "";
     }
@@ -18667,6 +18672,21 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (downloadMessageEl) {
       downloadMessageEl.textContent = "";
     }
+  };
+
+  const showDownloadReadyMessage = (blobUrl, fileName) => {
+    if (!downloadMessageEl) return;
+    downloadMessageEl.innerHTML = "";
+    const text = document.createElement("p");
+    text.textContent = "Excel файл готов. Нажмите кнопку ниже, чтобы скачать.";
+    const link = document.createElement("a");
+    link.href = blobUrl;
+    link.download = fileName;
+    link.className = "download-option";
+    link.style.display = "inline-flex";
+    link.style.marginTop = "12px";
+    link.textContent = "Скачать Excel";
+    downloadMessageEl.append(text, link);
   };
 
   const downloadMyToolsExcel = async () => {
@@ -18786,18 +18806,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         }
       }
 
-      const blobUrl = URL.createObjectURL(fileBlob);
-      const downloadLink = document.createElement("a");
-      downloadLink.href = blobUrl;
-      downloadLink.download = fileName;
-      downloadLink.target = "_blank";
-      downloadLink.rel = "noopener";
-      downloadLink.style.display = "none";
-      document.body.appendChild(downloadLink);
-      downloadLink.click();
-      document.body.removeChild(downloadLink);
-      URL.revokeObjectURL(blobUrl);
-      closeDownloadModal();
+      if (preparedDownloadUrl) {
+        URL.revokeObjectURL(preparedDownloadUrl);
+      }
+      preparedDownloadUrl = URL.createObjectURL(fileBlob);
+      showDownloadReadyMessage(preparedDownloadUrl, fileName);
     } catch (error) {
       console.error("Не удалось скачать Excel файл.", error);
       if (downloadMessageEl) {

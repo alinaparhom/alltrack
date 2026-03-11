@@ -44,6 +44,77 @@ function appendMailingLog(string $level, string $message, array $context = []): 
   file_put_contents($logPath, $encoded . PHP_EOL, LOCK_EX);
 }
 
+function schedulerPidIsRunning(int $pid): bool {
+  if ($pid <= 0) {
+    return false;
+  }
+
+  $procPath = "/proc/" . $pid . "/stat";
+  if (file_exists($procPath)) {
+    $stat = @file_get_contents($procPath);
+    if (is_string($stat) && preg_match('/^\d+\s+\([^)]*\)\s+([A-Z])\s/', $stat, $matches)) {
+      if (($matches[1] ?? "") === "Z") {
+        return false;
+      }
+    }
+  }
+
+  if (function_exists("posix_kill")) {
+    return @posix_kill($pid, 0);
+  }
+
+  return file_exists("/proc/" . $pid);
+}
+
+function ensureMailingSchedulerDaemon(): void {
+  if (PHP_SAPI === "cli") {
+    return;
+  }
+
+  $schedulerPath = __DIR__ . DIRECTORY_SEPARATOR . "telegram-scheduler.php";
+  if (!file_exists($schedulerPath)) {
+    return;
+  }
+
+  $pidPath = __DIR__ . DIRECTORY_SEPARATOR . "telegram-scheduler.pid";
+  $runningPid = (int) @file_get_contents($pidPath);
+  if (schedulerPidIsRunning($runningPid)) {
+    return;
+  }
+
+  $bootstrapStatePath = __DIR__ . DIRECTORY_SEPARATOR . "telegram-scheduler-bootstrap.json";
+  $bootstrapState = readJsonFile($bootstrapStatePath, []);
+  $lastAttemptTs = (int) ($bootstrapState["lastAttemptTs"] ?? 0);
+  $nowTs = time();
+  if ($lastAttemptTs > 0 && ($nowTs - $lastAttemptTs) < 30) {
+    return;
+  }
+
+  $nextState = [
+    "lastAttemptTs" => $nowTs,
+    "updatedAt" => (new DateTimeImmutable("now", new DateTimeZone("Europe/Moscow")))->format(DateTimeInterface::ATOM),
+  ];
+  $encoded = json_encode($nextState, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+  if ($encoded !== false) {
+    @file_put_contents($bootstrapStatePath, $encoded . PHP_EOL, LOCK_EX);
+  }
+
+  $phpBinary = defined("PHP_BINARY") && PHP_BINARY ? PHP_BINARY : "php";
+  $command = escapeshellarg($phpBinary)
+    . " " . escapeshellarg($schedulerPath)
+    . " --start-daemon";
+
+  $output = [];
+  $status = 0;
+  @exec($command . " 2>&1", $output, $status);
+  if ($status !== 0) {
+    appendMailingLog("warning", "Не удалось запустить фоновый планировщик рассылок.", [
+      "status" => $status,
+      "output" => implode("\n", $output),
+    ]);
+  }
+}
+
 function readJsonFile(string $path, $default) {
   if (!file_exists($path)) {
     return $default;
@@ -55,6 +126,8 @@ function readJsonFile(string $path, $default) {
   $decoded = json_decode($raw, true);
   return is_array($decoded) ? $decoded : $default;
 }
+
+ensureMailingSchedulerDaemon();
 
 function buildEntries(array $payload): array {
   $entries = $payload["entries"] ?? null;

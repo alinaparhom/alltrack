@@ -4646,6 +4646,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const toolsInfoRepairsEmptyEl = contentEl.querySelector(
     "[data-tools-info-repairs-empty]"
   );
+  const toolsInfoCancelMoveButton = contentEl.querySelector(
+    "[data-tools-info-cancel-move]"
+  );
   const toolsEditAccountingInput = contentEl.querySelector(
     "[data-tools-edit-accounting]"
   );
@@ -9607,6 +9610,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     document.body.style.overflow = "";
     toolsInfoState.tool = null;
     toolsInfoState.kitExpanded = false;
+    if (toolsInfoCancelMoveButton) {
+      toolsInfoCancelMoveButton.classList.add("is-hidden");
+      toolsInfoCancelMoveButton.disabled = true;
+    }
   };
 
   const openToolsInfoModal = async (tool) => {
@@ -9649,7 +9656,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     setToolsInfoTab("moves");
     toolsInfoModalEl.classList.remove("is-hidden");
     document.body.style.overflow = "hidden";
-    await loadToolsInfoData();
+    await Promise.all([loadToolsInfoData(), syncToolsInfoCancelMoveButton(tool)]);
   };
 
   const openToolsEditModal = (tool) => {
@@ -10598,6 +10605,46 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     return { move: moves[matchIndex], moveIndex: matchIndex };
   };
 
+  const syncToolsInfoCancelMoveButton = async (tool) => {
+    if (!toolsInfoCancelMoveButton) return;
+    toolsInfoCancelMoveButton.classList.add("is-hidden");
+    toolsInfoCancelMoveButton.disabled = true;
+    if (!tool) return;
+    const orgFolder = context.orgFolderName ?? "";
+    if (!orgFolder) return;
+    try {
+      const rawMoves = await loadJson(`./${orgFolder}/Перемещения.json`);
+      const normalizedMoves = normalizeCollectionPayload(rawMoves, "moves");
+      const pendingEntry = findPendingMoveForTool(normalizedMoves.items, tool);
+      if (!pendingEntry) return;
+      toolsInfoCancelMoveButton.classList.remove("is-hidden");
+      toolsInfoCancelMoveButton.disabled = false;
+    } catch (error) {
+      console.warn("Не удалось проверить возможность отмены перемещения.", error);
+    }
+  };
+
+  const registerMoveCancelFine = async (move) => {
+    const orgFolder = context.orgFolderName ?? "";
+    if (!orgFolder) return;
+    const fineConfig = settingsData?.organization?.fines?.lateReply ?? {};
+    const lateReplyFineAmount = resolveLateReplyFine(move, fineConfig);
+    if (!lateReplyFineAmount) return;
+    const finedUser = String(move?.["Принял"] ?? "").trim();
+    if (!finedUser) return;
+    const summaryUpdates = new Map([[finedUser, new Map([["Поздний ответ", lateReplyFineAmount]])]]);
+    const finesPath = `./${orgFolder}/Штрафы.json`;
+    let rawFines = {};
+    try {
+      rawFines = await loadJson(finesPath);
+    } catch (error) {
+      rawFines = {};
+    }
+    const finesPayload = applyMoveFinesSummaryUpdates(rawFines, summaryUpdates);
+    await saveJson(finesPath, finesPayload, { user });
+  };
+
+
   const openToolsCancelMoveModal = async (tool) => {
     if (!toolsCancelMoveModalEl) return;
     resetToolsCancelMoveState();
@@ -10675,13 +10722,23 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     toolsCancelMoveState.isSaving = true;
     setToolsCancelMoveMessage("Отменяем перемещение...", "info");
     const responseDate = formatDateValue(new Date());
+    const fineConfig = settingsData?.organization?.fines?.lateReply ?? {};
+    const lateReplyFineAmount = resolveLateReplyFine(move, fineConfig);
     const updatedMoves = [...movesPayload.items];
     updatedMoves[moveIndex] = {
       ...move,
       "Дата ответа": responseDate,
-      Ответ: "Отменено",
+      Ответ: "Отмена перемещения",
+      "Комментарий к ответу": "Отмена перемещения пользователем",
       "Отменил": String(user?.full_name ?? "").trim(),
       "Дата отмены": responseDate,
+      ...(lateReplyFineAmount > 0
+        ? {
+            "Штраф за ответ": lateReplyFineAmount,
+            "Тип штрафа": "Поздний ответ",
+            "Штраф за поздний ответ": "Да",
+          }
+        : {}),
     };
     const movesPath = `./${context.orgFolderName}/Перемещения.json`;
     const movesPayloadOut = movesPayload.wrapper
@@ -10689,6 +10746,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       : updatedMoves;
     try {
       await saveJson(movesPath, movesPayloadOut, { user });
+      await registerMoveCancelFine(updatedMoves[moveIndex]);
       const usersData = await loadJson(usersFilePath).catch(() => ({ users: [] }));
       const organizationName = findUserOrganizationName(user, usersData);
       await notifyMoveCancel({
@@ -11512,6 +11570,14 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     writeOffConfirmFormEl.addEventListener("submit", (event) => {
       event.preventDefault();
       applyWriteOff();
+    });
+  }
+
+  if (toolsInfoCancelMoveButton) {
+    toolsInfoCancelMoveButton.addEventListener("click", () => {
+      const tool = toolsInfoState.tool;
+      if (!tool) return;
+      void openToolsCancelMoveModal(tool);
     });
   }
 

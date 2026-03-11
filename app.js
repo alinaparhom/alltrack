@@ -22961,12 +22961,7 @@ function updateTelegramTopControlsOffset() {
 
   const chromeOffset = Math.max(0, Math.round(currentInnerHeight - viewportStableHeight));
   const adaptiveOffset = Math.min(chromeOffset, 64);
-  const topCloseButtonOffset =
-    (typeof webApp.isFullscreen === "boolean" && webApp.isFullscreen) ||
-    (typeof webApp.isExpanded === "boolean" && webApp.isExpanded)
-      ? 44
-      : 0;
-  const topControlsOffset = Math.max(adaptiveOffset, topCloseButtonOffset);
+  const topControlsOffset = adaptiveOffset;
 
   document.body.style.setProperty("--telegram-top-controls-offset", `${topControlsOffset}px`);
 }

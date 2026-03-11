@@ -18689,9 +18689,40 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       String(exportDate.getDate()).padStart(2, "0"),
     ].join("-");
     const fileName = `my-tools-${datePart}.xlsx`;
-    window.XLSX.writeFile(workbook, fileName);
 
-    closeDownloadModal();
+    try {
+      window.XLSX.writeFile(workbook, fileName);
+      closeDownloadModal();
+      return;
+    } catch (error) {
+      console.warn("Стандартная выгрузка Excel не сработала, пробуем резервный способ.", error);
+    }
+
+    try {
+      const workbookArray = window.XLSX.write(workbook, {
+        bookType: "xlsx",
+        type: "array",
+      });
+      const fileBlob = new Blob([workbookArray], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+      const blobUrl = URL.createObjectURL(fileBlob);
+      const downloadLink = document.createElement("a");
+      downloadLink.href = blobUrl;
+      downloadLink.download = fileName;
+      downloadLink.style.display = "none";
+      document.body.appendChild(downloadLink);
+      downloadLink.click();
+      document.body.removeChild(downloadLink);
+      URL.revokeObjectURL(blobUrl);
+      closeDownloadModal();
+    } catch (error) {
+      console.error("Не удалось скачать Excel файл.", error);
+      if (downloadMessageEl) {
+        downloadMessageEl.textContent =
+          "Не удалось скачать Excel. Попробуйте открыть приложение в веб-версии Telegram или в браузере.";
+      }
+    }
   };
 
   feedbackBackdropEl?.addEventListener("click", closeFeedbackModal);

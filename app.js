@@ -22961,7 +22961,14 @@ function updateTelegramTopControlsOffset() {
 
   const chromeOffset = Math.max(0, Math.round(currentInnerHeight - viewportStableHeight));
   const adaptiveOffset = Math.min(chromeOffset, 64);
-  document.body.style.setProperty("--telegram-top-controls-offset", `${adaptiveOffset}px`);
+  const topCloseButtonOffset =
+    (typeof webApp.isFullscreen === "boolean" && !webApp.isFullscreen) ||
+    (typeof webApp.isExpanded === "boolean" && !webApp.isExpanded)
+      ? 44
+      : 0;
+  const topControlsOffset = Math.max(adaptiveOffset, topCloseButtonOffset);
+
+  document.body.style.setProperty("--telegram-top-controls-offset", `${topControlsOffset}px`);
 }
 
 if (window.Telegram?.WebApp) {
@@ -22973,6 +22980,7 @@ if (window.Telegram?.WebApp) {
 
   updateTelegramTopControlsOffset();
   Telegram.WebApp.onEvent("viewportChanged", updateTelegramTopControlsOffset);
+  Telegram.WebApp.onEvent("fullscreenChanged", updateTelegramTopControlsOffset);
   window.addEventListener("resize", updateTelegramTopControlsOffset, { passive: true });
 }
 

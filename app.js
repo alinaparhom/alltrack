@@ -18761,14 +18761,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const fileName = `my-tools-${datePart}.xlsx`;
 
     try {
-      window.XLSX.writeFile(workbook, fileName);
-      closeDownloadModal();
-      return;
-    } catch (error) {
-      console.warn("Стандартная выгрузка Excel не сработала, пробуем резервный способ.", error);
-    }
-
-    try {
       const workbookArray = window.XLSX.write(workbook, {
         bookType: "xlsx",
         type: "array",
@@ -18776,10 +18768,30 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const fileBlob = new Blob([workbookArray], {
         type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       });
+
+      const shareSupported =
+        typeof navigator !== "undefined" &&
+        typeof navigator.canShare === "function" &&
+        typeof navigator.share === "function";
+      if (shareSupported) {
+        const excelFile = new File([fileBlob], fileName, { type: fileBlob.type });
+        if (navigator.canShare({ files: [excelFile] })) {
+          await navigator.share({
+            files: [excelFile],
+            title: "Мои инструменты",
+            text: "Выгрузка Excel",
+          });
+          closeDownloadModal();
+          return;
+        }
+      }
+
       const blobUrl = URL.createObjectURL(fileBlob);
       const downloadLink = document.createElement("a");
       downloadLink.href = blobUrl;
       downloadLink.download = fileName;
+      downloadLink.target = "_blank";
+      downloadLink.rel = "noopener";
       downloadLink.style.display = "none";
       document.body.appendChild(downloadLink);
       downloadLink.click();
@@ -18817,6 +18829,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   downloadOptionsEl?.addEventListener("click", (event) => {
     const button = event.target.closest("[data-download-option]");
     if (!button) return;
+    event.preventDefault();
+    event.stopPropagation();
     const option = button.dataset.downloadOption;
     if (!option) return;
     if (option === "my-tools") {

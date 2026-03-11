@@ -462,6 +462,22 @@ function isMoveRepliesScheduleDue(array $schedule, DateTimeImmutable $now): bool
   return $delta >= 0 && $delta < 5;
 }
 
+function resolveMoveRepliesMailingConfig(array $settings): ?array {
+  $candidates = [
+    $settings["mailings"]["moveReplies"] ?? null,
+    $settings["organization"]["mailings"]["moveReplies"] ?? null,
+  ];
+
+  foreach ($candidates as $candidate) {
+    if (!is_array($candidate)) {
+      continue;
+    }
+    return $candidate;
+  }
+
+  return null;
+}
+
 function buildMoveRepliesMailingText(string $organization, array $pendingMoves): string {
   $count = count($pendingMoves);
   $headerOrg = trim($organization) !== "" ? trim($organization) : "Организация";
@@ -545,7 +561,7 @@ function runMoveRepliesMailing(array $options = []): array {
     $summary["organizationsChecked"]++;
 
     $settings = readJsonFile($settingsPath, []);
-    $moveRepliesMailing = $settings["mailings"]["moveReplies"] ?? null;
+    $moveRepliesMailing = resolveMoveRepliesMailingConfig($settings);
     if (!is_array($moveRepliesMailing) || empty($moveRepliesMailing["enabled"])) {
       continue;
     }

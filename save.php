@@ -640,6 +640,43 @@ function runMoveRepliesMailing(array $options = []): array {
   return $summary;
 }
 
+function runMoveRepliesMailingIfNeeded(): void {
+  $timezone = new DateTimeZone("Europe/Moscow");
+  $now = new DateTimeImmutable("now", $timezone);
+  $currentMinuteStamp = $now->format("Y-m-d H:i");
+
+  $statePath = __DIR__ . DIRECTORY_SEPARATOR . "telegram-move-replies-mailing-last-run.json";
+  $state = readJsonFile($statePath, []);
+  $lastRunMinute = trim((string) ($state["lastRunMinute"] ?? ""));
+  if ($lastRunMinute === $currentMinuteStamp) {
+    return;
+  }
+
+  $result = runMoveRepliesMailing([
+    "dryRun" => false,
+  ]);
+
+  if (empty($result["success"])) {
+    appendMailingLog("error", "Не удалось выполнить рассылку 'Ответы на перемещения' при автозапуске.", [
+      "result" => $result,
+    ]);
+  }
+
+  $nextState = [
+    "lastRunMinute" => $currentMinuteStamp,
+    "updatedAt" => $now->format(DateTimeInterface::ATOM),
+  ];
+  $encoded = json_encode($nextState, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+  if ($encoded !== false) {
+    $saved = file_put_contents($statePath, $encoded . PHP_EOL, LOCK_EX);
+    if ($saved === false) {
+      appendMailingLog("warning", "Не удалось записать состояние автозапуска рассылки 'Ответы на перемещения'.", [
+        "statePath" => $statePath,
+      ]);
+    }
+  }
+}
+
 function pickOrganizationShortName(array $orgData, string $orgName): string {
   if ($orgName === "") {
     return "Организация";
@@ -1610,5 +1647,6 @@ foreach ($entries as $entry) {
 }
 
 runNoPhotoFineRecalculationIfNeeded();
+runMoveRepliesMailingIfNeeded();
 
 echo json_encode(["success" => true]);

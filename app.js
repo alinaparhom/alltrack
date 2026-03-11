@@ -1014,7 +1014,14 @@ function buildMoveToolNotificationMessage(
 
 function buildMoveByEnergyNotificationMessage(
   tool,
-  { movedBy, oldObject, targetObject, oldResponsible, newResponsible } = {}
+  {
+    movedBy,
+    oldObject,
+    targetObject,
+    oldResponsible,
+    newResponsible,
+    fineNote,
+  } = {}
 ) {
   const titleParts = [
     formatNotificationValue(tool?.["Наименование"], ""),
@@ -1024,7 +1031,7 @@ function buildMoveByEnergyNotificationMessage(
     .map((part) => part.trim())
     .filter(Boolean);
   const titleLine = titleParts.length ? titleParts.join(" ") : "—";
-  return [
+  const lines = [
     "😤ПЕРЕМЕЩЕНИЕ ЭНЕРГЕТИКОМ",
     `1. Номер: ${escapeTelegramHtml(formatNotificationValue(tool?.["Номер"]))}`,
     `2. Бух.номер: ${escapeTelegramHtml(
@@ -1042,7 +1049,11 @@ function buildMoveByEnergyNotificationMessage(
       formatNotificationValue(newResponsible)
     )}`,
     `Переместил: ${escapeTelegramHtml(formatNotificationValue(movedBy))}`,
-  ].join("\n");
+  ];
+  if (fineNote) {
+    lines.push("", escapeTelegramHtml(formatNotificationValue(fineNote)));
+  }
+  return lines.join("\n");
 }
 
 function buildMoveToolResponsibleMessage(
@@ -2087,6 +2098,18 @@ function buildLateReplyFineNote(settingsData) {
   return `У вас ${daysText} дней на ответ, далее штраф ${amountText} за каждый день без ответа.`;
 }
 
+function getMovedByEnergyFineAmount(settingsData) {
+  const fine = settingsData?.organization?.fines?.movedByEnergy ?? {};
+  if (!fine.enabled) return 0;
+  return Math.max(0, normalizeNumber(fine.amount, 0));
+}
+
+function buildMovedByEnergyFineNote(settingsData) {
+  const amount = getMovedByEnergyFineAmount(settingsData);
+  if (!amount) return "";
+  return `Назначен штраф за перемещение энергетиком: ${formatNotificationCost(amount)}.`;
+}
+
 function resolveToolPhotoNumberForNotification(tool) {
   const byNumber = String(tool?.["Номер"] ?? "").trim();
   const byAccounting = String(tool?.["Бух.номер"] ?? "").trim();
@@ -2112,6 +2135,7 @@ async function notifyMoveTool({
   moveReason,
   vacationNote,
   notificationId = "moveTool",
+  fineNote,
 }) {
   const result = {
     sent: false,
@@ -2142,6 +2166,7 @@ async function notifyMoveTool({
             targetObject,
             oldResponsible,
             newResponsible: responsibleName,
+            fineNote,
           })
         : buildMoveToolNotificationMessage(tool, {
             movedBy,
@@ -2231,12 +2256,16 @@ async function notifyMoveTool({
       });
     let responsibleSent = false;
     if (resolvedResponsibleId) {
-      const fineNote = buildLateReplyFineNote(settingsData);
+      const lateReplyFineNote = buildLateReplyFineNote(settingsData);
+      const combinedFineNote = [lateReplyFineNote, fineNote]
+        .map((item) => String(item ?? "").trim())
+        .filter(Boolean)
+        .join("\n");
       const responsibleMessage = buildMoveToolResponsibleMessage(tool, {
         movedBy,
         oldObject,
         targetObject,
-        fineNote: fineNote || "",
+        fineNote: combinedFineNote,
         moveReason,
         vacationNote,
       });
@@ -11929,6 +11958,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const eligibleTools = [];
       const isMoveByReplacement = toolsState.mode === "replacement";
       const allowMoveWithoutPhoto = toolsState.mode === "move-other";
+      const settingsPath = `./${context.orgFolderName}/Настройки.json`;
+      const settingsData = await loadJson(settingsPath).catch(() => ({}));
+      const movedByEnergyFineAmount = getMovedByEnergyFineAmount(settingsData);
+      const movedByEnergyFineNote = buildMovedByEnergyFineNote(settingsData);
+      const movedByEnergySummaryUpdates = new Map();
       const vacationNote = isMoveByReplacement
         ? "Отправлено другим пользователем, так как ответственный в отпуске"
         : "";
@@ -11946,18 +11980,40 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           skippedCount += 1;
           return;
         }
+        const oldResponsible = String(tool?.["Ответственный"] ?? "").trim();
+        const movedByName = String(user?.full_name ?? "").trim();
+        const isMovedByEnergy =
+          allowMoveWithoutPhoto &&
+          oldResponsible &&
+          normalizePersonName(oldResponsible) !== normalizePersonName(movedByName);
+        if (isMovedByEnergy && movedByEnergyFineAmount > 0) {
+          const current = normalizeCostValue(
+            movedByEnergySummaryUpdates.get(oldResponsible)
+          ) || 0;
+          movedByEnergySummaryUpdates.set(
+            oldResponsible,
+            current + movedByEnergyFineAmount
+          );
+        }
         eligibleTools.push(tool);
         eligibleEntries.push({
           Номер: String(tool?.["Номер"] ?? "").trim(),
           "Бух.номер": accountingNumber,
           "Дата перемещения": formatDateValue(now),
           "Дата ответа": "",
-          Переместил: String(user?.full_name ?? "").trim(),
+          Переместил: movedByName,
           Принял: responsible,
           "Старый объект": String(tool?.["Объект"] ?? "").trim(),
           "Новый объект": targetObject,
           "Причина перемещения": moveReason,
           "Примечание к отправке": vacationNote,
+          "Перемещение энергетиком": isMovedByEnergy ? "Да" : "Нет",
+          "Ответственный до перемещения": oldResponsible,
+          "Переместил энергетик": isMovedByEnergy ? movedByName : "",
+          "Штраф за перемещение энергетиком":
+            isMovedByEnergy && movedByEnergyFineAmount > 0
+              ? movedByEnergyFineAmount
+              : 0,
           Статус: String(tool?.["Статус"] ?? "").trim(),
         });
       });
@@ -11989,6 +12045,18 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const updatedMoves = [...movesData, ...eligibleEntries];
       try {
         await saveJson(movesPath, updatedMoves, { user });
+        if (movedByEnergySummaryUpdates.size) {
+          const finesPath = `./${context.orgFolderName}/Штрафы.json`;
+          const summaryUpdates = new Map();
+          movedByEnergySummaryUpdates.forEach((amount, userName) => {
+            const fineMap = new Map();
+            fineMap.set("Перемещения энергетиком", amount);
+            summaryUpdates.set(userName, fineMap);
+          });
+          const rawFines = await loadJson(finesPath).catch(() => ({}));
+          const nextFines = applyMoveFinesSummaryUpdates(rawFines, summaryUpdates);
+          await saveJson(finesPath, nextFines, { user });
+        }
         const message = skippedCount
           ? `Перемещение создано: ${eligibleEntries.length}. Пропущено: ${skippedCount}.`
           : `Перемещение создано: ${eligibleEntries.length}.`;
@@ -12007,6 +12075,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
               movedBy: String(user?.full_name ?? "").trim(),
               moveReason,
               vacationNote,
+              fineNote:
+                toolsState.mode === "move-other" ? movedByEnergyFineNote : "",
               notificationId:
                 toolsState.mode === "move-other" ? "moveByEnergy" : "moveTool",
             })

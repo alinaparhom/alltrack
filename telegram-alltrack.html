@@ -32,6 +32,7 @@
         --text-lg: 16px;
         --text-md: 14px;
         --text-sm: 12px;
+        --telegram-top-controls-offset: 36px;
       }
 
       body[data-theme="dark"] {
@@ -844,7 +845,13 @@
       }
 
       body.is-telegram .screen {
-        padding-top: calc(28px + 36px + env(safe-area-inset-top, 0px));
+        padding-top: calc(
+          28px + var(--telegram-top-controls-offset) + env(safe-area-inset-top, 0px)
+        );
+      }
+
+      body.is-telegram.is-ios {
+        --telegram-top-controls-offset: 52px;
       }
 
       .screen::before {

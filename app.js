@@ -22953,6 +22953,13 @@ if (window.Telegram?.WebApp) {
   Telegram.WebApp.setHeaderColor("#f5f7ff");
   Telegram.WebApp.setBackgroundColor("#f5f7ff");
   document.body?.classList.add("is-telegram");
+
+  const telegramLaunchData = Telegram.WebApp.initDataUnsafe ?? {};
+  const isChatInputLaunch =
+    Boolean(telegramLaunchData.chat_type) && !Boolean(telegramLaunchData.query_id);
+  if (isChatInputLaunch) {
+    document.body?.classList.add("is-chat-input-launch");
+  }
 }
 
 userSettingsTriggerEl?.addEventListener("click", () => {

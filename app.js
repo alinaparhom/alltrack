@@ -2562,11 +2562,6 @@ function renderUserSettingsView(user, preferences) {
   const normalized = normalizePreferences(preferences);
   return `
     <section class="role-card">
-      <div class="settings-header">
-        <div class="settings-title">
-          <span class="role-pill">Настройки</span>
-        </div>
-      </div>
       <form class="form-grid" data-settings-form>
         <div class="settings-section">
           <div class="settings-section-title">Вид значков на странице</div>

@@ -396,6 +396,233 @@ function runNoPhotoFineRecalculationIfNeeded(): void {
   }
 }
 
+function normalizeWeekDayLabel(string $value): string {
+  $normalized = mb_strtolower(trim($value), "UTF-8");
+  $normalized = str_replace(["ё", "."], ["е", ""], $normalized);
+  $normalized = preg_replace('/\s+/u', '', $normalized);
+  $map = [
+    "пн" => "Пн",
+    "понед" => "Пн",
+    "понедельник" => "Пн",
+    "вт" => "Вт",
+    "втор" => "Вт",
+    "вторник" => "Вт",
+    "ср" => "Ср",
+    "сред" => "Ср",
+    "среда" => "Ср",
+    "чт" => "Чт",
+    "чет" => "Чт",
+    "четверг" => "Чт",
+    "пт" => "Пт",
+    "пят" => "Пт",
+    "пятница" => "Пт",
+    "сб" => "Сб",
+    "суб" => "Сб",
+    "суббота" => "Сб",
+    "вс" => "Вс",
+    "воскр" => "Вс",
+    "воскресенье" => "Вс",
+  ];
+  return $map[$normalized] ?? "";
+}
+
+function isMoveRepliesScheduleDue(array $schedule, DateTimeImmutable $now): bool {
+  $daysRaw = $schedule["days"] ?? [];
+  if (!is_array($daysRaw) || empty($daysRaw)) {
+    return false;
+  }
+
+  $timeRaw = trim((string) ($schedule["time"] ?? ""));
+  if (!preg_match('/^(?:[01]\d|2[0-3]):[0-5]\d$/', $timeRaw)) {
+    return false;
+  }
+
+  $dayByNumber = [1 => "Пн", 2 => "Вт", 3 => "Ср", 4 => "Чт", 5 => "Пт", 6 => "Сб", 7 => "Вс"];
+  $today = $dayByNumber[(int) $now->format("N")] ?? "";
+  if ($today === "") {
+    return false;
+  }
+
+  $allowedDays = [];
+  foreach ($daysRaw as $day) {
+    $label = normalizeWeekDayLabel((string) $day);
+    if ($label !== "") {
+      $allowedDays[$label] = true;
+    }
+  }
+  if (empty($allowedDays[$today])) {
+    return false;
+  }
+
+  [$scheduleHour, $scheduleMinute] = array_map('intval', explode(':', $timeRaw));
+  $scheduleTotalMinutes = ($scheduleHour * 60) + $scheduleMinute;
+  $nowTotalMinutes = ((int) $now->format("H") * 60) + (int) $now->format("i");
+  $delta = $nowTotalMinutes - $scheduleTotalMinutes;
+
+  return $delta >= 0 && $delta < 5;
+}
+
+function buildMoveRepliesMailingText(string $organization, array $pendingMoves): string {
+  $count = count($pendingMoves);
+  $headerOrg = trim($organization) !== "" ? trim($organization) : "Организация";
+  $lines = [
+    "📦 Ответы на перемещения",
+    "🏢 " . $headerOrg,
+    "",
+    "Ожидают ответа: " . $count,
+  ];
+
+  $maxItems = 20;
+  $visibleMoves = array_slice($pendingMoves, 0, $maxItems);
+  foreach ($visibleMoves as $move) {
+    $toolName = trim((string) ($move["Инструмент"] ?? $move["Название"] ?? $move["Наименование"] ?? "Инструмент"));
+    $toolNumber = trim((string) ($move["Номер"] ?? $move["Бух.номер"] ?? ""));
+    $acceptedBy = trim((string) ($move["Принял"] ?? ""));
+    $toObject = trim((string) ($move["Новый объект"] ?? ""));
+    $line = "• " . $toolName;
+    if ($toolNumber !== "") {
+      $line .= " (№" . $toolNumber . ")";
+    }
+    if ($toObject !== "") {
+      $line .= " → " . $toObject;
+    }
+    if ($acceptedBy !== "") {
+      $line .= " · Принял: " . $acceptedBy;
+    }
+    $lines[] = $line;
+  }
+
+  if ($count > $maxItems) {
+    $lines[] = "… и ещё " . ($count - $maxItems) . ".";
+  }
+
+  return implode("\n", $lines);
+}
+
+function runMoveRepliesMailing(array $options = []): array {
+  $timezone = new DateTimeZone("Europe/Moscow");
+  $now = new DateTimeImmutable("now", $timezone);
+  $dryRun = !empty($options["dryRun"]);
+
+  $botToken = getenv("ALLTRACK_BOT_TOKEN") ?: "";
+  if ($botToken === "") {
+    $botToken = "8549452123:AAGxveuJSVf-xpNHQYTDKDmuMmHjGRVeDj0";
+  }
+
+  $statePath = __DIR__ . DIRECTORY_SEPARATOR . "telegram-move-replies-mailing-state.json";
+  $state = readJsonFile($statePath, ["sent" => []]);
+  $sentState = is_array($state["sent"] ?? null) ? $state["sent"] : [];
+
+  $summary = [
+    "success" => true,
+    "mode" => "move-replies-mailing-cli",
+    "time" => $now->format(DateTimeInterface::ATOM),
+    "dryRun" => $dryRun,
+    "organizationsChecked" => 0,
+    "messagesSent" => 0,
+    "organizations" => [],
+  ];
+
+  $entries = @scandir(__DIR__);
+  if (!is_array($entries)) {
+    return ["success" => false, "mode" => "move-replies-mailing-cli", "error" => "Не удалось прочитать папки организаций."];
+  }
+
+  foreach ($entries as $orgFolder) {
+    if ($orgFolder === "." || $orgFolder === "..") {
+      continue;
+    }
+    $orgPath = __DIR__ . DIRECTORY_SEPARATOR . $orgFolder;
+    if (!is_dir($orgPath)) {
+      continue;
+    }
+
+    $settingsPath = $orgPath . DIRECTORY_SEPARATOR . "Настройки.json";
+    $movesPath = $orgPath . DIRECTORY_SEPARATOR . "Перемещения.json";
+    if (!file_exists($settingsPath) || !file_exists($movesPath)) {
+      continue;
+    }
+    $summary["organizationsChecked"]++;
+
+    $settings = readJsonFile($settingsPath, []);
+    $moveRepliesMailing = $settings["mailings"]["moveReplies"] ?? null;
+    if (!is_array($moveRepliesMailing) || empty($moveRepliesMailing["enabled"])) {
+      continue;
+    }
+
+    $scheduleByGroup = $moveRepliesMailing["telegramSchedule"] ?? [];
+    if (!is_array($scheduleByGroup) || empty($scheduleByGroup)) {
+      continue;
+    }
+
+    $moves = readJsonArrayFile($movesPath);
+    $pendingMoves = [];
+    foreach ($moves as $move) {
+      if (!is_array($move)) {
+        continue;
+      }
+      $answer = trim((string) ($move["Ответ"] ?? ""));
+      if ($answer !== "") {
+        continue;
+      }
+      $pendingMoves[] = $move;
+    }
+
+    if (empty($pendingMoves)) {
+      continue;
+    }
+
+    $orgSentCount = 0;
+    foreach ($scheduleByGroup as $groupIdRaw => $schedule) {
+      $chatId = normalizeTelegramId($groupIdRaw);
+      if (!$chatId || !is_array($schedule)) {
+        continue;
+      }
+      if (!isMoveRepliesScheduleDue($schedule, $now)) {
+        continue;
+      }
+
+      $scheduleTime = trim((string) ($schedule["time"] ?? ""));
+      $stateKey = $orgFolder . "|" . $chatId . "|" . $now->format("Y-m-d") . "|" . $scheduleTime;
+      if (!empty($sentState[$stateKey])) {
+        continue;
+      }
+
+      $text = buildMoveRepliesMailingText($orgFolder, $pendingMoves);
+      $sendResult = $dryRun
+        ? ["ok" => true, "statusCode" => 0]
+        : sendTelegramTextMessage($botToken, $chatId, $text);
+
+      if (!empty($sendResult["ok"])) {
+        $sentState[$stateKey] = $now->format(DateTimeInterface::ATOM);
+        $orgSentCount++;
+        $summary["messagesSent"]++;
+      } else {
+        appendMailingLog("error", "Ошибка рассылки 'Ответы на перемещения'.", [
+          "organization" => $orgFolder,
+          "chatId" => $chatId,
+          "error" => $sendResult["error"] ?? "Неизвестная ошибка",
+        ]);
+      }
+    }
+
+    if ($orgSentCount > 0) {
+      $summary["organizations"][] = [
+        "organization" => $orgFolder,
+        "messagesSent" => $orgSentCount,
+        "pendingMoves" => count($pendingMoves),
+      ];
+    }
+  }
+
+  $encodedState = json_encode(["sent" => $sentState], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+  if ($encodedState !== false && !$dryRun) {
+    file_put_contents($statePath, $encodedState . PHP_EOL, LOCK_EX);
+  }
+
+  return $summary;
+}
+
 function pickOrganizationShortName(array $orgData, string $orgName): string {
   if ($orgName === "") {
     return "Организация";
@@ -1330,6 +1557,14 @@ function sendFeedbackStatusNotification(array $entry): void {
 $isCli = PHP_SAPI === "cli";
 if ($isCli) {
   $argvList = isset($argv) && is_array($argv) ? $argv : [];
+  if (in_array("--run-move-replies-mailing", $argvList, true)) {
+    $dryRun = in_array("--dry-run", $argvList, true);
+    $result = runMoveRepliesMailing([
+      "dryRun" => $dryRun,
+    ]);
+    echo json_encode($result, JSON_UNESCAPED_UNICODE) . PHP_EOL;
+    exit;
+  }
   if (in_array("--run-daily-no-photo-fines", $argvList, true)) {
     $respectTime = !in_array("--ignore-time", $argvList, true);
     $dryRun = in_array("--dry-run", $argvList, true);

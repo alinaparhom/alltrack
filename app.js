@@ -18980,6 +18980,21 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     mouse: 140,
   };
   let quickAccessOrderDirty = false;
+  let telegramVerticalSwipesBlocked = false;
+  const setTelegramVerticalSwipesBlocked = (shouldBlock) => {
+    if (!isIosMobile) return;
+    const webApp = window.Telegram?.WebApp;
+    if (!webApp) return;
+    if (shouldBlock && !telegramVerticalSwipesBlocked) {
+      webApp.disableVerticalSwipes?.();
+      telegramVerticalSwipesBlocked = true;
+      return;
+    }
+    if (!shouldBlock && telegramVerticalSwipesBlocked) {
+      webApp.enableVerticalSwipes?.();
+      telegramVerticalSwipesBlocked = false;
+    }
+  };
   const animateEnergyReorder = (firstRects) => {
     const items = Array.from(gridEl.querySelectorAll("[data-energy-item]"));
     items.forEach((item) => {
@@ -19045,6 +19060,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (dragState.isDragging) {
       gridEl.classList.remove("is-dragging");
       dragState.isDragging = false;
+      setTelegramVerticalSwipesBlocked(false);
       blockClick = true;
       await saveLayout();
       setTimeout(() => {
@@ -19056,6 +19072,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     dragState.pointerType = null;
     dragState.source = null;
     quickAccessOrderDirty = false;
+    setTelegramVerticalSwipesBlocked(false);
   };
 
   const updateDragTransform = (clientX, clientY) => {
@@ -19089,6 +19106,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     dragState.holdTimer = window.setTimeout(() => {
       if (!dragState.item) return;
       dragState.isDragging = true;
+      setTelegramVerticalSwipesBlocked(true);
       dragState.item.classList.add("is-dragging");
       if (source === "grid") {
         gridEl.classList.add("is-dragging");

@@ -22951,12 +22951,6 @@ function updateTelegramTopControlsOffset() {
   const webApp = window.Telegram?.WebApp;
   if (!webApp || !document.body) return;
 
-  const hasSystemCloseButton = webApp.isFullscreen === true;
-  if (!hasSystemCloseButton) {
-    document.body.style.setProperty("--telegram-top-controls-offset", "0px");
-    return;
-  }
-
   const viewportStableHeight = Number(webApp.viewportStableHeight);
   const currentInnerHeight = window.innerHeight;
 
@@ -22965,9 +22959,11 @@ function updateTelegramTopControlsOffset() {
     return;
   }
 
-  const chromeOffset = Math.max(0, Math.round(currentInnerHeight - viewportStableHeight));
-  const adaptiveOffset = Math.min(chromeOffset, 64);
-  const topControlsOffset = adaptiveOffset;
+  const chromeOffset = Math.max(
+    0,
+    Math.round(currentInnerHeight - viewportStableHeight)
+  );
+  const topControlsOffset = chromeOffset > 6 ? Math.min(chromeOffset, 72) : 0;
 
   document.body.style.setProperty("--telegram-top-controls-offset", `${topControlsOffset}px`);
 }

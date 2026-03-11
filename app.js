@@ -18966,12 +18966,18 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     isDragging: false,
     pointerStartX: 0,
     pointerStartY: 0,
-    startCenterX: 0,
-    startCenterY: 0,
+    startLeft: 0,
+    startTop: 0,
+    pointerOffsetX: 0,
+    pointerOffsetY: 0,
     lastPointerX: 0,
     lastPointerY: 0,
     rafId: null,
     source: null,
+  };
+  const dragHoldDelay = {
+    touch: 180,
+    mouse: 140,
   };
   let quickAccessOrderDirty = false;
   const animateEnergyReorder = (firstRects) => {
@@ -19054,8 +19060,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
   const updateDragTransform = (clientX, clientY) => {
     if (!dragState.item) return;
-    const deltaX = clientX - dragState.startCenterX;
-    const deltaY = clientY - dragState.startCenterY;
+    const deltaX = clientX - dragState.pointerOffsetX - dragState.startLeft;
+    const deltaY = clientY - dragState.pointerOffsetY - dragState.startTop;
     dragState.item.style.setProperty("--drag-x", `${deltaX}px`);
     dragState.item.style.setProperty("--drag-y", `${deltaY}px`);
   };
@@ -19072,8 +19078,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     dragState.pointerStartY = event.clientY;
     dragState.lastPointerX = event.clientX;
     dragState.lastPointerY = event.clientY;
-    dragState.startCenterX = rect.left + rect.width / 2;
-    dragState.startCenterY = rect.top + rect.height / 2;
+    dragState.startLeft = rect.left;
+    dragState.startTop = rect.top;
+    dragState.pointerOffsetX = event.clientX - rect.left;
+    dragState.pointerOffsetY = event.clientY - rect.top;
     dragState.source = source;
     if (source === "quick") {
       quickAccessOrderDirty = false;
@@ -19087,7 +19095,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       }
       card.setPointerCapture(dragState.pointerId);
       updateDragTransform(dragState.lastPointerX, dragState.lastPointerY);
-    }, event.pointerType === "touch" ? 280 : 200);
+    }, event.pointerType === "touch" ? dragHoldDelay.touch : dragHoldDelay.mouse);
   };
 
   gridEl.addEventListener("pointerdown", (event) => {
@@ -19139,8 +19147,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         shouldInsertAfter ? target.nextSibling : target
       );
       const updatedRect = dragState.item.getBoundingClientRect();
-      dragState.startCenterX += updatedRect.left - draggedRect.left;
-      dragState.startCenterY += updatedRect.top - draggedRect.top;
+      dragState.startLeft += updatedRect.left - draggedRect.left;
+      dragState.startTop += updatedRect.top - draggedRect.top;
       animateEnergyReorder(firstRects);
       scheduleLayoutSave();
       return;
@@ -19171,8 +19179,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         shouldInsertAfter ? target.nextSibling : target
       );
       const updatedRect = dragState.item.getBoundingClientRect();
-      dragState.startCenterX += updatedRect.left - draggedRect.left;
-      dragState.startCenterY += updatedRect.top - draggedRect.top;
+      dragState.startLeft += updatedRect.left - draggedRect.left;
+      dragState.startTop += updatedRect.top - draggedRect.top;
       animateQuickAccessReorder(firstRects);
       quickAccessOrderDirty = true;
     }

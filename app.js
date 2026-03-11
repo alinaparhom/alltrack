@@ -12001,7 +12001,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           );
         }
         eligibleTools.push(tool);
-        eligibleEntries.push({
+        const entry = {
           Номер: String(tool?.["Номер"] ?? "").trim(),
           "Бух.номер": accountingNumber,
           "Дата перемещения": formatDateValue(now),
@@ -12010,17 +12010,18 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           Принял: responsible,
           "Старый объект": String(tool?.["Объект"] ?? "").trim(),
           "Новый объект": targetObject,
-          "Причина перемещения": moveReason,
-          "Примечание к отправке": vacationNote,
-          "Перемещение энергетиком": isMovedByEnergy ? "Да" : "Нет",
-          "Ответственный до перемещения": oldResponsible,
-          "Переместил энергетик": isMovedByEnergy ? movedByName : "",
-          "Штраф за перемещение энергетиком":
-            isMovedByEnergy && movedByEnergyFineAmount > 0
-              ? movedByEnergyFineAmount
-              : 0,
           Статус: String(tool?.["Статус"] ?? "").trim(),
-        });
+        };
+
+        if (isMovedByEnergy) {
+          entry["Причина перемещения"] = moveReason;
+          entry["Ответственный до перемещения"] = oldResponsible;
+          entry["Переместил энергетик"] = movedByName;
+          entry["Штраф за перемещение энергетиком"] =
+            movedByEnergyFineAmount > 0 ? movedByEnergyFineAmount : 0;
+        }
+
+        eligibleEntries.push(entry);
       });
 
       if (!eligibleEntries.length) {

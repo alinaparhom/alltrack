@@ -18788,7 +18788,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     return `./${orgFolder}/Выгрузки/${encodeURIComponent(fileName)}`;
   };
 
-  const downloadMyToolsExcel = async () => {
+  const downloadToolsExcel = async ({ scope = "my" } = {}) => {
     if (!window.XLSX) {
       if (downloadMessageEl) {
         downloadMessageEl.textContent =
@@ -18824,9 +18824,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
 
     const selectedTools = rawTools
-      .filter(
-        (tool) => normalizePersonName(tool?.["Ответственный"] ?? "") === userNameKey
-      )
+      .filter((tool) => {
+        if (scope === "all") {
+          return true;
+        }
+        return normalizePersonName(tool?.["Ответственный"] ?? "") === userNameKey;
+      })
       .sort((a, b) =>
         resolveToolNumberValue(a).localeCompare(resolveToolNumberValue(b), "ru", {
           numeric: true,
@@ -18835,7 +18838,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
     if (!selectedTools.length) {
       if (downloadMessageEl) {
-        downloadMessageEl.textContent = "У вас пока нет инструментов для выгрузки.";
+        downloadMessageEl.textContent =
+          scope === "all"
+            ? "В базе пока нет инструментов для выгрузки."
+            : "У вас пока нет инструментов для выгрузки.";
       }
       return;
     }
@@ -18869,10 +18875,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
     const workbook = window.XLSX.utils.book_new();
     const sheet = window.XLSX.utils.aoa_to_sheet([header, ...rows]);
-    window.XLSX.utils.book_append_sheet(workbook, sheet, "Мои инструменты");
+    const sheetTitle = scope === "all" ? "Все инструменты" : "Мои инструменты";
+    window.XLSX.utils.book_append_sheet(workbook, sheet, sheetTitle);
 
     const exportDate = new Date();
-    const fileName = buildExportFileName(user?.full_name, exportDate);
+    const exportOwnerName = scope === "all" ? "Все инструменты" : user?.full_name;
+    const fileName = buildExportFileName(exportOwnerName, exportDate);
 
     try {
       const workbookArray = window.XLSX.write(workbook, {
@@ -18892,7 +18900,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         if (navigator.canShare({ files: [excelFile] })) {
           await navigator.share({
             files: [excelFile],
-            title: "Мои инструменты",
+            title: sheetTitle,
             text: "Выгрузка Excel",
           });
           closeDownloadModal();
@@ -18948,12 +18956,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const option = button.dataset.downloadOption;
     if (!option) return;
     if (option === "my-tools") {
-      downloadMyToolsExcel();
+      downloadToolsExcel({ scope: "my" });
       return;
     }
     if (option === "all-tools") {
-      closeDownloadModal();
-      openBaseModal();
+      downloadToolsExcel({ scope: "all" });
       return;
     }
     if (option === "responsible") {

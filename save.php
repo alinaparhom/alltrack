@@ -458,8 +458,9 @@ function isMoveRepliesScheduleDue(array $schedule, DateTimeImmutable $now): bool
   $scheduleTotalMinutes = ($scheduleHour * 60) + $scheduleMinute;
   $nowTotalMinutes = ((int) $now->format("H") * 60) + (int) $now->format("i");
   $delta = $nowTotalMinutes - $scheduleTotalMinutes;
+  $gracePeriodMinutes = 15;
 
-  return $delta >= 0 && $delta < 5;
+  return $delta >= 0 && $delta < $gracePeriodMinutes;
 }
 
 function resolveMoveRepliesMailingConfig(array $settings): ?array {

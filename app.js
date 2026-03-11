@@ -22951,6 +22951,12 @@ function updateTelegramTopControlsOffset() {
   const webApp = window.Telegram?.WebApp;
   if (!webApp || !document.body) return;
 
+  const hasSystemCloseButton = webApp.isFullscreen === true;
+  if (!hasSystemCloseButton) {
+    document.body.style.setProperty("--telegram-top-controls-offset", "0px");
+    return;
+  }
+
   const viewportStableHeight = Number(webApp.viewportStableHeight);
   const currentInnerHeight = window.innerHeight;
 

@@ -18599,6 +18599,101 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
   };
 
+  const downloadMyToolsExcel = async () => {
+    if (!window.XLSX) {
+      if (downloadMessageEl) {
+        downloadMessageEl.textContent =
+          "Модуль Excel не загружен. Обновите страницу и попробуйте снова.";
+      }
+      return;
+    }
+
+    const orgFolder = context.orgFolderName ?? "";
+    if (!orgFolder) {
+      if (downloadMessageEl) {
+        downloadMessageEl.textContent =
+          "Не удалось определить организацию пользователя.";
+      }
+      return;
+    }
+
+    const toolsPath = `./${orgFolder}/База с инструментами.json`;
+    const sourceResponsible = user?.full_name ?? "";
+    const userNameKey = normalizePersonName(sourceResponsible);
+
+    let rawTools = [];
+    try {
+      const raw = await loadJson(toolsPath);
+      rawTools = Array.isArray(raw) ? raw : Array.isArray(raw?.tools) ? raw.tools : [];
+    } catch (error) {
+      console.warn("Не удалось загрузить базу инструментов для выгрузки.", error);
+      if (downloadMessageEl) {
+        downloadMessageEl.textContent =
+          "Не удалось загрузить базу инструментов. Попробуйте позже.";
+      }
+      return;
+    }
+
+    const selectedTools = rawTools
+      .filter(
+        (tool) => normalizePersonName(tool?.["Ответственный"] ?? "") === userNameKey
+      )
+      .sort((a, b) =>
+        resolveToolNumberValue(a).localeCompare(resolveToolNumberValue(b), "ru", {
+          numeric: true,
+        })
+      );
+
+    if (!selectedTools.length) {
+      if (downloadMessageEl) {
+        downloadMessageEl.textContent = "У вас пока нет инструментов для выгрузки.";
+      }
+      return;
+    }
+
+    const header = [
+      "Номер",
+      "Бух.номер",
+      "Наименование",
+      "Производитель",
+      "Модель",
+      "Стоимость",
+      "Дата покупки",
+      "Объект",
+      "Серийный номер",
+      "Граппа инструментов",
+      "Статус",
+    ];
+    const rows = selectedTools.map((tool) => [
+      String(tool?.["Номер"] ?? "").trim(),
+      String(tool?.["Бух.номер"] ?? "").trim(),
+      String(tool?.["Наименование"] ?? "").trim(),
+      String(tool?.["Производитель"] ?? "").trim(),
+      String(tool?.["Модель"] ?? "").trim(),
+      String(tool?.["Стоимость"] ?? "").trim(),
+      String(tool?.["Дата покупки"] ?? "").trim(),
+      String(tool?.["Объект"] ?? "").trim(),
+      String(tool?.["Серийный номер"] ?? "").trim(),
+      String(tool?.["Граппа инструментов"] ?? "").trim(),
+      String(tool?.["Статус"] ?? "").trim(),
+    ]);
+
+    const workbook = window.XLSX.utils.book_new();
+    const sheet = window.XLSX.utils.aoa_to_sheet([header, ...rows]);
+    window.XLSX.utils.book_append_sheet(workbook, sheet, "Мои инструменты");
+
+    const exportDate = new Date();
+    const datePart = [
+      exportDate.getFullYear(),
+      String(exportDate.getMonth() + 1).padStart(2, "0"),
+      String(exportDate.getDate()).padStart(2, "0"),
+    ].join("-");
+    const fileName = `my-tools-${datePart}.xlsx`;
+    window.XLSX.writeFile(workbook, fileName);
+
+    closeDownloadModal();
+  };
+
   feedbackBackdropEl?.addEventListener("click", closeFeedbackModal);
   feedbackCloseButton?.addEventListener("click", closeFeedbackModal);
   feedbackCancelButton?.addEventListener("click", closeFeedbackModal);
@@ -18624,8 +18719,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const option = button.dataset.downloadOption;
     if (!option) return;
     if (option === "my-tools") {
-      closeDownloadModal();
-      openToolsModal();
+      downloadMyToolsExcel();
       return;
     }
     if (option === "all-tools") {

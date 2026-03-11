@@ -192,7 +192,7 @@
                     }
                 ],
                 "layoutCustomized": true,
-                "toolsView": "compact",
+                "toolsView": "table",
                 "quickAccess": [
                     "breakdowns",
                     "tools"
@@ -295,7 +295,7 @@
                             "Чт",
                             "Пт"
                         ],
-                        "time": "11:10"
+                        "time": "11:50"
                     },
                     "-1001994739583": {
                         "days": [
@@ -305,7 +305,7 @@
                             "Чт",
                             "Пт"
                         ],
-                        "time": "11:10"
+                        "time": "11:50"
                     }
                 }
             },

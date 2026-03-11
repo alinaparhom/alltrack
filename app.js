@@ -4361,6 +4361,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const feedbackPhotosEl = contentEl.querySelector("[data-energy-feedback-photos]");
   const feedbackFilesEl = contentEl.querySelector("[data-energy-feedback-files]");
   const feedbackStatusEl = contentEl.querySelector("[data-energy-feedback-message-status]");
+  const downloadModalEl = contentEl.querySelector("[data-energy-download-modal]");
+  const downloadBackdropEl = contentEl.querySelector("[data-energy-download-backdrop]");
+  const downloadCloseButton = contentEl.querySelector("[data-energy-download-close]");
+  const downloadOptionsEl = contentEl.querySelector("[data-energy-download-modal]");
+  const downloadMessageEl = contentEl.querySelector("[data-energy-download-message]");
   const objectsModalEl = contentEl.querySelector("[data-energy-objects-modal]");
   const objectsBackdropEl = contentEl.querySelector("[data-energy-objects-backdrop]");
   const objectsCloseButton = contentEl.querySelector("[data-energy-objects-close]");
@@ -18576,6 +18581,24 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     renderFeedbackFiles();
   };
 
+  const closeDownloadModal = () => {
+    if (!downloadModalEl) return;
+    downloadModalEl.classList.add("is-hidden");
+    document.body.style.overflow = "";
+    if (downloadMessageEl) {
+      downloadMessageEl.textContent = "";
+    }
+  };
+
+  const openDownloadModal = () => {
+    if (!downloadModalEl) return;
+    downloadModalEl.classList.remove("is-hidden");
+    document.body.style.overflow = "hidden";
+    if (downloadMessageEl) {
+      downloadMessageEl.textContent = "";
+    }
+  };
+
   feedbackBackdropEl?.addEventListener("click", closeFeedbackModal);
   feedbackCloseButton?.addEventListener("click", closeFeedbackModal);
   feedbackCancelButton?.addEventListener("click", closeFeedbackModal);
@@ -18584,6 +18607,54 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   feedbackModalEl?.addEventListener("keydown", (event) => {
     if (event.key === "Escape") {
       closeFeedbackModal();
+    }
+  });
+
+  downloadBackdropEl?.addEventListener("click", closeDownloadModal);
+  downloadCloseButton?.addEventListener("click", closeDownloadModal);
+  downloadModalEl?.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      closeDownloadModal();
+    }
+  });
+
+  downloadOptionsEl?.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-download-option]");
+    if (!button) return;
+    const option = button.dataset.downloadOption;
+    if (!option) return;
+    if (option === "my-tools") {
+      closeDownloadModal();
+      openToolsModal();
+      return;
+    }
+    if (option === "all-tools") {
+      closeDownloadModal();
+      openBaseModal();
+      return;
+    }
+    if (option === "responsible") {
+      closeDownloadModal();
+      openSearchModal();
+      return;
+    }
+    if (option === "no-photo") {
+      closeDownloadModal();
+      openNoPhotoModal();
+      return;
+    }
+    if (option === "moves") {
+      closeDownloadModal();
+      openPendingMovesModal();
+      return;
+    }
+    if (option === "status") {
+      closeDownloadModal();
+      openSearchModal();
+      return;
+    }
+    if (downloadMessageEl) {
+      downloadMessageEl.textContent = "Раздел «Накладная на покупку» скоро будет доступен.";
     }
   });
 
@@ -18826,6 +18897,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
     if (actionId === "demand") {
       openDemandModal();
+      return true;
+    }
+    if (actionId === "download") {
+      openDownloadModal();
       return true;
     }
     return false;

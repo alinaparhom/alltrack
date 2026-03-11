@@ -3235,6 +3235,62 @@
         min-height: 0;
       }
 
+      .download-modal__panel {
+        width: min(94vw, 560px);
+        height: auto;
+        max-height: min(86vh, 760px);
+        border-radius: 24px;
+        overflow: hidden;
+        grid-template-rows: auto 1fr;
+      }
+
+      .download-modal__header {
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: start;
+      }
+
+      .download-modal__body {
+        padding: 10px 4px 8px;
+      }
+
+      .download-modal__grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 10px;
+      }
+
+      .download-option {
+        width: 100%;
+        min-height: 46px;
+        border: 1px solid rgba(148, 163, 184, 0.28);
+        border-radius: 14px;
+        background: rgba(255, 255, 255, 0.72);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        color: var(--text);
+        font-size: var(--text-sm);
+        font-weight: 600;
+        text-align: left;
+        padding: 12px 14px;
+        cursor: pointer;
+        transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+      }
+
+      .download-option:hover {
+        transform: translateY(-1px);
+        border-color: rgba(59, 125, 255, 0.35);
+        box-shadow: 0 12px 24px rgba(59, 125, 255, 0.14);
+      }
+
+      .download-option:active {
+        transform: translateY(0);
+      }
+
+      .download-option:focus-visible {
+        outline: 2px solid rgba(59, 125, 255, 0.5);
+        outline-offset: 2px;
+      }
+
       .camera-modal__body {
         padding: 16px 18px 6px;
         gap: 12px;
@@ -6502,6 +6558,13 @@
       }
 
       @media (max-width: 520px) {
+        .download-modal__panel {
+          width: 100vw;
+          height: 100vh;
+          max-height: 100vh;
+          border-radius: 0;
+        }
+
         .tools-modal__panel {
           width: 100vw;
           max-height: 100vh;

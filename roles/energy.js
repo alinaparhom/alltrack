@@ -203,6 +203,42 @@ export function renderRole(user) {
             </form>
           </div>
         </div>
+        <div class="download-modal settings-modal is-hidden" data-energy-download-modal>
+          <div class="settings-modal__backdrop" data-energy-download-backdrop></div>
+          <div
+            class="settings-modal__panel download-modal__panel"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Выгрузить данные"
+          >
+            <div class="settings-modal__header download-modal__header">
+              <div class="settings-modal__title">
+                <h2>Выгрузить данные</h2>
+                <p>Выберите раздел для выгрузки</p>
+              </div>
+              <button
+                class="button-icon"
+                type="button"
+                data-energy-download-close
+                aria-label="Закрыть окно выгрузки"
+              >
+                <span class="button-icon-emoji" aria-hidden="true">✕</span>
+              </button>
+            </div>
+            <div class="settings-modal__body download-modal__body">
+              <div class="download-modal__grid">
+                <button type="button" class="download-option" data-download-option="my-tools">Мои инструменты</button>
+                <button type="button" class="download-option" data-download-option="all-tools">По всем инструментам</button>
+                <button type="button" class="download-option" data-download-option="responsible">По ответственному</button>
+                <button type="button" class="download-option" data-download-option="no-photo">Без фото</button>
+                <button type="button" class="download-option" data-download-option="status">По статусу</button>
+                <button type="button" class="download-option" data-download-option="moves">Перемещения</button>
+                <button type="button" class="download-option" data-download-option="invoice">Накладная на покупку</button>
+              </div>
+              <div class="form-message" data-energy-download-message></div>
+            </div>
+          </div>
+        </div>
         <div class="objects-modal settings-modal is-hidden" data-energy-objects-modal>
           <div class="settings-modal__backdrop" data-energy-objects-backdrop></div>
           <div

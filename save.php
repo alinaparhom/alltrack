@@ -614,43 +614,179 @@ function resolveMoveRepliesMailingConfig(array $settings): ?array {
   return null;
 }
 
-function buildMoveRepliesMailingText(string $organization, array $pendingMoves): string {
+function resolveLateReplyFineConfig(array $settings): array {
+  $candidates = [
+    $settings["organization"]["fines"]["lateReply"] ?? null,
+    $settings["organization"]["fines"] ?? null,
+    $settings["fines"]["lateReply"] ?? null,
+    $settings["fines"] ?? null,
+  ];
+
+  foreach ($candidates as $candidate) {
+    if (!is_array($candidate)) {
+      continue;
+    }
+    $enabled = !empty($candidate["enabled"]);
+    $daysLimit = max(0, (int) ($candidate["days"] ?? 0));
+    $amountPerDay = max(0, (float) ($candidate["amount"] ?? 0));
+    if (!$enabled || $amountPerDay <= 0) {
+      continue;
+    }
+    return [
+      "enabled" => true,
+      "daysLimit" => $daysLimit,
+      "amountPerDay" => $amountPerDay,
+    ];
+  }
+
+  return [
+    "enabled" => false,
+    "daysLimit" => 0,
+    "amountPerDay" => 0,
+  ];
+}
+
+function formatMoneyLabel(float $value): string {
+  $normalized = round($value, 2);
+  if (abs($normalized - round($normalized)) < 0.00001) {
+    return number_format((float) round($normalized), 0, '.', ' ') . " ₽";
+  }
+  return number_format($normalized, 2, '.', ' ') . " ₽";
+}
+
+function resolveMovePendingDays(array $move, DateTimeImmutable $now, DateTimeZone $timezone): int {
+  $moveDateRaw = trim((string) ($move["Дата перемещения"] ?? ""));
+  $moveDate = parseDateToDateTime($moveDateRaw, $timezone);
+  if ($moveDate === null) {
+    return 0;
+  }
+  $days = (int) $moveDate->diff($now)->format("%r%a");
+  return max(0, $days);
+}
+
+function resolveMoveCurrentLateFine(array $move, array $lateFineConfig, DateTimeImmutable $now, DateTimeZone $timezone): float {
+  if (empty($lateFineConfig["enabled"])) {
+    return 0;
+  }
+  $amountPerDay = (float) ($lateFineConfig["amountPerDay"] ?? 0);
+  if ($amountPerDay <= 0) {
+    return 0;
+  }
+  $pendingDays = resolveMovePendingDays($move, $now, $timezone);
+  $daysLimit = max(0, (int) ($lateFineConfig["daysLimit"] ?? 0));
+  if ($pendingDays <= $daysLimit) {
+    return 0;
+  }
+  $chargedDays = max(0, $pendingDays - 1);
+  return $chargedDays * $amountPerDay;
+}
+
+function resolveLateReplyBalanceByResponsible(array $fines): array {
+  $summaryByUser = is_array($fines["Штрафы по пользователям"] ?? null)
+    ? $fines["Штрафы по пользователям"]
+    : [];
+  $result = [];
+  foreach ($summaryByUser as $fullName => $userSummary) {
+    if (!is_array($userSummary)) {
+      continue;
+    }
+    $lateReplySummary = is_array($userSummary["Поздний ответ"] ?? null)
+      ? $userSummary["Поздний ответ"]
+      : [];
+    $balance = (float) ($lateReplySummary["Остаток"] ?? 0);
+    $normalizedName = trim((string) $fullName);
+    if ($normalizedName === "") {
+      continue;
+    }
+    $result[$normalizedName] = $balance;
+  }
+  return $result;
+}
+
+function buildMoveRepliesMailingText(string $organization, array $pendingMoves, array $settings, array $fines): string {
   $count = count($pendingMoves);
   $headerOrg = trim($organization) !== "" ? trim($organization) : "Организация";
+  $timezone = new DateTimeZone("Europe/Moscow");
+  $now = new DateTimeImmutable("now", $timezone);
+  $lateFineConfig = resolveLateReplyFineConfig($settings);
+  $lateReplyBalanceByResponsible = resolveLateReplyBalanceByResponsible($fines);
+
+  $groupedMoves = [];
+  foreach ($pendingMoves as $move) {
+    if (!is_array($move)) {
+      continue;
+    }
+    $responsible = trim((string) ($move["Принял"] ?? ""));
+    if ($responsible === "") {
+      $responsible = "Не назначен";
+    }
+    if (!isset($groupedMoves[$responsible])) {
+      $groupedMoves[$responsible] = [];
+    }
+
+    $groupedMoves[$responsible][] = [
+      "move" => $move,
+      "pendingDays" => resolveMovePendingDays($move, $now, $timezone),
+      "currentFine" => resolveMoveCurrentLateFine($move, $lateFineConfig, $now, $timezone),
+    ];
+  }
+
+  uksort($groupedMoves, static fn($a, $b) => strcasecmp($a, $b));
+
   $lines = [
-    "📦 Ответы на перемещения",
+    "📦 Напоминание: ответы на перемещения",
     "🏢 " . $headerOrg,
     "",
-    "Ожидают ответа: " . $count,
+    "📌 Без ответа: " . $count,
   ];
 
   if ($count === 0) {
-    $lines[] = "✅ Новых ответов на перемещения сейчас нет.";
+    $lines[] = "✅ Все перемещения закрыты, без просрочек.";
     return implode("\n", $lines);
   }
 
-  $maxItems = 20;
-  $visibleMoves = array_slice($pendingMoves, 0, $maxItems);
-  foreach ($visibleMoves as $move) {
-    $toolName = trim((string) ($move["Инструмент"] ?? $move["Название"] ?? $move["Наименование"] ?? "Инструмент"));
-    $toolNumber = trim((string) ($move["Номер"] ?? $move["Бух.номер"] ?? ""));
-    $acceptedBy = trim((string) ($move["Принял"] ?? ""));
-    $toObject = trim((string) ($move["Новый объект"] ?? ""));
-    $line = "• " . $toolName;
-    if ($toolNumber !== "") {
-      $line .= " (№" . $toolNumber . ")";
+  $maxMoveLines = 120;
+  $printedMoves = 0;
+  foreach ($groupedMoves as $responsible => $movesByResponsible) {
+    $currentBalance = (float) ($lateReplyBalanceByResponsible[$responsible] ?? 0);
+    $currentPendingFine = 0;
+    foreach ($movesByResponsible as $moveInfo) {
+      $currentPendingFine += (float) ($moveInfo["currentFine"] ?? 0);
     }
-    if ($toObject !== "") {
-      $line .= " → " . $toObject;
+
+    $lines[] = "";
+    $lines[] = "👤 " . $responsible;
+    $lines[] = "💳 Текущий остаток штрафа (закрытые): " . formatMoneyLabel($currentBalance);
+    $lines[] = "⏳ Потенциальный штраф по открытым: " . formatMoneyLabel($currentPendingFine);
+
+    foreach ($movesByResponsible as $moveInfo) {
+      if ($printedMoves >= $maxMoveLines) {
+        break 2;
+      }
+      $move = $moveInfo["move"];
+      $toolName = trim((string) ($move["Инструмент"] ?? $move["Название"] ?? $move["Наименование"] ?? "Инструмент"));
+      $toolNumber = trim((string) ($move["Номер"] ?? $move["Бух.номер"] ?? ""));
+      $toObject = trim((string) ($move["Новый объект"] ?? ""));
+      $pendingDays = (int) ($moveInfo["pendingDays"] ?? 0);
+      $currentFine = (float) ($moveInfo["currentFine"] ?? 0);
+
+      $line = "• 🧰 " . $toolName;
+      if ($toolNumber !== "") {
+        $line .= " (№" . $toolNumber . ")";
+      }
+      if ($toObject !== "") {
+        $line .= " → 📍 " . $toObject;
+      }
+      $line .= "\n  ⌛ Без ответа: " . $pendingDays . " дн.";
+      $line .= " · 💸 Штраф сейчас: " . formatMoneyLabel($currentFine);
+      $lines[] = $line;
+      $printedMoves++;
     }
-    if ($acceptedBy !== "") {
-      $line .= " · Принял: " . $acceptedBy;
-    }
-    $lines[] = $line;
   }
 
-  if ($count > $maxItems) {
-    $lines[] = "… и ещё " . ($count - $maxItems) . ".";
+  if ($printedMoves < $count) {
+    $lines[] = "";
+    $lines[] = "⚠️ Показаны первые " . $printedMoves . " перемещений из " . $count . ".";
   }
 
   return implode("\n", $lines);
@@ -713,6 +849,8 @@ function runMoveRepliesMailing(array $options = []): array {
     }
 
     $moves = readJsonArrayFile($movesPath);
+    $finesPath = $orgPath . DIRECTORY_SEPARATOR . "Штрафы.json";
+    $fines = readJsonFile($finesPath, []);
     $pendingMoves = [];
     foreach ($moves as $move) {
       if (!is_array($move)) {
@@ -744,7 +882,7 @@ function runMoveRepliesMailing(array $options = []): array {
         continue;
       }
 
-      $text = buildMoveRepliesMailingText($orgFolder, $pendingMoves);
+      $text = buildMoveRepliesMailingText($orgFolder, $pendingMoves, $settings, $fines);
       $sendResult = $dryRun
         ? ["ok" => true, "statusCode" => 0]
         : sendTelegramTextMessage($botToken, $chatId, $text);

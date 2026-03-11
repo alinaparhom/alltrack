@@ -22947,12 +22947,33 @@ async function loadUser() {
   }
 }
 
+function updateTelegramTopControlsOffset() {
+  const webApp = window.Telegram?.WebApp;
+  if (!webApp || !document.body) return;
+
+  const viewportStableHeight = Number(webApp.viewportStableHeight);
+  const currentInnerHeight = window.innerHeight;
+
+  if (!Number.isFinite(viewportStableHeight) || !Number.isFinite(currentInnerHeight)) {
+    document.body.style.setProperty("--telegram-top-controls-offset", "0px");
+    return;
+  }
+
+  const chromeOffset = Math.max(0, Math.round(currentInnerHeight - viewportStableHeight));
+  const adaptiveOffset = Math.min(chromeOffset, 64);
+  document.body.style.setProperty("--telegram-top-controls-offset", `${adaptiveOffset}px`);
+}
+
 if (window.Telegram?.WebApp) {
   Telegram.WebApp.ready();
   Telegram.WebApp.expand();
   Telegram.WebApp.setHeaderColor("#f5f7ff");
   Telegram.WebApp.setBackgroundColor("#f5f7ff");
   document.body?.classList.add("is-telegram");
+
+  updateTelegramTopControlsOffset();
+  Telegram.WebApp.onEvent("viewportChanged", updateTelegramTopControlsOffset);
+  window.addEventListener("resize", updateTelegramTopControlsOffset, { passive: true });
 }
 
 userSettingsTriggerEl?.addEventListener("click", () => {

@@ -848,7 +848,9 @@
       }
 
       body.is-telegram .screen {
-        padding-top: calc(10px + env(safe-area-inset-top, 0px));
+        padding-top: calc(
+          10px + env(safe-area-inset-top, 0px) + var(--telegram-top-controls-offset, 0px)
+        );
       }
 
       body.is-telegram.is-ios {

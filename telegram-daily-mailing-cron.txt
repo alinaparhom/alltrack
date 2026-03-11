@@ -1,14 +1,14 @@
 # Рассылки Alltrack без дополнительных настроек сервера.
-# Достаточно вызывать URL (например, через UptimeRobot / cron-job.org / GitHub Actions):
-# https://<ваш-домен>/js/alltrack/save.php?action=run-scheduled-mailings
+# Вызывайте один файл раз в минуту (через UptimeRobot / cron-job.org / GitHub Actions):
+# https://<ваш-домен>/js/alltrack/telegram-scheduler.php
 #
 # Важно:
 # - Время проверяется строго по Москве (Europe/Moscow).
-# - Вызов делайте 1 раз в минуту, чтобы не пропустить нужную минуту.
+# - Вызов должен быть каждую минуту.
 # - Рассылки уйдут только в точно заданную минуту из настроек.
 #
 # Пример для внешнего планировщика (каждую минуту):
-# GET https://<ваш-домен>/js/alltrack/save.php?action=run-scheduled-mailings
+# GET https://<ваш-домен>/js/alltrack/telegram-scheduler.php
 #
-# Если нужен локальный cron на сервере, можно оставить этот вариант:
-# * * * * * cd /var/www/www-root/data/www/bimmax.pro/js/alltrack && /usr/bin/php save.php --run-scheduled-mailings >> /var/www/www-root/data/www/bimmax.pro/js/alltrack/telegram-scheduled-mailings-cron.log 2>&1
+# Локальный cron на сервере (каждую минуту):
+# * * * * * cd /var/www/www-root/data/www/bimmax.pro/js/alltrack && /usr/bin/php telegram-scheduler.php >> /var/www/www-root/data/www/bimmax.pro/js/alltrack/telegram-scheduled-mailings-cron.log 2>&1

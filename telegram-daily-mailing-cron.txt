@@ -2,3 +2,6 @@
 
 # Ежедневный пересчёт штрафов за отсутствие фото в 14:30 по UTC+3 (Europe/Moscow)
 30 14 * * * cd /workspace/alltrack && /usr/bin/php save.php --run-daily-no-photo-fines >> /workspace/alltrack/telegram-daily-no-photo-fines-cron.log 2>&1
+
+# Проверка рассылки "Ответы на перемещения" каждые 5 минут (Europe/Moscow учитывается внутри save.php)
+*/5 * * * * cd /workspace/alltrack && /usr/bin/php save.php --run-move-replies-mailing >> /workspace/alltrack/telegram-move-replies-mailing-cron.log 2>&1

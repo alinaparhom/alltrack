@@ -238,6 +238,20 @@
                         "time": "12:00"
                     }
                 }
+            },
+            "moveReplies": {
+                "enabled": false,
+                "toolGroups": [],
+                "telegramSchedule": {
+                    "-5145416273": {
+                        "days": [],
+                        "time": "13:00"
+                    },
+                    "-001994739583": {
+                        "days": [],
+                        "time": "13:00"
+                    }
+                }
             }
         },
         "notifications": {

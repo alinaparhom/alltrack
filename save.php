@@ -599,9 +599,21 @@ function isMoveRepliesScheduleDue(array $schedule, DateTimeImmutable $now): bool
 }
 
 function resolveMoveRepliesMailingConfig(array $settings): ?array {
+  return resolveOrganizationMailingConfig($settings, "moveReplies");
+}
+
+function resolveRepairsMailingConfig(array $settings): ?array {
+  return resolveOrganizationMailingConfig($settings, "repairs");
+}
+
+function resolveOrganizationMailingConfig(array $settings, string $mailingKey): ?array {
+  if ($mailingKey === "") {
+    return null;
+  }
+
   $candidates = [
-    $settings["mailings"]["moveReplies"] ?? null,
-    $settings["organization"]["mailings"]["moveReplies"] ?? null,
+    $settings["mailings"][$mailingKey] ?? null,
+    $settings["organization"]["mailings"][$mailingKey] ?? null,
   ];
 
   foreach ($candidates as $candidate) {
@@ -612,6 +624,242 @@ function resolveMoveRepliesMailingConfig(array $settings): ?array {
   }
 
   return null;
+}
+
+function normalizeMailingGroupName(string $value): string {
+  return mb_strtolower(trim($value), 'UTF-8');
+}
+
+function resolveToolGroupName(array $tool): string {
+  $candidates = [
+    $tool["Граппа инструментов"] ?? null,
+    $tool["Группа инструментов"] ?? null,
+    $tool["Группа"] ?? null,
+  ];
+  foreach ($candidates as $candidate) {
+    $label = trim((string) $candidate);
+    if ($label !== "") {
+      return $label;
+    }
+  }
+  return "";
+}
+
+function isToolInMailingGroups(array $tool, array $selectedGroups): bool {
+  if (empty($selectedGroups)) {
+    return true;
+  }
+  $toolGroup = normalizeMailingGroupName(resolveToolGroupName($tool));
+  if ($toolGroup === "") {
+    return false;
+  }
+  return isset($selectedGroups[$toolGroup]);
+}
+
+function formatPercentageLabel(int $count, int $total): string {
+  if ($total <= 0 || $count <= 0) {
+    return "0%";
+  }
+  $percentage = ($count / $total) * 100;
+  if (abs($percentage - round($percentage)) < 0.00001) {
+    return (string) ((int) round($percentage)) . "%";
+  }
+  return number_format($percentage, 1, '.', '') . "%";
+}
+
+function buildRepairsMailingText(string $organization, array $tools): string {
+  $headerOrg = trim($organization) !== "" ? trim($organization) : "Организация";
+  $totalCount = count($tools);
+  $brokenCount = 0;
+  $inRepairCount = 0;
+  $writeOffCount = 0;
+
+  foreach ($tools as $tool) {
+    if (!is_array($tool)) {
+      continue;
+    }
+    $status = mb_strtolower(trim((string) ($tool["Статус"] ?? "")), 'UTF-8');
+    if ($status === "сломан") {
+      $brokenCount++;
+    } elseif ($status === "в ремонте") {
+      $inRepairCount++;
+    } elseif ($status === "на списание") {
+      $writeOffCount++;
+    }
+  }
+
+  return "🛠 Рассылка «Ремонты»\n"
+    . "🏢 Организация: {$headerOrg}\n\n"
+    . "Всего инструментов в базе: {$totalCount}\n"
+    . "Сломан: {$brokenCount} (" . formatPercentageLabel($brokenCount, $totalCount) . ")\n"
+    . "В ремонте: {$inRepairCount} (" . formatPercentageLabel($inRepairCount, $totalCount) . ")\n"
+    . "На списание: {$writeOffCount} (" . formatPercentageLabel($writeOffCount, $totalCount) . ")";
+}
+
+function runRepairsMailing(array $options = []): array {
+  $dryRun = !empty($options["dryRun"]);
+  $timezone = new DateTimeZone("Europe/Moscow");
+  $now = new DateTimeImmutable("now", $timezone);
+  $botToken = getenv("ALLTRACK_BOT_TOKEN") ?: "";
+  if ($botToken === "") {
+    $botToken = "8549452123:AAGxveuJSVf-xpNHQYTDKDmuMmHjGRVeDj0";
+  }
+
+  $statePath = __DIR__ . DIRECTORY_SEPARATOR . "telegram-repairs-mailing-state.json";
+  $state = readJsonFile($statePath, ["sent" => []]);
+  $sentState = is_array($state["sent"] ?? null) ? $state["sent"] : [];
+
+  $summary = [
+    "success" => true,
+    "mode" => "repairs-mailing-cli",
+    "time" => $now->format(DateTimeInterface::ATOM),
+    "dryRun" => $dryRun,
+    "organizationsChecked" => 0,
+    "messagesSent" => 0,
+    "organizations" => [],
+  ];
+
+  $entries = @scandir(__DIR__);
+  if (!is_array($entries)) {
+    return ["success" => false, "mode" => "repairs-mailing-cli", "error" => "Не удалось прочитать папки организаций."];
+  }
+
+  foreach ($entries as $orgFolder) {
+    if ($orgFolder === "." || $orgFolder === "..") {
+      continue;
+    }
+    $orgPath = __DIR__ . DIRECTORY_SEPARATOR . $orgFolder;
+    if (!is_dir($orgPath)) {
+      continue;
+    }
+
+    $settingsPath = $orgPath . DIRECTORY_SEPARATOR . "Настройки.json";
+    $toolsPath = $orgPath . DIRECTORY_SEPARATOR . "База с инструментами.json";
+    if (!file_exists($settingsPath) || !file_exists($toolsPath)) {
+      continue;
+    }
+    $summary["organizationsChecked"]++;
+
+    $settings = readJsonFile($settingsPath, []);
+    $repairsMailing = resolveRepairsMailingConfig($settings);
+    if (!is_array($repairsMailing) || empty($repairsMailing["enabled"])) {
+      continue;
+    }
+
+    $scheduleByGroup = $repairsMailing["telegramSchedule"] ?? [];
+    if (!is_array($scheduleByGroup) || empty($scheduleByGroup)) {
+      continue;
+    }
+
+    $tools = readJsonArrayFile($toolsPath);
+    $selectedGroups = [];
+    foreach (($repairsMailing["toolGroups"] ?? []) as $groupName) {
+      $label = normalizeMailingGroupName((string) $groupName);
+      if ($label !== "") {
+        $selectedGroups[$label] = true;
+      }
+    }
+
+    $filteredTools = [];
+    foreach ($tools as $tool) {
+      if (!is_array($tool)) {
+        continue;
+      }
+      if (!isToolInMailingGroups($tool, $selectedGroups)) {
+        continue;
+      }
+      $filteredTools[] = $tool;
+    }
+
+    $orgSentCount = 0;
+    foreach ($scheduleByGroup as $groupIdRaw => $schedule) {
+      $chatId = normalizeTelegramId($groupIdRaw);
+      if (!$chatId || !is_array($schedule)) {
+        continue;
+      }
+      if (!isMoveRepliesScheduleDue($schedule, $now)) {
+        continue;
+      }
+
+      $scheduleTime = normalizeScheduleTimeLabel($schedule["time"] ?? "");
+      if ($scheduleTime === "") {
+        continue;
+      }
+      $stateKey = $orgFolder . "|" . $chatId . "|" . $now->format("Y-m-d") . "|" . $scheduleTime;
+      if (!empty($sentState[$stateKey])) {
+        continue;
+      }
+
+      $text = buildRepairsMailingText($orgFolder, $filteredTools);
+      $sendResult = $dryRun
+        ? ["ok" => true, "statusCode" => 0]
+        : sendTelegramTextMessage($botToken, $chatId, $text);
+
+      if (!empty($sendResult["ok"])) {
+        $sentState[$stateKey] = $now->format(DateTimeInterface::ATOM);
+        $orgSentCount++;
+        $summary["messagesSent"]++;
+      } else {
+        appendMailingLog("error", "Ошибка рассылки 'Ремонты'.", [
+          "organization" => $orgFolder,
+          "chatId" => $chatId,
+          "error" => $sendResult["error"] ?? "Неизвестная ошибка",
+        ]);
+      }
+    }
+
+    if ($orgSentCount > 0) {
+      $summary["organizations"][] = [
+        "organization" => $orgFolder,
+        "messagesSent" => $orgSentCount,
+        "toolsIncluded" => count($filteredTools),
+      ];
+    }
+  }
+
+  $encodedState = json_encode(["sent" => $sentState], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+  if ($encodedState !== false && !$dryRun) {
+    file_put_contents($statePath, $encodedState . PHP_EOL, LOCK_EX);
+  }
+
+  return $summary;
+}
+
+function runRepairsMailingIfNeeded(): void {
+  $timezone = new DateTimeZone("Europe/Moscow");
+  $now = new DateTimeImmutable("now", $timezone);
+  $currentMinuteStamp = $now->format("Y-m-d H:i");
+
+  $statePath = __DIR__ . DIRECTORY_SEPARATOR . "telegram-repairs-mailing-last-run.json";
+  $state = readJsonFile($statePath, []);
+  $lastRunMinute = trim((string) ($state["lastRunMinute"] ?? ""));
+  if ($lastRunMinute === $currentMinuteStamp) {
+    return;
+  }
+
+  $result = runRepairsMailing([
+    "dryRun" => false,
+  ]);
+
+  if (empty($result["success"])) {
+    appendMailingLog("error", "Не удалось выполнить рассылку 'Ремонты' при автозапуске.", [
+      "result" => $result,
+    ]);
+  }
+
+  $nextState = [
+    "lastRunMinute" => $currentMinuteStamp,
+    "updatedAt" => $now->format(DateTimeInterface::ATOM),
+  ];
+  $encoded = json_encode($nextState, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+  if ($encoded !== false) {
+    $saved = file_put_contents($statePath, $encoded . PHP_EOL, LOCK_EX);
+    if ($saved === false) {
+      appendMailingLog("warning", "Не удалось записать состояние автозапуска рассылки 'Ремонты'.", [
+        "statePath" => $statePath,
+      ]);
+    }
+  }
 }
 
 function resolveLateReplyFineConfig(array $settings): array {
@@ -1901,16 +2149,20 @@ if ($isCli) {
     $moveRepliesResult = runMoveRepliesMailing([
       "dryRun" => $dryRun,
     ]);
+    $repairsResult = runRepairsMailing([
+      "dryRun" => $dryRun,
+    ]);
     $noPhotoResult = runNoPhotoFineRecalculation([
       "respectTime" => true,
       "dryRun" => $dryRun,
     ]);
 
     $result = [
-      "success" => !empty($moveRepliesResult["success"]) && !empty($noPhotoResult["success"]),
+      "success" => !empty($moveRepliesResult["success"]) && !empty($repairsResult["success"]) && !empty($noPhotoResult["success"]),
       "mode" => "scheduled-mailings-cli",
       "dryRun" => $dryRun,
       "moveReplies" => $moveRepliesResult,
+      "repairs" => $repairsResult,
       "noPhotoFines" => $noPhotoResult,
     ];
     echo json_encode($result, JSON_UNESCAPED_UNICODE) . PHP_EOL;
@@ -1934,12 +2186,21 @@ if ($isCli) {
     echo json_encode($result, JSON_UNESCAPED_UNICODE) . PHP_EOL;
     exit;
   }
+  if (in_array("--run-repairs-mailing", $argvList, true)) {
+    $dryRun = in_array("--dry-run", $argvList, true);
+    $result = runRepairsMailing([
+      "dryRun" => $dryRun,
+    ]);
+    echo json_encode($result, JSON_UNESCAPED_UNICODE) . PHP_EOL;
+    exit;
+  }
 }
 
 $requestedAction = trim((string) ($_GET["action"] ?? $payload["action"] ?? ""));
 if ($requestedAction === "run-scheduled-mailings") {
   runNoPhotoFineRecalculationIfNeeded();
   runMoveRepliesMailingIfNeeded();
+  runRepairsMailingIfNeeded();
   echo json_encode([
     "success" => true,
     "action" => "run-scheduled-mailings",
@@ -1965,5 +2226,6 @@ foreach ($entries as $entry) {
 
 runNoPhotoFineRecalculationIfNeeded();
 runMoveRepliesMailingIfNeeded();
+runRepairsMailingIfNeeded();
 
 echo json_encode(["success" => true]);

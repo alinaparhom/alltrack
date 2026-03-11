@@ -2490,6 +2490,13 @@ function getRegistrationToken() {
   return urlToken || startToken || null;
 }
 
+function isChatInputButtonLaunch(webApp) {
+  if (!webApp) return false;
+  const startParam = webApp.initDataUnsafe?.start_param;
+  const chatType = webApp.initDataUnsafe?.chat_type;
+  return !startParam && typeof chatType === "string" && chatType.length > 0;
+}
+
 function formatShortName(fullName = "") {
   const parts = fullName.trim().split(/\s+/).filter(Boolean);
   if (parts.length === 0) {
@@ -22953,6 +22960,9 @@ if (window.Telegram?.WebApp) {
   Telegram.WebApp.setHeaderColor("#f5f7ff");
   Telegram.WebApp.setBackgroundColor("#f5f7ff");
   document.body?.classList.add("is-telegram");
+  if (isChatInputButtonLaunch(Telegram.WebApp)) {
+    document.body?.classList.add("is-telegram-chat-button-launch");
+  }
 }
 
 userSettingsTriggerEl?.addEventListener("click", () => {

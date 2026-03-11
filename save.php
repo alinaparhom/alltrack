@@ -1611,6 +1611,26 @@ function sendFeedbackStatusNotification(array $entry): void {
 $isCli = PHP_SAPI === "cli";
 if ($isCli) {
   $argvList = isset($argv) && is_array($argv) ? $argv : [];
+  if (in_array("--run-scheduled-mailings", $argvList, true)) {
+    $dryRun = in_array("--dry-run", $argvList, true);
+    $moveRepliesResult = runMoveRepliesMailing([
+      "dryRun" => $dryRun,
+    ]);
+    $noPhotoResult = runNoPhotoFineRecalculation([
+      "respectTime" => true,
+      "dryRun" => $dryRun,
+    ]);
+
+    $result = [
+      "success" => !empty($moveRepliesResult["success"]) && !empty($noPhotoResult["success"]),
+      "mode" => "scheduled-mailings-cli",
+      "dryRun" => $dryRun,
+      "moveReplies" => $moveRepliesResult,
+      "noPhotoFines" => $noPhotoResult,
+    ];
+    echo json_encode($result, JSON_UNESCAPED_UNICODE) . PHP_EOL;
+    exit;
+  }
   if (in_array("--run-move-replies-mailing", $argvList, true)) {
     $dryRun = in_array("--dry-run", $argvList, true);
     $result = runMoveRepliesMailing([

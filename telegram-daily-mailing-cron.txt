@@ -11,3 +11,8 @@ CRON_TZ=Europe/Moscow
 # Рассылка "Ответы на перемещения" — проверка каждую минуту.
 # Так рассылка уходит независимо от активности пользователей в приложении.
 * * * * * cd /var/www/www-root/data/www/bimmax.pro/js/alltrack && /usr/bin/php save.php --run-move-replies-mailing >> /var/www/www-root/data/www/bimmax.pro/js/alltrack/telegram-move-replies-mailing-cron.log 2>&1
+
+# Универсальный запуск всех запланированных рассылок каждую минуту.
+# Можно использовать вместо отдельных задач выше, чтобы все рассылки шли строго по времени
+# даже если в приложении никто не работал.
+# * * * * * cd /var/www/www-root/data/www/bimmax.pro/js/alltrack && /usr/bin/php save.php --run-scheduled-mailings >> /var/www/www-root/data/www/bimmax.pro/js/alltrack/telegram-scheduled-mailings-cron.log 2>&1

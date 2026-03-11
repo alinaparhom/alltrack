@@ -94,6 +94,12 @@ const energyMailingOptions = [
     defaultDays: ["Чт"],
     defaultTime: "12:00",
   },
+  {
+    id: "moveReplies",
+    title: "Ответы на перемещения",
+    defaultDays: ["Пт"],
+    defaultTime: "13:00",
+  },
 ];
 const energyNotificationOptions = [
   { id: "newTool", title: "Новый инструмент" },

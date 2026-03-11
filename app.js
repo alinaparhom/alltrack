@@ -22952,7 +22952,10 @@ if (window.Telegram?.WebApp) {
   Telegram.WebApp.expand();
   Telegram.WebApp.setHeaderColor("#f5f7ff");
   Telegram.WebApp.setBackgroundColor("#f5f7ff");
+  const hasTopCloseControl =
+    window.Telegram?.WebApp?.initDataUnsafe?.chat_type !== "sender";
   document.body?.classList.add("is-telegram");
+  document.body?.classList.toggle("has-top-close-control", hasTopCloseControl);
 }
 
 userSettingsTriggerEl?.addEventListener("click", () => {

@@ -457,9 +457,9 @@ function isMoveRepliesScheduleDue(array $schedule, DateTimeImmutable $now): bool
   [$scheduleHour, $scheduleMinute] = array_map('intval', explode(':', $timeRaw));
   $scheduleTotalMinutes = ($scheduleHour * 60) + $scheduleMinute;
   $nowTotalMinutes = ((int) $now->format("H") * 60) + (int) $now->format("i");
-  // Рассылка должна уходить даже если задача запустилась позже нужной минуты.
-  // Повторную отправку в этот же день блокирует stateKey в runMoveRepliesMailing().
-  return $nowTotalMinutes >= $scheduleTotalMinutes;
+  // Отправляем строго в нужную минуту.
+  // Если задача cron не была запущена в это время, отправка не должна происходить позже.
+  return $nowTotalMinutes === $scheduleTotalMinutes;
 }
 
 function resolveMoveRepliesMailingConfig(array $settings): ?array {
@@ -487,6 +487,11 @@ function buildMoveRepliesMailingText(string $organization, array $pendingMoves):
     "",
     "Ожидают ответа: " . $count,
   ];
+
+  if ($count === 0) {
+    $lines[] = "✅ Новых ответов на перемещения сейчас нет.";
+    return implode("\n", $lines);
+  }
 
   $maxItems = 20;
   $visibleMoves = array_slice($pendingMoves, 0, $maxItems);
@@ -582,10 +587,6 @@ function runMoveRepliesMailing(array $options = []): array {
         continue;
       }
       $pendingMoves[] = $move;
-    }
-
-    if (empty($pendingMoves)) {
-      continue;
     }
 
     $orgSentCount = 0;

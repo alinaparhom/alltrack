@@ -11222,7 +11222,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           updatedMoves[index] = {
             ...updatedMoves[index],
             "Штраф за ответ": fineAmount,
-            "Штраф по отвеченному перемещению": fineAmount,
             "Тип штрафа": fineType,
             ...(lateReplyFineAmount > 0
               ? { "Штраф за поздний ответ": "Да" }

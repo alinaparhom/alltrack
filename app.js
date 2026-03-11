@@ -77,6 +77,12 @@ const fineTitleBySettingKey = {
 };
 const energyMailingOptions = [
   {
+    id: "moveReplies",
+    title: "Ответы на перемещения",
+    defaultDays: ["Пт"],
+    defaultTime: "13:00",
+  },
+  {
     id: "repairs",
     title: "Ремонты",
     defaultDays: ["Вт"],
@@ -93,12 +99,6 @@ const energyMailingOptions = [
     title: "Без бух.номера",
     defaultDays: ["Чт"],
     defaultTime: "12:00",
-  },
-  {
-    id: "moveReplies",
-    title: "Ответы на перемещения",
-    defaultDays: ["Пт"],
-    defaultTime: "13:00",
   },
 ];
 const energyNotificationOptions = [
@@ -4003,16 +4003,10 @@ function buildEnergySettingsMarkup(settings) {
                   )
                   .join("");
                 const groupLabel = escapeHtml(group.name || "Группа Telegram");
-                const groupId = escapeHtml(group.telegramId || "");
                 return `
                   <div class="settings-telegram-group">
                     <div class="settings-telegram-group__header">
                       <div class="settings-telegram-group__title">${groupLabel}</div>
-                      ${
-                        groupId
-                          ? `<div class="settings-telegram-group__id">ID: ${groupId}</div>`
-                          : ""
-                      }
                     </div>
                     <div class="settings-telegram-group__fields">
                       <div class="settings-telegram-field">
@@ -4079,7 +4073,7 @@ function buildEnergySettingsMarkup(settings) {
           ? telegramGroups
               .map((group) => {
                 const groupKey = getTelegramGroupKey(group);
-                const label = escapeHtml(group.name || group.telegramId || "Группа");
+                const label = escapeHtml(group.name || "Группа");
                 return `
                   <label class="settings-group-chip">
                     <input

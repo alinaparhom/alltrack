@@ -1,23 +1,16 @@
 {
     "users": {
         "tg-816370894": {
+            "preferences": {
+                "iconStyle": "icon-title",
+                "grouping": "free",
+                "theme": "light"
+            },
             "energy": {
                 "layout": [
                     {
                         "type": "action",
-                        "id": "write-off"
-                    },
-                    {
-                        "type": "action",
                         "id": "add-tool"
-                    },
-                    {
-                        "type": "action",
-                        "id": "repair"
-                    },
-                    {
-                        "type": "action",
-                        "id": "users"
                     },
                     {
                         "type": "action",
@@ -25,11 +18,31 @@
                     },
                     {
                         "type": "action",
+                        "id": "move-other"
+                    },
+                    {
+                        "type": "action",
+                        "id": "write-off"
+                    },
+                    {
+                        "type": "action",
+                        "id": "repair"
+                    },
+                    {
+                        "type": "action",
+                        "id": "demand"
+                    },
+                    {
+                        "type": "action",
                         "id": "objects"
                     },
                     {
                         "type": "action",
-                        "id": "settings"
+                        "id": "download"
+                    },
+                    {
+                        "type": "action",
+                        "id": "add-photo"
                     },
                     {
                         "type": "action",
@@ -41,18 +54,45 @@
                     },
                     {
                         "type": "action",
-                        "id": "add-photo"
-                    },
-                    {
-                        "type": "action",
-                        "id": "breakdowns"
-                    },
-                    {
-                        "type": "action",
                         "id": "fines"
                     },
                     {
+                        "type": "action",
+                        "id": "users"
+                    },
+                    {
+                        "type": "action",
+                        "id": "settings"
+                    },
+                    {
                         "type": "toggle"
+                    }
+                ],
+                "layoutCustomized": true,
+                "quickAccess": [
+                    "breakdowns",
+                    "info",
+                    "search",
+                    "tools",
+                    "pending"
+                ],
+                "toolsView": "table"
+            }
+        },
+        "tg-531530316": {
+            "energy": {
+                "toolsView": "table"
+            }
+        },
+        "tg-737803868": {
+            "energy": {
+                "layout": [
+                    {
+                        "type": "action",
+                        "id": "demand"
+                    },
+                    {
+                        "type": "pending"
                     },
                     {
                         "type": "action",
@@ -60,17 +100,22 @@
                     },
                     {
                         "type": "action",
-                        "id": "move-other"
+                        "id": "no-photo"
+                    },
+                    {
+                        "type": "toggle"
+                    },
+                    {
+                        "type": "action",
+                        "id": "search"
                     }
                 ],
                 "layoutCustomized": true,
-                "toolsView": "large",
+                "toolsView": "table",
                 "quickAccess": [
+                    "breakdowns",
                     "info",
-                    "search",
-                    "demand",
-                    "tools",
-                    "pending"
+                    "tools"
                 ]
             },
             "preferences": {
@@ -79,17 +124,7 @@
                 "theme": "light"
             }
         },
-        "tg-737803868": {
-            "preferences": {
-                "iconStyle": "icon-title",
-                "grouping": "free",
-                "theme": "light"
-            },
-            "energy": {
-                "toolsView": "table"
-            }
-        },
-        "tg-531530316": {
+        "tg-126827760": {
             "energy": {
                 "toolsView": "table"
             }
@@ -99,7 +134,6 @@
         "access": {
             "Ответственный": [
                 "tools",
-                "add-tool",
                 "search",
                 "breakdowns",
                 "demand",
@@ -109,26 +143,28 @@
             ],
             "Главный инженер": [
                 "tools",
+                "search",
+                "breakdowns",
+                "demand",
+                "info",
+                "download",
+                "fines"
+            ],
+            "Руководитель": [
+                "tools",
+                "search",
                 "breakdowns",
                 "demand",
                 "info",
                 "download"
             ],
-            "Руководитель": [
-                "tools",
-                "breakdowns",
-                "demand",
-                "info"
-            ],
             "Бухгалтерия": [
-                "write-off",
-                "info"
+                "write-off"
             ]
         },
         "stcGroups": [
             "Инструмент",
             "Бытовки",
-            "Орг.техника",
             "Формы",
             "Пропускная",
             "Геодезия"
@@ -136,11 +172,11 @@
         "telegramGroups": [
             {
                 "name": "Рабочие вопросы",
-                "telegramId": "-1001994739583"
+                "telegramId": "-5145416273"
             },
             {
-                "name": "Общая",
-                "telegramId": "-5145416273"
+                "name": "Общие вопросы",
+                "telegramId": "-001994739583"
             }
         ],
         "fines": {
@@ -151,8 +187,8 @@
             },
             "noPhoto": {
                 "enabled": true,
-                "days": 1,
-                "amount": 5
+                "days": 2,
+                "amount": 2
             },
             "movedByEnergy": {
                 "enabled": true,
@@ -161,57 +197,15 @@
             }
         },
         "mailings": {
-            "awaitingReply": {
-                "enabled": true,
-                "toolGroups": [
-                    "Инструмент",
-                    "Бытовки",
-                    "Орг.техника"
-                ],
-                "telegramSchedule": {
-                    "-1001994739583": {
-                        "days": [
-                            "Пн",
-                            "Вт",
-                            "Ср",
-                            "Чт",
-                            "Пт",
-                            "Сб",
-                            "Вс"
-                        ],
-                        "time": "18:35"
-                    },
-                    "-5145416273": {
-                        "days": [
-                            "Пн",
-                            "Вт",
-                            "Ср",
-                            "Чт",
-                            "Пт",
-                            "Сб",
-                            "Вс"
-                        ],
-                        "time": "18:35"
-                    }
-                }
-            },
             "repairs": {
-                "enabled": true,
-                "toolGroups": [
-                    "Инструмент"
-                ],
+                "enabled": false,
+                "toolGroups": [],
                 "telegramSchedule": {
-                    "-1001994739583": {
-                        "days": [
-                            "Пн",
-                            "Вт",
-                            "Ср",
-                            "Чт",
-                            "Пт"
-                        ],
-                        "time": "17:05"
-                    },
                     "-5145416273": {
+                        "days": [],
+                        "time": "10:00"
+                    },
+                    "-001994739583": {
                         "days": [],
                         "time": "10:00"
                     }
@@ -219,53 +213,27 @@
             },
             "noPhoto": {
                 "enabled": true,
-                "toolGroups": [
-                    "Инструмент",
-                    "Орг.техника"
-                ],
+                "toolGroups": [],
                 "telegramSchedule": {
-                    "-1001994739583": {
-                        "days": [
-                            "Пн",
-                            "Вт",
-                            "Ср",
-                            "Чт",
-                            "Пт",
-                            "Сб"
-                        ],
-                        "time": "17:10"
-                    },
                     "-5145416273": {
-                        "days": [
-                            "Пн",
-                            "Вт",
-                            "Ср",
-                            "Чт",
-                            "Пт"
-                        ],
-                        "time": "17:10"
+                        "days": [],
+                        "time": "11:00"
+                    },
+                    "-001994739583": {
+                        "days": [],
+                        "time": "11:00"
                     }
                 }
             },
             "noAccountingNumber": {
-                "enabled": true,
-                "toolGroups": [
-                    "Инструмент",
-                    "Бытовки",
-                    "Орг.техника"
-                ],
+                "enabled": false,
+                "toolGroups": [],
                 "telegramSchedule": {
-                    "-1001994739583": {
-                        "days": [
-                            "Пн",
-                            "Вт",
-                            "Ср",
-                            "Чт",
-                            "Пт"
-                        ],
-                        "time": "17:15"
-                    },
                     "-5145416273": {
+                        "days": [],
+                        "time": "12:00"
+                    },
+                    "-001994739583": {
                         "days": [],
                         "time": "12:00"
                     }
@@ -276,7 +244,6 @@
             "newTool": {
                 "enabled": true,
                 "groups": [
-                    "-1001994739583",
                     "-5145416273"
                 ],
                 "attachPhoto": true
@@ -284,64 +251,64 @@
             "moveTool": {
                 "enabled": true,
                 "groups": [
-                    "-1001994739583"
+                    "-5145416273"
                 ],
                 "attachPhoto": true
             },
             "acceptTool": {
                 "enabled": true,
                 "groups": [
-                    "-1001994739583"
+                    "-5145416273"
                 ],
                 "attachPhoto": true
             },
             "declineTool": {
                 "enabled": true,
                 "groups": [
-                    "-1001994739583",
-                    "-5145416273"
+                    "-5145416273",
+                    "-001994739583"
                 ],
                 "attachPhoto": true
             },
             "moveByEnergy": {
                 "enabled": true,
                 "groups": [
-                    "-1001994739583"
+                    "-5145416273",
+                    "-001994739583"
                 ],
                 "attachPhoto": true
             },
             "toolBreakdown": {
                 "enabled": true,
                 "groups": [
-                    "-1001994739583"
+                    "-5145416273"
                 ],
                 "attachPhoto": true
             },
             "fixBreakdown": {
                 "enabled": true,
                 "groups": [
-                    "-1001994739583"
+                    "-5145416273"
                 ],
                 "attachPhoto": true
             },
             "sendToRepair": {
                 "enabled": true,
                 "groups": [
-                    "-1001994739583"
+                    "-5145416273"
                 ],
                 "attachPhoto": true
             },
             "repaired": {
                 "enabled": true,
                 "groups": [
-                    "-1001994739583"
+                    "-5145416273"
                 ],
                 "attachPhoto": true
             },
             "writeOff": {
                 "enabled": true,
                 "groups": [
-                    "-1001994739583",
                     "-5145416273"
                 ],
                 "attachPhoto": true
@@ -349,10 +316,10 @@
             "finesIssued": {
                 "enabled": true,
                 "groups": [
-                    "-1001994739583",
-                    "-5145416273"
+                    "-5145416273",
+                    "-001994739583"
                 ],
-                "attachPhoto": false
+                "attachPhoto": true
             }
         }
     }

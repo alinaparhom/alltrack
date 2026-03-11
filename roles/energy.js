@@ -1267,6 +1267,15 @@ export function renderRole(user) {
                 </section>
               </div>
             </div>
+            <div class="settings-modal__footer tools-info-modal__footer">
+              <button
+                class="action-secondary is-hidden"
+                type="button"
+                data-tools-info-cancel-move
+              >
+                Отменить перемещение
+              </button>
+            </div>
           </div>
         </div>
         <div class="settings-modal is-hidden writeoff-modal" data-writeoff-modal>

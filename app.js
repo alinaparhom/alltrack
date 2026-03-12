@@ -5942,6 +5942,15 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     };
   };
 
+  const buildYandexViewportBounds = (points) => {
+    const bounds = buildToolsMapBounds(points);
+    if (!bounds) return null;
+    return [
+      [bounds.minLat, bounds.minLng],
+      [bounds.maxLat, bounds.maxLng],
+    ];
+  };
+
   const buildYandexStaticMapUrl = (points, bounds) => {
     const safePoints = Array.isArray(points) ? points : [];
     if (!safePoints.length) return "";
@@ -6179,7 +6188,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       return;
     }
 
-    const bounds = safePoints
+    const validCoordinates = safePoints
       .map((point) => {
         const lat = Number(point?.coordinates?.lat);
         const lng = Number(point?.coordinates?.lng);
@@ -6188,14 +6197,19 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       })
       .filter(Boolean);
 
-    if (bounds.length === 1) {
-      toolsMapState.map.setCenter(bounds[0], 10, { duration: 260 });
-    } else if (bounds.length > 1) {
-      toolsMapState.map.setBounds(bounds, {
-        checkZoomRange: true,
-        zoomMargin: [34, 34, 34, 34],
-        duration: 260,
-      });
+    if (validCoordinates.length === 1) {
+      toolsMapState.map.setCenter(validCoordinates[0], 13, { duration: 260 });
+    } else if (validCoordinates.length > 1) {
+      const viewportBounds = buildYandexViewportBounds(safePoints);
+      if (viewportBounds) {
+        toolsMapState.map.setBounds(viewportBounds, {
+          checkZoomRange: true,
+          preciseZoom: true,
+          useMapMargin: true,
+          zoomMargin: [34, 34, 34, 34],
+          duration: 260,
+        });
+      }
     }
 
     safePoints.forEach((point) => {
@@ -8468,7 +8482,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       return;
     }
 
-    const bounds = safePoints
+    const validCoordinates = safePoints
       .map((point) => {
         const lat = Number(point?.coordinates?.lat);
         const lng = Number(point?.coordinates?.lng);
@@ -8477,15 +8491,20 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       })
       .filter(Boolean);
 
-    if (fitViewport && bounds.length) {
-      if (bounds.length === 1) {
-        toolsSearchMapState.map.setCenter(bounds[0], 10, { duration: 260 });
+    if (fitViewport && validCoordinates.length) {
+      if (validCoordinates.length === 1) {
+        toolsSearchMapState.map.setCenter(validCoordinates[0], 13, { duration: 260 });
       } else {
-        toolsSearchMapState.map.setBounds(bounds, {
-          checkZoomRange: true,
-          zoomMargin: [34, 34, 34, 34],
-          duration: 260,
-        });
+        const viewportBounds = buildYandexViewportBounds(safePoints);
+        if (viewportBounds) {
+          toolsSearchMapState.map.setBounds(viewportBounds, {
+            checkZoomRange: true,
+            preciseZoom: true,
+            useMapMargin: true,
+            zoomMargin: [34, 34, 34, 34],
+            duration: 260,
+          });
+        }
       }
     }
 

@@ -1423,6 +1423,63 @@ export function renderRole(user) {
           </div>
         </div>
         <div
+          class="settings-modal is-hidden writeoff-status-confirm-modal"
+          data-writeoff-status-confirm-modal
+        >
+          <div
+            class="settings-modal__backdrop"
+            data-writeoff-status-confirm-backdrop
+          ></div>
+          <div
+            class="settings-modal__panel writeoff-status-confirm-modal__panel"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Подтверждение смены статуса на списание"
+          >
+            <div class="settings-modal__header writeoff-status-confirm-modal__header">
+              <div class="settings-modal__title">
+                <h2>Подтвердить статус</h2>
+                <p data-writeoff-status-confirm-subtitle>
+                  Укажите подтверждение для выбранного инструмента.
+                </p>
+              </div>
+              <button
+                class="button-icon"
+                type="button"
+                data-writeoff-status-confirm-close
+                aria-label="Закрыть подтверждение"
+              >
+                <span class="button-icon-emoji" aria-hidden="true">✕</span>
+              </button>
+            </div>
+            <div class="settings-modal__body writeoff-status-confirm-modal__body">
+              <div class="form-card writeoff-status-confirm-card">
+                <div class="writeoff-status-confirm-card__label">Инструмент</div>
+                <div class="writeoff-status-confirm-card__value" data-writeoff-status-confirm-tool>
+                  —
+                </div>
+              </div>
+              <div class="form-message" data-writeoff-status-confirm-message></div>
+            </div>
+            <div class="settings-modal__footer writeoff-status-confirm-actions">
+              <button
+                class="action-secondary"
+                type="button"
+                data-writeoff-status-confirm-cancel
+              >
+                Отмена
+              </button>
+              <button
+                class="action-primary"
+                type="button"
+                data-writeoff-status-confirm-apply
+              >
+                Подтвердить
+              </button>
+            </div>
+          </div>
+        </div>
+        <div
           class="settings-modal is-hidden tools-cancel-move-modal"
           data-tools-cancel-move-modal
         >

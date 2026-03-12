@@ -8450,7 +8450,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
     if (fitViewport && bounds.length) {
       if (bounds.length === 1) {
-        toolsSearchMapState.map.setCenter(bounds[0], 15, { duration: 260 });
+        toolsSearchMapState.map.setCenter(bounds[0], 10, { duration: 260 });
       } else {
         toolsSearchMapState.map.setBounds(bounds, {
           checkZoomRange: true,

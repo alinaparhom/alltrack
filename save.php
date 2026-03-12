@@ -603,6 +603,10 @@ function resolveMoveRepliesMailingConfig(array $settings): ?array {
 }
 
 function resolveRepairsMailingConfig(array $settings): ?array {
+  $noPhotoConfig = resolveOrganizationMailingConfig($settings, "noPhoto");
+  if (is_array($noPhotoConfig)) {
+    return $noPhotoConfig;
+  }
   return resolveOrganizationMailingConfig($settings, "repairs");
 }
 
@@ -667,33 +671,81 @@ function formatPercentageLabel(int $count, int $total): string {
   return number_format($percentage, 1, '.', '') . "%";
 }
 
+function isToolBrokenForRepairsMailing(array $tool): bool {
+  $status = mb_strtolower(trim((string) ($tool["Статус"] ?? "")), 'UTF-8');
+  return in_array($status, ["сломан", "в ремонте", "на списание"], true);
+}
+
+function isToolWithoutPhoto(array $tool): bool {
+  return (int) ($tool["Количество фото"] ?? 0) === 0;
+}
+
+function buildRepairsMailingChart(string $title, array $counts): string {
+  if (empty($counts)) {
+    return $title . "\n• Нет данных";
+  }
+
+  arsort($counts);
+  $maxCount = max($counts);
+  $lines = [$title];
+
+  foreach ($counts as $label => $countRaw) {
+    $count = (int) $countRaw;
+    if ($count <= 0) {
+      continue;
+    }
+    $safeLabel = trim((string) $label);
+    if ($safeLabel === "") {
+      $safeLabel = "Не указан";
+    }
+    $barLength = $maxCount > 0 ? max(1, (int) round(($count / $maxCount) * 10)) : 1;
+    $bar = str_repeat("█", $barLength);
+    $lines[] = "• {$safeLabel}: {$count} {$bar}";
+  }
+
+  return implode("\n", $lines);
+}
+
 function buildRepairsMailingText(string $organization, array $tools): string {
   $headerOrg = trim($organization) !== "" ? trim($organization) : "Организация";
-  $totalCount = count($tools);
-  $brokenCount = 0;
-  $inRepairCount = 0;
-  $writeOffCount = 0;
+  $brokenTools = [];
+  $withoutPhotoByObject = [];
+  $withoutPhotoByResponsible = [];
 
   foreach ($tools as $tool) {
     if (!is_array($tool)) {
       continue;
     }
-    $status = mb_strtolower(trim((string) ($tool["Статус"] ?? "")), 'UTF-8');
-    if ($status === "сломан") {
-      $brokenCount++;
-    } elseif ($status === "в ремонте") {
-      $inRepairCount++;
-    } elseif ($status === "на списание") {
-      $writeOffCount++;
+
+    if (!isToolBrokenForRepairsMailing($tool)) {
+      continue;
     }
+    $brokenTools[] = $tool;
+
+    if (!isToolWithoutPhoto($tool)) {
+      continue;
+    }
+
+    $objectName = trim((string) ($tool["Объект"] ?? ""));
+    $responsibleName = trim((string) ($tool["Ответственный"] ?? ""));
+    $objectKey = $objectName !== "" ? $objectName : "Не указан";
+    $responsibleKey = $responsibleName !== "" ? $responsibleName : "Не указан";
+    $withoutPhotoByObject[$objectKey] = (int) ($withoutPhotoByObject[$objectKey] ?? 0) + 1;
+    $withoutPhotoByResponsible[$responsibleKey] = (int) ($withoutPhotoByResponsible[$responsibleKey] ?? 0) + 1;
   }
+
+  $brokenCount = count($brokenTools);
+  $noPhotoBrokenCount = array_sum($withoutPhotoByObject);
+
+  $chartByObject = buildRepairsMailingChart("📊 График 1 (по объектам, без фото)", $withoutPhotoByObject);
+  $chartByResponsible = buildRepairsMailingChart("📊 График 2 (по ответственным, без фото)", $withoutPhotoByResponsible);
 
   return "🛠 Рассылка «Ремонты»\n"
     . "🏢 Организация: {$headerOrg}\n\n"
-    . "Всего инструментов в базе: {$totalCount}\n"
-    . "Сломан: {$brokenCount} (" . formatPercentageLabel($brokenCount, $totalCount) . ")\n"
-    . "В ремонте: {$inRepairCount} (" . formatPercentageLabel($inRepairCount, $totalCount) . ")\n"
-    . "На списание: {$writeOffCount} (" . formatPercentageLabel($writeOffCount, $totalCount) . ")";
+    . "Инструментов с поломками: {$brokenCount}\n"
+    . "Из них без фото: {$noPhotoBrokenCount}\n\n"
+    . $chartByObject . "\n\n"
+    . $chartByResponsible;
 }
 
 function runRepairsMailing(array $options = []): array {

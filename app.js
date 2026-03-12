@@ -4590,6 +4590,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
   }
   const toolsViewToggleEl = contentEl.querySelector("[data-tools-view-toggle]");
+  const toolsStatusFilterDropdownWrapEl = contentEl.querySelector("[data-tools-status-filter-dropdown]");
+  const toolsStatusStandaloneWrapEl = contentEl.querySelector("[data-tools-status-standalone-wrap]");
+  const toolsStatusStandaloneEl = contentEl.querySelector("[data-tools-status-standalone]");
   const toolsMoveButtonEl = contentEl.querySelector("[data-tools-move-trigger]");
   const toolsSelectionCancelButtonEl = contentEl.querySelector(
     "[data-tools-selection-cancel]"
@@ -5723,6 +5726,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     selectedIds: new Set(),
     toolMap: new Map(),
     activeReplacementResponsible: "",
+    statusStandalone: "",
   };
   const pendingMovesState = {
     pendingItems: [],
@@ -7867,6 +7871,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     });
   };
 
+  const isWriteOffPendingMode = () => toolsState.mode === "write-off-pending";
+
+  const setToolsStatusStandaloneVisibility = (isVisible) => {
+    toolsStatusFilterDropdownWrapEl?.classList.toggle("is-hidden", isVisible);
+    toolsStatusStandaloneWrapEl?.classList.toggle("is-hidden", !isVisible);
+  };
+
   const buildToolSelectionId = (tool, index) => {
     const number = String(tool?.["Номер"] ?? "").trim();
     if (number) return `number:${number}`;
@@ -7961,7 +7972,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   };
 
   const isToolSelectableForMove = (tool) => {
-    if (toolsState.mode === "base" || toolsState.mode === "search")
+    if (toolsState.mode === "base" || toolsState.mode === "search" || toolsState.mode === "write-off-pending")
       return false;
     if (!tool) return false;
     if (tool.__pendingMove) return false;
@@ -7972,7 +7983,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   };
 
   const selectAllToolsForMove = () => {
-    if (toolsState.mode === "base" || toolsState.mode === "search") return;
+    if (toolsState.mode === "base" || toolsState.mode === "search" || toolsState.mode === "write-off-pending") return;
     const selectableIds = toolsState.filtered
       .filter((tool) => isToolSelectableForMove(tool))
       .map((tool) => String(tool?.__selectionId ?? "").trim())
@@ -8894,7 +8905,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       ) {
         return false;
       }
-      if (
+      if (isWriteOffPendingMode()) {
+        const selectedStatus = String(toolsState.statusStandalone ?? "").trim();
+        if (selectedStatus && String(tool?.["Статус"] ?? "").trim() !== selectedStatus) {
+          return false;
+        }
+      } else if (
         hasSelected("status") &&
         !includesSelected("status", tool?.["Статус"])
       ) {
@@ -9012,11 +9028,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     });
   };
 
-  const countAppliedToolsFilters = () =>
-    Object.values(toolsState.filters).reduce((total, value) => {
+  const countAppliedToolsFilters = () => {
+    const fromDropdowns = Object.values(toolsState.filters).reduce((total, value) => {
       if (!Array.isArray(value)) return total;
       return total + value.length;
     }, 0);
+    return fromDropdowns + (isWriteOffPendingMode() && toolsState.statusStandalone ? 1 : 0);
+  };
 
   const updateToolsFiltersUi = () => {
     const appliedCount = countAppliedToolsFilters();
@@ -9043,6 +9061,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       toolsState.filters[key] = [];
       syncToolsFilterValue(key, []);
     });
+    toolsState.statusStandalone = "";
+    if (toolsStatusStandaloneEl) {
+      toolsStatusStandaloneEl.value = "";
+    }
     applyToolsFilters();
   };
 
@@ -9059,7 +9081,17 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     };
     fillToolsFilterOptions("group", collectValues("Граппа инструментов"));
     fillToolsFilterOptions("object", collectValues("Объект"));
-    fillToolsFilterOptions("status", collectValues("Статус"));
+    const statusValues = collectValues("Статус");
+    fillToolsFilterOptions("status", statusValues);
+    if (toolsStatusStandaloneEl) {
+      const current = String(toolsState.statusStandalone ?? "").trim();
+      const options = ["", ...statusValues];
+      toolsStatusStandaloneEl.innerHTML = options
+        .map((value) => `<option value="${escapeHtml(value)}">${escapeHtml(value || "Все")}</option>`)
+        .join("");
+      toolsStatusStandaloneEl.value = options.includes(current) ? current : "";
+      toolsState.statusStandalone = toolsStatusStandaloneEl.value;
+    }
     fillToolsFilterOptions("responsible", collectValues("Ответственный"));
     fillToolsFilterOptions("manufacturer", collectValues("Производитель"));
     fillToolsFilterOptions("model", collectValues("Модель"));
@@ -9247,6 +9279,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (!toolsModalEl) return;
     const objectFilter = sanitizeObjectName(options.objectFilter ?? "");
     toolsState.mode = "user";
+    setToolsStatusStandaloneVisibility(false);
     toolsState.activeReplacementResponsible = "";
     setToolsTitle("Мои инструменты");
     toolsState.filters.responsible = [];
@@ -9285,6 +9318,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (!normalizedFullName) return;
     toolsState.activeReplacementResponsible = normalizedFullName;
     toolsState.mode = "replacement";
+    setToolsStatusStandaloneVisibility(false);
     toolsState.filters.responsible = [];
     toolsState.filters.object = [];
     toolsState.view = normalizeToolsView(toolsState.previousView);
@@ -9314,6 +9348,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const openBaseModal = async () => {
     if (!toolsModalEl) return;
     toolsState.mode = "base";
+    setToolsStatusStandaloneVisibility(false);
     toolsState.activeReplacementResponsible = "";
     toolsState.view = normalizeToolsView(toolsState.previousView);
     setToolsTitle("База");
@@ -9337,10 +9372,41 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
   };
 
+  const openWriteOffPendingModal = async () => {
+    if (!toolsModalEl) return;
+    toolsState.mode = "write-off-pending";
+    toolsState.view = "table";
+    setToolsTitle("На списание");
+    setToolsStatusStandaloneVisibility(true);
+    setToolsResponsibleFilterVisibility(true);
+    updateToolsReplacementPendingLinkVisibility();
+    syncToolsMapViewButtonVisibility();
+    toolsModalEl.classList.remove("is-hidden");
+    document.body.style.overflow = "hidden";
+    setToolsSubtitle("Загружаем список...");
+    const numberConfig = await resolveToolsNumberConfig();
+    updateToolsNumberConfig(numberConfig);
+    if (currentUser?.role === responsibleRole) {
+      await loadUserTools();
+    } else {
+      await loadBaseTools();
+    }
+    syncToolsViewButtons();
+    if (
+      toolsSearchInput &&
+      (typeof window === "undefined" ||
+        !window.matchMedia ||
+        !window.matchMedia("(max-width: 520px)").matches)
+    ) {
+      toolsSearchInput.focus();
+    }
+  };
+
   const openSearchModal = async () => {
     if (!toolsModalEl) return;
     toolsState.mode = "search";
     toolsState.view = "table";
+    setToolsStatusStandaloneVisibility(false);
     setToolsTitle("Поиск");
     setToolsResponsibleFilterVisibility(true);
     updateToolsReplacementPendingLinkVisibility();
@@ -9365,6 +9431,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const openMoveOtherModal = async () => {
     if (!toolsModalEl) return;
     toolsState.mode = "move-other";
+    setToolsStatusStandaloneVisibility(false);
     toolsState.view = normalizeToolsView(toolsState.previousView);
     setToolsTitle("Переместить за других");
     setToolsResponsibleFilterVisibility(true);
@@ -11878,6 +11945,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     });
   }
 
+  if (toolsStatusStandaloneEl) {
+    toolsStatusStandaloneEl.addEventListener("change", (event) => {
+      toolsState.statusStandalone = String(event.target.value ?? "").trim();
+      applyToolsFilters();
+    });
+  }
+
   const setToolsFiltersOpen = (isOpen) => {
     if (toolsFiltersPanelEl) {
       toolsFiltersPanelEl.classList.toggle("is-open", isOpen);
@@ -12034,7 +12108,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
   const openToolsMoveModal = async () => {
     if (!toolsMoveModalEl) return;
-    if (toolsState.mode === "base") return;
+    if (toolsState.mode === "base" || toolsState.mode === "write-off-pending") return;
     if (toolsState.selectedIds.size === 0) return;
     const selectedTools = Array.from(toolsState.selectedIds)
       .map((id) => toolsState.toolMap.get(id))
@@ -12363,6 +12437,39 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     });
   }
 
+  const markToolAsWriteOffFromPending = async (tool) => {
+    if (!tool || !toolsState.orgFolder) return;
+    const statusText = String(tool?.["Статус"] ?? "").trim().toLowerCase();
+    if (statusText === "на списание") {
+      window.alert("У этого инструмента уже статус «На списание».");
+      return;
+    }
+    const confirmed = window.confirm("Поставить инструменту статус «На списание»?");
+    if (!confirmed) return;
+    try {
+      const toolsPath = `./${toolsState.orgFolder}/База с инструментами.json`;
+      const rawTools = await loadJson(toolsPath).catch(() => []);
+      const tools = normalizeToolsData(rawTools);
+      const matcher = buildToolsEditMatcher(tool);
+      const toolIndex = tools.findIndex((entry) => matcher(entry));
+      if (toolIndex < 0) {
+        window.alert("Инструмент не найден в базе.");
+        return;
+      }
+      tools[toolIndex] = {
+        ...tools[toolIndex],
+        "Статус": "На списание",
+      };
+      await saveJson(toolsPath, tools, { user: currentUser });
+      syncToolStatusInStates(tools[toolIndex], "На списание");
+      applyToolsFilters();
+      window.alert("Статус обновлён: На списание.");
+    } catch (error) {
+      console.error(error);
+      window.alert("Не удалось обновить статус. Проверьте сервер.");
+    }
+  };
+
   const toolsSelectState = {
     holdTimer: null,
     startX: 0,
@@ -12434,6 +12541,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         const tool = toolsState.toolMap.get(item.dataset.toolId);
         if (tool) {
           openToolsInfoModal(tool);
+        }
+        return;
+      }
+      if (toolsState.mode === "write-off-pending") {
+        const tool = toolsState.toolMap.get(item.dataset.toolId);
+        if (tool) {
+          void markToolAsWriteOffFromPending(tool);
         }
         return;
       }
@@ -19484,6 +19598,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
     if (actionId === "write-off") {
       openWriteOffModal();
+      return true;
+    }
+    if (actionId === "write-off-pending") {
+      openWriteOffPendingModal();
       return true;
     }
     if (actionId === "repair") {

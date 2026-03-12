@@ -1058,7 +1058,15 @@ function buildMoveByEnergyNotificationMessage(
 
 function buildMoveToolResponsibleMessage(
   tool,
-  { movedBy, oldObject, targetObject, fineNote, moveReason, vacationNote } = {}
+  {
+    movedBy,
+    oldObject,
+    targetObject,
+    fineNote,
+    moveReason,
+    vacationNote,
+    previousResponsible,
+  } = {}
 ) {
   const titleParts = [
     formatNotificationValue(tool?.["Наименование"], ""),
@@ -1086,9 +1094,17 @@ function buildMoveToolResponsibleMessage(
       formatNotificationValue(targetObject)
     )}`
   );
-  if (moveReason) {
+  if (previousResponsible) {
     lines.push(
-      `6. Причина перемещения: ${escapeTelegramHtml(
+      `6. Ответственный до перемещения: ${escapeTelegramHtml(
+        formatNotificationValue(previousResponsible)
+      )}`
+    );
+  }
+  if (moveReason) {
+    const reasonLineNumber = previousResponsible ? 7 : 6;
+    lines.push(
+      `${reasonLineNumber}. Причина перемещения: ${escapeTelegramHtml(
         formatNotificationValue(moveReason)
       )}`
     );
@@ -2136,6 +2152,7 @@ async function notifyMoveTool({
   vacationNote,
   notificationId = "moveTool",
   fineNote,
+  previousResponsible,
 }) {
   const result = {
     sent: false,
@@ -2157,7 +2174,9 @@ async function notifyMoveTool({
       ? extractNotificationGroups(settingsData, notificationId)
       : [];
     const oldObject = String(tool?.["Объект"] ?? "").trim();
-    const oldResponsible = String(tool?.["Ответственный"] ?? "").trim();
+    const oldResponsible =
+      String(previousResponsible ?? "").trim() ||
+      String(tool?.["Ответственный"] ?? "").trim();
     const moveMessage =
       notificationId === "moveByEnergy"
         ? buildMoveByEnergyNotificationMessage(tool, {
@@ -2268,6 +2287,7 @@ async function notifyMoveTool({
         fineNote: combinedFineNote,
         moveReason,
         vacationNote,
+        previousResponsible: oldResponsible,
       });
       const responsibleResult = await sendTelegramMessage(
         resolvedResponsibleId,
@@ -9409,12 +9429,27 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       title.textContent = formatInfoValue(move?.["Дата перемещения"]);
       const grid = document.createElement("div");
       grid.className = "tools-info-item__grid";
+      const previousResponsible = String(
+        move?.["Ответственный до перемещения"] ?? ""
+      ).trim();
+      const movedByEnergy = String(move?.["Переместил энергетик"] ?? "").trim();
       grid.append(
         buildToolsInfoRow("Переместил", move?.["Переместил"]),
         buildToolsInfoRow("Старый объект", move?.["Старый объект"]),
         buildToolsInfoRow("Принял", move?.["Принял"]),
         buildToolsInfoRow("Новый объект", move?.["Новый объект"])
       );
+      if (previousResponsible) {
+        grid.append(
+          buildToolsInfoRow(
+            "Ответственный до перемещения",
+            previousResponsible
+          )
+        );
+      }
+      if (movedByEnergy) {
+        grid.append(buildToolsInfoRow("Переместил энергетик", movedByEnergy));
+      }
       item.append(title, grid);
       if (isRejected) {
         const reason = formatInfoValue(move?.["Причина отказа"]);
@@ -10993,10 +11028,18 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const model = String(tool?.["Модель"] ?? "").trim();
       const sender = String(move?.["Переместил"] ?? "").trim();
       const moveDate = String(move?.["Дата перемещения"] ?? "").trim();
+      const previousResponsible = String(
+        move?.["Ответственный до перемещения"] ?? ""
+      ).trim();
+      const movedByEnergy = String(move?.["Переместил энергетик"] ?? "").trim();
       const metaLines = [
         [manufacturer, model].filter(Boolean).join(" · "),
         sender ? `Отправил: ${sender}` : "",
         moveDate ? `Дата перемещения: ${moveDate}` : "",
+        previousResponsible
+          ? `Ответственный до перемещения: ${previousResponsible}`
+          : "",
+        movedByEnergy ? `Переместил энергетик: ${movedByEnergy}` : "",
       ].filter(Boolean);
       metaLines.forEach((line) => {
         const lineEl = document.createElement("div");
@@ -12147,6 +12190,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
               movedBy: String(user?.full_name ?? "").trim(),
               moveReason,
               vacationNote,
+              previousResponsible: String(tool?.["Ответственный"] ?? "").trim(),
               fineNote:
                 toolsState.mode === "move-other" ? movedByEnergyFineNote : "",
               notificationId:

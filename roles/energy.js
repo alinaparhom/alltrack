@@ -9,6 +9,7 @@ export const energyActions = [
   { id: "write-off", title: "Списать", icon: "🧾" },
   { id: "repair", title: "Ремонт", icon: "🛠️" },
   { id: "breakdowns", title: "Поломки", icon: "⚠️" },
+  { id: "writeoff-status", title: "На списание", icon: "📋" },
   { id: "demand", title: "Потребность", icon: "📌" },
   { id: "objects", title: "Объекты", icon: "🏢" },
   { id: "info", title: "Информация", icon: "ℹ️" },
@@ -1974,6 +1975,16 @@ export function renderRole(user) {
                       autocomplete="off"
                     />
                   </label>
+                  <button
+                    class="tools-filters-toggle"
+                    type="button"
+                    data-breakdowns-filters-toggle
+                    aria-expanded="false"
+                    aria-controls="breakdowns-filters-panel"
+                  >
+                    <span class="tools-filters-toggle__icon" aria-hidden="true">⛃</span>
+                    <span class="tools-filters-toggle__label">Фильтр</span>
+                  </button>
                 </div>
                 <div class="tools-controls__row">
                   <label class="tools-quick-filter breakdowns-status-filter">
@@ -1985,6 +1996,28 @@ export function renderRole(user) {
                     >
                       <option value="">Всё</option>
                     </select>
+                  </label>
+                </div>
+                <div class="tools-filters" id="breakdowns-filters-panel" data-breakdowns-filters-panel>
+                  <label class="tools-filter">
+                    <span>По группе</span>
+                    <select class="form-input" data-breakdowns-filter="group"></select>
+                  </label>
+                  <label class="tools-filter">
+                    <span>По объекту</span>
+                    <select class="form-input" data-breakdowns-filter="object"></select>
+                  </label>
+                  <label class="tools-filter" data-breakdowns-responsible-filter>
+                    <span>По ответственному</span>
+                    <select class="form-input" data-breakdowns-filter="responsible"></select>
+                  </label>
+                  <label class="tools-filter">
+                    <span>По производителю</span>
+                    <select class="form-input" data-breakdowns-filter="manufacturer"></select>
+                  </label>
+                  <label class="tools-filter">
+                    <span>По модели</span>
+                    <select class="form-input" data-breakdowns-filter="model"></select>
                   </label>
                 </div>
               </div>

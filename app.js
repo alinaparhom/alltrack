@@ -4796,6 +4796,18 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const breakdownsStatusFilter = contentEl.querySelector(
     "[data-breakdowns-status-filter]"
   );
+  const breakdownsFilterEls = contentEl.querySelectorAll(
+    "[data-breakdowns-filter]"
+  );
+  const breakdownsFiltersPanelEl = contentEl.querySelector(
+    "[data-breakdowns-filters-panel]"
+  );
+  const breakdownsFiltersToggleEl = contentEl.querySelector(
+    "[data-breakdowns-filters-toggle]"
+  );
+  const breakdownsResponsibleFilterEl = contentEl.querySelector(
+    "[data-breakdowns-responsible-filter]"
+  );
   const breakdownsListEl = contentEl.querySelector("[data-breakdowns-list]");
   const breakdownsEmptyEl = contentEl.querySelector("[data-breakdowns-empty]");
   const breakdownsSubtitleEl = contentEl.querySelector(
@@ -4879,6 +4891,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   );
   const breakdownStatusSubtitleEl = contentEl.querySelector(
     "[data-breakdown-status-subtitle]"
+  );
+  const breakdownStatusTitleEl = contentEl.querySelector(
+    ".breakdown-status__header h2"
   );
   const breakdownStatusToolTitleEl = contentEl.querySelector(
     "[data-breakdown-status-tool-title]"
@@ -5810,11 +5825,19 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     filtered: [],
     search: "",
     orgFolder: "",
+    mode: "breakdowns",
     selectedTool: null,
     statusTool: null,
     toolMap: new Map(),
     photos: [],
     statusFilter: "",
+    filters: {
+      group: "",
+      object: "",
+      responsible: "",
+      manufacturer: "",
+      model: "",
+    },
     isSaving: false,
     isStatusSaving: false,
   };
@@ -10202,7 +10225,14 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       rawTools = [];
     }
     writeOffState.toolMap.clear();
+    const userName = normalizePersonName(user?.full_name ?? user?.fullName ?? "");
+    const canManageAllTools = user?.role !== responsibleRole;
     writeOffState.tools = rawTools
+      .filter((tool) => {
+        if (canManageAllTools) return true;
+        if (!userName) return true;
+        return normalizePersonName(tool?.["Ответственный"] ?? "") === userName;
+      })
       .map((tool, index) => {
         const selectionId = buildToolSelectionId(tool, index);
         const entry = {
@@ -12873,6 +12903,45 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     });
   });
 
+  const setBreakdownsFiltersOpen = (isOpen) => {
+    if (breakdownsFiltersPanelEl) {
+      breakdownsFiltersPanelEl.classList.toggle("is-open", isOpen);
+    }
+    if (breakdownsFiltersToggleEl) {
+      breakdownsFiltersToggleEl.setAttribute("aria-expanded", String(isOpen));
+    }
+  };
+
+  if (breakdownsFiltersToggleEl) {
+    breakdownsFiltersToggleEl.addEventListener("click", () => {
+      const isOpen = breakdownsFiltersPanelEl?.classList.contains("is-open");
+      setBreakdownsFiltersOpen(!isOpen);
+    });
+  }
+
+  if (typeof window !== "undefined" && breakdownsFiltersPanelEl) {
+    const mediaQuery = window.matchMedia("(max-width: 520px)");
+    const syncFiltersVisibility = () => {
+      setBreakdownsFiltersOpen(!mediaQuery.matches);
+    };
+    syncFiltersVisibility();
+    if (mediaQuery.addEventListener) {
+      mediaQuery.addEventListener("change", syncFiltersVisibility);
+    } else if (mediaQuery.addListener) {
+      mediaQuery.addListener(syncFiltersVisibility);
+    }
+  }
+
+  breakdownsFilterEls.forEach((selectEl) => {
+    selectEl.addEventListener("change", (event) => {
+      const target = event.target;
+      const key = target?.dataset?.breakdownsFilter;
+      if (!key) return;
+      breakdownsState.filters[key] = String(target.value ?? "");
+      applyBreakdownsFilters();
+    });
+  });
+
   const setNoPhotoSubtitle = (text) => {
     if (noPhotoSubtitleEl) {
       noPhotoSubtitleEl.textContent = text;
@@ -14240,6 +14309,36 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       ) {
         return false;
       }
+      if (
+        breakdownsState.filters.group &&
+        String(tool?.["Граппа инструментов"] ?? "").trim() !== breakdownsState.filters.group
+      ) {
+        return false;
+      }
+      if (
+        breakdownsState.filters.object &&
+        String(tool?.["Объект"] ?? "").trim() !== breakdownsState.filters.object
+      ) {
+        return false;
+      }
+      if (
+        breakdownsState.filters.responsible &&
+        String(tool?.["Ответственный"] ?? "").trim() !== breakdownsState.filters.responsible
+      ) {
+        return false;
+      }
+      if (
+        breakdownsState.filters.manufacturer &&
+        String(tool?.["Производитель"] ?? "").trim() !== breakdownsState.filters.manufacturer
+      ) {
+        return false;
+      }
+      if (
+        breakdownsState.filters.model &&
+        String(tool?.["Модель"] ?? "").trim() !== breakdownsState.filters.model
+      ) {
+        return false;
+      }
       if (!tokens.length) return true;
       const searchLine = tool.__searchLine ?? "";
       return tokens.every((token) => searchLine.includes(token));
@@ -14370,7 +14469,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
     const tools = await loadToolsData(orgFolder);
     const userName = normalizePersonName(user?.full_name ?? user?.fullName ?? "");
-    const canManageAllTools = user?.role === energyRole;
+    const canManageAllTools = user?.role !== responsibleRole;
     repairState.toolMap = new Map();
     repairState.tools = tools
       .filter((tool) => {
@@ -14444,6 +14543,39 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     breakdownsStatusFilter.value = breakdownsState.statusFilter;
   };
 
+  const fillBreakdownsFilterOptions = (key, values) => {
+    const selectEl = contentEl.querySelector(`[data-breakdowns-filter="${key}"]`);
+    if (!selectEl) return;
+    selectEl.innerHTML = "";
+    const allOption = document.createElement("option");
+    allOption.value = "";
+    allOption.textContent = "Все";
+    selectEl.appendChild(allOption);
+    values.forEach((value) => {
+      const option = document.createElement("option");
+      option.value = value;
+      option.textContent = value;
+      selectEl.appendChild(option);
+    });
+    selectEl.value = breakdownsState.filters[key] ?? "";
+  };
+
+  const prepareBreakdownsFilters = () => {
+    const collectValues = (field) => {
+      const set = new Set();
+      breakdownsState.tools.forEach((tool) => {
+        const value = String(tool?.[field] ?? "").trim();
+        if (value) set.add(value);
+      });
+      return Array.from(set).sort((a, b) => a.localeCompare(b, "ru", { numeric: true }));
+    };
+    fillBreakdownsFilterOptions("group", collectValues("Граппа инструментов"));
+    fillBreakdownsFilterOptions("object", collectValues("Объект"));
+    fillBreakdownsFilterOptions("responsible", collectValues("Ответственный"));
+    fillBreakdownsFilterOptions("manufacturer", collectValues("Производитель"));
+    fillBreakdownsFilterOptions("model", collectValues("Модель"));
+  };
+
   const loadBreakdownsTools = async () => {
     const orgFolder = context.orgFolderName ?? "";
     breakdownsState.orgFolder = orgFolder;
@@ -14456,7 +14588,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
     const tools = await loadToolsData(orgFolder);
     const userName = normalizePersonName(user?.full_name ?? user?.fullName ?? "");
-    const canManageAllTools = user?.role === energyRole;
+    const canManageAllTools = user?.role !== responsibleRole;
     breakdownsState.toolMap = new Map();
     breakdownsState.tools = tools
       .filter((tool) => {
@@ -14482,6 +14614,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         )
       );
     prepareBreakdownsStatusFilter();
+    prepareBreakdownsFilters();
+    if (breakdownsResponsibleFilterEl) {
+      breakdownsResponsibleFilterEl.classList.toggle("is-hidden", user?.role === responsibleRole);
+    }
     applyBreakdownsFilters();
   };
 
@@ -14697,6 +14833,15 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const openBreakdownStatusModal = (tool) => {
     if (!breakdownStatusModalEl || !tool) return;
     breakdownsState.statusTool = tool;
+    const isWriteoffMode = breakdownsState.mode === "writeoff-status";
+    if (breakdownStatusTitleEl) {
+      breakdownStatusTitleEl.textContent = isWriteoffMode ? "Статус: на списание" : "Поломка: статус";
+    }
+    breakdownStatusActionButtons.forEach((button) => {
+      const action = String(button.dataset.breakdownStatusAction ?? "");
+      const hideInWriteoffMode = isWriteoffMode && action !== "writeoff";
+      button.classList.toggle("is-hidden", hideInWriteoffMode);
+    });
     fillBreakdownStatusToolInfo(tool);
     setBreakdownStatusMessage("");
     breakdownStatusModalEl.classList.remove("is-hidden");
@@ -15036,11 +15181,21 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     document.body.style.overflow = "";
   };
 
-  const openBreakdownsModal = async () => {
+  const openBreakdownsModal = async (mode = "breakdowns") => {
     if (!breakdownsModalEl) return;
+    breakdownsState.mode = mode;
+    breakdownsState.search = "";
+    breakdownsState.statusFilter = "";
+    Object.keys(breakdownsState.filters).forEach((key) => {
+      breakdownsState.filters[key] = "";
+    });
+    if (breakdownsSearchInput) {
+      breakdownsSearchInput.value = "";
+    }
     breakdownsModalEl.classList.remove("is-hidden");
     document.body.style.overflow = "hidden";
-    setBreakdownsSubtitle("Загружаем список...");
+    const isWriteoffMode = mode === "writeoff-status";
+    setBreakdownsSubtitle(isWriteoffMode ? "Выберите инструмент для статуса «На списание»" : "Загружаем список...");
     setBreakdownsMessage("");
     await loadBreakdownsTools();
     if (
@@ -15102,6 +15257,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     prepareRepairStatusFilter();
     applyRepairFilters();
     prepareBreakdownsStatusFilter();
+    prepareBreakdownsFilters();
+    if (breakdownsResponsibleFilterEl) {
+      breakdownsResponsibleFilterEl.classList.toggle("is-hidden", user?.role === responsibleRole);
+    }
     applyBreakdownsFilters();
   };
 
@@ -15201,6 +15360,19 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const tool = breakdownsState.toolMap.get(toolId);
       if (!tool) return;
       const tone = tool?.__statusTone ?? resolveToolStatusTone(tool);
+      const isWriteoffMode = breakdownsState.mode === "writeoff-status";
+      if (isWriteoffMode) {
+        if (tone === "writeoff") {
+          setBreakdownsMessage("Инструмент уже на списании.", "info");
+          return;
+        }
+        if (tone === "repair") {
+          setBreakdownsMessage("Инструмент уже в ремонте.", "info");
+          return;
+        }
+        openBreakdownStatusModal(tool);
+        return;
+      }
       if (tone === "broken") {
         openBreakdownStatusModal(tool);
         return;
@@ -19432,7 +19604,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       return true;
     }
     if (actionId === "breakdowns") {
-      openBreakdownsModal();
+      openBreakdownsModal("breakdowns");
+      return true;
+    }
+    if (actionId === "writeoff-status") {
+      openBreakdownsModal("writeoff-status");
       return true;
     }
     if (actionId === "demand") {

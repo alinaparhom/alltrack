@@ -19452,8 +19452,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     source: null,
   };
   const dragHoldDelay = {
-    touch: 180,
+    touch: 120,
     mouse: 140,
+  };
+  const dragReorderThreshold = {
+    grid: 0.2,
+    quick: 0.18,
   };
   let quickAccessOrderDirty = false;
   let telegramVerticalSwipesBlocked = false;
@@ -19635,7 +19639,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       );
       const draggedRect = dragState.item.getBoundingClientRect();
       const rect = target.getBoundingClientRect();
-      const shouldInsertAfter = event.clientY > rect.top + rect.height / 2;
+      const yThreshold = rect.top + rect.height * dragReorderThreshold.grid;
+      const shouldInsertAfter = event.clientY > yThreshold;
       gridEl.insertBefore(
         dragState.item,
         shouldInsertAfter ? target.nextSibling : target
@@ -19664,8 +19669,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const rect = target.getBoundingClientRect();
       const centerY = rect.top + rect.height / 2;
       const centerX = rect.left + rect.width / 2;
+      const yThreshold = rect.top + rect.height * dragReorderThreshold.quick;
       const shouldInsertAfter =
-        event.clientY > centerY ||
+        event.clientY > yThreshold ||
         (Math.abs(event.clientY - centerY) < rect.height / 2 &&
           event.clientX > centerX);
       quickAccessListEl.insertBefore(
@@ -19772,16 +19778,24 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
   };
 
-  gridEl.addEventListener("pointermove", handleDragMove);
-
-  gridEl.addEventListener("pointerup", async () => {
+  const handleGlobalDragEnd = async (event) => {
+    if (!dragState.item) return;
+    if (event.pointerId !== dragState.pointerId) return;
     await handleDrop();
     await clearDrag();
-  });
+  };
 
-  gridEl.addEventListener("pointercancel", async () => {
+  const handleGlobalDragCancel = async (event) => {
+    if (!dragState.item) return;
+    if (event.pointerId !== dragState.pointerId) return;
     await clearDrag();
-  });
+  };
+
+  gridEl.addEventListener("pointermove", handleDragMove);
+
+  gridEl.addEventListener("pointerup", handleGlobalDragEnd);
+
+  gridEl.addEventListener("pointercancel", handleGlobalDragCancel);
 
   quickAccessListEl?.addEventListener("pointerdown", (event) => {
     const card = event.target.closest("[data-action-id]");
@@ -19791,14 +19805,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
   quickAccessListEl?.addEventListener("pointermove", handleDragMove);
 
-  quickAccessListEl?.addEventListener("pointerup", async () => {
-    await handleDrop();
-    await clearDrag();
-  });
+  quickAccessListEl?.addEventListener("pointerup", handleGlobalDragEnd);
 
-  quickAccessListEl?.addEventListener("pointercancel", async () => {
-    await clearDrag();
-  });
+  quickAccessListEl?.addEventListener("pointercancel", handleGlobalDragCancel);
+
+  document.addEventListener("pointermove", handleDragMove, { passive: false });
+  document.addEventListener("pointerup", handleGlobalDragEnd);
+  document.addEventListener("pointercancel", handleGlobalDragCancel);
 }
 
 function createRegistrationToken() {

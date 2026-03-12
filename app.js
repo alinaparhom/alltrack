@@ -6109,13 +6109,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     toolsMapState.markers = [];
 
     if (!safePoints.length) {
-      toolsMapState.map.setCenter([53.9, 27.56], 10, {
-        duration: 240,
-      });
       return;
     }
 
-    const bounds = [];
     safePoints.forEach((point) => {
       const lat = Number(point?.coordinates?.lat);
       const lng = Number(point?.coordinates?.lng);
@@ -6123,7 +6119,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const safePointName = escapeHtml(point.name);
       const toolsCount = Number(point.count) || 0;
 
-      bounds.push([lat, lng]);
       const marker = new window.ymaps.Placemark(
         [lat, lng],
         {
@@ -6143,18 +6138,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       toolsMapState.map.geoObjects.add(marker);
       toolsMapState.markers.push(marker);
     });
-
-    if (bounds.length) {
-      if (bounds.length === 1) {
-        toolsMapState.map.setCenter(bounds[0], 15, { duration: 260 });
-        return;
-      }
-      toolsMapState.map.setBounds(bounds, {
-        checkZoomRange: true,
-        zoomMargin: [34, 34, 34, 34],
-        duration: 260,
-      });
-    }
   };
 
   const activateToolsMapInteraction = async () => {

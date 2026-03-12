@@ -10230,6 +10230,119 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     renderWriteOffList();
   };
 
+  const applyWriteOffStatus = async () => {
+    if (writeOffState.selectedIds.size === 0) {
+      setWriteOffMessage("Выберите хотя бы один инструмент.", "error");
+      return;
+    }
+    const orgFolder = writeOffState.orgFolder ?? context.orgFolderName ?? "";
+    if (!orgFolder) {
+      setWriteOffMessage("Не удалось определить организацию.", "error");
+      return;
+    }
+    setWriteOffMessage("Сохраняем статус...", "info");
+    const toolsPath = `./${orgFolder}/База с инструментами.json`;
+    const writeOffPath = `./${orgFolder}/Списания.json`;
+    try {
+      const [rawTools, rawWriteOff] = await Promise.all([
+        loadJson(toolsPath).catch(() => []),
+        loadJson(writeOffPath).catch(() => []),
+      ]);
+      const tools = normalizeToolsData(rawTools);
+      const baseWrapper =
+        rawWriteOff && typeof rawWriteOff === "object" && !Array.isArray(rawWriteOff)
+          ? { ...rawWriteOff }
+          : {};
+      const writeOffItems = Array.isArray(rawWriteOff)
+        ? rawWriteOff
+        : Array.isArray(rawWriteOff?.items)
+          ? rawWriteOff.items
+          : [];
+      const pendingKey = "списокНаСписание";
+      const pendingList = Array.isArray(baseWrapper[pendingKey])
+        ? [...baseWrapper[pendingKey]]
+        : [];
+      const markerRaw = String(
+        user?.full_name ?? user?.fullName ?? currentUser?.full_name ?? ""
+      ).trim();
+      const marker = markerRaw ? formatFullName(markerRaw) : "Пользователь";
+      const dateValue = formatDateValue(new Date());
+      const selectedTools = Array.from(writeOffState.selectedIds)
+        .map((id) => writeOffState.toolMap.get(id))
+        .filter(Boolean);
+      const updatedTools = [...tools];
+      let updatedCount = 0;
+
+      selectedTools.forEach((selectedTool) => {
+        const selectedNumber = normalizeToolNumberValue(selectedTool?.["Номер"] ?? "");
+        const selectedAccounting = String(selectedTool?.["Бух.номер"] ?? "").trim();
+        const toolIndex = updatedTools.findIndex((entry) => {
+          const entryNumber = normalizeToolNumberValue(entry?.["Номер"] ?? "");
+          const entryAccounting = String(entry?.["Бух.номер"] ?? "").trim();
+          if (selectedNumber && entryNumber === selectedNumber) return true;
+          if (selectedAccounting && entryAccounting === selectedAccounting) return true;
+          return false;
+        });
+        if (toolIndex < 0) return;
+
+        updatedTools[toolIndex] = {
+          ...updatedTools[toolIndex],
+          "Статус": "На списание",
+        };
+        updatedCount += 1;
+
+        const pendingEntry = {
+          "Номер": String(updatedTools[toolIndex]?.["Номер"] ?? "").trim(),
+          "Бух.номер": String(updatedTools[toolIndex]?.["Бух.номер"] ?? "").trim(),
+          "Ответственный": String(
+            updatedTools[toolIndex]?.["Ответственный"] ?? ""
+          ).trim(),
+          'Дата постановки статуса "На списание"': dateValue,
+          "Поставил статус": marker,
+        };
+        const pendingIndex = pendingList.findIndex((entry) => {
+          const entryNumber = normalizeToolNumberValue(entry?.["Номер"] ?? "");
+          const entryAccounting = String(entry?.["Бух.номер"] ?? "").trim();
+          if (selectedNumber && entryNumber === selectedNumber) return true;
+          if (selectedAccounting && entryAccounting === selectedAccounting) return true;
+          return false;
+        });
+        if (pendingIndex >= 0) {
+          pendingList[pendingIndex] = { ...pendingList[pendingIndex], ...pendingEntry };
+        } else {
+          pendingList.push(pendingEntry);
+        }
+      });
+
+      if (updatedCount === 0) {
+        setWriteOffMessage("Выбранные инструменты не найдены в базе.", "error");
+        return;
+      }
+
+      const updatedWriteOffPayload = {
+        ...baseWrapper,
+        items: writeOffItems,
+        [pendingKey]: pendingList,
+      };
+      const meta = buildUploadUserMeta({ organizationName: context.orgFullName });
+      await saveEntries([
+        { path: toolsPath, data: updatedTools, ...meta },
+        { path: writeOffPath, data: updatedWriteOffPayload, ...meta },
+      ]);
+
+      selectedTools.forEach((tool) => {
+        syncToolStatusInStates(tool, "На списание");
+      });
+      writeOffState.selectedIds.clear();
+      writeOffState.selectedTools = [];
+      await loadWriteOffTools();
+      setWriteOffMessage(`Готово. Статус обновлён для: ${updatedCount}.`, "success");
+    } catch (error) {
+      console.error(error);
+      setWriteOffMessage("Не удалось обновить статус.", "error");
+    }
+  };
+
   const loadWriteOffTools = async () => {
     const orgFolder = context.orgFolderName ?? "";
     writeOffState.orgFolder = orgFolder;
@@ -10250,7 +10363,16 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       rawTools = [];
     }
     writeOffState.toolMap.clear();
-    writeOffState.tools = rawTools
+    const visibleTools =
+      user?.role === responsibleRole
+        ? rawTools.filter(
+            (tool) =>
+              normalizePersonName(tool?.["Ответственный"] ?? "") ===
+              normalizePersonName(user?.full_name ?? user?.fullName ?? "")
+          )
+        : rawTools;
+
+    writeOffState.tools = visibleTools
       .map((tool, index) => {
         const selectionId = buildToolSelectionId(tool, index);
         const entry = {
@@ -10292,9 +10414,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     setWriteOffMessage("");
     resetWriteOffState();
     await loadWriteOffTools();
-    setWriteOffSubtitle(
-      `Инструментов: ${writeOffState.tools.length}`
-    );
+    setWriteOffSubtitle(`Инструментов: ${writeOffState.tools.length}`);
     if (
       writeOffSearchInput &&
       (typeof window === "undefined" ||
@@ -11724,7 +11844,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     });
   }
   if (writeOffNextButton) {
-    writeOffNextButton.addEventListener("click", openWriteOffConfirmModal);
+    writeOffNextButton.addEventListener("click", () => {
+      void applyWriteOffStatus();
+    });
   }
 
   if (writeOffConfirmBackdropEl) {
@@ -11903,17 +12025,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     });
   }
 
-  if (typeof window !== "undefined" && toolsFiltersPanelEl) {
-    const mediaQuery = window.matchMedia("(max-width: 520px)");
-    const syncFiltersVisibility = () => {
-      setToolsFiltersOpen(!mediaQuery.matches);
-    };
-    syncFiltersVisibility();
-    if (mediaQuery.addEventListener) {
-      mediaQuery.addEventListener("change", syncFiltersVisibility);
-    } else if (mediaQuery.addListener) {
-      mediaQuery.addListener(syncFiltersVisibility);
-    }
+  if (toolsFiltersPanelEl) {
+    setToolsFiltersOpen(false);
   }
 
   const closeAllToolsFilterDropdowns = () => {

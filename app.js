@@ -3587,6 +3587,13 @@ function normalizeToolsData(raw) {
   return [];
 }
 
+function isValidMapCoordinate(lat, lng) {
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return false;
+  if (Math.abs(lat) > 90 || Math.abs(lng) > 180) return false;
+  if (Math.abs(lat) < 0.0001 && Math.abs(lng) < 0.0001) return false;
+  return true;
+}
+
 function buildToolsMapPoints(toolsList, objectsList, userName = "") {
   const userKey = normalizePersonName(userName);
   if (!userKey) return [];
@@ -3616,7 +3623,7 @@ function buildToolsMapPoints(toolsList, objectsList, userName = "") {
       if (!coordinates) return null;
       const lat = Number(coordinates.lat);
       const lng = Number(coordinates.lng);
-      if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+      if (!isValidMapCoordinate(lat, lng)) return null;
       return {
         name: objectName,
         count: entry.count,
@@ -3649,7 +3656,7 @@ function buildToolsMapPointsByObjects(toolsList, objectsList) {
       if (!coordinates) return null;
       const lat = Number(coordinates.lat);
       const lng = Number(coordinates.lng);
-      if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+      if (!isValidMapCoordinate(lat, lng)) return null;
       return {
         name: objectName,
         count: entry.count,

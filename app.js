@@ -17969,7 +17969,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
     if (usersInviteHintEl) {
       usersInviteHintEl.textContent =
-        "Нажмите на ответственного без ID в списке, чтобы сформировать ссылку.";
+        "Нажмите на пользователя без ID в списке, чтобы сформировать новую ссылку.";
     }
     if (usersInviteNoteEl) {
       usersInviteNoteEl.textContent =
@@ -18540,30 +18540,29 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     try {
       const registrationsData = await loadRegistrations();
       const registrations = registrationsData.registrations ?? [];
-      const existingRegistration = registrations.find(
+      const registrationToken = createRegistrationToken();
+      const registrationsWithoutUser = registrations.filter(
         (item) =>
-          item.user?.full_name === fullName &&
-          item.user?.organization === organizationName &&
-          item.user?.role === roleName
+          !(
+            item.user?.full_name === fullName &&
+            item.user?.organization === organizationName &&
+            item.user?.role === roleName
+          )
       );
-      const registrationToken =
-        existingRegistration?.token ?? createRegistrationToken();
-      const nextRegistrationsData = existingRegistration
-        ? { registrations }
-        : {
-            registrations: [
-              ...registrations,
-              {
-                token: registrationToken,
-                created_at: new Date().toISOString(),
-                user: {
-                  full_name: fullName,
-                  organization: organizationName,
-                  role: roleName,
-                },
-              },
-            ],
-          };
+      const nextRegistrationsData = {
+        registrations: [
+          ...registrationsWithoutUser,
+          {
+            token: registrationToken,
+            created_at: new Date().toISOString(),
+            user: {
+              full_name: fullName,
+              organization: organizationName,
+              role: roleName,
+            },
+          },
+        ],
+      };
 
       await saveJson(pendingRegistrationsFilePath, nextRegistrationsData, { user });
 
@@ -18584,7 +18583,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       if (usersInviteLinkEl) {
         usersInviteLinkEl.value = fallbackLink;
       }
-      usersInviteBox.dataset.shareText = `Контакт ответственного: ${fullName}. Организация: ${organizationName}.`;
+      usersInviteBox.dataset.shareText = `Контакт пользователя: ${fullName}. Роль: ${roleName}. Организация: ${organizationName}.`;
       usersInviteBox.dataset.telegramLink = fallbackLink;
       if (telegramLinks?.appLink) {
         usersInviteBox.dataset.telegramAppLink = telegramLinks.appLink;
@@ -21455,7 +21454,7 @@ function setupSuperAdmin() {
     }
     if (usersInviteHintEl) {
       usersInviteHintEl.textContent =
-        "Нажмите на ответственного без ID в списке, чтобы сформировать ссылку.";
+        "Нажмите на пользователя без ID в списке, чтобы сформировать новую ссылку.";
     }
     if (usersInviteNoteEl) {
       usersInviteNoteEl.textContent =
@@ -21616,33 +21615,32 @@ function setupSuperAdmin() {
     try {
       const registrationsData = await loadRegistrations();
       const registrations = registrationsData.registrations ?? [];
-      const existing = registrations.find(
+      const registrationToken = createRegistrationToken();
+      const registrationsWithoutUser = registrations.filter(
         (item) =>
-          item.user?.full_name === fullName &&
-          item.user?.organization === organizationName &&
-          item.user?.role === roleName
+          !(
+            item.user?.full_name === fullName &&
+            item.user?.organization === organizationName &&
+            item.user?.role === roleName
+          )
       );
-      const registrationToken = existing?.token ?? createRegistrationToken();
-
-      if (!existing) {
-        const nextRegistrationsData = {
-          registrations: [
-            ...registrations,
-            {
-              token: registrationToken,
-              created_at: new Date().toISOString(),
-              user: {
-                full_name: fullName,
-                organization: organizationName,
-                role: roleName,
-              },
+      const nextRegistrationsData = {
+        registrations: [
+          ...registrationsWithoutUser,
+          {
+            token: registrationToken,
+            created_at: new Date().toISOString(),
+            user: {
+              full_name: fullName,
+              organization: organizationName,
+              role: roleName,
             },
-          ],
-        };
-        await saveEntries([
-          { path: pendingRegistrationsFilePath, data: nextRegistrationsData },
-        ]);
-      }
+          },
+        ],
+      };
+      await saveEntries([
+        { path: pendingRegistrationsFilePath, data: nextRegistrationsData },
+      ]);
 
       const registrationLink = new URL(
         `${window.location.origin}${window.location.pathname}`
@@ -21661,7 +21659,7 @@ function setupSuperAdmin() {
       if (usersInviteLinkEl) {
         usersInviteLinkEl.value = fallbackLink;
       }
-      usersInviteBox.dataset.shareText = `Контакт ответственного: ${fullName}. Организация: ${organizationName}.`;
+      usersInviteBox.dataset.shareText = `Контакт пользователя: ${fullName}. Роль: ${roleName}. Организация: ${organizationName}.`;
       usersInviteBox.dataset.telegramLink = fallbackLink;
       if (telegramLinks?.appLink) {
         usersInviteBox.dataset.telegramAppLink = telegramLinks.appLink;
@@ -21670,7 +21668,7 @@ function setupSuperAdmin() {
       }
       if (usersInviteNoteEl) {
         usersInviteNoteEl.textContent = telegramLinks?.webLink
-          ? "При открытии в Telegram ID сохранится автоматически и ответственный сразу увидит свою страницу."
+          ? "При открытии в Telegram ID сохранится автоматически и пользователь сразу увидит свою страницу."
           : "Бот ещё не указан. Скопируйте ссылку и отправьте её вручную.";
       }
       if (usersInviteShareButton) {
@@ -22708,11 +22706,11 @@ function setupSuperAdmin() {
       const telegramStatus = document.createElement("span");
       telegramStatus.className = "users-details__status";
       const hasTelegramId = Boolean(normalizeTelegramId(user?.telegram_id));
-      const canInvite = roleName === responsibleRole && !hasTelegramId;
+      const canInvite = !hasTelegramId;
       telegramStatus.textContent = hasTelegramId
         ? "ID привязан"
         : canInvite
-          ? "ID не привязан · нажмите, чтобы пригласить"
+          ? "ID не привязан · нажмите, чтобы сгенерировать ссылку"
           : "ID не привязан";
       telegramStatus.classList.toggle("is-linked", hasTelegramId);
       meta.append(roleTag, telegramStatus);
@@ -22725,7 +22723,7 @@ function setupSuperAdmin() {
         card.setAttribute("tabindex", "0");
         card.setAttribute(
           "aria-label",
-          `Пригласить ответственного ${name.textContent}`
+          `Сгенерировать ссылку для ${name.textContent}`
         );
         const handleInvite = () => {
           createResponsibleInvite(user);

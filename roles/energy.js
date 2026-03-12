@@ -6,7 +6,7 @@ export const energyActions = [
   { id: "base", title: "База", icon: "🗂️" },
   { id: "search", title: "Поиск", icon: "🔍" },
   { id: "move-other", title: "Переместить за других", icon: "↔️" },
-  { id: "write-off", title: "На списание", icon: "🧾" },
+  { id: "write-off", title: "Списать", icon: "🧾" },
   { id: "repair", title: "Ремонт", icon: "🛠️" },
   { id: "breakdowns", title: "Поломки", icon: "⚠️" },
   { id: "demand", title: "Потребность", icon: "📌" },
@@ -926,6 +926,20 @@ export function renderRole(user) {
                       </div>
                     </div>
                   </label>
+                  <label class="tools-filter">
+                    <span>Статус</span>
+                    <div class="tools-filter-dropdown" data-tools-filter="status">
+                      <button type="button" class="form-input tools-filter-dropdown__trigger" data-tools-filter-trigger>
+                        Все
+                      </button>
+                      <div class="tools-filter-dropdown__menu is-hidden" data-tools-filter-menu>
+                        <button type="button" class="tools-filter-dropdown__clear" data-tools-filter-clear>
+                          Выбрать всё
+                        </button>
+                        <div class="tools-filter-dropdown__options" data-tools-filter-options></div>
+                      </div>
+                    </div>
+                  </label>
                   <label class="tools-filter" data-tools-responsible-filter>
                     <span>Ответственны</span>
                     <div class="tools-filter-dropdown" data-tools-filter="responsible">
@@ -983,20 +997,6 @@ export function renderRole(user) {
                     </div>
                   </label>
                 </div>
-                <label class="tools-filter tools-filter--status" data-tools-status-filter>
-                  <span>По статусу</span>
-                  <div class="tools-filter-dropdown" data-tools-filter="status">
-                    <button type="button" class="form-input tools-filter-dropdown__trigger" data-tools-filter-trigger>
-                      Все
-                    </button>
-                    <div class="tools-filter-dropdown__menu is-hidden" data-tools-filter-menu>
-                      <button type="button" class="tools-filter-dropdown__clear" data-tools-filter-clear>
-                        Выбрать всё
-                      </button>
-                      <div class="tools-filter-dropdown__options" data-tools-filter-options></div>
-                    </div>
-                  </div>
-                </label>
               </div>
               <div class="tools-list" data-tools-list></div>
               <div class="tools-search-map is-hidden" data-tools-search-map>
@@ -1284,12 +1284,12 @@ export function renderRole(user) {
             class="settings-modal__panel writeoff-modal__panel"
             role="dialog"
             aria-modal="true"
-            aria-label="На списание"
+            aria-label="Списание инструментов"
           >
             <div class="settings-modal__header writeoff-modal__header">
               <div class="settings-modal__title">
-                <h2>На списание</h2>
-                <p data-writeoff-subtitle>Выберите инструменты для смены статуса</p>
+                <h2>Списание</h2>
+                <p data-writeoff-subtitle>Выберите инструменты для списания</p>
               </div>
               <button
                 class="button-icon"
@@ -1340,7 +1340,7 @@ export function renderRole(user) {
                 type="button"
                 data-writeoff-next
               >
-                Установить статус
+                Списать
               </button>
             </div>
           </div>

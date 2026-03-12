@@ -9437,9 +9437,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       title.textContent = formatInfoValue(move?.["Дата перемещения"]);
       const grid = document.createElement("div");
       grid.className = "tools-info-item__grid";
-      const previousResponsible = String(
-        move?.["Ответственный до перемещения"] ?? ""
-      ).trim();
+      const hasPreviousResponsible = Object.prototype.hasOwnProperty.call(
+        move ?? {},
+        "Ответственный до перемещения"
+      );
+      const previousResponsible = hasPreviousResponsible
+        ? String(move?.["Ответственный до перемещения"] ?? "").trim()
+        : "";
       const movedByEnergy = String(move?.["Переместил энергетик"] ?? "").trim();
       grid.append(
         buildToolsInfoRow("Переместил", move?.["Переместил"]),
@@ -11036,9 +11040,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const model = String(tool?.["Модель"] ?? "").trim();
       const sender = String(move?.["Переместил"] ?? "").trim();
       const moveDate = String(move?.["Дата перемещения"] ?? "").trim();
-      const previousResponsible = String(
-        move?.["Ответственный до перемещения"] ?? ""
-      ).trim();
+      const hasPreviousResponsible = Object.prototype.hasOwnProperty.call(
+        move ?? {},
+        "Ответственный до перемещения"
+      );
+      const previousResponsible = hasPreviousResponsible
+        ? String(move?.["Ответственный до перемещения"] ?? "").trim()
+        : "";
       const movedByEnergy = String(move?.["Переместил энергетик"] ?? "").trim();
       const senderLabel = movedByEnergy ? "Переместил энергетик" : "Отправил";
       const senderValue = movedByEnergy || sender;

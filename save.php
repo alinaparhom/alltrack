@@ -790,10 +790,6 @@ function buildNoPhotoMailingText(string $organization, array $tools): string {
     return implode("\n", $lines);
   }
 
-  $lines[] = "📎 Графики отправлены отдельными картинками:";
-  $lines[] = "• График 1 — по объектам";
-  $lines[] = "• График 2 — по ответственным";
-
   return implode("\n", $lines);
 }
 
@@ -821,14 +817,22 @@ function buildNoPhotoChartImage(string $organization, string $chartTitle, array 
       "datasets" => [[
         "label" => "Инструменты без фото",
         "data" => $values,
-        "backgroundColor" => "rgba(80, 170, 255, 0.75)",
-        "borderColor" => "rgba(80, 170, 255, 1)",
+        "backgroundColor" => "rgba(239, 68, 68, 0.82)",
+        "borderColor" => "rgba(220, 38, 38, 1)",
         "borderWidth" => 1,
+        "datalabels" => [
+          "anchor" => "end",
+          "align" => "end",
+          "offset" => 2,
+          "color" => "#7f1d1d",
+          "font" => ["weight" => "bold", "size" => 13],
+        ],
       ]],
     ],
     "options" => [
       "plugins" => [
         "legend" => ["display" => false],
+        "datalabels" => ["display" => true],
         "title" => [
           "display" => true,
           "text" => $chartTitle,

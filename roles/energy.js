@@ -215,7 +215,7 @@ export function renderRole(user) {
             <div class="settings-modal__header download-modal__header">
               <div class="settings-modal__title">
                 <h2>Выгрузить данные</h2>
-                <p>Выберите раздел для выгрузки</p>
+                <p data-energy-download-subtitle>Выберите раздел для выгрузки</p>
               </div>
               <button
                 class="button-icon"
@@ -227,7 +227,7 @@ export function renderRole(user) {
               </button>
             </div>
             <div class="settings-modal__body download-modal__body">
-              <div class="download-modal__grid">
+              <div class="download-modal__grid" data-download-options-grid>
                 <button type="button" class="download-option" data-download-option="my-tools">Мои инструменты</button>
                 <button type="button" class="download-option" data-download-option="all-tools">По всем инструментам</button>
                 <button type="button" class="download-option" data-download-option="responsible">По ответственному</button>

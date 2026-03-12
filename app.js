@@ -4429,6 +4429,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const downloadBackdropEl = contentEl.querySelector("[data-energy-download-backdrop]");
   const downloadCloseButton = contentEl.querySelector("[data-energy-download-close]");
   const downloadOptionsEl = contentEl.querySelector("[data-energy-download-modal]");
+  const downloadOptionsGridEl = contentEl.querySelector("[data-download-options-grid]");
+  const downloadSubtitleEl = contentEl.querySelector("[data-energy-download-subtitle]");
   const downloadMessageEl = contentEl.querySelector("[data-energy-download-message]");
   const downloadResponsibleBoxEl = contentEl.querySelector("[data-download-responsible-box]");
   const downloadResponsibleSearchEl = contentEl.querySelector("[data-download-responsible-search]");
@@ -19213,6 +19215,20 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     renderFeedbackFiles();
   };
 
+  const toggleResponsibleDownloadPicker = (isVisible = false) => {
+    if (downloadResponsibleBoxEl) {
+      downloadResponsibleBoxEl.classList.toggle("is-hidden", !isVisible);
+    }
+    if (downloadOptionsGridEl) {
+      downloadOptionsGridEl.classList.toggle("is-hidden", isVisible);
+    }
+    if (downloadSubtitleEl) {
+      downloadSubtitleEl.textContent = isVisible
+        ? "Выберите ответственного для выгрузки"
+        : "Выберите раздел для выгрузки";
+    }
+  };
+
   const resetResponsibleDownloadPicker = () => {
     if (downloadResponsibleSearchEl) {
       downloadResponsibleSearchEl.value = "";
@@ -19221,7 +19237,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       downloadResponsibleListEl.innerHTML = "";
     }
     if (downloadResponsibleBoxEl) {
-      downloadResponsibleBoxEl.classList.add("is-hidden");
+      toggleResponsibleDownloadPicker(false);
     }
     responsibleDownloadToolsCache = [];
   };
@@ -19310,6 +19326,16 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     });
 
     downloadMessageEl.append(text, button);
+
+    if (serverFileUrl) {
+      const link = document.createElement("a");
+      link.href = serverFileUrl;
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      link.textContent = "Или скачайте по ссылке";
+      link.className = "download-ready-link";
+      downloadMessageEl.appendChild(link);
+    }
   };
 
   const blobToBase64 = async (blob) => {
@@ -19327,18 +19353,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const sourceName = String(currentUserName ?? "").trim();
     const nameParts = sourceName.split(/\s+/).filter(Boolean);
     const surname = nameParts[0] || "Пользователь";
-    const timestamp = [
+    const formattedDate = [
       date.getFullYear(),
       String(date.getMonth() + 1).padStart(2, "0"),
       String(date.getDate()).padStart(2, "0"),
-    ].join("-")
-      + "_"
-      + [
-        String(date.getHours()).padStart(2, "0"),
-        String(date.getMinutes()).padStart(2, "0"),
-        String(date.getSeconds()).padStart(2, "0"),
-      ].join("-");
-    return `${surname}_${timestamp}.xlsx`;
+    ].join("-");
+    return `${surname}_${formattedDate}.xlsx`;
   };
 
   const saveExportFileOnServer = async (orgFolder, fileName, fileBlob) => {
@@ -19361,7 +19381,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (!response.ok) {
       throw new Error(`save failed: ${response.status}`);
     }
-    return `./${orgFolder}/Выгрузки/${encodeURIComponent(fileName)}`;
+    return new URL(`./${orgFolder}/Выгрузки/${encodeURIComponent(fileName)}`, window.location.href).href;
   };
 
   const collectResponsibleNamesForDownload = (tools) => {
@@ -19591,7 +19611,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
 
     responsibleDownloadToolsCache = rawTools;
-    downloadResponsibleBoxEl.classList.remove("is-hidden");
+    toggleResponsibleDownloadPicker(true);
     renderResponsibleDownloadOptions(rawTools, downloadResponsibleSearchEl?.value ?? "");
     downloadResponsibleSearchEl?.focus();
   };
@@ -19630,10 +19650,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const option = button.dataset.downloadOption;
     if (!option) return;
     if (option === "my-tools") {
+      toggleResponsibleDownloadPicker(false);
       downloadToolsExcel({ scope: "my" });
       return;
     }
     if (option === "all-tools") {
+      toggleResponsibleDownloadPicker(false);
       downloadToolsExcel({ scope: "all" });
       return;
     }

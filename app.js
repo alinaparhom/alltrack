@@ -17992,7 +17992,18 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (usersDetailsEmptyEl) {
       usersDetailsEmptyEl.classList.toggle("is-hidden", orgUsers.length > 0);
     }
-    orgUsers.forEach((entry) => {
+    const sortedUsers = [...orgUsers].sort((a, b) => {
+      const aRole = String(a?.role ?? "").trim();
+      const bRole = String(b?.role ?? "").trim();
+      if (aRole !== responsibleRole || bRole !== responsibleRole) {
+        return 0;
+      }
+      const aName = formatFullName(String(a?.full_name ?? "").trim());
+      const bName = formatFullName(String(b?.full_name ?? "").trim());
+      return aName.localeCompare(bName, "ru");
+    });
+
+    sortedUsers.forEach((entry) => {
       const card = document.createElement("div");
       card.className = "users-details__card";
 
@@ -22223,7 +22234,18 @@ function setupSuperAdmin() {
     if (usersDetailsEmptyEl) {
       usersDetailsEmptyEl.classList.toggle("is-hidden", orgUsers.length > 0);
     }
-    orgUsers.forEach((user) => {
+    const sortedUsers = [...orgUsers].sort((a, b) => {
+      const aRole = String(a?.role ?? "").trim();
+      const bRole = String(b?.role ?? "").trim();
+      if (aRole !== responsibleRole || bRole !== responsibleRole) {
+        return 0;
+      }
+      const aName = formatFullName(String(a?.full_name ?? "").trim());
+      const bName = formatFullName(String(b?.full_name ?? "").trim());
+      return aName.localeCompare(bName, "ru");
+    });
+
+    sortedUsers.forEach((user) => {
       const card = document.createElement("div");
       card.className = "users-details__card";
 

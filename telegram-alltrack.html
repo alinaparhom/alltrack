@@ -3327,6 +3327,49 @@
         outline-offset: 2px;
       }
 
+      .download-responsible {
+        margin-top: 10px;
+        display: grid;
+        gap: 8px;
+      }
+
+      .download-responsible__search {
+        display: grid;
+        gap: 6px;
+        font-size: var(--text-sm);
+        color: var(--muted);
+      }
+
+      .download-responsible__list {
+        display: grid;
+        gap: 8px;
+        max-height: min(42vh, 320px);
+        overflow-y: auto;
+        padding-right: 2px;
+      }
+
+      .download-responsible__option {
+        width: 100%;
+        border: 1px solid rgba(148, 163, 184, 0.3);
+        border-radius: 12px;
+        min-height: 44px;
+        padding: 10px 12px;
+        text-align: left;
+        font-size: var(--text-sm);
+        font-weight: 600;
+        color: var(--text);
+        background: rgba(255, 255, 255, 0.82);
+      }
+
+      .download-responsible__empty {
+        border-radius: 12px;
+        background: rgba(148, 163, 184, 0.12);
+        color: var(--muted);
+        font-size: var(--text-sm);
+        padding: 12px;
+        text-align: center;
+      }
+
       .camera-modal__body {
         padding: 16px 18px 6px;
         gap: 12px;

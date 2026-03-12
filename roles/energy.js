@@ -236,6 +236,20 @@ export function renderRole(user) {
                 <button type="button" class="download-option" data-download-option="moves">Перемещения</button>
                 <button type="button" class="download-option" data-download-option="invoice">Накладная на покупку</button>
               </div>
+              <div class="download-responsible is-hidden" data-download-responsible-box>
+                <label class="download-responsible__search" for="download-responsible-search">
+                  <span>Выберите ответственного</span>
+                  <input
+                    id="download-responsible-search"
+                    class="form-input"
+                    type="search"
+                    placeholder="Начните вводить ФИО"
+                    autocomplete="off"
+                    data-download-responsible-search
+                  />
+                </label>
+                <div class="download-responsible__list" data-download-responsible-list></div>
+              </div>
               <div class="form-message" data-energy-download-message></div>
             </div>
           </div>

@@ -681,9 +681,9 @@ export function renderRole(user) {
                 class="registration-box users-details__invite is-hidden"
                 data-users-invite-box
               >
-                <div class="registration-title">Приглашение для ответственного</div>
+                <div class="registration-title">Приглашение для пользователя</div>
                 <p class="registration-hint" data-users-invite-hint>
-                  Нажмите на ответственного без ID в списке, чтобы сформировать ссылку.
+                  Нажмите на пользователя без ID в списке, чтобы сформировать новую ссылку.
                 </p>
                 <p class="registration-note" data-users-invite-note>
                   Откройте ссылку в Telegram — ID сохранится автоматически.

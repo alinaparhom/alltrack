@@ -5957,9 +5957,65 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     return `https://static-maps.yandex.ru/1.x/?${params.toString()}`;
   };
 
-  const openToolsModalWithObjectFilter = async (objectName) => {
-    const safeObjectName = sanitizeObjectName(objectName);
-    await openToolsModal({ objectFilter: safeObjectName });
+  const collectToolsMapToolsForObject = (objectName) => {
+    const targetObjectKey = sanitizeObjectName(objectName ?? "").toLowerCase();
+    if (!targetObjectKey) return [];
+    return (Array.isArray(toolsMapState.userTools) ? toolsMapState.userTools : []).filter(
+      (tool) =>
+        sanitizeObjectName(tool?.["Объект"] ?? tool?.object ?? "").toLowerCase() ===
+        targetObjectKey
+    );
+  };
+
+  const buildToolsMapObjectPopupHtml = (point) => {
+    const objectName = String(point?.name ?? "").trim();
+    if (!objectName) {
+      return "<div class='tools-map-popup'><div class='tools-map-popup__empty'>Нет данных по объекту.</div></div>";
+    }
+
+    const objectTools = collectToolsMapToolsForObject(objectName);
+    if (!objectTools.length) {
+      return "<div class='tools-map-popup'><div class='tools-map-popup__empty'>У вас нет инструментов на этом объекте.</div></div>";
+    }
+
+    const groups = new Map();
+    objectTools.forEach((tool) => {
+      const title = String(tool?.["Наименование"] ?? "").trim() || "Без наименования";
+      if (!groups.has(title)) {
+        groups.set(title, []);
+      }
+      groups.get(title).push(tool);
+    });
+
+    const groupsHtml = Array.from(groups.entries())
+      .sort((a, b) => a[0].localeCompare(b[0], "ru"))
+      .map(([title, tools]) => {
+        const toolsHtml = tools
+          .map((tool) => {
+            const number = resolveToolNumberValue(tool) || "Без номера";
+            const status = String(tool?.["Статус"] ?? "").trim();
+            return `<li class='tools-map-popup__item'>
+              <span class='tools-map-popup__item-number'>${escapeHtml(number)}</span>
+              ${
+                status
+                  ? `<span class='tools-map-popup__item-status'>${escapeHtml(status)}</span>`
+                  : ""
+              }
+            </li>`;
+          })
+          .join("");
+
+        return `<section class='tools-map-popup__group'>
+          <div class='tools-map-popup__group-header'>
+            <span class='tools-map-popup__group-title'>${escapeHtml(title)}</span>
+            <span class='tools-map-popup__group-count'>${tools.length}</span>
+          </div>
+          <ul class='tools-map-popup__list'>${toolsHtml}</ul>
+        </section>`;
+      })
+      .join("");
+
+    return `<div class='tools-map-popup'>${groupsHtml}</div>`;
   };
 
   const projectToolsMapPoint = (point, bounds) => {
@@ -6020,7 +6076,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       dot.addEventListener("click", (event) => {
         event.preventDefault();
         event.stopPropagation();
-        void openToolsModalWithObjectFilter(point.name);
+        void awakenToolsMap();
       });
       mapContentEl.appendChild(dot);
     });
@@ -6052,6 +6108,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const toolsMapState = {
     activated: false,
     points: [],
+    userTools: [],
     map: null,
     markers: [],
     yandexPromise: null,
@@ -6123,7 +6180,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         [lat, lng],
         {
           balloonContentHeader: safePointName,
-          balloonContentBody: `Инструментов: ${toolsCount}`,
+          balloonContentBody: buildToolsMapObjectPopupHtml(point),
           hintContent: `${safePointName} · ${toolsCount}`,
           iconCaption: `${safePointName} · ${toolsCount}`,
         },
@@ -6133,7 +6190,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       );
       marker.__toolsPoint = point;
       marker.events.add("click", () => {
-        void openToolsModalWithObjectFilter(point.name);
+        marker.properties.set("balloonContentHeader", safePointName);
+        marker.properties.set("balloonContentBody", buildToolsMapObjectPopupHtml(point));
+        marker.balloon.open();
       });
       toolsMapState.map.geoObjects.add(marker);
       toolsMapState.markers.push(marker);
@@ -6235,6 +6294,15 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         objectsList,
         user.full_name ?? user.fullName ?? ""
       );
+      const responsibleKey = normalizePersonName(user.full_name ?? user.fullName ?? "");
+      toolsMapState.userTools = responsibleKey
+        ? toolsList.filter((tool) => {
+            const responsible = normalizePersonName(
+              tool?.["Ответственный"] ?? tool?.responsible ?? tool?.user ?? tool?.owner ?? ""
+            );
+            return responsible === responsibleKey;
+          })
+        : [];
       renderToolsMap(points);
     } catch (error) {
       console.warn("Не удалось загрузить данные для карты инструментов.", error);

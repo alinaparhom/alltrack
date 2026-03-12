@@ -6166,7 +6166,29 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     toolsMapState.markers = [];
 
     if (!safePoints.length) {
+      toolsMapState.map.setCenter([53.9, 27.56], 10, {
+        duration: 240,
+      });
       return;
+    }
+
+    const bounds = safePoints
+      .map((point) => {
+        const lat = Number(point?.coordinates?.lat);
+        const lng = Number(point?.coordinates?.lng);
+        if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+        return [lat, lng];
+      })
+      .filter(Boolean);
+
+    if (bounds.length === 1) {
+      toolsMapState.map.setCenter(bounds[0], 10, { duration: 260 });
+    } else if (bounds.length > 1) {
+      toolsMapState.map.setBounds(bounds, {
+        checkZoomRange: true,
+        zoomMargin: [34, 34, 34, 34],
+        duration: 260,
+      });
     }
 
     safePoints.forEach((point) => {

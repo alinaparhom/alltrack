@@ -1060,6 +1060,7 @@ function buildMoveToolResponsibleMessage(
   tool,
   {
     movedBy,
+    movedByEnergy,
     oldObject,
     targetObject,
     fineNote,
@@ -1076,6 +1077,11 @@ function buildMoveToolResponsibleMessage(
     .map((part) => part.trim())
     .filter(Boolean);
   const titleLine = titleParts.length ? titleParts.join(" ") : "—";
+  const energyMover = String(movedByEnergy ?? "").trim();
+  const senderLabel = energyMover ? "Переместил энергетик" : "Переместил";
+  const previousResponsibleLabel = energyMover
+    ? "Ответственный"
+    : "Ответственный до перемещения";
   const lines = [
     "🔔 Вам переместили инструмент",
     `1. Номер: ${escapeTelegramHtml(
@@ -1096,7 +1102,7 @@ function buildMoveToolResponsibleMessage(
   );
   if (previousResponsible) {
     lines.push(
-      `6. Ответственный до перемещения: ${escapeTelegramHtml(
+      `6. ${previousResponsibleLabel}: ${escapeTelegramHtml(
         formatNotificationValue(previousResponsible)
       )}`
     );
@@ -1111,8 +1117,8 @@ function buildMoveToolResponsibleMessage(
   }
   lines.push(
     "",
-    `Переместил: ${escapeTelegramHtml(
-      formatNotificationValue(movedBy)
+    `${senderLabel}: ${escapeTelegramHtml(
+      formatNotificationValue(energyMover || movedBy)
     )}`
   );
   if (vacationNote) {
@@ -2153,6 +2159,7 @@ async function notifyMoveTool({
   notificationId = "moveTool",
   fineNote,
   previousResponsible,
+  movedByEnergy,
 }) {
   const result = {
     sent: false,
@@ -2282,6 +2289,7 @@ async function notifyMoveTool({
         .join("\n");
       const responsibleMessage = buildMoveToolResponsibleMessage(tool, {
         movedBy,
+        movedByEnergy,
         oldObject,
         targetObject,
         fineNote: combinedFineNote,
@@ -11032,20 +11040,25 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         move?.["Ответственный до перемещения"] ?? ""
       ).trim();
       const movedByEnergy = String(move?.["Переместил энергетик"] ?? "").trim();
+      const senderLabel = movedByEnergy ? "Переместил энергетик" : "Отправил";
+      const senderValue = movedByEnergy || sender;
+      const previousResponsibleLabel = movedByEnergy
+        ? "Ответственный"
+        : "Ответственный до перемещения";
       const metaLines = [
         [manufacturer, model].filter(Boolean).join(" · "),
-        sender ? `Отправил: ${sender}` : "",
+        senderValue ? `${senderLabel}: ${senderValue}` : "",
         moveDate ? `Дата перемещения: ${moveDate}` : "",
         previousResponsible
-          ? `Ответственный до перемещения: ${previousResponsible}`
+          ? `${previousResponsibleLabel}: ${previousResponsible}`
           : "",
-        movedByEnergy ? `Переместил энергетик: ${movedByEnergy}` : "",
       ].filter(Boolean);
       metaLines.forEach((line) => {
         const lineEl = document.createElement("div");
-        lineEl.className = line.includes("Отправил")
-          ? "pending-move-responsible"
-          : "pending-move-meta";
+        lineEl.className =
+          line.startsWith("Отправил:") || line.startsWith("Переместил энергетик:")
+            ? "pending-move-responsible"
+            : "pending-move-meta";
         lineEl.textContent = line;
         meta.appendChild(lineEl);
       });
@@ -12179,24 +12192,35 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         const usersData = await loadJson(usersFilePath).catch(() => ({ users: [] }));
         const organizationName = findUserOrganizationName(user, usersData);
         const notificationResults = await Promise.all(
-          eligibleTools.map((tool) =>
-            notifyMoveTool({
+          eligibleTools.map((tool) => {
+            const previousResponsible = String(
+              tool?.["Ответственный"] ?? ""
+            ).trim();
+            const movedByName = String(user?.full_name ?? "").trim();
+            const movedByEnergy =
+              toolsState.mode === "move-other" &&
+              previousResponsible &&
+              normalizePersonName(previousResponsible) !==
+                normalizePersonName(movedByName)
+                ? movedByName
+                : "";
+            return notifyMoveTool({
               tool,
               orgFolder: context.orgFolderName,
               organizationName,
               responsibleName: responsible,
               responsibleTelegramId,
               targetObject,
-              movedBy: String(user?.full_name ?? "").trim(),
+              movedBy: movedByName,
+              movedByEnergy,
               moveReason,
               vacationNote,
-              previousResponsible: String(tool?.["Ответственный"] ?? "").trim(),
-              fineNote:
-                toolsState.mode === "move-other" ? movedByEnergyFineNote : "",
+              previousResponsible,
+              fineNote: movedByEnergy ? movedByEnergyFineNote : "",
               notificationId:
                 toolsState.mode === "move-other" ? "moveByEnergy" : "moveTool",
-            })
-          )
+            });
+          })
         );
         const notificationStatus = analyzeNotificationResults(notificationResults);
         if (notificationStatus.summary) {

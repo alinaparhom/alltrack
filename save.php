@@ -295,6 +295,32 @@ function resolveOrganizationLaunchDateByFolder(string $orgFolder, array $orgData
   return null;
 }
 
+function resolveOrganizationFullNameByFolder(string $orgFolder, array $orgData): string {
+  $fallback = trim($orgFolder);
+  if ($fallback === "") {
+    return "Организация";
+  }
+
+  $targetFolder = normalizeOrganizationFolder($orgFolder);
+  $organizations = is_array($orgData["organizations"] ?? null) ? $orgData["organizations"] : [];
+
+  foreach ($organizations as $org) {
+    if (!is_array($org)) {
+      continue;
+    }
+    $fullName = trim((string) ($org["full_name"] ?? ""));
+    $shortName = trim((string) ($org["short_name"] ?? ""));
+    if (
+      folderMatchesOrganization($targetFolder, $fullName) ||
+      folderMatchesOrganization($targetFolder, $shortName)
+    ) {
+      return $fullName !== "" ? $fullName : ($shortName !== "" ? $shortName : $fallback);
+    }
+  }
+
+  return $fallback;
+}
+
 function resolveNoPhotoFineConfig(array $settings): ?array {
   $candidates = [
     $settings["organization"]["fines"]["noPhoto"] ?? null,
@@ -988,6 +1014,8 @@ function runNoPhotoMailing(array $options = []): array {
     return ["success" => false, "mode" => "no-photo-mailing-cli", "error" => "Не удалось прочитать папки организаций."];
   }
 
+  $orgData = readJsonFile(__DIR__ . DIRECTORY_SEPARATOR . "organizations.json", ["organizations" => []]);
+
   foreach ($entries as $orgFolder) {
     if ($orgFolder === "." || $orgFolder === "..") {
       continue;
@@ -1035,6 +1063,8 @@ function runNoPhotoMailing(array $options = []): array {
       $filteredTools[] = $tool;
     }
 
+    $orgDisplayName = resolveOrganizationFullNameByFolder($orgFolder, $orgData);
+
     $orgSentCount = 0;
     foreach ($scheduleByGroup as $groupIdRaw => $schedule) {
       $chatId = normalizeTelegramId($groupIdRaw);
@@ -1055,7 +1085,7 @@ function runNoPhotoMailing(array $options = []): array {
       }
 
       $noPhotoTools = collectNoPhotoTools($filteredTools);
-      $text = buildNoPhotoMailingText($orgFolder, $filteredTools);
+      $text = buildNoPhotoMailingText($orgDisplayName, $filteredTools);
       $sendResult = $dryRun
         ? ["ok" => true, "statusCode" => 0]
         : sendTelegramTextMessage($botToken, $chatId, $text);
@@ -1063,7 +1093,7 @@ function runNoPhotoMailing(array $options = []): array {
       if (!empty($sendResult["ok"])) {
         if (!$dryRun && !empty($noPhotoTools)) {
           $counters = buildNoPhotoChartCounters($noPhotoTools);
-          $objectChartPath = buildNoPhotoChartImage($orgFolder, "График 1: по объектам", $counters["byObject"] ?? []);
+          $objectChartPath = buildNoPhotoChartImage($orgDisplayName, "График 1: по объектам", $counters["byObject"] ?? []);
           if (is_string($objectChartPath) && is_file($objectChartPath)) {
             $photoResult = sendTelegramPhotoMessage($botToken, $chatId, $objectChartPath, "График 1: инструменты без фото по объектам");
             if (empty($photoResult["ok"])) {
@@ -1076,7 +1106,7 @@ function runNoPhotoMailing(array $options = []): array {
             @unlink($objectChartPath);
           }
 
-          $responsibleChartPath = buildNoPhotoChartImage($orgFolder, "График 2: по ответственным", $counters["byResponsible"] ?? []);
+          $responsibleChartPath = buildNoPhotoChartImage($orgDisplayName, "График 2: по ответственным", $counters["byResponsible"] ?? []);
           if (is_string($responsibleChartPath) && is_file($responsibleChartPath)) {
             $photoResult = sendTelegramPhotoMessage($botToken, $chatId, $responsibleChartPath, "График 2: инструменты без фото по ответственным");
             if (empty($photoResult["ok"])) {
@@ -1184,6 +1214,8 @@ function runNoAccountingNumberMailing(array $options = []): array {
     return ["success" => false, "mode" => "no-accounting-number-mailing-cli", "error" => "Не удалось прочитать папки организаций."];
   }
 
+  $orgData = readJsonFile(__DIR__ . DIRECTORY_SEPARATOR . "organizations.json", ["organizations" => []]);
+
   foreach ($entries as $orgFolder) {
     if ($orgFolder === "." || $orgFolder === "..") {
       continue;
@@ -1231,6 +1263,8 @@ function runNoAccountingNumberMailing(array $options = []): array {
       $filteredTools[] = $tool;
     }
 
+    $orgDisplayName = resolveOrganizationFullNameByFolder($orgFolder, $orgData);
+
     $orgSentCount = 0;
     foreach ($scheduleByGroup as $groupIdRaw => $schedule) {
       $chatId = normalizeTelegramId($groupIdRaw);
@@ -1250,7 +1284,7 @@ function runNoAccountingNumberMailing(array $options = []): array {
         continue;
       }
 
-      $text = buildNoAccountingNumberMailingText($orgFolder, $filteredTools);
+      $text = buildNoAccountingNumberMailingText($orgDisplayName, $filteredTools);
       $sendResult = $dryRun
         ? ["ok" => true, "statusCode" => 0]
         : sendTelegramTextMessage($botToken, $chatId, $text);
@@ -1351,6 +1385,8 @@ function runRepairsMailing(array $options = []): array {
     return ["success" => false, "mode" => "repairs-mailing-cli", "error" => "Не удалось прочитать папки организаций."];
   }
 
+  $orgData = readJsonFile(__DIR__ . DIRECTORY_SEPARATOR . "organizations.json", ["organizations" => []]);
+
   foreach ($entries as $orgFolder) {
     if ($orgFolder === "." || $orgFolder === "..") {
       continue;
@@ -1398,6 +1434,8 @@ function runRepairsMailing(array $options = []): array {
       $filteredTools[] = $tool;
     }
 
+    $orgDisplayName = resolveOrganizationFullNameByFolder($orgFolder, $orgData);
+
     $orgSentCount = 0;
     foreach ($scheduleByGroup as $groupIdRaw => $schedule) {
       $chatId = normalizeTelegramId($groupIdRaw);
@@ -1417,7 +1455,7 @@ function runRepairsMailing(array $options = []): array {
         continue;
       }
 
-      $text = buildRepairsMailingText($orgFolder, $filteredTools);
+      $text = buildRepairsMailingText($orgDisplayName, $filteredTools);
       $sendResult = $dryRun
         ? ["ok" => true, "statusCode" => 0]
         : sendTelegramTextMessage($botToken, $chatId, $text);
@@ -1696,6 +1734,8 @@ function runMoveRepliesMailing(array $options = []): array {
     return ["success" => false, "mode" => "move-replies-mailing-cli", "error" => "Не удалось прочитать папки организаций."];
   }
 
+  $orgData = readJsonFile(__DIR__ . DIRECTORY_SEPARATOR . "organizations.json", ["organizations" => []]);
+
   foreach ($entries as $orgFolder) {
     if ($orgFolder === "." || $orgFolder === "..") {
       continue;
@@ -1738,6 +1778,8 @@ function runMoveRepliesMailing(array $options = []): array {
       $pendingMoves[] = $move;
     }
 
+    $orgDisplayName = resolveOrganizationFullNameByFolder($orgFolder, $orgData);
+
     $orgSentCount = 0;
     foreach ($scheduleByGroup as $groupIdRaw => $schedule) {
       $chatId = normalizeTelegramId($groupIdRaw);
@@ -1757,7 +1799,7 @@ function runMoveRepliesMailing(array $options = []): array {
         continue;
       }
 
-      $text = buildMoveRepliesMailingText($orgFolder, $pendingMoves, $settings, $fines);
+      $text = buildMoveRepliesMailingText($orgDisplayName, $pendingMoves, $settings, $fines);
       $sendResult = $dryRun
         ? ["ok" => true, "statusCode" => 0]
         : sendTelegramTextMessage($botToken, $chatId, $text);

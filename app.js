@@ -4430,7 +4430,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const downloadCloseButton = contentEl.querySelector("[data-energy-download-close]");
   const downloadOptionsEl = contentEl.querySelector("[data-energy-download-modal]");
   const downloadMessageEl = contentEl.querySelector("[data-energy-download-message]");
+  const downloadResponsibleBoxEl = contentEl.querySelector("[data-download-responsible-box]");
+  const downloadResponsibleSearchEl = contentEl.querySelector("[data-download-responsible-search]");
+  const downloadResponsibleListEl = contentEl.querySelector("[data-download-responsible-list]");
   let preparedDownloadUrl = "";
+  let responsibleDownloadToolsCache = [];
   const objectsModalEl = contentEl.querySelector("[data-energy-objects-modal]");
   const objectsBackdropEl = contentEl.querySelector("[data-energy-objects-backdrop]");
   const objectsCloseButton = contentEl.querySelector("[data-energy-objects-close]");
@@ -19209,6 +19213,19 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     renderFeedbackFiles();
   };
 
+  const resetResponsibleDownloadPicker = () => {
+    if (downloadResponsibleSearchEl) {
+      downloadResponsibleSearchEl.value = "";
+    }
+    if (downloadResponsibleListEl) {
+      downloadResponsibleListEl.innerHTML = "";
+    }
+    if (downloadResponsibleBoxEl) {
+      downloadResponsibleBoxEl.classList.add("is-hidden");
+    }
+    responsibleDownloadToolsCache = [];
+  };
+
   const closeDownloadModal = () => {
     if (!downloadModalEl) return;
     downloadModalEl.classList.add("is-hidden");
@@ -19217,6 +19234,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       URL.revokeObjectURL(preparedDownloadUrl);
       preparedDownloadUrl = "";
     }
+    resetResponsibleDownloadPicker();
     if (downloadMessageEl) {
       downloadMessageEl.textContent = "";
     }
@@ -19226,6 +19244,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (!downloadModalEl) return;
     downloadModalEl.classList.remove("is-hidden");
     document.body.style.overflow = "hidden";
+    resetResponsibleDownloadPicker();
     if (downloadMessageEl) {
       downloadMessageEl.textContent = "";
     }
@@ -19345,7 +19364,23 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     return `./${orgFolder}/Выгрузки/${encodeURIComponent(fileName)}`;
   };
 
-  const downloadToolsExcel = async ({ scope = "my" } = {}) => {
+  const collectResponsibleNamesForDownload = (tools) => {
+    const unique = new Map();
+    (Array.isArray(tools) ? tools : []).forEach((tool) => {
+      const source = String(tool?.["Ответственный"] ?? "").trim();
+      if (!source) return;
+      const key = normalizePersonName(source);
+      if (!key || unique.has(key)) return;
+      unique.set(key, source);
+    });
+    return Array.from(unique.values()).sort((a, b) =>
+      a.localeCompare(b, "ru", {
+        sensitivity: "base",
+      })
+    );
+  };
+
+  const downloadToolsExcel = async ({ scope = "my", responsibleName = "" } = {}) => {
     if (!window.XLSX) {
       if (downloadMessageEl) {
         downloadMessageEl.textContent =
@@ -19364,7 +19399,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
 
     const toolsPath = `./${orgFolder}/База с инструментами.json`;
-    const sourceResponsible = user?.full_name ?? "";
+    const sourceResponsible =
+      scope === "responsible" ? String(responsibleName ?? "").trim() : user?.full_name ?? "";
     const userNameKey = normalizePersonName(sourceResponsible);
 
     let rawTools = [];
@@ -19385,6 +19421,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         if (scope === "all") {
           return true;
         }
+        if (scope === "responsible") {
+          return normalizePersonName(tool?.["Ответственный"] ?? "") === userNameKey;
+        }
         return normalizePersonName(tool?.["Ответственный"] ?? "") === userNameKey;
       })
       .sort((a, b) =>
@@ -19398,7 +19437,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         downloadMessageEl.textContent =
           scope === "all"
             ? "В базе пока нет инструментов для выгрузки."
-            : "У вас пока нет инструментов для выгрузки.";
+            : scope === "responsible"
+              ? "У выбранного ответственного нет инструментов для выгрузки."
+              : "У вас пока нет инструментов для выгрузки.";
       }
       return;
     }
@@ -19432,11 +19473,21 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
     const workbook = window.XLSX.utils.book_new();
     const sheet = window.XLSX.utils.aoa_to_sheet([header, ...rows]);
-    const sheetTitle = scope === "all" ? "Все инструменты" : "Мои инструменты";
+    const sheetTitle =
+      scope === "all"
+        ? "Все инструменты"
+        : scope === "responsible"
+          ? `Инструменты · ${sourceResponsible || "Ответственный"}`
+          : "Мои инструменты";
     window.XLSX.utils.book_append_sheet(workbook, sheet, sheetTitle);
 
     const exportDate = new Date();
-    const exportOwnerName = scope === "all" ? "Все инструменты" : user?.full_name;
+    const exportOwnerName =
+      scope === "all"
+        ? "Все инструменты"
+        : scope === "responsible"
+          ? sourceResponsible || "Ответственный"
+          : user?.full_name;
     const fileName = buildExportFileName(exportOwnerName, exportDate);
 
     try {
@@ -19486,6 +19537,65 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
   };
 
+  const renderResponsibleDownloadOptions = (allTools, query = "") => {
+    if (!downloadResponsibleListEl) return;
+    downloadResponsibleListEl.innerHTML = "";
+    const normalizedQuery = normalizePersonName(query);
+    const names = collectResponsibleNamesForDownload(allTools);
+    const filtered = !normalizedQuery
+      ? names
+      : names.filter((fullName) => normalizePersonName(fullName).includes(normalizedQuery));
+
+    if (!filtered.length) {
+      const empty = document.createElement("div");
+      empty.className = "download-responsible__empty";
+      empty.textContent = names.length
+        ? "Ничего не найдено. Измените запрос."
+        : "В базе пока нет ответственных.";
+      downloadResponsibleListEl.appendChild(empty);
+      return;
+    }
+
+    filtered.forEach((fullName) => {
+      const optionButton = document.createElement("button");
+      optionButton.type = "button";
+      optionButton.className = "download-responsible__option";
+      optionButton.textContent = formatFullName(fullName);
+      optionButton.addEventListener("click", () => {
+        void downloadToolsExcel({ scope: "responsible", responsibleName: fullName });
+      });
+      downloadResponsibleListEl.appendChild(optionButton);
+    });
+  };
+
+  const openResponsibleDownloadPicker = async () => {
+    if (!downloadResponsibleBoxEl || !downloadResponsibleListEl) return;
+    if (!context.orgFolderName) {
+      if (downloadMessageEl) {
+        downloadMessageEl.textContent = "Не удалось определить организацию пользователя.";
+      }
+      return;
+    }
+
+    const toolsPath = `./${context.orgFolderName}/База с инструментами.json`;
+    let rawTools = [];
+    try {
+      const raw = await loadJson(toolsPath);
+      rawTools = Array.isArray(raw) ? raw : Array.isArray(raw?.tools) ? raw.tools : [];
+    } catch (error) {
+      console.warn("Не удалось загрузить базу инструментов для выбора ответственного.", error);
+      if (downloadMessageEl) {
+        downloadMessageEl.textContent = "Не удалось загрузить список ответственных.";
+      }
+      return;
+    }
+
+    responsibleDownloadToolsCache = rawTools;
+    downloadResponsibleBoxEl.classList.remove("is-hidden");
+    renderResponsibleDownloadOptions(rawTools, downloadResponsibleSearchEl?.value ?? "");
+    downloadResponsibleSearchEl?.focus();
+  };
+
   feedbackBackdropEl?.addEventListener("click", closeFeedbackModal);
   feedbackCloseButton?.addEventListener("click", closeFeedbackModal);
   feedbackCancelButton?.addEventListener("click", closeFeedbackModal);
@@ -19505,6 +19615,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
   });
 
+  downloadResponsibleSearchEl?.addEventListener("input", () => {
+    renderResponsibleDownloadOptions(
+      responsibleDownloadToolsCache,
+      downloadResponsibleSearchEl?.value ?? ""
+    );
+  });
+
   downloadOptionsEl?.addEventListener("click", (event) => {
     const button = event.target.closest("[data-download-option]");
     if (!button) return;
@@ -19521,8 +19638,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       return;
     }
     if (option === "responsible") {
-      closeDownloadModal();
-      openSearchModal();
+      if (downloadMessageEl) {
+        downloadMessageEl.textContent = "";
+      }
+      void openResponsibleDownloadPicker();
       return;
     }
     if (option === "no-photo") {

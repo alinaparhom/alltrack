@@ -1033,6 +1033,66 @@ export function renderRole(user) {
             </div>
           </div>
         </div>
+        <div
+          class="settings-modal is-hidden tools-writeoff-pending-confirm-modal"
+          data-tools-writeoff-pending-confirm-modal
+        >
+          <div
+            class="settings-modal__backdrop"
+            data-tools-writeoff-pending-confirm-backdrop
+          ></div>
+          <div
+            class="settings-modal__panel tools-writeoff-pending-confirm-modal__panel"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Подтверждение смены статуса"
+          >
+            <div class="settings-modal__header">
+              <div class="settings-modal__title">
+                <h2>Подтверждение статуса</h2>
+                <p data-tools-writeoff-pending-confirm-subtitle>
+                  Проверьте инструмент перед изменением.
+                </p>
+              </div>
+              <button
+                class="button-icon"
+                type="button"
+                data-tools-writeoff-pending-confirm-close
+                aria-label="Закрыть подтверждение"
+              >
+                <span class="button-icon-emoji" aria-hidden="true">✕</span>
+              </button>
+            </div>
+            <div class="settings-modal__body">
+              <div class="form-card tools-writeoff-pending-confirm-card">
+                <div class="tools-writeoff-pending-confirm-card__label">Инструмент</div>
+                <div class="tools-writeoff-pending-confirm-card__title" data-tools-writeoff-pending-confirm-title>
+                  —
+                </div>
+                <div class="tools-writeoff-pending-confirm-card__meta" data-tools-writeoff-pending-confirm-meta>
+                  —
+                </div>
+              </div>
+              <div class="form-message" data-tools-writeoff-pending-confirm-message></div>
+            </div>
+            <div class="settings-modal__footer tools-writeoff-pending-confirm-actions">
+              <button
+                class="action-secondary"
+                type="button"
+                data-tools-writeoff-pending-confirm-cancel
+              >
+                Отмена
+              </button>
+              <button
+                class="action-primary"
+                type="button"
+                data-tools-writeoff-pending-confirm-submit
+              >
+                Подтвердить «На списание»
+              </button>
+            </div>
+          </div>
+        </div>
         <div class="tools-modal settings-modal is-hidden" data-tools-edit-modal>
           <div class="settings-modal__backdrop" data-tools-edit-backdrop></div>
           <div

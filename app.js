@@ -20203,9 +20203,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   };
 
   const startDrag = (event, card, source) => {
-    if (event.cancelable && event.pointerType === "touch") {
-      event.preventDefault();
-    }
     const rect = card.getBoundingClientRect();
     dragState.item = card;
     dragState.pointerId = event.pointerId;

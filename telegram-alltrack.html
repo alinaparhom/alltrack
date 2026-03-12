@@ -1977,14 +1977,14 @@
 
       .quick-access-list {
         --quick-access-columns: 5;
-        --quick-access-gap: 0px;
+        --quick-access-gap: 8px;
         --quick-access-item-size: calc(
           (100% - (var(--quick-access-columns) - 1) * var(--quick-access-gap)) /
             var(--quick-access-columns)
         );
         display: flex;
         align-items: center;
-        justify-content: space-evenly;
+        justify-content: center;
         gap: var(--quick-access-gap);
         min-height: var(--quick-access-item-size);
       }
@@ -1999,7 +1999,7 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        font-size: 22px;
+        font-size: 20px;
         color: var(--accent);
         box-shadow: 0 10px 22px rgba(26, 31, 46, 0.08);
         cursor: pointer;

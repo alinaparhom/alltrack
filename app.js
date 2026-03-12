@@ -8190,6 +8190,18 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
   };
 
+  const canUseToolsMapView = () =>
+    toolsState.mode === "search" || toolsState.mode === "user";
+
+  const syncToolsMapViewButtonVisibility = () => {
+    if (!toolsSearchMapViewButtonEl) return;
+    const shouldShowMapButton = canUseToolsMapView();
+    toolsSearchMapViewButtonEl.classList.toggle("is-hidden", !shouldShowMapButton);
+    if (!shouldShowMapButton && toolsState.view === "map") {
+      toolsState.view = normalizeToolsView(toolsState.previousView);
+    }
+  };
+
   const clearToolsList = () => {
     if (toolsListEl) {
       toolsListEl.innerHTML = "";
@@ -9196,7 +9208,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     syncToolsFilterValue("object", []);
     setToolsResponsibleFilterVisibility(false);
     updateToolsReplacementPendingLinkVisibility();
-    toolsSearchMapViewButtonEl?.classList.add("is-hidden");
+    syncToolsMapViewButtonVisibility();
     toolsModalEl.classList.remove("is-hidden");
     document.body.style.overflow = "hidden";
     setToolsSubtitle("Загружаем список...");
@@ -9233,7 +9245,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     setToolsResponsibleFilterVisibility(false);
     setToolsTitle(`Инструменты ${formatFullName(normalizedFullName)}`);
     updateToolsReplacementPendingLinkVisibility();
-    toolsSearchMapViewButtonEl?.classList.add("is-hidden");
+    syncToolsMapViewButtonVisibility();
     toolsModalEl.classList.remove("is-hidden");
     document.body.style.overflow = "hidden";
     setToolsSubtitle("Загружаем список...");
@@ -9259,7 +9271,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     setToolsTitle("База");
     setToolsResponsibleFilterVisibility(true);
     updateToolsReplacementPendingLinkVisibility();
-    toolsSearchMapViewButtonEl?.classList.add("is-hidden");
+    syncToolsMapViewButtonVisibility();
     toolsModalEl.classList.remove("is-hidden");
     document.body.style.overflow = "hidden";
     setToolsSubtitle("Загружаем список...");
@@ -9284,7 +9296,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     setToolsTitle("Поиск");
     setToolsResponsibleFilterVisibility(true);
     updateToolsReplacementPendingLinkVisibility();
-    toolsSearchMapViewButtonEl?.classList.remove("is-hidden");
+    syncToolsMapViewButtonVisibility();
     toolsModalEl.classList.remove("is-hidden");
     document.body.style.overflow = "hidden";
     setToolsSubtitle("Загружаем список...");
@@ -9309,7 +9321,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     setToolsTitle("Переместить за других");
     setToolsResponsibleFilterVisibility(true);
     updateToolsReplacementPendingLinkVisibility();
-    toolsSearchMapViewButtonEl?.classList.add("is-hidden");
+    syncToolsMapViewButtonVisibility();
     toolsModalEl.classList.remove("is-hidden");
     document.body.style.overflow = "hidden";
     setToolsSubtitle("Загружаем список...");
@@ -11931,7 +11943,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
   if (toolsSearchMapViewButtonEl) {
     toolsSearchMapViewButtonEl.addEventListener("click", () => {
-      if (toolsState.mode !== "search") return;
+      if (!canUseToolsMapView()) return;
       if (toolsState.view === "map") {
         toolsState.view = normalizeToolsView(toolsState.previousView);
       } else {

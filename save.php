@@ -606,6 +606,10 @@ function resolveRepairsMailingConfig(array $settings): ?array {
   return resolveOrganizationMailingConfig($settings, "repairs");
 }
 
+function resolveNoPhotoMailingConfig(array $settings): ?array {
+  return resolveOrganizationMailingConfig($settings, "noPhoto");
+}
+
 function resolveOrganizationMailingConfig(array $settings, string $mailingKey): ?array {
   if ($mailingKey === "") {
     return null;
@@ -697,6 +701,256 @@ function buildRepairsMailingText(string $organization, array $tools): string {
     . "Статус «Сломан»: {$brokenCount} (" . formatPercentageLabel($brokenCount, $totalCount) . ")\n"
     . "Статус «В ремонте»: {$inRepairCount} (" . formatPercentageLabel($inRepairCount, $totalCount) . ")\n"
     . "Статус «На списание»: {$writeOffCount} (" . formatPercentageLabel($writeOffCount, $totalCount) . ")";
+}
+
+function isBrokenTool(array $tool): bool {
+  $status = mb_strtolower(trim((string) ($tool["Статус"] ?? "")), 'UTF-8');
+  return $status === "сломан";
+}
+
+function renderMailingTopList(array $counter, string $labelTitle): array {
+  if (empty($counter)) {
+    return ["• Нет данных"];
+  }
+
+  arsort($counter, SORT_NUMERIC);
+  $total = array_sum($counter);
+  $maxValue = max($counter);
+  $lines = [];
+
+  foreach ($counter as $label => $count) {
+    $normalizedLabel = trim((string) $label);
+    if ($normalizedLabel === "") {
+      $normalizedLabel = "Не указано";
+    }
+    $barLength = $maxValue > 0 ? max(1, (int) round(($count / $maxValue) * 10)) : 1;
+    $bar = str_repeat("▮", $barLength);
+    $percent = formatPercentageLabel((int) $count, (int) $total);
+    $lines[] = "• {$normalizedLabel}: {$count} {$labelTitle} {$bar} ({$percent})";
+  }
+
+  return $lines;
+}
+
+function buildNoPhotoMailingText(string $organization, array $tools): string {
+  $headerOrg = trim($organization) !== "" ? trim($organization) : "Организация";
+  $brokenNoPhoto = [];
+  foreach ($tools as $tool) {
+    if (!is_array($tool)) {
+      continue;
+    }
+    if (!isBrokenTool($tool)) {
+      continue;
+    }
+    $photoCount = (int) ($tool["Количество фото"] ?? 0);
+    if ($photoCount !== 0) {
+      continue;
+    }
+    $brokenNoPhoto[] = $tool;
+  }
+
+  $totalCount = count($brokenNoPhoto);
+  $lines = [
+    "📷 Рассылка «Без фото»",
+    "🏢 Организация: {$headerOrg}",
+    "",
+    "Сломанных инструментов без фото: {$totalCount}",
+  ];
+
+  if ($totalCount === 0) {
+    $lines[] = "✅ Нет сломанных инструментов с количеством фото 0.";
+    return implode("\n", $lines);
+  }
+
+  $byObject = [];
+  $byResponsible = [];
+  foreach ($brokenNoPhoto as $tool) {
+    $object = trim((string) ($tool["Объект"] ?? ""));
+    if ($object !== "") {
+      $byObject[$object] = ($byObject[$object] ?? 0) + 1;
+    }
+
+    $responsible = trim((string) ($tool["Ответственный"] ?? ""));
+    if ($responsible !== "") {
+      $byResponsible[$responsible] = ($byResponsible[$responsible] ?? 0) + 1;
+    }
+  }
+
+  $lines[] = "";
+  $lines[] = "📊 График 1: по объектам (только где есть инструменты без фото)";
+  $lines = array_merge($lines, renderMailingTopList($byObject, "шт."));
+
+  $lines[] = "";
+  $lines[] = "📊 График 2: по ответственным (только где есть инструменты без фото)";
+  $lines = array_merge($lines, renderMailingTopList($byResponsible, "шт."));
+
+  return implode("\n", $lines);
+}
+
+function runNoPhotoMailing(array $options = []): array {
+  $dryRun = !empty($options["dryRun"]);
+  $timezone = new DateTimeZone("Europe/Moscow");
+  $now = new DateTimeImmutable("now", $timezone);
+  $botToken = getenv("ALLTRACK_BOT_TOKEN") ?: "";
+  if ($botToken === "") {
+    $botToken = "8549452123:AAGxveuJSVf-xpNHQYTDKDmuMmHjGRVeDj0";
+  }
+
+  $statePath = __DIR__ . DIRECTORY_SEPARATOR . "telegram-no-photo-mailing-state.json";
+  $state = readJsonFile($statePath, ["sent" => []]);
+  $sentState = is_array($state["sent"] ?? null) ? $state["sent"] : [];
+
+  $summary = [
+    "success" => true,
+    "mode" => "no-photo-mailing-cli",
+    "time" => $now->format(DateTimeInterface::ATOM),
+    "dryRun" => $dryRun,
+    "organizationsChecked" => 0,
+    "messagesSent" => 0,
+    "organizations" => [],
+  ];
+
+  $entries = @scandir(__DIR__);
+  if (!is_array($entries)) {
+    return ["success" => false, "mode" => "no-photo-mailing-cli", "error" => "Не удалось прочитать папки организаций."];
+  }
+
+  foreach ($entries as $orgFolder) {
+    if ($orgFolder === "." || $orgFolder === "..") {
+      continue;
+    }
+    $orgPath = __DIR__ . DIRECTORY_SEPARATOR . $orgFolder;
+    if (!is_dir($orgPath)) {
+      continue;
+    }
+
+    $settingsPath = $orgPath . DIRECTORY_SEPARATOR . "Настройки.json";
+    $toolsPath = $orgPath . DIRECTORY_SEPARATOR . "База с инструментами.json";
+    if (!file_exists($settingsPath) || !file_exists($toolsPath)) {
+      continue;
+    }
+    $summary["organizationsChecked"]++;
+
+    $settings = readJsonFile($settingsPath, []);
+    $noPhotoMailing = resolveNoPhotoMailingConfig($settings);
+    if (!is_array($noPhotoMailing) || empty($noPhotoMailing["enabled"])) {
+      continue;
+    }
+
+    $scheduleByGroup = $noPhotoMailing["telegramSchedule"] ?? [];
+    if (!is_array($scheduleByGroup) || empty($scheduleByGroup)) {
+      continue;
+    }
+
+    $tools = readJsonArrayFile($toolsPath);
+    $selectedGroups = [];
+    foreach (($noPhotoMailing["toolGroups"] ?? []) as $groupName) {
+      $label = normalizeMailingGroupName((string) $groupName);
+      if ($label !== "") {
+        $selectedGroups[$label] = true;
+      }
+    }
+
+    $filteredTools = [];
+    foreach ($tools as $tool) {
+      if (!is_array($tool)) {
+        continue;
+      }
+      if (!isToolInMailingGroups($tool, $selectedGroups)) {
+        continue;
+      }
+      $filteredTools[] = $tool;
+    }
+
+    $orgSentCount = 0;
+    foreach ($scheduleByGroup as $groupIdRaw => $schedule) {
+      $chatId = normalizeTelegramId($groupIdRaw);
+      if (!$chatId || !is_array($schedule)) {
+        continue;
+      }
+      if (!isMoveRepliesScheduleDue($schedule, $now)) {
+        continue;
+      }
+
+      $scheduleTime = normalizeScheduleTimeLabel($schedule["time"] ?? "");
+      if ($scheduleTime === "") {
+        continue;
+      }
+      $stateKey = $orgFolder . "|" . $chatId . "|" . $now->format("Y-m-d") . "|" . $scheduleTime;
+      if (!empty($sentState[$stateKey])) {
+        continue;
+      }
+
+      $text = buildNoPhotoMailingText($orgFolder, $filteredTools);
+      $sendResult = $dryRun
+        ? ["ok" => true, "statusCode" => 0]
+        : sendTelegramTextMessage($botToken, $chatId, $text);
+
+      if (!empty($sendResult["ok"])) {
+        $sentState[$stateKey] = $now->format(DateTimeInterface::ATOM);
+        $orgSentCount++;
+        $summary["messagesSent"]++;
+      } else {
+        appendMailingLog("error", "Ошибка рассылки 'Без фото'.", [
+          "organization" => $orgFolder,
+          "chatId" => $chatId,
+          "error" => $sendResult["error"] ?? "Неизвестная ошибка",
+        ]);
+      }
+    }
+
+    if ($orgSentCount > 0) {
+      $summary["organizations"][] = [
+        "organization" => $orgFolder,
+        "messagesSent" => $orgSentCount,
+        "toolsIncluded" => count($filteredTools),
+      ];
+    }
+  }
+
+  $encodedState = json_encode(["sent" => $sentState], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+  if ($encodedState !== false && !$dryRun) {
+    file_put_contents($statePath, $encodedState . PHP_EOL, LOCK_EX);
+  }
+
+  return $summary;
+}
+
+function runNoPhotoMailingIfNeeded(): void {
+  $timezone = new DateTimeZone("Europe/Moscow");
+  $now = new DateTimeImmutable("now", $timezone);
+  $currentMinuteStamp = $now->format("Y-m-d H:i");
+
+  $statePath = __DIR__ . DIRECTORY_SEPARATOR . "telegram-no-photo-mailing-last-run.json";
+  $state = readJsonFile($statePath, []);
+  $lastRunMinute = trim((string) ($state["lastRunMinute"] ?? ""));
+  if ($lastRunMinute === $currentMinuteStamp) {
+    return;
+  }
+
+  $result = runNoPhotoMailing([
+    "dryRun" => false,
+  ]);
+
+  if (empty($result["success"])) {
+    appendMailingLog("error", "Не удалось выполнить рассылку 'Без фото' при автозапуске.", [
+      "result" => $result,
+    ]);
+  }
+
+  $nextState = [
+    "lastRunMinute" => $currentMinuteStamp,
+    "updatedAt" => $now->format(DateTimeInterface::ATOM),
+  ];
+  $encoded = json_encode($nextState, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+  if ($encoded !== false) {
+    $saved = file_put_contents($statePath, $encoded . PHP_EOL, LOCK_EX);
+    if ($saved === false) {
+      appendMailingLog("warning", "Не удалось записать состояние автозапуска рассылки 'Без фото'.", [
+        "statePath" => $statePath,
+      ]);
+    }
+  }
 }
 
 
@@ -2156,17 +2410,21 @@ if ($isCli) {
     $repairsResult = runRepairsMailing([
       "dryRun" => $dryRun,
     ]);
+    $noPhotoMailingResult = runNoPhotoMailing([
+      "dryRun" => $dryRun,
+    ]);
     $noPhotoResult = runNoPhotoFineRecalculation([
       "respectTime" => true,
       "dryRun" => $dryRun,
     ]);
 
     $result = [
-      "success" => !empty($moveRepliesResult["success"]) && !empty($repairsResult["success"]) && !empty($noPhotoResult["success"]),
+      "success" => !empty($moveRepliesResult["success"]) && !empty($repairsResult["success"]) && !empty($noPhotoMailingResult["success"]) && !empty($noPhotoResult["success"]),
       "mode" => "scheduled-mailings-cli",
       "dryRun" => $dryRun,
       "moveReplies" => $moveRepliesResult,
       "repairs" => $repairsResult,
+      "noPhotoMailing" => $noPhotoMailingResult,
       "noPhotoFines" => $noPhotoResult,
     ];
     echo json_encode($result, JSON_UNESCAPED_UNICODE) . PHP_EOL;
@@ -2198,6 +2456,14 @@ if ($isCli) {
     echo json_encode($result, JSON_UNESCAPED_UNICODE) . PHP_EOL;
     exit;
   }
+  if (in_array("--run-no-photo-mailing", $argvList, true)) {
+    $dryRun = in_array("--dry-run", $argvList, true);
+    $result = runNoPhotoMailing([
+      "dryRun" => $dryRun,
+    ]);
+    echo json_encode($result, JSON_UNESCAPED_UNICODE) . PHP_EOL;
+    exit;
+  }
 }
 
 $requestedAction = trim((string) ($_GET["action"] ?? $payload["action"] ?? ""));
@@ -2205,6 +2471,7 @@ if ($requestedAction === "run-scheduled-mailings") {
   runNoPhotoFineRecalculationIfNeeded();
   runMoveRepliesMailingIfNeeded();
   runRepairsMailingIfNeeded();
+  runNoPhotoMailingIfNeeded();
   echo json_encode([
     "success" => true,
     "action" => "run-scheduled-mailings",
@@ -2231,5 +2498,6 @@ foreach ($entries as $entry) {
 runNoPhotoFineRecalculationIfNeeded();
 runMoveRepliesMailingIfNeeded();
 runRepairsMailingIfNeeded();
+runNoPhotoMailingIfNeeded();
 
 echo json_encode(["success" => true]);

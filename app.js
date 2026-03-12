@@ -19352,13 +19352,19 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const buildExportFileName = (currentUserName, date) => {
     const sourceName = String(currentUserName ?? "").trim();
     const nameParts = sourceName.split(/\s+/).filter(Boolean);
-    const surname = nameParts[0] || "Пользователь";
+    const rawSurname = nameParts[0] || "Пользователь";
+    const surname = rawSurname.replace(/[\\/:*?"<>|]+/g, "_") || "Пользователь";
     const formattedDate = [
       date.getFullYear(),
       String(date.getMonth() + 1).padStart(2, "0"),
       String(date.getDate()).padStart(2, "0"),
     ].join("-");
-    return `${surname}_${formattedDate}.xlsx`;
+    const formattedTime = [
+      String(date.getHours()).padStart(2, "0"),
+      String(date.getMinutes()).padStart(2, "0"),
+      String(date.getSeconds()).padStart(2, "0"),
+    ].join("-");
+    return `${surname}_${formattedDate}_${formattedTime}.xlsx`;
   };
 
   const saveExportFileOnServer = async (orgFolder, fileName, fileBlob) => {
@@ -19519,6 +19525,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       });
 
+      let serverFileUrl = "";
+      try {
+        serverFileUrl = await saveExportFileOnServer(orgFolder, fileName, fileBlob);
+      } catch (error) {
+        console.warn("Не удалось сохранить выгрузку на сервере.", error);
+      }
+
       const shareSupported =
         typeof navigator !== "undefined" &&
         typeof navigator.canShare === "function" &&
@@ -19526,21 +19539,16 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       if (shareSupported) {
         const excelFile = new File([fileBlob], fileName, { type: fileBlob.type });
         if (navigator.canShare({ files: [excelFile] })) {
-          await navigator.share({
-            files: [excelFile],
-            title: sheetTitle,
-            text: "Выгрузка Excel",
-          });
-          closeDownloadModal();
-          return;
+          try {
+            await navigator.share({
+              files: [excelFile],
+              title: sheetTitle,
+              text: "Выгрузка Excel",
+            });
+          } catch (error) {
+            console.warn("Не удалось поделиться выгрузкой через системный диалог.", error);
+          }
         }
-      }
-
-      let serverFileUrl = "";
-      try {
-        serverFileUrl = await saveExportFileOnServer(orgFolder, fileName, fileBlob);
-      } catch (error) {
-        console.warn("Не удалось сохранить выгрузку на сервере.", error);
       }
 
       if (preparedDownloadUrl) {

@@ -5401,7 +5401,7 @@
       }
 
       .tools-filters {
-        display: none;
+        display: grid;
         grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
         gap: 8px;
         padding: 8px;
@@ -5413,10 +5413,6 @@
         align-items: start;
       }
 
-      .tools-filters.is-open {
-        display: grid;
-      }
-
       .tools-filter {
         display: grid;
         gap: 6px;
@@ -5425,11 +5421,6 @@
         color: var(--muted);
         text-transform: uppercase;
         letter-spacing: 0.04em;
-      }
-
-      .tools-filter--status {
-        margin-top: 8px;
-        max-width: 280px;
       }
 
       .tools-filter .form-input {
@@ -6680,11 +6671,6 @@
 
         .tools-filters.is-open {
           display: grid;
-        }
-
-        .tools-filter--status {
-          margin-top: 6px;
-          max-width: 100%;
         }
 
         .tools-list.is-large {

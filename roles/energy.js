@@ -7,6 +7,7 @@ export const energyActions = [
   { id: "search", title: "Поиск", icon: "🔍" },
   { id: "move-other", title: "Переместить за других", icon: "↔️" },
   { id: "write-off", title: "Списать", icon: "🧾" },
+  { id: "write-off-pending", title: "На списание", icon: "📋" },
   { id: "repair", title: "Ремонт", icon: "🛠️" },
   { id: "breakdowns", title: "Поломки", icon: "⚠️" },
   { id: "demand", title: "Потребность", icon: "📌" },
@@ -926,7 +927,7 @@ export function renderRole(user) {
                       </div>
                     </div>
                   </label>
-                  <label class="tools-filter">
+                  <label class="tools-filter" data-tools-status-filter-dropdown>
                     <span>Статус</span>
                     <div class="tools-filter-dropdown" data-tools-filter="status">
                       <button type="button" class="form-input tools-filter-dropdown__trigger" data-tools-filter-trigger>
@@ -995,6 +996,14 @@ export function renderRole(user) {
                         <div class="tools-filter-dropdown__options" data-tools-filter-options></div>
                       </div>
                     </div>
+                  </label>
+                </div>
+                <div class="tools-standalone-filter is-hidden" data-tools-status-standalone-wrap>
+                  <label class="tools-filter tools-filter--standalone">
+                    <span>По статусу</span>
+                    <select class="form-input" data-tools-status-standalone>
+                      <option value="">Все</option>
+                    </select>
                   </label>
                 </div>
               </div>

@@ -5400,6 +5400,18 @@
         fill: currentColor;
       }
 
+      .tools-standalone-filter {
+        margin-top: 8px;
+      }
+
+      .tools-filter--standalone {
+        max-width: 260px;
+      }
+
+      .tools-filter--standalone .form-input {
+        min-height: 42px;
+      }
+
       .tools-filters {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
@@ -6671,6 +6683,10 @@
 
         .tools-filters.is-open {
           display: grid;
+        }
+
+        .tools-filter--standalone {
+          max-width: 100%;
         }
 
         .tools-list.is-large {

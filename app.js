@@ -18322,10 +18322,15 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const telegramStatus = document.createElement("span");
       telegramStatus.className = "users-details__status";
       const hasTelegramId = Boolean(normalizeTelegramId(entry?.telegram_id));
+      const canInvite = !hasTelegramId;
       const isResponsible = roleName === responsibleRole;
       const isVacation = Boolean(entry?.on_vacation);
       const vacationReplacer = String(entry?.vacation_replacer ?? "").trim();
-      telegramStatus.textContent = hasTelegramId ? "ID привязан" : "ID не привязан";
+      telegramStatus.textContent = hasTelegramId
+        ? "ID привязан"
+        : canInvite
+          ? "ID не привязан · нажмите, чтобы сгенерировать ссылку"
+          : "ID не привязан";
       telegramStatus.classList.toggle("is-linked", hasTelegramId);
       meta.append(roleTag, telegramStatus);
 
@@ -18344,7 +18349,25 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const isCurrentUserCard =
         normalizePersonName(entry?.full_name ?? "") ===
         normalizePersonName(currentUser?.full_name ?? currentUser?.fullName ?? "");
-      if (isResponsible || isCurrentUserCard) {
+      if (canInvite) {
+        card.classList.add("is-actionable");
+        card.setAttribute("role", "button");
+        card.setAttribute("tabindex", "0");
+        card.setAttribute(
+          "aria-label",
+          `Сгенерировать ссылку для ${name.textContent}`
+        );
+        const handleInvite = () => {
+          createResponsibleInvite(entry);
+        };
+        card.addEventListener("click", handleInvite);
+        card.addEventListener("keydown", (event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            handleInvite();
+          }
+        });
+      } else if (isResponsible || isCurrentUserCard) {
         card.classList.add("is-actionable");
         card.setAttribute("role", "button");
         card.setAttribute("tabindex", "0");

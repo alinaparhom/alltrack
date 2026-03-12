@@ -732,39 +732,30 @@ function renderMailingTopList(array $counter, string $labelTitle): array {
   return $lines;
 }
 
-function buildNoPhotoMailingText(string $organization, array $tools): string {
-  $headerOrg = trim($organization) !== "" ? trim($organization) : "Организация";
-  $brokenNoPhoto = [];
+function collectNoPhotoTools(array $tools): array {
+  $noPhoto = [];
   foreach ($tools as $tool) {
     if (!is_array($tool)) {
-      continue;
-    }
-    if (!isBrokenTool($tool)) {
       continue;
     }
     $photoCount = (int) ($tool["Количество фото"] ?? 0);
     if ($photoCount !== 0) {
       continue;
     }
-    $brokenNoPhoto[] = $tool;
+    $noPhoto[] = $tool;
   }
+  return $noPhoto;
+}
 
-  $totalCount = count($brokenNoPhoto);
-  $lines = [
-    "📷 Рассылка «Без фото»",
-    "🏢 Организация: {$headerOrg}",
-    "",
-    "Сломанных инструментов без фото: {$totalCount}",
-  ];
-
-  if ($totalCount === 0) {
-    $lines[] = "✅ Нет сломанных инструментов с количеством фото 0.";
-    return implode("\n", $lines);
-  }
-
+function buildNoPhotoChartCounters(array $tools): array {
   $byObject = [];
   $byResponsible = [];
-  foreach ($brokenNoPhoto as $tool) {
+
+  foreach ($tools as $tool) {
+    if (!is_array($tool)) {
+      continue;
+    }
+
     $object = trim((string) ($tool["Объект"] ?? ""));
     if ($object !== "") {
       $byObject[$object] = ($byObject[$object] ?? 0) + 1;
@@ -776,15 +767,115 @@ function buildNoPhotoMailingText(string $organization, array $tools): string {
     }
   }
 
-  $lines[] = "";
-  $lines[] = "📊 График 1: по объектам (только где есть инструменты без фото)";
-  $lines = array_merge($lines, renderMailingTopList($byObject, "шт."));
+  return [
+    "byObject" => $byObject,
+    "byResponsible" => $byResponsible,
+  ];
+}
 
-  $lines[] = "";
-  $lines[] = "📊 График 2: по ответственным (только где есть инструменты без фото)";
-  $lines = array_merge($lines, renderMailingTopList($byResponsible, "шт."));
+function buildNoPhotoMailingText(string $organization, array $tools): string {
+  $headerOrg = trim($organization) !== "" ? trim($organization) : "Организация";
+  $noPhotoTools = collectNoPhotoTools($tools);
+
+  $totalCount = count($noPhotoTools);
+  $lines = [
+    "📷 Рассылка «Без фото»",
+    "🏢 Организация: {$headerOrg}",
+    "",
+    "Инструментов без фото: {$totalCount}",
+  ];
+
+  if ($totalCount === 0) {
+    $lines[] = "✅ Нет инструментов с количеством фото 0.";
+    return implode("\n", $lines);
+  }
+
+  $lines[] = "📎 Графики отправлены отдельными картинками:";
+  $lines[] = "• График 1 — по объектам";
+  $lines[] = "• График 2 — по ответственным";
 
   return implode("\n", $lines);
+}
+
+function buildNoPhotoChartImage(string $organization, string $chartTitle, array $counter): ?string {
+  if (empty($counter)) {
+    return null;
+  }
+
+  arsort($counter, SORT_NUMERIC);
+  $labels = [];
+  $values = [];
+  foreach ($counter as $label => $value) {
+    $labelText = trim((string) $label);
+    if ($labelText === "") {
+      $labelText = "Не указано";
+    }
+    $labels[] = mb_strimwidth($labelText, 0, 34, "…", "UTF-8");
+    $values[] = (int) $value;
+  }
+
+  $chartConfig = [
+    "type" => "bar",
+    "data" => [
+      "labels" => $labels,
+      "datasets" => [[
+        "label" => "Инструменты без фото",
+        "data" => $values,
+        "backgroundColor" => "rgba(80, 170, 255, 0.75)",
+        "borderColor" => "rgba(80, 170, 255, 1)",
+        "borderWidth" => 1,
+      ]],
+    ],
+    "options" => [
+      "plugins" => [
+        "legend" => ["display" => false],
+        "title" => [
+          "display" => true,
+          "text" => $chartTitle,
+          "font" => ["size" => 18],
+          "color" => "#1f2937",
+        ],
+      ],
+      "scales" => [
+        "y" => [
+          "beginAtZero" => true,
+          "ticks" => ["precision" => 0, "color" => "#334155"],
+        ],
+        "x" => [
+          "ticks" => ["color" => "#334155", "maxRotation" => 25, "minRotation" => 0],
+        ],
+      ],
+    ],
+  ];
+
+  $encodedChart = rawurlencode((string) json_encode($chartConfig, JSON_UNESCAPED_UNICODE));
+  $url = "https://quickchart.io/chart?width=1200&height=700&backgroundColor=white&devicePixelRatio=2&c={$encodedChart}";
+  $imageBinary = @file_get_contents($url);
+  if ($imageBinary === false || $imageBinary === "") {
+    return null;
+  }
+
+  $safeOrg = preg_replace('/[^a-z0-9_-]+/iu', '-', trim($organization));
+  if (!is_string($safeOrg) || $safeOrg === "") {
+    $safeOrg = "org";
+  }
+  $safeTitle = preg_replace('/[^a-z0-9_-]+/iu', '-', trim($chartTitle));
+  if (!is_string($safeTitle) || $safeTitle === "") {
+    $safeTitle = "chart";
+  }
+
+  $fileName = sprintf(
+    'no-photo-chart-%s-%s-%s.png',
+    $safeOrg,
+    $safeTitle,
+    date('Ymd-His')
+  );
+  $targetPath = rtrim(sys_get_temp_dir(), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $fileName;
+  if (@file_put_contents($targetPath, $imageBinary, LOCK_EX) === false) {
+    return null;
+  }
+
+  return $targetPath;
 }
 
 function runNoPhotoMailing(array $options = []): array {
@@ -881,12 +972,42 @@ function runNoPhotoMailing(array $options = []): array {
         continue;
       }
 
+      $noPhotoTools = collectNoPhotoTools($filteredTools);
       $text = buildNoPhotoMailingText($orgFolder, $filteredTools);
       $sendResult = $dryRun
         ? ["ok" => true, "statusCode" => 0]
         : sendTelegramTextMessage($botToken, $chatId, $text);
 
       if (!empty($sendResult["ok"])) {
+        if (!$dryRun && !empty($noPhotoTools)) {
+          $counters = buildNoPhotoChartCounters($noPhotoTools);
+          $objectChartPath = buildNoPhotoChartImage($orgFolder, "График 1: по объектам", $counters["byObject"] ?? []);
+          if (is_string($objectChartPath) && is_file($objectChartPath)) {
+            $photoResult = sendTelegramPhotoMessage($botToken, $chatId, $objectChartPath, "График 1: инструменты без фото по объектам");
+            if (empty($photoResult["ok"])) {
+              appendMailingLog("warning", "Не удалось отправить график 1 рассылки 'Без фото'.", [
+                "organization" => $orgFolder,
+                "chatId" => $chatId,
+                "error" => $photoResult["error"] ?? "Неизвестная ошибка",
+              ]);
+            }
+            @unlink($objectChartPath);
+          }
+
+          $responsibleChartPath = buildNoPhotoChartImage($orgFolder, "График 2: по ответственным", $counters["byResponsible"] ?? []);
+          if (is_string($responsibleChartPath) && is_file($responsibleChartPath)) {
+            $photoResult = sendTelegramPhotoMessage($botToken, $chatId, $responsibleChartPath, "График 2: инструменты без фото по ответственным");
+            if (empty($photoResult["ok"])) {
+              appendMailingLog("warning", "Не удалось отправить график 2 рассылки 'Без фото'.", [
+                "organization" => $orgFolder,
+                "chatId" => $chatId,
+                "error" => $photoResult["error"] ?? "Неизвестная ошибка",
+              ]);
+            }
+            @unlink($responsibleChartPath);
+          }
+        }
+
         $sentState[$stateKey] = $now->format(DateTimeInterface::ATOM);
         $orgSentCount++;
         $summary["messagesSent"]++;

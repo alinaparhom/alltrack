@@ -5342,27 +5342,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     "[data-writeoff-confirm-message]"
   );
   const writeOffActsInput = contentEl.querySelector("[data-writeoff-acts]");
-  const writeOffStatusConfirmModalEl = contentEl.querySelector(
-    "[data-writeoff-status-confirm-modal]"
-  );
-  const writeOffStatusConfirmBackdropEl = contentEl.querySelector(
-    "[data-writeoff-status-confirm-backdrop]"
-  );
-  const writeOffStatusConfirmCloseButton = contentEl.querySelector(
-    "[data-writeoff-status-confirm-close]"
-  );
-  const writeOffStatusConfirmCancelButton = contentEl.querySelector(
-    "[data-writeoff-status-confirm-cancel]"
-  );
-  const writeOffStatusConfirmApplyButton = contentEl.querySelector(
-    "[data-writeoff-status-confirm-apply]"
-  );
-  const writeOffStatusConfirmToolEl = contentEl.querySelector(
-    "[data-writeoff-status-confirm-tool]"
-  );
-  const writeOffStatusConfirmMessageEl = contentEl.querySelector(
-    "[data-writeoff-status-confirm-message]"
-  );
 
   const context = contextOverride || (await resolveUserSettingsContext(user));
   const settingsData = context.settingsData;
@@ -5781,10 +5760,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     breakdowns: [],
     repairs: [],
     kitExpanded: false,
-  };
-  const writeOffStatusConfirmState = {
-    tool: null,
-    isSaving: false,
   };
   let pendingMovesDeclineResolver = null;
   const toolsMoveState = {
@@ -11833,25 +11808,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       closeWriteOffConfirmModal();
     }
   });
-  if (writeOffStatusConfirmBackdropEl) {
-    writeOffStatusConfirmBackdropEl.addEventListener("click", closeWriteOffStatusConfirmModal);
-  }
-  if (writeOffStatusConfirmCloseButton) {
-    writeOffStatusConfirmCloseButton.addEventListener("click", closeWriteOffStatusConfirmModal);
-  }
-  if (writeOffStatusConfirmCancelButton) {
-    writeOffStatusConfirmCancelButton.addEventListener("click", closeWriteOffStatusConfirmModal);
-  }
-  if (writeOffStatusConfirmApplyButton) {
-    writeOffStatusConfirmApplyButton.addEventListener("click", () => {
-      void applyWriteOffStatusFromPending();
+  if (writeOffConfirmFormEl) {
+    writeOffConfirmFormEl.addEventListener("submit", (event) => {
+      event.preventDefault();
+      applyWriteOff();
     });
   }
-  writeOffStatusConfirmModalEl?.addEventListener("keydown", (event) => {
-    if (event.key === "Escape") {
-      closeWriteOffStatusConfirmModal();
-    }
-  });
 
   if (toolsInfoCancelMoveButton) {
     toolsInfoCancelMoveButton.addEventListener("click", () => {
@@ -12475,57 +12437,23 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     });
   }
 
-  const getWriteOffStatusConfirmToolLabel = (tool) => {
-    const accounting = String(tool?.["Бух.номер"] ?? "").trim();
-    const number = String(tool?.["Номер"] ?? "").trim();
-    const name = String(tool?.["Наименование"] ?? "").trim();
-    const primary = accounting || number || "Без номера";
-    return name ? `${primary} · ${name}` : primary;
-  };
-
-  const setWriteOffStatusConfirmMessage = (text = "", type = "") => {
-    if (!writeOffStatusConfirmMessageEl) return;
-    writeOffStatusConfirmMessageEl.textContent = text;
-    writeOffStatusConfirmMessageEl.classList.remove("is-error", "is-success", "is-info");
-    if (type) {
-      writeOffStatusConfirmMessageEl.classList.add(`is-${type}`);
-    }
-  };
-
-  const closeWriteOffStatusConfirmModal = () => {
-    if (!writeOffStatusConfirmModalEl) return;
-    writeOffStatusConfirmModalEl.classList.add("is-hidden");
-    writeOffStatusConfirmState.tool = null;
-    writeOffStatusConfirmState.isSaving = false;
-    if (writeOffStatusConfirmApplyButton) {
-      writeOffStatusConfirmApplyButton.disabled = false;
-    }
-    setWriteOffStatusConfirmMessage("");
-    if (toolsModalEl && !toolsModalEl.classList.contains("is-hidden")) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
-  };
-
-  const applyWriteOffStatusFromPending = async () => {
-    if (writeOffStatusConfirmState.isSaving || !writeOffStatusConfirmState.tool || !toolsState.orgFolder) {
+  const markToolAsWriteOffFromPending = async (tool) => {
+    if (!tool || !toolsState.orgFolder) return;
+    const statusText = String(tool?.["Статус"] ?? "").trim().toLowerCase();
+    if (statusText === "на списание") {
+      window.alert("У этого инструмента уже статус «На списание».");
       return;
     }
-    writeOffStatusConfirmState.isSaving = true;
-    if (writeOffStatusConfirmApplyButton) {
-      writeOffStatusConfirmApplyButton.disabled = true;
-    }
-    setWriteOffStatusConfirmMessage("Сохраняем статус...", "info");
+    const confirmed = window.confirm("Поставить инструменту статус «На списание»?");
+    if (!confirmed) return;
     try {
-      const tool = writeOffStatusConfirmState.tool;
       const toolsPath = `./${toolsState.orgFolder}/База с инструментами.json`;
       const rawTools = await loadJson(toolsPath).catch(() => []);
       const tools = normalizeToolsData(rawTools);
       const matcher = buildToolsEditMatcher(tool);
       const toolIndex = tools.findIndex((entry) => matcher(entry));
       if (toolIndex < 0) {
-        setWriteOffStatusConfirmMessage("Инструмент не найден в базе.", "error");
+        window.alert("Инструмент не найден в базе.");
         return;
       }
       tools[toolIndex] = {
@@ -12535,38 +12463,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       await saveJson(toolsPath, tools, { user: currentUser });
       syncToolStatusInStates(tools[toolIndex], "На списание");
       applyToolsFilters();
-      setWriteOffStatusConfirmMessage("Статус обновлён: На списание.", "success");
-      window.setTimeout(() => {
-        closeWriteOffStatusConfirmModal();
-      }, 420);
+      window.alert("Статус обновлён: На списание.");
     } catch (error) {
       console.error(error);
-      setWriteOffStatusConfirmMessage(
-        "Не удалось обновить статус. Проверьте сервер.",
-        "error"
-      );
-    } finally {
-      writeOffStatusConfirmState.isSaving = false;
-      if (writeOffStatusConfirmApplyButton) {
-        writeOffStatusConfirmApplyButton.disabled = false;
-      }
+      window.alert("Не удалось обновить статус. Проверьте сервер.");
     }
-  };
-
-  const markToolAsWriteOffFromPending = (tool) => {
-    if (!tool || !toolsState.orgFolder || !writeOffStatusConfirmModalEl) return;
-    const statusText = String(tool?.["Статус"] ?? "").trim().toLowerCase();
-    if (statusText === "на списание") {
-      setToolsMessage("У этого инструмента уже статус «На списание».", "info");
-      return;
-    }
-    writeOffStatusConfirmState.tool = tool;
-    if (writeOffStatusConfirmToolEl) {
-      writeOffStatusConfirmToolEl.textContent = getWriteOffStatusConfirmToolLabel(tool);
-    }
-    setWriteOffStatusConfirmMessage("");
-    writeOffStatusConfirmModalEl.classList.remove("is-hidden");
-    document.body.style.overflow = "hidden";
   };
 
   const toolsSelectState = {

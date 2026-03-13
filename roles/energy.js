@@ -1650,6 +1650,11 @@ export function renderRole(user) {
               </button>
             </div>
             <div class="settings-modal__body tools-modal__body">
+              <div class="tools-list is-table" data-pending-moves-list></div>
+              <div class="tools-empty is-hidden" data-pending-moves-empty>
+                Нет инструментов, которые ждут ответа.
+              </div>
+              <div class="form-message" data-pending-moves-message></div>
               <div class="pending-moves-actions">
                 <button
                   class="action-secondary pending-moves-action-button pending-moves-action-button--decline"
@@ -1666,11 +1671,6 @@ export function renderRole(user) {
                   Принять все
                 </button>
               </div>
-              <div class="tools-list is-table" data-pending-moves-list></div>
-              <div class="tools-empty is-hidden" data-pending-moves-empty>
-                Нет инструментов, которые ждут ответа.
-              </div>
-              <div class="form-message" data-pending-moves-message></div>
             </div>
             <div class="pending-moves-loading is-hidden" data-pending-moves-loading aria-hidden="true">
               <div class="pending-moves-loading__box" role="status" aria-live="polite">

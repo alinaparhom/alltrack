@@ -6794,16 +6794,27 @@
       }
 
       .pending-moves-actions {
-        display: flex;
-        flex-wrap: wrap;
+        position: sticky;
+        bottom: 0;
+        z-index: 3;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 10px;
-        justify-content: flex-end;
-        margin-bottom: 12px;
+        margin-top: 12px;
+        padding: 10px;
+        border-radius: 14px;
+        border: 1px solid rgba(226, 232, 240, 0.9);
+        background: rgba(255, 255, 255, 0.9);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        box-shadow: 0 -8px 20px rgba(15, 23, 42, 0.08);
       }
 
       .pending-moves-action-button {
-        flex: 1;
+        width: 140px;
         min-width: 140px;
+        max-width: 140px;
+        justify-self: center;
       }
 
       .pending-moves-action-button--accept {
@@ -6828,7 +6839,8 @@
 
       .pending-moves-tools-table .tools-table__row {
         grid-template-columns: minmax(80px, 120px) minmax(0, 1.2fr) minmax(0, 1fr);
-        padding-bottom: 16px;
+        gap: 8px;
+        padding: 10px 14px;
       }
 
       .tools-table__cell--actions {
@@ -7277,8 +7289,9 @@
         }
 
         .pending-moves-tools-table .tools-table__row {
-          grid-template-columns: 1fr;
-          padding-bottom: 18px;
+          grid-template-columns: minmax(70px, 84px) minmax(0, 1fr) auto;
+          gap: 8px;
+          padding: 10px 12px;
         }
 
         .pending-moves-tools-table .tools-table__cell--actions {
@@ -7287,6 +7300,41 @@
           justify-content: space-between;
           width: 100%;
           gap: 8px;
+        }
+
+
+        .pending-moves-tools-table .tools-table__cell--thumb {
+          justify-self: end;
+          align-self: start;
+        }
+
+        .pending-moves-tools-table .tools-table__thumb {
+          width: 56px;
+          height: 56px;
+        }
+
+        .pending-moves-tools-table .tools-table__cell {
+          gap: 2px;
+        }
+
+        .pending-moves-tools-table .tools-table__cell--actions {
+          grid-column: 1 / -1;
+          margin-top: 4px;
+        }
+
+        .pending-moves-actions {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 8px;
+          padding: 8px;
+          margin-top: 10px;
+        }
+
+        .pending-moves-action-button {
+          width: 132px;
+          min-width: 132px;
+          max-width: 132px;
+          padding: 8px 10px;
+          font-size: 12px;
         }
 
         .pending-moves-tools-table .pending-move-action--decline {

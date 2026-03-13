@@ -21287,8 +21287,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (!button) return;
     const option = String(button.dataset.energyInfoOption ?? "").trim();
     if (option === "moves-history") {
-      closeInfoModal();
-      void openSearchModal();
+      // Кнопку оставляем в интерфейсе, но переход отключён по бизнес-требованию.
       return;
     }
     if (option === "pending-list") {

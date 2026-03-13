@@ -5296,6 +5296,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const pendingMovesMessageEl = contentEl.querySelector(
     "[data-pending-moves-message]"
   );
+  const pendingMovesLoadingEl = contentEl.querySelector(
+    "[data-pending-moves-loading]"
+  );
   const pendingMovesAcceptAllButton = contentEl.querySelector(
     "[data-pending-moves-accept-all]"
   );
@@ -11103,6 +11106,17 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     pendingMovesMessageEl.classList.add(`is-${type}`);
   };
 
+  const setPendingMovesSavingState = (isSaving) => {
+    const saving = Boolean(isSaving);
+    pendingMovesState.isSaving = saving;
+    pendingMovesModalEl?.classList.toggle("is-loading", saving);
+    if (pendingMovesLoadingEl) {
+      pendingMovesLoadingEl.classList.toggle("is-hidden", !saving);
+      pendingMovesLoadingEl.setAttribute("aria-hidden", String(!saving));
+    }
+    pendingMovesModalEl?.setAttribute("aria-busy", String(saving));
+  };
+
   const setPendingMovesDeclineMessage = (text = "", type = "") => {
     if (!pendingMovesDeclineMessageEl) return;
     pendingMovesDeclineMessageEl.textContent = text;
@@ -11882,12 +11896,14 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
   const closePendingMovesModal = () => {
     if (!pendingMovesModalEl) return;
+    if (pendingMovesState.isSaving) return;
     pendingMovesModalEl.classList.add("is-hidden");
     document.body.style.overflow = "";
     if (pendingMovesMessageEl) {
       pendingMovesMessageEl.textContent = "";
       pendingMovesMessageEl.classList.remove("is-error", "is-success", "is-info");
     }
+    setPendingMovesSavingState(false);
   };
 
   const openPendingMovesModal = async (options = {}) => {
@@ -12452,7 +12468,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         return;
       }
     }
-    pendingMovesState.isSaving = true;
+    setPendingMovesSavingState(true);
     setPendingMovesMessage("Сохраняем ответы...", "info");
     const updatedMoves = [...pendingMovesState.allMoves];
     const responseDate = formatDateValue(new Date());
@@ -12468,7 +12484,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           "Не удалось прочитать фото отказа. Попробуйте снова.",
           "error"
         );
-        pendingMovesState.isSaving = false;
+        setPendingMovesSavingState(false);
         return;
       }
     }
@@ -12686,7 +12702,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       console.error(error);
       setPendingMovesMessage("Не удалось сохранить ответы.", "error");
     } finally {
-      pendingMovesState.isSaving = false;
+      setPendingMovesSavingState(false);
     }
   };
 

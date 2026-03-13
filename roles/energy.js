@@ -1338,24 +1338,33 @@ export function renderRole(user) {
                   </div>
                 </div>
               </div>
-              <div class="tools-info-tabs" role="tablist" aria-label="История">
+              <div class="tools-info-tabs" role="tablist" aria-label="Разделы информации">
                 <button
                   class="tools-info-tab is-active"
                   type="button"
                   role="tab"
                   aria-selected="true"
-                  data-tools-info-tab="moves"
+                  data-tools-info-tab="pending"
                 >
-                  Перемещения
+                  Список на принятии
                 </button>
                 <button
                   class="tools-info-tab"
                   type="button"
                   role="tab"
                   aria-selected="false"
-                  data-tools-info-tab="breakdowns"
+                  data-tools-info-tab="moves"
                 >
-                  Поломки
+                  История перемещений
+                </button>
+                <button
+                  class="tools-info-tab"
+                  type="button"
+                  role="tab"
+                  aria-selected="false"
+                  data-tools-info-tab="dates"
+                >
+                  По датам
                 </button>
                 <button
                   class="tools-info-tab"
@@ -1364,22 +1373,38 @@ export function renderRole(user) {
                   aria-selected="false"
                   data-tools-info-tab="repairs"
                 >
-                  Ремонты
+                  Ремонт
+                </button>
+                <button
+                  class="tools-info-tab"
+                  type="button"
+                  role="tab"
+                  aria-selected="false"
+                  data-tools-info-tab="fines"
+                >
+                  Штрафы
                 </button>
               </div>
               <div class="tools-info-panels">
-                <section class="tools-info-panel is-active" data-tools-info-panel="moves">
+                <section class="tools-info-panel is-active" data-tools-info-panel="pending">
+                  <div class="tools-info-summary" data-tools-info-pending-summary></div>
+                  <div class="tools-info-list" data-tools-info-pending-list></div>
+                  <div class="tools-info-empty is-hidden" data-tools-info-pending-empty>
+                    Пока нет перемещений, которые ждут принятия.
+                  </div>
+                </section>
+                <section class="tools-info-panel" data-tools-info-panel="moves">
                   <div class="tools-info-summary" data-tools-info-moves-summary></div>
                   <div class="tools-info-list" data-tools-info-moves-list></div>
                   <div class="tools-info-empty is-hidden" data-tools-info-moves-empty>
                     Перемещений пока нет.
                   </div>
                 </section>
-                <section class="tools-info-panel" data-tools-info-panel="breakdowns">
-                  <div class="tools-info-summary" data-tools-info-breakdowns-summary></div>
-                  <div class="tools-info-list" data-tools-info-breakdowns-list></div>
-                  <div class="tools-info-empty is-hidden" data-tools-info-breakdowns-empty>
-                    Поломок пока нет.
+                <section class="tools-info-panel" data-tools-info-panel="dates">
+                  <div class="tools-info-summary" data-tools-info-dates-summary></div>
+                  <div class="tools-info-list" data-tools-info-dates-list></div>
+                  <div class="tools-info-empty is-hidden" data-tools-info-dates-empty>
+                    Событий по датам пока нет.
                   </div>
                 </section>
                 <section class="tools-info-panel" data-tools-info-panel="repairs">
@@ -1387,6 +1412,13 @@ export function renderRole(user) {
                   <div class="tools-info-list" data-tools-info-repairs-list></div>
                   <div class="tools-info-empty is-hidden" data-tools-info-repairs-empty>
                     Ремонтов пока нет.
+                  </div>
+                </section>
+                <section class="tools-info-panel" data-tools-info-panel="fines">
+                  <div class="tools-info-summary" data-tools-info-fines-summary></div>
+                  <div class="tools-info-list" data-tools-info-fines-list></div>
+                  <div class="tools-info-empty is-hidden" data-tools-info-fines-empty>
+                    Штрафов по инструменту пока нет.
                   </div>
                 </section>
               </div>
@@ -1399,6 +1431,60 @@ export function renderRole(user) {
               >
                 Отменить перемещение
               </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-modal is-hidden info-picker-modal" data-info-picker-modal>
+          <div class="settings-modal__backdrop" data-info-picker-backdrop></div>
+          <div
+            class="settings-modal__panel info-picker-modal__panel"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Выбор информации"
+          >
+            <div class="settings-modal__header info-picker-modal__header">
+              <div class="settings-modal__title">
+                <h2>Информация</h2>
+                <p>Выберите, что хотите посмотреть</p>
+              </div>
+              <button
+                class="button-icon"
+                type="button"
+                data-info-picker-close
+                aria-label="Закрыть окно выбора информации"
+              >
+                <span class="button-icon-emoji" aria-hidden="true">✕</span>
+              </button>
+            </div>
+            <div class="settings-modal__body info-picker-modal__body">
+              <div class="info-picker-grid" data-info-picker-grid>
+                <button class="info-picker-item" type="button" data-info-picker-option="pending">
+                  <span class="info-picker-item__icon" aria-hidden="true">📋</span>
+                  <span class="info-picker-item__title">Список на принятии</span>
+                  <span class="info-picker-item__hint">Инструменты, ожидающие ваш ответ</span>
+                </button>
+                <button class="info-picker-item" type="button" data-info-picker-option="moves">
+                  <span class="info-picker-item__icon" aria-hidden="true">🚚</span>
+                  <span class="info-picker-item__title">История перемещений</span>
+                  <span class="info-picker-item__hint">Откройте карточку инструмента и историю</span>
+                </button>
+                <button class="info-picker-item" type="button" data-info-picker-option="dates">
+                  <span class="info-picker-item__icon" aria-hidden="true">🗓️</span>
+                  <span class="info-picker-item__title">По датам</span>
+                  <span class="info-picker-item__hint">События в одном списке по хронологии</span>
+                </button>
+                <button class="info-picker-item" type="button" data-info-picker-option="repairs">
+                  <span class="info-picker-item__icon" aria-hidden="true">🛠️</span>
+                  <span class="info-picker-item__title">Ремонт</span>
+                  <span class="info-picker-item__hint">Заявки и текущий статус ремонта</span>
+                </button>
+                <button class="info-picker-item" type="button" data-info-picker-option="fines">
+                  <span class="info-picker-item__icon" aria-hidden="true">💸</span>
+                  <span class="info-picker-item__title">Штрафы</span>
+                  <span class="info-picker-item__hint">Штрафы за перемещения и ответы</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>

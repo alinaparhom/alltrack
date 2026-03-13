@@ -5346,6 +5346,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const infoPendingFiltersPanelEl = contentEl.querySelector(
     "[data-info-pending-filters-panel]"
   );
+  const infoPendingPersonDropdownEls = contentEl.querySelectorAll(
+    "[data-info-pending-person-dropdown]"
+  );
   const infoPendingDateTriggerEl = contentEl.querySelector(
     "[data-info-pending-date-trigger]"
   );
@@ -11696,31 +11699,76 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     );
   };
 
-  const updateInfoPendingResponsibleFilters = () => {
-    const updateSelectOptions = (selectEl, values, emptyLabel, currentValue) => {
-      if (!selectEl) return;
-      const options = [`<option value="">${escapeHtml(emptyLabel)}</option>`];
-      values.forEach((value) => {
-        const selected = value === currentValue ? ' selected' : "";
-        options.push(`<option value="${escapeHtml(value)}"${selected}>${escapeHtml(value)}</option>`);
-      });
-      selectEl.innerHTML = options.join("");
-      if (currentValue && !values.includes(currentValue)) {
-        selectEl.value = "";
-      }
-    };
+  const setInfoPendingPersonDropdownOpen = (key, isOpen) => {
+    infoPendingPersonDropdownEls.forEach((dropdownEl) => {
+      const dropdownKey = String(dropdownEl.dataset.infoPendingPersonDropdown ?? "").trim();
+      const shouldOpen = dropdownKey === key && Boolean(isOpen);
+      dropdownEl.classList.toggle("is-open", shouldOpen);
+      const menuEl = dropdownEl.querySelector("[data-info-pending-person-menu]");
+      menuEl?.classList.toggle("is-hidden", !shouldOpen);
+      const triggerEl = dropdownEl.querySelector("[data-info-pending-person-trigger]");
+      triggerEl?.setAttribute("aria-expanded", String(shouldOpen));
+    });
+  };
 
-    updateSelectOptions(
-      infoPendingFilterReceiverEl,
+  const renderInfoPendingPersonDropdown = (key, values, emptyLabel, currentValue) => {
+    const dropdownEl = contentEl.querySelector(
+      `[data-info-pending-person-dropdown="${key}"]`
+    );
+    if (!dropdownEl) return;
+    const optionsEl = dropdownEl.querySelector("[data-info-pending-person-options]");
+    const clearButtonEl = dropdownEl.querySelector("[data-info-pending-person-clear]");
+    const triggerEl = dropdownEl.querySelector("[data-info-pending-person-trigger]");
+    const hiddenInputEl =
+      key === "receiver" ? infoPendingFilterReceiverEl : infoPendingFilterSenderEl;
+    if (!(optionsEl instanceof HTMLElement) || !(triggerEl instanceof HTMLElement)) return;
+
+    if (clearButtonEl) {
+      clearButtonEl.textContent = emptyLabel;
+      clearButtonEl.classList.toggle("is-active", !currentValue);
+    }
+
+    optionsEl.innerHTML = "";
+    values.forEach((value, index) => {
+      const id = `info-pending-${key}-${index}`;
+      const optionLabelEl = document.createElement("label");
+      optionLabelEl.className = "tools-filter-dropdown__option";
+      optionLabelEl.setAttribute("for", id);
+      const radioEl = document.createElement("input");
+      radioEl.type = "radio";
+      radioEl.id = id;
+      radioEl.name = `info-pending-${key}`;
+      radioEl.value = value;
+      radioEl.checked = value === currentValue;
+      radioEl.dataset.infoPendingPersonOption = key;
+      const textEl = document.createElement("span");
+      textEl.textContent = value;
+      optionLabelEl.append(radioEl, textEl);
+      optionsEl.append(optionLabelEl);
+    });
+
+    const safeCurrentValue = values.includes(currentValue) ? currentValue : "";
+    if (hiddenInputEl) {
+      hiddenInputEl.value = safeCurrentValue;
+    }
+    triggerEl.classList.toggle("is-active", Boolean(safeCurrentValue));
+    triggerEl.textContent = safeCurrentValue || emptyLabel;
+  };
+
+  const updateInfoPendingResponsibleFilters = () => {
+    const receiverValue = String(infoPendingState.filters.receiver ?? "");
+    const senderValue = String(infoPendingState.filters.sender ?? "");
+    renderInfoPendingPersonDropdown(
+      "receiver",
       infoPendingState.receiverOptions,
       "Все принимающие",
-      String(infoPendingState.filters.receiver ?? "")
+      receiverValue
     );
-    updateSelectOptions(
-      infoPendingFilterSenderEl,
+    renderInfoPendingPersonDropdown(
+      "sender",
       infoPendingState.senderOptions,
       "Все передающие",
-      String(infoPendingState.filters.sender ?? "")
+      senderValue
     );
   };
 
@@ -12065,6 +12113,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     infoPendingFiltersPanelEl?.classList.toggle("is-hidden", !infoPendingState.isFiltersOpen);
     infoPendingFiltersToggleEl?.setAttribute("aria-expanded", String(infoPendingState.isFiltersOpen));
     if (!infoPendingState.isFiltersOpen) {
+      setInfoPendingPersonDropdownOpen("", false);
       setInfoPendingDatePickerOpen(false);
     }
   };
@@ -12691,14 +12740,38 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
   });
   infoPendingSortEl?.addEventListener("change", handleInfoPendingFiltersChanged);
-  infoPendingFilterReceiverEl?.addEventListener(
-    "change",
-    handleInfoPendingFiltersChanged
-  );
-  infoPendingFilterSenderEl?.addEventListener(
-    "change",
-    handleInfoPendingFiltersChanged
-  );
+  infoPendingFilterReceiverEl?.addEventListener("change", handleInfoPendingFiltersChanged);
+  infoPendingFilterSenderEl?.addEventListener("change", handleInfoPendingFiltersChanged);
+  infoPendingPersonDropdownEls.forEach((dropdownEl) => {
+    const key = String(dropdownEl.dataset.infoPendingPersonDropdown ?? "").trim();
+    if (!key) return;
+    const triggerEl = dropdownEl.querySelector("[data-info-pending-person-trigger]");
+    const clearButtonEl = dropdownEl.querySelector("[data-info-pending-person-clear]");
+    const hiddenInputEl =
+      key === "receiver" ? infoPendingFilterReceiverEl : infoPendingFilterSenderEl;
+
+    triggerEl?.addEventListener("click", (event) => {
+      event.stopPropagation();
+      const isOpen = dropdownEl.classList.contains("is-open");
+      setInfoPendingPersonDropdownOpen(key, !isOpen);
+    });
+
+    clearButtonEl?.addEventListener("click", (event) => {
+      event.stopPropagation();
+      if (hiddenInputEl) hiddenInputEl.value = "";
+      setInfoPendingPersonDropdownOpen("", false);
+      handleInfoPendingFiltersChanged();
+    });
+
+    const optionsEl = dropdownEl.querySelector("[data-info-pending-person-options]");
+    optionsEl?.addEventListener("change", (event) => {
+      const target = event.target instanceof HTMLInputElement ? event.target : null;
+      if (!target?.matches('[data-info-pending-person-option]')) return;
+      if (hiddenInputEl) hiddenInputEl.value = String(target.value ?? "").trim();
+      setInfoPendingPersonDropdownOpen("", false);
+      handleInfoPendingFiltersChanged();
+    });
+  });
   infoPendingFilterDateFromEl?.addEventListener(
     "change",
     handleInfoPendingFiltersChanged
@@ -12746,6 +12819,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (!target) return;
     if (infoPendingModalEl?.classList.contains("is-hidden")) return;
     if (infoPendingControlsContainerEl?.contains(target)) return;
+    setInfoPendingPersonDropdownOpen("", false);
     setInfoPendingFiltersOpen(false);
   });
 

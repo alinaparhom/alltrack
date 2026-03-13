@@ -3492,21 +3492,43 @@ export function renderRole(user) {
                   <div class="info-pending-filters__panel is-hidden" data-info-pending-filters-panel>
                     <label class="form-field">
                       <span>Принимающий</span>
-                      <select
-                        class="form-input info-pending-responsible-select"
-                        data-info-pending-filter-receiver
+                      <div
+                        class="tools-filter-dropdown info-pending-responsible-dropdown"
+                        data-info-pending-person-dropdown="receiver"
                       >
-                        <option value="">Все принимающие</option>
-                      </select>
+                        <button
+                          type="button"
+                          class="form-input tools-filter-dropdown__trigger"
+                          data-info-pending-person-trigger
+                        >Все принимающие</button>
+                        <div class="tools-filter-dropdown__menu is-hidden" data-info-pending-person-menu>
+                          <button type="button" class="tools-filter-dropdown__clear" data-info-pending-person-clear>
+                            Все принимающие
+                          </button>
+                          <div class="tools-filter-dropdown__options" data-info-pending-person-options></div>
+                        </div>
+                        <input type="hidden" data-info-pending-filter-receiver />
+                      </div>
                     </label>
                     <label class="form-field">
                       <span>Передающий</span>
-                      <select
-                        class="form-input info-pending-responsible-select"
-                        data-info-pending-filter-sender
+                      <div
+                        class="tools-filter-dropdown info-pending-responsible-dropdown"
+                        data-info-pending-person-dropdown="sender"
                       >
-                        <option value="">Все передающие</option>
-                      </select>
+                        <button
+                          type="button"
+                          class="form-input tools-filter-dropdown__trigger"
+                          data-info-pending-person-trigger
+                        >Все передающие</button>
+                        <div class="tools-filter-dropdown__menu is-hidden" data-info-pending-person-menu>
+                          <button type="button" class="tools-filter-dropdown__clear" data-info-pending-person-clear>
+                            Все передающие
+                          </button>
+                          <div class="tools-filter-dropdown__options" data-info-pending-person-options></div>
+                        </div>
+                        <input type="hidden" data-info-pending-filter-sender />
+                      </div>
                     </label>
                     <div class="form-field">
                       <span>Дата перемещения</span>

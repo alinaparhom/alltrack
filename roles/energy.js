@@ -3472,12 +3472,18 @@ export function renderRole(user) {
               <div class="info-pending-controls">
                 <label class="form-field">
                   <span>Сортировка</span>
-                  <select class="form-input info-pending-sort-select" data-info-pending-sort>
-                    <option value="old">Сначала старые</option>
-                    <option value="new">Сначала новые</option>
-                    <option value="receiver">По принимающему</option>
-                    <option value="sender">По передающему</option>
-                  </select>
+                  <div class="tools-filter-dropdown info-pending-sort-dropdown" data-info-pending-sort-dropdown>
+                    <button
+                      type="button"
+                      class="form-input tools-filter-dropdown__trigger"
+                      data-info-pending-sort-trigger
+                      aria-expanded="false"
+                    >Сначала старые</button>
+                    <div class="tools-filter-dropdown__menu is-hidden" data-info-pending-sort-menu>
+                      <div class="tools-filter-dropdown__options" data-info-pending-sort-options></div>
+                    </div>
+                    <input type="hidden" data-info-pending-sort value="old" />
+                  </div>
                 </label>
                 <div class="info-pending-filters">
                   <button

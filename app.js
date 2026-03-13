@@ -19573,6 +19573,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       return;
     }
 
+    const includeResponsibleColumn = scope === "all" || scope === "no-photo";
+
     const header = [
       "Номер",
       "Бух.номер",
@@ -19581,6 +19583,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       "Модель",
       "Стоимость",
       "Дата покупки",
+      ...(includeResponsibleColumn ? ["Ответственный"] : []),
       "Объект",
       "Серийный номер",
       "Граппа инструментов",
@@ -19594,6 +19597,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       String(tool?.["Модель"] ?? "").trim(),
       String(tool?.["Стоимость"] ?? "").trim(),
       String(tool?.["Дата покупки"] ?? "").trim(),
+      ...(includeResponsibleColumn
+        ? [String(tool?.["Ответственный"] ?? "").trim()]
+        : []),
       String(tool?.["Объект"] ?? "").trim(),
       String(tool?.["Серийный номер"] ?? "").trim(),
       String(tool?.["Граппа инструментов"] ?? "").trim(),

@@ -20960,6 +20960,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (!button) return;
     const option = button.dataset.infoPickerOption;
     closeInfoPickerModal();
+    if (option === "instructions") {
+      openDownloadModal();
+      return;
+    }
     if (option === "pending") {
       openPendingMovesModal();
       return;

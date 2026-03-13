@@ -1661,14 +1661,14 @@ export function renderRole(user) {
                   type="button"
                   data-pending-moves-decline-all
                 >
-                  Не принять все
+                  Не принять всё
                 </button>
                 <button
                   class="action-primary pending-moves-action-button pending-moves-action-button--accept"
                   type="button"
                   data-pending-moves-accept-all
                 >
-                  Принять все
+                  Принять всё
                 </button>
               </div>
             </div>

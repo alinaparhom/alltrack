@@ -6800,7 +6800,7 @@
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 10px;
-        margin-top: 12px;
+        margin-top: 10px;
         padding: 10px;
         border-radius: 14px;
         border: 1px solid rgba(226, 232, 240, 0.9);
@@ -6811,9 +6811,12 @@
       }
 
       .pending-moves-action-button {
-        width: 140px;
-        min-width: 140px;
-        max-width: 140px;
+        width: 172px;
+        min-width: 172px;
+        max-width: 172px;
+        min-height: 44px;
+        padding: 10px 14px;
+        font-size: 14px;
         justify-self: center;
       }
 
@@ -6838,9 +6841,13 @@
       }
 
       .pending-moves-tools-table .tools-table__row {
-        grid-template-columns: minmax(80px, 120px) minmax(0, 1.2fr) minmax(0, 1fr);
-        gap: 8px;
+        grid-template-columns: max-content minmax(0, 1fr) minmax(72px, 96px);
+        gap: 14px;
         padding: 10px 14px;
+      }
+
+      .pending-moves-tools-table .tools-table__cell {
+        gap: 3px;
       }
 
       .tools-table__cell--actions {
@@ -6866,6 +6873,11 @@
 
       .pending-moves-tools-table .pending-move-action--accept {
         margin-left: auto;
+      }
+
+      .pending-moves-tools-table .tools-table__thumb {
+        width: 64px;
+        height: 64px;
       }
 
       .tools-table__actions-label {
@@ -7289,8 +7301,8 @@
         }
 
         .pending-moves-tools-table .tools-table__row {
-          grid-template-columns: minmax(70px, 84px) minmax(0, 1fr) auto;
-          gap: 8px;
+          grid-template-columns: max-content minmax(0, 1fr) minmax(70px, 88px);
+          gap: 12px;
           padding: 10px 12px;
         }
 
@@ -7309,8 +7321,8 @@
         }
 
         .pending-moves-tools-table .tools-table__thumb {
-          width: 56px;
-          height: 56px;
+          width: 64px;
+          height: 64px;
         }
 
         .pending-moves-tools-table .tools-table__cell {
@@ -7330,11 +7342,12 @@
         }
 
         .pending-moves-action-button {
-          width: 132px;
-          min-width: 132px;
-          max-width: 132px;
-          padding: 8px 10px;
-          font-size: 12px;
+          width: 100%;
+          min-width: 0;
+          max-width: none;
+          min-height: 42px;
+          padding: 9px 10px;
+          font-size: 13px;
         }
 
         .pending-moves-tools-table .pending-move-action--decline {

@@ -251,24 +251,38 @@ export function renderRole(user) {
                 <div class="download-responsible__list" data-download-responsible-list></div>
               </div>
               <div class="download-responsible is-hidden" data-download-moves-box>
-                <div class="form-field">
-                  <label for="download-moves-start-date">Дата с</label>
-                  <input
-                    id="download-moves-start-date"
-                    class="form-input"
-                    type="date"
-                    data-download-moves-start-date
-                  />
+                <div class="download-moves-calendar" data-download-moves-calendar>
+                  <div class="download-moves-calendar__header">
+                    <button
+                      type="button"
+                      class="download-moves-calendar__nav"
+                      data-download-moves-prev-month
+                      aria-label="Предыдущий месяц"
+                    >
+                      ←
+                    </button>
+                    <div class="download-moves-calendar__month" data-download-moves-month-label>
+                      Месяц
+                    </div>
+                    <button
+                      type="button"
+                      class="download-moves-calendar__nav"
+                      data-download-moves-next-month
+                      aria-label="Следующий месяц"
+                    >
+                      →
+                    </button>
+                  </div>
+                  <div class="download-moves-calendar__weekdays" aria-hidden="true">
+                    <span>Пн</span><span>Вт</span><span>Ср</span><span>Чт</span><span>Пт</span><span>Сб</span><span>Вс</span>
+                  </div>
+                  <div class="download-moves-calendar__days" data-download-moves-days></div>
+                  <div class="download-moves-calendar__selected" data-download-moves-selected-range>
+                    Выберите начальную и конечную дату
+                  </div>
                 </div>
-                <div class="form-field">
-                  <label for="download-moves-end-date">Дата по</label>
-                  <input
-                    id="download-moves-end-date"
-                    class="form-input"
-                    type="date"
-                    data-download-moves-end-date
-                  />
-                </div>
+                <input id="download-moves-start-date" type="hidden" data-download-moves-start-date />
+                <input id="download-moves-end-date" type="hidden" data-download-moves-end-date />
                 <button
                   type="button"
                   class="action-primary"

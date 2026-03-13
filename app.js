@@ -5327,6 +5327,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const infoPendingListEl = contentEl.querySelector("[data-info-pending-list]");
   const infoPendingEmptyEl = contentEl.querySelector("[data-info-pending-empty]");
   const infoPendingSortEl = contentEl.querySelector("[data-info-pending-sort]");
+  const infoPendingSortDropdownEl = contentEl.querySelector("[data-info-pending-sort-dropdown]");
+  const infoPendingSortTriggerEl = contentEl.querySelector("[data-info-pending-sort-trigger]");
+  const infoPendingSortMenuEl = contentEl.querySelector("[data-info-pending-sort-menu]");
+  const infoPendingSortOptionsEl = contentEl.querySelector("[data-info-pending-sort-options]");
   const infoPendingControlsContainerEl = contentEl.querySelector(".info-pending-controls");
   const infoPendingFilterReceiverEl = contentEl.querySelector(
     "[data-info-pending-filter-receiver]"
@@ -5851,6 +5855,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     vacationStartAt: "",
     isSaving: false,
   };
+  const infoPendingSortModes = [
+    { value: "old", label: "Сначала старые" },
+    { value: "new", label: "Сначала новые" },
+    { value: "receiver", label: "По принимающему" },
+    { value: "sender", label: "По передающему" },
+  ];
   const infoPendingState = {
     allItems: [],
     filteredItems: [],
@@ -5869,6 +5879,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     visibleMonthDate: new Date(),
     isFiltersOpen: false,
     isDatePickerOpen: false,
+    isSortOpen: false,
   };
   const toolsCancelMoveState = {
     move: null,
@@ -11711,6 +11722,51 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     });
   };
 
+  const setInfoPendingSortDropdownOpen = (isOpen) => {
+    const shouldOpen = Boolean(isOpen);
+    infoPendingState.isSortOpen = shouldOpen;
+    infoPendingSortDropdownEl?.classList.toggle("is-open", shouldOpen);
+    infoPendingSortMenuEl?.classList.toggle("is-hidden", !shouldOpen);
+    infoPendingSortTriggerEl?.setAttribute("aria-expanded", String(shouldOpen));
+  };
+
+  const renderInfoPendingSortDropdown = () => {
+    if (!(infoPendingSortOptionsEl instanceof HTMLElement)) return;
+    const currentValue = String(infoPendingState.filters.sort ?? "old");
+    const currentOption =
+      infoPendingSortModes.find((option) => option.value === currentValue) ??
+      infoPendingSortModes[0];
+    if (infoPendingSortEl instanceof HTMLInputElement) {
+      infoPendingSortEl.value = currentOption.value;
+    }
+    if (infoPendingSortTriggerEl instanceof HTMLElement) {
+      infoPendingSortTriggerEl.textContent = currentOption.label;
+      infoPendingSortTriggerEl.classList.toggle(
+        "is-active",
+        currentOption.value !== "old"
+      );
+    }
+
+    infoPendingSortOptionsEl.innerHTML = "";
+    infoPendingSortModes.forEach((option, index) => {
+      const id = `info-pending-sort-${index}`;
+      const optionLabelEl = document.createElement("label");
+      optionLabelEl.className = "tools-filter-dropdown__option";
+      optionLabelEl.setAttribute("for", id);
+      const radioEl = document.createElement("input");
+      radioEl.type = "radio";
+      radioEl.id = id;
+      radioEl.name = "info-pending-sort";
+      radioEl.value = option.value;
+      radioEl.checked = option.value === currentOption.value;
+      radioEl.dataset.infoPendingSortOption = option.value;
+      const textEl = document.createElement("span");
+      textEl.textContent = option.label;
+      optionLabelEl.append(radioEl, textEl);
+      infoPendingSortOptionsEl.append(optionLabelEl);
+    });
+  };
+
   const renderInfoPendingPersonDropdown = (key, values, emptyLabel, currentValue) => {
     const dropdownEl = contentEl.querySelector(
       `[data-info-pending-person-dropdown="${key}"]`
@@ -11994,6 +12050,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (!infoPendingModalEl) return;
     infoPendingModalEl.classList.remove("is-hidden");
     document.body.style.overflow = "hidden";
+    setInfoPendingSortDropdownOpen(false);
     setInfoPendingFiltersOpen(false);
     setInfoPendingDatePickerOpen(false);
     await loadInfoPendingList();
@@ -12003,6 +12060,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (!infoPendingModalEl) return;
     infoPendingModalEl.classList.add("is-hidden");
     document.body.style.overflow = "";
+    setInfoPendingSortDropdownOpen(false);
     setInfoPendingFiltersOpen(false);
     setInfoPendingDatePickerOpen(false);
   };
@@ -12132,7 +12190,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   };
 
   const handleInfoPendingFiltersChanged = () => {
-    infoPendingState.filters.sort = String(infoPendingSortEl?.value ?? "old");
+    const requestedSort = String(infoPendingSortEl?.value ?? "old");
+    infoPendingState.filters.sort =
+      infoPendingSortModes.some((option) => option.value === requestedSort)
+        ? requestedSort
+        : "old";
+    renderInfoPendingSortDropdown();
     infoPendingState.filters.receiver = String(
       infoPendingFilterReceiverEl?.value ?? ""
     ).trim();
@@ -12740,6 +12803,24 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
   });
   infoPendingSortEl?.addEventListener("change", handleInfoPendingFiltersChanged);
+  infoPendingSortTriggerEl?.addEventListener("click", (event) => {
+    event.stopPropagation();
+    const shouldOpen = !infoPendingState.isSortOpen;
+    setInfoPendingSortDropdownOpen(shouldOpen);
+    if (shouldOpen) {
+      setInfoPendingPersonDropdownOpen("", false);
+      setInfoPendingFiltersOpen(false);
+    }
+  });
+  infoPendingSortOptionsEl?.addEventListener("change", (event) => {
+    const target = event.target instanceof HTMLInputElement ? event.target : null;
+    if (!target?.matches('[data-info-pending-sort-option]')) return;
+    if (infoPendingSortEl instanceof HTMLInputElement) {
+      infoPendingSortEl.value = String(target.value ?? "old").trim() || "old";
+    }
+    setInfoPendingSortDropdownOpen(false);
+    handleInfoPendingFiltersChanged();
+  });
   infoPendingFilterReceiverEl?.addEventListener("change", handleInfoPendingFiltersChanged);
   infoPendingFilterSenderEl?.addEventListener("change", handleInfoPendingFiltersChanged);
   infoPendingPersonDropdownEls.forEach((dropdownEl) => {
@@ -12819,6 +12900,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (!target) return;
     if (infoPendingModalEl?.classList.contains("is-hidden")) return;
     if (infoPendingControlsContainerEl?.contains(target)) return;
+    setInfoPendingSortDropdownOpen(false);
     setInfoPendingPersonDropdownOpen("", false);
     setInfoPendingFiltersOpen(false);
   });

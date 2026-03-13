@@ -21286,6 +21286,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const button = event.target.closest("[data-energy-info-option]");
     if (!button) return;
     const option = String(button.dataset.energyInfoOption ?? "").trim();
+    if (option === "moves-history") {
+      closeInfoModal();
+      void openSearchModal();
+      return;
+    }
     if (option === "pending-list") {
       closeInfoModal();
       void openInfoPendingModal();

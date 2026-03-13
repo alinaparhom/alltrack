@@ -5853,6 +5853,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     filteredItems: [],
     toolMap: new Map(),
     fineConfig: {},
+    receiverOptions: [],
+    senderOptions: [],
+    pendingDateKeys: new Set(),
     filters: {
       sort: "old",
       receiver: "",
@@ -11676,6 +11679,51 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     return previousResponsible || movedBy;
   };
 
+  const buildInfoPendingResponsibleOptions = () => {
+    const receiverSet = new Set();
+    const senderSet = new Set();
+    infoPendingState.allItems.forEach(({ move }) => {
+      const receiver = String(move?.["Принял"] ?? "").trim();
+      const sender = String(resolveInfoPendingSender(move) ?? "").trim();
+      if (receiver) receiverSet.add(receiver);
+      if (sender) senderSet.add(sender);
+    });
+    infoPendingState.receiverOptions = Array.from(receiverSet).sort((a, b) =>
+      a.localeCompare(b, "ru")
+    );
+    infoPendingState.senderOptions = Array.from(senderSet).sort((a, b) =>
+      a.localeCompare(b, "ru")
+    );
+  };
+
+  const updateInfoPendingResponsibleFilters = () => {
+    const updateSelectOptions = (selectEl, values, emptyLabel, currentValue) => {
+      if (!selectEl) return;
+      const options = [`<option value="">${escapeHtml(emptyLabel)}</option>`];
+      values.forEach((value) => {
+        const selected = value === currentValue ? ' selected' : "";
+        options.push(`<option value="${escapeHtml(value)}"${selected}>${escapeHtml(value)}</option>`);
+      });
+      selectEl.innerHTML = options.join("");
+      if (currentValue && !values.includes(currentValue)) {
+        selectEl.value = "";
+      }
+    };
+
+    updateSelectOptions(
+      infoPendingFilterReceiverEl,
+      infoPendingState.receiverOptions,
+      "Все принимающие",
+      String(infoPendingState.filters.receiver ?? "")
+    );
+    updateSelectOptions(
+      infoPendingFilterSenderEl,
+      infoPendingState.senderOptions,
+      "Все передающие",
+      String(infoPendingState.filters.sender ?? "")
+    );
+  };
+
   const applyInfoPendingFiltersAndSort = () => {
     const receiverFilter = normalizePersonName(infoPendingState.filters.receiver);
     const senderFilter = normalizePersonName(infoPendingState.filters.sender);
@@ -11834,6 +11882,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     infoPendingState.filteredItems = [];
     infoPendingState.toolMap = new Map();
     infoPendingState.fineConfig = settingsData?.organization?.fines?.lateReply ?? {};
+    infoPendingState.pendingDateKeys = new Set();
+    infoPendingState.receiverOptions = [];
+    infoPendingState.senderOptions = [];
     if (!orgFolder) {
       if (infoPendingSubtitleEl) infoPendingSubtitleEl.textContent = "Организация не найдена.";
       renderInfoPendingList();
@@ -11872,6 +11923,15 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           fineAmount: resolveLateReplyFine(entry.move, infoPendingState.fineConfig),
         };
       });
+
+    infoPendingState.pendingDateKeys = new Set(
+      infoPendingState.allItems
+        .map(({ move }) => parseDateValue(move?.["Дата перемещения"]))
+        .filter((date) => date instanceof Date && !Number.isNaN(date.getTime()))
+        .map((date) => toIsoDate(date))
+    );
+    buildInfoPendingResponsibleOptions();
+    updateInfoPendingResponsibleFilters();
 
     if (infoPendingState.filters.dateFrom) {
       const start = parseIsoDateValue(infoPendingState.filters.dateFrom);
@@ -11979,6 +12039,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const ts = dayDate.getTime();
       button.dataset.date = iso;
       button.textContent = String(dayDate.getDate());
+      if (!infoPendingState.pendingDateKeys.has(iso)) {
+        button.classList.add("is-no-pending");
+      }
       if (Number.isFinite(startTs) && ts === startTs) button.classList.add("is-selected");
       if (Number.isFinite(endTs) && ts === endTs) button.classList.add("is-selected");
       if (Number.isFinite(startTs) && Number.isFinite(endTs) && ts >= startTs && ts <= endTs) {
@@ -12629,11 +12692,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   });
   infoPendingSortEl?.addEventListener("change", handleInfoPendingFiltersChanged);
   infoPendingFilterReceiverEl?.addEventListener(
-    "input",
+    "change",
     handleInfoPendingFiltersChanged
   );
   infoPendingFilterSenderEl?.addEventListener(
-    "input",
+    "change",
     handleInfoPendingFiltersChanged
   );
   infoPendingFilterDateFromEl?.addEventListener(

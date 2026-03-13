@@ -3472,7 +3472,7 @@ export function renderRole(user) {
               <div class="info-pending-controls">
                 <label class="form-field">
                   <span>Сортировка</span>
-                  <select class="form-input" data-info-pending-sort>
+                  <select class="form-input info-pending-sort-select" data-info-pending-sort>
                     <option value="old">Сначала старые</option>
                     <option value="new">Сначала новые</option>
                     <option value="receiver">По принимающему</option>
@@ -3491,12 +3491,16 @@ export function renderRole(user) {
                   </button>
                   <div class="info-pending-filters__panel is-hidden" data-info-pending-filters-panel>
                     <label class="form-field">
-                      <span>Фильтр: принимающий</span>
-                      <input class="form-input" type="search" placeholder="Введите ФИО" data-info-pending-filter-receiver />
+                      <span>Принимающий</span>
+                      <select class="form-input" data-info-pending-filter-receiver>
+                        <option value="">Все принимающие</option>
+                      </select>
                     </label>
                     <label class="form-field">
-                      <span>Фильтр: передающий</span>
-                      <input class="form-input" type="search" placeholder="Введите ФИО" data-info-pending-filter-sender />
+                      <span>Передающий</span>
+                      <select class="form-input" data-info-pending-filter-sender>
+                        <option value="">Все передающие</option>
+                      </select>
                     </label>
                     <div class="form-field">
                       <span>Дата перемещения</span>

@@ -5327,6 +5327,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const infoPendingListEl = contentEl.querySelector("[data-info-pending-list]");
   const infoPendingEmptyEl = contentEl.querySelector("[data-info-pending-empty]");
   const infoPendingSortEl = contentEl.querySelector("[data-info-pending-sort]");
+  const infoPendingControlsContainerEl = contentEl.querySelector(".info-pending-controls");
   const infoPendingFilterReceiverEl = contentEl.querySelector(
     "[data-info-pending-filter-receiver]"
   );
@@ -5338,6 +5339,33 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   );
   const infoPendingFilterDateToEl = contentEl.querySelector(
     "[data-info-pending-filter-date-to]"
+  );
+  const infoPendingFiltersToggleEl = contentEl.querySelector(
+    "[data-info-pending-filters-toggle]"
+  );
+  const infoPendingFiltersPanelEl = contentEl.querySelector(
+    "[data-info-pending-filters-panel]"
+  );
+  const infoPendingDateTriggerEl = contentEl.querySelector(
+    "[data-info-pending-date-trigger]"
+  );
+  const infoPendingCalendarEl = contentEl.querySelector(
+    "[data-info-pending-calendar]"
+  );
+  const infoPendingCalendarPrevEl = contentEl.querySelector(
+    "[data-info-pending-calendar-prev]"
+  );
+  const infoPendingCalendarNextEl = contentEl.querySelector(
+    "[data-info-pending-calendar-next]"
+  );
+  const infoPendingCalendarMonthLabelEl = contentEl.querySelector(
+    "[data-info-pending-calendar-month-label]"
+  );
+  const infoPendingCalendarDaysEl = contentEl.querySelector(
+    "[data-info-pending-calendar-days]"
+  );
+  const infoPendingCalendarSelectedRangeEl = contentEl.querySelector(
+    "[data-info-pending-calendar-selected-range]"
   );
   const toolsCancelMoveModalEl = contentEl.querySelector(
     "[data-tools-cancel-move-modal]"
@@ -5832,6 +5860,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       dateFrom: "",
       dateTo: "",
     },
+    visibleMonthDate: new Date(),
+    isFiltersOpen: false,
+    isDatePickerOpen: false,
   };
   const toolsCancelMoveState = {
     move: null,
@@ -11842,14 +11873,21 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         };
       });
 
-    applyInfoPendingFiltersAndSort();
-    renderInfoPendingList();
+    if (infoPendingState.filters.dateFrom) {
+      const start = parseIsoDateValue(infoPendingState.filters.dateFrom);
+      if (start instanceof Date && !Number.isNaN(start.getTime())) {
+        infoPendingState.visibleMonthDate = new Date(start.getFullYear(), start.getMonth(), 1);
+      }
+    }
+    handleInfoPendingFiltersChanged();
   };
 
   const openInfoPendingModal = async () => {
     if (!infoPendingModalEl) return;
     infoPendingModalEl.classList.remove("is-hidden");
     document.body.style.overflow = "hidden";
+    setInfoPendingFiltersOpen(false);
+    setInfoPendingDatePickerOpen(false);
     await loadInfoPendingList();
   };
 
@@ -11857,6 +11895,128 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (!infoPendingModalEl) return;
     infoPendingModalEl.classList.add("is-hidden");
     document.body.style.overflow = "";
+    setInfoPendingFiltersOpen(false);
+    setInfoPendingDatePickerOpen(false);
+  };
+
+  const formatInfoPendingDateLabel = (value) => {
+    const parsed = parseIsoDateValue(value);
+    if (!(parsed instanceof Date) || Number.isNaN(parsed.getTime())) return "";
+    return parsed.toLocaleDateString("ru-RU");
+  };
+
+  const getInfoPendingDateRange = () => {
+    const start = parseIsoDateValue(infoPendingState.filters.dateFrom);
+    const endRaw = parseIsoDateValue(infoPendingState.filters.dateTo);
+    if (!(start instanceof Date) || Number.isNaN(start.getTime())) {
+      return { start: null, end: null };
+    }
+    if (!(endRaw instanceof Date) || Number.isNaN(endRaw.getTime())) {
+      return { start, end: start };
+    }
+    return start.getTime() <= endRaw.getTime()
+      ? { start, end: endRaw }
+      : { start: endRaw, end: start };
+  };
+
+  const updateInfoPendingDateTrigger = () => {
+    if (!infoPendingDateTriggerEl) return;
+    const { start, end } = getInfoPendingDateRange();
+    if (!start && !end) {
+      infoPendingDateTriggerEl.textContent = "Выберите дату";
+      return;
+    }
+    const startLabel = formatInfoPendingDateLabel(start);
+    const endLabel = formatInfoPendingDateLabel(end);
+    infoPendingDateTriggerEl.textContent =
+      startLabel && endLabel && startLabel !== endLabel
+        ? `${startLabel} — ${endLabel}`
+        : startLabel || endLabel || "Выберите дату";
+  };
+
+  const updateInfoPendingCalendarHint = () => {
+    if (!infoPendingCalendarSelectedRangeEl) return;
+    const { start, end } = getInfoPendingDateRange();
+    if (!start && !end) {
+      infoPendingCalendarSelectedRangeEl.textContent = "Выберите одну дату или диапазон";
+      return;
+    }
+    const startLabel = formatInfoPendingDateLabel(start);
+    const endLabel = formatInfoPendingDateLabel(end);
+    infoPendingCalendarSelectedRangeEl.textContent =
+      startLabel && endLabel && startLabel !== endLabel
+        ? `Период: ${startLabel} — ${endLabel}`
+        : `Дата: ${startLabel || endLabel}`;
+  };
+
+  const renderInfoPendingCalendar = () => {
+    if (!infoPendingCalendarDaysEl || !infoPendingCalendarMonthLabelEl) return;
+    const monthDate = new Date(
+      infoPendingState.visibleMonthDate.getFullYear(),
+      infoPendingState.visibleMonthDate.getMonth(),
+      1
+    );
+    infoPendingCalendarMonthLabelEl.textContent = monthDate.toLocaleDateString("ru-RU", {
+      month: "long",
+      year: "numeric",
+    });
+    const { start, end } = getInfoPendingDateRange();
+    const startTs = start instanceof Date ? start.getTime() : Number.NaN;
+    const endTs = end instanceof Date ? end.getTime() : Number.NaN;
+
+    infoPendingCalendarDaysEl.innerHTML = "";
+    buildMonthMatrix(monthDate).forEach((dayDate) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "download-moves-calendar__day";
+      if (!dayDate) {
+        button.classList.add("is-empty");
+        button.tabIndex = -1;
+        infoPendingCalendarDaysEl.append(button);
+        return;
+      }
+      const iso = toIsoDate(dayDate);
+      const ts = dayDate.getTime();
+      button.dataset.date = iso;
+      button.textContent = String(dayDate.getDate());
+      if (Number.isFinite(startTs) && ts === startTs) button.classList.add("is-selected");
+      if (Number.isFinite(endTs) && ts === endTs) button.classList.add("is-selected");
+      if (Number.isFinite(startTs) && Number.isFinite(endTs) && ts >= startTs && ts <= endTs) {
+        button.classList.add("is-in-range");
+      }
+      infoPendingCalendarDaysEl.append(button);
+    });
+    updateInfoPendingCalendarHint();
+  };
+
+  const setInfoPendingDatePickerOpen = (isOpen) => {
+    infoPendingState.isDatePickerOpen = Boolean(isOpen);
+    infoPendingCalendarEl?.classList.toggle("is-hidden", !infoPendingState.isDatePickerOpen);
+    if (infoPendingState.isDatePickerOpen) {
+      renderInfoPendingCalendar();
+    }
+  };
+
+  const setInfoPendingFiltersOpen = (isOpen) => {
+    infoPendingState.isFiltersOpen = Boolean(isOpen);
+    infoPendingFiltersPanelEl?.classList.toggle("is-hidden", !infoPendingState.isFiltersOpen);
+    infoPendingFiltersToggleEl?.setAttribute("aria-expanded", String(infoPendingState.isFiltersOpen));
+    if (!infoPendingState.isFiltersOpen) {
+      setInfoPendingDatePickerOpen(false);
+    }
+  };
+
+  const handleInfoPendingDateSelect = (isoDate) => {
+    const currentStart = String(infoPendingFilterDateFromEl?.value ?? "").trim();
+    const currentEnd = String(infoPendingFilterDateToEl?.value ?? "").trim();
+    if (!currentStart || (currentStart && currentEnd)) {
+      if (infoPendingFilterDateFromEl) infoPendingFilterDateFromEl.value = isoDate;
+      if (infoPendingFilterDateToEl) infoPendingFilterDateToEl.value = "";
+    } else {
+      if (infoPendingFilterDateToEl) infoPendingFilterDateToEl.value = isoDate;
+    }
+    handleInfoPendingFiltersChanged();
+    setInfoPendingDatePickerOpen(true);
   };
 
   const handleInfoPendingFiltersChanged = () => {
@@ -11873,6 +12033,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     infoPendingState.filters.dateTo = String(
       infoPendingFilterDateToEl?.value ?? ""
     ).trim();
+    updateInfoPendingDateTrigger();
     applyInfoPendingFiltersAndSort();
     renderInfoPendingList();
   };
@@ -12483,6 +12644,47 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     "change",
     handleInfoPendingFiltersChanged
   );
+  infoPendingFiltersToggleEl?.addEventListener("click", (event) => {
+    event.stopPropagation();
+    setInfoPendingFiltersOpen(!infoPendingState.isFiltersOpen);
+  });
+  infoPendingFiltersPanelEl?.addEventListener("click", (event) => {
+    event.stopPropagation();
+  });
+  infoPendingDateTriggerEl?.addEventListener("click", (event) => {
+    event.stopPropagation();
+    setInfoPendingDatePickerOpen(!infoPendingState.isDatePickerOpen);
+  });
+  infoPendingCalendarPrevEl?.addEventListener("click", () => {
+    infoPendingState.visibleMonthDate = new Date(
+      infoPendingState.visibleMonthDate.getFullYear(),
+      infoPendingState.visibleMonthDate.getMonth() - 1,
+      1
+    );
+    renderInfoPendingCalendar();
+  });
+  infoPendingCalendarNextEl?.addEventListener("click", () => {
+    infoPendingState.visibleMonthDate = new Date(
+      infoPendingState.visibleMonthDate.getFullYear(),
+      infoPendingState.visibleMonthDate.getMonth() + 1,
+      1
+    );
+    renderInfoPendingCalendar();
+  });
+  infoPendingCalendarDaysEl?.addEventListener("click", (event) => {
+    const target = event.target instanceof HTMLElement ? event.target : null;
+    const button = target?.closest("button[data-date]");
+    const isoDate = String(button?.dataset?.date ?? "").trim();
+    if (!isoDate) return;
+    handleInfoPendingDateSelect(isoDate);
+  });
+  document.addEventListener("click", (event) => {
+    const target = event.target instanceof Node ? event.target : null;
+    if (!target) return;
+    if (infoPendingModalEl?.classList.contains("is-hidden")) return;
+    if (infoPendingControlsContainerEl?.contains(target)) return;
+    setInfoPendingFiltersOpen(false);
+  });
 
   if (toolsSearchInput) {
     toolsSearchInput.addEventListener("input", (event) => {

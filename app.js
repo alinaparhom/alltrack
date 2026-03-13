@@ -10994,6 +10994,55 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     await saveJson(finesPath, finesPayload, { user });
   };
 
+  const registerNoPhotoFineForTool = async (tool, amount) => {
+    const orgFolder = context.orgFolderName ?? "";
+    const fineAmount = normalizeCostValue(amount);
+    if (!orgFolder || !fineAmount) return;
+
+    const finedUser = String(tool?.["Ответственный"] ?? "").trim();
+    if (!finedUser) return;
+
+    const toolNumber = String(tool?.["Номер"] ?? "").trim();
+    const accountingNumber = String(tool?.["Бух.номер"] ?? "").trim();
+    const identifier = toolNumber || accountingNumber || "без номера";
+    const fineDate = new Date().toISOString().slice(0, 10);
+    const finesPath = `./${orgFolder}/Штрафы.json`;
+
+    let rawFines = {};
+    try {
+      rawFines = await loadJson(finesPath);
+    } catch (error) {
+      rawFines = {};
+    }
+
+    const summaryUpdates = new Map([
+      [finedUser, new Map([["Нет фото", fineAmount]])],
+    ]);
+    const finesPayload = applyMoveFinesSummaryUpdates(rawFines, summaryUpdates);
+    const currentFineList = Array.isArray(finesPayload?.fines)
+      ? finesPayload.fines
+      : [];
+    const nextFineList = [
+      ...currentFineList,
+      {
+        Дата: fineDate,
+        Ответственный: finedUser,
+        Сумма: fineAmount,
+        Причина: `Зафиксирован штраф за отсутствие фото инструмента №${identifier}`,
+        "Тип штрафа": "Нет фото",
+      },
+    ];
+
+    await saveJson(
+      finesPath,
+      {
+        ...finesPayload,
+        fines: nextFineList,
+      },
+      { user }
+    );
+  };
+
 
   const openToolsCancelMoveModal = async (tool) => {
     if (!toolsCancelMoveModalEl) return;
@@ -12986,9 +13035,17 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
       const current = Number.parseInt(tools[toolIndex]?.["Количество фото"] ?? 0, 10);
       const safeCurrent = Number.isFinite(current) ? current : 0;
+      const currentNoPhotoFine = normalizeCostValue(
+        tools[toolIndex]?.["Текущий штраф за отсутствие фото"]
+      );
+      if (currentNoPhotoFine > 0) {
+        await registerNoPhotoFineForTool(tools[toolIndex], currentNoPhotoFine);
+      }
+
       const updatedTool = {
         ...tools[toolIndex],
         "Количество фото": safeCurrent + 1,
+        "Текущий штраф за отсутствие фото": 0,
       };
       const updatedTools = [...tools];
       updatedTools[toolIndex] = updatedTool;

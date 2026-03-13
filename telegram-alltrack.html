@@ -3423,6 +3423,29 @@
         outline-offset: 2px;
       }
 
+      .info-hub-modal__header--compact {
+        padding-top: calc(36px + env(safe-area-inset-top));
+      }
+
+      .info-pending-list-modal__panel {
+        max-width: 980px;
+      }
+
+      .info-pending-list-modal__body {
+        gap: 12px;
+      }
+
+      .info-pending-controls {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+        padding: 2px;
+      }
+
+      .info-pending-controls .form-field {
+        margin: 0;
+      }
+
       .download-responsible {
         margin-top: 10px;
         display: grid;
@@ -9293,6 +9316,10 @@
 
       @media (max-width: 640px) {
         .info-hub-modal__grid {
+          grid-template-columns: 1fr;
+        }
+
+        .info-pending-controls {
           grid-template-columns: 1fr;
         }
 

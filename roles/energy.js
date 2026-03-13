@@ -3403,10 +3403,9 @@ export function renderRole(user) {
             aria-modal="true"
             aria-label="Раздел информации"
           >
-            <div class="settings-modal__header info-hub-modal__header">
+            <div class="settings-modal__header info-hub-modal__header info-hub-modal__header--compact">
               <div class="settings-modal__title">
                 <h2>Информация</h2>
-                <p>Выберите нужный раздел</p>
               </div>
               <button
                 class="button-icon"
@@ -3443,6 +3442,63 @@ export function renderRole(user) {
                   <span class="info-hub-option__icon" aria-hidden="true">💸</span>
                   <span class="info-hub-option__text">Штрафы</span>
                 </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="settings-modal info-pending-list-modal is-hidden" data-info-pending-modal>
+          <div class="settings-modal__backdrop" data-info-pending-backdrop></div>
+          <div
+            class="settings-modal__panel tools-modal__panel info-pending-list-modal__panel"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Список на принятии"
+          >
+            <div class="settings-modal__header tools-modal__header">
+              <div class="settings-modal__title">
+                <h2>Список на принятии</h2>
+                <p data-info-pending-subtitle>Загружаем список...</p>
+              </div>
+              <button
+                class="button-icon"
+                type="button"
+                data-info-pending-close
+                aria-label="Закрыть список на принятии"
+              >
+                <span class="button-icon-emoji" aria-hidden="true">✕</span>
+              </button>
+            </div>
+            <div class="settings-modal__body tools-modal__body info-pending-list-modal__body">
+              <div class="info-pending-controls">
+                <label class="form-field">
+                  <span>Сортировка</span>
+                  <select class="form-input" data-info-pending-sort>
+                    <option value="old">Сначала старые</option>
+                    <option value="new">Сначала новые</option>
+                    <option value="receiver">По принимающему</option>
+                    <option value="sender">По передающему</option>
+                  </select>
+                </label>
+                <label class="form-field">
+                  <span>Фильтр: принимающий</span>
+                  <input class="form-input" type="search" placeholder="Введите ФИО" data-info-pending-filter-receiver />
+                </label>
+                <label class="form-field">
+                  <span>Фильтр: передающий</span>
+                  <input class="form-input" type="search" placeholder="Введите ФИО" data-info-pending-filter-sender />
+                </label>
+                <label class="form-field">
+                  <span>Дата перемещения: с</span>
+                  <input class="form-input" type="date" data-info-pending-filter-date-from />
+                </label>
+                <label class="form-field">
+                  <span>Дата перемещения: по</span>
+                  <input class="form-input" type="date" data-info-pending-filter-date-to />
+                </label>
+              </div>
+              <div class="tools-list is-table" data-info-pending-list></div>
+              <div class="tools-empty is-hidden" data-info-pending-empty>
+                Нет перемещений без ответа.
               </div>
             </div>
           </div>

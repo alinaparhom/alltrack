@@ -19446,6 +19446,22 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     return `${surname}_${formattedDate}_${formattedTime}.xlsx`;
   };
 
+  const buildExportSheetTitle = (scope, responsibleName) => {
+    const rawTitle =
+      scope === "all"
+        ? "Все инструменты"
+        : scope === "responsible"
+          ? `Инструменты · ${String(responsibleName ?? "").trim() || "Ответственный"}`
+          : "Мои инструменты";
+
+    const sanitizedTitle = rawTitle
+      .replace(/[\\/?*\[\]:]/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+
+    return (sanitizedTitle || "Выгрузка").slice(0, 31);
+  };
+
   const saveExportFileOnServer = async (orgFolder, fileName, fileBlob) => {
     const contentBase64 = await blobToBase64(fileBlob);
     const response = await fetch(saveEndpoint, {
@@ -19578,12 +19594,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
     const workbook = window.XLSX.utils.book_new();
     const sheet = window.XLSX.utils.aoa_to_sheet([header, ...rows]);
-    const sheetTitle =
-      scope === "all"
-        ? "Все инструменты"
-        : scope === "responsible"
-          ? `Инструменты · ${sourceResponsible || "Ответственный"}`
-          : "Мои инструменты";
+    const sheetTitle = buildExportSheetTitle(scope, sourceResponsible);
     window.XLSX.utils.book_append_sheet(workbook, sheet, sheetTitle);
 
     const exportDate = new Date();

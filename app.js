@@ -4436,12 +4436,25 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const downloadResponsibleSearchEl = contentEl.querySelector("[data-download-responsible-search]");
   const downloadResponsibleListEl = contentEl.querySelector("[data-download-responsible-list]");
   const downloadMovesBoxEl = contentEl.querySelector("[data-download-moves-box]");
+  const downloadMovesCalendarEl = contentEl.querySelector("[data-download-moves-calendar]");
+  const downloadMovesMonthLabelEl = contentEl.querySelector("[data-download-moves-month-label]");
+  const downloadMovesDaysEl = contentEl.querySelector("[data-download-moves-days]");
+  const downloadMovesSelectedRangeEl = contentEl.querySelector(
+    "[data-download-moves-selected-range]"
+  );
+  const downloadMovesPrevMonthButton = contentEl.querySelector(
+    "[data-download-moves-prev-month]"
+  );
+  const downloadMovesNextMonthButton = contentEl.querySelector(
+    "[data-download-moves-next-month]"
+  );
   const downloadMovesStartDateEl = contentEl.querySelector("[data-download-moves-start-date]");
   const downloadMovesEndDateEl = contentEl.querySelector("[data-download-moves-end-date]");
   const downloadMovesGenerateButton = contentEl.querySelector("[data-download-moves-generate]");
   let preparedDownloadUrl = "";
   let responsibleDownloadToolsCache = [];
   let downloadPickerMode = "responsible";
+  let downloadMovesVisibleMonthDate = new Date();
   const objectsModalEl = contentEl.querySelector("[data-energy-objects-modal]");
   const objectsBackdropEl = contentEl.querySelector("[data-energy-objects-backdrop]");
   const objectsCloseButton = contentEl.querySelector("[data-energy-objects-close]");
@@ -19336,6 +19349,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (downloadMovesEndDateEl) {
       downloadMovesEndDateEl.value = "";
     }
+    downloadMovesVisibleMonthDate = new Date();
     if (downloadMovesBoxEl) {
       downloadMovesBoxEl.classList.add("is-hidden");
     }
@@ -19540,6 +19554,130 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     return parsed ? parsed.getTime() : Number.NaN;
   };
 
+  const toIsoDate = (date) => {
+    if (!(date instanceof Date) || Number.isNaN(date.getTime())) return "";
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
+  const formatDateLabel = (value) => {
+    const parsed = parseDateOnly(value);
+    if (!parsed) return "";
+    return parsed.toLocaleDateString("ru-RU");
+  };
+
+  const buildMonthMatrix = (monthDate) => {
+    const year = monthDate.getFullYear();
+    const month = monthDate.getMonth();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const firstWeekDayRaw = new Date(year, month, 1).getDay();
+    const firstWeekDay = firstWeekDayRaw === 0 ? 7 : firstWeekDayRaw;
+    const result = [];
+    for (let i = 1; i < firstWeekDay; i += 1) {
+      result.push(null);
+    }
+    for (let day = 1; day <= daysInMonth; day += 1) {
+      result.push(new Date(year, month, day));
+    }
+    return result;
+  };
+
+  const updateMovesSelectedRangeHint = () => {
+    if (!downloadMovesSelectedRangeEl) return;
+    const start = downloadMovesStartDateEl?.value ?? "";
+    const end = downloadMovesEndDateEl?.value ?? "";
+    if (!start && !end) {
+      downloadMovesSelectedRangeEl.textContent =
+        "Выберите начальную и конечную дату";
+      return;
+    }
+    if (start && !end) {
+      downloadMovesSelectedRangeEl.textContent = `Начало: ${formatDateLabel(start)}. Выберите конечную дату.`;
+      return;
+    }
+    const startTs = toDayTimestamp(start);
+    const endTs = toDayTimestamp(end);
+    if (!Number.isFinite(startTs) || !Number.isFinite(endTs)) {
+      downloadMovesSelectedRangeEl.textContent =
+        "Выберите корректный диапазон дат";
+      return;
+    }
+    const min = startTs <= endTs ? start : end;
+    const max = startTs <= endTs ? end : start;
+    if (min === max) {
+      downloadMovesSelectedRangeEl.textContent = `Выбран 1 день: ${formatDateLabel(min)}`;
+      return;
+    }
+    downloadMovesSelectedRangeEl.textContent = `Период: ${formatDateLabel(min)} — ${formatDateLabel(max)}`;
+  };
+
+  const renderMovesRangeCalendar = () => {
+    if (!downloadMovesCalendarEl || !downloadMovesDaysEl || !downloadMovesMonthLabelEl) {
+      return;
+    }
+    const monthDate = new Date(
+      downloadMovesVisibleMonthDate.getFullYear(),
+      downloadMovesVisibleMonthDate.getMonth(),
+      1
+    );
+    downloadMovesMonthLabelEl.textContent = monthDate.toLocaleDateString("ru-RU", {
+      month: "long",
+      year: "numeric",
+    });
+
+    const startTs = toDayTimestamp(downloadMovesStartDateEl?.value ?? "");
+    const endTsRaw = toDayTimestamp(downloadMovesEndDateEl?.value ?? "");
+    const hasStart = Number.isFinite(startTs);
+    const hasEnd = Number.isFinite(endTsRaw);
+    const rangeStart = hasStart && hasEnd ? Math.min(startTs, endTsRaw) : startTs;
+    const rangeEnd = hasStart && hasEnd ? Math.max(startTs, endTsRaw) : startTs;
+
+    downloadMovesDaysEl.innerHTML = "";
+    buildMonthMatrix(monthDate).forEach((dayDate) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "download-moves-calendar__day";
+      if (!dayDate) {
+        button.classList.add("is-empty");
+        button.tabIndex = -1;
+        downloadMovesDaysEl.append(button);
+        return;
+      }
+      const iso = toIsoDate(dayDate);
+      const ts = dayDate.getTime();
+      button.textContent = String(dayDate.getDate());
+      button.dataset.date = iso;
+      if (hasStart && ts === startTs) {
+        button.classList.add("is-selected");
+      }
+      if (hasEnd && ts === endTsRaw) {
+        button.classList.add("is-selected");
+      }
+      if (hasStart && ts >= rangeStart && ts <= rangeEnd) {
+        button.classList.add("is-in-range");
+      }
+      downloadMovesDaysEl.append(button);
+    });
+
+    updateMovesSelectedRangeHint();
+  };
+
+  const handleMovesDateSelect = (isoDate) => {
+    if (!downloadMovesStartDateEl || !downloadMovesEndDateEl) return;
+    const currentStart = downloadMovesStartDateEl.value;
+    const currentEnd = downloadMovesEndDateEl.value;
+    if (!currentStart || (currentStart && currentEnd)) {
+      downloadMovesStartDateEl.value = isoDate;
+      downloadMovesEndDateEl.value = "";
+      renderMovesRangeCalendar();
+      return;
+    }
+    downloadMovesEndDateEl.value = isoDate;
+    renderMovesRangeCalendar();
+  };
+
   const downloadMovesExcel = async ({ startDate = "", endDate = "" } = {}) => {
     if (!window.XLSX) {
       if (downloadMessageEl) {
@@ -19670,8 +19808,19 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       downloadMovesStartDateEl.value = todayIso;
     }
     if (downloadMovesEndDateEl && !downloadMovesEndDateEl.value) {
-      downloadMovesEndDateEl.value = downloadMovesStartDateEl?.value || todayIso;
+      downloadMovesEndDateEl.value = "";
     }
+    if (downloadMovesStartDateEl?.value) {
+      const startDate = parseDateOnly(downloadMovesStartDateEl.value);
+      if (startDate) {
+        downloadMovesVisibleMonthDate = new Date(
+          startDate.getFullYear(),
+          startDate.getMonth(),
+          1
+        );
+      }
+    }
+    renderMovesRangeCalendar();
   };
 
   const collectResponsibleNamesForDownload = (tools) => {
@@ -20120,6 +20269,32 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       startDate: downloadMovesStartDateEl?.value ?? "",
       endDate: downloadMovesEndDateEl?.value ?? "",
     });
+  });
+
+  downloadMovesDaysEl?.addEventListener("click", (event) => {
+    const dayButton = event.target.closest("[data-date]");
+    if (!dayButton) return;
+    const isoDate = String(dayButton.dataset.date ?? "").trim();
+    if (!isoDate) return;
+    handleMovesDateSelect(isoDate);
+  });
+
+  downloadMovesPrevMonthButton?.addEventListener("click", () => {
+    downloadMovesVisibleMonthDate = new Date(
+      downloadMovesVisibleMonthDate.getFullYear(),
+      downloadMovesVisibleMonthDate.getMonth() - 1,
+      1
+    );
+    renderMovesRangeCalendar();
+  });
+
+  downloadMovesNextMonthButton?.addEventListener("click", () => {
+    downloadMovesVisibleMonthDate = new Date(
+      downloadMovesVisibleMonthDate.getFullYear(),
+      downloadMovesVisibleMonthDate.getMonth() + 1,
+      1
+    );
+    renderMovesRangeCalendar();
   });
 
   feedbackFormEl?.addEventListener("submit", async (event) => {

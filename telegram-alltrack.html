@@ -3392,6 +3392,84 @@
         text-align: center;
       }
 
+      .download-moves-calendar {
+        border-radius: 16px;
+        border: 1px solid rgba(148, 163, 184, 0.24);
+        background: rgba(255, 255, 255, 0.72);
+        backdrop-filter: blur(8px);
+        padding: 12px;
+        display: grid;
+        gap: 10px;
+      }
+
+      .download-moves-calendar__header {
+        display: grid;
+        grid-template-columns: 36px 1fr 36px;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .download-moves-calendar__month {
+        text-align: center;
+        font-weight: 700;
+        font-size: var(--text-sm);
+      }
+
+      .download-moves-calendar__nav {
+        min-height: 36px;
+        border: 1px solid rgba(59, 125, 255, 0.2);
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.88);
+        color: var(--accent);
+        font-size: 16px;
+        font-weight: 700;
+      }
+
+      .download-moves-calendar__weekdays,
+      .download-moves-calendar__days {
+        display: grid;
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+        gap: 6px;
+      }
+
+      .download-moves-calendar__weekdays span {
+        text-align: center;
+        font-size: 11px;
+        color: var(--muted);
+      }
+
+      .download-moves-calendar__day {
+        min-height: 38px;
+        border: 1px solid rgba(148, 163, 184, 0.18);
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.9);
+        color: var(--text);
+        font-size: 13px;
+        font-weight: 600;
+      }
+
+      .download-moves-calendar__day.is-empty {
+        visibility: hidden;
+        pointer-events: none;
+      }
+
+      .download-moves-calendar__day.is-in-range {
+        background: rgba(59, 125, 255, 0.2);
+        border-color: rgba(59, 125, 255, 0.2);
+      }
+
+      .download-moves-calendar__day.is-selected {
+        background: linear-gradient(135deg, #5d9bff, #3b7dff);
+        color: #fff;
+        border-color: rgba(59, 125, 255, 0.7);
+      }
+
+      .download-moves-calendar__selected {
+        font-size: 12px;
+        color: var(--muted);
+        text-align: center;
+      }
+
       .camera-modal__body {
         padding: 16px 18px 6px;
         gap: 12px;

@@ -20960,6 +20960,15 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (!button) return;
     const option = button.dataset.infoPickerOption;
     closeInfoPickerModal();
+    if (option === "instructions") {
+      window.alert(
+        "Инструкции:
+1) Для истории инструмента откройте \"История перемещений\".
+2) Для текущих заявок выберите \"Ремонт\".
+3) Для штрафов перейдите в \"Штрафы\"."
+      );
+      return;
+    }
     if (option === "pending") {
       openPendingMovesModal();
       return;

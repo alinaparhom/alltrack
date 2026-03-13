@@ -4831,10 +4831,12 @@
 
       .tools-info-modal__footer {
         width: 100%;
+        padding: 0 18px calc(12px + env(safe-area-inset-bottom));
       }
 
       .tools-info-modal__footer [data-tools-info-cancel-move] {
         width: 100%;
+        box-sizing: border-box;
         justify-content: center;
         margin: 0;
         border-color: rgba(234, 179, 8, 0.5);

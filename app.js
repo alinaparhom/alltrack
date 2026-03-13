@@ -19450,6 +19450,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const rawTitle =
       scope === "all"
         ? "Все инструменты"
+        : scope === "no-photo"
+          ? "Инструменты без фото"
         : scope === "responsible"
           ? `Инструменты · ${String(responsibleName ?? "").trim() || "Ответственный"}`
           : "Мои инструменты";
@@ -19542,6 +19544,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         if (scope === "all") {
           return true;
         }
+        if (scope === "no-photo") {
+          const photoCount = Number.parseInt(tool?.["Количество фото"] ?? 0, 10);
+          return !(Number.isFinite(photoCount) && photoCount > 0);
+        }
         if (scope === "responsible") {
           return normalizePersonName(tool?.["Ответственный"] ?? "") === userNameKey;
         }
@@ -19558,6 +19564,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         downloadMessageEl.textContent =
           scope === "all"
             ? "В базе пока нет инструментов для выгрузки."
+            : scope === "no-photo"
+              ? "В базе пока нет инструментов без фото."
             : scope === "responsible"
               ? "У выбранного ответственного нет инструментов для выгрузки."
               : "У вас пока нет инструментов для выгрузки.";
@@ -19601,6 +19609,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const exportOwnerName =
       scope === "all"
         ? "Все инструменты"
+        : scope === "no-photo"
+          ? "Без фото"
         : scope === "responsible"
           ? sourceResponsible || "Ответственный"
           : user?.full_name;
@@ -19765,8 +19775,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       return;
     }
     if (option === "no-photo") {
-      closeDownloadModal();
-      openNoPhotoModal();
+      toggleResponsibleDownloadPicker(false);
+      downloadToolsExcel({ scope: "no-photo" });
       return;
     }
     if (option === "moves") {

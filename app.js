@@ -5871,6 +5871,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     files: [],
     index: 0,
     touchStartX: null,
+    pointers: new Map(),
+    basePinchDistance: null,
+    scale: 1,
   };
   const infoPendingSortModes = [
     { value: "old", label: "Сначала старые" },
@@ -5904,16 +5907,16 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     <div class="settings-modal__backdrop" data-pending-photo-viewer-backdrop></div>
     <section class="settings-modal__panel pending-photo-viewer__panel" role="dialog" aria-modal="true" aria-label="Фото инструмента">
       <header class="settings-modal__header pending-photo-viewer__header">
-        <div>
+        <div class="pending-photo-viewer__title-row">
           <h2>Фото инструмента</h2>
           <p data-pending-photo-viewer-counter>1 / 1</p>
         </div>
         <button type="button" class="icon-button" data-pending-photo-viewer-close aria-label="Закрыть">✕</button>
       </header>
       <div class="settings-modal__body pending-photo-viewer__body">
-        <button type="button" class="pending-photo-viewer__nav" data-pending-photo-viewer-prev aria-label="Предыдущее фото">←</button>
-        <img class="pending-photo-viewer__image" data-pending-photo-viewer-image alt="Фото инструмента" />
-        <button type="button" class="pending-photo-viewer__nav" data-pending-photo-viewer-next aria-label="Следующее фото">→</button>
+        <div class="pending-photo-viewer__image-wrap" data-pending-photo-viewer-image-wrap>
+          <img class="pending-photo-viewer__image" data-pending-photo-viewer-image alt="Фото инструмента" />
+        </div>
       </div>
     </section>
   `;
@@ -5924,11 +5927,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const pendingPhotoViewerCounterEl = pendingMovePhotoViewerEl.querySelector(
     "[data-pending-photo-viewer-counter]"
   );
-  const pendingPhotoViewerPrevButton = pendingMovePhotoViewerEl.querySelector(
-    "[data-pending-photo-viewer-prev]"
-  );
-  const pendingPhotoViewerNextButton = pendingMovePhotoViewerEl.querySelector(
-    "[data-pending-photo-viewer-next]"
+  const pendingPhotoViewerImageWrapEl = pendingMovePhotoViewerEl.querySelector(
+    "[data-pending-photo-viewer-image-wrap]"
   );
   const pendingPhotoViewerCloseButton = pendingMovePhotoViewerEl.querySelector(
     "[data-pending-photo-viewer-close]"
@@ -11592,9 +11592,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     pendingMovePhotoViewerState.files = [];
     pendingMovePhotoViewerState.index = 0;
     pendingMovePhotoViewerState.touchStartX = null;
+    pendingMovePhotoViewerState.pointers.clear();
+    pendingMovePhotoViewerState.basePinchDistance = null;
+    pendingMovePhotoViewerState.scale = 1;
     if (pendingPhotoViewerImageEl instanceof HTMLImageElement) {
       pendingPhotoViewerImageEl.removeAttribute("src");
       pendingPhotoViewerImageEl.alt = "Фото инструмента";
+      pendingPhotoViewerImageEl.style.transform = "scale(1)";
     }
     if (pendingPhotoViewerCounterEl instanceof HTMLElement) {
       pendingPhotoViewerCounterEl.textContent = "1 / 1";
@@ -11624,18 +11628,23 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (pendingPhotoViewerCounterEl instanceof HTMLElement) {
       pendingPhotoViewerCounterEl.textContent = `${pendingMovePhotoViewerState.index + 1} / ${total}`;
     }
-    if (pendingPhotoViewerPrevButton instanceof HTMLButtonElement) {
-      pendingPhotoViewerPrevButton.disabled = total <= 1;
-    }
-    if (pendingPhotoViewerNextButton instanceof HTMLButtonElement) {
-      pendingPhotoViewerNextButton.disabled = total <= 1;
-    }
+    pendingMovePhotoViewerState.scale = 1;
+    pendingMovePhotoViewerState.basePinchDistance = null;
+    pendingMovePhotoViewerState.pointers.clear();
+    pendingPhotoViewerImageEl.style.transform = "scale(1)";
   };
 
   const shiftPendingMovePhotoViewer = (step) => {
     if (!pendingMovePhotoViewerState.files.length) return;
     pendingMovePhotoViewerState.index += step;
     renderPendingMovePhotoViewer();
+  };
+
+  const setPendingPhotoViewerScale = (nextScale) => {
+    if (!(pendingPhotoViewerImageEl instanceof HTMLImageElement)) return;
+    const normalized = Math.min(4, Math.max(1, Number(nextScale) || 1));
+    pendingMovePhotoViewerState.scale = normalized;
+    pendingPhotoViewerImageEl.style.transform = `scale(${normalized})`;
   };
 
   const openPendingMovePhotoViewer = async ({ tool, fallbackNumber, title }) => {
@@ -12930,17 +12939,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   });
   pendingPhotoViewerBackdropEl?.addEventListener("click", closePendingMovePhotoViewer);
   pendingPhotoViewerCloseButton?.addEventListener("click", closePendingMovePhotoViewer);
-  pendingPhotoViewerPrevButton?.addEventListener("click", () => {
-    shiftPendingMovePhotoViewer(-1);
-  });
-  pendingPhotoViewerNextButton?.addEventListener("click", () => {
-    shiftPendingMovePhotoViewer(1);
-  });
   pendingPhotoViewerImageEl?.addEventListener("touchstart", (event) => {
+    if (pendingMovePhotoViewerState.scale > 1) return;
     const touch = event.touches?.[0];
     pendingMovePhotoViewerState.touchStartX = touch?.clientX ?? null;
   });
   pendingPhotoViewerImageEl?.addEventListener("touchend", (event) => {
+    if (pendingMovePhotoViewerState.scale > 1) return;
     if (pendingMovePhotoViewerState.touchStartX === null) return;
     const touch = event.changedTouches?.[0];
     const endX = touch?.clientX ?? null;
@@ -12949,6 +12954,54 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     pendingMovePhotoViewerState.touchStartX = null;
     if (Math.abs(delta) < 30) return;
     shiftPendingMovePhotoViewer(delta > 0 ? -1 : 1);
+  });
+  pendingPhotoViewerImageWrapEl?.addEventListener("wheel", (event) => {
+    event.preventDefault();
+    const delta = event.deltaY > 0 ? -0.2 : 0.2;
+    setPendingPhotoViewerScale(pendingMovePhotoViewerState.scale + delta);
+  });
+  pendingPhotoViewerImageWrapEl?.addEventListener("pointerdown", (event) => {
+    pendingPhotoViewerImageWrapEl.setPointerCapture(event.pointerId);
+    pendingMovePhotoViewerState.pointers.set(event.pointerId, {
+      x: event.clientX,
+      y: event.clientY,
+    });
+    if (pendingMovePhotoViewerState.pointers.size === 2) {
+      const [first, second] = Array.from(pendingMovePhotoViewerState.pointers.values());
+      pendingMovePhotoViewerState.basePinchDistance = Math.hypot(
+        first.x - second.x,
+        first.y - second.y
+      );
+    }
+  });
+  pendingPhotoViewerImageWrapEl?.addEventListener("pointermove", (event) => {
+    if (!pendingMovePhotoViewerState.pointers.has(event.pointerId)) return;
+    pendingMovePhotoViewerState.pointers.set(event.pointerId, {
+      x: event.clientX,
+      y: event.clientY,
+    });
+    if (pendingMovePhotoViewerState.pointers.size !== 2) return;
+    const [first, second] = Array.from(pendingMovePhotoViewerState.pointers.values());
+    const distance = Math.hypot(first.x - second.x, first.y - second.y);
+    if (!pendingMovePhotoViewerState.basePinchDistance) {
+      pendingMovePhotoViewerState.basePinchDistance = distance;
+      return;
+    }
+    const zoomFactor = distance / pendingMovePhotoViewerState.basePinchDistance;
+    setPendingPhotoViewerScale(pendingMovePhotoViewerState.scale * zoomFactor);
+    pendingMovePhotoViewerState.basePinchDistance = distance;
+  });
+  pendingPhotoViewerImageWrapEl?.addEventListener("pointerup", (event) => {
+    pendingMovePhotoViewerState.pointers.delete(event.pointerId);
+    if (pendingMovePhotoViewerState.pointers.size < 2) {
+      pendingMovePhotoViewerState.basePinchDistance = null;
+    }
+  });
+  pendingPhotoViewerImageWrapEl?.addEventListener("pointercancel", (event) => {
+    pendingMovePhotoViewerState.pointers.delete(event.pointerId);
+    if (pendingMovePhotoViewerState.pointers.size < 2) {
+      pendingMovePhotoViewerState.basePinchDistance = null;
+    }
   });
   pendingMovePhotoViewerEl?.addEventListener("keydown", (event) => {
     if (pendingMovePhotoViewerEl.classList.contains("is-hidden")) return;

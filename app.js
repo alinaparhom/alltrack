@@ -4437,6 +4437,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const downloadResponsibleListEl = contentEl.querySelector("[data-download-responsible-list]");
   let preparedDownloadUrl = "";
   let responsibleDownloadToolsCache = [];
+  let downloadPickerMode = "responsible";
   const objectsModalEl = contentEl.querySelector("[data-energy-objects-modal]");
   const objectsBackdropEl = contentEl.querySelector("[data-energy-objects-backdrop]");
   const objectsCloseButton = contentEl.querySelector("[data-energy-objects-close]");
@@ -19303,12 +19304,19 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
     if (downloadSubtitleEl) {
       downloadSubtitleEl.textContent = isVisible
-        ? "Выберите ответственного для выгрузки"
+        ? downloadPickerMode === "status"
+          ? "Выберите статус для выгрузки"
+          : "Выберите ответственного для выгрузки"
         : "Выберите раздел для выгрузки";
+    }
+    if (downloadResponsibleSearchEl) {
+      downloadResponsibleSearchEl.placeholder =
+        downloadPickerMode === "status" ? "Поиск по статусу" : "Поиск по ФИО";
     }
   };
 
   const resetResponsibleDownloadPicker = () => {
+    downloadPickerMode = "responsible";
     if (downloadResponsibleSearchEl) {
       downloadResponsibleSearchEl.value = "";
     }
@@ -19452,6 +19460,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         ? "Все инструменты"
         : scope === "no-photo"
           ? "Инструменты без фото"
+        : scope === "status"
+          ? `Статус · ${String(responsibleName ?? "").trim() || "Не указан"}`
         : scope === "responsible"
           ? `Инструменты · ${String(responsibleName ?? "").trim() || "Ответственный"}`
           : "Мои инструменты";
@@ -19503,7 +19513,26 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     );
   };
 
-  const downloadToolsExcel = async ({ scope = "my", responsibleName = "" } = {}) => {
+  const collectStatusesForDownload = (tools) => {
+    const unique = new Map();
+    (Array.isArray(tools) ? tools : []).forEach((tool) => {
+      const status = String(tool?.["Статус"] ?? "").trim();
+      const key = status.toLocaleLowerCase("ru");
+      if (!status || !key || unique.has(key)) return;
+      unique.set(key, status);
+    });
+    return Array.from(unique.values()).sort((a, b) =>
+      a.localeCompare(b, "ru", {
+        sensitivity: "base",
+      })
+    );
+  };
+
+  const downloadToolsExcel = async ({
+    scope = "my",
+    responsibleName = "",
+    statusName = "",
+  } = {}) => {
     if (!window.XLSX) {
       if (downloadMessageEl) {
         downloadMessageEl.textContent =
@@ -19524,7 +19553,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const toolsPath = `./${orgFolder}/База с инструментами.json`;
     const sourceResponsible =
       scope === "responsible" ? String(responsibleName ?? "").trim() : user?.full_name ?? "";
+    const sourceStatus = scope === "status" ? String(statusName ?? "").trim() : "";
     const userNameKey = normalizePersonName(sourceResponsible);
+    const statusKey = sourceStatus.toLocaleLowerCase("ru");
 
     let rawTools = [];
     try {
@@ -19551,6 +19582,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         if (scope === "responsible") {
           return normalizePersonName(tool?.["Ответственный"] ?? "") === userNameKey;
         }
+        if (scope === "status") {
+          return String(tool?.["Статус"] ?? "").trim().toLocaleLowerCase("ru") === statusKey;
+        }
         return normalizePersonName(tool?.["Ответственный"] ?? "") === userNameKey;
       })
       .sort((a, b) =>
@@ -19566,6 +19600,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
             ? "В базе пока нет инструментов для выгрузки."
             : scope === "no-photo"
               ? "В базе пока нет инструментов без фото."
+            : scope === "status"
+              ? "По выбранному статусу нет инструментов для выгрузки."
             : scope === "responsible"
               ? "У выбранного ответственного нет инструментов для выгрузки."
               : "У вас пока нет инструментов для выгрузки.";
@@ -19573,42 +19609,73 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       return;
     }
 
-    const includeResponsibleColumn = scope === "all" || scope === "no-photo";
+    const isStatusExport = scope === "status";
+    const includeResponsibleColumn = isStatusExport || scope === "all" || scope === "no-photo";
 
-    const header = [
-      "Номер",
-      "Бух.номер",
-      "Наименование",
-      "Производитель",
-      "Модель",
-      "Стоимость",
-      "Дата покупки",
-      ...(includeResponsibleColumn ? ["Ответственный"] : []),
-      "Объект",
-      "Серийный номер",
-      "Граппа инструментов",
-      "Статус",
-    ];
+    const header = isStatusExport
+      ? [
+          "Номер",
+          "Бух.номер",
+          "Наименование",
+          "Производитель",
+          "Модель",
+          "Стоимость",
+          "Дата покупки",
+          "Объект",
+          "Серийный номер",
+          "Граппа инструментов",
+          "Ответственный",
+        ]
+      : [
+          "Номер",
+          "Бух.номер",
+          "Наименование",
+          "Производитель",
+          "Модель",
+          "Стоимость",
+          "Дата покупки",
+          ...(includeResponsibleColumn ? ["Ответственный"] : []),
+          "Объект",
+          "Серийный номер",
+          "Граппа инструментов",
+          "Статус",
+        ];
     const rows = selectedTools.map((tool) => [
-      String(tool?.["Номер"] ?? "").trim(),
-      String(tool?.["Бух.номер"] ?? "").trim(),
-      String(tool?.["Наименование"] ?? "").trim(),
-      String(tool?.["Производитель"] ?? "").trim(),
-      String(tool?.["Модель"] ?? "").trim(),
-      String(tool?.["Стоимость"] ?? "").trim(),
-      String(tool?.["Дата покупки"] ?? "").trim(),
-      ...(includeResponsibleColumn
-        ? [String(tool?.["Ответственный"] ?? "").trim()]
-        : []),
-      String(tool?.["Объект"] ?? "").trim(),
-      String(tool?.["Серийный номер"] ?? "").trim(),
-      String(tool?.["Граппа инструментов"] ?? "").trim(),
-      String(tool?.["Статус"] ?? "").trim(),
+      ...(isStatusExport
+        ? [
+            String(tool?.["Номер"] ?? "").trim(),
+            String(tool?.["Бух.номер"] ?? "").trim(),
+            String(tool?.["Наименование"] ?? "").trim(),
+            String(tool?.["Производитель"] ?? "").trim(),
+            String(tool?.["Модель"] ?? "").trim(),
+            String(tool?.["Стоимость"] ?? "").trim(),
+            String(tool?.["Дата покупки"] ?? "").trim(),
+            String(tool?.["Объект"] ?? "").trim(),
+            String(tool?.["Серийный номер"] ?? "").trim(),
+            String(tool?.["Граппа инструментов"] ?? "").trim(),
+            String(tool?.["Ответственный"] ?? "").trim(),
+          ]
+        : [
+            String(tool?.["Номер"] ?? "").trim(),
+            String(tool?.["Бух.номер"] ?? "").trim(),
+            String(tool?.["Наименование"] ?? "").trim(),
+            String(tool?.["Производитель"] ?? "").trim(),
+            String(tool?.["Модель"] ?? "").trim(),
+            String(tool?.["Стоимость"] ?? "").trim(),
+            String(tool?.["Дата покупки"] ?? "").trim(),
+            ...(includeResponsibleColumn
+              ? [String(tool?.["Ответственный"] ?? "").trim()]
+              : []),
+            String(tool?.["Объект"] ?? "").trim(),
+            String(tool?.["Серийный номер"] ?? "").trim(),
+            String(tool?.["Граппа инструментов"] ?? "").trim(),
+            String(tool?.["Статус"] ?? "").trim(),
+          ]),
     ]);
 
     const workbook = window.XLSX.utils.book_new();
     const sheet = window.XLSX.utils.aoa_to_sheet([header, ...rows]);
-    const sheetTitle = buildExportSheetTitle(scope, sourceResponsible);
+    const sheetTitle = buildExportSheetTitle(scope, scope === "status" ? sourceStatus : sourceResponsible);
     window.XLSX.utils.book_append_sheet(workbook, sheet, sheetTitle);
 
     const exportDate = new Date();
@@ -19617,6 +19684,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         ? "Все инструменты"
         : scope === "no-photo"
           ? "Без фото"
+        : scope === "status"
+          ? sourceStatus || "Статус"
         : scope === "responsible"
           ? sourceResponsible || "Ответственный"
           : user?.full_name;
@@ -19702,6 +19771,37 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     });
   };
 
+  const renderStatusDownloadOptions = (allTools, query = "") => {
+    if (!downloadResponsibleListEl) return;
+    downloadResponsibleListEl.innerHTML = "";
+    const normalizedQuery = String(query ?? "").trim().toLocaleLowerCase("ru");
+    const statuses = collectStatusesForDownload(allTools);
+    const filtered = !normalizedQuery
+      ? statuses
+      : statuses.filter((status) => status.toLocaleLowerCase("ru").includes(normalizedQuery));
+
+    if (!filtered.length) {
+      const empty = document.createElement("div");
+      empty.className = "download-responsible__empty";
+      empty.textContent = statuses.length
+        ? "Ничего не найдено. Измените запрос."
+        : "В базе пока нет статусов.";
+      downloadResponsibleListEl.appendChild(empty);
+      return;
+    }
+
+    filtered.forEach((status) => {
+      const optionButton = document.createElement("button");
+      optionButton.type = "button";
+      optionButton.className = "download-responsible__option";
+      optionButton.textContent = status;
+      optionButton.addEventListener("click", () => {
+        void downloadToolsExcel({ scope: "status", statusName: status });
+      });
+      downloadResponsibleListEl.appendChild(optionButton);
+    });
+  };
+
   const openResponsibleDownloadPicker = async () => {
     if (!downloadResponsibleBoxEl || !downloadResponsibleListEl) return;
     if (!context.orgFolderName) {
@@ -19725,8 +19825,38 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
 
     responsibleDownloadToolsCache = rawTools;
+    downloadPickerMode = "responsible";
     toggleResponsibleDownloadPicker(true);
     renderResponsibleDownloadOptions(rawTools, downloadResponsibleSearchEl?.value ?? "");
+    downloadResponsibleSearchEl?.focus();
+  };
+
+  const openStatusDownloadPicker = async () => {
+    if (!downloadResponsibleBoxEl || !downloadResponsibleListEl) return;
+    if (!context.orgFolderName) {
+      if (downloadMessageEl) {
+        downloadMessageEl.textContent = "Не удалось определить организацию пользователя.";
+      }
+      return;
+    }
+
+    const toolsPath = `./${context.orgFolderName}/База с инструментами.json`;
+    let rawTools = [];
+    try {
+      const raw = await loadJson(toolsPath);
+      rawTools = Array.isArray(raw) ? raw : Array.isArray(raw?.tools) ? raw.tools : [];
+    } catch (error) {
+      console.warn("Не удалось загрузить базу инструментов для выбора статуса.", error);
+      if (downloadMessageEl) {
+        downloadMessageEl.textContent = "Не удалось загрузить список статусов.";
+      }
+      return;
+    }
+
+    responsibleDownloadToolsCache = rawTools;
+    downloadPickerMode = "status";
+    toggleResponsibleDownloadPicker(true);
+    renderStatusDownloadOptions(rawTools, downloadResponsibleSearchEl?.value ?? "");
     downloadResponsibleSearchEl?.focus();
   };
 
@@ -19750,10 +19880,14 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   });
 
   downloadResponsibleSearchEl?.addEventListener("input", () => {
-    renderResponsibleDownloadOptions(
-      responsibleDownloadToolsCache,
-      downloadResponsibleSearchEl?.value ?? ""
-    );
+    if (downloadPickerMode === "status") {
+      renderStatusDownloadOptions(
+        responsibleDownloadToolsCache,
+        downloadResponsibleSearchEl?.value ?? ""
+      );
+      return;
+    }
+    renderResponsibleDownloadOptions(responsibleDownloadToolsCache, downloadResponsibleSearchEl?.value ?? "");
   });
 
   downloadOptionsEl?.addEventListener("click", (event) => {
@@ -19791,8 +19925,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       return;
     }
     if (option === "status") {
-      closeDownloadModal();
-      openSearchModal();
+      if (downloadMessageEl) {
+        downloadMessageEl.textContent = "";
+      }
+      void openStatusDownloadPicker();
       return;
     }
     if (downloadMessageEl) {

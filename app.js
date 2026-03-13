@@ -4696,6 +4696,18 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const toolsInfoMovesEmptyEl = contentEl.querySelector(
     "[data-tools-info-moves-empty]"
   );
+  const toolsInfoFilterNumberEl = contentEl.querySelector(
+    "[data-tools-info-filter-number]"
+  );
+  const toolsInfoFilterAccountingEl = contentEl.querySelector(
+    "[data-tools-info-filter-accounting]"
+  );
+  const toolsInfoFilterMoveDateEl = contentEl.querySelector(
+    "[data-tools-info-filter-move-date]"
+  );
+  const toolsInfoFilterResponseDateEl = contentEl.querySelector(
+    "[data-tools-info-filter-response-date]"
+  );
   const toolsInfoBreakdownsSummaryEl = contentEl.querySelector(
     "[data-tools-info-breakdowns-summary]"
   );
@@ -5907,6 +5919,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     breakdowns: [],
     repairs: [],
     kitExpanded: false,
+    moveFilters: {
+      number: "",
+      accounting: "",
+      moveDate: "",
+      responseDate: "",
+    },
   };
   let pendingMovesDeclineResolver = null;
   const toolsMoveState = {
@@ -9825,19 +9843,55 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     };
   };
 
+  const getToolsInfoMoveFilters = () => ({
+    number: String(toolsInfoFilterNumberEl?.value ?? "").trim(),
+    accounting: String(toolsInfoFilterAccountingEl?.value ?? "").trim(),
+    moveDate: String(toolsInfoFilterMoveDateEl?.value ?? "").trim(),
+    responseDate: String(toolsInfoFilterResponseDateEl?.value ?? "").trim(),
+  });
+
+  const applyToolsInfoMoveFilters = (moves, filters) => {
+    const normalizedNumber = normalizeToolNumberValue(filters.number);
+    const normalizedAccounting = filters.accounting.toLowerCase();
+    return moves.filter((move) => {
+      const moveNumber = normalizeToolNumberValue(move?.["Номер"] ?? "");
+      const moveAccounting = String(move?.["Бух.номер"] ?? "")
+        .trim()
+        .toLowerCase();
+      const moveDate = formatIsoDateValue(parseDateValue(move?.["Дата перемещения"]));
+      const responseDate = formatIsoDateValue(parseDateValue(move?.["Дата ответа"]));
+      if (normalizedNumber && moveNumber !== normalizedNumber) return false;
+      if (normalizedAccounting && !moveAccounting.includes(normalizedAccounting)) {
+        return false;
+      }
+      if (filters.moveDate && moveDate !== filters.moveDate) return false;
+      if (filters.responseDate && responseDate !== filters.responseDate) return false;
+      return true;
+    });
+  };
+
   const renderToolsInfoMoves = () => {
     if (toolsInfoMovesListEl) toolsInfoMovesListEl.innerHTML = "";
-    const moves = toolsInfoState.moves;
+    toolsInfoState.moveFilters = getToolsInfoMoveFilters();
+    const filteredMoves = applyToolsInfoMoveFilters(
+      toolsInfoState.moves,
+      toolsInfoState.moveFilters
+    );
     if (toolsInfoMovesSummaryEl) {
-      toolsInfoMovesSummaryEl.textContent = moves.length
-        ? `Всего перемещений: ${moves.length}`
+      toolsInfoMovesSummaryEl.textContent = toolsInfoState.moves.length
+        ? `Показано: ${filteredMoves.length} из ${toolsInfoState.moves.length}`
         : "Перемещений пока нет.";
     }
     if (toolsInfoMovesEmptyEl) {
-      toolsInfoMovesEmptyEl.classList.toggle("is-hidden", moves.length > 0);
+      toolsInfoMovesEmptyEl.classList.toggle("is-hidden", filteredMoves.length > 0);
+      if (toolsInfoState.moves.length > 0 && filteredMoves.length === 0) {
+        toolsInfoMovesEmptyEl.textContent = "По заданным фильтрам перемещений нет.";
+      } else {
+        toolsInfoMovesEmptyEl.textContent = "Перемещений пока нет.";
+      }
     }
     if (!toolsInfoMovesListEl) return;
-    moves.forEach((move) => {
+    filteredMoves.forEach((move) => {
       const response = String(move?.["Ответ"] ?? "").trim().toLowerCase();
       const isRejected = response === "не принял";
       const item = document.createElement("div");
@@ -9859,10 +9913,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         : "";
       const movedByEnergy = String(move?.["Переместил энергетик"] ?? "").trim();
       grid.append(
+        buildToolsInfoRow("Номер инструмента", move?.["Номер"]),
+        buildToolsInfoRow("Бух.номер", move?.["Бух.номер"]),
         buildToolsInfoRow("Переместил", move?.["Переместил"]),
         buildToolsInfoRow("Старый объект", move?.["Старый объект"]),
         buildToolsInfoRow("Принял", move?.["Принял"]),
-        buildToolsInfoRow("Новый объект", move?.["Новый объект"])
+        buildToolsInfoRow("Новый объект", move?.["Новый объект"]),
+        buildToolsInfoRow("Дата ответа", move?.["Дата ответа"])
       );
       if (previousResponsible) {
         grid.append(
@@ -10094,6 +10151,20 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       toolsInfoSubtitleEl.textContent = `№${toolNumber}`;
     }
     toolsInfoState.kitExpanded = false;
+    [
+      toolsInfoFilterNumberEl,
+      toolsInfoFilterAccountingEl,
+      toolsInfoFilterMoveDateEl,
+      toolsInfoFilterResponseDateEl,
+    ].forEach((input) => {
+      if (input) input.value = "";
+    });
+    toolsInfoState.moveFilters = {
+      number: "",
+      accounting: "",
+      moveDate: "",
+      responseDate: "",
+    };
     renderToolsInfoGrid(tool);
     renderToolsInfoKit(tool);
     if (toolsInfoMovesSummaryEl) {
@@ -12528,6 +12599,15 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       });
     });
   }
+  [
+    toolsInfoFilterNumberEl,
+    toolsInfoFilterAccountingEl,
+    toolsInfoFilterMoveDateEl,
+    toolsInfoFilterResponseDateEl,
+  ].forEach((input) => {
+    input?.addEventListener("input", renderToolsInfoMoves);
+    input?.addEventListener("change", renderToolsInfoMoves);
+  });
   if (toolsEditFormEl) {
     toolsEditFormEl.addEventListener("submit", (event) => {
       event.preventDefault();

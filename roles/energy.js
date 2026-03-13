@@ -3479,22 +3479,60 @@ export function renderRole(user) {
                     <option value="sender">По передающему</option>
                   </select>
                 </label>
-                <label class="form-field">
-                  <span>Фильтр: принимающий</span>
-                  <input class="form-input" type="search" placeholder="Введите ФИО" data-info-pending-filter-receiver />
-                </label>
-                <label class="form-field">
-                  <span>Фильтр: передающий</span>
-                  <input class="form-input" type="search" placeholder="Введите ФИО" data-info-pending-filter-sender />
-                </label>
-                <label class="form-field">
-                  <span>Дата перемещения: с</span>
-                  <input class="form-input" type="date" data-info-pending-filter-date-from />
-                </label>
-                <label class="form-field">
-                  <span>Дата перемещения: по</span>
-                  <input class="form-input" type="date" data-info-pending-filter-date-to />
-                </label>
+                <div class="info-pending-filters">
+                  <button
+                    type="button"
+                    class="button-icon info-pending-filters__toggle"
+                    data-info-pending-filters-toggle
+                    aria-label="Открыть фильтры"
+                    aria-expanded="false"
+                  >
+                    <span class="button-icon-emoji" aria-hidden="true">🔎</span>
+                  </button>
+                  <div class="info-pending-filters__panel is-hidden" data-info-pending-filters-panel>
+                    <label class="form-field">
+                      <span>Фильтр: принимающий</span>
+                      <input class="form-input" type="search" placeholder="Введите ФИО" data-info-pending-filter-receiver />
+                    </label>
+                    <label class="form-field">
+                      <span>Фильтр: передающий</span>
+                      <input class="form-input" type="search" placeholder="Введите ФИО" data-info-pending-filter-sender />
+                    </label>
+                    <div class="form-field">
+                      <span>Дата перемещения</span>
+                      <button
+                        type="button"
+                        class="form-input info-pending-date-trigger"
+                        data-info-pending-date-trigger
+                        aria-label="Выбрать дату перемещения"
+                      >Выберите дату</button>
+                      <input type="hidden" data-info-pending-filter-date-from />
+                      <input type="hidden" data-info-pending-filter-date-to />
+                    </div>
+                    <div class="download-moves-calendar info-pending-calendar" data-info-pending-calendar>
+                      <div class="download-moves-calendar__header">
+                        <button
+                          type="button"
+                          class="download-moves-calendar__nav"
+                          data-info-pending-calendar-prev
+                          aria-label="Предыдущий месяц"
+                        >◀</button>
+                        <div class="download-moves-calendar__month" data-info-pending-calendar-month-label></div>
+                        <button
+                          type="button"
+                          class="download-moves-calendar__nav"
+                          data-info-pending-calendar-next
+                          aria-label="Следующий месяц"
+                        >▶</button>
+                      </div>
+                      <div class="download-moves-calendar__weekdays" aria-hidden="true">
+                        <span>Пн</span><span>Вт</span><span>Ср</span><span>Чт</span><span>Пт</span><span>Сб</span><span>Вс</span>
+                      </div>
+                      <div class="download-moves-calendar__days" data-info-pending-calendar-days></div>
+                      <div class="download-moves-calendar__selected" data-info-pending-calendar-selected-range></div>
+                    </div>
+                  </div>
+                </div>
               </div>
               <div class="tools-list is-table" data-info-pending-list></div>
               <div class="tools-empty is-hidden" data-info-pending-empty>

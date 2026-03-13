@@ -3437,13 +3437,53 @@
 
       .info-pending-controls {
         display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: end;
         gap: 10px;
         padding: 2px;
       }
 
       .info-pending-controls .form-field {
         margin: 0;
+      }
+
+      .info-pending-filters {
+        position: relative;
+      }
+
+      .info-pending-filters__toggle {
+        width: 44px;
+        min-width: 44px;
+        height: 44px;
+      }
+
+      .info-pending-filters__panel {
+        position: absolute;
+        top: calc(100% + 8px);
+        right: 0;
+        z-index: 4;
+        width: min(92vw, 360px);
+        display: grid;
+        gap: 10px;
+        padding: 12px;
+        border-radius: 16px;
+        border: 1px solid rgba(148, 163, 184, 0.28);
+        background: rgba(255, 255, 255, 0.82);
+        backdrop-filter: blur(14px);
+        box-shadow: 0 10px 32px rgba(15, 23, 42, 0.12);
+      }
+
+      .info-pending-date-trigger {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        font: inherit;
+        color: var(--text-primary);
+      }
+
+      .info-pending-calendar.is-hidden {
+        display: none;
       }
 
       .download-responsible {
@@ -9320,7 +9360,12 @@
         }
 
         .info-pending-controls {
-          grid-template-columns: 1fr;
+          grid-template-columns: minmax(0, 1fr) auto;
+        }
+
+        .info-pending-filters__panel {
+          right: -2px;
+          width: min(96vw, 340px);
         }
 
         .info-hub-option {

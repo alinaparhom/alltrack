@@ -4435,6 +4435,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const downloadResponsibleBoxEl = contentEl.querySelector("[data-download-responsible-box]");
   const downloadResponsibleSearchEl = contentEl.querySelector("[data-download-responsible-search]");
   const downloadResponsibleListEl = contentEl.querySelector("[data-download-responsible-list]");
+  const downloadMovesBoxEl = contentEl.querySelector("[data-download-moves-box]");
+  const downloadMovesStartDateEl = contentEl.querySelector("[data-download-moves-start-date]");
+  const downloadMovesEndDateEl = contentEl.querySelector("[data-download-moves-end-date]");
+  const downloadMovesGenerateButton = contentEl.querySelector("[data-download-moves-generate]");
   let preparedDownloadUrl = "";
   let responsibleDownloadToolsCache = [];
   let downloadPickerMode = "responsible";
@@ -19302,6 +19306,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (downloadOptionsGridEl) {
       downloadOptionsGridEl.classList.toggle("is-hidden", isVisible);
     }
+    if (downloadMovesBoxEl) {
+      downloadMovesBoxEl.classList.add("is-hidden");
+    }
     if (downloadSubtitleEl) {
       downloadSubtitleEl.textContent = isVisible
         ? downloadPickerMode === "status"
@@ -19322,6 +19329,15 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
     if (downloadResponsibleListEl) {
       downloadResponsibleListEl.innerHTML = "";
+    }
+    if (downloadMovesStartDateEl) {
+      downloadMovesStartDateEl.value = "";
+    }
+    if (downloadMovesEndDateEl) {
+      downloadMovesEndDateEl.value = "";
+    }
+    if (downloadMovesBoxEl) {
+      downloadMovesBoxEl.classList.add("is-hidden");
     }
     if (downloadResponsibleBoxEl) {
       toggleResponsibleDownloadPicker(false);
@@ -19464,6 +19480,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           ? `Статус · ${String(responsibleName ?? "").trim() || "Не указан"}`
         : scope === "responsible"
           ? `Инструменты · ${String(responsibleName ?? "").trim() || "Ответственный"}`
+          : scope === "moves"
+            ? "Перемещения"
           : "Мои инструменты";
 
     const sanitizedTitle = rawTitle
@@ -19495,6 +19513,165 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       throw new Error(`save failed: ${response.status}`);
     }
     return new URL(`./${orgFolder}/Выгрузки/${encodeURIComponent(fileName)}`, window.location.href).href;
+  };
+
+  const parseDateOnly = (value) => {
+    const source = String(value ?? "").trim();
+    if (!source) return null;
+    const isoMatch = source.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (isoMatch) {
+      const [, year, month, day] = isoMatch;
+      const result = new Date(Number(year), Number(month) - 1, Number(day));
+      return Number.isNaN(result.getTime()) ? null : result;
+    }
+    const ruMatch = source.match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
+    if (ruMatch) {
+      const [, day, month, year] = ruMatch;
+      const result = new Date(Number(year), Number(month) - 1, Number(day));
+      return Number.isNaN(result.getTime()) ? null : result;
+    }
+    const parsed = new Date(source);
+    if (Number.isNaN(parsed.getTime())) return null;
+    return new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate());
+  };
+
+  const toDayTimestamp = (value) => {
+    const parsed = parseDateOnly(value);
+    return parsed ? parsed.getTime() : Number.NaN;
+  };
+
+  const downloadMovesExcel = async ({ startDate = "", endDate = "" } = {}) => {
+    if (!window.XLSX) {
+      if (downloadMessageEl) {
+        downloadMessageEl.textContent =
+          "Модуль Excel не загружен. Обновите страницу и попробуйте снова.";
+      }
+      return;
+    }
+
+    const orgFolder = context.orgFolderName ?? "";
+    if (!orgFolder) {
+      if (downloadMessageEl) {
+        downloadMessageEl.textContent = "Не удалось определить организацию пользователя.";
+      }
+      return;
+    }
+
+    const startTs = toDayTimestamp(startDate);
+    const endTs = toDayTimestamp(endDate || startDate);
+    if (!Number.isFinite(startTs) || !Number.isFinite(endTs)) {
+      if (downloadMessageEl) {
+        downloadMessageEl.textContent = "Выберите корректный диапазон дат.";
+      }
+      return;
+    }
+
+    const normalizedStart = Math.min(startTs, endTs);
+    const normalizedEnd = Math.max(startTs, endTs);
+
+    let rawMoves = [];
+    try {
+      const raw = await loadJson(`./${orgFolder}/Перемещения.json`);
+      rawMoves = Array.isArray(raw) ? raw : Array.isArray(raw?.moves) ? raw.moves : [];
+    } catch (error) {
+      console.warn("Не удалось загрузить перемещения для выгрузки.", error);
+      if (downloadMessageEl) {
+        downloadMessageEl.textContent = "Не удалось загрузить перемещения. Попробуйте позже.";
+      }
+      return;
+    }
+
+    const filteredMoves = rawMoves.filter((move) => {
+      const answer = String(move?.["Ответ"] ?? "").trim().toLocaleLowerCase("ru");
+      if (answer !== "принял") return false;
+      const moveDateTs = toDayTimestamp(move?.["Дата ответа"]);
+      if (!Number.isFinite(moveDateTs)) return false;
+      return moveDateTs >= normalizedStart && moveDateTs <= normalizedEnd;
+    });
+
+    if (!filteredMoves.length) {
+      if (downloadMessageEl) {
+        downloadMessageEl.textContent =
+          "За выбранный диапазон нет принятых перемещений.";
+      }
+      return;
+    }
+
+    const exportRows = filteredMoves.map((move) => ({
+      "Номер": String(move?.["Номер"] ?? "").trim(),
+      "Бух.номер": String(move?.["Бух.номер"] ?? "").trim(),
+      "Наименование по бухгалтерии": String(
+        move?.["Наименование по бухгалтерии"] ?? ""
+      ).trim(),
+      "Дата ответа": String(move?.["Дата ответа"] ?? "").trim(),
+      "Переместил/Ответственный до перемещения": String(
+        move?.["Ответственный до перемещения"] || move?.["Переместил"] || ""
+      ).trim(),
+      "Принял": String(move?.["Принял"] ?? "").trim(),
+      "Старый объект": String(move?.["Старый объект"] ?? "").trim(),
+      "Новый объект": String(move?.["Новый объект"] ?? "").trim(),
+    }));
+
+    const worksheet = window.XLSX.utils.json_to_sheet(exportRows, {
+      header: [
+        "Номер",
+        "Бух.номер",
+        "Наименование по бухгалтерии",
+        "Дата ответа",
+        "Переместил/Ответственный до перемещения",
+        "Принял",
+        "Старый объект",
+        "Новый объект",
+      ],
+    });
+    const workbook = window.XLSX.utils.book_new();
+    window.XLSX.utils.book_append_sheet(
+      workbook,
+      worksheet,
+      buildExportSheetTitle("moves")
+    );
+    const outputArray = window.XLSX.write(workbook, {
+      bookType: "xlsx",
+      type: "array",
+    });
+    const fileBlob = new Blob([outputArray], {
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    });
+    if (preparedDownloadUrl) {
+      URL.revokeObjectURL(preparedDownloadUrl);
+    }
+    const downloadUrl = URL.createObjectURL(fileBlob);
+    preparedDownloadUrl = downloadUrl;
+    const fileName = buildExportFileName(user?.full_name ?? "Перемещения", new Date());
+    let serverFileUrl = "";
+    try {
+      serverFileUrl = await saveExportFileOnServer(orgFolder, fileName, fileBlob);
+    } catch (error) {
+      console.warn("Не удалось сохранить выгрузку перемещений на сервере.", error);
+    }
+    showDownloadReadyMessage(fileBlob, downloadUrl, fileName, serverFileUrl);
+  };
+
+  const openMovesDownloadPicker = () => {
+    if (downloadResponsibleBoxEl) {
+      downloadResponsibleBoxEl.classList.add("is-hidden");
+    }
+    if (downloadOptionsGridEl) {
+      downloadOptionsGridEl.classList.add("is-hidden");
+    }
+    if (downloadMovesBoxEl) {
+      downloadMovesBoxEl.classList.remove("is-hidden");
+    }
+    if (downloadSubtitleEl) {
+      downloadSubtitleEl.textContent = "Выберите диапазон дат перемещений";
+    }
+    const todayIso = new Date().toISOString().slice(0, 10);
+    if (downloadMovesStartDateEl && !downloadMovesStartDateEl.value) {
+      downloadMovesStartDateEl.value = todayIso;
+    }
+    if (downloadMovesEndDateEl && !downloadMovesEndDateEl.value) {
+      downloadMovesEndDateEl.value = downloadMovesStartDateEl?.value || todayIso;
+    }
   };
 
   const collectResponsibleNamesForDownload = (tools) => {
@@ -19920,8 +20097,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       return;
     }
     if (option === "moves") {
-      closeDownloadModal();
-      openPendingMovesModal();
+      if (downloadMessageEl) {
+        downloadMessageEl.textContent = "";
+      }
+      openMovesDownloadPicker();
       return;
     }
     if (option === "status") {
@@ -19934,6 +20113,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (downloadMessageEl) {
       downloadMessageEl.textContent = "Раздел «Накладная на покупку» скоро будет доступен.";
     }
+  });
+
+  downloadMovesGenerateButton?.addEventListener("click", () => {
+    void downloadMovesExcel({
+      startDate: downloadMovesStartDateEl?.value ?? "",
+      endDate: downloadMovesEndDateEl?.value ?? "",
+    });
   });
 
   feedbackFormEl?.addEventListener("submit", async (event) => {

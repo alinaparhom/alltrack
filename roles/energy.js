@@ -250,6 +250,33 @@ export function renderRole(user) {
                 </label>
                 <div class="download-responsible__list" data-download-responsible-list></div>
               </div>
+              <div class="download-responsible is-hidden" data-download-moves-box>
+                <div class="form-field">
+                  <label for="download-moves-start-date">Дата с</label>
+                  <input
+                    id="download-moves-start-date"
+                    class="form-input"
+                    type="date"
+                    data-download-moves-start-date
+                  />
+                </div>
+                <div class="form-field">
+                  <label for="download-moves-end-date">Дата по</label>
+                  <input
+                    id="download-moves-end-date"
+                    class="form-input"
+                    type="date"
+                    data-download-moves-end-date
+                  />
+                </div>
+                <button
+                  type="button"
+                  class="action-primary"
+                  data-download-moves-generate
+                >
+                  Сформировать
+                </button>
+              </div>
               <div class="form-message" data-energy-download-message></div>
             </div>
           </div>

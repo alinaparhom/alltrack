@@ -5114,6 +5114,46 @@
         box-shadow: 0 14px 30px rgba(202, 138, 4, 0.28);
       }
 
+      .tools-info-filters {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+        margin-bottom: 12px;
+        padding: 12px;
+        border-radius: 14px;
+        background: linear-gradient(
+          135deg,
+          rgba(255, 255, 255, 0.9),
+          rgba(240, 249, 255, 0.82)
+        );
+        border: 1px solid rgba(191, 219, 254, 0.45);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75);
+        backdrop-filter: blur(8px);
+      }
+
+      .tools-info-filters__field {
+        display: grid;
+        gap: 6px;
+        min-width: 0;
+      }
+
+      .tools-info-filters__field > span {
+        font-size: 12px;
+        font-weight: 600;
+        color: #334155;
+      }
+
+      .tools-info-filters__field .form-input {
+        height: 38px;
+        padding: 8px 10px;
+        font-size: 14px;
+        border-radius: 10px;
+      }
+
+      .tools-info-filters__field input[type="date"].form-input {
+        color-scheme: light;
+      }
+
       .tools-info-summary {
         font-size: 13px;
         color: var(--muted);
@@ -5205,6 +5245,15 @@
         color: var(--muted);
         text-align: center;
         padding: 12px;
+      }
+
+      @media (max-width: 640px) {
+        .tools-info-filters {
+          grid-template-columns: 1fr;
+          gap: 8px;
+          padding: 10px;
+          margin-bottom: 10px;
+        }
       }
 
       @media (min-width: 720px) {

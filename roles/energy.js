@@ -1369,6 +1369,43 @@ export function renderRole(user) {
               </div>
               <div class="tools-info-panels">
                 <section class="tools-info-panel is-active" data-tools-info-panel="moves">
+                  <div class="tools-info-filters" data-tools-info-moves-filters>
+                    <label class="tools-info-filters__field">
+                      <span>Номер инструмента</span>
+                      <input
+                        class="form-input"
+                        type="text"
+                        inputmode="numeric"
+                        placeholder="Например, 125"
+                        data-tools-info-filter-number
+                      />
+                    </label>
+                    <label class="tools-info-filters__field">
+                      <span>Бух.номер</span>
+                      <input
+                        class="form-input"
+                        type="text"
+                        placeholder="Например, Б-7781"
+                        data-tools-info-filter-accounting
+                      />
+                    </label>
+                    <label class="tools-info-filters__field">
+                      <span>Дата перемещения</span>
+                      <input
+                        class="form-input"
+                        type="date"
+                        data-tools-info-filter-move-date
+                      />
+                    </label>
+                    <label class="tools-info-filters__field">
+                      <span>Дата ответа</span>
+                      <input
+                        class="form-input"
+                        type="date"
+                        data-tools-info-filter-response-date
+                      />
+                    </label>
+                  </div>
                   <div class="tools-info-summary" data-tools-info-moves-summary></div>
                   <div class="tools-info-list" data-tools-info-moves-list></div>
                   <div class="tools-info-empty is-hidden" data-tools-info-moves-empty>

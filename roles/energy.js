@@ -1444,7 +1444,10 @@ export function renderRole(user) {
             aria-label="Выбор информации"
           >
             <div class="settings-modal__header info-picker-modal__header">
-              <h2>Информация</h2>
+              <div class="settings-modal__title">
+                <h2>Информация</h2>
+                <p>Выберите, что хотите посмотреть</p>
+              </div>
               <button
                 class="button-icon"
                 type="button"
@@ -1456,11 +1459,6 @@ export function renderRole(user) {
             </div>
             <div class="settings-modal__body info-picker-modal__body">
               <div class="info-picker-grid" data-info-picker-grid>
-                <button class="info-picker-item" type="button" data-info-picker-option="instructions">
-                  <span class="info-picker-item__icon" aria-hidden="true">📘</span>
-                  <span class="info-picker-item__title">Инструкции</span>
-                  <span class="info-picker-item__hint">Коротко о том, как работать с разделом</span>
-                </button>
                 <button class="info-picker-item" type="button" data-info-picker-option="pending">
                   <span class="info-picker-item__icon" aria-hidden="true">📋</span>
                   <span class="info-picker-item__title">Список на принятии</span>

@@ -3483,6 +3483,15 @@
         background-position: right 8px center;
       }
 
+      .info-pending-responsible-select {
+        appearance: none;
+        -webkit-appearance: none;
+        padding-right: 38px;
+        background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 20 20'><path d='M5 7l5 6 5-6' fill='none' stroke='%2364758b' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+        background-repeat: no-repeat;
+        background-position: right 8px center;
+      }
+
       .info-pending-date-trigger {
         width: 100%;
         display: flex;
@@ -3615,6 +3624,16 @@
         color: #94a3b8;
         background: rgba(241, 245, 249, 0.96);
         border-color: rgba(203, 213, 225, 0.7);
+      }
+
+      .download-moves-calendar__day.is-no-pending.is-in-range {
+        background: linear-gradient(
+            0deg,
+            rgba(59, 125, 255, 0.24),
+            rgba(59, 125, 255, 0.24)
+          ),
+          rgba(241, 245, 249, 0.96);
+        border-color: rgba(59, 125, 255, 0.35);
       }
 
       .download-moves-calendar__day.is-selected {

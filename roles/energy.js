@@ -3492,13 +3492,19 @@ export function renderRole(user) {
                   <div class="info-pending-filters__panel is-hidden" data-info-pending-filters-panel>
                     <label class="form-field">
                       <span>Принимающий</span>
-                      <select class="form-input" data-info-pending-filter-receiver>
+                      <select
+                        class="form-input info-pending-responsible-select"
+                        data-info-pending-filter-receiver
+                      >
                         <option value="">Все принимающие</option>
                       </select>
                     </label>
                     <label class="form-field">
                       <span>Передающий</span>
-                      <select class="form-input" data-info-pending-filter-sender>
+                      <select
+                        class="form-input info-pending-responsible-select"
+                        data-info-pending-filter-sender
+                      >
                         <option value="">Все передающие</option>
                       </select>
                     </label>

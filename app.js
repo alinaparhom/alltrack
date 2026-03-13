@@ -5867,6 +5867,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     vacationStartAt: "",
     isSaving: false,
   };
+  const pendingMovePhotoViewerState = {
+    files: [],
+    index: 0,
+    touchStartX: null,
+  };
   const infoPendingSortModes = [
     { value: "old", label: "Сначала старые" },
     { value: "new", label: "Сначала новые" },
@@ -5893,6 +5898,44 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     isDatePickerOpen: false,
     isSortOpen: false,
   };
+  const pendingMovePhotoViewerEl = document.createElement("div");
+  pendingMovePhotoViewerEl.className = "settings-modal pending-photo-viewer is-hidden";
+  pendingMovePhotoViewerEl.innerHTML = `
+    <div class="settings-modal__backdrop" data-pending-photo-viewer-backdrop></div>
+    <section class="settings-modal__panel pending-photo-viewer__panel" role="dialog" aria-modal="true" aria-label="Фото инструмента">
+      <header class="settings-modal__header pending-photo-viewer__header">
+        <div>
+          <h2>Фото инструмента</h2>
+          <p data-pending-photo-viewer-counter>1 / 1</p>
+        </div>
+        <button type="button" class="icon-button" data-pending-photo-viewer-close aria-label="Закрыть">✕</button>
+      </header>
+      <div class="settings-modal__body pending-photo-viewer__body">
+        <button type="button" class="pending-photo-viewer__nav" data-pending-photo-viewer-prev aria-label="Предыдущее фото">←</button>
+        <img class="pending-photo-viewer__image" data-pending-photo-viewer-image alt="Фото инструмента" />
+        <button type="button" class="pending-photo-viewer__nav" data-pending-photo-viewer-next aria-label="Следующее фото">→</button>
+      </div>
+    </section>
+  `;
+  document.body.appendChild(pendingMovePhotoViewerEl);
+  const pendingPhotoViewerImageEl = pendingMovePhotoViewerEl.querySelector(
+    "[data-pending-photo-viewer-image]"
+  );
+  const pendingPhotoViewerCounterEl = pendingMovePhotoViewerEl.querySelector(
+    "[data-pending-photo-viewer-counter]"
+  );
+  const pendingPhotoViewerPrevButton = pendingMovePhotoViewerEl.querySelector(
+    "[data-pending-photo-viewer-prev]"
+  );
+  const pendingPhotoViewerNextButton = pendingMovePhotoViewerEl.querySelector(
+    "[data-pending-photo-viewer-next]"
+  );
+  const pendingPhotoViewerCloseButton = pendingMovePhotoViewerEl.querySelector(
+    "[data-pending-photo-viewer-close]"
+  );
+  const pendingPhotoViewerBackdropEl = pendingMovePhotoViewerEl.querySelector(
+    "[data-pending-photo-viewer-backdrop]"
+  );
   const toolsCancelMoveState = {
     move: null,
     moveIndex: null,
@@ -9089,6 +9132,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         hasPhoto,
       });
       thumb.appendChild(img);
+      if (hasPhoto) {
+        thumb.dataset.pendingPhotoOpen = "true";
+        thumb.dataset.pendingPhotoMoveIndex = String(moveIndex);
+        thumb.setAttribute("role", "button");
+        thumb.tabIndex = 0;
+        thumb.setAttribute("aria-label", "Открыть фото инструмента");
+      }
       photoCell.appendChild(thumb);
       row.append(numberCell, infoCell, photoCell);
       table.appendChild(row);
@@ -11537,6 +11587,85 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     return map;
   };
 
+  const closePendingMovePhotoViewer = () => {
+    pendingMovePhotoViewerEl.classList.add("is-hidden");
+    pendingMovePhotoViewerState.files = [];
+    pendingMovePhotoViewerState.index = 0;
+    pendingMovePhotoViewerState.touchStartX = null;
+    if (pendingPhotoViewerImageEl instanceof HTMLImageElement) {
+      pendingPhotoViewerImageEl.removeAttribute("src");
+      pendingPhotoViewerImageEl.alt = "Фото инструмента";
+    }
+    if (pendingPhotoViewerCounterEl instanceof HTMLElement) {
+      pendingPhotoViewerCounterEl.textContent = "1 / 1";
+    }
+  };
+
+  const renderPendingMovePhotoViewer = () => {
+    const files = pendingMovePhotoViewerState.files;
+    const total = files.length;
+    if (!total) {
+      closePendingMovePhotoViewer();
+      return;
+    }
+    if (pendingMovePhotoViewerState.index < 0) {
+      pendingMovePhotoViewerState.index = total - 1;
+    }
+    if (pendingMovePhotoViewerState.index >= total) {
+      pendingMovePhotoViewerState.index = 0;
+    }
+    const current = files[pendingMovePhotoViewerState.index];
+    if (pendingPhotoViewerImageEl instanceof HTMLImageElement) {
+      pendingPhotoViewerImageEl.src = current?.url ?? toolPhotoPlaceholder;
+      pendingPhotoViewerImageEl.alt = current?.name
+        ? `Фото инструмента: ${current.name}`
+        : "Фото инструмента";
+    }
+    if (pendingPhotoViewerCounterEl instanceof HTMLElement) {
+      pendingPhotoViewerCounterEl.textContent = `${pendingMovePhotoViewerState.index + 1} / ${total}`;
+    }
+    if (pendingPhotoViewerPrevButton instanceof HTMLButtonElement) {
+      pendingPhotoViewerPrevButton.disabled = total <= 1;
+    }
+    if (pendingPhotoViewerNextButton instanceof HTMLButtonElement) {
+      pendingPhotoViewerNextButton.disabled = total <= 1;
+    }
+  };
+
+  const shiftPendingMovePhotoViewer = (step) => {
+    if (!pendingMovePhotoViewerState.files.length) return;
+    pendingMovePhotoViewerState.index += step;
+    renderPendingMovePhotoViewer();
+  };
+
+  const openPendingMovePhotoViewer = async ({ tool, fallbackNumber, title }) => {
+    const orgFolder = toolsState.orgFolder || context.orgFolderName || "";
+    if (!orgFolder || !tool) return;
+    const photoCount = Number.parseInt(tool?.["Количество фото"] ?? 0, 10);
+    if (!(Number.isFinite(photoCount) && photoCount > 0)) return;
+    const primaryPhotoNumber = resolveToolPhotoNumber(tool);
+    const numberValue = String(tool?.["Номер"] ?? "").trim();
+    const accountingNumber = String(tool?.["Бух.номер"] ?? "").trim();
+    const { files } = await loadToolPhotoFiles(
+      orgFolder,
+      primaryPhotoNumber,
+      fallbackNumber,
+      numberValue,
+      accountingNumber
+    );
+    if (!files.length) return;
+    pendingMovePhotoViewerState.files = files;
+    pendingMovePhotoViewerState.index = 0;
+    pendingMovePhotoViewerState.touchStartX = null;
+    pendingMovePhotoViewerEl.classList.remove("is-hidden");
+    renderPendingMovePhotoViewer();
+    if (pendingPhotoViewerImageEl instanceof HTMLImageElement) {
+      pendingPhotoViewerImageEl.alt = title
+        ? `Фото инструмента ${title}`
+        : "Фото инструмента";
+    }
+  };
+
   const renderPendingMovesList = () => {
     if (!pendingMovesListEl) return;
     pendingMovesListEl.innerHTML = "";
@@ -11633,6 +11762,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         hasPhoto,
       });
       thumb.appendChild(img);
+      if (hasPhoto) {
+        thumb.dataset.pendingPhotoOpen = "true";
+        thumb.dataset.pendingPhotoMoveIndex = String(moveIndex);
+        thumb.setAttribute("role", "button");
+        thumb.tabIndex = 0;
+        thumb.setAttribute("aria-label", "Открыть фото инструмента");
+      }
       photoCell.appendChild(thumb);
 
       const actionsCell = document.createElement("div");
@@ -12039,6 +12175,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         hasPhoto,
       });
       thumb.appendChild(img);
+      if (hasPhoto) {
+        thumb.dataset.infoPendingPhotoOpen = "true";
+        thumb.dataset.infoPendingMoveIndex = String(item.moveIndex);
+        thumb.setAttribute("role", "button");
+        thumb.tabIndex = 0;
+        thumb.setAttribute("aria-label", "Открыть фото инструмента");
+      }
       photoCell.appendChild(thumb);
 
       row.append(numberCell, infoCell, photoCell);
@@ -12785,6 +12928,42 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       closePendingMovesModal();
     }
   });
+  pendingPhotoViewerBackdropEl?.addEventListener("click", closePendingMovePhotoViewer);
+  pendingPhotoViewerCloseButton?.addEventListener("click", closePendingMovePhotoViewer);
+  pendingPhotoViewerPrevButton?.addEventListener("click", () => {
+    shiftPendingMovePhotoViewer(-1);
+  });
+  pendingPhotoViewerNextButton?.addEventListener("click", () => {
+    shiftPendingMovePhotoViewer(1);
+  });
+  pendingPhotoViewerImageEl?.addEventListener("touchstart", (event) => {
+    const touch = event.touches?.[0];
+    pendingMovePhotoViewerState.touchStartX = touch?.clientX ?? null;
+  });
+  pendingPhotoViewerImageEl?.addEventListener("touchend", (event) => {
+    if (pendingMovePhotoViewerState.touchStartX === null) return;
+    const touch = event.changedTouches?.[0];
+    const endX = touch?.clientX ?? null;
+    if (endX === null) return;
+    const delta = endX - pendingMovePhotoViewerState.touchStartX;
+    pendingMovePhotoViewerState.touchStartX = null;
+    if (Math.abs(delta) < 30) return;
+    shiftPendingMovePhotoViewer(delta > 0 ? -1 : 1);
+  });
+  pendingMovePhotoViewerEl?.addEventListener("keydown", (event) => {
+    if (pendingMovePhotoViewerEl.classList.contains("is-hidden")) return;
+    if (event.key === "Escape") {
+      closePendingMovePhotoViewer();
+      return;
+    }
+    if (event.key === "ArrowLeft") {
+      shiftPendingMovePhotoViewer(-1);
+      return;
+    }
+    if (event.key === "ArrowRight") {
+      shiftPendingMovePhotoViewer(1);
+    }
+  });
   if (energyPendingWrapperEl) {
     energyPendingWrapperEl.addEventListener("click", () => {
       if (energyPendingWrapperEl.classList.contains("is-hidden")) return;
@@ -12793,6 +12972,30 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   }
   if (pendingMovesListEl) {
     pendingMovesListEl.addEventListener("click", (event) => {
+      const photoButton = event.target.closest("[data-pending-photo-open]");
+      if (photoButton) {
+        const moveIndex = Number.parseInt(
+          photoButton.dataset.pendingPhotoMoveIndex ?? "",
+          10
+        );
+        if (Number.isFinite(moveIndex)) {
+          const item = pendingMovesState.pendingItems.find(
+            (entry) => entry.moveIndex === moveIndex
+          );
+          if (item?.tool) {
+            const moveNumber =
+              String(item.move?.["Номер"] ?? "").trim() ||
+              String(item.move?.["Бух.номер"] ?? "").trim();
+            const toolTitle = String(item.tool?.["Наименование"] ?? "").trim();
+            void openPendingMovePhotoViewer({
+              tool: item.tool,
+              fallbackNumber: moveNumber,
+              title: toolTitle,
+            });
+          }
+        }
+        return;
+      }
       const actionButton = event.target.closest("[data-pending-move-action]");
       if (!actionButton) return;
       const moveIndex = Number.parseInt(
@@ -12812,6 +13015,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           decision: "Не принял",
         });
       }
+    });
+    pendingMovesListEl.addEventListener("keydown", (event) => {
+      if (event.key !== "Enter" && event.key !== " ") return;
+      const photoButton = event.target.closest("[data-pending-photo-open]");
+      if (!photoButton) return;
+      event.preventDefault();
+      photoButton.click();
     });
   }
   if (pendingMovesAcceptAllButton) {
@@ -12868,6 +13078,38 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       if (resolver) {
         resolver({ reason, photoFile });
       }
+    });
+  }
+
+  if (infoPendingListEl) {
+    infoPendingListEl.addEventListener("click", (event) => {
+      const photoButton = event.target.closest("[data-info-pending-photo-open]");
+      if (!photoButton) return;
+      const moveIndex = Number.parseInt(
+        photoButton.dataset.infoPendingMoveIndex ?? "",
+        10
+      );
+      if (!Number.isFinite(moveIndex)) return;
+      const item = infoPendingState.filteredItems.find(
+        (entry) => entry.moveIndex === moveIndex
+      );
+      if (!item?.tool) return;
+      const moveNumber =
+        String(item.move?.["Номер"] ?? "").trim() ||
+        String(item.move?.["Бух.номер"] ?? "").trim();
+      const toolTitle = String(item.tool?.["Наименование"] ?? "").trim();
+      void openPendingMovePhotoViewer({
+        tool: item.tool,
+        fallbackNumber: moveNumber,
+        title: toolTitle,
+      });
+    });
+    infoPendingListEl.addEventListener("keydown", (event) => {
+      if (event.key !== "Enter" && event.key !== " ") return;
+      const photoButton = event.target.closest("[data-info-pending-photo-open]");
+      if (!photoButton) return;
+      event.preventDefault();
+      photoButton.click();
     });
   }
 

@@ -1459,11 +1459,6 @@ export function renderRole(user) {
             </div>
             <div class="settings-modal__body info-picker-modal__body">
               <div class="info-picker-grid" data-info-picker-grid>
-                <button class="info-picker-item" type="button" data-info-picker-option="instructions">
-                  <span class="info-picker-item__icon" aria-hidden="true">📘</span>
-                  <span class="info-picker-item__title">Инструкции</span>
-                  <span class="info-picker-item__hint">Короткая памятка по работе в приложении</span>
-                </button>
                 <button class="info-picker-item" type="button" data-info-picker-option="pending">
                   <span class="info-picker-item__icon" aria-hidden="true">📋</span>
                   <span class="info-picker-item__title">Список на принятии</span>

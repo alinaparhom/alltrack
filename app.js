@@ -9093,7 +9093,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const table = document.createElement("div");
     table.className = "tools-table";
 
-    items.forEach((tool) => {
+    items.forEach((tool, moveIndex) => {
       const row = document.createElement("div");
       row.className = "tools-table__row";
       row.classList.toggle("is-selected", toolsState.selectedIds.has(tool.__selectionId));

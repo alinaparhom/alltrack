@@ -1672,6 +1672,12 @@ export function renderRole(user) {
               </div>
               <div class="form-message" data-pending-moves-message></div>
             </div>
+            <div class="pending-moves-loading is-hidden" data-pending-moves-loading aria-hidden="true">
+              <div class="pending-moves-loading__box" role="status" aria-live="polite">
+                <div class="pending-moves-loading__spinner" aria-hidden="true">🛠️</div>
+                <p>Применяем действие...</p>
+              </div>
+            </div>
           </div>
         </div>
         <div

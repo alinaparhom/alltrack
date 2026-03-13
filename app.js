@@ -4429,6 +4429,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const downloadBackdropEl = contentEl.querySelector("[data-energy-download-backdrop]");
   const downloadCloseButton = contentEl.querySelector("[data-energy-download-close]");
   const downloadOptionsEl = contentEl.querySelector("[data-energy-download-modal]");
+  const infoModalEl = contentEl.querySelector("[data-energy-info-modal]");
+  const infoBackdropEl = contentEl.querySelector("[data-energy-info-backdrop]");
+  const infoCloseButton = contentEl.querySelector("[data-energy-info-close]");
+  const infoGridEl = contentEl.querySelector("[data-energy-info-grid]");
   const downloadOptionsGridEl = contentEl.querySelector("[data-download-options-grid]");
   const downloadSubtitleEl = contentEl.querySelector("[data-energy-download-subtitle]");
   const downloadMessageEl = contentEl.querySelector("[data-energy-download-message]");
@@ -19400,6 +19404,18 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
   };
 
+  const closeInfoModal = () => {
+    if (!infoModalEl) return;
+    infoModalEl.classList.add("is-hidden");
+    document.body.style.overflow = "";
+  };
+
+  const openInfoModal = () => {
+    if (!infoModalEl) return;
+    infoModalEl.classList.remove("is-hidden");
+    document.body.style.overflow = "hidden";
+  };
+
   const triggerExcelDownload = async (fileBlob, blobUrl, fileName, serverFileUrl = "") => {
     if (!fileBlob || !blobUrl) return;
 
@@ -20446,6 +20462,19 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
   });
 
+  infoBackdropEl?.addEventListener("click", closeInfoModal);
+  infoCloseButton?.addEventListener("click", closeInfoModal);
+  infoModalEl?.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      closeInfoModal();
+    }
+  });
+
+  infoGridEl?.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-energy-info-option]");
+    if (!button) return;
+  });
+
   downloadResponsibleSearchEl?.addEventListener("input", () => {
     if (downloadPickerMode === "status") {
       renderStatusDownloadOptions(
@@ -20795,6 +20824,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
     if (actionId === "download") {
       openDownloadModal();
+      return true;
+    }
+    if (actionId === "info") {
+      openInfoModal();
       return true;
     }
     return false;

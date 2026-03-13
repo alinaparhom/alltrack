@@ -4435,6 +4435,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const downloadResponsibleBoxEl = contentEl.querySelector("[data-download-responsible-box]");
   const downloadResponsibleSearchEl = contentEl.querySelector("[data-download-responsible-search]");
   const downloadResponsibleListEl = contentEl.querySelector("[data-download-responsible-list]");
+  const downloadResponsibleSearchLabelEl = downloadResponsibleBoxEl?.querySelector(".download-responsible__search span");
   const downloadMovesBoxEl = contentEl.querySelector("[data-download-moves-box]");
   const downloadMovesCalendarEl = contentEl.querySelector("[data-download-moves-calendar]");
   const downloadMovesMonthLabelEl = contentEl.querySelector("[data-download-moves-month-label]");
@@ -4453,6 +4454,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const downloadMovesGenerateButton = contentEl.querySelector("[data-download-moves-generate]");
   let preparedDownloadUrl = "";
   let responsibleDownloadToolsCache = [];
+  let invoiceDownloadItemsCache = [];
   let downloadPickerMode = "responsible";
   let downloadMovesVisibleMonthDate = new Date();
   const objectsModalEl = contentEl.querySelector("[data-energy-objects-modal]");
@@ -19326,17 +19328,32 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       downloadSubtitleEl.textContent = isVisible
         ? downloadPickerMode === "status"
           ? "Выберите статус для выгрузки"
-          : "Выберите ответственного для выгрузки"
+          : downloadPickerMode === "invoice"
+            ? "Выберите инструмент для накладной"
+            : "Выберите ответственного для выгрузки"
         : "Выберите раздел для выгрузки";
+    }
+    if (downloadResponsibleSearchLabelEl) {
+      downloadResponsibleSearchLabelEl.textContent =
+        downloadPickerMode === "status"
+          ? "Выберите статус"
+          : downloadPickerMode === "invoice"
+            ? "Выберите инструмент"
+            : "Выберите ответственного";
     }
     if (downloadResponsibleSearchEl) {
       downloadResponsibleSearchEl.placeholder =
-        downloadPickerMode === "status" ? "Поиск по статусу" : "Поиск по ФИО";
+        downloadPickerMode === "status"
+          ? "Поиск по статусу"
+          : downloadPickerMode === "invoice"
+            ? "Поиск по номеру, названию, модели"
+            : "Поиск по ФИО";
     }
   };
 
   const resetResponsibleDownloadPicker = () => {
     downloadPickerMode = "responsible";
+    invoiceDownloadItemsCache = [];
     if (downloadResponsibleSearchEl) {
       downloadResponsibleSearchEl.value = "";
     }
@@ -20128,6 +20145,230 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     });
   };
 
+  const listFolderFilesViaEndpoint = async (orgFolder, folderName) => {
+    if (!orgFolder || !folderName) return [];
+    const payload = JSON.stringify({
+      entries: [
+        {
+          type: "list-photos",
+          path: `${orgFolder}/${folderName}`,
+          ...buildUploadUserMeta({ organizationName: context.orgFullName }),
+        },
+      ],
+    });
+    const response = await fetch(saveEndpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: payload,
+    });
+    const responseText = await response.text();
+    if (!response.ok) {
+      let errorText = responseText;
+      if (responseText) {
+        try {
+          const parsed = JSON.parse(responseText);
+          errorText =
+            parsed?.error ??
+            parsed?.message ??
+            (typeof parsed === "string" ? parsed : responseText);
+        } catch (error) {
+          // ignore json parse errors
+        }
+      }
+      throw new Error(errorText || `Ошибка загрузки файлов: ${response.status}`);
+    }
+    if (!responseText) return [];
+    try {
+      const parsed = JSON.parse(responseText);
+      return Array.isArray(parsed?.files) ? parsed.files : [];
+    } catch (error) {
+      console.warn("Не удалось распарсить список файлов.", error);
+      return [];
+    }
+  };
+
+  const buildInvoiceDownloadItems = (tools, invoiceFiles, orgFolder) => {
+    const invoiceMap = new Map();
+    invoiceFiles.forEach((fileName) => {
+      const baseName = String(fileName ?? "").trim();
+      if (!baseName) return;
+      const firstPart = baseName.split("_")[0] ?? "";
+      const normalized = normalizeToolNumberValue(firstPart);
+      if (!normalized) return;
+      const bucket = invoiceMap.get(normalized) ?? [];
+      bucket.push(baseName);
+      invoiceMap.set(normalized, bucket);
+    });
+
+    const result = [];
+    tools.forEach((tool) => {
+      const toolNumberVariants = new Set([
+        ...getToolNumberVariants(tool?.["Номер"]),
+        ...getToolNumberVariants(tool?.["Бух.номер"]),
+      ]);
+      const linkedFiles = [];
+      toolNumberVariants.forEach((variant) => {
+        const normalized = normalizeToolNumberValue(variant);
+        if (!normalized) return;
+        const files = invoiceMap.get(normalized) ?? [];
+        linkedFiles.push(...files);
+      });
+      const uniqueFiles = Array.from(new Set(linkedFiles));
+      if (!uniqueFiles.length) return;
+      const toolNumber = String(tool?.["Номер"] ?? "").trim();
+      const accountingNumber = String(tool?.["Бух.номер"] ?? "").trim();
+      const titleParts = [
+        toolNumber ? `№${toolNumber}` : "",
+        accountingNumber ? `Бух: ${accountingNumber}` : "",
+        String(tool?.["Наименование"] ?? "").trim(),
+        String(tool?.["Модель"] ?? "").trim(),
+      ].filter(Boolean);
+      const title = titleParts.join(" · ");
+      result.push({
+        title: title || "Инструмент",
+        searchLine: [
+          toolNumber,
+          accountingNumber,
+          String(tool?.["Наименование"] ?? ""),
+          String(tool?.["Производитель"] ?? ""),
+          String(tool?.["Модель"] ?? ""),
+          ...uniqueFiles,
+        ]
+          .join(" ")
+          .toLocaleLowerCase("ru"),
+        files: uniqueFiles.sort((a, b) => a.localeCompare(b, "ru")),
+        urls: uniqueFiles
+          .sort((a, b) => a.localeCompare(b, "ru"))
+          .map((fileName) =>
+            new URL(
+              `./${orgFolder}/Накладные покупка/${encodeURIComponent(fileName)}`,
+              window.location.href
+            ).href
+          ),
+      });
+    });
+    return result.sort((a, b) => a.title.localeCompare(b.title, "ru"));
+  };
+
+  const isImageInvoiceFile = (fileName) => {
+    const extension = String(fileName ?? "")
+      .split(".")
+      .pop()
+      ?.toLocaleLowerCase("ru");
+    return ["jpg", "jpeg", "png", "gif", "webp", "bmp", "svg", "heic", "heif"].includes(
+      extension || ""
+    );
+  };
+
+  const openInvoiceDocument = (invoiceItem) => {
+    if (!downloadMessageEl || !invoiceItem) return;
+    const firstFile = invoiceItem.files?.[0] ?? "";
+    const firstUrl = invoiceItem.urls?.[0] ?? "";
+    if (!firstUrl) {
+      downloadMessageEl.textContent = "Не удалось сформировать ссылку на накладную.";
+      return;
+    }
+
+    if (invoiceItem.files.length === 1 && isImageInvoiceFile(firstFile)) {
+      window.open(firstUrl, "_blank", "noopener,noreferrer");
+      downloadMessageEl.textContent = "Изображение накладной открыто в новой вкладке.";
+      return;
+    }
+
+    downloadMessageEl.textContent = "";
+    const wrap = document.createElement("div");
+    wrap.className = "download-links";
+    const title = document.createElement("div");
+    title.textContent =
+      invoiceItem.files.length > 1
+        ? "Найдены накладные. Выберите файл для скачивания:"
+        : "Накладная не изображение. Нажмите для скачивания:";
+    wrap.appendChild(title);
+    const list = document.createElement("div");
+    invoiceItem.urls.forEach((url, index) => {
+      const link = document.createElement("a");
+      link.href = url;
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      link.textContent = invoiceItem.files[index] || `Файл ${index + 1}`;
+      link.style.display = "block";
+      link.style.marginTop = "6px";
+      list.appendChild(link);
+    });
+    wrap.appendChild(list);
+    downloadMessageEl.appendChild(wrap);
+  };
+
+  const renderInvoiceDownloadOptions = (items, query = "") => {
+    if (!downloadResponsibleListEl) return;
+    downloadResponsibleListEl.innerHTML = "";
+    const normalizedQuery = String(query ?? "").trim().toLocaleLowerCase("ru");
+    const filtered = !normalizedQuery
+      ? items
+      : items.filter((item) => item.searchLine.includes(normalizedQuery));
+
+    if (!filtered.length) {
+      const empty = document.createElement("div");
+      empty.className = "download-responsible__empty";
+      empty.textContent = items.length
+        ? "Ничего не найдено. Измените запрос."
+        : "Не найдены инструменты с накладными на покупку.";
+      downloadResponsibleListEl.appendChild(empty);
+      return;
+    }
+
+    filtered.forEach((item) => {
+      const optionButton = document.createElement("button");
+      optionButton.type = "button";
+      optionButton.className = "download-responsible__option";
+      optionButton.textContent = item.title;
+      optionButton.addEventListener("click", () => {
+        openInvoiceDocument(item);
+      });
+      downloadResponsibleListEl.appendChild(optionButton);
+    });
+  };
+
+  const openInvoiceDownloadPicker = async () => {
+    if (!downloadResponsibleBoxEl || !downloadResponsibleListEl) return;
+    if (!context.orgFolderName) {
+      if (downloadMessageEl) {
+        downloadMessageEl.textContent = "Не удалось определить организацию пользователя.";
+      }
+      return;
+    }
+
+    const toolsPath = `./${context.orgFolderName}/База с инструментами.json`;
+    let rawTools = [];
+    try {
+      const raw = await loadJson(toolsPath);
+      rawTools = Array.isArray(raw) ? raw : Array.isArray(raw?.tools) ? raw.tools : [];
+    } catch (error) {
+      console.warn("Не удалось загрузить базу инструментов для накладных.", error);
+      if (downloadMessageEl) {
+        downloadMessageEl.textContent = "Не удалось загрузить список инструментов.";
+      }
+      return;
+    }
+
+    let invoiceFiles = [];
+    try {
+      invoiceFiles = await listFolderFilesViaEndpoint(context.orgFolderName, "Накладные покупка");
+    } catch (error) {
+      console.warn("Не удалось загрузить папку накладных.", error);
+      if (downloadMessageEl) {
+        downloadMessageEl.textContent = "Не удалось загрузить накладные на покупку.";
+      }
+      return;
+    }
+
+    invoiceDownloadItemsCache = buildInvoiceDownloadItems(rawTools, invoiceFiles, context.orgFolderName);
+    downloadPickerMode = "invoice";
+    toggleResponsibleDownloadPicker(true);
+    renderInvoiceDownloadOptions(invoiceDownloadItemsCache, downloadResponsibleSearchEl?.value ?? "");
+    downloadResponsibleSearchEl?.focus();
+  };
+
   const openResponsibleDownloadPicker = async () => {
     if (!downloadResponsibleBoxEl || !downloadResponsibleListEl) return;
     if (!context.orgFolderName) {
@@ -20213,6 +20454,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       );
       return;
     }
+    if (downloadPickerMode === "invoice") {
+      renderInvoiceDownloadOptions(
+        invoiceDownloadItemsCache,
+        downloadResponsibleSearchEl?.value ?? ""
+      );
+      return;
+    }
     renderResponsibleDownloadOptions(responsibleDownloadToolsCache, downloadResponsibleSearchEl?.value ?? "");
   });
 
@@ -20259,8 +20507,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       void openStatusDownloadPicker();
       return;
     }
-    if (downloadMessageEl) {
-      downloadMessageEl.textContent = "Раздел «Накладная на покупку» скоро будет доступен.";
+    if (option === "invoice") {
+      if (downloadMessageEl) {
+        downloadMessageEl.textContent = "";
+      }
+      void openInvoiceDownloadPicker();
     }
   });
 

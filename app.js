@@ -5314,6 +5314,31 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const pendingMovesDeclineMessageEl = contentEl.querySelector(
     "[data-pending-moves-decline-message]"
   );
+  const infoPendingModalEl = contentEl.querySelector("[data-info-pending-modal]");
+  const infoPendingBackdropEl = contentEl.querySelector(
+    "[data-info-pending-backdrop]"
+  );
+  const infoPendingCloseButton = contentEl.querySelector(
+    "[data-info-pending-close]"
+  );
+  const infoPendingSubtitleEl = contentEl.querySelector(
+    "[data-info-pending-subtitle]"
+  );
+  const infoPendingListEl = contentEl.querySelector("[data-info-pending-list]");
+  const infoPendingEmptyEl = contentEl.querySelector("[data-info-pending-empty]");
+  const infoPendingSortEl = contentEl.querySelector("[data-info-pending-sort]");
+  const infoPendingFilterReceiverEl = contentEl.querySelector(
+    "[data-info-pending-filter-receiver]"
+  );
+  const infoPendingFilterSenderEl = contentEl.querySelector(
+    "[data-info-pending-filter-sender]"
+  );
+  const infoPendingFilterDateFromEl = contentEl.querySelector(
+    "[data-info-pending-filter-date-from]"
+  );
+  const infoPendingFilterDateToEl = contentEl.querySelector(
+    "[data-info-pending-filter-date-to]"
+  );
   const toolsCancelMoveModalEl = contentEl.querySelector(
     "[data-tools-cancel-move-modal]"
   );
@@ -5794,6 +5819,19 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     replacementMode: false,
     vacationStartAt: "",
     isSaving: false,
+  };
+  const infoPendingState = {
+    allItems: [],
+    filteredItems: [],
+    toolMap: new Map(),
+    fineConfig: {},
+    filters: {
+      sort: "old",
+      receiver: "",
+      sender: "",
+      dateFrom: "",
+      dateTo: "",
+    },
   };
   const toolsCancelMoveState = {
     move: null,
@@ -11595,6 +11633,250 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     await loadPendingMovesList(options);
   };
 
+  const resolveInfoPendingSender = (move) => {
+    const hasPreviousResponsible = Object.prototype.hasOwnProperty.call(
+      move ?? {},
+      "Ответственный до перемещения"
+    );
+    const previousResponsible = hasPreviousResponsible
+      ? String(move?.["Ответственный до перемещения"] ?? "").trim()
+      : "";
+    const movedBy = String(move?.["Переместил"] ?? "").trim();
+    return previousResponsible || movedBy;
+  };
+
+  const applyInfoPendingFiltersAndSort = () => {
+    const receiverFilter = normalizePersonName(infoPendingState.filters.receiver);
+    const senderFilter = normalizePersonName(infoPendingState.filters.sender);
+    const dateFrom = parseIsoDateValue(infoPendingState.filters.dateFrom);
+    const dateTo = parseIsoDateValue(infoPendingState.filters.dateTo);
+    const toTs = (date) =>
+      date instanceof Date
+        ? new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime()
+        : null;
+    const fromTs = toTs(dateFrom);
+    const toDateTs = toTs(dateTo);
+
+    const filtered = infoPendingState.allItems.filter((item) => {
+      const receiver = normalizePersonName(item.move?.["Принял"] ?? "");
+      const sender = normalizePersonName(resolveInfoPendingSender(item.move));
+      if (receiverFilter && !receiver.includes(receiverFilter)) return false;
+      if (senderFilter && !sender.includes(senderFilter)) return false;
+      const moveDate = parseDateValue(item.move?.["Дата перемещения"]);
+      const moveTs = toTs(moveDate);
+      if (fromTs !== null && (moveTs === null || moveTs < fromTs)) return false;
+      if (toDateTs !== null && (moveTs === null || moveTs > toDateTs)) return false;
+      return true;
+    });
+
+    const byDateAsc = (a, b) => {
+      const aDate = parseDateValue(a.move?.["Дата перемещения"]);
+      const bDate = parseDateValue(b.move?.["Дата перемещения"]);
+      const aTs = aDate instanceof Date ? aDate.getTime() : Number.MAX_SAFE_INTEGER;
+      const bTs = bDate instanceof Date ? bDate.getTime() : Number.MAX_SAFE_INTEGER;
+      if (aTs !== bTs) return aTs - bTs;
+      return a.moveIndex - b.moveIndex;
+    };
+
+    filtered.sort((a, b) => {
+      const mode = infoPendingState.filters.sort;
+      if (mode === "new") return byDateAsc(b, a);
+      if (mode === "receiver") {
+        const receiverA = normalizePersonName(a.move?.["Принял"] ?? "");
+        const receiverB = normalizePersonName(b.move?.["Принял"] ?? "");
+        const compare = receiverA.localeCompare(receiverB, "ru");
+        if (compare !== 0) return compare;
+        return byDateAsc(a, b);
+      }
+      if (mode === "sender") {
+        const senderA = normalizePersonName(resolveInfoPendingSender(a.move));
+        const senderB = normalizePersonName(resolveInfoPendingSender(b.move));
+        const compare = senderA.localeCompare(senderB, "ru");
+        if (compare !== 0) return compare;
+        return byDateAsc(a, b);
+      }
+      return byDateAsc(a, b);
+    });
+
+    infoPendingState.filteredItems = filtered;
+  };
+
+  const renderInfoPendingList = () => {
+    if (!infoPendingListEl) return;
+    infoPendingListEl.innerHTML = "";
+    const items = infoPendingState.filteredItems;
+    if (!items.length) {
+      infoPendingEmptyEl?.classList.remove("is-hidden");
+      return;
+    }
+    infoPendingEmptyEl?.classList.add("is-hidden");
+
+    const table = document.createElement("div");
+    table.className = "tools-table pending-moves-tools-table";
+
+    items.forEach((item) => {
+      const { move, tool, fineAmount } = item;
+      const row = document.createElement("div");
+      row.className = "tools-table__row";
+
+      const numberCell = document.createElement("div");
+      numberCell.className = "tools-table__cell tools-table__cell--number";
+      const number =
+        String(move?.["Номер"] ?? "").trim() ||
+        String(move?.["Бух.номер"] ?? "").trim();
+      numberCell.textContent = number || "—";
+
+      const infoCell = document.createElement("div");
+      infoCell.className = "tools-table__cell";
+      const title = document.createElement("div");
+      title.className = "tools-table__title";
+      const meansName = String(tool?.["Наименование"] ?? "").trim();
+      title.textContent = meansName || "Без названия";
+
+      const meta = document.createElement("div");
+      meta.className = "tools-table__meta tools-table__meta--stack";
+      const receiver = String(move?.["Принял"] ?? "").trim();
+      const sender = resolveInfoPendingSender(move);
+      const senderLabel = Object.prototype.hasOwnProperty.call(
+        move ?? {},
+        "Ответственный до перемещения"
+      )
+        ? "Ответственный до перемещения"
+        : "Переместил";
+      const moveDate = String(move?.["Дата перемещения"] ?? "").trim();
+      [
+        receiver ? `Принял: ${receiver}` : "",
+        sender ? `${senderLabel}: ${sender}` : "",
+        moveDate ? `Дата перемещения: ${moveDate}` : "",
+      ]
+        .filter(Boolean)
+        .forEach((line) => {
+          const lineEl = document.createElement("div");
+          lineEl.className = "pending-move-meta";
+          lineEl.textContent = line;
+          meta.appendChild(lineEl);
+        });
+      infoCell.append(title, meta);
+
+      const fine = document.createElement("div");
+      fine.className = "pending-move-fine";
+      fine.textContent = `Текущий штраф: ${formatNotificationCostWithoutCurrency(
+        fineAmount
+      )}`;
+      infoCell.appendChild(fine);
+
+      const photoCell = document.createElement("div");
+      photoCell.className = "tools-table__cell tools-table__cell--thumb";
+      const thumb = document.createElement("div");
+      thumb.className = "tools-table__thumb";
+      const img = document.createElement("img");
+      img.className = "tools-table__thumb-image";
+      img.alt = meansName || "Инструмент";
+      const photoCount = Number.parseInt(tool?.["Количество фото"] ?? 0, 10);
+      const hasPhoto = Number.isFinite(photoCount) && photoCount > 0;
+      const photoNumber =
+        String(tool?.["Номер"] ?? "").trim() ||
+        String(tool?.["Бух.номер"] ?? "").trim() ||
+        number;
+      applyToolPhotoWithFallback({
+        img,
+        orgFolder: toolsState.orgFolder,
+        toolNumber: photoNumber,
+        hasPhoto,
+      });
+      thumb.appendChild(img);
+      photoCell.appendChild(thumb);
+
+      row.append(numberCell, infoCell, photoCell);
+      table.appendChild(row);
+    });
+
+    infoPendingListEl.appendChild(table);
+    if (infoPendingSubtitleEl) {
+      infoPendingSubtitleEl.textContent = `Перемещений без ответа: ${items.length}`;
+    }
+  };
+
+  const loadInfoPendingList = async () => {
+    const orgFolder = context.orgFolderName ?? "";
+    infoPendingState.allItems = [];
+    infoPendingState.filteredItems = [];
+    infoPendingState.toolMap = new Map();
+    infoPendingState.fineConfig = settingsData?.organization?.fines?.lateReply ?? {};
+    if (!orgFolder) {
+      if (infoPendingSubtitleEl) infoPendingSubtitleEl.textContent = "Организация не найдена.";
+      renderInfoPendingList();
+      return;
+    }
+    toolsState.orgFolder = orgFolder;
+    if (infoPendingSubtitleEl) infoPendingSubtitleEl.textContent = "Загружаем список...";
+
+    const movesPath = `./${orgFolder}/Перемещения.json`;
+    let moves = [];
+    try {
+      const rawMoves = await loadJson(movesPath);
+      moves = Array.isArray(rawMoves)
+        ? rawMoves
+        : Array.isArray(rawMoves?.moves)
+          ? rawMoves.moves
+          : [];
+    } catch (error) {
+      console.warn("Не удалось загрузить перемещения.", error);
+    }
+
+    infoPendingState.toolMap = await buildPendingToolsMap(orgFolder);
+    infoPendingState.allItems = moves
+      .map((move, index) => ({ move, moveIndex: index }))
+      .filter(({ move }) => !String(move?.["Дата ответа"] ?? "").trim())
+      .map((entry) => {
+        const number = String(entry.move?.["Номер"] ?? "").trim();
+        const accounting = String(entry.move?.["Бух.номер"] ?? "").trim();
+        const tool =
+          infoPendingState.toolMap.get(`n:${number}`) ??
+          infoPendingState.toolMap.get(`a:${accounting}`) ??
+          null;
+        return {
+          ...entry,
+          tool,
+          fineAmount: resolveLateReplyFine(entry.move, infoPendingState.fineConfig),
+        };
+      });
+
+    applyInfoPendingFiltersAndSort();
+    renderInfoPendingList();
+  };
+
+  const openInfoPendingModal = async () => {
+    if (!infoPendingModalEl) return;
+    infoPendingModalEl.classList.remove("is-hidden");
+    document.body.style.overflow = "hidden";
+    await loadInfoPendingList();
+  };
+
+  const closeInfoPendingModal = () => {
+    if (!infoPendingModalEl) return;
+    infoPendingModalEl.classList.add("is-hidden");
+    document.body.style.overflow = "";
+  };
+
+  const handleInfoPendingFiltersChanged = () => {
+    infoPendingState.filters.sort = String(infoPendingSortEl?.value ?? "old");
+    infoPendingState.filters.receiver = String(
+      infoPendingFilterReceiverEl?.value ?? ""
+    ).trim();
+    infoPendingState.filters.sender = String(
+      infoPendingFilterSenderEl?.value ?? ""
+    ).trim();
+    infoPendingState.filters.dateFrom = String(
+      infoPendingFilterDateFromEl?.value ?? ""
+    ).trim();
+    infoPendingState.filters.dateTo = String(
+      infoPendingFilterDateToEl?.value ?? ""
+    ).trim();
+    applyInfoPendingFiltersAndSort();
+    renderInfoPendingList();
+  };
+
   const applyPendingMovesDecision = async ({ moveIndexes, decision }) => {
     if (pendingMovesState.isSaving) return;
     if (!moveIndexes.length) {
@@ -12172,6 +12454,35 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       }
     });
   }
+
+  if (infoPendingBackdropEl) {
+    infoPendingBackdropEl.addEventListener("click", closeInfoPendingModal);
+  }
+  if (infoPendingCloseButton) {
+    infoPendingCloseButton.addEventListener("click", closeInfoPendingModal);
+  }
+  infoPendingModalEl?.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      closeInfoPendingModal();
+    }
+  });
+  infoPendingSortEl?.addEventListener("change", handleInfoPendingFiltersChanged);
+  infoPendingFilterReceiverEl?.addEventListener(
+    "input",
+    handleInfoPendingFiltersChanged
+  );
+  infoPendingFilterSenderEl?.addEventListener(
+    "input",
+    handleInfoPendingFiltersChanged
+  );
+  infoPendingFilterDateFromEl?.addEventListener(
+    "change",
+    handleInfoPendingFiltersChanged
+  );
+  infoPendingFilterDateToEl?.addEventListener(
+    "change",
+    handleInfoPendingFiltersChanged
+  );
 
   if (toolsSearchInput) {
     toolsSearchInput.addEventListener("input", (event) => {
@@ -20473,6 +20784,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   infoGridEl?.addEventListener("click", (event) => {
     const button = event.target.closest("[data-energy-info-option]");
     if (!button) return;
+    const option = String(button.dataset.energyInfoOption ?? "").trim();
+    if (option === "pending-list") {
+      closeInfoModal();
+      void openInfoPendingModal();
+    }
   });
 
   downloadResponsibleSearchEl?.addEventListener("input", () => {

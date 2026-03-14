@@ -7453,12 +7453,17 @@
 
         .pending-moves-tools-table .tools-table__cell--thumb {
           justify-self: end;
-          align-self: center;
+          align-self: stretch;
+          height: 100%;
+          display: flex;
+          align-items: stretch;
         }
 
         .pending-moves-tools-table .tools-table__thumb {
-          width: 3392px;
-          height: 3392px;
+          height: 100%;
+          width: auto;
+          aspect-ratio: 1 / 1;
+          min-height: 3392px;
           border-radius: 14px;
         }
 

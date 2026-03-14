@@ -7432,10 +7432,11 @@
 
         .pending-moves-tools-table .tools-table__row {
           --pending-tools-horizontal-gap: 10px;
-          grid-template-columns: max-content minmax(120px, 170px) minmax(470px, 540px);
+          grid-template-columns: max-content minmax(0, 1fr) minmax(88px, 98px);
           column-gap: 2px;
           row-gap: 6px;
           padding: 8px var(--pending-tools-horizontal-gap);
+          align-items: stretch;
         }
 
         .pending-moves-tools-table .tools-table__cell:not(.tools-table__cell--number):not(.tools-table__cell--thumb):not(.tools-table__cell--actions) {
@@ -7453,12 +7454,13 @@
 
         .pending-moves-tools-table .tools-table__cell--thumb {
           justify-self: end;
-          align-self: center;
+          align-self: stretch;
         }
 
         .pending-moves-tools-table .tools-table__thumb {
-          width: 3392px;
-          height: 3392px;
+          width: 100%;
+          height: 100%;
+          min-height: 98px;
           border-radius: 14px;
         }
 

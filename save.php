@@ -1619,6 +1619,7 @@ function resolveLateReplyBalanceByResponsible(array $fines): array {
 function buildMoveRepliesMailingText(string $organization, array $pendingMoves, array $settings, array $fines): string {
   $count = count($pendingMoves);
   $headerOrg = trim($organization) !== "" ? trim($organization) : "Организация";
+  $headerOrgSafe = htmlspecialchars($headerOrg, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8");
   $timezone = new DateTimeZone("Europe/Moscow");
   $now = new DateTimeImmutable("now", $timezone);
   $lateFineConfig = resolveLateReplyFineConfig($settings);
@@ -1648,7 +1649,7 @@ function buildMoveRepliesMailingText(string $organization, array $pendingMoves, 
 
   $lines = [
     "📦 Напоминание: ответы на перемещения",
-    "🏢 " . $headerOrg,
+    "🏢 " . $headerOrgSafe,
     "",
     "📌 Без ответа: " . $count,
   ];
@@ -1668,7 +1669,8 @@ function buildMoveRepliesMailingText(string $organization, array $pendingMoves, 
     }
 
     $lines[] = "";
-    $lines[] = "👤 " . $responsible;
+    $responsibleSafe = htmlspecialchars($responsible, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8");
+    $lines[] = "👤 <b><u>" . $responsibleSafe . "</u></b>";
     $lines[] = "💳 Текущий остаток штрафа (закрытые): " . formatMoneyLabel($currentBalance);
     $lines[] = "⏳ Потенциальный штраф по открытым: " . formatMoneyLabel($currentPendingFine);
 
@@ -1683,12 +1685,16 @@ function buildMoveRepliesMailingText(string $organization, array $pendingMoves, 
       $pendingDays = (int) ($moveInfo["pendingDays"] ?? 0);
       $currentFine = (float) ($moveInfo["currentFine"] ?? 0);
 
-      $line = "• 🧰 " . $toolName;
+      $toolNameSafe = htmlspecialchars($toolName, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8");
+      $toolNumberSafe = htmlspecialchars($toolNumber, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8");
+      $toObjectSafe = htmlspecialchars($toObject, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8");
+
+      $line = "• 🧰 " . $toolNameSafe;
       if ($toolNumber !== "") {
-        $line .= " (№" . $toolNumber . ")";
+        $line .= " (№" . $toolNumberSafe . ")";
       }
       if ($toObject !== "") {
-        $line .= " → 📍 " . $toObject;
+        $line .= " → 📍 " . $toObjectSafe;
       }
       $line .= "\n  ⌛ Без ответа: " . $pendingDays . " дн.";
       $line .= " · 💸 Штраф сейчас: " . formatMoneyLabel($currentFine);
@@ -1802,7 +1808,7 @@ function runMoveRepliesMailing(array $options = []): array {
       $text = buildMoveRepliesMailingText($orgDisplayName, $pendingMoves, $settings, $fines);
       $sendResult = $dryRun
         ? ["ok" => true, "statusCode" => 0]
-        : sendTelegramTextMessage($botToken, $chatId, $text);
+        : sendTelegramTextMessage($botToken, $chatId, $text, "HTML");
 
       if (!empty($sendResult["ok"])) {
         $sentState[$stateKey] = $now->format(DateTimeInterface::ATOM);
@@ -2432,13 +2438,16 @@ function readJsonArrayFile(string $path): array {
   return is_array($decoded) ? $decoded : [];
 }
 
-function sendTelegramTextMessage(string $botToken, string $chatId, string $text): array {
+function sendTelegramTextMessage(string $botToken, string $chatId, string $text, ?string $parseMode = null): array {
   $apiUrl = "https://api.telegram.org/bot" . rawurlencode($botToken) . "/sendMessage";
   $payload = [
     "chat_id" => $chatId,
     "text" => $text,
     "disable_web_page_preview" => true,
   ];
+  if (is_string($parseMode) && trim($parseMode) !== "") {
+    $payload["parse_mode"] = trim($parseMode);
+  }
 
   if (function_exists("curl_init")) {
     $curl = curl_init($apiUrl);

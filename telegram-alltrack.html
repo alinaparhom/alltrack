@@ -6847,10 +6847,14 @@
 
       .pending-moves-tools-table .tools-table__row {
         --pending-tools-horizontal-gap: 14px;
-        grid-template-columns: max-content minmax(0, 1fr) minmax(88px, 112px);
+        grid-template-columns: max-content minmax(0, 1fr) minmax(104px, 132px);
         column-gap: var(--pending-tools-horizontal-gap);
         row-gap: 10px;
         padding: 10px var(--pending-tools-horizontal-gap);
+      }
+
+      .pending-moves-tools-table .tools-table__cell:not(.tools-table__cell--number):not(.tools-table__cell--actions) {
+        margin-left: calc(var(--pending-tools-horizontal-gap) * -1);
       }
 
       .pending-moves-tools-table .tools-table__cell {
@@ -6883,8 +6887,8 @@
       }
 
       .pending-moves-tools-table .tools-table__thumb {
-        width: 76px;
-        height: 76px;
+        width: 88px;
+        height: 88px;
       }
 
       .tools-table__actions-label {
@@ -7309,7 +7313,7 @@
 
         .pending-moves-tools-table .tools-table__row {
           --pending-tools-horizontal-gap: 12px;
-          grid-template-columns: max-content minmax(0, 1fr) minmax(76px, 96px);
+          grid-template-columns: max-content minmax(0, 1fr) minmax(86px, 108px);
           column-gap: var(--pending-tools-horizontal-gap);
           row-gap: 8px;
           padding: 10px var(--pending-tools-horizontal-gap);
@@ -7330,8 +7334,8 @@
         }
 
         .pending-moves-tools-table .tools-table__thumb {
-          width: 72px;
-          height: 72px;
+          width: 82px;
+          height: 82px;
         }
 
         .pending-moves-tools-table .tools-table__cell {

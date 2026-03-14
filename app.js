@@ -5311,9 +5311,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const pendingMovesBulkConfirmBackdropEl = contentEl.querySelector(
     "[data-pending-moves-bulk-confirm-backdrop]"
   );
-  const pendingMovesBulkConfirmCloseButton = contentEl.querySelector(
-    "[data-pending-moves-bulk-confirm-close]"
-  );
   const pendingMovesBulkConfirmCancelButton = contentEl.querySelector(
     "[data-pending-moves-bulk-confirm-cancel]"
   );
@@ -13177,11 +13174,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   }
   if (pendingMovesBulkConfirmBackdropEl) {
     pendingMovesBulkConfirmBackdropEl.addEventListener("click", () => {
-      closePendingMovesBulkConfirmModal();
-    });
-  }
-  if (pendingMovesBulkConfirmCloseButton) {
-    pendingMovesBulkConfirmCloseButton.addEventListener("click", () => {
       closePendingMovesBulkConfirmModal();
     });
   }

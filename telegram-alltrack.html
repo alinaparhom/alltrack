@@ -6858,10 +6858,10 @@
 
       .pending-moves-tools-table .tools-table__row {
         --pending-tools-horizontal-gap: 10px;
-        grid-template-columns: max-content minmax(0, 1fr) minmax(240px, 256px);
+        grid-template-columns: max-content minmax(0, 1fr) minmax(132px, 140px);
         column-gap: 2px;
-        row-gap: 10px;
-        padding: 10px var(--pending-tools-horizontal-gap);
+        row-gap: 8px;
+        padding: 8px var(--pending-tools-horizontal-gap);
       }
 
       .pending-moves-tools-table .tools-table__cell--number {
@@ -6874,6 +6874,10 @@
 
       .pending-moves-tools-table .tools-table__cell {
         gap: 2px;
+      }
+
+      .pending-moves-tools-table .tools-table__title {
+        font-size: 13px;
       }
 
       .tools-table__cell--actions {
@@ -6902,8 +6906,9 @@
       }
 
       .pending-moves-tools-table .tools-table__thumb {
-        width: 912px;
-        height: 912px;
+        width: 112px;
+        height: 112px;
+        border-radius: 16px;
       }
 
       .pending-moves-tools-table .tools-table__cell--thumb {
@@ -6919,24 +6924,24 @@
       }
 
       .pending-move-responsible {
-        font-size: 12px;
+        font-size: 11px;
         font-weight: 600;
         color: var(--title);
       }
 
       .pending-move-meta {
-        font-size: 12px;
+        font-size: 11px;
         color: var(--muted);
       }
 
       .pending-move-fine {
-        margin-top: 6px;
+        margin-top: 4px;
         display: inline-flex;
         align-items: center;
         gap: 6px;
-        padding: 4px 8px;
+        padding: 3px 7px;
         border-radius: 999px;
-        font-size: 11px;
+        font-size: 10px;
         font-weight: 600;
         color: var(--danger);
         background: rgba(248, 113, 113, 0.12);
@@ -6950,8 +6955,8 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        padding: 6px 10px;
-        font-size: 12px;
+        padding: 5px 9px;
+        font-size: 11px;
         font-weight: 600;
         line-height: 1.2;
         text-align: center;
@@ -7417,10 +7422,10 @@
 
         .pending-moves-tools-table .tools-table__row {
           --pending-tools-horizontal-gap: 10px;
-          grid-template-columns: max-content minmax(0, 1fr) minmax(220px, 236px);
+          grid-template-columns: max-content minmax(0, 1fr) minmax(108px, 116px);
           column-gap: 2px;
-          row-gap: 8px;
-          padding: 10px var(--pending-tools-horizontal-gap);
+          row-gap: 6px;
+          padding: 8px var(--pending-tools-horizontal-gap);
         }
 
         .pending-moves-tools-table .tools-table__cell:not(.tools-table__cell--number):not(.tools-table__cell--thumb):not(.tools-table__cell--actions) {
@@ -7442,8 +7447,9 @@
         }
 
         .pending-moves-tools-table .tools-table__thumb {
-          width: 832px;
-          height: 832px;
+          width: 96px;
+          height: 96px;
+          border-radius: 14px;
         }
 
         .pending-moves-tools-table .tools-table__cell {

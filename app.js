@@ -14469,6 +14469,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         .filter(Boolean)
         .join(" · ");
       const statusLine = document.createElement("div");
+      statusLine.className = "tools-table__status-line";
       statusLine.textContent = `Статус: ${status || "—"}`;
       meta.append(accountingLine, detailsLine, statusLine);
       infoCell.append(title, meta);
@@ -15751,6 +15752,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const lineBottom = document.createElement("div");
       lineBottom.textContent = `Бух.номер: ${accountingNumber || "—"}`;
       const statusLine = document.createElement("div");
+      statusLine.className = "tools-table__status-line";
       statusLine.textContent = `Статус: ${status || "—"}`;
       meta.append(lineTop, lineBottom, statusLine);
       infoCell.append(title, meta);

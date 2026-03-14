@@ -6858,7 +6858,7 @@
 
       .pending-moves-tools-table .tools-table__row {
         --pending-tools-horizontal-gap: 10px;
-        grid-template-columns: max-content minmax(0, 1fr) minmax(452px, 460px);
+        grid-template-columns: max-content minmax(220px, 312px) minmax(452px, 460px);
         column-gap: 2px;
         row-gap: 8px;
         padding: 8px var(--pending-tools-horizontal-gap);
@@ -6917,7 +6917,7 @@
       }
 
       .info-pending-tools-table .tools-table__row {
-        grid-template-columns: max-content minmax(0, 1fr) minmax(900px, 908px);
+        grid-template-columns: max-content minmax(220px, 320px) minmax(900px, 908px);
       }
 
       .pending-moves-tools-table .tools-table__cell--thumb {
@@ -6964,8 +6964,9 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        padding: 4px 8px;
-        font-size: 10px;
+        min-height: 34px;
+        padding: 7px 12px;
+        font-size: 12px;
         font-weight: 600;
         line-height: 1.2;
         text-align: center;

@@ -1954,7 +1954,7 @@ export function renderRole(user) {
             </div>
             <div class="settings-modal__body tools-modal__body">
               <div class="tools-controls">
-                <div class="tools-controls__row">
+                <div class="tools-controls__row tools-controls__row--no-photo-search">
                   <label class="tools-search">
                     <input
                       class="form-input tools-search__input"

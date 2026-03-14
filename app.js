@@ -11937,8 +11937,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (!pendingMovesBulkConfirmModalEl) return;
     pendingMovesBulkConfirmModalEl.classList.add("is-hidden");
     pendingMovesState.bulkConfirmAction = null;
-    pendingMovesBulkConfirmSubmitButton?.classList.remove("action-danger");
-    pendingMovesBulkConfirmSubmitButton?.classList.add("action-primary");
+    pendingMovesBulkConfirmSubmitButton?.classList.remove(
+      "pending-moves-bulk-confirm-submit--accept",
+      "pending-moves-bulk-confirm-submit--decline"
+    );
   };
 
   const openPendingMovesBulkConfirmModal = (action) => {
@@ -11964,8 +11966,14 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       pendingMovesBulkConfirmSubmitButton.textContent = isAccept
         ? "Да, принять всё"
         : "Да, не принять всё";
-      pendingMovesBulkConfirmSubmitButton.classList.toggle("action-primary", isAccept);
-      pendingMovesBulkConfirmSubmitButton.classList.toggle("action-danger", !isAccept);
+      pendingMovesBulkConfirmSubmitButton.classList.toggle(
+        "pending-moves-bulk-confirm-submit--accept",
+        isAccept
+      );
+      pendingMovesBulkConfirmSubmitButton.classList.toggle(
+        "pending-moves-bulk-confirm-submit--decline",
+        !isAccept
+      );
     }
     pendingMovesBulkConfirmModalEl.classList.remove("is-hidden");
   };

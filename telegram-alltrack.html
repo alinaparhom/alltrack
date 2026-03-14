@@ -6978,6 +6978,22 @@
         max-width: 560px;
       }
 
+      .pending-moves-bulk-confirm-modal__panel {
+        max-width: 520px;
+      }
+
+      .pending-moves-bulk-confirm-actions {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+      }
+
+      .pending-moves-bulk-confirm-actions .action-secondary,
+      .pending-moves-bulk-confirm-actions .action-primary,
+      .pending-moves-bulk-confirm-actions .action-danger {
+        width: 100%;
+      }
+
       .pending-moves-decline-textarea {
         min-height: 120px;
         resize: vertical;
@@ -7405,6 +7421,10 @@
           min-height: 42px;
           padding: 9px 10px;
           font-size: 13px;
+        }
+
+        .pending-moves-bulk-confirm-actions {
+          grid-template-columns: 1fr;
         }
 
         .pending-moves-tools-table .pending-move-action--decline {

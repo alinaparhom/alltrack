@@ -12204,7 +12204,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     infoPendingEmptyEl?.classList.add("is-hidden");
 
     const table = document.createElement("div");
-    table.className = "tools-table pending-moves-tools-table";
+    table.className = "tools-table pending-moves-tools-table info-pending-tools-table";
 
     items.forEach((item) => {
       const { move, tool, fineAmount } = item;

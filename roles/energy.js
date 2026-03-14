@@ -1704,14 +1704,14 @@ export function renderRole(user) {
             </div>
             <div class="settings-modal__footer pending-moves-bulk-confirm-actions">
               <button
-                class="action-secondary"
+                class="pending-moves-bulk-confirm-cancel"
                 type="button"
                 data-pending-moves-bulk-confirm-cancel
               >
                 Отмена
               </button>
               <button
-                class="action-primary"
+                class="pending-moves-bulk-confirm-submit"
                 type="button"
                 data-pending-moves-bulk-confirm-submit
               >

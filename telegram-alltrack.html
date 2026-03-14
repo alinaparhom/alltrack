@@ -6984,34 +6984,49 @@
 
       .pending-moves-bulk-confirm-actions {
         display: flex;
-        flex-wrap: nowrap;
+        flex-wrap: wrap;
         align-items: center;
-        justify-content: center;
-        gap: 12px;
+        justify-content: flex-end;
+        gap: 8px;
       }
 
-      .pending-moves-bulk-confirm-actions .action-secondary,
-      .pending-moves-bulk-confirm-actions .action-primary,
-      .pending-moves-bulk-confirm-actions .action-danger {
+      .pending-moves-bulk-confirm-cancel,
+      .pending-moves-bulk-confirm-submit {
         width: auto;
-        min-width: 164px;
-        border-radius: 14px;
-        border: 1px solid rgba(148, 163, 184, 0.34);
-        background: linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(241, 245, 249, 0.88));
-        color: #0f172a;
-        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
+        min-width: 0;
+        border-radius: 999px;
+        border: 1px solid transparent;
+        padding: 8px 12px;
+        min-height: 34px;
+        font-size: 13px;
+        font-weight: 600;
+        line-height: 1.2;
+        box-shadow: 0 6px 14px rgba(15, 23, 42, 0.12);
+        transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
       }
 
-      .pending-moves-bulk-confirm-actions .action-primary {
-        border-color: rgba(59, 130, 246, 0.45);
-        background: linear-gradient(135deg, #3b82f6, #2563eb);
+      .pending-moves-bulk-confirm-cancel {
+        border-color: rgba(248, 113, 113, 0.4);
+        background: linear-gradient(135deg, #ef4444, #dc2626);
         color: #ffffff;
       }
 
-      .pending-moves-bulk-confirm-actions .action-secondary {
-        border-color: rgba(15, 23, 42, 0.15);
-        background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(226, 232, 240, 0.92));
-        color: #0f172a;
+      .pending-moves-bulk-confirm-submit {
+        border-color: rgba(74, 222, 128, 0.45);
+        background: linear-gradient(135deg, #22c55e, #16a34a);
+        color: #ffffff;
+      }
+
+      .pending-moves-bulk-confirm-submit.pending-moves-bulk-confirm-submit--decline {
+        border-color: rgba(248, 113, 113, 0.4);
+        background: linear-gradient(135deg, #ef4444, #dc2626);
+      }
+
+      .pending-moves-bulk-confirm-cancel:hover,
+      .pending-moves-bulk-confirm-submit:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 10px 18px rgba(15, 23, 42, 0.14);
+        filter: brightness(1.03);
       }
 
       .pending-moves-decline-textarea {
@@ -7444,15 +7459,14 @@
         }
 
         .pending-moves-bulk-confirm-actions {
-          flex-wrap: wrap;
-          gap: 10px;
+          justify-content: stretch;
+          gap: 8px;
         }
 
-        .pending-moves-bulk-confirm-actions .action-secondary,
-        .pending-moves-bulk-confirm-actions .action-primary,
-        .pending-moves-bulk-confirm-actions .action-danger {
+        .pending-moves-bulk-confirm-cancel,
+        .pending-moves-bulk-confirm-submit {
           flex: 1 1 100%;
-          min-width: 0;
+          justify-content: center;
         }
 
         .pending-moves-tools-table .pending-move-action--decline {

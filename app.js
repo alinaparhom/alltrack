@@ -14465,11 +14465,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       detailsLine.textContent = [
         `Производитель: ${manufacturer || "—"}`,
         `Модель: ${model || "—"}`,
-        status ? `Статус: ${status}` : "",
       ]
         .filter(Boolean)
         .join(" · ");
-      meta.append(accountingLine, detailsLine);
+      const statusLine = document.createElement("div");
+      statusLine.textContent = `Статус: ${status || "—"}`;
+      meta.append(accountingLine, detailsLine, statusLine);
       infoCell.append(title, meta);
 
       const actionCell = document.createElement("div");
@@ -15748,11 +15749,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         `Модель: ${model || "—"}`,
       ].join(" · ");
       const lineBottom = document.createElement("div");
-      lineBottom.textContent = [
-        `Бух.номер: ${accountingNumber || "—"}`,
-        `Статус: ${status || "—"}`,
-      ].join(" · ");
-      meta.append(lineTop, lineBottom);
+      lineBottom.textContent = `Бух.номер: ${accountingNumber || "—"}`;
+      const statusLine = document.createElement("div");
+      statusLine.textContent = `Статус: ${status || "—"}`;
+      meta.append(lineTop, lineBottom, statusLine);
       infoCell.append(title, meta);
 
       row.append(numberCell, infoCell);
@@ -15835,11 +15835,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         `Модель: ${model || "—"}`,
       ].join(" · ");
       const lineBottom = document.createElement("div");
-      lineBottom.textContent = [
-        `Бух.номер: ${accountingNumber || "—"}`,
-        `Статус: ${status || "—"}`,
-      ].join(" · ");
-      meta.append(lineTop, lineBottom);
+      lineBottom.textContent = `Бух.номер: ${accountingNumber || "—"}`;
+      const statusLine = document.createElement("div");
+      statusLine.textContent = `Статус: ${status || "—"}`;
+      meta.append(lineTop, lineBottom, statusLine);
       infoCell.append(title, meta);
 
       row.append(numberCell, infoCell);

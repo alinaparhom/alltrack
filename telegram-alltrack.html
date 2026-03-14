@@ -7432,7 +7432,7 @@
 
         .pending-moves-tools-table .tools-table__row {
           --pending-tools-horizontal-gap: 10px;
-          grid-template-columns: max-content minmax(0, 1fr) minmax(88px, 98px);
+          grid-template-columns: max-content minmax(0, 1fr) auto;
           column-gap: 2px;
           row-gap: 6px;
           padding: 8px var(--pending-tools-horizontal-gap);
@@ -7458,9 +7458,11 @@
         }
 
         .pending-moves-tools-table .tools-table__thumb {
-          width: 100%;
+          width: auto;
           height: 100%;
           min-height: 98px;
+          min-width: 98px;
+          aspect-ratio: 1 / 1;
           border-radius: 14px;
         }
 

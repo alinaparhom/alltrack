@@ -7432,57 +7432,43 @@
 
         .pending-moves-tools-table .tools-table__row {
           --pending-tools-horizontal-gap: 10px;
-          grid-template-columns: minmax(0, 1fr) minmax(88px, 104px);
-          column-gap: 10px;
+          grid-template-columns: max-content minmax(120px, 170px) minmax(470px, 540px);
+          column-gap: 2px;
           row-gap: 6px;
           padding: 8px var(--pending-tools-horizontal-gap);
-          align-items: stretch;
         }
 
         .pending-moves-tools-table .tools-table__cell:not(.tools-table__cell--number):not(.tools-table__cell--thumb):not(.tools-table__cell--actions) {
-          margin-left: 0;
-          grid-column: 1;
-          grid-row: 2;
-          min-width: 0;
+          margin-left: -28px;
         }
 
         .pending-moves-tools-table .tools-table__cell--actions {
           display: flex;
           align-items: center;
           justify-content: space-between;
-          gap: 8px;
           width: 100%;
-          grid-column: 1;
-          grid-row: 3;
+          gap: 8px;
         }
 
-        .pending-moves-tools-table .tools-table__cell--number {
-          grid-column: 1;
-          grid-row: 1;
-        }
 
         .pending-moves-tools-table .tools-table__cell--thumb {
-          grid-column: 2;
-          grid-row: 1 / span 3;
-          justify-self: stretch;
-          align-self: stretch;
-          height: 100%;
+          justify-self: end;
+          align-self: center;
         }
 
         .pending-moves-tools-table .tools-table__thumb {
-          width: 100%;
-          height: 100%;
-          min-height: 130px;
+          width: 3392px;
+          height: 3392px;
           border-radius: 14px;
         }
 
         .info-pending-tools-table .tools-table__thumb {
-          width: 100%;
-          height: 100%;
+          width: 3680px;
+          height: 3680px;
         }
 
         .info-pending-tools-table .tools-table__row {
-          grid-template-columns: minmax(0, 1fr) minmax(88px, 104px);
+          grid-template-columns: max-content minmax(104px, 148px) minmax(980px, 1080px);
         }
 
         .pending-moves-tools-table .tools-table__cell {
@@ -7490,7 +7476,7 @@
         }
 
         .pending-moves-tools-table .tools-table__cell--actions {
-          grid-column: 1;
+          grid-column: 1 / -1;
           margin-top: 4px;
         }
 

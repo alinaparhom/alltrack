@@ -5305,6 +5305,27 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const pendingMovesDeclineAllButton = contentEl.querySelector(
     "[data-pending-moves-decline-all]"
   );
+  const pendingMovesBulkConfirmModalEl = contentEl.querySelector(
+    "[data-pending-moves-bulk-confirm-modal]"
+  );
+  const pendingMovesBulkConfirmBackdropEl = contentEl.querySelector(
+    "[data-pending-moves-bulk-confirm-backdrop]"
+  );
+  const pendingMovesBulkConfirmCloseButton = contentEl.querySelector(
+    "[data-pending-moves-bulk-confirm-close]"
+  );
+  const pendingMovesBulkConfirmCancelButton = contentEl.querySelector(
+    "[data-pending-moves-bulk-confirm-cancel]"
+  );
+  const pendingMovesBulkConfirmSubmitButton = contentEl.querySelector(
+    "[data-pending-moves-bulk-confirm-submit]"
+  );
+  const pendingMovesBulkConfirmTitleEl = contentEl.querySelector(
+    "[data-pending-moves-bulk-confirm-title]"
+  );
+  const pendingMovesBulkConfirmTextEl = contentEl.querySelector(
+    "[data-pending-moves-bulk-confirm-text]"
+  );
   const pendingMovesDeclineModalEl = contentEl.querySelector(
     "[data-pending-moves-decline-modal]"
   );
@@ -5869,6 +5890,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     replacementMode: false,
     vacationStartAt: "",
     isSaving: false,
+    bulkConfirmAction: null,
   };
   const pendingMovePhotoViewerState = {
     files: [],
@@ -11898,6 +11920,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (!pendingMovesModalEl) return;
     if (pendingMovesState.isSaving) return;
     pendingMovesModalEl.classList.add("is-hidden");
+    closePendingMovesBulkConfirmModal();
     document.body.style.overflow = "";
     if (pendingMovesMessageEl) {
       pendingMovesMessageEl.textContent = "";
@@ -11911,6 +11934,55 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     pendingMovesModalEl.classList.remove("is-hidden");
     document.body.style.overflow = "hidden";
     await loadPendingMovesList(options);
+  };
+
+  const closePendingMovesBulkConfirmModal = () => {
+    if (!pendingMovesBulkConfirmModalEl) return;
+    pendingMovesBulkConfirmModalEl.classList.add("is-hidden");
+    pendingMovesState.bulkConfirmAction = null;
+    pendingMovesBulkConfirmSubmitButton?.classList.remove("action-danger");
+    pendingMovesBulkConfirmSubmitButton?.classList.add("action-primary");
+  };
+
+  const openPendingMovesBulkConfirmModal = (action) => {
+    if (!pendingMovesBulkConfirmModalEl || pendingMovesState.isSaving) return;
+    const total = pendingMovesState.pendingItems.length;
+    if (!total) {
+      setPendingMovesMessage("Нет инструментов для массового действия.", "info");
+      return;
+    }
+    const isAccept = action === "accept";
+    pendingMovesState.bulkConfirmAction = action;
+    if (pendingMovesBulkConfirmTitleEl) {
+      pendingMovesBulkConfirmTitleEl.textContent = isAccept
+        ? "Принять все инструменты?"
+        : "Не принять все инструменты?";
+    }
+    if (pendingMovesBulkConfirmTextEl) {
+      pendingMovesBulkConfirmTextEl.textContent = isAccept
+        ? `Подтвердите, что хотите принять все (${total}) ожидающих инструментов.`
+        : `Подтвердите, что хотите отклонить все (${total}) ожидающих инструментов.`;
+    }
+    if (pendingMovesBulkConfirmSubmitButton) {
+      pendingMovesBulkConfirmSubmitButton.textContent = isAccept
+        ? "Да, принять всё"
+        : "Да, не принять всё";
+      pendingMovesBulkConfirmSubmitButton.classList.toggle("action-primary", isAccept);
+      pendingMovesBulkConfirmSubmitButton.classList.toggle("action-danger", !isAccept);
+    }
+    pendingMovesBulkConfirmModalEl.classList.remove("is-hidden");
+  };
+
+  const applyPendingMovesBulkAction = () => {
+    const action = pendingMovesState.bulkConfirmAction;
+    if (!action) return;
+    const indexes = pendingMovesState.pendingItems.map((item) => item.moveIndex);
+    closePendingMovesBulkConfirmModal();
+    if (action === "accept") {
+      applyPendingMovesDecision({ moveIndexes: indexes, decision: "Принял" });
+      return;
+    }
+    applyPendingMovesDecision({ moveIndexes: indexes, decision: "Не принял" });
   };
 
   const resolveInfoPendingSender = (move) => {
@@ -13095,23 +13167,39 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   }
   if (pendingMovesAcceptAllButton) {
     pendingMovesAcceptAllButton.addEventListener("click", () => {
-      const indexes = pendingMovesState.pendingItems.map(
-        (item) => item.moveIndex
-      );
-      applyPendingMovesDecision({ moveIndexes: indexes, decision: "Принял" });
+      openPendingMovesBulkConfirmModal("accept");
     });
   }
   if (pendingMovesDeclineAllButton) {
     pendingMovesDeclineAllButton.addEventListener("click", () => {
-      const indexes = pendingMovesState.pendingItems.map(
-        (item) => item.moveIndex
-      );
-      applyPendingMovesDecision({
-        moveIndexes: indexes,
-        decision: "Не принял",
-      });
+      openPendingMovesBulkConfirmModal("decline");
     });
   }
+  if (pendingMovesBulkConfirmBackdropEl) {
+    pendingMovesBulkConfirmBackdropEl.addEventListener("click", () => {
+      closePendingMovesBulkConfirmModal();
+    });
+  }
+  if (pendingMovesBulkConfirmCloseButton) {
+    pendingMovesBulkConfirmCloseButton.addEventListener("click", () => {
+      closePendingMovesBulkConfirmModal();
+    });
+  }
+  if (pendingMovesBulkConfirmCancelButton) {
+    pendingMovesBulkConfirmCancelButton.addEventListener("click", () => {
+      closePendingMovesBulkConfirmModal();
+    });
+  }
+  if (pendingMovesBulkConfirmSubmitButton) {
+    pendingMovesBulkConfirmSubmitButton.addEventListener("click", () => {
+      applyPendingMovesBulkAction();
+    });
+  }
+  pendingMovesBulkConfirmModalEl?.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      closePendingMovesBulkConfirmModal();
+    }
+  });
   if (pendingMovesDeclineBackdropEl) {
     pendingMovesDeclineBackdropEl.addEventListener("click", () =>
       closePendingMovesDeclineModal(true)

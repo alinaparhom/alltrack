@@ -1681,6 +1681,54 @@ export function renderRole(user) {
           </div>
         </div>
         <div
+          class="settings-modal is-hidden pending-moves-bulk-confirm-modal"
+          data-pending-moves-bulk-confirm-modal
+        >
+          <div
+            class="settings-modal__backdrop"
+            data-pending-moves-bulk-confirm-backdrop
+          ></div>
+          <div
+            class="settings-modal__panel pending-moves-bulk-confirm-modal__panel"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Подтверждение массового действия"
+          >
+            <div class="settings-modal__header">
+              <div class="settings-modal__title">
+                <h2 data-pending-moves-bulk-confirm-title>Подтвердите действие</h2>
+                <p data-pending-moves-bulk-confirm-text>
+                  Вы уверены, что хотите применить действие ко всем инструментам?
+                </p>
+              </div>
+              <button
+                class="button-icon"
+                type="button"
+                data-pending-moves-bulk-confirm-close
+                aria-label="Закрыть окно подтверждения"
+              >
+                <span class="button-icon-emoji" aria-hidden="true">✕</span>
+              </button>
+            </div>
+            <div class="settings-modal__footer pending-moves-bulk-confirm-actions">
+              <button
+                class="action-secondary"
+                type="button"
+                data-pending-moves-bulk-confirm-cancel
+              >
+                Отмена
+              </button>
+              <button
+                class="action-primary"
+                type="button"
+                data-pending-moves-bulk-confirm-submit
+              >
+                Подтвердить
+              </button>
+            </div>
+          </div>
+        </div>
+        <div
           class="settings-modal is-hidden pending-moves-decline-modal"
           data-pending-moves-decline-modal
         >

@@ -6751,6 +6751,11 @@
         align-content: start;
       }
 
+      .pending-moves-modal__panel [data-pending-moves-message]:empty {
+        display: none;
+        min-height: 0;
+      }
+
       .pending-moves-loading {
         position: absolute;
         inset: 0;
@@ -6811,7 +6816,7 @@
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 10px;
-        margin-top: 10px;
+        margin-top: 0;
         padding: 10px;
         border-radius: 14px;
         border: 1px solid rgba(226, 232, 240, 0.9);

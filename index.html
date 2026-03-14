@@ -2,42 +2,87 @@
 <html lang="ru">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
     <title>AllTrack — Mini App</title>
     <style>
-      body {
-        margin: 0;
-        font-family: "Inter", system-ui, -apple-system, sans-serif;
-        background: #f3f6ff;
-        color: #1a1f2e;
-        min-height: 100vh;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+      :root {
+        color-scheme: light;
+        --bg: #f3f6ff;
+        --glass: rgba(255, 255, 255, 0.72);
+        --border: rgba(143, 164, 204, 0.3);
+        --text: #1a1f2e;
+        --muted: #5f6b85;
+        --accent: #3b7dff;
+        --shadow: 0 24px 60px rgba(26, 31, 46, 0.1);
       }
 
-      a {
-        color: #3b7dff;
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        padding: 16px;
+        font-family: "Inter", system-ui, -apple-system, sans-serif;
+        background: radial-gradient(circle at top, #ffffff 0%, var(--bg) 55%);
+        color: var(--text);
+      }
+
+      .redirect-card {
+        width: min(100%, 420px);
+        border-radius: 22px;
+        padding: 18px 16px;
+        border: 1px solid var(--border);
+        background: var(--glass);
+        backdrop-filter: blur(16px);
+        box-shadow: var(--shadow);
+        text-align: center;
+      }
+
+      .redirect-title {
+        margin: 0;
+        font-size: 20px;
+        line-height: 1.3;
+      }
+
+      .redirect-text {
+        margin: 10px 0 0;
+        font-size: 14px;
+        color: var(--muted);
+        line-height: 1.5;
+      }
+
+      .redirect-link {
+        color: var(--accent);
         text-decoration: none;
-        font-weight: 600;
+        font-weight: 700;
+      }
+
+      .redirect-link:active {
+        opacity: 0.8;
       }
     </style>
   </head>
   <body>
-    <p>
-      Если переход не сработал, откройте
-      <a href="./telegram-alltrack.html" data-redirect-link>AllTrack</a>.
-    </p>
+    <div class="redirect-card">
+      <h1 class="redirect-title">Открываем AllTrack…</h1>
+      <p class="redirect-text">
+        Если переход всё же не сработал, нажмите
+        <a class="redirect-link" href="./telegram-alltrack.html" data-redirect-link>Открыть AllTrack</a>.
+      </p>
+    </div>
+
     <script>
       const initDataKey = "alltrack-init-data";
-      const searchInitData = new URLSearchParams(window.location.search).get(
-        "tgWebAppData"
-      );
+      const params = new URLSearchParams(window.location.search);
+      const searchInitData = params.get("tgWebAppData");
       const rawHash = window.location.hash.replace(/^#/, "");
-      const hashInitData = rawHash
-        ? new URLSearchParams(rawHash).get("tgWebAppData")
-        : null;
+      const hashInitData = rawHash ? new URLSearchParams(rawHash).get("tgWebAppData") : null;
       const initDataToCache = searchInitData || hashInitData;
+
       if (initDataToCache) {
         try {
           sessionStorage.setItem(initDataKey, initDataToCache);
@@ -56,7 +101,33 @@
         link.href = targetUrl.href;
       }
 
-      window.location.replace(targetUrl.href);
+      let attempts = 0;
+      const maxAttempts = 4;
+      const tryRedirect = () => {
+        attempts += 1;
+
+        if (attempts === 1) {
+          window.location.href = targetUrl.href;
+          return;
+        }
+
+        if (attempts <= maxAttempts) {
+          window.location.replace(targetUrl.href);
+          return;
+        }
+
+        clearInterval(retryTimer);
+      };
+
+      const retryTimer = window.setInterval(tryRedirect, 320);
+      tryRedirect();
+
+      window.addEventListener("pagehide", () => clearInterval(retryTimer), { once: true });
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "hidden") {
+          clearInterval(retryTimer);
+        }
+      });
     </script>
   </body>
 </html>

@@ -1701,14 +1701,6 @@ export function renderRole(user) {
                   Вы уверены, что хотите применить действие ко всем инструментам?
                 </p>
               </div>
-              <button
-                class="button-icon"
-                type="button"
-                data-pending-moves-bulk-confirm-close
-                aria-label="Закрыть окно подтверждения"
-              >
-                <span class="button-icon-emoji" aria-hidden="true">✕</span>
-              </button>
             </div>
             <div class="settings-modal__footer pending-moves-bulk-confirm-actions">
               <button

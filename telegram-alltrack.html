@@ -3125,6 +3125,26 @@
         box-shadow: 0 12px 24px rgba(26, 31, 46, 0.1);
       }
 
+      button[class*="__close"],
+      .button-icon[aria-label="Закрыть"],
+      .icon-button[aria-label="Закрыть"] {
+        color: #dc2626;
+        border-color: rgba(220, 38, 38, 0.45);
+      }
+
+      button[class*="__close"]:hover,
+      .button-icon[aria-label="Закрыть"]:hover,
+      .icon-button[aria-label="Закрыть"]:hover {
+        box-shadow: 0 10px 22px rgba(220, 38, 38, 0.2);
+      }
+
+      body[data-theme="dark"] button[class*="__close"],
+      body[data-theme="dark"] .button-icon[aria-label="Закрыть"],
+      body[data-theme="dark"] .icon-button[aria-label="Закрыть"] {
+        color: #f87171;
+        border-color: rgba(248, 113, 113, 0.55);
+      }
+
       .settings-modal {
         position: fixed;
         inset: 0;

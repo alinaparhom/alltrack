@@ -57,8 +57,11 @@ export function renderRole(user) {
         <div class="tools-map-card" data-tools-map>
           <div class="tools-map-header">
             <div class="tools-map-header-actions">
+              <span class="tools-map-pill" data-tools-map-count aria-live="polite"
+                >0 объектов</span
+              >
               <button
-                class="tools-map-toggle"
+                class="tools-map-toggle tools-map-toggle--header"
                 type="button"
                 data-tools-map-toggle
                 aria-expanded="true"
@@ -86,6 +89,15 @@ export function renderRole(user) {
                 Пока нет координат объектов.
               </div>
             </div>
+            <button
+              class="tools-map-toggle tools-map-toggle--overlay"
+              type="button"
+              data-tools-map-toggle-overlay
+              aria-expanded="true"
+              aria-label="Свернуть карту"
+            >
+              <span aria-hidden="true">▾</span>
+            </button>
           </div>
         </div>
         <div class="energy-actions-scroll" data-energy-actions-scroll>

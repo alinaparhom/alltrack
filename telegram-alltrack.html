@@ -1256,8 +1256,9 @@
       .tools-map-header-actions {
         display: inline-flex;
         align-items: center;
+        justify-content: flex-end;
         gap: 8px;
-        flex-shrink: 0;
+        flex: 1 1 auto;
       }
 
       .tools-map-title {
@@ -1319,6 +1320,26 @@
       .tools-map-toggle:focus-visible {
         outline: 2px solid var(--accent);
         outline-offset: 2px;
+      }
+
+      .tools-map-toggle--overlay {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        z-index: 3;
+        background: rgba(255, 255, 255, 0.86);
+      }
+
+      .tools-map-toggle--header {
+        display: none;
+      }
+
+      .tools-map-card--collapsed .tools-map-toggle--header {
+        display: inline-flex;
+      }
+
+      .tools-map-card--collapsed .tools-map-toggle--overlay {
+        display: none;
       }
 
       .tools-map-canvas {
@@ -1628,8 +1649,16 @@
         }
 
         .tools-map-pill {
+          margin-left: auto;
           padding: 5px 10px;
           font-size: 12px;
+        }
+
+        .tools-map-toggle--overlay {
+          top: 8px;
+          right: 8px;
+          width: 32px;
+          height: 32px;
         }
 
         .tools-map-canvas {

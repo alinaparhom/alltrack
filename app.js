@@ -11798,18 +11798,18 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const row = document.createElement("div");
       row.className = "tools-table__row";
       row.dataset.moveIndex = String(moveIndex);
-      const numberCell = document.createElement("div");
-      numberCell.className = "tools-table__cell tools-table__cell--number";
       const number =
         String(move?.["Номер"] ?? "").trim() ||
         String(move?.["Бух.номер"] ?? "").trim();
-      numberCell.textContent = number || "—";
       const infoCell = document.createElement("div");
-      infoCell.className = "tools-table__cell";
+      infoCell.className = "tools-table__cell pending-move-main-cell";
       const title = document.createElement("div");
       title.className = "tools-table__title";
       const meansName = String(tool?.["Наименование"] ?? "").trim();
-      title.textContent = meansName || "Без названия";
+      const displayNumber = number || "—";
+      title.textContent = meansName
+        ? `${displayNumber} ${meansName}`
+        : `${displayNumber} Без названия`;
       const meta = document.createElement("div");
       meta.className = "tools-table__meta tools-table__meta--stack";
       const manufacturer = String(tool?.["Производитель"] ?? "").trim();
@@ -11891,7 +11891,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         <button class=\"pending-move-action pending-move-action--decline\" type=\"button\" data-pending-move-action=\"decline\" data-move-index=\"${moveIndex}\" aria-label=\"Не принять\">Не принять</button>
         <button class=\"pending-move-action pending-move-action--accept\" type=\"button\" data-pending-move-action=\"accept\" data-move-index=\"${moveIndex}\" aria-label=\"Принять\">Принять</button>
       `;
-      row.append(numberCell, infoCell, photoCell, actionsCell);
+      row.append(infoCell, photoCell, actionsCell);
       table.appendChild(row);
     });
 
@@ -12283,18 +12283,18 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const row = document.createElement("div");
       row.className = "tools-table__row";
 
-      const numberCell = document.createElement("div");
-      numberCell.className = "tools-table__cell tools-table__cell--number";
       const number =
         String(move?.["Номер"] ?? "").trim() ||
         String(move?.["Бух.номер"] ?? "").trim();
-      numberCell.textContent = number || "—";
       const infoCell = document.createElement("div");
-      infoCell.className = "tools-table__cell";
+      infoCell.className = "tools-table__cell pending-move-main-cell";
       const title = document.createElement("div");
       title.className = "tools-table__title";
       const meansName = String(tool?.["Наименование"] ?? "").trim();
-      title.textContent = meansName || "Без названия";
+      const displayNumber = number || "—";
+      title.textContent = meansName
+        ? `${displayNumber} ${meansName}`
+        : `${displayNumber} Без названия`;
 
       const meta = document.createElement("div");
       meta.className = "tools-table__meta tools-table__meta--stack";
@@ -12357,7 +12357,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       }
       photoCell.appendChild(thumb);
 
-      row.append(numberCell, infoCell, photoCell);
+      row.append(infoCell, photoCell);
       table.appendChild(row);
     });
 

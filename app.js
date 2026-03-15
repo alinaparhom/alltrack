@@ -26016,7 +26016,9 @@ function updateTelegramTopControlsOffset() {
     Math.round(currentInnerHeight - viewportStableHeight)
   );
   const hasFullscreenFlag = typeof webApp.isFullscreen === "boolean";
-  const hasSystemCloseButton = hasFullscreenFlag ? webApp.isFullscreen : chromeOffset > 6;
+  const hasSystemCloseButton = hasFullscreenFlag
+    ? !webApp.isFullscreen || chromeOffset > 6
+    : chromeOffset > 6;
 
   let topControlsOffset = 0;
   if (hasSystemCloseButton) {

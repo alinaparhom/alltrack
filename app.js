@@ -117,6 +117,11 @@ const energyNotificationOptions = [
   { id: "writeOff", title: "Списание" },
   { id: "finesIssued", title: "Выставленные штрафы" },
 ];
+const energyDataUsageOptions = [
+  { id: "serialNumber", title: "Серийный номер" },
+  { id: "cost", title: "Стоимость" },
+  { id: "serviceLife", title: "Срок службы" },
+];
 const energyWeekDays = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
 let currentUser = null;
 let currentUserLabel = "";
@@ -3713,6 +3718,10 @@ function buildEnergyOrganizationDefaults() {
       attachPhoto: true,
     };
   });
+  const dataUsage = {};
+  energyDataUsageOptions.forEach((option) => {
+    dataUsage[option.id] = true;
+  });
   return {
     access,
     stcGroups: [],
@@ -3720,6 +3729,7 @@ function buildEnergyOrganizationDefaults() {
     fines,
     mailings,
     notifications,
+    dataUsage,
   };
 }
 
@@ -3894,6 +3904,12 @@ function normalizeEnergyOrganizationSettings(raw) {
       ),
     };
   });
+  const dataUsage = {};
+  energyDataUsageOptions.forEach((option) => {
+    const data = source.dataUsage?.[option.id];
+    dataUsage[option.id] =
+      typeof data === "boolean" ? data : defaults.dataUsage[option.id];
+  });
   return {
     access,
     stcGroups,
@@ -3901,6 +3917,7 @@ function normalizeEnergyOrganizationSettings(raw) {
     fines,
     mailings,
     notifications,
+    dataUsage,
   };
 }
 
@@ -4186,6 +4203,21 @@ function buildEnergySettingsMarkup(settings) {
       `;
     })
     .join("");
+  const dataUsageMarkup = energyDataUsageOptions
+    .map((option) => {
+      const isEnabled = settings.dataUsage?.[option.id] !== false;
+      return `
+        <label class="settings-group-chip">
+          <input
+            type="checkbox"
+            name="data-usage-${option.id}"
+            ${isEnabled ? "checked" : ""}
+          />
+          <span>${escapeHtml(option.title)}</span>
+        </label>
+      `;
+    })
+    .join("");
 
   return `
     <div class="settings-accordion" data-settings-accordion>
@@ -4276,6 +4308,25 @@ function buildEnergySettingsMarkup(settings) {
       <div class="settings-accordion__content">
         <div class="settings-notifications">
           ${notificationsMarkup}
+        </div>
+      </div>
+    </div>
+    <div class="settings-accordion" data-settings-accordion>
+      <button
+        class="settings-accordion__header"
+        type="button"
+        data-settings-accordion-toggle
+        aria-expanded="false"
+      >
+        <span class="settings-accordion__title">Данные</span>
+        <span class="settings-accordion__icon" aria-hidden="true">⌄</span>
+      </button>
+      <div class="settings-accordion__content">
+        <div class="settings-accordion__hint">
+          Выберите, какие поля использует организация. По умолчанию включены все.
+        </div>
+        <div class="settings-group-chip-list">
+          ${dataUsageMarkup}
         </div>
       </div>
     </div>
@@ -21930,6 +21981,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         attachPhoto: formData.get(`notification-${option.id}-photo`) !== null,
       };
     });
+    const nextDataUsage = {};
+    energyDataUsageOptions.forEach((option) => {
+      nextDataUsage[option.id] =
+        formData.get(`data-usage-${option.id}`) !== null;
+    });
     settingsData.organization = normalizeEnergyOrganizationSettings({
       access: nextAccess,
       stcGroups: settingsGroups,
@@ -21939,6 +21995,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       fines: nextFines,
       mailings: nextMailings,
       notifications: nextNotifications,
+      dataUsage: nextDataUsage,
     });
     try {
       await saveJson(context.settingsPath, settingsData, { user });

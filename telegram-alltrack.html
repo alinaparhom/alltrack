@@ -961,6 +961,10 @@
       }
 
       .app-title-text {
+        text-transform: none;
+        letter-spacing: 0.2px;
+        font-size: clamp(16px, 4.2vw, 20px);
+        line-height: 1.2;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
@@ -10305,7 +10309,7 @@
             >
               <span data-user-initials>AA</span>
             </button>
-            <span class="app-title-text">AllTrack</span>
+            <span class="app-title-text" data-app-title-text>AllTrack</span>
           </div>
           <div class="app-title-actions">
             <button

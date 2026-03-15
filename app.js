@@ -31,6 +31,7 @@ const energyPendingCountEl = document.querySelector("[data-energy-pending-count]
 const energyPendingWrapperEl = document.querySelector("[data-energy-pending-wrapper]");
 const energyPendingStatusEl = document.querySelector("[data-energy-pending-status]");
 const appTitleMetaEl = document.querySelector("[data-app-title-meta]");
+const appTitleTextEl = document.querySelector("[data-app-title-text]");
 const settingsBackButtonEl = document.querySelector(
   "[data-settings-back-header]"
 );
@@ -2528,6 +2529,17 @@ function formatShortName(fullName = "") {
   const parts = fullName.trim().split(/\s+/).filter(Boolean);
   if (parts.length === 0) {
     return "Пользователь";
+  }
+  return parts.slice(0, 2).join(" ");
+}
+
+function formatHeaderUserName(fullName = "") {
+  const parts = fullName.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) {
+    return "Пользователь";
+  }
+  if (parts.length === 1) {
+    return parts[0];
   }
   return parts.slice(0, 2).join(" ");
 }
@@ -25755,6 +25767,9 @@ async function renderUserRoleView() {
 
   contentEl.innerHTML = renderRole(currentUserLabel);
   if (userNameEl) userNameEl.textContent = userName;
+  if (appTitleTextEl) {
+    appTitleTextEl.textContent = formatHeaderUserName(currentUser.full_name ?? "");
+  }
   if (userOrgEl) userOrgEl.textContent = currentUser.organization ?? "Организация";
   if (userInitialsEl) {
     userInitialsEl.textContent = getInitials(currentUser.full_name ?? "");
@@ -25805,6 +25820,9 @@ async function showUserSettings() {
 
   const userName = formatShortName(currentUser.full_name);
   if (userNameEl) userNameEl.textContent = userName;
+  if (appTitleTextEl) {
+    appTitleTextEl.textContent = formatHeaderUserName(currentUser.full_name ?? "");
+  }
   if (userOrgEl) userOrgEl.textContent = currentUser.organization ?? "Организация";
   if (userInitialsEl) {
     userInitialsEl.textContent = getInitials(currentUser.full_name ?? "");
@@ -25945,6 +25963,7 @@ async function loadUser() {
   if (!telegramId) {
     renderError("Telegram ID не получен. Откройте приложение из Telegram.");
     if (userNameEl) userNameEl.textContent = "Гость";
+    if (appTitleTextEl) appTitleTextEl.textContent = "Гость";
     if (userOrgEl) userOrgEl.textContent = "Откройте приложение из Telegram";
     if (userInitialsEl) userInitialsEl.textContent = "??";
     void appendAuthLog("telegram_id_missing", collectTelegramContext());
@@ -25978,6 +25997,7 @@ async function loadUser() {
     if (!user) {
       renderError("Пользователь с таким ID не найден в базе.");
       if (userNameEl) userNameEl.textContent = "Гость";
+      if (appTitleTextEl) appTitleTextEl.textContent = "Гость";
       if (userOrgEl) userOrgEl.textContent = "Нет доступа к организации";
       void appendAuthLog("user_not_found", {
         telegramId: telegramIdKey,
@@ -25990,6 +26010,9 @@ async function loadUser() {
     if (!renderRole) {
       renderError("Для вашей роли ещё не создана страница.");
       if (userNameEl) userNameEl.textContent = formatShortName(user.full_name);
+      if (appTitleTextEl) {
+        appTitleTextEl.textContent = formatHeaderUserName(user.full_name ?? "");
+      }
       if (userOrgEl) userOrgEl.textContent = user.organization ?? "Организация";
       void appendAuthLog("role_missing", {
         telegramId: telegramIdKey,
@@ -26017,6 +26040,7 @@ async function loadUser() {
   } catch (error) {
     renderError("Возникла ошибка при загрузке данных.");
     if (userNameEl) userNameEl.textContent = "Гость";
+    if (appTitleTextEl) appTitleTextEl.textContent = "Гость";
     if (userOrgEl) userOrgEl.textContent = "Проверьте соединение";
     if (userInitialsEl) userInitialsEl.textContent = "??";
     console.error(error);

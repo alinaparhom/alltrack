@@ -4322,10 +4322,7 @@ function buildEnergySettingsMarkup(settings) {
         <span class="settings-accordion__icon" aria-hidden="true">⌄</span>
       </button>
       <div class="settings-accordion__content">
-        <div class="settings-accordion__hint">
-          Выберите, какие поля использует организация. По умолчанию включены все.
-        </div>
-        <div class="settings-group-chip-list">
+        <div class="settings-group-chip-list settings-group-chip-list--column">
           ${dataUsageMarkup}
         </div>
       </div>

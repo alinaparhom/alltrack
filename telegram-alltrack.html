@@ -6635,8 +6635,15 @@
         gap: 6px;
       }
 
+      :root {
+        --tools-object-column-width: 220px;
+        --tools-object-column-width-mobile: 140px;
+        --pending-tools-object-column-width: 340px;
+        --pending-tools-object-column-width-mobile: 176px;
+      }
+
       .tools-table--breakdowns .tools-table__row {
-        grid-template-columns: max-content max-content minmax(0, 1fr);
+        grid-template-columns: max-content var(--tools-object-column-width) minmax(0, 1fr);
         cursor: pointer;
       }
 
@@ -6647,8 +6654,8 @@
 
       .tools-table__row {
         display: grid;
-        grid-template-columns: max-content max-content minmax(0, 1fr) auto;
-        column-gap: 1px;
+        grid-template-columns: max-content var(--tools-object-column-width) minmax(0, 1fr) auto;
+        column-gap: 2px;
         row-gap: 2px;
         align-items: center;
         padding: 12px 14px;
@@ -6703,10 +6710,13 @@
       .tools-table__cell--object {
         font-weight: 500;
         color: #475569;
-        min-width: 0;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
+        width: var(--tools-object-column-width);
+        min-width: var(--tools-object-column-width);
+        max-width: var(--tools-object-column-width);
+        white-space: normal;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+        hyphens: auto;
       }
 
       .tools-table__cell--thumb {
@@ -6781,7 +6791,7 @@
       }
 
       .tools-table--remove-photo .tools-table__row {
-        grid-template-columns: max-content max-content minmax(0, 1fr) auto;
+        grid-template-columns: max-content var(--tools-object-column-width) minmax(0, 1fr) auto;
         align-items: start;
       }
 
@@ -7062,8 +7072,8 @@
 
       .pending-moves-tools-table .tools-table__row {
         --pending-tools-horizontal-gap: 10px;
-        grid-template-columns: max-content minmax(110px, 170px) minmax(560px, 640px) auto;
-        column-gap: 2px;
+        grid-template-columns: max-content var(--pending-tools-object-column-width) minmax(560px, 640px) auto;
+        column-gap: 4px;
         row-gap: 8px;
         padding: 8px var(--pending-tools-horizontal-gap);
       }
@@ -7126,7 +7136,7 @@
       }
 
       .info-pending-tools-table .tools-table__row {
-        grid-template-columns: max-content minmax(120px, 170px) minmax(1140px, 1240px);
+        grid-template-columns: max-content var(--pending-tools-object-column-width) minmax(1140px, 1240px);
       }
 
       .pending-moves-tools-table .tools-table__cell--thumb {
@@ -7667,10 +7677,16 @@
         }
 
         .tools-list.is-table .tools-table__row {
-          grid-template-columns: max-content max-content minmax(0, 1fr) auto;
+          grid-template-columns: max-content var(--tools-object-column-width-mobile) minmax(0, 1fr) auto;
           padding: 10px 12px;
-          column-gap: 1px;
+          column-gap: 2px;
           row-gap: 2px;
+        }
+
+        .tools-list.is-table .tools-table__cell--object {
+          width: var(--tools-object-column-width-mobile);
+          min-width: var(--tools-object-column-width-mobile);
+          max-width: var(--tools-object-column-width-mobile);
         }
 
         .tools-list.is-table .tools-table__thumb {
@@ -7689,8 +7705,8 @@
 
         .pending-moves-tools-table .tools-table__row {
           --pending-tools-horizontal-gap: 10px;
-          grid-template-columns: max-content minmax(62px, 88px) minmax(0, 1fr) auto;
-          column-gap: 1px;
+          grid-template-columns: max-content var(--pending-tools-object-column-width-mobile) minmax(0, 1fr) auto;
+          column-gap: 2px;
           row-gap: 6px;
           padding: 8px var(--pending-tools-horizontal-gap);
           align-items: stretch;
@@ -7737,7 +7753,7 @@
         }
 
         .info-pending-tools-table .tools-table__row {
-          grid-template-columns: max-content minmax(72px, 104px) minmax(980px, 1080px);
+          grid-template-columns: max-content var(--pending-tools-object-column-width-mobile) minmax(980px, 1080px);
         }
 
         .pending-moves-tools-table .tools-table__cell {

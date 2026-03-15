@@ -998,6 +998,8 @@
       }
 
       .app-title-badge {
+        position: relative;
+        overflow: hidden;
         width: 40px;
         height: 40px;
         border-radius: 14px;
@@ -1012,6 +1014,18 @@
         border: 1px solid rgba(226, 232, 240, 0.9);
         box-shadow: 0 12px 24px rgba(26, 31, 46, 0.08);
         flex-shrink: 0;
+      }
+
+      .app-title-badge img {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      .app-title-badge[data-has-photo="true"] [data-user-initials] {
+        opacity: 0;
       }
 
       button.app-title-badge {
@@ -10343,6 +10357,7 @@
               data-user-settings-trigger
               aria-label="Открыть настройки профиля"
             >
+              <img src="" alt="Фото профиля" data-user-photo class="is-hidden" />
               <span data-user-initials>AA</span>
             </button>
             <div class="app-title-user">

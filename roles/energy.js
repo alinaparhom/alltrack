@@ -57,9 +57,6 @@ export function renderRole(user) {
         <div class="tools-map-card" data-tools-map>
           <div class="tools-map-header">
             <div class="tools-map-header-actions">
-              <span class="tools-map-pill" data-tools-map-count aria-live="polite"
-                >0 объектов</span
-              >
               <button
                 class="tools-map-toggle tools-map-toggle--header"
                 type="button"

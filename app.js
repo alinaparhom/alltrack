@@ -9165,17 +9165,31 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       title.textContent = infoLine || "Без названия";
       const meta = document.createElement("div");
       meta.className = "tools-row__meta";
-      meta.textContent = [
+      const mainMetaLine = [
         toolsState.numberKey === "Бух.номер" && accountingNumber === number
           ? ""
           : accountingNumber,
-        formatToolCostLabel(tool),
         tool?.["Граппа инструментов"],
         tool?.["Статус"],
         tool?.["Объект"],
       ]
         .filter((value) => value && String(value).trim())
         .join(" · ");
+      const costMetaLine = formatToolCostLabel(tool);
+      meta.replaceChildren();
+      if (mainMetaLine) {
+        const mainMetaLineEl = document.createElement("div");
+        mainMetaLineEl.textContent = mainMetaLine;
+        meta.appendChild(mainMetaLineEl);
+      }
+      if (costMetaLine) {
+        const costMetaLineEl = document.createElement("div");
+        costMetaLineEl.textContent = costMetaLine;
+        meta.appendChild(costMetaLineEl);
+      }
+      if (!mainMetaLine && !costMetaLine) {
+        meta.textContent = "—";
+      }
       main.append(title, meta);
       row.appendChild(main);
       if (!hasPhoto) {
@@ -9280,15 +9294,21 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const name = String(tool?.["Наименование"] ?? "").trim();
       title.textContent = name || "Без названия";
       const meta = document.createElement("div");
-      meta.className = "tools-table__meta";
+      meta.className = "tools-table__meta tools-table__meta--stack";
       const manufacturer = String(tool?.["Производитель"] ?? "").trim();
       const model = String(tool?.["Модель"] ?? "").trim();
-      meta.textContent = [
-        [manufacturer, model].filter(Boolean).join(" · "),
-        formatToolCostLabel(tool),
-      ]
-        .filter(Boolean)
-        .join(" · ") || "—";
+      const manufacturerModelLine = [manufacturer, model].filter(Boolean).join(" · ");
+      const costLine = formatToolCostLabel(tool);
+      const metaLines = [manufacturerModelLine, costLine].filter(Boolean);
+      if (metaLines.length === 0) {
+        meta.textContent = "—";
+      } else {
+        metaLines.forEach((line) => {
+          const lineEl = document.createElement("div");
+          lineEl.textContent = line;
+          meta.appendChild(lineEl);
+        });
+      }
       infoCell.append(title, meta);
       const photoCell = document.createElement("div");
       photoCell.className = "tools-table__cell tools-table__cell--thumb";

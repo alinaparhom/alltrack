@@ -20609,7 +20609,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const syncFeedbackAnonymousHint = () => {
     if (!feedbackHintEl || !feedbackAnonymousEl) return;
     feedbackHintEl.textContent = feedbackAnonymousEl.checked
-      ? "Обращение отправится анонимно. Ответ от администраторов вы не получите."
+      ? "Обращение отправится анонимно. Ответ от администраторов вы не получите 😔"
       : "Обращение отправится с вашими данными, чтобы вам могли ответить.";
   };
 

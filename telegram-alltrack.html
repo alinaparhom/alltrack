@@ -9943,30 +9943,17 @@
       }
 
       @media (min-width: 1200px) and (min-height: 700px) and (hover: hover) and (pointer: fine) {
-        .energy-dashboard {
-          min-height: 100%;
-        }
-
         .tools-map-card {
-          position: relative;
           top: 0;
           padding: 18px;
-          flex: 1 1 auto;
-          min-height: 0;
-          display: flex;
-          flex-direction: column;
         }
 
         .tools-map-canvas {
-          height: auto;
-          max-height: none;
-          min-height: 320px;
-          flex: 1 1 auto;
+          height: min(54vh, 560px);
         }
 
         .energy-actions-scroll {
-          flex: 0 0 auto;
-          margin-top: auto;
+          margin-top: 14px;
           overflow: visible;
         }
 

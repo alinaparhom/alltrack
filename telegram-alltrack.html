@@ -6636,10 +6636,10 @@
       }
 
       :root {
-        --tools-object-column-width: 220px;
-        --tools-object-column-width-mobile: 140px;
-        --pending-tools-object-column-width: 340px;
-        --pending-tools-object-column-width-mobile: 176px;
+        --tools-object-column-width: 147px;
+        --tools-object-column-width-mobile: 94px;
+        --pending-tools-object-column-width: 227px;
+        --pending-tools-object-column-width-mobile: 117px;
       }
 
       .tools-table--breakdowns .tools-table__row {
@@ -6713,6 +6713,8 @@
         width: var(--tools-object-column-width);
         min-width: var(--tools-object-column-width);
         max-width: var(--tools-object-column-width);
+        text-align: center;
+        justify-items: center;
         white-space: normal;
         overflow-wrap: anywhere;
         word-break: break-word;
@@ -7136,7 +7138,7 @@
       }
 
       .info-pending-tools-table .tools-table__row {
-        grid-template-columns: max-content var(--pending-tools-object-column-width) minmax(1140px, 1240px);
+        grid-template-columns: max-content minmax(1320px, 1480px);
       }
 
       .pending-moves-tools-table .tools-table__cell--thumb {
@@ -7753,7 +7755,7 @@
         }
 
         .info-pending-tools-table .tools-table__row {
-          grid-template-columns: max-content var(--pending-tools-object-column-width-mobile) minmax(980px, 1080px);
+          grid-template-columns: max-content minmax(1080px, 1220px);
         }
 
         .pending-moves-tools-table .tools-table__cell {

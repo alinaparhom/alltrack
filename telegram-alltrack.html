@@ -7429,6 +7429,16 @@
         max-width: 560px;
       }
 
+      .tools-writeoff-pending-confirm-modal__header {
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: start;
+      }
+
+      .tools-writeoff-pending-confirm-modal__header .button-icon {
+        align-self: start;
+        margin-top: 2px;
+      }
+
       .tools-writeoff-pending-confirm-card {
         border-radius: 18px;
         border: 1px solid rgba(148, 163, 184, 0.35);
@@ -7464,13 +7474,57 @@
       .tools-writeoff-pending-confirm-actions {
         display: flex;
         gap: 10px;
-        flex-wrap: wrap;
+        flex-wrap: nowrap;
       }
 
       .tools-writeoff-pending-confirm-actions .action-secondary,
       .tools-writeoff-pending-confirm-actions .action-primary {
         flex: 1;
-        min-width: 190px;
+        min-width: 0;
+      }
+
+      .tools-writeoff-pending-confirm-actions__cancel {
+        border-color: rgba(220, 38, 38, 0.2);
+        background: linear-gradient(135deg, rgba(254, 226, 226, 0.95), rgba(252, 165, 165, 0.92));
+        color: #991b1b;
+      }
+
+      .tools-writeoff-pending-confirm-actions__cancel:hover {
+        box-shadow: 0 14px 24px rgba(220, 38, 38, 0.22);
+      }
+
+      .tools-writeoff-pending-confirm-actions__submit {
+        border-color: rgba(22, 163, 74, 0.25);
+        background: linear-gradient(135deg, rgba(220, 252, 231, 0.96), rgba(134, 239, 172, 0.92));
+        color: #166534;
+      }
+
+      .tools-writeoff-pending-confirm-actions__submit:hover {
+        box-shadow: 0 14px 24px rgba(22, 163, 74, 0.25);
+      }
+
+      body[data-theme="dark"] .tools-writeoff-pending-confirm-actions__cancel {
+        border-color: rgba(248, 113, 113, 0.35);
+        background: linear-gradient(135deg, rgba(127, 29, 29, 0.9), rgba(185, 28, 28, 0.9));
+        color: #fee2e2;
+      }
+
+      body[data-theme="dark"] .tools-writeoff-pending-confirm-actions__submit {
+        border-color: rgba(74, 222, 128, 0.35);
+        background: linear-gradient(135deg, rgba(20, 83, 45, 0.92), rgba(21, 128, 61, 0.88));
+        color: #dcfce7;
+      }
+
+      @media (max-width: 480px) {
+        .tools-writeoff-pending-confirm-actions {
+          gap: 8px;
+        }
+
+        .tools-writeoff-pending-confirm-actions .action-secondary,
+        .tools-writeoff-pending-confirm-actions .action-primary {
+          padding-inline: 10px;
+          font-size: 13px;
+        }
       }
 
       .tools-row {

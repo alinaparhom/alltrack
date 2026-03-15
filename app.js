@@ -2635,9 +2635,25 @@ function renderError(message) {
 
 function renderUserSettingsView(user, preferences) {
   const normalized = normalizePreferences(preferences);
+  const userPosition = String(user?.position ?? "").trim();
   return `
     <section class="role-card">
       <form class="form-grid" data-settings-form>
+        <div class="settings-section">
+          <div class="settings-section-title">Профиль</div>
+          <div class="form-field">
+            <label class="form-label" for="user-settings-position">Должность</label>
+            <input
+              class="form-input"
+              type="text"
+              id="user-settings-position"
+              name="user-position"
+              value="${escapeHtml(userPosition)}"
+              placeholder="Например: мастер участка"
+              autocomplete="organization-title"
+            />
+          </div>
+        </div>
         <div class="settings-section">
           <div class="settings-section-title">Вид значков на странице</div>
           <div class="toggle-group toggle-group--visual">
@@ -2761,6 +2777,32 @@ function renderUserSettingsView(user, preferences) {
       </form>
     </section>
   `;
+}
+
+async function saveCurrentUserPosition(positionValue) {
+  if (!currentUser) return;
+  const nextPosition = String(positionValue ?? "").trim().replace(/\s+/g, " ");
+  const currentPosition = String(currentUser.position ?? "").trim();
+  if (nextPosition === currentPosition) return;
+
+  const usersData = await loadJson(usersFilePath).catch(() => ({ users: [] }));
+  const users = Array.isArray(usersData?.users) ? [...usersData.users] : [];
+  const telegramIdKey = normalizeTelegramId(currentUser.telegram_id);
+  const userIndex = users.findIndex(
+    (item) => normalizeTelegramId(item?.telegram_id) === telegramIdKey
+  );
+  if (userIndex < 0) return;
+
+  users[userIndex] = {
+    ...users[userIndex],
+    position: nextPosition,
+  };
+
+  await saveJson(usersFilePath, { users }, { user: currentUser });
+  currentUser = {
+    ...currentUser,
+    position: nextPosition,
+  };
 }
 
 async function loadJson(path) {
@@ -19953,6 +19995,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       entry?.organization ?? selectedUsersOrgName ?? ""
     ).trim();
     const roleName = String(entry?.role ?? responsibleRole).trim() || responsibleRole;
+    const positionName = String(entry?.position ?? "").trim();
     if (!fullName || !organizationName) return;
 
     try {
@@ -19977,6 +20020,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
               full_name: fullName,
               organization: organizationName,
               role: roleName,
+              position: positionName,
             },
           },
         ],
@@ -20179,6 +20223,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const firstName = String(formData.get("users-add-first-name") ?? "").trim();
     const middleName = String(formData.get("users-add-middle-name") ?? "").trim();
     const roleName = String(formData.get("users-add-role") ?? "").trim();
+    const positionName = String(formData.get("users-add-position") ?? "").trim();
     const organizationName = String(selectedUsersOrgName ?? "").trim();
 
     if (!organizationName) {
@@ -20188,7 +20233,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       return;
     }
 
-    if (!lastName || !firstName || !middleName || !roleName) {
+    if (!lastName || !firstName || !middleName || !roleName || !positionName) {
       if (usersAddMessageEl) {
         usersAddMessageEl.textContent = "Заполните все поля.";
       }
@@ -20218,7 +20263,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           full_name: fullName,
           organization: organizationName,
           role: roleName,
+          position: positionName,
         });
+      } else {
+        existingUser.position = positionName;
       }
 
       const registrations = registrationsData.registrations ?? [];
@@ -20232,7 +20280,21 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         existingRegistration?.token ?? createRegistrationToken();
 
       const nextRegistrationsData = existingRegistration
-        ? { registrations }
+        ? {
+            registrations: registrations.map((item) => {
+              if (item !== existingRegistration) return item;
+              return {
+                ...item,
+                user: {
+                  ...(item.user ?? {}),
+                  full_name: fullName,
+                  organization: organizationName,
+                  role: roleName,
+                  position: positionName,
+                },
+              };
+            }),
+          }
         : {
             registrations: [
               ...registrations,
@@ -20243,6 +20305,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
                   full_name: fullName,
                   organization: organizationName,
                   role: roleName,
+                  position: positionName,
                 },
               },
             ],
@@ -25482,6 +25545,7 @@ function setupSuperAdmin() {
     const firstName = String(formData.get("users-add-first-name") ?? "").trim();
     const middleName = String(formData.get("users-add-middle-name") ?? "").trim();
     const roleName = String(formData.get("users-add-role") ?? "").trim();
+    const positionName = String(formData.get("users-add-position") ?? "").trim();
     const organizationName = String(selectedUsersOrgName ?? "").trim();
 
     if (!organizationName) {
@@ -25491,7 +25555,7 @@ function setupSuperAdmin() {
       return;
     }
 
-    if (!lastName || !firstName || !middleName || !roleName) {
+    if (!lastName || !firstName || !middleName || !roleName || !positionName) {
       if (usersAddMessageEl) {
         usersAddMessageEl.textContent = "Заполните все поля.";
       }
@@ -25521,7 +25585,10 @@ function setupSuperAdmin() {
           full_name: fullName,
           organization: organizationName,
           role: roleName,
+          position: positionName,
         });
+      } else {
+        existingUser.position = positionName;
       }
 
       const registrations = registrationsData.registrations ?? [];
@@ -25535,7 +25602,21 @@ function setupSuperAdmin() {
         existingRegistration?.token ?? createRegistrationToken();
 
       const nextRegistrationsData = existingRegistration
-        ? { registrations }
+        ? {
+            registrations: registrations.map((item) => {
+              if (item !== existingRegistration) return item;
+              return {
+                ...item,
+                user: {
+                  ...(item.user ?? {}),
+                  full_name: fullName,
+                  organization: organizationName,
+                  role: roleName,
+                  position: positionName,
+                },
+              };
+            }),
+          }
         : {
             registrations: [
               ...registrations,
@@ -25546,6 +25627,7 @@ function setupSuperAdmin() {
                   full_name: fullName,
                   organization: organizationName,
                   role: roleName,
+                  position: positionName,
                 },
               },
             ],
@@ -25861,11 +25943,13 @@ async function showUserSettings() {
   const handleFormChange = async () => {
     if (!formEl) return;
     const formData = new FormData(formEl);
+    const nextPosition = String(formData.get("user-position") ?? "").trim();
     const nextPreferences = normalizePreferences({
       iconStyle: formData.get("icon-style"),
       grouping: formData.get("grouping"),
       theme: formData.get("theme"),
     });
+    await saveCurrentUserPosition(nextPosition);
     currentPreferences = applyUserPreferences(nextPreferences);
     currentPreferences = await saveUserPreferences(
       currentSettingsContext,
@@ -25927,7 +26011,8 @@ async function applyRegistrationToken(telegramId, token) {
         item.telegram_id === 0 &&
         item.full_name === registration.user?.full_name &&
         item.organization === registration.user?.organization &&
-        item.role === registration.user?.role
+        item.role === registration.user?.role &&
+        String(item.position ?? "").trim() === String(registration.user?.position ?? "").trim()
     );
   }
 
@@ -25937,10 +26022,14 @@ async function applyRegistrationToken(telegramId, token) {
       full_name: registration.user?.full_name ?? "Пользователь",
       organization: registration.user?.organization ?? "Организация",
       role: registration.user?.role ?? "Энергетик",
+      position: String(registration.user?.position ?? "").trim(),
     };
     usersData.users = [...(usersData.users ?? []), resolvedUser];
   } else {
     resolvedUser.telegram_id = telegramId;
+    if (Object.prototype.hasOwnProperty.call(registration.user ?? {}, "position")) {
+      resolvedUser.position = String(registration.user?.position ?? "").trim();
+    }
   }
 
   const nextRegistrationsData = {

@@ -23,6 +23,7 @@ const userNameEl = document.querySelector("[data-user-name]");
 const userOrgEl = document.querySelector("[data-user-org]");
 const userPositionEl = document.querySelector("[data-user-position]");
 const userInitialsEl = document.querySelector("[data-user-initials]");
+const userPhotoEl = document.querySelector("[data-user-photo]");
 const appUserEl = document.querySelector("[data-app-user]");
 const userSettingsTriggerEl = document.querySelector("[data-user-settings-trigger]");
 const superAdminStatEl = document.querySelector("[data-super-admin-stat]");
@@ -687,6 +688,46 @@ function parseInitDataUser(initData) {
   return null;
 }
 
+
+function extractTelegramUserPhotoUrl() {
+  const webApp = window.Telegram?.WebApp;
+  const candidates = [
+    webApp?.initDataUnsafe?.user?.photo_url,
+    parseInitDataUser(webApp?.initData)?.photo_url,
+    parseInitDataUser(getInitDataFromUrl())?.photo_url,
+  ];
+
+  for (const candidate of candidates) {
+    const value = String(candidate ?? "").trim();
+    if (value) return value;
+  }
+
+  return "";
+}
+
+function updateHeaderUserBadge(fullName = "", { forceInitials = false } = {}) {
+  const initials = getInitials(fullName);
+  if (userInitialsEl) {
+    userInitialsEl.textContent = initials;
+  }
+
+  if (!userPhotoEl) return;
+
+  const photoUrl = forceInitials ? "" : extractTelegramUserPhotoUrl();
+  const badgeEl = userPhotoEl.closest(".app-title-badge");
+  const hasPhoto = Boolean(photoUrl);
+
+  userPhotoEl.classList.toggle("is-hidden", !hasPhoto);
+  if (hasPhoto) {
+    userPhotoEl.src = photoUrl;
+  } else {
+    userPhotoEl.removeAttribute("src");
+  }
+
+  if (badgeEl) {
+    badgeEl.dataset.hasPhoto = hasPhoto ? "true" : "false";
+  }
+}
 function collectTelegramContext() {
   const webApp = window.Telegram?.WebApp ?? null;
   const initData = webApp?.initData ?? null;
@@ -25901,9 +25942,7 @@ async function renderUserRoleView() {
     userPositionEl.textContent =
       String(currentUser.position ?? "").trim() || "Должность не указана";
   }
-  if (userInitialsEl) {
-    userInitialsEl.textContent = getInitials(currentUser.full_name ?? "");
-  }
+  updateHeaderUserBadge(currentUser.full_name ?? "");
   if (appUserEl) {
     appUserEl.classList.add("is-hidden");
   }
@@ -25962,9 +26001,7 @@ async function showUserSettings() {
     userPositionEl.textContent =
       String(currentUser.position ?? "").trim() || "Должность не указана";
   }
-  if (userInitialsEl) {
-    userInitialsEl.textContent = getInitials(currentUser.full_name ?? "");
-  }
+  updateHeaderUserBadge(currentUser.full_name ?? "");
   if (appUserEl) {
     appUserEl.classList.remove("is-hidden");
   }
@@ -26110,7 +26147,7 @@ async function loadUser() {
     if (userNameEl) userNameEl.textContent = "Гость";
     if (appTitleTextEl) appTitleTextEl.textContent = "Гость";
     if (userOrgEl) userOrgEl.textContent = "Откройте приложение из Telegram";
-    if (userInitialsEl) userInitialsEl.textContent = "??";
+    updateHeaderUserBadge("??", { forceInitials: true });
     void appendAuthLog("telegram_id_missing", collectTelegramContext());
     return;
   }
@@ -26187,7 +26224,7 @@ async function loadUser() {
     if (userNameEl) userNameEl.textContent = "Гость";
     if (appTitleTextEl) appTitleTextEl.textContent = "Гость";
     if (userOrgEl) userOrgEl.textContent = "Проверьте соединение";
-    if (userInitialsEl) userInitialsEl.textContent = "??";
+    updateHeaderUserBadge("??", { forceInitials: true });
     console.error(error);
     void appendAuthLog("load_error", {
       message: error?.message ?? String(error),

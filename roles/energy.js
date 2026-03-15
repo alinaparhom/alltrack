@@ -1141,7 +1141,7 @@ export function renderRole(user) {
                 type="button"
                 data-tools-writeoff-pending-confirm-submit
               >
-                Подтвердить «На списание»
+                Подтвердить
               </button>
             </div>
           </div>

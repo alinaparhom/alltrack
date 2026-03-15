@@ -9170,6 +9170,16 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     return card;
   };
 
+  const buildToolObjectCell = (tool, fallbackObject = "") => {
+    const objectCell = document.createElement("div");
+    objectCell.className = "tools-table__cell tools-table__cell--object";
+    const objectName =
+      String(tool?.["Объект"] ?? "").trim() || String(fallbackObject ?? "").trim();
+    objectCell.textContent = objectName || "—";
+    objectCell.title = objectName || "Объект не указан";
+    return objectCell;
+  };
+
   const renderToolsTable = (items) => {
     const table = document.createElement("div");
     table.className = "tools-table";
@@ -9190,6 +9200,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const number = resolveToolNumberValue(tool);
       const photoNumber = resolveToolPhotoNumber(tool);
       numberCell.textContent = number || "—";
+      const objectCell = buildToolObjectCell(tool);
       const infoCell = document.createElement("div");
       infoCell.className = "tools-table__cell";
       const title = document.createElement("div");
@@ -9224,7 +9235,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         thumb.setAttribute("aria-label", "Открыть фото инструмента");
       }
       photoCell.appendChild(thumb);
-      row.append(numberCell, infoCell, photoCell);
+      row.append(numberCell, objectCell, infoCell, photoCell);
       table.appendChild(row);
     });
 
@@ -11793,6 +11804,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         String(move?.["Номер"] ?? "").trim() ||
         String(move?.["Бух.номер"] ?? "").trim();
       numberCell.textContent = number || "—";
+      const objectCell = buildToolObjectCell(
+        tool,
+        String(move?.["Новый объект"] ?? "").trim() ||
+          String(move?.["Объект"] ?? "").trim()
+      );
 
       const infoCell = document.createElement("div");
       infoCell.className = "tools-table__cell";
@@ -11881,7 +11897,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         <button class=\"pending-move-action pending-move-action--decline\" type=\"button\" data-pending-move-action=\"decline\" data-move-index=\"${moveIndex}\" aria-label=\"Не принять\">Не принять</button>
         <button class=\"pending-move-action pending-move-action--accept\" type=\"button\" data-pending-move-action=\"accept\" data-move-index=\"${moveIndex}\" aria-label=\"Принять\">Принять</button>
       `;
-      row.append(numberCell, infoCell, photoCell, actionsCell);
+      row.append(numberCell, objectCell, infoCell, photoCell, actionsCell);
       table.appendChild(row);
     });
 
@@ -12279,6 +12295,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         String(move?.["Номер"] ?? "").trim() ||
         String(move?.["Бух.номер"] ?? "").trim();
       numberCell.textContent = number || "—";
+      const objectCell = buildToolObjectCell(
+        tool,
+        String(move?.["Новый объект"] ?? "").trim() ||
+          String(move?.["Объект"] ?? "").trim()
+      );
 
       const infoCell = document.createElement("div");
       infoCell.className = "tools-table__cell";
@@ -12348,7 +12369,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       }
       photoCell.appendChild(thumb);
 
-      row.append(numberCell, infoCell, photoCell);
+      row.append(numberCell, objectCell, infoCell, photoCell);
       table.appendChild(row);
     });
 
@@ -14130,6 +14151,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const number = String(tool?.["Номер"] ?? "").trim();
       numberCell.textContent = number || "—";
       row.dataset.addPhotoNumber = number;
+      const objectCell = buildToolObjectCell(tool);
 
       const infoCell = document.createElement("div");
       infoCell.className = "tools-table__cell";
@@ -14180,7 +14202,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       thumb.append(icon, fileInput);
       photoCell.appendChild(thumb);
 
-      row.append(numberCell, infoCell, photoCell);
+      row.append(numberCell, objectCell, infoCell, photoCell);
       table.appendChild(row);
     });
 
@@ -14594,6 +14616,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       numberCell.className = "tools-table__cell tools-table__cell--number";
       const number = String(tool?.["Номер"] ?? "").trim();
       numberCell.textContent = number || "—";
+      const objectCell = buildToolObjectCell(tool);
 
       const infoCell = document.createElement("div");
       infoCell.className = "tools-table__cell";
@@ -14633,7 +14656,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       actionButton.textContent = "Карточка";
       actionCell.appendChild(actionButton);
 
-      row.append(numberCell, infoCell, actionCell);
+      row.append(numberCell, objectCell, infoCell, actionCell);
       table.appendChild(row);
     });
 
@@ -14942,6 +14965,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       numberCell.className = "tools-table__cell tools-table__cell--number";
       const number = resolveToolNumberValue(tool);
       numberCell.textContent = number || "—";
+      const objectCell = buildToolObjectCell(tool);
 
       const infoCell = document.createElement("div");
       infoCell.className = "tools-table__cell";
@@ -14974,7 +14998,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       });
       photoCell.appendChild(thumb);
 
-      row.append(numberCell, infoCell, photoCell);
+      row.append(numberCell, objectCell, infoCell, photoCell);
       table.appendChild(row);
     });
 
@@ -15880,6 +15904,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       numberCell.className = "tools-table__cell tools-table__cell--number";
       const number = resolveToolNumberValue(tool);
       numberCell.textContent = number || "—";
+      const objectCell = buildToolObjectCell(tool);
 
       const infoCell = document.createElement("div");
       infoCell.className = "tools-table__cell";
@@ -15907,7 +15932,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       meta.append(lineTop, lineBottom, statusLine);
       infoCell.append(title, meta);
 
-      row.append(numberCell, infoCell);
+      row.append(numberCell, objectCell, infoCell);
       table.appendChild(row);
     });
     return table;
@@ -15967,6 +15992,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       numberCell.className = "tools-table__cell tools-table__cell--number";
       const number = resolveToolNumberValue(tool);
       numberCell.textContent = number || "—";
+      const objectCell = buildToolObjectCell(tool);
 
       const infoCell = document.createElement("div");
       infoCell.className = "tools-table__cell";
@@ -15994,7 +16020,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       meta.append(lineTop, lineBottom, statusLine);
       infoCell.append(title, meta);
 
-      row.append(numberCell, infoCell);
+      row.append(numberCell, objectCell, infoCell);
       table.appendChild(row);
     });
     return table;

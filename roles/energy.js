@@ -202,7 +202,7 @@ export function renderRole(user) {
                 </div>
                 <div class="form-message" data-energy-feedback-message-status></div>
               </div>
-              <div class="settings-modal__footer">
+              <div class="settings-modal__footer feedback-modal__footer">
                 <button class="action-secondary" type="button" data-energy-feedback-cancel>
                   Отмена
                 </button>

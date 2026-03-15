@@ -21,6 +21,7 @@ const roleMap = new Map([
 const contentEl = document.querySelector("[data-content]");
 const userNameEl = document.querySelector("[data-user-name]");
 const userOrgEl = document.querySelector("[data-user-org]");
+const userPositionEl = document.querySelector("[data-user-position]");
 const userInitialsEl = document.querySelector("[data-user-initials]");
 const appUserEl = document.querySelector("[data-app-user]");
 const userSettingsTriggerEl = document.querySelector("[data-user-settings-trigger]");
@@ -32,6 +33,7 @@ const energyPendingWrapperEl = document.querySelector("[data-energy-pending-wrap
 const energyPendingStatusEl = document.querySelector("[data-energy-pending-status]");
 const appTitleMetaEl = document.querySelector("[data-app-title-meta]");
 const appTitleTextEl = document.querySelector("[data-app-title-text]");
+const appTitlePositionEl = document.querySelector("[data-app-title-position]");
 const settingsBackButtonEl = document.querySelector(
   "[data-settings-back-header]"
 );
@@ -25870,7 +25872,15 @@ async function renderUserRoleView() {
   if (appTitleTextEl) {
     appTitleTextEl.textContent = formatHeaderUserName(currentUser.full_name ?? "");
   }
+  if (appTitlePositionEl) {
+    appTitlePositionEl.textContent =
+      String(currentUser.position ?? "").trim() || "Должность не указана";
+  }
   if (userOrgEl) userOrgEl.textContent = currentUser.organization ?? "Организация";
+  if (userPositionEl) {
+    userPositionEl.textContent =
+      String(currentUser.position ?? "").trim() || "Должность не указана";
+  }
   if (userInitialsEl) {
     userInitialsEl.textContent = getInitials(currentUser.full_name ?? "");
   }
@@ -25923,7 +25933,15 @@ async function showUserSettings() {
   if (appTitleTextEl) {
     appTitleTextEl.textContent = formatHeaderUserName(currentUser.full_name ?? "");
   }
+  if (appTitlePositionEl) {
+    appTitlePositionEl.textContent =
+      String(currentUser.position ?? "").trim() || "Должность не указана";
+  }
   if (userOrgEl) userOrgEl.textContent = currentUser.organization ?? "Организация";
+  if (userPositionEl) {
+    userPositionEl.textContent =
+      String(currentUser.position ?? "").trim() || "Должность не указана";
+  }
   if (userInitialsEl) {
     userInitialsEl.textContent = getInitials(currentUser.full_name ?? "");
   }

@@ -6636,7 +6636,7 @@
       }
 
       .tools-table--breakdowns .tools-table__row {
-        grid-template-columns: minmax(80px, 120px) minmax(0, 1fr);
+        grid-template-columns: minmax(80px, 120px) minmax(110px, 170px) minmax(0, 1fr);
         cursor: pointer;
       }
 
@@ -6647,7 +6647,7 @@
 
       .tools-table__row {
         display: grid;
-        grid-template-columns: minmax(80px, 120px) minmax(0, 1fr) auto;
+        grid-template-columns: minmax(80px, 120px) minmax(110px, 170px) minmax(0, 1fr) auto;
         gap: 12px;
         align-items: center;
         padding: 12px 14px;
@@ -6697,6 +6697,11 @@
       .tools-table__cell--number {
         font-weight: 600;
         color: var(--title);
+      }
+
+      .tools-table__cell--object {
+        font-weight: 500;
+        color: #475569;
       }
 
       .tools-table__cell--thumb {
@@ -6904,14 +6909,18 @@
 
       @media (max-width: 520px) {
         .tools-table--remove-photo .tools-table__row {
-          grid-template-columns: minmax(64px, 90px) minmax(0, 1fr);
+          grid-template-columns: minmax(64px, 90px) minmax(90px, 130px) minmax(0, 1fr);
           grid-template-areas:
-            "number info"
-            "thumb info";
+            "number object info"
+            "thumb thumb info";
         }
 
         .tools-table--remove-photo .tools-table__cell--number {
           grid-area: number;
+        }
+
+        .tools-table--remove-photo .tools-table__cell--object {
+          grid-area: object;
         }
 
         .tools-table--remove-photo .tools-table__cell--thumb {
@@ -7048,7 +7057,7 @@
 
       .pending-moves-tools-table .tools-table__row {
         --pending-tools-horizontal-gap: 10px;
-        grid-template-columns: max-content minmax(140px, 200px) minmax(560px, 640px);
+        grid-template-columns: max-content minmax(110px, 170px) minmax(560px, 640px) auto;
         column-gap: 2px;
         row-gap: 8px;
         padding: 8px var(--pending-tools-horizontal-gap);
@@ -7058,7 +7067,7 @@
         padding-right: 2px;
       }
 
-      .pending-moves-tools-table .tools-table__cell:not(.tools-table__cell--number):not(.tools-table__cell--thumb):not(.tools-table__cell--actions) {
+      .pending-moves-tools-table .tools-table__cell:not(.tools-table__cell--number):not(.tools-table__cell--object):not(.tools-table__cell--thumb):not(.tools-table__cell--actions) {
         margin-left: -30px;
       }
 
@@ -7653,7 +7662,7 @@
         }
 
         .tools-list.is-table .tools-table__row {
-          grid-template-columns: minmax(64px, 90px) minmax(0, 1fr) auto;
+          grid-template-columns: minmax(64px, 90px) minmax(90px, 130px) minmax(0, 1fr) auto;
           padding: 10px 12px;
         }
 
@@ -7673,14 +7682,14 @@
 
         .pending-moves-tools-table .tools-table__row {
           --pending-tools-horizontal-gap: 10px;
-          grid-template-columns: max-content minmax(0, 1fr) auto;
+          grid-template-columns: max-content minmax(90px, 120px) minmax(0, 1fr) auto;
           column-gap: 2px;
           row-gap: 6px;
           padding: 8px var(--pending-tools-horizontal-gap);
           align-items: stretch;
         }
 
-        .pending-moves-tools-table .tools-table__cell:not(.tools-table__cell--number):not(.tools-table__cell--thumb):not(.tools-table__cell--actions) {
+        .pending-moves-tools-table .tools-table__cell:not(.tools-table__cell--number):not(.tools-table__cell--object):not(.tools-table__cell--thumb):not(.tools-table__cell--actions) {
           margin-left: -28px;
         }
 

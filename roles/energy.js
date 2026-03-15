@@ -56,9 +56,7 @@ export function renderRole(user) {
       <div class="dashboard energy-dashboard">
         <div class="tools-map-card" data-tools-map>
           <div class="tools-map-header">
-            <h3 class="tools-map-title">Карта инструментов</h3>
             <div class="tools-map-header-actions">
-              <div class="tools-map-pill" data-tools-map-count>0</div>
               <button
                 class="tools-map-toggle"
                 type="button"

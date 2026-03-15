@@ -30,6 +30,7 @@ const energyPendingIconEl = document.querySelector("[data-energy-pending-icon]")
 const energyPendingCountEl = document.querySelector("[data-energy-pending-count]");
 const energyPendingWrapperEl = document.querySelector("[data-energy-pending-wrapper]");
 const energyPendingStatusEl = document.querySelector("[data-energy-pending-status]");
+const appTitleMetaEl = document.querySelector("[data-app-title-meta]");
 const settingsBackButtonEl = document.querySelector(
   "[data-settings-back-header]"
 );
@@ -4432,7 +4433,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const toolsMapCanvasEl = contentEl.querySelector("[data-tools-map-canvas]");
   const toolsMapLayerEl = contentEl.querySelector("[data-tools-map-layer]");
   const toolsMapImageEl = contentEl.querySelector("[data-tools-map-image]");
-  const toolsMapCountEl = contentEl.querySelector("[data-tools-map-count]");
   const toolsMapPlaceholderEl = contentEl.querySelector("[data-tools-map-placeholder]");
   const toolsMapToggleEl = contentEl.querySelector("[data-tools-map-toggle]");
   let isToolsMapCollapsed = false;
@@ -6333,8 +6333,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (!toolsMapCanvasEl || !toolsMapEl) return;
     const safePoints = Array.isArray(points) ? points : [];
     toolsMapState.points = safePoints;
-    if (toolsMapCountEl) {
-      toolsMapCountEl.textContent = `${safePoints.length} объектов`;
+    if (appTitleMetaEl) {
+      appTitleMetaEl.textContent = `· ${safePoints.length} объектов`;
+      appTitleMetaEl.classList.remove("is-hidden");
     }
     const mapContentEl = toolsMapLayerEl ?? toolsMapCanvasEl;
     const existingDots = mapContentEl.querySelectorAll(".tools-map-dot");
@@ -25731,6 +25732,12 @@ async function renderUserRoleView() {
   if (energyPendingStatEl) {
     energyPendingStatEl.classList.toggle("is-hidden", !isEnergyDashboardRole);
   }
+  if (appTitleMetaEl) {
+    appTitleMetaEl.classList.toggle("is-hidden", !isEnergyDashboardRole);
+    if (!isEnergyDashboardRole) {
+      appTitleMetaEl.textContent = "";
+    }
+  }
   document.body?.classList.toggle(
     "is-energy-role",
     isEnergyDashboardRole
@@ -25768,6 +25775,10 @@ async function showUserSettings() {
   }
   if (energyPendingStatEl) {
     energyPendingStatEl.classList.add("is-hidden");
+  }
+  if (appTitleMetaEl) {
+    appTitleMetaEl.classList.add("is-hidden");
+    appTitleMetaEl.textContent = "";
   }
   if (settingsBackButtonEl) {
     settingsBackButtonEl.classList.remove("is-hidden");

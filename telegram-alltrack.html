@@ -961,6 +961,15 @@
         color: var(--text);
       }
 
+      .app-title-meta {
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 0.2px;
+        text-transform: none;
+        color: var(--muted);
+        white-space: nowrap;
+      }
+
       .app-title-badge {
         width: 40px;
         height: 40px;
@@ -1314,7 +1323,7 @@
 
       .tools-map-canvas {
         position: relative;
-        height: 408px;
+        height: clamp(220px, 34vh, 360px);
         border-radius: 20px;
         background: linear-gradient(145deg, rgba(255, 255, 255, 0.95), rgba(235, 242, 255, 0.75));
         border: 1px solid rgba(216, 227, 248, 0.9);
@@ -1605,6 +1614,10 @@
       }
 
       @media (max-width: 420px) {
+        .app-title-meta {
+          font-size: 11px;
+        }
+
         .tools-map-header {
           align-items: center;
           gap: 8px;
@@ -1620,7 +1633,7 @@
         }
 
         .tools-map-canvas {
-          height: 388px;
+          height: clamp(210px, 32vh, 300px);
         }
       }
 
@@ -1875,7 +1888,7 @@
         justify-content: flex-start;
         gap: 12px;
         margin-top: var(--grid-gap);
-        min-height: 0;
+        min-height: calc(2 * 72px + var(--grid-gap));
         flex: 1 1 auto;
         overflow-y: auto;
         padding-right: 0;
@@ -10036,6 +10049,7 @@
               <span data-user-initials>AA</span>
             </button>
             <span class="app-title-text">AllTrack</span>
+            <span class="app-title-meta is-hidden" data-app-title-meta aria-live="polite"></span>
           </div>
           <div class="app-title-actions">
             <button

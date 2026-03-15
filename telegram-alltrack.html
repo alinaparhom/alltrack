@@ -6960,21 +6960,22 @@
         grid-column: 1 / -1;
         flex-wrap: nowrap;
         align-items: center;
-        justify-content: stretch;
+        justify-content: center;
         width: 100%;
         gap: 12px;
       }
 
       .pending-moves-tools-table .pending-move-action {
-        flex: 1 1 0;
+        flex: 0 1 clamp(104px, 36vw, 132px);
+        width: clamp(104px, 36vw, 132px);
       }
 
       .pending-moves-tools-table .pending-move-action--decline {
-        margin-right: auto;
+        margin-right: 0;
       }
 
       .pending-moves-tools-table .pending-move-action--accept {
-        margin-left: auto;
+        margin-left: 0;
       }
 
       .pending-moves-tools-table .tools-table__thumb {

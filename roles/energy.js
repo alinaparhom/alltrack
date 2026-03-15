@@ -947,16 +947,7 @@ export function renderRole(user) {
                       aria-controls="tools-filters-panel"
                       aria-label="Фильтры"
                     >
-                      <svg
-                        class="tools-filters-toggle__icon"
-                        aria-hidden="true"
-                        viewBox="0 0 24 24"
-                        focusable="false"
-                      >
-                        <path
-                          d="M3 5.5a1 1 0 0 1 1-1h16a1 1 0 0 1 .8 1.6L14 13.5v4.1a1 1 0 0 1-1.5.86l-3-1.8a1 1 0 0 1-.5-.86v-2.7L3.2 6.1a1 1 0 0 1-.2-.6z"
-                        />
-                      </svg>
+                      <span class="tools-filters-toggle__label">Фильтры</span>
                     </button>
                   </div>
                 </div>
@@ -1004,7 +995,7 @@ export function renderRole(user) {
                     </div>
                   </label>
                   <label class="tools-filter" data-tools-responsible-filter>
-                    <span>Ответственны</span>
+                    <span>Ответственный</span>
                     <div class="tools-filter-dropdown" data-tools-filter="responsible">
                       <button type="button" class="form-input tools-filter-dropdown__trigger" data-tools-filter-trigger>
                         Все

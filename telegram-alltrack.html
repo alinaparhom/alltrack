@@ -7074,10 +7074,16 @@
 
       .pending-moves-tools-table .tools-table__row {
         --pending-tools-horizontal-gap: 10px;
-        grid-template-columns: minmax(0, 1fr) auto;
+        grid-template-columns: minmax(74px, 92px) minmax(0, 1fr) auto;
         column-gap: 10px;
         row-gap: 8px;
         padding: 8px var(--pending-tools-horizontal-gap);
+      }
+
+      .pending-moves-tools-table .pending-move-number-cell {
+        align-self: start;
+        font-size: 12px;
+        letter-spacing: 0.02em;
       }
 
       .pending-moves-tools-table .tools-table__cell {
@@ -7134,7 +7140,7 @@
       }
 
       .info-pending-tools-table .tools-table__row {
-        grid-template-columns: minmax(0, 1fr) auto;
+        grid-template-columns: minmax(74px, 92px) minmax(0, 1fr) auto;
       }
 
       .pending-moves-tools-table .tools-table__cell--thumb {
@@ -7703,7 +7709,7 @@
 
         .pending-moves-tools-table .tools-table__row {
           --pending-tools-horizontal-gap: 10px;
-          grid-template-columns: minmax(0, 1fr) auto;
+          grid-template-columns: 64px minmax(0, 1fr) auto;
           column-gap: 2px;
           row-gap: 6px;
           padding: 8px var(--pending-tools-horizontal-gap);
@@ -7747,7 +7753,7 @@
         }
 
         .info-pending-tools-table .tools-table__row {
-          grid-template-columns: minmax(0, 1fr) auto;
+          grid-template-columns: 64px minmax(0, 1fr) auto;
         }
 
         .pending-moves-tools-table .tools-table__cell {

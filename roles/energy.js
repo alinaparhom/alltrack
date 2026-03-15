@@ -157,7 +157,7 @@ export function renderRole(user) {
             <div class="settings-modal__header feedback-modal__header">
               <div class="settings-modal__title">
                 <h2>Обратная связь</h2>
-                <p>Напишите пожелание, проблему или предложение</p>
+                <p class="feedback-modal__subtitle">Напишите пожелание, проблему или предложение</p>
               </div>
               <button
                 class="button-icon"
@@ -170,13 +170,6 @@ export function renderRole(user) {
             </div>
             <form class="settings-modal__form feedback-modal__form" data-energy-feedback-form>
               <div class="settings-modal__body feedback-modal__body">
-                <label class="feedback-modal__anonymous">
-                  <input type="checkbox" data-energy-feedback-anonymous />
-                  <span>Отправить анонимно</span>
-                </label>
-                <p class="feedback-modal__hint" data-energy-feedback-hint>
-                  Если отправите анонимно, ответ на обращение получить не получится.
-                </p>
                 <div class="form-field">
                   <label for="feedback-message">Текст обращения</label>
                   <textarea
@@ -188,6 +181,13 @@ export function renderRole(user) {
                     required
                   ></textarea>
                 </div>
+                <label class="feedback-modal__anonymous">
+                  <input type="checkbox" data-energy-feedback-anonymous />
+                  <span>Отправить анонимно</span>
+                </label>
+                <p class="feedback-modal__hint" data-energy-feedback-hint>
+                  Если отправите анонимно, ответ на обращение получить не получится. ☹️
+                </p>
                 <div class="form-field">
                   <label for="feedback-photos">Фото (можно несколько)</label>
                   <input

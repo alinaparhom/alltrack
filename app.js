@@ -877,6 +877,10 @@ function formatNotificationCostWithoutCurrency(value) {
     .trim();
 }
 
+function formatToolCostLabel(tool) {
+  return `Стоимость: ${formatNotificationCost(tool?.["Стоимость"])}`;
+}
+
 function escapeTelegramHtml(value) {
   return String(value ?? "")
     .replace(/&/g, "&amp;")
@@ -9163,6 +9167,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         toolsState.numberKey === "Бух.номер" && accountingNumber === number
           ? ""
           : accountingNumber,
+        formatToolCostLabel(tool),
         tool?.["Граппа инструментов"],
         tool?.["Статус"],
         tool?.["Объект"],
@@ -9276,7 +9281,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       meta.className = "tools-table__meta";
       const manufacturer = String(tool?.["Производитель"] ?? "").trim();
       const model = String(tool?.["Модель"] ?? "").trim();
-      meta.textContent = [manufacturer, model].filter(Boolean).join(" · ") || "—";
+      meta.textContent = [
+        [manufacturer, model].filter(Boolean).join(" · "),
+        formatToolCostLabel(tool),
+      ]
+        .filter(Boolean)
+        .join(" · ") || "—";
       infoCell.append(title, meta);
       const photoCell = document.createElement("div");
       photoCell.className = "tools-table__cell tools-table__cell--thumb";
@@ -12378,6 +12388,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         receiver ? `Принял: ${receiver}` : "",
         sender ? `${senderLabel}: ${sender}` : "",
         moveDate ? `Дата перемещения: ${moveDate}` : "",
+        formatToolCostLabel(tool),
       ]
         .filter(Boolean)
         .forEach((line) => {
@@ -14686,6 +14697,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const manufacturer = String(tool?.["Производитель"] ?? "").trim();
       const model = String(tool?.["Модель"] ?? "").trim();
       const status = String(tool?.["Статус"] ?? "").trim();
+      const costLine = document.createElement("div");
+      costLine.textContent = formatToolCostLabel(tool);
 
       const accountingLine = document.createElement("div");
       accountingLine.textContent = `Бух.номер: ${accountingNumber || "—"}`;
@@ -14699,7 +14712,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const statusLine = document.createElement("div");
       statusLine.className = "tools-table__status-line";
       statusLine.textContent = `Статус: ${status || "—"}`;
-      meta.append(accountingLine, detailsLine, statusLine);
+      meta.append(accountingLine, detailsLine, costLine, statusLine);
       infoCell.append(title, meta);
 
       const actionCell = document.createElement("div");
@@ -15038,6 +15051,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       meta.innerHTML = `
         <div>Производитель: ${manufacturer || "—"} · Модель: ${model || "—"}</div>
         <div>Бух.номер: ${accountingNumber || "—"}</div>
+        <div>${formatToolCostLabel(tool)}</div>
         <div class="remove-photo-count">Фото: ${safeCount}</div>
       `;
       infoCell.append(title, meta);
@@ -15974,6 +15988,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const model = String(tool?.["Модель"] ?? "").trim();
       const accountingNumber = String(tool?.["Бух.номер"] ?? "").trim();
       const status = String(tool?.["Статус"] ?? "").trim();
+      const costLine = document.createElement("div");
+      costLine.textContent = formatToolCostLabel(tool);
       const lineTop = document.createElement("div");
       lineTop.textContent = [
         `Производитель: ${manufacturer || "—"}`,
@@ -15984,7 +16000,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const statusLine = document.createElement("div");
       statusLine.className = "tools-table__status-line";
       statusLine.textContent = `Статус: ${status || "—"}`;
-      meta.append(lineTop, lineBottom, statusLine);
+      meta.append(lineTop, lineBottom, costLine, statusLine);
       infoCell.append(title, meta);
 
       row.append(numberCell, objectCell, infoCell);
@@ -16062,6 +16078,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const model = String(tool?.["Модель"] ?? "").trim();
       const accountingNumber = String(tool?.["Бух.номер"] ?? "").trim();
       const status = String(tool?.["Статус"] ?? "").trim();
+      const costLine = document.createElement("div");
+      costLine.textContent = formatToolCostLabel(tool);
       const lineTop = document.createElement("div");
       lineTop.textContent = [
         `Производитель: ${manufacturer || "—"}`,
@@ -16072,7 +16090,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const statusLine = document.createElement("div");
       statusLine.className = "tools-table__status-line";
       statusLine.textContent = `Статус: ${status || "—"}`;
-      meta.append(lineTop, lineBottom, statusLine);
+      meta.append(lineTop, lineBottom, costLine, statusLine);
       infoCell.append(title, meta);
 
       row.append(numberCell, objectCell, infoCell);

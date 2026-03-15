@@ -944,6 +944,8 @@
         display: inline-flex;
         align-items: center;
         gap: 10px;
+        margin-left: auto;
+        min-width: 0;
       }
 
       .app-title-actions.is-hidden {
@@ -959,6 +961,14 @@
         align-items: center;
         gap: 12px;
         color: var(--text);
+        min-width: 0;
+        flex: 1 1 auto;
+      }
+
+      .app-title-text {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
       }
 
       .app-title-meta {
@@ -10078,7 +10088,6 @@
               <span data-user-initials>AA</span>
             </button>
             <span class="app-title-text">AllTrack</span>
-            <span class="app-title-meta is-hidden" data-app-title-meta aria-live="polite"></span>
           </div>
           <div class="app-title-actions">
             <button
@@ -10111,6 +10120,7 @@
             <div class="app-stat is-hidden" data-super-admin-stat title="Статистика">
               <span class="section-icon" aria-hidden="true">📊</span>
             </div>
+            <span class="app-title-meta is-hidden" data-app-title-meta aria-live="polite"></span>
           </div>
         </div>
       </header>

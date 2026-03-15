@@ -6337,7 +6337,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const safePoints = Array.isArray(points) ? points : [];
     toolsMapState.points = safePoints;
     if (appTitleMetaEl) {
-      appTitleMetaEl.textContent = `· ${safePoints.length} объектов`;
+      appTitleMetaEl.textContent = `${safePoints.length} объектов`;
       appTitleMetaEl.classList.remove("is-hidden");
     }
     if (toolsMapCountEl) {
@@ -6372,12 +6372,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const dot = document.createElement("button");
       dot.className = "tools-map-dot";
       dot.type = "button";
-      dot.setAttribute("aria-label", `${point.name}: ${point.count} инструментов`);
+      dot.setAttribute("aria-label", point.name);
       dot.style.left = `${(position.x * 100).toFixed(2)}%`;
       dot.style.top = `${(position.y * 100).toFixed(2)}%`;
       dot.innerHTML = `
         <span class="tools-map-dot__title">${escapeHtml(point.name)}</span>
-        <span class="tools-map-dot__count">${point.count}</span>
       `;
       dot.addEventListener("click", (event) => {
         event.preventDefault();

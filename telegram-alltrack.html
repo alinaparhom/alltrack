@@ -36,6 +36,7 @@
         --text-md: 14px;
         --text-sm: 12px;
         --telegram-top-controls-offset: 0px;
+        --telegram-top-spacing: 0px;
       }
 
       body[data-theme="dark"] {
@@ -862,7 +863,7 @@
         backdrop-filter: blur(24px);
         border: 1px solid rgba(255, 255, 255, 0.6);
         border-radius: 0;
-        padding: calc(16px + env(safe-area-inset-top)) 16px
+        padding: calc(16px + env(safe-area-inset-top) + var(--telegram-top-spacing, 0px)) 16px
           calc(18px + env(safe-area-inset-bottom));
         box-shadow: var(--shadow);
         position: relative;
@@ -884,14 +885,8 @@
         -webkit-overflow-scrolling: touch;
       }
 
-      body.is-telegram .screen {
-        padding-top: calc(
-          10px + env(safe-area-inset-top, 0px) + var(--telegram-top-controls-offset, 0px)
-        );
-      }
-
-      body.is-telegram.is-ios {
-        --telegram-top-controls-offset: 0px;
+      body.is-telegram {
+        --telegram-top-spacing: var(--telegram-top-controls-offset, 0px);
       }
 
       .screen::before {
@@ -3271,7 +3266,7 @@
         position: relative;
         display: grid;
         gap: 4px;
-        padding: calc(56px + env(safe-area-inset-top)) 18px 6px;
+        padding: calc(56px + env(safe-area-inset-top) + var(--telegram-top-spacing, 0px)) 18px 6px;
         border-bottom: 1px solid rgba(226, 232, 240, 0.7);
       }
 
@@ -3507,7 +3502,7 @@
       }
 
       .info-hub-modal__header--compact {
-        padding-top: calc(36px + env(safe-area-inset-top));
+        padding-top: calc(36px + env(safe-area-inset-top) + var(--telegram-top-spacing, 0px));
       }
 
       .info-pending-list-modal__panel {
@@ -4158,7 +4153,7 @@
         grid-template-columns: minmax(0, 1fr) auto;
         align-items: start;
         gap: 6px;
-        padding: calc(12px + env(safe-area-inset-top)) 14px 8px;
+        padding: calc(12px + env(safe-area-inset-top) + var(--telegram-top-spacing, 0px)) 14px 8px;
         border-bottom: 1px solid rgba(226, 232, 240, 0.8);
         background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0));
       }
@@ -5692,7 +5687,7 @@
       .tools-move-modal .settings-modal__header {
         grid-template-columns: minmax(0, 1fr) auto;
         align-items: start;
-        padding: calc(56px + env(safe-area-inset-top)) 24px 10px;
+        padding: calc(56px + env(safe-area-inset-top) + var(--telegram-top-spacing, 0px)) 24px 10px;
       }
 
       .tools-move-modal .settings-modal__title {
@@ -5835,7 +5830,7 @@
 
       @media (max-width: 520px) {
         .tools-move-modal .settings-modal__header {
-          padding: calc(56px + env(safe-area-inset-top)) 18px 8px;
+          padding: calc(56px + env(safe-area-inset-top) + var(--telegram-top-spacing, 0px)) 18px 8px;
         }
 
         .tools-move-modal .settings-modal__title {
@@ -7740,7 +7735,7 @@
         grid-template-columns: minmax(0, 1fr) auto;
         align-items: start;
         gap: 8px;
-        padding: calc(20px + env(safe-area-inset-top)) 20px 12px;
+        padding: calc(20px + env(safe-area-inset-top) + var(--telegram-top-spacing, 0px)) 20px 12px;
         border-bottom: 1px solid rgba(226, 232, 240, 0.7);
         background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(255, 255, 255, 0.7));
       }
@@ -7784,7 +7779,7 @@
         grid-template-columns: minmax(0, 1fr) auto;
         align-items: start;
         gap: 8px;
-        padding: calc(14px + env(safe-area-inset-top)) 12px 8px;
+        padding: calc(14px + env(safe-area-inset-top) + var(--telegram-top-spacing, 0px)) 12px 8px;
         border-bottom: 1px solid rgba(226, 232, 240, 0.7);
         background: rgba(255, 255, 255, 0.85);
       }
@@ -8279,7 +8274,7 @@
         grid-template-columns: minmax(0, 1fr) auto;
         align-items: start;
         gap: 8px;
-        padding: calc(10px + env(safe-area-inset-top)) 14px 6px;
+        padding: calc(10px + env(safe-area-inset-top) + var(--telegram-top-spacing, 0px)) 14px 6px;
         border-bottom: 1px solid rgba(226, 232, 240, 0.7);
         background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(255, 255, 255, 0.7));
       }
@@ -9835,7 +9830,7 @@
         }
 
         .settings-modal__header {
-          padding-top: calc(72px + env(safe-area-inset-top));
+          padding-top: calc(72px + env(safe-area-inset-top) + var(--telegram-top-spacing, 0px));
         }
 
         .settings-modal__footer {
@@ -9952,7 +9947,7 @@
 
       @media (max-width: 420px) {
         .screen {
-          padding: calc(14px + env(safe-area-inset-top)) 12px
+          padding: calc(14px + env(safe-area-inset-top) + var(--telegram-top-spacing, 0px)) 12px
             calc(16px + env(safe-area-inset-bottom));
         }
 

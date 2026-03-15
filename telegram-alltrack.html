@@ -7074,18 +7074,18 @@
 
       .pending-moves-tools-table .tools-table__row {
         --pending-tools-horizontal-gap: 10px;
-        grid-template-columns: max-content minmax(0, 1fr) auto;
+        grid-template-columns: minmax(0, 1fr) auto;
         column-gap: 10px;
         row-gap: 8px;
         padding: 8px var(--pending-tools-horizontal-gap);
       }
 
-      .pending-moves-tools-table .tools-table__cell--number {
-        padding-right: 2px;
-      }
-
       .pending-moves-tools-table .tools-table__cell {
         gap: 2px;
+      }
+
+      .pending-moves-tools-table .pending-move-main-cell {
+        min-width: 0;
       }
 
       .pending-moves-tools-table .tools-table__title {
@@ -7134,7 +7134,7 @@
       }
 
       .info-pending-tools-table .tools-table__row {
-        grid-template-columns: max-content minmax(0, 1fr) auto;
+        grid-template-columns: minmax(0, 1fr) auto;
       }
 
       .pending-moves-tools-table .tools-table__cell--thumb {
@@ -7703,7 +7703,7 @@
 
         .pending-moves-tools-table .tools-table__row {
           --pending-tools-horizontal-gap: 10px;
-          grid-template-columns: max-content minmax(0, 1fr) auto;
+          grid-template-columns: minmax(0, 1fr) auto;
           column-gap: 2px;
           row-gap: 6px;
           padding: 8px var(--pending-tools-horizontal-gap);
@@ -7747,7 +7747,7 @@
         }
 
         .info-pending-tools-table .tools-table__row {
-          grid-template-columns: max-content minmax(0, 1fr) auto;
+          grid-template-columns: minmax(0, 1fr) auto;
         }
 
         .pending-moves-tools-table .tools-table__cell {

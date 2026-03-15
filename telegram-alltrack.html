@@ -9942,6 +9942,48 @@
         }
       }
 
+      @media (min-width: 1200px) and (min-height: 700px) and (hover: hover) and (pointer: fine) {
+        .tools-map-card {
+          top: 0;
+          padding: 18px;
+        }
+
+        .tools-map-canvas {
+          height: min(54vh, 560px);
+        }
+
+        .energy-actions-scroll {
+          margin-top: 14px;
+          overflow: visible;
+        }
+
+        .energy-grid {
+          grid-template-columns: repeat(auto-fit, minmax(124px, 1fr));
+          gap: 10px;
+        }
+
+        .energy-grid .action-card {
+          min-height: 64px;
+          padding: 12px;
+        }
+
+        .energy-grid .action-icon {
+          width: 32px;
+          height: 32px;
+          border-radius: 12px;
+          font-size: 16px;
+        }
+
+        .energy-grid .action-title {
+          font-size: 12px;
+          line-height: 1.2;
+        }
+
+        .quick-access {
+          display: none;
+        }
+      }
+
     </style>
   </head>
   <body>

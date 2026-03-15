@@ -1100,7 +1100,7 @@ export function renderRole(user) {
             aria-modal="true"
             aria-label="Подтверждение смены статуса"
           >
-            <div class="settings-modal__header">
+            <div class="settings-modal__header tools-writeoff-pending-confirm-modal__header">
               <div class="settings-modal__title">
                 <h2>Подтверждение статуса</h2>
                 <p data-tools-writeoff-pending-confirm-subtitle>
@@ -1130,14 +1130,14 @@ export function renderRole(user) {
             </div>
             <div class="settings-modal__footer tools-writeoff-pending-confirm-actions">
               <button
-                class="action-secondary"
+                class="action-secondary tools-writeoff-pending-confirm-actions__cancel"
                 type="button"
                 data-tools-writeoff-pending-confirm-cancel
               >
                 Отмена
               </button>
               <button
-                class="action-primary"
+                class="action-primary tools-writeoff-pending-confirm-actions__submit"
                 type="button"
                 data-tools-writeoff-pending-confirm-submit
               >

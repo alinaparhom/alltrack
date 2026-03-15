@@ -6421,6 +6421,14 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     yandexPromise: null,
   };
 
+  const syncToolsMapCanvasSquare = () => {
+    if (!toolsMapCanvasEl) return;
+    const canvasWidth = Math.round(toolsMapCanvasEl.clientWidth);
+    if (!canvasWidth) return;
+    toolsMapCanvasEl.style.height = `${canvasWidth}px`;
+    toolsMapState.map?.container?.fitToViewport?.();
+  };
+
   const ensureYandexMapsLoaded = () => {
     if (window.ymaps?.Map) {
       return Promise.resolve(window.ymaps);
@@ -6603,11 +6611,14 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         event.preventDefault();
         event.stopPropagation();
         setToolsMapCollapsedState(!isToolsMapCollapsed);
+        window.requestAnimationFrame(syncToolsMapCanvasSquare);
       });
     });
   }
 
   if (toolsMapCanvasEl) {
+    syncToolsMapCanvasSquare();
+    window.addEventListener("resize", syncToolsMapCanvasSquare);
     toolsMapCanvasEl.addEventListener("click", () => {
       void awakenToolsMap();
     });

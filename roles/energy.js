@@ -3404,6 +3404,18 @@ export function renderRole(user) {
                       <option value="Ответственный">Ответственный</option>
                     </select>
                   </div>
+                  <div class="form-field">
+                    <label class="form-label" for="users-add-position">Должность</label>
+                    <input
+                      class="form-input"
+                      type="text"
+                      id="users-add-position"
+                      name="users-add-position"
+                      autocomplete="organization-title"
+                      placeholder="Например: мастер участка"
+                      required
+                    />
+                  </div>
                   <p class="users-add__note">
                     После сохранения появится ссылка‑приглашение для регистрации пользователя.
                   </p>

@@ -11891,7 +11891,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         <button class=\"pending-move-action pending-move-action--decline\" type=\"button\" data-pending-move-action=\"decline\" data-move-index=\"${moveIndex}\" aria-label=\"Не принять\">Не принять</button>
         <button class=\"pending-move-action pending-move-action--accept\" type=\"button\" data-pending-move-action=\"accept\" data-move-index=\"${moveIndex}\" aria-label=\"Принять\">Принять</button>
       `;
-      row.append(numberCell, objectCell, infoCell, photoCell, actionsCell);
+      row.append(numberCell, infoCell, photoCell, actionsCell);
       table.appendChild(row);
     });
 

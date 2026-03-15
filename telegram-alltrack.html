@@ -6632,11 +6632,11 @@
 
       .tools-table {
         display: grid;
-        gap: 10px;
+        gap: 6px;
       }
 
       .tools-table--breakdowns .tools-table__row {
-        grid-template-columns: minmax(80px, 120px) minmax(110px, 170px) minmax(0, 1fr);
+        grid-template-columns: minmax(80px, 120px) minmax(36px, 56px) minmax(0, 1fr);
         cursor: pointer;
       }
 
@@ -6647,8 +6647,8 @@
 
       .tools-table__row {
         display: grid;
-        grid-template-columns: minmax(80px, 120px) minmax(110px, 170px) minmax(0, 1fr) auto;
-        gap: 12px;
+        grid-template-columns: minmax(80px, 120px) minmax(36px, 56px) minmax(0, 1fr) auto;
+        gap: 4px;
         align-items: center;
         padding: 12px 14px;
         border-radius: 16px;
@@ -6702,6 +6702,10 @@
       .tools-table__cell--object {
         font-weight: 500;
         color: #475569;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
       }
 
       .tools-table__cell--thumb {
@@ -7662,8 +7666,9 @@
         }
 
         .tools-list.is-table .tools-table__row {
-          grid-template-columns: minmax(64px, 90px) minmax(90px, 130px) minmax(0, 1fr) auto;
+          grid-template-columns: minmax(64px, 90px) minmax(30px, 44px) minmax(0, 1fr) auto;
           padding: 10px 12px;
+          gap: 3px;
         }
 
         .tools-list.is-table .tools-table__thumb {

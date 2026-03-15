@@ -4434,7 +4434,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const toolsMapLayerEl = contentEl.querySelector("[data-tools-map-layer]");
   const toolsMapImageEl = contentEl.querySelector("[data-tools-map-image]");
   const toolsMapPlaceholderEl = contentEl.querySelector("[data-tools-map-placeholder]");
-  const toolsMapToggleEl = contentEl.querySelector("[data-tools-map-toggle]");
+  const toolsMapCountEl = contentEl.querySelector("[data-tools-map-count]");
+  const toolsMapToggleEls = Array.from(
+    contentEl.querySelectorAll("[data-tools-map-toggle], [data-tools-map-toggle-overlay]")
+  );
   let isToolsMapCollapsed = false;
   const updateQuickAccessOffset = () => {
     if (!quickAccessEl) return;
@@ -6337,6 +6340,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       appTitleMetaEl.textContent = `· ${safePoints.length} объектов`;
       appTitleMetaEl.classList.remove("is-hidden");
     }
+    if (toolsMapCountEl) {
+      const objectText = safePoints.length === 1 ? "объект" : "объектов";
+      toolsMapCountEl.textContent = `${safePoints.length} ${objectText}`;
+    }
     const mapContentEl = toolsMapLayerEl ?? toolsMapCanvasEl;
     const existingDots = mapContentEl.querySelectorAll(".tools-map-dot");
     existingDots.forEach((dot) => dot.remove());
@@ -6386,16 +6393,18 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   };
 
   const setToolsMapCollapsedState = (collapsed) => {
-    if (!toolsMapEl || !toolsMapToggleEl) return;
+    if (!toolsMapEl || !toolsMapToggleEls.length) return;
     isToolsMapCollapsed = Boolean(collapsed);
     toolsMapEl.classList.toggle("tools-map-card--collapsed", isToolsMapCollapsed);
-    toolsMapToggleEl.innerHTML = '<span aria-hidden="true">▾</span>';
-    toolsMapToggleEl.classList.toggle("is-collapsed", isToolsMapCollapsed);
-    toolsMapToggleEl.setAttribute("aria-expanded", String(!isToolsMapCollapsed));
-    toolsMapToggleEl.setAttribute(
-      "aria-label",
-      isToolsMapCollapsed ? "Развернуть карту" : "Свернуть карту"
-    );
+    toolsMapToggleEls.forEach((toggleEl) => {
+      toggleEl.innerHTML = '<span aria-hidden="true">▾</span>';
+      toggleEl.classList.toggle("is-collapsed", isToolsMapCollapsed);
+      toggleEl.setAttribute("aria-expanded", String(!isToolsMapCollapsed));
+      toggleEl.setAttribute(
+        "aria-label",
+        isToolsMapCollapsed ? "Развернуть карту" : "Свернуть карту"
+      );
+    });
     if (!isToolsMapCollapsed && !toolsMapState.activated) {
       toolsMapCanvasEl?.setAttribute(
         "aria-label",
@@ -6589,9 +6598,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     });
   };
 
-  if (toolsMapToggleEl) {
-    toolsMapToggleEl.addEventListener("click", () => {
-      setToolsMapCollapsedState(!isToolsMapCollapsed);
+  if (toolsMapToggleEls.length) {
+    toolsMapToggleEls.forEach((toggleEl) => {
+      toggleEl.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        setToolsMapCollapsedState(!isToolsMapCollapsed);
+      });
     });
   }
 

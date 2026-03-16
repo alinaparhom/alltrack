@@ -1693,8 +1693,24 @@ function resolveLateReplyBalanceByResponsible(array $fines): array {
       continue;
     }
     $result[$normalizedName] = $balance;
+    $result[normalizePersonLabel($normalizedName)] = $balance;
   }
   return $result;
+}
+
+function resolveResponsibleCurrentBalance(array $balanceByResponsible, string $fullName): float {
+  $name = trim($fullName);
+  if ($name === "") {
+    return 0;
+  }
+  if (isset($balanceByResponsible[$name])) {
+    return (float) $balanceByResponsible[$name];
+  }
+  $normalizedName = normalizePersonLabel($name);
+  if ($normalizedName !== "" && isset($balanceByResponsible[$normalizedName])) {
+    return (float) $balanceByResponsible[$normalizedName];
+  }
+  return 0;
 }
 
 function resolveUserFullNameForPendingAcceptance(array $userSettings, $userSettingsKey, array $usersIndexByTelegram): string {
@@ -1741,7 +1757,7 @@ function buildPendingAcceptanceMailingText(string $organization, string $fullNam
   $now = new DateTimeImmutable("now", $timezone);
   $lateFineConfig = resolveLateReplyFineConfig($settings);
   $lateReplyBalanceByResponsible = resolveLateReplyBalanceByResponsible($fines);
-  $currentBalance = (float) ($lateReplyBalanceByResponsible[$fullName] ?? 0);
+  $currentBalance = resolveResponsibleCurrentBalance($lateReplyBalanceByResponsible, $fullName);
 
   $currentPendingFine = 0;
   foreach ($pendingMoves as $move) {
@@ -1761,6 +1777,7 @@ function buildPendingAcceptanceMailingText(string $organization, string $fullNam
     . "🏢 Организация: {$organization}\n"
     . "👤 Получатель: {$fullName}\n"
     . "🧰 Ожидают ответа: {$count}\n"
+    . "✍️ Нужно ответить на перемещение\n"
     . "💸 Текущий штраф: " . formatMoneyLabel($totalCurrentFine) . "\n"
     . "   • Закрытые перемещения: " . formatMoneyLabel($currentBalance) . "\n"
     . "   • Открытые без ответа: " . formatMoneyLabel($currentPendingFine);
@@ -1821,7 +1838,7 @@ function buildMoveRepliesMailingText(string $organization, array $pendingMoves, 
   $maxMoveLines = 120;
   $printedMoves = 0;
   foreach ($groupedMoves as $responsible => $movesByResponsible) {
-    $currentBalance = (float) ($lateReplyBalanceByResponsible[$responsible] ?? 0);
+    $currentBalance = resolveResponsibleCurrentBalance($lateReplyBalanceByResponsible, $responsible);
     $currentPendingFine = 0;
     foreach ($movesByResponsible as $moveInfo) {
       $currentPendingFine += (float) ($moveInfo["currentFine"] ?? 0);
@@ -2083,6 +2100,8 @@ function runPendingAcceptanceMailing(array $options = []): array {
 
     $summary["organizationsChecked"]++;
     $settings = readJsonFile($settingsPath, []);
+    $orgData = readJsonFile(__DIR__ . DIRECTORY_SEPARATOR . "organizations.json", ["organizations" => []]);
+    $orgDisplayName = resolveOrganizationFullNameByFolder($orgFolder, $orgData);
     $usersSettings = $settings["users"] ?? [];
     if (!is_array($usersSettings) || empty($usersSettings)) {
       continue;
@@ -2098,7 +2117,8 @@ function runPendingAcceptanceMailing(array $options = []): array {
         continue;
       }
       $responseDate = trim((string) ($move["Дата ответа"] ?? ""));
-      if ($responseDate !== "") {
+      $response = trim((string) ($move["Ответ"] ?? ""));
+      if ($responseDate !== "" || $response !== "") {
         continue;
       }
       $acceptedBy = normalizePersonLabel((string) ($move["Принял"] ?? ""));
@@ -2152,7 +2172,7 @@ function runPendingAcceptanceMailing(array $options = []): array {
         continue;
       }
 
-      $text = buildPendingAcceptanceMailingText($orgFolder, $fullName, $pendingMoves, $settings, $fines);
+      $text = buildPendingAcceptanceMailingText($orgDisplayName, $fullName, $pendingMoves, $settings, $fines);
 
       $sendResult = $dryRun
         ? ["ok" => true, "statusCode" => 0]

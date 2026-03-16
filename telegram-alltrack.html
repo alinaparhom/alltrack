@@ -7625,8 +7625,9 @@
 
       .tools-writeoff-pending-confirm-actions .action-secondary,
       .tools-writeoff-pending-confirm-actions .action-primary {
-        flex: 1 1 0;
-        min-width: 0;
+        flex: 0 0 auto;
+        width: auto;
+        min-width: fit-content;
         white-space: nowrap;
         height: auto;
         min-height: 0;
@@ -7651,6 +7652,7 @@
 
       .tools-writeoff-pending-confirm-actions__submit {
         order: 2;
+        margin-left: auto;
         background: var(--success-soft);
         color: var(--success);
       }
@@ -7674,10 +7676,10 @@
 
         .tools-writeoff-pending-confirm-actions .action-secondary,
         .tools-writeoff-pending-confirm-actions .action-primary {
-          padding-inline: 10px;
+          padding-inline: 12px;
           font-size: 13px;
           letter-spacing: -0.01em;
-          min-width: 0;
+          min-width: fit-content;
         }
       }
 

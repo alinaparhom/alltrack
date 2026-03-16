@@ -1697,6 +1697,84 @@ function resolveLateReplyBalanceByResponsible(array $fines): array {
   return $result;
 }
 
+function resolveUserFullNameForPendingAcceptance(array $userSettings, $userSettingsKey, array $usersIndexByTelegram): string {
+  $fromSettings = trim((string) ($userSettings["full_name"] ?? ""));
+  if ($fromSettings !== "") {
+    return $fromSettings;
+  }
+
+  $telegramId = normalizeTelegramId($userSettings["telegram_id"] ?? null);
+  if (!$telegramId) {
+    $telegramId = normalizeTelegramId($userSettingsKey);
+  }
+  if ($telegramId && !empty($usersIndexByTelegram[$telegramId])) {
+    return $usersIndexByTelegram[$telegramId];
+  }
+
+  return "";
+}
+
+function buildUsersIndexByTelegram(): array {
+  $usersPath = __DIR__ . DIRECTORY_SEPARATOR . "users.json";
+  $usersData = readJsonFile($usersPath, ["users" => []]);
+  $users = is_array($usersData["users"] ?? null) ? $usersData["users"] : [];
+  $index = [];
+
+  foreach ($users as $item) {
+    if (!is_array($item)) {
+      continue;
+    }
+    $telegramId = normalizeTelegramId($item["telegram_id"] ?? null);
+    $fullName = trim((string) ($item["full_name"] ?? ""));
+    if (!$telegramId || $fullName === "") {
+      continue;
+    }
+    $index[$telegramId] = $fullName;
+  }
+
+  return $index;
+}
+
+function buildPendingAcceptanceMailingText(string $organization, string $fullName, array $pendingMoves, array $settings, array $fines): string {
+  $count = count($pendingMoves);
+  $timezone = new DateTimeZone("Europe/Moscow");
+  $now = new DateTimeImmutable("now", $timezone);
+  $lateFineConfig = resolveLateReplyFineConfig($settings);
+  $lateReplyBalanceByResponsible = resolveLateReplyBalanceByResponsible($fines);
+  $currentBalance = (float) ($lateReplyBalanceByResponsible[$fullName] ?? 0);
+
+  $currentPendingFine = 0;
+  foreach ($pendingMoves as $move) {
+    if (!is_array($move)) {
+      continue;
+    }
+    $currentPendingFine += resolveMoveCurrentLateFine($move, $lateFineConfig, $now, $timezone);
+  }
+
+  $totalCurrentFine = $currentBalance + $currentPendingFine;
+  $firstMove = $pendingMoves[0] ?? [];
+  $toolName = trim((string) ($firstMove["Инструмент"] ?? $firstMove["Название"] ?? $firstMove["Наименование"] ?? ""));
+  $fromObject = trim((string) ($firstMove["Старый объект"] ?? ""));
+  $toObject = trim((string) ($firstMove["Новый объект"] ?? ""));
+
+  $text = "🔔 Напоминание по инструментам на принятии\n"
+    . "🏢 Организация: {$organization}\n"
+    . "👤 Получатель: {$fullName}\n"
+    . "🧰 Ожидают ответа: {$count}\n"
+    . "💸 Текущий штраф: " . formatMoneyLabel($totalCurrentFine) . "\n"
+    . "   • Закрытые перемещения: " . formatMoneyLabel($currentBalance) . "\n"
+    . "   • Открытые без ответа: " . formatMoneyLabel($currentPendingFine);
+
+  if ($toolName !== "") {
+    $text .= "\n\nПервый в списке: {$toolName}";
+  }
+  if ($fromObject !== "" || $toObject !== "") {
+    $text .= "\nМаршрут: " . ($fromObject !== "" ? $fromObject : "—") . " → " . ($toObject !== "" ? $toObject : "—");
+  }
+
+  return $text;
+}
+
 function buildMoveRepliesMailingText(string $organization, array $pendingMoves, array $settings, array $fines): string {
   $count = count($pendingMoves);
   $headerOrg = trim($organization) !== "" ? trim($organization) : "Организация";
@@ -1983,6 +2061,7 @@ function runPendingAcceptanceMailing(array $options = []): array {
   ];
 
   $entries = @scandir(__DIR__);
+  $usersIndexByTelegram = buildUsersIndexByTelegram();
   if (!is_array($entries)) {
     return ["success" => false, "mode" => "pending-acceptance-mailing-cli", "error" => "Не удалось прочитать папки организаций."];
   }
@@ -2009,6 +2088,9 @@ function runPendingAcceptanceMailing(array $options = []): array {
       continue;
     }
 
+    $finesPath = $orgPath . DIRECTORY_SEPARATOR . "Штрафы.json";
+    $fines = readJsonFile($finesPath, []);
+
     $moves = readJsonArrayFile($movesPath);
     $pendingByUser = [];
     foreach ($moves as $move) {
@@ -2034,16 +2116,19 @@ function runPendingAcceptanceMailing(array $options = []): array {
     }
 
     $orgSentCount = 0;
-    foreach ($usersSettings as $userSettings) {
+    foreach ($usersSettings as $userSettingsKey => $userSettings) {
       if (!is_array($userSettings)) {
         continue;
       }
       $telegramId = normalizeTelegramId($userSettings["telegram_id"] ?? null);
       if (!$telegramId) {
+        $telegramId = normalizeTelegramId($userSettingsKey);
+      }
+      if (!$telegramId) {
         continue;
       }
 
-      $fullName = trim((string) ($userSettings["full_name"] ?? ""));
+      $fullName = resolveUserFullNameForPendingAcceptance($userSettings, $userSettingsKey, $usersIndexByTelegram);
       if ($fullName === "") {
         continue;
       }
@@ -2067,22 +2152,7 @@ function runPendingAcceptanceMailing(array $options = []): array {
         continue;
       }
 
-      $count = count($pendingMoves);
-      $firstMove = $pendingMoves[0];
-      $toolName = trim((string) ($firstMove["Инструмент"] ?? $firstMove["Название"] ?? $firstMove["Наименование"] ?? ""));
-      $fromObject = trim((string) ($firstMove["Старый объект"] ?? ""));
-      $toObject = trim((string) ($firstMove["Новый объект"] ?? ""));
-
-      $text = "🔔 Напоминание по инструментам на принятии\n"
-        . "🏢 Организация: {$orgFolder}\n"
-        . "👤 Получатель: {$fullName}\n"
-        . "🧰 Ожидают ответа: {$count}";
-      if ($toolName !== "") {
-        $text .= "\n\nПервый в списке: {$toolName}";
-      }
-      if ($fromObject !== "" || $toObject !== "") {
-        $text .= "\nМаршрут: " . ($fromObject !== "" ? $fromObject : "—") . " → " . ($toObject !== "" ? $toObject : "—");
-      }
+      $text = buildPendingAcceptanceMailingText($orgFolder, $fullName, $pendingMoves, $settings, $fines);
 
       $sendResult = $dryRun
         ? ["ok" => true, "statusCode" => 0]

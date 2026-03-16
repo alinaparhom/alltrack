@@ -5613,11 +5613,59 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const infoMovesHistoryFilterAccountingEl = contentEl.querySelector(
     "[data-info-moves-history-filter-accounting]"
   );
-  const infoMovesHistoryFilterMoveDateEl = contentEl.querySelector(
-    "[data-info-moves-history-filter-move-date]"
+  const infoMovesHistoryFilterMoveDateFromEl = contentEl.querySelector(
+    "[data-info-moves-history-filter-move-date-from]"
   );
-  const infoMovesHistoryFilterResponseDateEl = contentEl.querySelector(
-    "[data-info-moves-history-filter-response-date]"
+  const infoMovesHistoryFilterMoveDateToEl = contentEl.querySelector(
+    "[data-info-moves-history-filter-move-date-to]"
+  );
+  const infoMovesHistoryFilterResponseDateFromEl = contentEl.querySelector(
+    "[data-info-moves-history-filter-response-date-from]"
+  );
+  const infoMovesHistoryFilterResponseDateToEl = contentEl.querySelector(
+    "[data-info-moves-history-filter-response-date-to]"
+  );
+  const infoMovesHistoryMoveDateTriggerEl = contentEl.querySelector(
+    "[data-info-moves-history-move-date-trigger]"
+  );
+  const infoMovesHistoryResponseDateTriggerEl = contentEl.querySelector(
+    "[data-info-moves-history-response-date-trigger]"
+  );
+  const infoMovesHistoryMoveCalendarEl = contentEl.querySelector(
+    "[data-info-moves-history-move-calendar]"
+  );
+  const infoMovesHistoryMoveCalendarPrevEl = contentEl.querySelector(
+    "[data-info-moves-history-move-calendar-prev]"
+  );
+  const infoMovesHistoryMoveCalendarNextEl = contentEl.querySelector(
+    "[data-info-moves-history-move-calendar-next]"
+  );
+  const infoMovesHistoryMoveCalendarMonthLabelEl = contentEl.querySelector(
+    "[data-info-moves-history-move-calendar-month-label]"
+  );
+  const infoMovesHistoryMoveCalendarDaysEl = contentEl.querySelector(
+    "[data-info-moves-history-move-calendar-days]"
+  );
+  const infoMovesHistoryMoveCalendarSelectedRangeEl = contentEl.querySelector(
+    "[data-info-moves-history-move-calendar-selected-range]"
+  );
+  const infoMovesHistoryResponseCalendarEl = contentEl.querySelector(
+    "[data-info-moves-history-response-calendar]"
+  );
+  const infoMovesHistoryResponseCalendarPrevEl = contentEl.querySelector(
+    "[data-info-moves-history-response-calendar-prev]"
+  );
+  const infoMovesHistoryResponseCalendarNextEl = contentEl.querySelector(
+    "[data-info-moves-history-response-calendar-next]"
+  );
+  const infoMovesHistoryResponseCalendarMonthLabelEl = contentEl.querySelector(
+    "[data-info-moves-history-response-calendar-month-label]"
+  );
+  const infoMovesHistoryResponseCalendarDaysEl = contentEl.querySelector(
+    "[data-info-moves-history-response-calendar-days]"
+  );
+  const infoMovesHistoryResponseCalendarSelectedRangeEl = contentEl.querySelector(
+    "[data-info-moves-history-response-calendar-selected-range]"
   );
   const toolsCancelMoveModalEl = contentEl.querySelector(
     "[data-tools-cancel-move-modal]"
@@ -6166,8 +6214,15 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     filters: {
       number: "",
       accounting: "",
-      moveDate: "",
-      responseDate: "",
+      moveDateFrom: "",
+      moveDateTo: "",
+      responseDateFrom: "",
+      responseDateTo: "",
+    },
+    datePicker: {
+      activeType: "",
+      moveVisibleMonthDate: new Date(),
+      responseVisibleMonthDate: new Date(),
     },
   };
   const pendingMovePhotoViewerEl = document.createElement("div");
@@ -12682,9 +12737,34 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const getInfoMovesHistoryFilters = () => ({
     number: String(infoMovesHistoryFilterNumberEl?.value ?? "").trim(),
     accounting: String(infoMovesHistoryFilterAccountingEl?.value ?? "").trim(),
-    moveDate: String(infoMovesHistoryFilterMoveDateEl?.value ?? "").trim(),
-    responseDate: String(infoMovesHistoryFilterResponseDateEl?.value ?? "").trim(),
+    moveDateFrom: String(infoMovesHistoryFilterMoveDateFromEl?.value ?? "").trim(),
+    moveDateTo: String(infoMovesHistoryFilterMoveDateToEl?.value ?? "").trim(),
+    responseDateFrom: String(infoMovesHistoryFilterResponseDateFromEl?.value ?? "").trim(),
+    responseDateTo: String(infoMovesHistoryFilterResponseDateToEl?.value ?? "").trim(),
   });
+
+  const getIsoDateRange = (fromValue, toValue) => {
+    const fromDate = parseIsoDateValue(fromValue);
+    const toDateRaw = parseIsoDateValue(toValue);
+    if (!(fromDate instanceof Date) || Number.isNaN(fromDate.getTime())) {
+      return { start: null, end: null };
+    }
+    if (!(toDateRaw instanceof Date) || Number.isNaN(toDateRaw.getTime())) {
+      return { start: fromDate, end: fromDate };
+    }
+    return fromDate.getTime() <= toDateRaw.getTime()
+      ? { start: fromDate, end: toDateRaw }
+      : { start: toDateRaw, end: fromDate };
+  };
+
+  const isDateInRange = (dateValue, fromValue, toValue) => {
+    const { start, end } = getIsoDateRange(fromValue, toValue);
+    if (!start || !end) return true;
+    const date = parseIsoDateValue(dateValue);
+    if (!(date instanceof Date) || Number.isNaN(date.getTime())) return false;
+    const ts = date.getTime();
+    return ts >= start.getTime() && ts <= end.getTime();
+  };
 
   const applyInfoMovesHistoryFilters = (moves, filters) => {
     const normalizedNumber = normalizeToolNumberValue(filters.number);
@@ -12700,10 +12780,174 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       if (normalizedAccounting && !moveAccounting.includes(normalizedAccounting)) {
         return false;
       }
-      if (filters.moveDate && moveDate !== filters.moveDate) return false;
-      if (filters.responseDate && responseDate !== filters.responseDate) return false;
+      if (!isDateInRange(moveDate, filters.moveDateFrom, filters.moveDateTo)) return false;
+      if (
+        !isDateInRange(
+          responseDate,
+          filters.responseDateFrom,
+          filters.responseDateTo
+        )
+      ) {
+        return false;
+      }
       return true;
     });
+  };
+
+  const setInfoMovesHistoryDatePickerOpen = (type, isOpen) => {
+    const normalizedType = type === "response" ? "response" : "move";
+    const shouldOpen = Boolean(isOpen);
+    if (!shouldOpen) {
+      infoMovesHistoryState.datePicker.activeType = "";
+      infoMovesHistoryMoveCalendarEl?.classList.add("is-hidden");
+      infoMovesHistoryResponseCalendarEl?.classList.add("is-hidden");
+      return;
+    }
+    infoMovesHistoryState.datePicker.activeType = normalizedType;
+    infoMovesHistoryMoveCalendarEl?.classList.toggle(
+      "is-hidden",
+      normalizedType !== "move"
+    );
+    infoMovesHistoryResponseCalendarEl?.classList.toggle(
+      "is-hidden",
+      normalizedType !== "response"
+    );
+    renderInfoMovesHistoryCalendar(normalizedType);
+  };
+
+  const formatInfoMovesHistoryDateLabel = (value) => {
+    const parsed = parseIsoDateValue(value);
+    if (!(parsed instanceof Date) || Number.isNaN(parsed.getTime())) return "";
+    return parsed.toLocaleDateString("ru-RU");
+  };
+
+  const updateInfoMovesHistoryDateTrigger = (type) => {
+    const isResponse = type === "response";
+    const fromValue = isResponse
+      ? String(infoMovesHistoryFilterResponseDateFromEl?.value ?? "").trim()
+      : String(infoMovesHistoryFilterMoveDateFromEl?.value ?? "").trim();
+    const toValue = isResponse
+      ? String(infoMovesHistoryFilterResponseDateToEl?.value ?? "").trim()
+      : String(infoMovesHistoryFilterMoveDateToEl?.value ?? "").trim();
+    const triggerEl = isResponse
+      ? infoMovesHistoryResponseDateTriggerEl
+      : infoMovesHistoryMoveDateTriggerEl;
+    if (!triggerEl) return;
+    const { start, end } = getIsoDateRange(fromValue, toValue);
+    if (!start || !end) {
+      triggerEl.textContent = "Выберите дату";
+      return;
+    }
+    const startLabel = formatInfoMovesHistoryDateLabel(toIsoDate(start));
+    const endLabel = formatInfoMovesHistoryDateLabel(toIsoDate(end));
+    triggerEl.textContent =
+      startLabel !== endLabel ? `${startLabel} — ${endLabel}` : startLabel;
+  };
+
+  const updateInfoMovesHistoryCalendarHint = (type) => {
+    const isResponse = type === "response";
+    const selectedEl = isResponse
+      ? infoMovesHistoryResponseCalendarSelectedRangeEl
+      : infoMovesHistoryMoveCalendarSelectedRangeEl;
+    if (!selectedEl) return;
+    const fromValue = isResponse
+      ? String(infoMovesHistoryFilterResponseDateFromEl?.value ?? "").trim()
+      : String(infoMovesHistoryFilterMoveDateFromEl?.value ?? "").trim();
+    const toValue = isResponse
+      ? String(infoMovesHistoryFilterResponseDateToEl?.value ?? "").trim()
+      : String(infoMovesHistoryFilterMoveDateToEl?.value ?? "").trim();
+    const { start, end } = getIsoDateRange(fromValue, toValue);
+    if (!start || !end) {
+      selectedEl.textContent = "Выберите одну дату или диапазон";
+      return;
+    }
+    const startLabel = formatInfoMovesHistoryDateLabel(toIsoDate(start));
+    const endLabel = formatInfoMovesHistoryDateLabel(toIsoDate(end));
+    selectedEl.textContent =
+      startLabel !== endLabel ? `Период: ${startLabel} — ${endLabel}` : `Дата: ${startLabel}`;
+  };
+
+  const renderInfoMovesHistoryCalendar = (type) => {
+    const isResponse = type === "response";
+    const monthDate = new Date(
+      (isResponse
+        ? infoMovesHistoryState.datePicker.responseVisibleMonthDate
+        : infoMovesHistoryState.datePicker.moveVisibleMonthDate
+      ).getFullYear(),
+      (isResponse
+        ? infoMovesHistoryState.datePicker.responseVisibleMonthDate
+        : infoMovesHistoryState.datePicker.moveVisibleMonthDate
+      ).getMonth(),
+      1
+    );
+    const monthLabelEl = isResponse
+      ? infoMovesHistoryResponseCalendarMonthLabelEl
+      : infoMovesHistoryMoveCalendarMonthLabelEl;
+    const daysEl = isResponse
+      ? infoMovesHistoryResponseCalendarDaysEl
+      : infoMovesHistoryMoveCalendarDaysEl;
+    if (!monthLabelEl || !daysEl) return;
+
+    monthLabelEl.textContent = monthDate.toLocaleDateString("ru-RU", {
+      month: "long",
+      year: "numeric",
+    });
+
+    const fromValue = isResponse
+      ? String(infoMovesHistoryFilterResponseDateFromEl?.value ?? "").trim()
+      : String(infoMovesHistoryFilterMoveDateFromEl?.value ?? "").trim();
+    const toValue = isResponse
+      ? String(infoMovesHistoryFilterResponseDateToEl?.value ?? "").trim()
+      : String(infoMovesHistoryFilterMoveDateToEl?.value ?? "").trim();
+    const { start, end } = getIsoDateRange(fromValue, toValue);
+    const startTs = start instanceof Date ? start.getTime() : Number.NaN;
+    const endTs = end instanceof Date ? end.getTime() : Number.NaN;
+
+    daysEl.innerHTML = "";
+    buildMonthMatrix(monthDate).forEach((dayDate) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "download-moves-calendar__day";
+      if (!dayDate) {
+        button.classList.add("is-empty");
+        button.tabIndex = -1;
+        daysEl.append(button);
+        return;
+      }
+      const iso = toIsoDate(dayDate);
+      const ts = dayDate.getTime();
+      button.dataset.date = iso;
+      button.textContent = String(dayDate.getDate());
+      if (Number.isFinite(startTs) && ts === startTs) button.classList.add("is-selected");
+      if (Number.isFinite(endTs) && ts === endTs) button.classList.add("is-selected");
+      if (Number.isFinite(startTs) && Number.isFinite(endTs) && ts >= startTs && ts <= endTs) {
+        button.classList.add("is-in-range");
+      }
+      daysEl.append(button);
+    });
+
+    updateInfoMovesHistoryCalendarHint(type);
+  };
+
+  const handleInfoMovesHistoryDateSelect = (type, isoDate) => {
+    const isResponse = type === "response";
+    const fromEl = isResponse
+      ? infoMovesHistoryFilterResponseDateFromEl
+      : infoMovesHistoryFilterMoveDateFromEl;
+    const toEl = isResponse
+      ? infoMovesHistoryFilterResponseDateToEl
+      : infoMovesHistoryFilterMoveDateToEl;
+    const currentFrom = String(fromEl?.value ?? "").trim();
+    const currentTo = String(toEl?.value ?? "").trim();
+    if (!currentFrom || (currentFrom && currentTo)) {
+      if (fromEl) fromEl.value = isoDate;
+      if (toEl) toEl.value = "";
+    } else {
+      if (toEl) toEl.value = isoDate;
+    }
+    updateInfoMovesHistoryDateTrigger(type);
+    renderInfoMovesHistoryCalendar(type);
+    renderInfoMovesHistoryList();
   };
 
   const buildInfoMovesHistoryRow = (label, value) => {
@@ -12825,11 +13069,15 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (!infoMovesHistoryModalEl) return;
     infoMovesHistoryModalEl.classList.remove("is-hidden");
     document.body.style.overflow = "hidden";
+    updateInfoMovesHistoryDateTrigger("move");
+    updateInfoMovesHistoryDateTrigger("response");
+    setInfoMovesHistoryDatePickerOpen("move", false);
     await loadInfoMovesHistory();
   };
 
   const closeInfoMovesHistoryModal = () => {
     if (!infoMovesHistoryModalEl) return;
+    setInfoMovesHistoryDatePickerOpen("move", false);
     infoMovesHistoryModalEl.classList.add("is-hidden");
     document.body.style.overflow = "";
   };
@@ -13851,11 +14099,75 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   [
     infoMovesHistoryFilterNumberEl,
     infoMovesHistoryFilterAccountingEl,
-    infoMovesHistoryFilterMoveDateEl,
-    infoMovesHistoryFilterResponseDateEl,
+    infoMovesHistoryFilterMoveDateFromEl,
+    infoMovesHistoryFilterMoveDateToEl,
+    infoMovesHistoryFilterResponseDateFromEl,
+    infoMovesHistoryFilterResponseDateToEl,
   ].forEach((input) => {
     input?.addEventListener("input", renderInfoMovesHistoryList);
     input?.addEventListener("change", renderInfoMovesHistoryList);
+  });
+  infoMovesHistoryMoveDateTriggerEl?.addEventListener("click", (event) => {
+    event.stopPropagation();
+    const shouldOpen = infoMovesHistoryState.datePicker.activeType !== "move";
+    setInfoMovesHistoryDatePickerOpen("move", shouldOpen);
+  });
+  infoMovesHistoryResponseDateTriggerEl?.addEventListener("click", (event) => {
+    event.stopPropagation();
+    const shouldOpen = infoMovesHistoryState.datePicker.activeType !== "response";
+    setInfoMovesHistoryDatePickerOpen("response", shouldOpen);
+  });
+  infoMovesHistoryMoveCalendarEl?.addEventListener("click", (event) => {
+    event.stopPropagation();
+  });
+  infoMovesHistoryResponseCalendarEl?.addEventListener("click", (event) => {
+    event.stopPropagation();
+  });
+  infoMovesHistoryMoveCalendarPrevEl?.addEventListener("click", () => {
+    infoMovesHistoryState.datePicker.moveVisibleMonthDate = new Date(
+      infoMovesHistoryState.datePicker.moveVisibleMonthDate.getFullYear(),
+      infoMovesHistoryState.datePicker.moveVisibleMonthDate.getMonth() - 1,
+      1
+    );
+    renderInfoMovesHistoryCalendar("move");
+  });
+  infoMovesHistoryMoveCalendarNextEl?.addEventListener("click", () => {
+    infoMovesHistoryState.datePicker.moveVisibleMonthDate = new Date(
+      infoMovesHistoryState.datePicker.moveVisibleMonthDate.getFullYear(),
+      infoMovesHistoryState.datePicker.moveVisibleMonthDate.getMonth() + 1,
+      1
+    );
+    renderInfoMovesHistoryCalendar("move");
+  });
+  infoMovesHistoryResponseCalendarPrevEl?.addEventListener("click", () => {
+    infoMovesHistoryState.datePicker.responseVisibleMonthDate = new Date(
+      infoMovesHistoryState.datePicker.responseVisibleMonthDate.getFullYear(),
+      infoMovesHistoryState.datePicker.responseVisibleMonthDate.getMonth() - 1,
+      1
+    );
+    renderInfoMovesHistoryCalendar("response");
+  });
+  infoMovesHistoryResponseCalendarNextEl?.addEventListener("click", () => {
+    infoMovesHistoryState.datePicker.responseVisibleMonthDate = new Date(
+      infoMovesHistoryState.datePicker.responseVisibleMonthDate.getFullYear(),
+      infoMovesHistoryState.datePicker.responseVisibleMonthDate.getMonth() + 1,
+      1
+    );
+    renderInfoMovesHistoryCalendar("response");
+  });
+  infoMovesHistoryMoveCalendarDaysEl?.addEventListener("click", (event) => {
+    const target = event.target instanceof HTMLElement ? event.target : null;
+    const button = target?.closest("button[data-date]");
+    const isoDate = String(button?.dataset?.date ?? "").trim();
+    if (!isoDate) return;
+    handleInfoMovesHistoryDateSelect("move", isoDate);
+  });
+  infoMovesHistoryResponseCalendarDaysEl?.addEventListener("click", (event) => {
+    const target = event.target instanceof HTMLElement ? event.target : null;
+    const button = target?.closest("button[data-date]");
+    const isoDate = String(button?.dataset?.date ?? "").trim();
+    if (!isoDate) return;
+    handleInfoMovesHistoryDateSelect("response", isoDate);
   });
   document.addEventListener("click", (event) => {
     const target = event.target instanceof Node ? event.target : null;
@@ -13865,6 +14177,18 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     setInfoPendingSortDropdownOpen(false);
     setInfoPendingPersonDropdownOpen("", false);
     setInfoPendingFiltersOpen(false);
+  });
+  document.addEventListener("click", (event) => {
+    const target = event.target instanceof Node ? event.target : null;
+    if (!target) return;
+    if (infoMovesHistoryModalEl?.classList.contains("is-hidden")) return;
+    const clickedInsidePicker =
+      infoMovesHistoryMoveDateTriggerEl?.contains(target) ||
+      infoMovesHistoryResponseDateTriggerEl?.contains(target) ||
+      infoMovesHistoryMoveCalendarEl?.contains(target) ||
+      infoMovesHistoryResponseCalendarEl?.contains(target);
+    if (clickedInsidePicker) return;
+    setInfoMovesHistoryDatePickerOpen("move", false);
   });
 
   if (toolsSearchInput) {

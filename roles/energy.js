@@ -3672,7 +3672,7 @@ export function renderRole(user) {
         <div class="settings-modal info-moves-history-modal is-hidden" data-info-moves-history-modal>
           <div class="settings-modal__backdrop" data-info-moves-history-backdrop></div>
           <div
-            class="settings-modal__panel info-moves-history-modal__panel"
+            class="settings-modal__panel info-moves-history-modal__panel info-moves-history-modal__panel--fullscreen"
             role="dialog"
             aria-modal="true"
             aria-label="История перемещений"
@@ -3693,41 +3693,75 @@ export function renderRole(user) {
             </div>
             <div class="settings-modal__body info-moves-history-modal__body">
               <div class="info-moves-history-filters">
-                <label class="form-field">
-                  <span>Номер инструмента</span>
-                  <input
-                    class="form-input"
-                    type="text"
-                    placeholder="Например, 157"
-                    data-info-moves-history-filter-number
-                    inputmode="numeric"
-                  />
-                </label>
-                <label class="form-field">
-                  <span>Бух.номер</span>
-                  <input
-                    class="form-input"
-                    type="text"
-                    placeholder="Введите бух.номер"
-                    data-info-moves-history-filter-accounting
-                  />
-                </label>
-                <label class="form-field">
-                  <span>Дата перемещения</span>
-                  <input
-                    class="form-input"
-                    type="date"
-                    data-info-moves-history-filter-move-date
-                  />
-                </label>
-                <label class="form-field">
-                  <span>Дата ответа</span>
-                  <input
-                    class="form-input"
-                    type="date"
-                    data-info-moves-history-filter-response-date
-                  />
-                </label>
+                <div class="info-moves-history-filters__row">
+                  <label class="form-field">
+                    <span>Номер инструмента</span>
+                    <input
+                      class="form-input"
+                      type="text"
+                      placeholder="Например, 157"
+                      data-info-moves-history-filter-number
+                      inputmode="numeric"
+                    />
+                  </label>
+                  <label class="form-field">
+                    <span>Бух.номер</span>
+                    <input
+                      class="form-input"
+                      type="text"
+                      placeholder="Введите бух.номер"
+                      data-info-moves-history-filter-accounting
+                    />
+                  </label>
+                </div>
+                <div class="info-moves-history-filters__row info-moves-history-filters__row--dates">
+                  <div class="form-field info-moves-history-date-field">
+                    <span>Дата перемещения</span>
+                    <button
+                      type="button"
+                      class="form-input info-moves-history-date-trigger"
+                      data-info-moves-history-move-date-trigger
+                      aria-label="Выбрать дату перемещения"
+                    >Выберите дату</button>
+                    <input type="hidden" data-info-moves-history-filter-move-date-from />
+                    <input type="hidden" data-info-moves-history-filter-move-date-to />
+                    <div class="download-moves-calendar is-hidden" data-info-moves-history-move-calendar>
+                      <div class="download-moves-calendar__header">
+                        <button type="button" class="download-moves-calendar__nav" data-info-moves-history-move-calendar-prev aria-label="Предыдущий месяц">◀</button>
+                        <div class="download-moves-calendar__month" data-info-moves-history-move-calendar-month-label></div>
+                        <button type="button" class="download-moves-calendar__nav" data-info-moves-history-move-calendar-next aria-label="Следующий месяц">▶</button>
+                      </div>
+                      <div class="download-moves-calendar__weekdays" aria-hidden="true">
+                        <span>Пн</span><span>Вт</span><span>Ср</span><span>Чт</span><span>Пт</span><span>Сб</span><span>Вс</span>
+                      </div>
+                      <div class="download-moves-calendar__days" data-info-moves-history-move-calendar-days></div>
+                      <div class="download-moves-calendar__selected" data-info-moves-history-move-calendar-selected-range></div>
+                    </div>
+                  </div>
+                  <div class="form-field info-moves-history-date-field">
+                    <span>Дата ответа</span>
+                    <button
+                      type="button"
+                      class="form-input info-moves-history-date-trigger"
+                      data-info-moves-history-response-date-trigger
+                      aria-label="Выбрать дату ответа"
+                    >Выберите дату</button>
+                    <input type="hidden" data-info-moves-history-filter-response-date-from />
+                    <input type="hidden" data-info-moves-history-filter-response-date-to />
+                    <div class="download-moves-calendar is-hidden" data-info-moves-history-response-calendar>
+                      <div class="download-moves-calendar__header">
+                        <button type="button" class="download-moves-calendar__nav" data-info-moves-history-response-calendar-prev aria-label="Предыдущий месяц">◀</button>
+                        <div class="download-moves-calendar__month" data-info-moves-history-response-calendar-month-label></div>
+                        <button type="button" class="download-moves-calendar__nav" data-info-moves-history-response-calendar-next aria-label="Следующий месяц">▶</button>
+                      </div>
+                      <div class="download-moves-calendar__weekdays" aria-hidden="true">
+                        <span>Пн</span><span>Вт</span><span>Ср</span><span>Чт</span><span>Пт</span><span>Сб</span><span>Вс</span>
+                      </div>
+                      <div class="download-moves-calendar__days" data-info-moves-history-response-calendar-days></div>
+                      <div class="download-moves-calendar__selected" data-info-moves-history-response-calendar-selected-range></div>
+                    </div>
+                  </div>
+                </div>
               </div>
               <div class="info-moves-history-summary" data-info-moves-history-summary></div>
               <div class="info-moves-history-list" data-info-moves-history-list></div>

@@ -18516,11 +18516,28 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const reasonHintEl = toolsMoveReasonFieldEl.querySelector(
       "[data-tools-move-reason-hint]"
     );
+    const reasonLabelEl = toolsMoveReasonFieldEl.querySelector(
+      "[data-tools-move-reason-label]"
+    );
+    const requiredPlaceholder =
+      "Обязательно для роли «Энергетик». Например: причина перемещения";
+    const optionalPlaceholder =
+      "Необязательно. Например: требуется проверка или ремонт";
+    toolsMoveReasonFieldEl.classList.toggle("form-field--required", shouldRequire);
     toolsMoveReasonInput.required = shouldRequire;
+    toolsMoveReasonInput.setAttribute("aria-required", shouldRequire ? "true" : "false");
+    toolsMoveReasonInput.placeholder = shouldRequire
+      ? requiredPlaceholder
+      : optionalPlaceholder;
+    if (reasonLabelEl) {
+      reasonLabelEl.textContent = shouldRequire
+        ? "Комментарий к перемещению (обязательно)"
+        : "Комментарий к перемещению (необязательно)";
+    }
     if (reasonHintEl) {
       reasonHintEl.textContent = shouldRequire
-        ? "Для ответственного «Энергетик» поле обязательно."
-        : "Необязательно. Можно оставить пометку к перемещению.";
+        ? "Обязательное поле: выбран пользователь с ролью «Энергетик»."
+        : "Поле необязательное для выбранной роли.";
     }
   };
 

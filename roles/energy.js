@@ -1843,7 +1843,7 @@ export function renderRole(user) {
                     ></div>
                   </label>
                   <label class="form-field" data-tools-move-reason-field>
-                    <span class="form-label">Комментарий к перемещению</span>
+                    <span class="form-label" data-tools-move-reason-label>Комментарий к перемещению (необязательно)</span>
                     <textarea
                       class="form-input"
                       rows="3"

@@ -5595,8 +5595,14 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const infoMovesHistoryCloseButton = contentEl.querySelector(
     "[data-info-moves-history-close]"
   );
-  const infoMovesHistorySubtitleEl = contentEl.querySelector(
-    "[data-info-moves-history-subtitle]"
+  const infoMovesHistoryFiltersToggleEl = contentEl.querySelector(
+    "[data-info-moves-history-filters-toggle]"
+  );
+  const infoMovesHistoryFiltersPanelEl = contentEl.querySelector(
+    "[data-info-moves-history-filters-panel]"
+  );
+  const infoMovesHistoryPersonDropdownEls = contentEl.querySelectorAll(
+    "[data-info-moves-history-person-dropdown]"
   );
   const infoMovesHistorySummaryEl = contentEl.querySelector(
     "[data-info-moves-history-summary]"
@@ -6217,6 +6223,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const infoMovesHistoryState = {
     allMoves: [],
     filteredMoves: [],
+    senderOptions: [],
+    receiverOptions: [],
     filters: {
       number: "",
       accounting: "",
@@ -6230,6 +6238,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       moveVisibleMonthDate: new Date(),
       responseVisibleMonthDate: new Date(),
     },
+    isFiltersOpen: false,
   };
   const pendingMovePhotoViewerEl = document.createElement("div");
   pendingMovePhotoViewerEl.className = "settings-modal pending-photo-viewer is-hidden";
@@ -12746,6 +12755,151 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     await loadInfoPendingList();
   };
 
+  const buildInfoMovesHistoryResponsibleOptions = () => {
+    const senderSet = new Set();
+    const receiverSet = new Set();
+    infoMovesHistoryState.allMoves.forEach((move) => {
+      const sender = String(move?.["Переместил"] ?? "").trim();
+      const receiver = String(move?.["Принял"] ?? "").trim();
+      if (sender) senderSet.add(sender);
+      if (receiver) receiverSet.add(receiver);
+    });
+    infoMovesHistoryState.senderOptions = Array.from(senderSet).sort((a, b) =>
+      a.localeCompare(b, "ru")
+    );
+    infoMovesHistoryState.receiverOptions = Array.from(receiverSet).sort((a, b) =>
+      a.localeCompare(b, "ru")
+    );
+  };
+
+  const setInfoMovesHistoryPersonDropdownOpen = (key, isOpen) => {
+    infoMovesHistoryPersonDropdownEls.forEach((dropdownEl) => {
+      const dropdownKey = String(
+        dropdownEl.dataset.infoMovesHistoryPersonDropdown ?? ""
+      ).trim();
+      const shouldOpen = dropdownKey === key && Boolean(isOpen);
+      dropdownEl.classList.toggle("is-open", shouldOpen);
+      const menuEl = dropdownEl.querySelector("[data-info-moves-history-person-menu]");
+      menuEl?.classList.toggle("is-hidden", !shouldOpen);
+      const triggerEl = dropdownEl.querySelector("[data-info-moves-history-person-trigger]");
+      triggerEl?.setAttribute("aria-expanded", String(shouldOpen));
+      if (shouldOpen) {
+        const searchEl = dropdownEl.querySelector("[data-info-moves-history-person-search]");
+        if (searchEl instanceof HTMLInputElement) {
+          searchEl.focus();
+          searchEl.select();
+        }
+      }
+    });
+  };
+
+  const renderInfoMovesHistoryPersonDropdown = (
+    key,
+    values,
+    emptyLabel,
+    currentValue,
+    searchTerm = ""
+  ) => {
+    const dropdownEl = contentEl.querySelector(
+      `[data-info-moves-history-person-dropdown="${key}"]`
+    );
+    if (!dropdownEl) return;
+    const optionsEl = dropdownEl.querySelector("[data-info-moves-history-person-options]");
+    const clearButtonEl = dropdownEl.querySelector("[data-info-moves-history-person-clear]");
+    const triggerEl = dropdownEl.querySelector("[data-info-moves-history-person-trigger]");
+    const hiddenInputEl =
+      key === "receiver" ? infoMovesHistoryFilterReceiverEl : infoMovesHistoryFilterSenderEl;
+    if (!(optionsEl instanceof HTMLElement) || !(triggerEl instanceof HTMLElement)) return;
+
+    const normalizedSearchTerm = String(searchTerm ?? "").trim().toLowerCase();
+    const visibleValues = normalizedSearchTerm
+      ? values.filter((value) => value.toLowerCase().includes(normalizedSearchTerm))
+      : values;
+
+    if (clearButtonEl) {
+      clearButtonEl.textContent = emptyLabel;
+      clearButtonEl.classList.toggle("is-active", !currentValue);
+    }
+
+    optionsEl.innerHTML = "";
+    if (!visibleValues.length) {
+      const emptyEl = document.createElement("div");
+      emptyEl.className = "tools-filter-dropdown__empty";
+      emptyEl.textContent = "Ничего не найдено";
+      optionsEl.append(emptyEl);
+    } else {
+      visibleValues.forEach((value, index) => {
+        const id = `info-moves-history-${key}-${index}`;
+        const optionLabelEl = document.createElement("label");
+        optionLabelEl.className = "tools-filter-dropdown__option";
+        optionLabelEl.setAttribute("for", id);
+        const radioEl = document.createElement("input");
+        radioEl.type = "radio";
+        radioEl.id = id;
+        radioEl.name = `info-moves-history-${key}`;
+        radioEl.value = value;
+        radioEl.checked = value === currentValue;
+        radioEl.dataset.infoMovesHistoryPersonOption = key;
+        const textEl = document.createElement("span");
+        textEl.textContent = value;
+        optionLabelEl.append(radioEl, textEl);
+        optionsEl.append(optionLabelEl);
+      });
+    }
+
+    const safeCurrentValue = values.includes(currentValue) ? currentValue : "";
+    if (hiddenInputEl) hiddenInputEl.value = safeCurrentValue;
+    triggerEl.classList.toggle("is-active", Boolean(safeCurrentValue));
+    triggerEl.textContent = safeCurrentValue || emptyLabel;
+  };
+
+  const updateInfoMovesHistoryResponsibleFilters = () => {
+    const senderValue = String(infoMovesHistoryState.filters.sender ?? "");
+    const receiverValue = String(infoMovesHistoryState.filters.receiver ?? "");
+    const senderDropdownEl = contentEl.querySelector(
+      '[data-info-moves-history-person-dropdown="sender"]'
+    );
+    const receiverDropdownEl = contentEl.querySelector(
+      '[data-info-moves-history-person-dropdown="receiver"]'
+    );
+    const senderSearch = String(
+      senderDropdownEl?.querySelector("[data-info-moves-history-person-search]")?.value ?? ""
+    );
+    const receiverSearch = String(
+      receiverDropdownEl?.querySelector("[data-info-moves-history-person-search]")?.value ?? ""
+    );
+    renderInfoMovesHistoryPersonDropdown(
+      "sender",
+      infoMovesHistoryState.senderOptions,
+      "Все передающие",
+      senderValue,
+      senderSearch
+    );
+    renderInfoMovesHistoryPersonDropdown(
+      "receiver",
+      infoMovesHistoryState.receiverOptions,
+      "Все принимающие",
+      receiverValue,
+      receiverSearch
+    );
+  };
+
+  const setInfoMovesHistoryFiltersOpen = (isOpen) => {
+    infoMovesHistoryState.isFiltersOpen = Boolean(isOpen);
+    infoMovesHistoryFiltersPanelEl?.classList.toggle(
+      "is-hidden",
+      !infoMovesHistoryState.isFiltersOpen
+    );
+    infoMovesHistoryFiltersToggleEl?.setAttribute(
+      "aria-expanded",
+      String(infoMovesHistoryState.isFiltersOpen)
+    );
+    if (!infoMovesHistoryState.isFiltersOpen) {
+      setInfoMovesHistoryPersonDropdownOpen("", false);
+      setInfoMovesHistoryDatePickerOpen("move", false);
+    }
+  };
+
   const getInfoMovesHistoryFilters = () => ({
     number: String(infoMovesHistoryFilterNumberEl?.value ?? "").trim(),
     accounting: String(infoMovesHistoryFilterAccountingEl?.value ?? "").trim(),
@@ -13020,7 +13174,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const item = document.createElement("article");
       item.className = "info-moves-history-item";
       const response = String(move?.["Ответ"] ?? "").trim().toLowerCase();
-      if (response === "не принял") {
+      if (response !== "принял") {
         item.classList.add("info-moves-history-item--danger");
       }
 
@@ -13047,15 +13201,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   };
 
   const loadInfoMovesHistory = async () => {
-    if (infoMovesHistorySubtitleEl) {
-      infoMovesHistorySubtitleEl.textContent = "Загружаем данные...";
-    }
     if (!context.orgFolderName) {
       infoMovesHistoryState.allMoves = [];
       renderInfoMovesHistoryList();
-      if (infoMovesHistorySubtitleEl) {
-        infoMovesHistorySubtitleEl.textContent = "Не удалось определить организацию.";
-      }
       return;
     }
 
@@ -13073,9 +13221,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
 
     infoMovesHistoryState.allMoves = moves
-      .filter(
-        (move) => String(move?.["Ответ"] ?? "").trim().toLowerCase() !== "отменено"
-      )
+      .filter((move) => {
+        const response = String(move?.["Ответ"] ?? "").trim().toLowerCase();
+        const responseDate = String(move?.["Дата ответа"] ?? "").trim();
+        return response !== "отменено" && Boolean(responseDate);
+      })
       .sort((a, b) => {
         const aDate = parseDateValue(a?.["Дата перемещения"]);
         const bDate = parseDateValue(b?.["Дата перемещения"]);
@@ -13085,11 +13235,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         return bDate - aDate;
       });
 
-    if (infoMovesHistorySubtitleEl) {
-      infoMovesHistorySubtitleEl.textContent = context.organizationName
-        ? `${context.organizationName} · перемещения инструмента`
-        : "Перемещения инструмента";
-    }
+    buildInfoMovesHistoryResponsibleOptions();
+    updateInfoMovesHistoryResponsibleFilters();
     renderInfoMovesHistoryList();
   };
 
@@ -13099,13 +13246,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     document.body.style.overflow = "hidden";
     updateInfoMovesHistoryDateTrigger("move");
     updateInfoMovesHistoryDateTrigger("response");
-    setInfoMovesHistoryDatePickerOpen("move", false);
+    setInfoMovesHistoryFiltersOpen(false);
     await loadInfoMovesHistory();
   };
 
   const closeInfoMovesHistoryModal = () => {
     if (!infoMovesHistoryModalEl) return;
-    setInfoMovesHistoryDatePickerOpen("move", false);
+    setInfoMovesHistoryFiltersOpen(false);
     infoMovesHistoryModalEl.classList.add("is-hidden");
     document.body.style.overflow = "";
   };
@@ -14124,6 +14271,44 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       closeInfoMovesHistoryModal();
     }
   });
+  infoMovesHistoryFiltersToggleEl?.addEventListener("click", (event) => {
+    event.stopPropagation();
+    setInfoMovesHistoryFiltersOpen(!infoMovesHistoryState.isFiltersOpen);
+  });
+  infoMovesHistoryFiltersPanelEl?.addEventListener("click", (event) => {
+    event.stopPropagation();
+  });
+  infoMovesHistoryPersonDropdownEls.forEach((dropdownEl) => {
+    const key = String(dropdownEl.dataset.infoMovesHistoryPersonDropdown ?? "").trim();
+    const triggerEl = dropdownEl.querySelector("[data-info-moves-history-person-trigger]");
+    const menuEl = dropdownEl.querySelector("[data-info-moves-history-person-menu]");
+    const clearEl = dropdownEl.querySelector("[data-info-moves-history-person-clear]");
+    const searchEl = dropdownEl.querySelector("[data-info-moves-history-person-search]");
+    triggerEl?.addEventListener("click", (event) => {
+      event.stopPropagation();
+      const isOpen = dropdownEl.classList.contains("is-open");
+      setInfoMovesHistoryPersonDropdownOpen(key, !isOpen);
+    });
+    menuEl?.addEventListener("click", (event) => {
+      event.stopPropagation();
+    });
+    clearEl?.addEventListener("click", () => {
+      if (key === "sender" && infoMovesHistoryFilterSenderEl) {
+        infoMovesHistoryFilterSenderEl.value = "";
+      }
+      if (key === "receiver" && infoMovesHistoryFilterReceiverEl) {
+        infoMovesHistoryFilterReceiverEl.value = "";
+      }
+      if (searchEl instanceof HTMLInputElement) searchEl.value = "";
+      setInfoMovesHistoryPersonDropdownOpen("", false);
+      renderInfoMovesHistoryList();
+      updateInfoMovesHistoryResponsibleFilters();
+    });
+    searchEl?.addEventListener("input", () => {
+      updateInfoMovesHistoryResponsibleFilters();
+    });
+  });
+
   [
     infoMovesHistoryFilterNumberEl,
     infoMovesHistoryFilterAccountingEl,
@@ -14199,6 +14384,21 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (!isoDate) return;
     handleInfoMovesHistoryDateSelect("response", isoDate);
   });
+  infoMovesHistoryFiltersPanelEl?.addEventListener("change", (event) => {
+    const target = event.target instanceof HTMLInputElement ? event.target : null;
+    if (!target || target.type !== "radio") return;
+    const key = String(target.dataset.infoMovesHistoryPersonOption ?? "").trim();
+    if (!key) return;
+    if (key === "sender" && infoMovesHistoryFilterSenderEl) {
+      infoMovesHistoryFilterSenderEl.value = target.value;
+    }
+    if (key === "receiver" && infoMovesHistoryFilterReceiverEl) {
+      infoMovesHistoryFilterReceiverEl.value = target.value;
+    }
+    setInfoMovesHistoryPersonDropdownOpen("", false);
+    renderInfoMovesHistoryList();
+    updateInfoMovesHistoryResponsibleFilters();
+  });
   document.addEventListener("click", (event) => {
     const target = event.target instanceof Node ? event.target : null;
     if (!target) return;
@@ -14212,13 +14412,16 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const target = event.target instanceof Node ? event.target : null;
     if (!target) return;
     if (infoMovesHistoryModalEl?.classList.contains("is-hidden")) return;
-    const clickedInsidePicker =
+    const clickedInsideControls =
+      infoMovesHistoryFiltersToggleEl?.contains(target) ||
+      infoMovesHistoryFiltersPanelEl?.contains(target) ||
       infoMovesHistoryMoveDateTriggerEl?.contains(target) ||
       infoMovesHistoryResponseDateTriggerEl?.contains(target) ||
       infoMovesHistoryMoveCalendarEl?.contains(target) ||
       infoMovesHistoryResponseCalendarEl?.contains(target);
-    if (clickedInsidePicker) return;
-    setInfoMovesHistoryDatePickerOpen("move", false);
+    if (clickedInsideControls) return;
+    setInfoMovesHistoryPersonDropdownOpen("", false);
+    setInfoMovesHistoryFiltersOpen(false);
   });
 
   if (toolsSearchInput) {

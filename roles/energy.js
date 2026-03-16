@@ -3680,7 +3680,6 @@ export function renderRole(user) {
             <div class="settings-modal__header info-moves-history-modal__header">
               <div class="settings-modal__title">
                 <h2>История перемещений</h2>
-                <p data-info-moves-history-subtitle>Загружаем данные...</p>
               </div>
               <button
                 class="button-icon"
@@ -3692,7 +3691,15 @@ export function renderRole(user) {
               </button>
             </div>
             <div class="settings-modal__body info-moves-history-modal__body">
-              <div class="info-moves-history-filters">
+              <div class="info-moves-history-filters-controls">
+                <button
+                  type="button"
+                  class="button-secondary info-moves-history-filters-toggle"
+                  data-info-moves-history-filters-toggle
+                  aria-expanded="false"
+                >Фильтры</button>
+              </div>
+              <div class="info-moves-history-filters is-hidden" data-info-moves-history-filters-panel>
                 <div class="info-moves-history-filters__row">
                   <label class="form-field">
                     <span>Номер инструмента</span>
@@ -3717,21 +3724,55 @@ export function renderRole(user) {
                 <div class="info-moves-history-filters__row">
                   <label class="form-field">
                     <span>По передающему</span>
-                    <input
-                      class="form-input"
-                      type="text"
-                      placeholder="Введите ФИО"
-                      data-info-moves-history-filter-sender
-                    />
+                    <div
+                      class="tools-filter-dropdown info-moves-history-responsible-dropdown"
+                      data-info-moves-history-person-dropdown="sender"
+                    >
+                      <button
+                        type="button"
+                        class="form-input tools-filter-dropdown__trigger"
+                        data-info-moves-history-person-trigger
+                      >Все передающие</button>
+                      <div class="tools-filter-dropdown__menu is-hidden" data-info-moves-history-person-menu>
+                        <input
+                          type="search"
+                          class="form-input tools-filter-dropdown__search"
+                          placeholder="Поиск ответственного"
+                          data-info-moves-history-person-search
+                        />
+                        <button type="button" class="tools-filter-dropdown__clear" data-info-moves-history-person-clear>
+                          Все передающие
+                        </button>
+                        <div class="tools-filter-dropdown__options" data-info-moves-history-person-options></div>
+                      </div>
+                      <input type="hidden" data-info-moves-history-filter-sender />
+                    </div>
                   </label>
                   <label class="form-field">
                     <span>По принимающему</span>
-                    <input
-                      class="form-input"
-                      type="text"
-                      placeholder="Введите ФИО"
-                      data-info-moves-history-filter-receiver
-                    />
+                    <div
+                      class="tools-filter-dropdown info-moves-history-responsible-dropdown"
+                      data-info-moves-history-person-dropdown="receiver"
+                    >
+                      <button
+                        type="button"
+                        class="form-input tools-filter-dropdown__trigger"
+                        data-info-moves-history-person-trigger
+                      >Все принимающие</button>
+                      <div class="tools-filter-dropdown__menu is-hidden" data-info-moves-history-person-menu>
+                        <input
+                          type="search"
+                          class="form-input tools-filter-dropdown__search"
+                          placeholder="Поиск ответственного"
+                          data-info-moves-history-person-search
+                        />
+                        <button type="button" class="tools-filter-dropdown__clear" data-info-moves-history-person-clear>
+                          Все принимающие
+                        </button>
+                        <div class="tools-filter-dropdown__options" data-info-moves-history-person-options></div>
+                      </div>
+                      <input type="hidden" data-info-moves-history-filter-receiver />
+                    </div>
                   </label>
                 </div>
                 <div class="info-moves-history-filters__row info-moves-history-filters__row--dates">

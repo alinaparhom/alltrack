@@ -5685,6 +5685,23 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const infoMovesHistoryResponseCalendarSelectedRangeEl = contentEl.querySelector(
     "[data-info-moves-history-response-calendar-selected-range]"
   );
+  const infoByDatesModalEl = contentEl.querySelector("[data-info-by-dates-modal]");
+  const infoByDatesBackdropEl = contentEl.querySelector("[data-info-by-dates-backdrop]");
+  const infoByDatesCloseButton = contentEl.querySelector("[data-info-by-dates-close]");
+  const infoByDatesSubtitleEl = contentEl.querySelector("[data-info-by-dates-subtitle]");
+  const infoByDatesSummaryEl = contentEl.querySelector("[data-info-by-dates-summary]");
+  const infoByDatesListEl = contentEl.querySelector("[data-info-by-dates-list]");
+  const infoByDatesEmptyEl = contentEl.querySelector("[data-info-by-dates-empty]");
+  const infoByDatesTabEls = contentEl.querySelectorAll("[data-info-by-dates-tab]");
+  const infoByDatesCalendarDaysEl = contentEl.querySelector("[data-info-by-dates-calendar-days]");
+  const infoByDatesCalendarMonthLabelEl = contentEl.querySelector(
+    "[data-info-by-dates-calendar-month-label]"
+  );
+  const infoByDatesCalendarSelectedRangeEl = contentEl.querySelector(
+    "[data-info-by-dates-calendar-selected-range]"
+  );
+  const infoByDatesCalendarPrevEl = contentEl.querySelector("[data-info-by-dates-calendar-prev]");
+  const infoByDatesCalendarNextEl = contentEl.querySelector("[data-info-by-dates-calendar-next]");
   const toolsCancelMoveModalEl = contentEl.querySelector(
     "[data-tools-cancel-move-modal]"
   );
@@ -6247,6 +6264,17 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       responseVisibleMonthDate: new Date(),
     },
     isFiltersOpen: false,
+  };
+  const infoByDatesState = {
+    activeTab: "registrations",
+    filters: {
+      dateFrom: "",
+      dateTo: "",
+    },
+    visibleMonthDate: new Date(),
+    registrations: [],
+    moves: [],
+    writeoffs: [],
   };
   const pendingMovePhotoViewerEl = document.createElement("div");
   pendingMovePhotoViewerEl.className = "settings-modal pending-photo-viewer is-hidden";
@@ -13333,6 +13361,265 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (!infoMovesHistoryModalEl) return;
     setInfoMovesHistoryFiltersOpen(false);
     infoMovesHistoryModalEl.classList.add("is-hidden");
+    document.body.style.overflow = "";
+  };
+
+  const formatInfoByDatesLabel = (isoDate) => {
+    const parsed = parseIsoDateValue(isoDate);
+    return parsed ? formatDateValue(parsed) : "—";
+  };
+
+  const setInfoByDatesRangeLabel = () => {
+    if (!infoByDatesCalendarSelectedRangeEl) return;
+    const from = infoByDatesState.filters.dateFrom;
+    const to = infoByDatesState.filters.dateTo;
+    if (!from && !to) {
+      infoByDatesCalendarSelectedRangeEl.textContent = "Выберите дату или диапазон.";
+      return;
+    }
+    if (from && !to) {
+      infoByDatesCalendarSelectedRangeEl.textContent = `Начало: ${formatInfoByDatesLabel(from)}. Выберите конечную дату.`;
+      return;
+    }
+    const start = formatInfoByDatesLabel(from);
+    const end = formatInfoByDatesLabel(to || from);
+    infoByDatesCalendarSelectedRangeEl.textContent =
+      from === to ? `Выбран 1 день: ${start}` : `Период: ${start} — ${end}`;
+  };
+
+  const renderInfoByDatesCalendar = () => {
+    if (!infoByDatesCalendarDaysEl || !infoByDatesCalendarMonthLabelEl) return;
+    const visibleDate = infoByDatesState.visibleMonthDate;
+    const year = visibleDate.getFullYear();
+    const month = visibleDate.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const offset = (firstDay.getDay() + 6) % 7;
+    const daysCount = new Date(year, month + 1, 0).getDate();
+    infoByDatesCalendarMonthLabelEl.textContent = firstDay.toLocaleDateString("ru-RU", {
+      month: "long",
+      year: "numeric",
+    });
+    infoByDatesCalendarDaysEl.innerHTML = "";
+    for (let i = 0; i < offset; i += 1) {
+      const filler = document.createElement("span");
+      filler.className = "download-moves-calendar__day is-empty";
+      infoByDatesCalendarDaysEl.appendChild(filler);
+    }
+
+    const from = parseIsoDateValue(infoByDatesState.filters.dateFrom);
+    const toRaw = parseIsoDateValue(infoByDatesState.filters.dateTo);
+    const to = toRaw || from;
+    const rangeStart = from && to ? new Date(Math.min(from.getTime(), to.getTime())) : null;
+    const rangeEnd = from && to ? new Date(Math.max(from.getTime(), to.getTime())) : null;
+    const sameDay = (a, b) =>
+      a && b &&
+      a.getFullYear() === b.getFullYear() &&
+      a.getMonth() === b.getMonth() &&
+      a.getDate() === b.getDate();
+
+    for (let day = 1; day <= daysCount; day += 1) {
+      const dayDate = new Date(year, month, day);
+      const iso = formatIsoDateValue(dayDate);
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "download-moves-calendar__day";
+      btn.dataset.date = iso;
+      btn.textContent = String(day);
+      if (
+        rangeStart &&
+        rangeEnd &&
+        dayDate.getTime() >= rangeStart.getTime() &&
+        dayDate.getTime() <= rangeEnd.getTime()
+      ) {
+        btn.classList.add("is-in-range");
+      }
+      if (sameDay(dayDate, from) || sameDay(dayDate, to)) {
+        btn.classList.add("is-selected");
+      }
+      infoByDatesCalendarDaysEl.appendChild(btn);
+    }
+    setInfoByDatesRangeLabel();
+  };
+
+  const parseCollectionItems = (raw, fallbackKey) => {
+    if (Array.isArray(raw)) return raw;
+    if (Array.isArray(raw?.[fallbackKey])) return raw[fallbackKey];
+    return [];
+  };
+
+  const createInfoByDatesRow = (label, value) => {
+    const row = document.createElement("div");
+    row.className = "info-moves-history-item__row";
+    const labelEl = document.createElement("div");
+    labelEl.className = "info-moves-history-item__label";
+    labelEl.textContent = label;
+    const valueEl = document.createElement("div");
+    valueEl.className = "info-moves-history-item__value";
+    valueEl.textContent = formatInfoValue(value);
+    row.append(labelEl, valueEl);
+    return row;
+  };
+
+  const applyInfoByDatesFilter = (items, getDate) => {
+    const from = parseIsoDateValue(infoByDatesState.filters.dateFrom);
+    const toRaw = parseIsoDateValue(infoByDatesState.filters.dateTo);
+    const to = toRaw || from;
+    if (!from && !to) return items;
+    const rangeStart = from && to ? new Date(Math.min(from.getTime(), to.getTime())) : from || to;
+    const rangeEnd = from && to ? new Date(Math.max(from.getTime(), to.getTime())) : from || to;
+    return items.filter((item) => {
+      const valueDate = parseDateValue(getDate(item));
+      if (!valueDate) return false;
+      const dateOnly = new Date(valueDate.getFullYear(), valueDate.getMonth(), valueDate.getDate());
+      return dateOnly >= rangeStart && dateOnly <= rangeEnd;
+    });
+  };
+
+  const renderInfoByDatesList = () => {
+    if (!infoByDatesListEl || !infoByDatesEmptyEl || !infoByDatesSummaryEl) return;
+    infoByDatesListEl.innerHTML = "";
+
+    const tab = infoByDatesState.activeTab;
+    const source =
+      tab === "moves"
+        ? infoByDatesState.moves
+        : tab === "writeoff"
+          ? infoByDatesState.writeoffs
+          : infoByDatesState.registrations;
+
+    const filtered = applyInfoByDatesFilter(
+      source,
+      (item) =>
+        tab === "moves"
+          ? item?.["Дата перемещения"]
+          : tab === "writeoff"
+            ? item?.["Дата списания"]
+            : item?.["Дата покупки"]
+    );
+
+    infoByDatesSummaryEl.textContent = source.length
+      ? `Показано: ${filtered.length} из ${source.length}`
+      : "Данных пока нет.";
+
+    infoByDatesEmptyEl.classList.toggle("is-hidden", filtered.length > 0);
+    if (!filtered.length) {
+      infoByDatesEmptyEl.textContent = "За выбранные даты данных нет.";
+      return;
+    }
+
+    filtered.forEach((item) => {
+      const card = document.createElement("article");
+      card.className = "info-moves-history-item";
+
+      const title = document.createElement("div");
+      title.className = "info-moves-history-item__title";
+      title.textContent =
+        tab === "moves"
+          ? `Перемещение • ${formatInfoValue(item?.["Дата перемещения"])}`
+          : tab === "writeoff"
+            ? `Списание • ${formatInfoValue(item?.["Дата списания"])}`
+            : `Регистрация • ${formatInfoValue(item?.["Дата покупки"])}`;
+
+      const grid = document.createElement("div");
+      grid.className = "info-moves-history-item__grid";
+      if (tab === "moves") {
+        grid.append(
+          createInfoByDatesRow("Номер", item?.["Номер"]),
+          createInfoByDatesRow("Бух.номер", item?.["Бух.номер"]),
+          createInfoByDatesRow("Передал", item?.["Переместил"]),
+          createInfoByDatesRow("Принял", item?.["Принял"]),
+          createInfoByDatesRow("Старый объект", item?.["Старый объект"]),
+          createInfoByDatesRow("Новый объект", item?.["Новый объект"])
+        );
+      } else if (tab === "writeoff") {
+        grid.append(
+          createInfoByDatesRow("Номер", item?.["Номер"]),
+          createInfoByDatesRow("Бух.номер", item?.["Бух.номер"]),
+          createInfoByDatesRow("Наименование", item?.["Наименование"]),
+          createInfoByDatesRow("Списал", item?.["Списал"]),
+          createInfoByDatesRow("Ответственный", item?.["Ответственный"]),
+          createInfoByDatesRow("Объект", item?.["Объект"])
+        );
+      } else {
+        grid.append(
+          createInfoByDatesRow("Номер", item?.["Номер"]),
+          createInfoByDatesRow("Бух.номер", item?.["Бух.номер"]),
+          createInfoByDatesRow("Наименование", item?.["Наименование"]),
+          createInfoByDatesRow("Ответственный", item?.["Ответственный"]),
+          createInfoByDatesRow("Объект", item?.["Объект"]),
+          createInfoByDatesRow("Статус", item?.["Статус"])
+        );
+      }
+
+      card.append(title, grid);
+      infoByDatesListEl.appendChild(card);
+    });
+  };
+
+  const loadInfoByDatesData = async () => {
+    if (!context.orgFolderName) {
+      infoByDatesState.registrations = [];
+      infoByDatesState.moves = [];
+      infoByDatesState.writeoffs = [];
+      renderInfoByDatesList();
+      return;
+    }
+    const orgFolder = context.orgFolderName;
+    const toolsPath = `./${orgFolder}/База с инструментами.json`;
+    const movesPath = `./${orgFolder}/Перемещения.json`;
+    const writeoffPath = `./${orgFolder}/Списания.json`;
+
+    let toolsRaw = [];
+    let movesRaw = [];
+    let writeoffRaw = [];
+    try {
+      toolsRaw = await loadJson(toolsPath);
+    } catch (error) {
+      console.warn("Не удалось загрузить регистрации по датам.", error);
+    }
+    try {
+      movesRaw = await loadJson(movesPath);
+    } catch (error) {
+      console.warn("Не удалось загрузить перемещения по датам.", error);
+    }
+    try {
+      writeoffRaw = await loadJson(writeoffPath);
+    } catch (error) {
+      console.warn("Не удалось загрузить списания по датам.", error);
+    }
+
+    infoByDatesState.registrations = parseCollectionItems(toolsRaw, "tools").sort((a, b) => {
+      const aDate = parseDateValue(a?.["Дата покупки"]);
+      const bDate = parseDateValue(b?.["Дата покупки"]);
+      return (bDate?.getTime() || 0) - (aDate?.getTime() || 0);
+    });
+    infoByDatesState.moves = parseCollectionItems(movesRaw, "moves").sort((a, b) => {
+      const aDate = parseDateValue(a?.["Дата перемещения"]);
+      const bDate = parseDateValue(b?.["Дата перемещения"]);
+      return (bDate?.getTime() || 0) - (aDate?.getTime() || 0);
+    });
+    infoByDatesState.writeoffs = parseCollectionItems(writeoffRaw, "items").sort((a, b) => {
+      const aDate = parseDateValue(a?.["Дата списания"]);
+      const bDate = parseDateValue(b?.["Дата списания"]);
+      return (bDate?.getTime() || 0) - (aDate?.getTime() || 0);
+    });
+    renderInfoByDatesList();
+  };
+
+  const openInfoByDatesModal = async () => {
+    if (!infoByDatesModalEl) return;
+    infoByDatesModalEl.classList.remove("is-hidden");
+    document.body.style.overflow = "hidden";
+    if (infoByDatesSubtitleEl) {
+      infoByDatesSubtitleEl.textContent = "Выберите дату или диапазон дат.";
+    }
+    renderInfoByDatesCalendar();
+    await loadInfoByDatesData();
+  };
+
+  const closeInfoByDatesModal = () => {
+    if (!infoByDatesModalEl) return;
+    infoByDatesModalEl.classList.add("is-hidden");
     document.body.style.overflow = "";
   };
 
@@ -22909,7 +23196,70 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (option === "pending-list") {
       closeInfoModal();
       void openInfoPendingModal();
+      return;
     }
+    if (option === "by-dates") {
+      closeInfoModal();
+      void openInfoByDatesModal();
+    }
+  });
+
+  infoByDatesBackdropEl?.addEventListener("click", closeInfoByDatesModal);
+  infoByDatesCloseButton?.addEventListener("click", closeInfoByDatesModal);
+  infoByDatesModalEl?.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      closeInfoByDatesModal();
+    }
+  });
+
+  infoByDatesTabEls.forEach((tabEl) => {
+    tabEl.addEventListener("click", () => {
+      const nextTab = String(tabEl.dataset.infoByDatesTab ?? "").trim();
+      if (!nextTab) return;
+      infoByDatesState.activeTab = nextTab;
+      infoByDatesTabEls.forEach((item) => {
+        item.classList.toggle(
+          "is-active",
+          String(item.dataset.infoByDatesTab ?? "").trim() === nextTab
+        );
+      });
+      renderInfoByDatesList();
+    });
+  });
+
+  infoByDatesCalendarDaysEl?.addEventListener("click", (event) => {
+    const dayButton = event.target.closest("[data-date]");
+    if (!dayButton) return;
+    const isoDate = String(dayButton.dataset.date ?? "").trim();
+    if (!isoDate) return;
+    const currentStart = infoByDatesState.filters.dateFrom;
+    const currentEnd = infoByDatesState.filters.dateTo;
+    if (!currentStart || currentEnd) {
+      infoByDatesState.filters.dateFrom = isoDate;
+      infoByDatesState.filters.dateTo = "";
+    } else {
+      infoByDatesState.filters.dateTo = isoDate;
+    }
+    renderInfoByDatesCalendar();
+    renderInfoByDatesList();
+  });
+
+  infoByDatesCalendarPrevEl?.addEventListener("click", () => {
+    infoByDatesState.visibleMonthDate = new Date(
+      infoByDatesState.visibleMonthDate.getFullYear(),
+      infoByDatesState.visibleMonthDate.getMonth() - 1,
+      1
+    );
+    renderInfoByDatesCalendar();
+  });
+
+  infoByDatesCalendarNextEl?.addEventListener("click", () => {
+    infoByDatesState.visibleMonthDate = new Date(
+      infoByDatesState.visibleMonthDate.getFullYear(),
+      infoByDatesState.visibleMonthDate.getMonth() + 1,
+      1
+    );
+    renderInfoByDatesCalendar();
   });
 
   downloadResponsibleSearchEl?.addEventListener("input", () => {

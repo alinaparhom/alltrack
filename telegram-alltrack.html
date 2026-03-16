@@ -10679,6 +10679,34 @@
         color: var(--text);
       }
 
+      .settings-weekdays {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .settings-weekday-option {
+        position: relative;
+      }
+
+      .settings-weekday-input {
+        position: absolute;
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      .settings-weekday-input + .settings-day-chip {
+        cursor: pointer;
+        user-select: none;
+      }
+
+      .settings-weekday-input:checked + .settings-day-chip {
+        background: linear-gradient(135deg, rgba(59, 125, 255, 0.22), rgba(90, 161, 255, 0.3));
+        border-color: rgba(59, 125, 255, 0.45);
+        color: #1f4db6;
+        box-shadow: 0 8px 20px rgba(59, 125, 255, 0.2);
+      }
+
       .role-tile {
         padding: var(--space);
         border-radius: var(--radius-card);

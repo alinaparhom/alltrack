@@ -56,6 +56,10 @@ const defaultPreferences = {
   grouping: "free",
   theme: "telegram",
 };
+const pendingAcceptanceMailingDefault = {
+  days: ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"],
+  time: "18:00",
+};
 const quickAccessDefaults = ["breakdowns", "info", "search", "tools", "move"];
 const quickAccessLimit = 5;
 const isIosMobile =
@@ -128,6 +132,7 @@ const energyDataUsageOptions = [
   { id: "serviceLife", title: "Срок службы" },
 ];
 const energyWeekDays = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
+const weekDayOptions = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
 let currentUser = null;
 let currentUserLabel = "";
 let currentPreferences = { ...defaultPreferences };
@@ -2645,6 +2650,25 @@ function normalizePreferences(preferences = {}) {
   };
 }
 
+function normalizePendingAcceptanceMailing(raw = {}) {
+  const source = raw && typeof raw === "object" && !Array.isArray(raw) ? raw : {};
+  const normalizedDays = Array.isArray(source.days)
+    ? source.days
+        .map((day) => String(day ?? "").trim())
+        .filter((day) => weekDayOptions.includes(day))
+    : [];
+  const days = normalizedDays.length
+    ? [...new Set(normalizedDays)]
+    : [...pendingAcceptanceMailingDefault.days];
+
+  const parsedTime = String(source.time ?? "").trim();
+  const time = /^([01]\d|2[0-3]):([0-5]\d)$/.test(parsedTime)
+    ? parsedTime
+    : pendingAcceptanceMailingDefault.time;
+
+  return { days, time };
+}
+
 function resolveThemePreference(themePreference) {
   if (themePreference === "light" || themePreference === "dark") {
     return themePreference;
@@ -2702,8 +2726,9 @@ function renderError(message) {
   `;
 }
 
-function renderUserSettingsView(user, preferences) {
+function renderUserSettingsView(user, preferences, pendingAcceptanceMailing) {
   const normalized = normalizePreferences(preferences);
+  const mailingSchedule = normalizePendingAcceptanceMailing(pendingAcceptanceMailing);
   const userPosition = String(user?.position ?? "").trim();
   return `
     <section class="role-card">
@@ -2793,6 +2818,37 @@ function renderUserSettingsView(user, preferences) {
                 <span class="toggle-label">Название под значком</span>
               </span>
             </label>
+          </div>
+        </div>
+        <div class="settings-section">
+          <div class="settings-section-title">Рассылка по инструментам на принятии</div>
+          <div class="settings-weekdays" role="group" aria-label="Дни рассылки">
+            ${weekDayOptions
+              .map(
+                (day) => `
+              <label class="settings-weekday-option">
+                <input
+                  class="settings-weekday-input"
+                  type="checkbox"
+                  name="pending-mailing-days"
+                  value="${day}"
+                  ${mailingSchedule.days.includes(day) ? "checked" : ""}
+                />
+                <span class="settings-day-chip">${day}</span>
+              </label>
+            `
+              )
+              .join("")}
+          </div>
+          <div class="form-field">
+            <label class="form-label" for="user-settings-pending-mailing-time">Время рассылки</label>
+            <input
+              class="form-input"
+              type="time"
+              id="user-settings-pending-mailing-time"
+              name="pending-mailing-time"
+              value="${mailingSchedule.time}"
+            />
           </div>
         </div>
         <div class="settings-section">
@@ -4483,14 +4539,19 @@ async function resolveUserSettingsContext(user) {
   };
 }
 
-async function saveUserPreferences(context, preferences) {
+async function saveUserPreferences(context, preferences, pendingAcceptanceMailing) {
   const normalized = normalizePreferences(preferences);
+  const currentMailing = normalizePendingAcceptanceMailing(pendingAcceptanceMailing);
   context.settingsData.users[context.userKey] = {
     ...(context.settingsData.users[context.userKey] ?? {}),
     preferences: normalized,
+    pendingAcceptanceMailing: currentMailing,
   };
   await saveJson(context.settingsPath, context.settingsData, { user: currentUser });
-  return normalized;
+  return {
+    preferences: normalized,
+    pendingAcceptanceMailing: currentMailing,
+  };
 }
 
 function findUserOrganizationName(user, usersData) {
@@ -27332,6 +27393,10 @@ async function showUserSettings() {
   const savedPreferences =
     currentSettingsContext.settingsData.users?.[currentSettingsContext.userKey]
       ?.preferences ?? {};
+  const savedPendingAcceptanceMailing = normalizePendingAcceptanceMailing(
+    currentSettingsContext.settingsData.users?.[currentSettingsContext.userKey]
+      ?.pendingAcceptanceMailing
+  );
   currentPreferences = normalizePreferences({
     ...currentPreferences,
     ...savedPreferences,
@@ -27366,7 +27431,11 @@ async function showUserSettings() {
   if (settingsBackButtonEl) {
     settingsBackButtonEl.classList.remove("is-hidden");
   }
-  contentEl.innerHTML = renderUserSettingsView(currentUser, currentPreferences);
+  contentEl.innerHTML = renderUserSettingsView(
+    currentUser,
+    currentPreferences,
+    savedPendingAcceptanceMailing
+  );
 
   const backButton = contentEl.querySelector("[data-settings-back]");
   const formEl = contentEl.querySelector("[data-settings-form]");
@@ -27393,12 +27462,18 @@ async function showUserSettings() {
       grouping: formData.get("grouping"),
       theme: formData.get("theme"),
     });
+    const nextPendingAcceptanceMailing = normalizePendingAcceptanceMailing({
+      days: formData.getAll("pending-mailing-days"),
+      time: formData.get("pending-mailing-time"),
+    });
     await saveCurrentUserPosition(nextPosition);
     currentPreferences = applyUserPreferences(nextPreferences);
-    currentPreferences = await saveUserPreferences(
+    const savedSettings = await saveUserPreferences(
       currentSettingsContext,
-      currentPreferences
+      currentPreferences,
+      nextPendingAcceptanceMailing
     );
+    currentPreferences = savedSettings.preferences;
     updateMessage("Сохранено");
   };
 

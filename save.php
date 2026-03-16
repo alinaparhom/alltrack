@@ -588,6 +588,87 @@ function normalizeScheduleTimeLabel($value): string {
   return sprintf('%02d:%02d', $hour, $minute);
 }
 
+function normalizePersonLabel(string $value): string {
+  $normalized = preg_replace('/\s+/u', ' ', trim($value));
+  if (!is_string($normalized)) {
+    return "";
+  }
+  return mb_strtolower($normalized, 'UTF-8');
+}
+
+function resolvePendingAcceptanceMailingConfig(array $userSettings): array {
+  $defaults = [
+    "days" => ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"],
+    "time" => "18:00",
+  ];
+
+  $raw = $userSettings["pendingAcceptanceMailing"] ?? null;
+  if (!is_array($raw)) {
+    return $defaults;
+  }
+
+  $allowedDaysMap = [
+    "Пн" => true,
+    "Вт" => true,
+    "Ср" => true,
+    "Чт" => true,
+    "Пт" => true,
+    "Сб" => true,
+    "Вс" => true,
+  ];
+
+  $days = [];
+  $rawDays = $raw["days"] ?? [];
+  if (is_array($rawDays)) {
+    foreach ($rawDays as $day) {
+      $label = normalizeWeekDayLabel((string) $day);
+      if ($label !== "" && !empty($allowedDaysMap[$label])) {
+        $days[$label] = true;
+      }
+    }
+  }
+
+  $normalizedTime = normalizeScheduleTimeLabel($raw["time"] ?? "");
+  return [
+    "days" => !empty($days) ? array_keys($days) : $defaults["days"],
+    "time" => $normalizedTime !== "" ? $normalizedTime : $defaults["time"],
+  ];
+}
+
+function isUserPendingAcceptanceScheduleDue(array $schedule, DateTimeImmutable $now): bool {
+  $daysRaw = $schedule["days"] ?? [];
+  if (!is_array($daysRaw) || empty($daysRaw)) {
+    return false;
+  }
+
+  $timeRaw = normalizeScheduleTimeLabel($schedule["time"] ?? "");
+  if ($timeRaw === "") {
+    return false;
+  }
+
+  $dayByNumber = [1 => "Пн", 2 => "Вт", 3 => "Ср", 4 => "Чт", 5 => "Пт", 6 => "Сб", 7 => "Вс"];
+  $today = $dayByNumber[(int) $now->format("N")] ?? "";
+  if ($today === "") {
+    return false;
+  }
+
+  $allowedDays = [];
+  foreach ($daysRaw as $day) {
+    $label = normalizeWeekDayLabel((string) $day);
+    if ($label !== "") {
+      $allowedDays[$label] = true;
+    }
+  }
+  if (empty($allowedDays[$today])) {
+    return false;
+  }
+
+  [$scheduleHour, $scheduleMinute] = array_map('intval', explode(':', $timeRaw));
+  $scheduleTotalMinutes = ($scheduleHour * 60) + $scheduleMinute;
+  $nowTotalMinutes = ((int) $now->format("H") * 60) + (int) $now->format("i");
+  return $nowTotalMinutes === $scheduleTotalMinutes;
+}
+
 function isMoveRepliesScheduleDue(array $schedule, DateTimeImmutable $now): bool {
   $daysRaw = $schedule["days"] ?? [];
   if (!is_array($daysRaw) || empty($daysRaw)) {
@@ -1877,6 +1958,202 @@ function runMoveRepliesMailingIfNeeded(): void {
   }
 }
 
+function runPendingAcceptanceMailing(array $options = []): array {
+  $timezone = new DateTimeZone("Europe/Moscow");
+  $now = new DateTimeImmutable("now", $timezone);
+  $dryRun = !empty($options["dryRun"]);
+
+  $botToken = getenv("ALLTRACK_BOT_TOKEN") ?: "";
+  if ($botToken === "") {
+    $botToken = "8549452123:AAGxveuJSVf-xpNHQYTDKDmuMmHjGRVeDj0";
+  }
+
+  $statePath = __DIR__ . DIRECTORY_SEPARATOR . "telegram-pending-acceptance-mailing-state.json";
+  $state = readJsonFile($statePath, ["sent" => []]);
+  $sentState = is_array($state["sent"] ?? null) ? $state["sent"] : [];
+
+  $summary = [
+    "success" => true,
+    "mode" => "pending-acceptance-mailing-cli",
+    "time" => $now->format(DateTimeInterface::ATOM),
+    "dryRun" => $dryRun,
+    "organizationsChecked" => 0,
+    "messagesSent" => 0,
+    "organizations" => [],
+  ];
+
+  $entries = @scandir(__DIR__);
+  if (!is_array($entries)) {
+    return ["success" => false, "mode" => "pending-acceptance-mailing-cli", "error" => "Не удалось прочитать папки организаций."];
+  }
+
+  foreach ($entries as $orgFolder) {
+    if ($orgFolder === "." || $orgFolder === "..") {
+      continue;
+    }
+    $orgPath = __DIR__ . DIRECTORY_SEPARATOR . $orgFolder;
+    if (!is_dir($orgPath)) {
+      continue;
+    }
+
+    $settingsPath = $orgPath . DIRECTORY_SEPARATOR . "Настройки.json";
+    $movesPath = $orgPath . DIRECTORY_SEPARATOR . "Перемещения.json";
+    if (!file_exists($settingsPath) || !file_exists($movesPath)) {
+      continue;
+    }
+
+    $summary["organizationsChecked"]++;
+    $settings = readJsonFile($settingsPath, []);
+    $usersSettings = $settings["users"] ?? [];
+    if (!is_array($usersSettings) || empty($usersSettings)) {
+      continue;
+    }
+
+    $moves = readJsonArrayFile($movesPath);
+    $pendingByUser = [];
+    foreach ($moves as $move) {
+      if (!is_array($move)) {
+        continue;
+      }
+      $responseDate = trim((string) ($move["Дата ответа"] ?? ""));
+      if ($responseDate !== "") {
+        continue;
+      }
+      $acceptedBy = normalizePersonLabel((string) ($move["Принял"] ?? ""));
+      if ($acceptedBy === "") {
+        continue;
+      }
+      if (!isset($pendingByUser[$acceptedBy])) {
+        $pendingByUser[$acceptedBy] = [];
+      }
+      $pendingByUser[$acceptedBy][] = $move;
+    }
+
+    if (empty($pendingByUser)) {
+      continue;
+    }
+
+    $orgSentCount = 0;
+    foreach ($usersSettings as $userSettings) {
+      if (!is_array($userSettings)) {
+        continue;
+      }
+      $telegramId = normalizeTelegramId($userSettings["telegram_id"] ?? null);
+      if (!$telegramId) {
+        continue;
+      }
+
+      $fullName = trim((string) ($userSettings["full_name"] ?? ""));
+      if ($fullName === "") {
+        continue;
+      }
+      $userKey = normalizePersonLabel($fullName);
+      $pendingMoves = $pendingByUser[$userKey] ?? [];
+      if (empty($pendingMoves)) {
+        continue;
+      }
+
+      $schedule = resolvePendingAcceptanceMailingConfig($userSettings);
+      if (!isUserPendingAcceptanceScheduleDue($schedule, $now)) {
+        continue;
+      }
+
+      $scheduleTime = normalizeScheduleTimeLabel($schedule["time"] ?? "");
+      if ($scheduleTime === "") {
+        continue;
+      }
+      $stateKey = $orgFolder . "|" . $telegramId . "|" . $now->format("Y-m-d") . "|" . $scheduleTime;
+      if (!empty($sentState[$stateKey])) {
+        continue;
+      }
+
+      $count = count($pendingMoves);
+      $firstMove = $pendingMoves[0];
+      $toolName = trim((string) ($firstMove["Инструмент"] ?? $firstMove["Название"] ?? $firstMove["Наименование"] ?? ""));
+      $fromObject = trim((string) ($firstMove["Старый объект"] ?? ""));
+      $toObject = trim((string) ($firstMove["Новый объект"] ?? ""));
+
+      $text = "🔔 Напоминание по инструментам на принятии\n"
+        . "🏢 Организация: {$orgFolder}\n"
+        . "👤 Получатель: {$fullName}\n"
+        . "🧰 Ожидают ответа: {$count}";
+      if ($toolName !== "") {
+        $text .= "\n\nПервый в списке: {$toolName}";
+      }
+      if ($fromObject !== "" || $toObject !== "") {
+        $text .= "\nМаршрут: " . ($fromObject !== "" ? $fromObject : "—") . " → " . ($toObject !== "" ? $toObject : "—");
+      }
+
+      $sendResult = $dryRun
+        ? ["ok" => true, "statusCode" => 0]
+        : sendTelegramTextMessage($botToken, $telegramId, $text);
+
+      if (!empty($sendResult["ok"])) {
+        $sentState[$stateKey] = $now->format(DateTimeInterface::ATOM);
+        $orgSentCount++;
+        $summary["messagesSent"]++;
+      } else {
+        appendMailingLog("error", "Ошибка персональной рассылки по инструментам на принятии.", [
+          "organization" => $orgFolder,
+          "telegramId" => $telegramId,
+          "error" => $sendResult["error"] ?? "Неизвестная ошибка",
+        ]);
+      }
+    }
+
+    if ($orgSentCount > 0) {
+      $summary["organizations"][] = [
+        "organization" => $orgFolder,
+        "messagesSent" => $orgSentCount,
+      ];
+    }
+  }
+
+  $encodedState = json_encode(["sent" => $sentState], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+  if ($encodedState !== false && !$dryRun) {
+    file_put_contents($statePath, $encodedState . PHP_EOL, LOCK_EX);
+  }
+
+  return $summary;
+}
+
+function runPendingAcceptanceMailingIfNeeded(): void {
+  $timezone = new DateTimeZone("Europe/Moscow");
+  $now = new DateTimeImmutable("now", $timezone);
+  $currentMinuteStamp = $now->format("Y-m-d H:i");
+
+  $statePath = __DIR__ . DIRECTORY_SEPARATOR . "telegram-pending-acceptance-mailing-last-run.json";
+  $state = readJsonFile($statePath, []);
+  $lastRunMinute = trim((string) ($state["lastRunMinute"] ?? ""));
+  if ($lastRunMinute === $currentMinuteStamp) {
+    return;
+  }
+
+  $result = runPendingAcceptanceMailing([
+    "dryRun" => false,
+  ]);
+
+  if (empty($result["success"])) {
+    appendMailingLog("error", "Не удалось выполнить персональную рассылку по инструментам на принятии при автозапуске.", [
+      "result" => $result,
+    ]);
+  }
+
+  $nextState = [
+    "lastRunMinute" => $currentMinuteStamp,
+    "updatedAt" => $now->format(DateTimeInterface::ATOM),
+  ];
+  $encoded = json_encode($nextState, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+  if ($encoded !== false) {
+    $saved = file_put_contents($statePath, $encoded . PHP_EOL, LOCK_EX);
+    if ($saved === false) {
+      appendMailingLog("warning", "Не удалось записать состояние автозапуска персональной рассылки по инструментам на принятии.", [
+        "statePath" => $statePath,
+      ]);
+    }
+  }
+}
+
 function pickOrganizationShortName(array $orgData, string $orgName): string {
   if ($orgName === "") {
     return "Организация";
@@ -2836,19 +3113,23 @@ if ($isCli) {
     $noAccountingNumberMailingResult = runNoAccountingNumberMailing([
       "dryRun" => $dryRun,
     ]);
+    $pendingAcceptanceMailingResult = runPendingAcceptanceMailing([
+      "dryRun" => $dryRun,
+    ]);
     $noPhotoResult = runNoPhotoFineRecalculation([
       "respectTime" => true,
       "dryRun" => $dryRun,
     ]);
 
     $result = [
-      "success" => !empty($moveRepliesResult["success"]) && !empty($repairsResult["success"]) && !empty($noPhotoMailingResult["success"]) && !empty($noAccountingNumberMailingResult["success"]) && !empty($noPhotoResult["success"]),
+      "success" => !empty($moveRepliesResult["success"]) && !empty($repairsResult["success"]) && !empty($noPhotoMailingResult["success"]) && !empty($noAccountingNumberMailingResult["success"]) && !empty($pendingAcceptanceMailingResult["success"]) && !empty($noPhotoResult["success"]),
       "mode" => "scheduled-mailings-cli",
       "dryRun" => $dryRun,
       "moveReplies" => $moveRepliesResult,
       "repairs" => $repairsResult,
       "noPhotoMailing" => $noPhotoMailingResult,
       "noAccountingNumberMailing" => $noAccountingNumberMailingResult,
+      "pendingAcceptanceMailing" => $pendingAcceptanceMailingResult,
       "noPhotoFines" => $noPhotoResult,
     ];
     echo json_encode($result, JSON_UNESCAPED_UNICODE) . PHP_EOL;
@@ -2905,6 +3186,7 @@ if ($requestedAction === "run-scheduled-mailings") {
   runRepairsMailingIfNeeded();
   runNoPhotoMailingIfNeeded();
   runNoAccountingNumberMailingIfNeeded();
+  runPendingAcceptanceMailingIfNeeded();
   echo json_encode([
     "success" => true,
     "action" => "run-scheduled-mailings",
@@ -2933,5 +3215,6 @@ runMoveRepliesMailingIfNeeded();
 runRepairsMailingIfNeeded();
 runNoPhotoMailingIfNeeded();
 runNoAccountingNumberMailingIfNeeded();
+runPendingAcceptanceMailingIfNeeded();
 
 echo json_encode(["success" => true]);

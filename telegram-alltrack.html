@@ -3797,7 +3797,20 @@
         overflow: visible;
       }
 
+      .info-moves-history-filters-controls {
+        display: flex;
+        justify-content: flex-start;
+      }
+
+      .info-moves-history-filters-toggle {
+        min-height: 40px;
+        padding: 10px 14px;
+        border-radius: 12px;
+      }
+
       .info-moves-history-filters {
+        position: relative;
+        z-index: 20;
         display: grid;
         gap: 10px;
         padding: 10px;
@@ -3818,6 +3831,30 @@
         margin: 0;
       }
 
+
+      .info-moves-history-responsible-dropdown .tools-filter-dropdown__menu {
+        position: static;
+        width: 100%;
+        margin-top: 8px;
+        max-height: min(42vh, 280px);
+        display: grid;
+        gap: 8px;
+      }
+
+      .info-moves-history-responsible-dropdown.is-open .tools-filter-dropdown__menu {
+        display: grid;
+      }
+
+      .tools-filter-dropdown__search {
+        width: 100%;
+      }
+
+      .tools-filter-dropdown__empty {
+        padding: 10px;
+        color: var(--muted);
+        font-size: var(--text-sm);
+      }
+
       .info-moves-history-date-field {
         position: relative;
       }
@@ -3833,7 +3870,7 @@
 
       .info-moves-history-date-field .download-moves-calendar {
         position: absolute;
-        z-index: 120;
+        z-index: 800;
         width: min(100%, 360px);
         top: calc(100% + 8px);
         left: 0;
@@ -3845,6 +3882,8 @@
       }
 
       .info-moves-history-list {
+        position: relative;
+        z-index: 1;
         display: grid;
         gap: 10px;
         min-height: 0;

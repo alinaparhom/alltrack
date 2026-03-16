@@ -3816,12 +3816,40 @@
       }
 
       .info-by-dates-calendar__actions {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 10px;
         margin: 8px 0;
-        flex-wrap: wrap;
+      }
+
+      .info-by-dates-calendar__action-button {
+        min-height: 40px;
+        border-radius: 12px;
+        border: 1px solid rgba(148, 163, 184, 0.3);
+        background: rgba(255, 255, 255, 0.72);
+        color: var(--text);
+        font-size: 13px;
+        font-weight: 700;
+        padding: 10px 12px;
+        backdrop-filter: blur(8px);
+        transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease,
+          background 0.18s ease;
+      }
+
+      .info-by-dates-calendar__action-button:active {
+        transform: translateY(1px) scale(0.99);
+      }
+
+      .info-by-dates-calendar__action-button--ghost {
+        border-color: rgba(148, 163, 184, 0.3);
+        background: rgba(255, 255, 255, 0.76);
+      }
+
+      .info-by-dates-calendar__action-button--accent {
+        border-color: rgba(59, 125, 255, 0.36);
+        background: linear-gradient(135deg, rgba(93, 155, 255, 0.95), rgba(59, 125, 255, 0.95));
+        color: #fff;
+        box-shadow: 0 10px 20px rgba(59, 125, 255, 0.2);
       }
 
       .info-by-dates-calendar.is-collapsed .download-moves-calendar__weekdays,
@@ -3872,6 +3900,23 @@
 
       body[data-theme="dark"] .info-by-dates-modal__panel {
         background: linear-gradient(180deg, rgba(10, 16, 30, 0.98), rgba(15, 22, 40, 0.95));
+      }
+
+      body[data-theme="dark"] .info-by-dates-calendar__action-button {
+        border-color: rgba(148, 163, 184, 0.34);
+        background: rgba(20, 30, 50, 0.76);
+        color: #e5ecff;
+      }
+
+      body[data-theme="dark"] .info-by-dates-calendar__action-button--ghost {
+        background: rgba(20, 30, 50, 0.72);
+      }
+
+      body[data-theme="dark"] .info-by-dates-calendar__action-button--accent {
+        border-color: rgba(93, 155, 255, 0.5);
+        background: linear-gradient(135deg, rgba(99, 162, 255, 0.94), rgba(70, 135, 255, 0.94));
+        color: #ffffff;
+        box-shadow: 0 10px 24px rgba(27, 83, 179, 0.35);
       }
 
       body[data-theme="dark"] .info-by-dates-tab {
@@ -10751,6 +10796,10 @@
 
         .info-by-dates-tabs {
           flex-wrap: nowrap;
+        }
+
+        .info-by-dates-calendar__actions {
+          grid-template-columns: 1fr;
         }
 
         .info-by-dates-tab {

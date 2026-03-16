@@ -3862,8 +3862,20 @@ export function renderRole(user) {
                   <button type="button" class="download-moves-calendar__nav" data-info-by-dates-calendar-next aria-label="Следующий месяц">▶</button>
                 </div>
                 <div class="info-by-dates-calendar__actions">
-                  <button type="button" class="tools-link-button" data-info-by-dates-reset-dates>Сбросить даты</button>
-                  <button type="button" class="tools-link-button" data-info-by-dates-toggle-calendar>Свернуть календарь</button>
+                  <button
+                    type="button"
+                    class="info-by-dates-calendar__action-button info-by-dates-calendar__action-button--ghost"
+                    data-info-by-dates-reset-dates
+                  >
+                    Сбросить даты
+                  </button>
+                  <button
+                    type="button"
+                    class="info-by-dates-calendar__action-button info-by-dates-calendar__action-button--accent"
+                    data-info-by-dates-toggle-calendar
+                  >
+                    Свернуть календарь
+                  </button>
                 </div>
                 <div class="download-moves-calendar__weekdays" aria-hidden="true">
                   <span>Пн</span><span>Вт</span><span>Ср</span><span>Чт</span><span>Пт</span><span>Сб</span><span>Вс</span>

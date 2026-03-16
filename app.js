@@ -160,6 +160,7 @@ const energyResponsibleAccessRoles = new Set([
   leaderRole,
   accountingRole,
 ]);
+const responsibleLikeRoles = new Set([responsibleRole, chiefEngineerRole]);
 
 if (isIosMobile) {
   document.body?.classList.add("is-ios");
@@ -10194,7 +10195,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     setToolsSubtitle("Загружаем список...");
     const numberConfig = await resolveToolsNumberConfig();
     updateToolsNumberConfig(numberConfig);
-    if (currentUser?.role === responsibleRole) {
+    if (responsibleLikeRoles.has(currentUser?.role)) {
       await loadUserTools();
     } else {
       await loadBaseTools();

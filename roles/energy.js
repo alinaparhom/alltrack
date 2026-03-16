@@ -2644,13 +2644,13 @@ export function renderRole(user) {
                 ></div>
                 <div class="settings-modal__actions breakdown-form__actions">
                   <button
-                    class="action-secondary"
+                    class="action-secondary breakdown-form__cancel"
                     type="button"
                     data-breakdown-form-cancel
                   >
                     Отмена
                   </button>
-                  <button class="action-primary" type="submit">
+                  <button class="action-primary breakdown-form__submit" type="submit">
                     Пометить сломанным
                   </button>
                 </div>

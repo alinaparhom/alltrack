@@ -3815,13 +3815,32 @@
         z-index: 20;
       }
 
+      .info-by-dates-calendar__actions {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        margin: 8px 0;
+        flex-wrap: wrap;
+      }
+
+      .info-by-dates-calendar.is-collapsed .download-moves-calendar__weekdays,
+      .info-by-dates-calendar.is-collapsed .download-moves-calendar__days {
+        display: none;
+      }
+
       .info-by-dates-tabs {
-        display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
+        display: flex;
+        flex-wrap: nowrap;
+        align-items: stretch;
         gap: 8px;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
       }
 
       .info-by-dates-tab {
+        flex: 1 1 0;
+        min-width: 108px;
         min-height: 40px;
         border-radius: 12px;
         border: 1px solid rgba(148, 163, 184, 0.28);
@@ -10731,7 +10750,11 @@
         }
 
         .info-by-dates-tabs {
-          grid-template-columns: 1fr;
+          flex-wrap: nowrap;
+        }
+
+        .info-by-dates-tab {
+          min-width: 102px;
         }
       }
 

@@ -3669,6 +3669,74 @@ export function renderRole(user) {
             </div>
           </div>
         </div>
+        <div class="settings-modal info-moves-history-modal is-hidden" data-info-moves-history-modal>
+          <div class="settings-modal__backdrop" data-info-moves-history-backdrop></div>
+          <div
+            class="settings-modal__panel info-moves-history-modal__panel"
+            role="dialog"
+            aria-modal="true"
+            aria-label="История перемещений"
+          >
+            <div class="settings-modal__header info-moves-history-modal__header">
+              <div class="settings-modal__title">
+                <h2>История перемещений</h2>
+                <p data-info-moves-history-subtitle>Загружаем данные...</p>
+              </div>
+              <button
+                class="button-icon"
+                type="button"
+                data-info-moves-history-close
+                aria-label="Закрыть историю перемещений"
+              >
+                <span class="button-icon-emoji" aria-hidden="true">✕</span>
+              </button>
+            </div>
+            <div class="settings-modal__body info-moves-history-modal__body">
+              <div class="info-moves-history-filters">
+                <label class="form-field">
+                  <span>Номер инструмента</span>
+                  <input
+                    class="form-input"
+                    type="text"
+                    placeholder="Например, 157"
+                    data-info-moves-history-filter-number
+                    inputmode="numeric"
+                  />
+                </label>
+                <label class="form-field">
+                  <span>Бух.номер</span>
+                  <input
+                    class="form-input"
+                    type="text"
+                    placeholder="Введите бух.номер"
+                    data-info-moves-history-filter-accounting
+                  />
+                </label>
+                <label class="form-field">
+                  <span>Дата перемещения</span>
+                  <input
+                    class="form-input"
+                    type="date"
+                    data-info-moves-history-filter-move-date
+                  />
+                </label>
+                <label class="form-field">
+                  <span>Дата ответа</span>
+                  <input
+                    class="form-input"
+                    type="date"
+                    data-info-moves-history-filter-response-date
+                  />
+                </label>
+              </div>
+              <div class="info-moves-history-summary" data-info-moves-history-summary></div>
+              <div class="info-moves-history-list" data-info-moves-history-list></div>
+              <div class="tools-empty is-hidden" data-info-moves-history-empty>
+                Перемещения не найдены.
+              </div>
+            </div>
+          </div>
+        </div>
         <div class="quick-access" data-quick-access>
           <div class="quick-access-list" data-quick-access-list></div>
         </div>

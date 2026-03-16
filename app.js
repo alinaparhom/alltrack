@@ -18513,10 +18513,14 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const updateToolsMoveReasonState = (responsibleName) => {
     if (!toolsMoveReasonFieldEl || !toolsMoveReasonInput) return;
     const shouldRequire = isEnergyResponsible(responsibleName);
-    toolsMoveReasonFieldEl.classList.toggle("is-hidden", !shouldRequire);
+    const reasonHintEl = toolsMoveReasonFieldEl.querySelector(
+      "[data-tools-move-reason-hint]"
+    );
     toolsMoveReasonInput.required = shouldRequire;
-    if (!shouldRequire) {
-      toolsMoveReasonInput.value = "";
+    if (reasonHintEl) {
+      reasonHintEl.textContent = shouldRequire
+        ? "Для ответственного «Энергетик» поле обязательно."
+        : "Необязательно. Можно оставить пометку к перемещению.";
     }
   };
 

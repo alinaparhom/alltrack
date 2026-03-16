@@ -2711,6 +2711,11 @@ function applyUserPreferences(preferences) {
   return normalized;
 }
 
+
+function setUserSettingsMode(isActive) {
+  document.body?.classList.toggle("is-user-settings", Boolean(isActive));
+}
+
 function renderError(message) {
   contentEl.innerHTML = `
     <section class="role-card">
@@ -27350,14 +27355,11 @@ async function renderUserRoleView() {
       String(currentUser.position ?? "").trim() || "Должность не указана";
   }
   if (userOrgEl) userOrgEl.textContent = currentUser.organization ?? "Организация";
-  if (userPositionEl) {
-    userPositionEl.textContent =
-      String(currentUser.position ?? "").trim() || "Должность не указана";
-  }
   updateHeaderUserBadge(currentUser.full_name ?? "");
   if (appUserEl) {
     appUserEl.classList.add("is-hidden");
   }
+  setUserSettingsMode(false);
   if (settingsBackButtonEl) {
     settingsBackButtonEl.classList.add("is-hidden");
   }
@@ -27412,15 +27414,14 @@ async function showUserSettings() {
     appTitlePositionEl.textContent =
       String(currentUser.position ?? "").trim() || "Должность не указана";
   }
-  if (userOrgEl) userOrgEl.textContent = currentUser.organization ?? "Организация";
-  if (userPositionEl) {
-    userPositionEl.textContent =
-      String(currentUser.position ?? "").trim() || "Должность не указана";
+  if (userOrgEl) {
+    userOrgEl.textContent = await resolveUserOrganizationFullName(currentUser);
   }
   updateHeaderUserBadge(currentUser.full_name ?? "");
   if (appUserEl) {
     appUserEl.classList.remove("is-hidden");
   }
+  setUserSettingsMode(true);
   if (energyPendingStatEl) {
     energyPendingStatEl.classList.add("is-hidden");
   }

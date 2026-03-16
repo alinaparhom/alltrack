@@ -225,11 +225,19 @@ function normalizeTelegramId($value): ?string {
   if ($raw === "") {
     return null;
   }
-  $cleaned = preg_replace('/[^\d-]+/', "", $raw);
-  if ($cleaned === "" || $cleaned === "0") {
+
+  $isNegative = str_starts_with($raw, "-");
+  $digits = preg_replace('/\D+/', "", $raw);
+  if ($digits === "") {
     return null;
   }
-  return $cleaned;
+
+  $normalizedDigits = ltrim($digits, "0");
+  if ($normalizedDigits === "") {
+    return null;
+  }
+
+  return $isNegative ? "-" . $normalizedDigits : $normalizedDigits;
 }
 
 function parseDateToDateTime(?string $value, DateTimeZone $timezone): ?DateTimeImmutable {

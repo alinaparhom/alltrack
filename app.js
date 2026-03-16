@@ -27509,6 +27509,53 @@ function buildAuthorizedLabel(user) {
   return `Вы авторизованы в базе как <strong>${fullName}</strong> (${roleTitle}).`;
 }
 
+function askUserOrganizationChoice(users) {
+  if (!Array.isArray(users) || users.length <= 1) {
+    return Promise.resolve(users?.[0] ?? null);
+  }
+
+  const optionsMarkup = users
+    .map((user, index) => {
+      const organization = escapeHtml(user.organization ?? "Организация");
+      const role = escapeHtml(user.role ?? "Роль");
+      const position = escapeHtml(String(user.position ?? "").trim() || "Должность не указана");
+      return `
+        <button class="org-choice-card" type="button" data-org-choice-index="${index}">
+          <span class="org-choice-title">${organization}</span>
+          <span class="org-choice-meta">${role}</span>
+          <span class="org-choice-meta">${position}</span>
+        </button>
+      `;
+    })
+    .join("");
+
+  contentEl.innerHTML = `
+    <section class="role-card role-card--org-choice">
+      <div class="role-header">
+        <span class="role-pill">Выбор организации</span>
+        <h1>Выберите компанию для входа</h1>
+      </div>
+      <p class="role-description">
+        У вас есть доступ к нескольким организациям. Нажмите нужную компанию, чтобы открыть рабочий экран.
+      </p>
+      <div class="org-choice-grid" data-org-choice-grid>
+        ${optionsMarkup}
+      </div>
+    </section>
+  `;
+
+  return new Promise((resolve) => {
+    const buttons = contentEl.querySelectorAll("[data-org-choice-index]");
+    buttons.forEach((button) => {
+      button.addEventListener("click", () => {
+        const index = Number(button.getAttribute("data-org-choice-index"));
+        const selectedUser = Number.isInteger(index) ? users[index] : null;
+        resolve(selectedUser ?? null);
+      });
+    });
+  });
+}
+
 async function applyRegistrationToken(telegramId, token) {
   const registrationsData = await loadRegistrations();
   const registrations = registrationsData.registrations ?? [];
@@ -27595,9 +27642,16 @@ async function loadUser() {
 
     if (!user) {
       const data = await loadJson(usersFilePath);
-      user = data.users?.find(
+      const matchedUsers = (data.users ?? []).filter(
         (item) => normalizeTelegramId(item.telegram_id) === telegramIdKey
       );
+
+      if (matchedUsers.length > 1) {
+        user = await askUserOrganizationChoice(matchedUsers);
+      } else {
+        user = matchedUsers[0] ?? null;
+      }
+
       userLabel = `Вы вошли как <strong>${formatShortName(
         user?.full_name ?? ""
       )}</strong>`;

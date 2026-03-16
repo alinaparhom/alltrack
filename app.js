@@ -23256,8 +23256,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       infoByDatesState.filters.dateTo = "";
     } else {
       infoByDatesState.filters.dateTo = isoDate;
-      infoByDatesState.isCalendarCollapsed = true;
-      updateInfoByDatesCalendarVisibility();
     }
     renderInfoByDatesCalendar();
     renderInfoByDatesList();

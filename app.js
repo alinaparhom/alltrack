@@ -25086,30 +25086,33 @@ function setupSuperAdmin() {
   };
 
   const resolveUploadOrganization = async () => {
-    const fallbackOrg = selectedOrgName || currentUser?.organization || "";
-    let organizationName = fallbackOrg;
-    try {
-      const usersData = await loadJson(usersFilePath);
-      const users = Array.isArray(usersData?.users) ? usersData.users : [];
-      const telegramId = normalizeTelegramId(currentUser?.telegram_id ?? null);
-      const matchedUser =
-        users.find(
-          (user) =>
-            telegramId && normalizeTelegramId(user?.telegram_id ?? null) === telegramId
-        ) ??
-        users.find(
-          (user) =>
-            String(user?.full_name ?? "").trim() ===
-              String(currentUser?.full_name ?? "").trim() &&
-            String(user?.organization ?? "").trim() ===
-              String(currentUser?.organization ?? "").trim() &&
-            String(user?.role ?? "").trim() === String(currentUser?.role ?? "").trim()
-        );
-      if (matchedUser?.organization) {
-        organizationName = String(matchedUser.organization).trim();
+    const selectedOrganization = String(selectedOrgName ?? "").trim();
+    let organizationName = selectedOrganization || String(currentUser?.organization ?? "").trim();
+
+    if (!selectedOrganization) {
+      try {
+        const usersData = await loadJson(usersFilePath);
+        const users = Array.isArray(usersData?.users) ? usersData.users : [];
+        const telegramId = normalizeTelegramId(currentUser?.telegram_id ?? null);
+        const matchedUser =
+          users.find(
+            (user) =>
+              telegramId && normalizeTelegramId(user?.telegram_id ?? null) === telegramId
+          ) ??
+          users.find(
+            (user) =>
+              String(user?.full_name ?? "").trim() ===
+                String(currentUser?.full_name ?? "").trim() &&
+              String(user?.organization ?? "").trim() ===
+                String(currentUser?.organization ?? "").trim() &&
+              String(user?.role ?? "").trim() === String(currentUser?.role ?? "").trim()
+          );
+        if (matchedUser?.organization) {
+          organizationName = String(matchedUser.organization).trim();
+        }
+      } catch (error) {
+        console.warn("Не удалось определить организацию пользователя.", error);
       }
-    } catch (error) {
-      console.warn("Не удалось определить организацию пользователя.", error);
     }
 
     if (!organizationName) {

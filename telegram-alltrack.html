@@ -7626,12 +7626,12 @@
       .tools-writeoff-pending-confirm-actions .action-secondary,
       .tools-writeoff-pending-confirm-actions .action-primary {
         flex: 0 0 auto;
-        width: auto;
-        min-width: fit-content;
+        width: 136px;
+        min-width: 136px;
         white-space: nowrap;
-        height: auto;
-        min-height: 0;
-        padding: 12px 14px;
+        height: 44px;
+        min-height: 44px;
+        padding: 12px;
         line-height: 1.25;
         border-radius: 12px;
         font-weight: 600;
@@ -7657,6 +7657,11 @@
         color: var(--success);
       }
 
+      .settings-modal__footer.tools-writeoff-pending-confirm-actions {
+        flex-direction: row;
+        align-items: center;
+      }
+
       .tools-writeoff-pending-confirm-actions__submit:hover {
         transform: translateY(-1px);
         box-shadow: 0 16px 40px rgba(26, 31, 46, 0.12);
@@ -7676,10 +7681,20 @@
 
         .tools-writeoff-pending-confirm-actions .action-secondary,
         .tools-writeoff-pending-confirm-actions .action-primary {
-          padding-inline: 12px;
+          width: 128px;
+          min-width: 128px;
+          height: 42px;
+          min-height: 42px;
+          padding-inline: 10px;
           font-size: 13px;
           letter-spacing: -0.01em;
-          min-width: fit-content;
+        }
+      }
+
+      @media (max-width: 520px) {
+        .settings-modal__footer.tools-writeoff-pending-confirm-actions {
+          flex-direction: row;
+          align-items: center;
         }
       }
 

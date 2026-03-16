@@ -5693,6 +5693,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const infoByDatesListEl = contentEl.querySelector("[data-info-by-dates-list]");
   const infoByDatesEmptyEl = contentEl.querySelector("[data-info-by-dates-empty]");
   const infoByDatesTabEls = contentEl.querySelectorAll("[data-info-by-dates-tab]");
+  const infoByDatesCalendarEl = contentEl.querySelector("[data-info-by-dates-calendar]");
   const infoByDatesCalendarDaysEl = contentEl.querySelector("[data-info-by-dates-calendar-days]");
   const infoByDatesCalendarMonthLabelEl = contentEl.querySelector(
     "[data-info-by-dates-calendar-month-label]"
@@ -5702,6 +5703,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   );
   const infoByDatesCalendarPrevEl = contentEl.querySelector("[data-info-by-dates-calendar-prev]");
   const infoByDatesCalendarNextEl = contentEl.querySelector("[data-info-by-dates-calendar-next]");
+  const infoByDatesResetDatesEl = contentEl.querySelector("[data-info-by-dates-reset-dates]");
+  const infoByDatesToggleCalendarEl = contentEl.querySelector(
+    "[data-info-by-dates-toggle-calendar]"
+  );
   const toolsCancelMoveModalEl = contentEl.querySelector(
     "[data-tools-cancel-move-modal]"
   );
@@ -6275,6 +6280,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     registrations: [],
     moves: [],
     writeoffs: [],
+    isCalendarCollapsed: false,
   };
   const pendingMovePhotoViewerEl = document.createElement("div");
   pendingMovePhotoViewerEl.className = "settings-modal pending-photo-viewer is-hidden";
@@ -13387,6 +13393,15 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       from === to ? `Выбран 1 день: ${start}` : `Период: ${start} — ${end}`;
   };
 
+  const updateInfoByDatesCalendarVisibility = () => {
+    if (!infoByDatesCalendarEl || !infoByDatesToggleCalendarEl) return;
+    const isCollapsed = Boolean(infoByDatesState.isCalendarCollapsed);
+    infoByDatesCalendarEl.classList.toggle("is-collapsed", isCollapsed);
+    infoByDatesToggleCalendarEl.textContent = isCollapsed
+      ? "Развернуть календарь"
+      : "Свернуть календарь";
+  };
+
   const renderInfoByDatesCalendar = () => {
     if (!infoByDatesCalendarDaysEl || !infoByDatesCalendarMonthLabelEl) return;
     const visibleDate = infoByDatesState.visibleMonthDate;
@@ -13613,6 +13628,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (infoByDatesSubtitleEl) {
       infoByDatesSubtitleEl.textContent = "Выберите дату или диапазон дат.";
     }
+    infoByDatesState.isCalendarCollapsed = false;
+    updateInfoByDatesCalendarVisibility();
     renderInfoByDatesCalendar();
     await loadInfoByDatesData();
   };
@@ -23239,9 +23256,25 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       infoByDatesState.filters.dateTo = "";
     } else {
       infoByDatesState.filters.dateTo = isoDate;
+      infoByDatesState.isCalendarCollapsed = true;
+      updateInfoByDatesCalendarVisibility();
     }
     renderInfoByDatesCalendar();
     renderInfoByDatesList();
+  });
+
+  infoByDatesResetDatesEl?.addEventListener("click", () => {
+    infoByDatesState.filters.dateFrom = "";
+    infoByDatesState.filters.dateTo = "";
+    infoByDatesState.isCalendarCollapsed = false;
+    updateInfoByDatesCalendarVisibility();
+    renderInfoByDatesCalendar();
+    renderInfoByDatesList();
+  });
+
+  infoByDatesToggleCalendarEl?.addEventListener("click", () => {
+    infoByDatesState.isCalendarCollapsed = !infoByDatesState.isCalendarCollapsed;
+    updateInfoByDatesCalendarVisibility();
   });
 
   infoByDatesCalendarPrevEl?.addEventListener("click", () => {

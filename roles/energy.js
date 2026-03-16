@@ -3861,6 +3861,10 @@ export function renderRole(user) {
                   <div class="download-moves-calendar__month" data-info-by-dates-calendar-month-label></div>
                   <button type="button" class="download-moves-calendar__nav" data-info-by-dates-calendar-next aria-label="Следующий месяц">▶</button>
                 </div>
+                <div class="info-by-dates-calendar__actions">
+                  <button type="button" class="tools-link-button" data-info-by-dates-reset-dates>Сбросить даты</button>
+                  <button type="button" class="tools-link-button" data-info-by-dates-toggle-calendar>Свернуть календарь</button>
+                </div>
                 <div class="download-moves-calendar__weekdays" aria-hidden="true">
                   <span>Пн</span><span>Вт</span><span>Ср</span><span>Чт</span><span>Пт</span><span>Сб</span><span>Вс</span>
                 </div>
@@ -3869,7 +3873,7 @@ export function renderRole(user) {
               </div>
 
               <div class="info-by-dates-tabs" data-info-by-dates-tabs>
-                <button type="button" class="info-by-dates-tab is-active" data-info-by-dates-tab="registrations">Регистрации</button>
+                <button type="button" class="info-by-dates-tab is-active" data-info-by-dates-tab="registrations">Регистрация</button>
                 <button type="button" class="info-by-dates-tab" data-info-by-dates-tab="moves">Перемещения</button>
                 <button type="button" class="info-by-dates-tab" data-info-by-dates-tab="writeoff">Списания</button>
               </div>

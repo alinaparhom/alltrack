@@ -1,117 +1,218 @@
 [
-    {
-        "id": "obj-1769086905798-981e5e",
-        "name": "Минск Мир",
-        "coordinates": {
-            "lat": 53.864341,
-            "lng": 27.546276
-        }
-    },
-    {
-        "id": "obj-1769086895456-81fbfd",
-        "name": "Депо",
-        "coordinates": {
-            "lat": 53.912103,
-            "lng": 27.572346
-        }
-    },
-    {
-        "id": "obj-1769443014277-bed26b",
-        "name": "Выкса",
-        "coordinates": {
-            "lat": 55.320654,
-            "lng": 42.167888
-        }
-    },
-    {
-        "id": "obj-1769443014277-b624f8",
-        "name": "База",
-        "coordinates": null
-    },
-    {
-        "id": "obj-1769443014277-91086f",
-        "name": "Костёл",
-        "coordinates": {
-            "lat": 53.89652,
-            "lng": 27.547457
-        }
-    },
-    {
-        "id": "obj-1769443014277-717631",
-        "name": "Динамо",
-        "coordinates": {
-            "lat": 53.919077,
-            "lng": 27.548385
-        }
-    },
-    {
-        "id": "obj-1769443014277-3d76ea",
-        "name": "Гарантия",
-        "coordinates": null
-    },
-    {
-        "id": "obj-1769443014277-c1758d",
-        "name": "Главпочтампт",
-        "coordinates": null
-    },
-    {
-        "id": "obj-1769443014277-eb9280",
-        "name": "Любань",
-        "coordinates": null
-    },
-    {
-        "id": "obj-1769443014277-f1c563",
-        "name": "МолодечноГаз",
-        "coordinates": null
-    },
-    {
-        "id": "obj-1769443014277-15300b",
-        "name": "Паркинг Притыцкого",
-        "coordinates": null
-    },
-    {
-        "id": "obj-1769443588002-a818d2",
-        "name": "Березино",
-        "coordinates": null
-    },
-    {
-        "id": "obj-1769443588002-a489d4",
-        "name": "СК РБ",
-        "coordinates": null
-    },
-    {
-        "id": "obj-1769443588002-70718d",
-        "name": "Интеграл",
-        "coordinates": null
-    },
-    {
-        "id": "obj-1769443588002-103e09",
-        "name": "Станьково",
-        "coordinates": null
-    },
-    {
-        "id": "obj-1769443588002-0aa94e",
-        "name": "Магнит",
-        "coordinates": null
-    },
-    {
-        "id": "obj-1769443588002-c19dfc",
-        "name": "Почта Колядичи",
-        "coordinates": null
-    },
-    {
-        "id": "obj-1769443588002-1012c7",
-        "name": "Поликлиника",
-        "coordinates": null
-    },
-    {
-        "id": "obj-1769443588002-207bbf",
-        "name": "Клад",
-        "coordinates": null
-    },
-    {
-        "id": "obj-1769443588002-4e7804",
-        "name": "БНТУ",
-        "coordinates": null
+  {
+    "id": "obj-import-1-4c2b09",
+    "name": "Депо",
+    "coordinates": {
+      "lat": 53.912103,
+      "lng": 27.572346
     }
+  },
+  {
+    "id": "obj-import-2-52d4c6",
+    "name": "МолодечноГаз",
+    "coordinates": {
+      "lat": 53.9,
+      "lng": 27.56
+    }
+  },
+  {
+    "id": "obj-import-3-d4f6ee",
+    "name": "Динамо",
+    "coordinates": {
+      "lat": 53.919077,
+      "lng": 27.548385
+    }
+  },
+  {
+    "id": "obj-import-4-e8bf99",
+    "name": "Склад",
+    "coordinates": {
+      "lat": 53.9,
+      "lng": 27.56
+    }
+  },
+  {
+    "id": "obj-import-5-633f22",
+    "name": "Выкса",
+    "coordinates": {
+      "lat": 55.320654,
+      "lng": 42.167888
+    }
+  },
+  {
+    "id": "obj-import-6-131622",
+    "name": "База",
+    "coordinates": {
+      "lat": 53.9,
+      "lng": 27.56
+    }
+  },
+  {
+    "id": "obj-import-8-df46a2",
+    "name": "Паркинг Притыцкого",
+    "coordinates": {
+      "lat": 53.9,
+      "lng": 27.56
+    }
+  },
+  {
+    "id": "obj-import-9-8caf05",
+    "name": "Офис",
+    "coordinates": {
+      "lat": 53.9,
+      "lng": 27.56
+    }
+  },
+  {
+    "id": "obj-import-10-975961",
+    "name": "СК РБ",
+    "coordinates": {
+      "lat": 53.9,
+      "lng": 27.56
+    }
+  },
+  {
+    "id": "obj-import-11-c6dab2",
+    "name": "Гарантия",
+    "coordinates": {
+      "lat": 53.9,
+      "lng": 27.56
+    }
+  },
+  {
+    "id": "obj-import-12-19ad7c",
+    "name": "Белгазпромбанк",
+    "coordinates": {
+      "lat": 53.9,
+      "lng": 27.56
+    }
+  },
+  {
+    "id": "obj-import-13-b7d3c2",
+    "name": "Якимович",
+    "coordinates": {
+      "lat": 53.9,
+      "lng": 27.56
+    }
+  },
+  {
+    "id": "obj-import-14-c1fd56",
+    "name": "Магнит",
+    "coordinates": {
+      "lat": 53.9,
+      "lng": 27.56
+    }
+  },
+  {
+    "id": "obj-import-15-1fb573",
+    "name": "Березино",
+    "coordinates": {
+      "lat": 53.9,
+      "lng": 27.56
+    }
+  },
+  {
+    "id": "obj-import-16-1aa343",
+    "name": "Главпочтампт",
+    "coordinates": {
+      "lat": 53.9,
+      "lng": 27.56
+    }
+  },
+  {
+    "id": "obj-import-17-79eecd",
+    "name": "ДепоКузьмин",
+    "coordinates": {
+      "lat": 53.9,
+      "lng": 27.56
+    }
+  },
+  {
+    "id": "obj-import-18-56f12e",
+    "name": "МолодечноПротосовицкий",
+    "coordinates": {
+      "lat": 53.9,
+      "lng": 27.56
+    }
+  },
+  {
+    "id": "obj-import-19-640ae4",
+    "name": "Почта Колядичи",
+    "coordinates": {
+      "lat": 53.9,
+      "lng": 27.56
+    }
+  },
+  {
+    "id": "obj-import-20-f600c0",
+    "name": "Поликлиника",
+    "coordinates": {
+      "lat": 53.9,
+      "lng": 27.56
+    }
+  },
+  {
+    "id": "obj-import-21-edec64",
+    "name": "Станьково",
+    "coordinates": {
+      "lat": 53.9,
+      "lng": 27.56
+    }
+  },
+  {
+    "id": "obj-import-22-4417ba",
+    "name": "Минск Мир",
+    "coordinates": {
+      "lat": 53.864341,
+      "lng": 27.546276
+    }
+  },
+  {
+    "id": "obj-import-23-027d37",
+    "name": "Любань",
+    "coordinates": {
+      "lat": 53.9,
+      "lng": 27.56
+    }
+  },
+  {
+    "id": "obj-import-24-96f5ab",
+    "name": "Костёл",
+    "coordinates": {
+      "lat": 53.89652,
+      "lng": 27.547457
+    }
+  },
+  {
+    "id": "obj-import-25-666ee1",
+    "name": "Интеграл",
+    "coordinates": {
+      "lat": 53.9,
+      "lng": 27.56
+    }
+  },
+  {
+    "id": "obj-import-26-7cc9b3",
+    "name": "Верфи",
+    "coordinates": {
+      "lat": 53.9,
+      "lng": 27.56
+    }
+  },
+  {
+    "id": "obj-import-27-e5651f",
+    "name": "МВД",
+    "coordinates": {
+      "lat": 53.9,
+      "lng": 27.56
+    }
+  },
+  {
+    "id": "obj-import-28-786766",
+    "name": "Войсковый",
+    "coordinates": {
+      "lat": 53.9,
+      "lng": 27.56
+    }
+  }
 ]

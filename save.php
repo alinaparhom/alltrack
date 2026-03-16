@@ -1865,16 +1865,40 @@ function buildPendingAcceptanceMailingText(string $organization, string $fullNam
       break;
     }
 
-    $toolName = trim((string) ($move["Инструмент"] ?? $move["Название"] ?? $move["Наименование"] ?? ""));
+    $toolNumber = trim((string) ($move["Номер"] ?? $move["Бух.номер"] ?? ""));
+    $toolName = trim((string) ($move["Наименование"] ?? $move["Инструмент"] ?? $move["Название"] ?? ""));
+    $toolManufacturer = trim((string) ($move["Производитель"] ?? ""));
+    $toolModel = trim((string) ($move["Модель"] ?? ""));
     $fromObject = trim((string) ($move["Старый объект"] ?? ""));
     $toObject = trim((string) ($move["Новый объект"] ?? ""));
     $moveDate = trim((string) ($move["Дата перемещения"] ?? ""));
     $reason = trim((string) ($move["Причина перемещения"] ?? ""));
+    $movedBy = trim((string) ($move["Ответственный до перемещения"] ?? ""));
+    if ($movedBy === "") {
+      $movedBy = trim((string) ($move["Переместил"] ?? ""));
+    }
     $moveFine = resolveMoveCurrentLateFine($move, $lateFineConfig, $now, $timezone);
 
     $printedMoves++;
-    $text .= "\n\n{$printedMoves}) " . ($toolName !== "" ? $toolName : "Без названия");
+    $toolHeaderParts = [];
+    if ($toolNumber !== "") {
+      $toolHeaderParts[] = $toolNumber;
+    }
+    if ($toolName !== "") {
+      $toolHeaderParts[] = $toolName;
+    }
+    if ($toolManufacturer !== "") {
+      $toolHeaderParts[] = $toolManufacturer;
+    }
+    if ($toolModel !== "") {
+      $toolHeaderParts[] = $toolModel;
+    }
+
+    $text .= "\n\n{$printedMoves}) " . (count($toolHeaderParts) > 0 ? implode(" - ", $toolHeaderParts) : "Без названия");
     $text .= "\n   Маршрут: " . ($fromObject !== "" ? $fromObject : "—") . " → " . ($toObject !== "" ? $toObject : "—");
+    if ($movedBy !== "") {
+      $text .= "\n   Ответственный до перемещения: {$movedBy}";
+    }
     if ($moveDate !== "") {
       $text .= "\n   Дата: {$moveDate}";
     }

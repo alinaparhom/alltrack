@@ -14204,6 +14204,21 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     });
 
     toolsListEl.addEventListener("click", (event) => {
+      const photoButton = event.target.closest("[data-pending-photo-open]");
+      if (photoButton) {
+        const toolIndex = Number.parseInt(
+          photoButton.dataset.pendingPhotoMoveIndex ?? "",
+          10
+        );
+        if (Number.isFinite(toolIndex)) {
+          const tool = toolsState.filtered[toolIndex] ?? null;
+          if (tool) {
+            const title = String(tool?.["Наименование"] ?? "").trim();
+            void openPendingMovePhotoViewer({ tool, title });
+          }
+        }
+        return;
+      }
       const item = event.target.closest("[data-tools-item]");
       if (!item) return;
       if (toolsState.mode === "base") {
@@ -14253,6 +14268,14 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         return;
       }
       updateToolsSelectionUi();
+    });
+
+    toolsListEl.addEventListener("keydown", (event) => {
+      if (event.key !== "Enter" && event.key !== " ") return;
+      const photoButton = event.target.closest("[data-pending-photo-open]");
+      if (!photoButton) return;
+      event.preventDefault();
+      photoButton.click();
     });
   }
   const setAddPhotoSubtitle = (text) => {

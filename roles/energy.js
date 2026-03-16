@@ -1842,19 +1842,16 @@ export function renderRole(user) {
                       data-tools-move-object-suggestions
                     ></div>
                   </label>
-                  <label
-                    class="form-field form-field--required is-hidden"
-                    data-tools-move-reason-field
-                  >
-                    <span class="form-label">Причина перемещения</span>
+                  <label class="form-field" data-tools-move-reason-field>
+                    <span class="form-label">Комментарий к перемещению</span>
                     <textarea
                       class="form-input"
                       rows="3"
-                      placeholder="Например: требуется проверка или ремонт"
+                      placeholder="Необязательно. Например: требуется проверка или ремонт"
                       data-tools-move-reason
                     ></textarea>
-                    <span class="form-hint">
-                      Обязательное поле для ответственного «Энергетик».
+                    <span class="form-hint" data-tools-move-reason-hint>
+                      Необязательно для обычного перемещения. Для ответственного «Энергетик» поле обязательно.
                     </span>
                   </label>
                 </div>

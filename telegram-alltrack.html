@@ -2730,6 +2730,28 @@
         min-width: 0;
       }
 
+      .repair-form__actions [data-repair-form-cancel] {
+        border-color: rgba(214, 69, 69, 0.32);
+        background: rgba(255, 99, 99, 0.16);
+        color: #d64545;
+      }
+
+      .repair-form__actions [data-repair-form-submit] {
+        background: var(--success-soft);
+        color: var(--success);
+        box-shadow: 0 10px 24px rgba(47, 158, 103, 0.14);
+      }
+
+      .repair-form__actions [data-repair-form-cancel]:hover,
+      .repair-form__actions [data-repair-form-cancel]:focus-visible {
+        box-shadow: 0 14px 34px rgba(214, 69, 69, 0.2);
+      }
+
+      .repair-form__actions [data-repair-form-submit]:hover,
+      .repair-form__actions [data-repair-form-submit]:focus-visible {
+        box-shadow: 0 14px 34px rgba(47, 158, 103, 0.2);
+      }
+
       .breakdown-status__body {
         display: grid;
         gap: 16px;

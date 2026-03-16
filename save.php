@@ -1751,6 +1751,76 @@ function buildUsersIndexByTelegram(): array {
   return $index;
 }
 
+function buildPendingAcceptanceTargetsForOrganization(string $orgFolder, array $usersSettings, array $allUsers): array {
+  $targets = [];
+  $orgFolderNormalized = normalizeOrganizationFolder($orgFolder);
+
+  foreach ($usersSettings as $userSettingsKey => $userSettings) {
+    if (!is_array($userSettings)) {
+      continue;
+    }
+    $telegramId = normalizeTelegramId($userSettings["telegram_id"] ?? null);
+    if (!$telegramId) {
+      $telegramId = normalizeTelegramId($userSettingsKey);
+    }
+
+    $fullName = trim((string) ($userSettings["full_name"] ?? ""));
+    $nameKey = normalizePersonLabel($fullName);
+    $targetKey = $telegramId ?: ($nameKey !== "" ? $nameKey : "");
+    if ($targetKey === "") {
+      continue;
+    }
+
+    $targets[$targetKey] = [
+      "telegramId" => $telegramId,
+      "fullName" => $fullName,
+      "schedule" => resolvePendingAcceptanceMailingConfig($userSettings),
+    ];
+  }
+
+  foreach ($allUsers as $userItem) {
+    if (!is_array($userItem)) {
+      continue;
+    }
+
+    $telegramId = normalizeTelegramId($userItem["telegram_id"] ?? null);
+    $fullName = trim((string) ($userItem["full_name"] ?? ""));
+    $organization = trim((string) ($userItem["organization"] ?? ""));
+    if (!$telegramId || $fullName === "" || $organization === "") {
+      continue;
+    }
+
+    if (!folderMatchesOrganization($orgFolderNormalized, $organization)) {
+      continue;
+    }
+
+    $nameKey = normalizePersonLabel($fullName);
+    $targetKey = $telegramId;
+    $target = $targets[$targetKey] ?? ($nameKey !== "" ? ($targets[$nameKey] ?? null) : null);
+    if (is_array($target)) {
+      if (empty($target["telegramId"])) {
+        $target["telegramId"] = $telegramId;
+      }
+      if (trim((string) ($target["fullName"] ?? "")) === "") {
+        $target["fullName"] = $fullName;
+      }
+      $targets[$targetKey] = $target;
+      if ($nameKey !== "" && isset($targets[$nameKey])) {
+        unset($targets[$nameKey]);
+      }
+      continue;
+    }
+
+    $targets[$targetKey] = [
+      "telegramId" => $telegramId,
+      "fullName" => $fullName,
+      "schedule" => resolvePendingAcceptanceMailingConfig([]),
+    ];
+  }
+
+  return $targets;
+}
+
 function buildPendingAcceptanceMailingText(string $organization, string $fullName, array $pendingMoves, array $settings, array $fines): string {
   $count = count($pendingMoves);
   $timezone = new DateTimeZone("Europe/Moscow");
@@ -2079,6 +2149,8 @@ function runPendingAcceptanceMailing(array $options = []): array {
 
   $entries = @scandir(__DIR__);
   $usersIndexByTelegram = buildUsersIndexByTelegram();
+  $allUsersData = readJsonFile(__DIR__ . DIRECTORY_SEPARATOR . "users.json", ["users" => []]);
+  $allUsers = is_array($allUsersData["users"] ?? null) ? $allUsersData["users"] : [];
   if (!is_array($entries)) {
     return ["success" => false, "mode" => "pending-acceptance-mailing-cli", "error" => "Не удалось прочитать папки организаций."];
   }
@@ -2102,10 +2174,7 @@ function runPendingAcceptanceMailing(array $options = []): array {
     $settings = readJsonFile($settingsPath, []);
     $orgData = readJsonFile(__DIR__ . DIRECTORY_SEPARATOR . "organizations.json", ["organizations" => []]);
     $orgDisplayName = resolveOrganizationFullNameByFolder($orgFolder, $orgData);
-    $usersSettings = $settings["users"] ?? [];
-    if (!is_array($usersSettings) || empty($usersSettings)) {
-      continue;
-    }
+    $usersSettings = is_array($settings["users"] ?? null) ? $settings["users"] : [];
 
     $finesPath = $orgPath . DIRECTORY_SEPARATOR . "Штрафы.json";
     $fines = readJsonFile($finesPath, []);
@@ -2135,20 +2204,23 @@ function runPendingAcceptanceMailing(array $options = []): array {
       continue;
     }
 
+    $targets = buildPendingAcceptanceTargetsForOrganization($orgFolder, $usersSettings, $allUsers);
+    if (empty($targets)) {
+      continue;
+    }
+
     $orgSentCount = 0;
-    foreach ($usersSettings as $userSettingsKey => $userSettings) {
-      if (!is_array($userSettings)) {
-        continue;
-      }
-      $telegramId = normalizeTelegramId($userSettings["telegram_id"] ?? null);
-      if (!$telegramId) {
-        $telegramId = normalizeTelegramId($userSettingsKey);
-      }
+    foreach ($targets as $target) {
+      $telegramId = normalizeTelegramId($target["telegramId"] ?? null);
       if (!$telegramId) {
         continue;
       }
 
-      $fullName = resolveUserFullNameForPendingAcceptance($userSettings, $userSettingsKey, $usersIndexByTelegram);
+      $fullName = trim((string) ($target["fullName"] ?? ""));
+      if ($fullName === "") {
+        $fallback = ["telegram_id" => $telegramId, "full_name" => ""];
+        $fullName = resolveUserFullNameForPendingAcceptance($fallback, $telegramId, $usersIndexByTelegram);
+      }
       if ($fullName === "") {
         continue;
       }
@@ -2158,7 +2230,9 @@ function runPendingAcceptanceMailing(array $options = []): array {
         continue;
       }
 
-      $schedule = resolvePendingAcceptanceMailingConfig($userSettings);
+      $schedule = is_array($target["schedule"] ?? null)
+        ? $target["schedule"]
+        : resolvePendingAcceptanceMailingConfig([]);
       if (!isUserPendingAcceptanceScheduleDue($schedule, $now)) {
         continue;
       }

@@ -23,6 +23,8 @@
         --accent-soft: rgba(59, 125, 255, 0.18);
         --success: #2f9e67;
         --success-soft: rgba(47, 158, 103, 0.16);
+        --danger: #ef4444;
+        --danger-soft: rgba(239, 68, 68, 0.16);
         --text: #1a1f2e;
         --muted: #5f6b85;
         --title-muted: #6b758c;
@@ -47,6 +49,8 @@
         --accent-soft: rgba(123, 178, 255, 0.24);
         --success: #57e09b;
         --success-soft: rgba(87, 224, 155, 0.22);
+        --danger: #ff7b7b;
+        --danger-soft: rgba(255, 123, 123, 0.24);
         --text: #f3f6ff;
         --muted: #b9c3d8;
         --title-muted: #dfe6f5;
@@ -2203,6 +2207,18 @@
         align-items: center;
         justify-content: center;
         box-shadow: 0 6px 12px rgba(59, 125, 255, 0.28);
+      }
+
+      .action-card__badge[data-my-tools-count],
+      .quick-access-item__badge[data-my-tools-count] {
+        background: var(--success);
+        box-shadow: 0 6px 12px color-mix(in srgb, var(--success) 35%, transparent);
+      }
+
+      .pending-badge[data-energy-pending-count],
+      .quick-access-item__badge[data-quick-access-pending-count] {
+        background: var(--danger);
+        box-shadow: 0 8px 16px color-mix(in srgb, var(--danger) 34%, transparent);
       }
 
       .quick-access-item:hover {

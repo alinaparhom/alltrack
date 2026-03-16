@@ -3698,11 +3698,16 @@ export function renderRole(user) {
                   data-info-moves-history-filters-toggle
                   aria-expanded="false"
                 >Фильтры</button>
+                <button
+                  type="button"
+                  class="button-secondary info-moves-history-reset-all is-hidden"
+                  data-info-moves-history-reset-all
+                >Сбросить все</button>
               </div>
               <div class="info-moves-history-filters is-hidden" data-info-moves-history-filters-panel>
                 <div class="info-moves-history-filters__row">
                   <label class="form-field">
-                    <span>Номер инструмента</span>
+                    <span class="info-moves-history-filter-label">Номер инструмента <button type="button" class="info-moves-history-filter-reset is-hidden" data-info-moves-history-reset="number">Сбросить</button></span>
                     <input
                       class="form-input"
                       type="text"
@@ -3712,7 +3717,7 @@ export function renderRole(user) {
                     />
                   </label>
                   <label class="form-field">
-                    <span>Бух.номер</span>
+                    <span class="info-moves-history-filter-label">Бух.номер <button type="button" class="info-moves-history-filter-reset is-hidden" data-info-moves-history-reset="accounting">Сбросить</button></span>
                     <input
                       class="form-input"
                       type="text"
@@ -3723,7 +3728,7 @@ export function renderRole(user) {
                 </div>
                 <div class="info-moves-history-filters__row">
                   <label class="form-field">
-                    <span>По передающему</span>
+                    <span class="info-moves-history-filter-label">По передающему <button type="button" class="info-moves-history-filter-reset is-hidden" data-info-moves-history-reset="sender">Сбросить</button></span>
                     <div
                       class="tools-filter-dropdown info-moves-history-responsible-dropdown"
                       data-info-moves-history-person-dropdown="sender"
@@ -3749,7 +3754,7 @@ export function renderRole(user) {
                     </div>
                   </label>
                   <label class="form-field">
-                    <span>По принимающему</span>
+                    <span class="info-moves-history-filter-label">По принимающему <button type="button" class="info-moves-history-filter-reset is-hidden" data-info-moves-history-reset="receiver">Сбросить</button></span>
                     <div
                       class="tools-filter-dropdown info-moves-history-responsible-dropdown"
                       data-info-moves-history-person-dropdown="receiver"
@@ -3777,7 +3782,7 @@ export function renderRole(user) {
                 </div>
                 <div class="info-moves-history-filters__row info-moves-history-filters__row--dates">
                   <div class="form-field info-moves-history-date-field">
-                    <span>Дата перемещения</span>
+                    <span class="info-moves-history-filter-label">Дата перемещения <button type="button" class="info-moves-history-filter-reset is-hidden" data-info-moves-history-reset="moveDate">Сбросить</button></span>
                     <button
                       type="button"
                       class="form-input info-moves-history-date-trigger"
@@ -3800,7 +3805,7 @@ export function renderRole(user) {
                     </div>
                   </div>
                   <div class="form-field info-moves-history-date-field">
-                    <span>Дата ответа</span>
+                    <span class="info-moves-history-filter-label">Дата ответа <button type="button" class="info-moves-history-filter-reset is-hidden" data-info-moves-history-reset="responseDate">Сбросить</button></span>
                     <button
                       type="button"
                       class="form-input info-moves-history-date-trigger"

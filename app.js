@@ -5601,6 +5601,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const infoMovesHistoryFiltersPanelEl = contentEl.querySelector(
     "[data-info-moves-history-filters-panel]"
   );
+  const infoMovesHistoryResetAllEl = contentEl.querySelector(
+    "[data-info-moves-history-reset-all]"
+  );
+  const infoMovesHistoryFilterResetEls = contentEl.querySelectorAll(
+    "[data-info-moves-history-reset]"
+  );
   const infoMovesHistoryPersonDropdownEls = contentEl.querySelectorAll(
     "[data-info-moves-history-person-dropdown]"
   );
@@ -6228,6 +6234,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     filters: {
       number: "",
       accounting: "",
+      sender: [],
+      receiver: [],
       moveDateFrom: "",
       moveDateTo: "",
       responseDateFrom: "",
@@ -12793,11 +12801,24 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     });
   };
 
+  const parseInfoMovesHistoryPersonFilter = (value) => {
+    const raw = String(value ?? "").trim();
+    if (!raw) return [];
+    try {
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed)
+        ? parsed.map((item) => String(item ?? "").trim()).filter(Boolean)
+        : [];
+    } catch (error) {
+      return [];
+    }
+  };
+
   const renderInfoMovesHistoryPersonDropdown = (
     key,
     values,
     emptyLabel,
-    currentValue,
+    currentValues,
     searchTerm = ""
   ) => {
     const dropdownEl = contentEl.querySelector(
@@ -12818,7 +12839,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
     if (clearButtonEl) {
       clearButtonEl.textContent = emptyLabel;
-      clearButtonEl.classList.toggle("is-active", !currentValue);
+      clearButtonEl.classList.toggle("is-active", !currentValues.length);
     }
 
     optionsEl.innerHTML = "";
@@ -12833,29 +12854,37 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         const optionLabelEl = document.createElement("label");
         optionLabelEl.className = "tools-filter-dropdown__option";
         optionLabelEl.setAttribute("for", id);
-        const radioEl = document.createElement("input");
-        radioEl.type = "radio";
-        radioEl.id = id;
-        radioEl.name = `info-moves-history-${key}`;
-        radioEl.value = value;
-        radioEl.checked = value === currentValue;
-        radioEl.dataset.infoMovesHistoryPersonOption = key;
+        const checkboxEl = document.createElement("input");
+        checkboxEl.type = "checkbox";
+        checkboxEl.id = id;
+        checkboxEl.value = value;
+        checkboxEl.checked = currentValues.includes(value);
+        checkboxEl.dataset.infoMovesHistoryPersonOption = key;
         const textEl = document.createElement("span");
         textEl.textContent = value;
-        optionLabelEl.append(radioEl, textEl);
+        optionLabelEl.append(checkboxEl, textEl);
         optionsEl.append(optionLabelEl);
       });
     }
 
-    const safeCurrentValue = values.includes(currentValue) ? currentValue : "";
-    if (hiddenInputEl) hiddenInputEl.value = safeCurrentValue;
-    triggerEl.classList.toggle("is-active", Boolean(safeCurrentValue));
-    triggerEl.textContent = safeCurrentValue || emptyLabel;
+    const safeCurrentValues = currentValues.filter((value) => values.includes(value));
+    if (hiddenInputEl) hiddenInputEl.value = JSON.stringify(safeCurrentValues);
+    triggerEl.classList.toggle("is-active", safeCurrentValues.length > 0);
+    triggerEl.textContent =
+      safeCurrentValues.length === 0
+        ? emptyLabel
+        : safeCurrentValues.length === 1
+          ? safeCurrentValues[0]
+          : `Выбрано: ${safeCurrentValues.length}`;
   };
 
   const updateInfoMovesHistoryResponsibleFilters = () => {
-    const senderValue = String(infoMovesHistoryState.filters.sender ?? "");
-    const receiverValue = String(infoMovesHistoryState.filters.receiver ?? "");
+    const senderValue = Array.isArray(infoMovesHistoryState.filters.sender)
+      ? infoMovesHistoryState.filters.sender
+      : [];
+    const receiverValue = Array.isArray(infoMovesHistoryState.filters.receiver)
+      ? infoMovesHistoryState.filters.receiver
+      : [];
     const senderDropdownEl = contentEl.querySelector(
       '[data-info-moves-history-person-dropdown="sender"]'
     );
@@ -12903,8 +12932,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const getInfoMovesHistoryFilters = () => ({
     number: String(infoMovesHistoryFilterNumberEl?.value ?? "").trim(),
     accounting: String(infoMovesHistoryFilterAccountingEl?.value ?? "").trim(),
-    sender: String(infoMovesHistoryFilterSenderEl?.value ?? "").trim(),
-    receiver: String(infoMovesHistoryFilterReceiverEl?.value ?? "").trim(),
+    sender: parseInfoMovesHistoryPersonFilter(infoMovesHistoryFilterSenderEl?.value ?? ""),
+    receiver: parseInfoMovesHistoryPersonFilter(infoMovesHistoryFilterReceiverEl?.value ?? ""),
     moveDateFrom: String(infoMovesHistoryFilterMoveDateFromEl?.value ?? "").trim(),
     moveDateTo: String(infoMovesHistoryFilterMoveDateToEl?.value ?? "").trim(),
     responseDateFrom: String(infoMovesHistoryFilterResponseDateFromEl?.value ?? "").trim(),
@@ -12937,8 +12966,16 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const applyInfoMovesHistoryFilters = (moves, filters) => {
     const normalizedNumber = normalizeToolNumberValue(filters.number);
     const normalizedAccounting = filters.accounting.toLowerCase();
-    const normalizedSender = filters.sender.toLowerCase();
-    const normalizedReceiver = filters.receiver.toLowerCase();
+    const normalizedSender = new Set(
+      (Array.isArray(filters.sender) ? filters.sender : [])
+        .map((value) => String(value ?? "").trim().toLowerCase())
+        .filter(Boolean)
+    );
+    const normalizedReceiver = new Set(
+      (Array.isArray(filters.receiver) ? filters.receiver : [])
+        .map((value) => String(value ?? "").trim().toLowerCase())
+        .filter(Boolean)
+    );
     return moves.filter((move) => {
       const moveNumber = normalizeToolNumberValue(move?.["Номер"] ?? "");
       const moveAccounting = String(move?.["Бух.номер"] ?? "")
@@ -12956,10 +12993,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       if (normalizedAccounting && !moveAccounting.includes(normalizedAccounting)) {
         return false;
       }
-      if (normalizedSender && !moveSender.includes(normalizedSender)) {
+      if (normalizedSender.size && !normalizedSender.has(moveSender)) {
         return false;
       }
-      if (normalizedReceiver && !moveReceiver.includes(normalizedReceiver)) {
+      if (normalizedReceiver.size && !normalizedReceiver.has(moveReceiver)) {
         return false;
       }
       if (!isDateInRange(moveDate, filters.moveDateFrom, filters.moveDateTo)) return false;
@@ -13145,6 +13182,46 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     return row;
   };
 
+  const resetInfoMovesHistoryFilter = (key) => {
+    if (key === "number" && infoMovesHistoryFilterNumberEl) infoMovesHistoryFilterNumberEl.value = "";
+    if (key === "accounting" && infoMovesHistoryFilterAccountingEl) infoMovesHistoryFilterAccountingEl.value = "";
+    if (key === "sender" && infoMovesHistoryFilterSenderEl) infoMovesHistoryFilterSenderEl.value = "";
+    if (key === "receiver" && infoMovesHistoryFilterReceiverEl) infoMovesHistoryFilterReceiverEl.value = "";
+    if (key === "moveDate") {
+      if (infoMovesHistoryFilterMoveDateFromEl) infoMovesHistoryFilterMoveDateFromEl.value = "";
+      if (infoMovesHistoryFilterMoveDateToEl) infoMovesHistoryFilterMoveDateToEl.value = "";
+      updateInfoMovesHistoryDateTrigger("move");
+      renderInfoMovesHistoryCalendar("move");
+    }
+    if (key === "responseDate") {
+      if (infoMovesHistoryFilterResponseDateFromEl) infoMovesHistoryFilterResponseDateFromEl.value = "";
+      if (infoMovesHistoryFilterResponseDateToEl) infoMovesHistoryFilterResponseDateToEl.value = "";
+      updateInfoMovesHistoryDateTrigger("response");
+      renderInfoMovesHistoryCalendar("response");
+    }
+    if (key === "all") {
+      ["number", "accounting", "sender", "receiver", "moveDate", "responseDate"].forEach((item) => resetInfoMovesHistoryFilter(item));
+      return;
+    }
+  };
+
+  const updateInfoMovesHistoryResetButtons = () => {
+    const filters = getInfoMovesHistoryFilters();
+    const active = {
+      number: Boolean(filters.number),
+      accounting: Boolean(filters.accounting),
+      sender: Array.isArray(filters.sender) && filters.sender.length > 0,
+      receiver: Array.isArray(filters.receiver) && filters.receiver.length > 0,
+      moveDate: Boolean(filters.moveDateFrom || filters.moveDateTo),
+      responseDate: Boolean(filters.responseDateFrom || filters.responseDateTo),
+    };
+    infoMovesHistoryFilterResetEls.forEach((buttonEl) => {
+      const key = String(buttonEl.dataset.infoMovesHistoryReset ?? "").trim();
+      buttonEl.classList.toggle("is-hidden", !active[key]);
+    });
+    infoMovesHistoryResetAllEl?.classList.toggle("is-hidden", !Object.values(active).some(Boolean));
+  };
+
   const renderInfoMovesHistoryList = () => {
     if (infoMovesHistoryListEl) infoMovesHistoryListEl.innerHTML = "";
     infoMovesHistoryState.filters = getInfoMovesHistoryFilters();
@@ -13153,6 +13230,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       infoMovesHistoryState.filters
     );
     infoMovesHistoryState.filteredMoves = filteredMoves;
+    updateInfoMovesHistoryResetButtons();
 
     if (infoMovesHistorySummaryEl) {
       infoMovesHistorySummaryEl.textContent = infoMovesHistoryState.allMoves.length
@@ -13246,6 +13324,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     document.body.style.overflow = "hidden";
     updateInfoMovesHistoryDateTrigger("move");
     updateInfoMovesHistoryDateTrigger("response");
+    updateInfoMovesHistoryResetButtons();
     setInfoMovesHistoryFiltersOpen(false);
     await loadInfoMovesHistory();
   };
@@ -14300,13 +14379,29 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         infoMovesHistoryFilterReceiverEl.value = "";
       }
       if (searchEl instanceof HTMLInputElement) searchEl.value = "";
-      setInfoMovesHistoryPersonDropdownOpen("", false);
       renderInfoMovesHistoryList();
       updateInfoMovesHistoryResponsibleFilters();
     });
     searchEl?.addEventListener("input", () => {
       updateInfoMovesHistoryResponsibleFilters();
     });
+  });
+
+  infoMovesHistoryFilterResetEls.forEach((buttonEl) => {
+    buttonEl.addEventListener("click", (event) => {
+      event.stopPropagation();
+      const key = String(buttonEl.dataset.infoMovesHistoryReset ?? "").trim();
+      if (!key) return;
+      resetInfoMovesHistoryFilter(key);
+      renderInfoMovesHistoryList();
+      updateInfoMovesHistoryResponsibleFilters();
+    });
+  });
+  infoMovesHistoryResetAllEl?.addEventListener("click", (event) => {
+    event.stopPropagation();
+    resetInfoMovesHistoryFilter("all");
+    renderInfoMovesHistoryList();
+    updateInfoMovesHistoryResponsibleFilters();
   });
 
   [
@@ -14386,16 +14481,18 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   });
   infoMovesHistoryFiltersPanelEl?.addEventListener("change", (event) => {
     const target = event.target instanceof HTMLInputElement ? event.target : null;
-    if (!target || target.type !== "radio") return;
+    if (!target || target.type !== "checkbox") return;
     const key = String(target.dataset.infoMovesHistoryPersonOption ?? "").trim();
     if (!key) return;
-    if (key === "sender" && infoMovesHistoryFilterSenderEl) {
-      infoMovesHistoryFilterSenderEl.value = target.value;
+    const hiddenInputEl = key === "sender" ? infoMovesHistoryFilterSenderEl : infoMovesHistoryFilterReceiverEl;
+    const selected = parseInfoMovesHistoryPersonFilter(hiddenInputEl?.value ?? "");
+    const next = new Set(selected);
+    if (target.checked) {
+      next.add(target.value);
+    } else {
+      next.delete(target.value);
     }
-    if (key === "receiver" && infoMovesHistoryFilterReceiverEl) {
-      infoMovesHistoryFilterReceiverEl.value = target.value;
-    }
-    setInfoMovesHistoryPersonDropdownOpen("", false);
+    if (hiddenInputEl) hiddenInputEl.value = JSON.stringify(Array.from(next));
     renderInfoMovesHistoryList();
     updateInfoMovesHistoryResponsibleFilters();
   });

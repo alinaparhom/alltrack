@@ -300,6 +300,28 @@ async function loadUserPendingMovesCount(orgFolderName, user) {
   return moves.length;
 }
 
+async function loadUserToolsCount(orgFolderName, user) {
+  if (!orgFolderName || !user) return 0;
+  const userName = normalizePersonName(user.full_name ?? user.fullName ?? "");
+  if (!userName) return 0;
+  const toolsPath = `./${orgFolderName}/База с инструментами.json`;
+  try {
+    const rawTools = await loadJson(toolsPath);
+    const tools = Array.isArray(rawTools)
+      ? rawTools
+      : Array.isArray(rawTools?.tools)
+        ? rawTools.tools
+        : [];
+    return tools.filter((tool) => {
+      const responsible = normalizePersonName(tool?.["Ответственный"] ?? "");
+      return responsible && responsible === userName;
+    }).length;
+  } catch (error) {
+    console.warn("Не удалось загрузить инструменты для счётчика.", error);
+  }
+  return 0;
+}
+
 function getToolNumberVariants(value) {
   const raw = String(value ?? "").trim();
   const match = raw.match(/\d+/);
@@ -3192,10 +3214,15 @@ function createEnergyActionCard(action) {
     isToolsReplacementActionId(action.id)
       ? `<span class="action-card__badge is-hidden" data-tools-replacement-count data-tools-replacement-action-id="${action.id}"></span>`
       : "";
+  const toolsBadge =
+    action.id === "tools"
+      ? '<span class="action-card__badge" data-my-tools-count>0</span>'
+      : "";
   button.innerHTML = `
     <span class="action-icon">${action.icon}</span>
     <div class="action-title action-title--fit">${action.title}</div>
     ${replacementBadge}
+    ${toolsBadge}
   `;
   return button;
 }
@@ -5747,6 +5774,25 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
   let quickAccessIds = resolveQuickAccessIds();
   let quickAccessDraft = [...quickAccessIds];
+  let myToolsCount =
+    context?.orgFolderName && user
+      ? await loadUserToolsCount(context.orgFolderName, user)
+      : 0;
+
+  const updateMyToolsBadge = (count) => {
+    const safeCount = Number.isFinite(Number(count)) ? Math.max(0, Number(count)) : 0;
+    const badgeTitle = `Мои инструменты: ${safeCount}`;
+    document
+      .querySelectorAll("[data-my-tools-count]")
+      .forEach((badgeEl) => {
+        badgeEl.textContent = String(safeCount);
+        const parentButton = badgeEl.closest("button");
+        if (parentButton) {
+          parentButton.setAttribute("title", badgeTitle);
+          parentButton.setAttribute("aria-label", badgeTitle);
+        }
+      });
+  };
 
   const getQuickAccessOrderFromDom = () => {
     if (!quickAccessListEl) return [];
@@ -5768,10 +5814,14 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const replacementBadge = isToolsReplacementActionId(action.id)
       ? `<span class="quick-access-item__badge is-hidden" data-tools-replacement-count data-tools-replacement-action-id="${action.id}"></span>`
       : "";
+    const toolsBadge =
+      action.id === "tools"
+        ? '<span class="quick-access-item__badge" data-my-tools-count>0</span>'
+        : "";
     const iconMarkup = isToolsReplacementActionId(action.id)
       ? `<span aria-hidden="true" data-tools-replacement-icon data-tools-replacement-action-id="${action.id}">${action.icon}</span>`
       : `<span aria-hidden="true">${action.icon}</span>`;
-    button.innerHTML = `${iconMarkup}${replacementBadge}`;
+    button.innerHTML = `${iconMarkup}${replacementBadge}${toolsBadge}`;
     return button;
   };
 
@@ -5851,6 +5901,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     updateQuickAccessOffset();
     syncQuickAccessPendingIndicator();
     updateToolsReplacementIndicator();
+    updateMyToolsBadge(myToolsCount);
   };
 
   const scrollToQuickAccess = () => {
@@ -5921,6 +5972,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   renderEnergyGrid();
   renderQuickAccessList();
   updateToolsReplacementIndicator();
+  updateMyToolsBadge(myToolsCount);
   requestAnimationFrame(() => {
     scrollToQuickAccess();
   });

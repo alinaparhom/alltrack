@@ -5958,6 +5958,18 @@
         position: static;
       }
 
+      .tools-move-modal .tools-move-modal__actions {
+        justify-content: space-between;
+      }
+
+      .tools-move-modal .tools-move-modal__actions .action-secondary {
+        order: 1;
+      }
+
+      .tools-move-modal .tools-move-modal__actions .action-primary {
+        order: 2;
+      }
+
       .tools-move-modal .suggestions {
         top: calc(100% + 4px);
         padding: 6px;
@@ -5983,6 +5995,8 @@
 
         .tools-move-modal .settings-modal__footer {
           justify-content: space-between;
+          flex-direction: row;
+          align-items: center;
         }
 
         .tools-move-modal .settings-modal__footer .action-primary,

@@ -1857,7 +1857,7 @@ export function renderRole(user) {
                 </div>
                 <div class="form-message" data-tools-move-message></div>
               </div>
-              <div class="settings-modal__footer">
+              <div class="settings-modal__footer tools-move-modal__actions">
                 <button
                   class="action-secondary"
                   type="button"

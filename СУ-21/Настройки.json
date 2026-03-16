@@ -1,1 +1,203 @@
-
+{
+    "users": [],
+    "organization": {
+        "access": {
+            "Ответственный": [
+                "tools",
+                "add-tool",
+                "base",
+                "search",
+                "move-other",
+                "write-off",
+                "write-off-pending",
+                "repair",
+                "breakdowns",
+                "demand",
+                "objects",
+                "info",
+                "download",
+                "add-photo",
+                "remove-photo",
+                "no-photo",
+                "fines",
+                "users",
+                "settings"
+            ],
+            "Главный инженер": [
+                "tools",
+                "add-tool",
+                "base",
+                "search",
+                "move-other",
+                "write-off",
+                "write-off-pending",
+                "repair",
+                "breakdowns",
+                "demand",
+                "objects",
+                "info",
+                "download",
+                "add-photo",
+                "remove-photo",
+                "no-photo",
+                "fines",
+                "users",
+                "settings"
+            ],
+            "Руководитель": [
+                "tools",
+                "add-tool",
+                "base",
+                "search",
+                "move-other",
+                "write-off",
+                "write-off-pending",
+                "repair",
+                "breakdowns",
+                "demand",
+                "objects",
+                "info",
+                "download",
+                "add-photo",
+                "remove-photo",
+                "no-photo",
+                "fines",
+                "users",
+                "settings"
+            ],
+            "Бухгалтерия": [
+                "tools",
+                "add-tool",
+                "base",
+                "search",
+                "move-other",
+                "write-off",
+                "write-off-pending",
+                "repair",
+                "breakdowns",
+                "demand",
+                "objects",
+                "info",
+                "download",
+                "add-photo",
+                "remove-photo",
+                "no-photo",
+                "fines",
+                "users",
+                "settings"
+            ]
+        },
+        "stcGroups": [
+            "Инструмент",
+            "Бытовки",
+            "Формы",
+            "Тарг",
+            "Геодезия",
+            "Орг.техника",
+            "Леса",
+            "Навесы"
+        ],
+        "telegramGroups": [],
+        "fines": {
+            "lateReply": {
+                "enabled": true,
+                "days": 3,
+                "amount": 0
+            },
+            "noPhoto": {
+                "enabled": true,
+                "days": 1,
+                "amount": 0
+            },
+            "movedByEnergy": {
+                "enabled": true,
+                "days": 0,
+                "amount": 0
+            }
+        },
+        "mailings": {
+            "moveReplies": {
+                "enabled": true,
+                "toolGroups": [],
+                "telegramSchedule": []
+            },
+            "repairs": {
+                "enabled": true,
+                "toolGroups": [],
+                "telegramSchedule": []
+            },
+            "noPhoto": {
+                "enabled": true,
+                "toolGroups": [],
+                "telegramSchedule": []
+            },
+            "noAccountingNumber": {
+                "enabled": true,
+                "toolGroups": [],
+                "telegramSchedule": []
+            }
+        },
+        "notifications": {
+            "newTool": {
+                "enabled": false,
+                "groups": [],
+                "attachPhoto": true
+            },
+            "moveTool": {
+                "enabled": false,
+                "groups": [],
+                "attachPhoto": true
+            },
+            "acceptTool": {
+                "enabled": false,
+                "groups": [],
+                "attachPhoto": true
+            },
+            "declineTool": {
+                "enabled": false,
+                "groups": [],
+                "attachPhoto": true
+            },
+            "moveByEnergy": {
+                "enabled": false,
+                "groups": [],
+                "attachPhoto": true
+            },
+            "toolBreakdown": {
+                "enabled": false,
+                "groups": [],
+                "attachPhoto": true
+            },
+            "fixBreakdown": {
+                "enabled": false,
+                "groups": [],
+                "attachPhoto": true
+            },
+            "sendToRepair": {
+                "enabled": false,
+                "groups": [],
+                "attachPhoto": true
+            },
+            "repaired": {
+                "enabled": false,
+                "groups": [],
+                "attachPhoto": true
+            },
+            "writeOff": {
+                "enabled": false,
+                "groups": [],
+                "attachPhoto": true
+            },
+            "finesIssued": {
+                "enabled": false,
+                "groups": [],
+                "attachPhoto": true
+            }
+        },
+        "dataUsage": {
+            "serialNumber": true,
+            "cost": true,
+            "serviceLife": true
+        }
+    }
+}

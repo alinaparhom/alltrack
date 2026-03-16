@@ -20850,7 +20850,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (!feedbackHintEl || !feedbackAnonymousEl) return;
     feedbackHintEl.textContent = feedbackAnonymousEl.checked
       ? "Обращение отправится анонимно. Ответ от администраторов вы не получите 😔"
-      : "Обращение отправится с вашими данными, чтобы вам могли ответить.";
+      : "Обращение отправится с вашими данными, чтобы вам могли ответить 🙂";
   };
 
   const closeFeedbackModal = () => {

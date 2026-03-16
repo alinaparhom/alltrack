@@ -5866,6 +5866,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const writeOffActsInput = contentEl.querySelector("[data-writeoff-acts]");
 
   const context = contextOverride || (await resolveUserSettingsContext(user));
+  const isChiefEngineerDashboard = user?.role === chiefEngineerRole;
   const settingsData = context.settingsData;
   const organizationSettings = getEnergyOrganizationSettings(settingsData);
   const resolveVacationReplacements = async () => {
@@ -5929,7 +5930,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     icon: "🚚",
   };
   const actionsMap = new Map(availableActions.map((action) => [action.id, action]));
-  const quickAccessOptions = [...availableActions, pendingQuickAccessOption];
+  const quickAccessOptions = isChiefEngineerDashboard
+    ? [...availableActions]
+    : [...availableActions, pendingQuickAccessOption];
   const quickAccessOptionsMap = new Map(
     quickAccessOptions.map((action) => [action.id, action])
   );
@@ -5943,11 +5946,25 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     forceToggleLast:
       !layoutCustomized && isDefaultEnergyLayout(savedLayout, availableActions),
   });
-  const layoutToRender = applyGroupingPreference(
+  const layoutToRenderRaw = applyGroupingPreference(
     normalizedLayout,
     availableActions,
     groupingPreference
   );
+  const layoutToRender = isChiefEngineerDashboard
+    ? layoutToRenderRaw
+        .flatMap((item) => {
+          if (item?.type === "action" && item.id) return [{ type: "action", id: item.id }];
+          if (item?.type === "group" && Array.isArray(item.items)) {
+            return item.items.map((actionId) => ({ type: "action", id: actionId }));
+          }
+          return [];
+        })
+        .filter(
+          (item, index, list) =>
+            list.findIndex((candidate) => candidate.id === item.id) === index
+        )
+    : layoutToRenderRaw;
 
   const resolveQuickAccessIds = () => {
     const saved = settingsData.users?.[context.userKey]?.energy?.quickAccess;
@@ -6193,7 +6210,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   }
 
   const groupToggle = contentEl.querySelector("[data-energy-group-toggle]");
-  const allowGrouping = groupingPreference === "free";
+  const allowGrouping = !isChiefEngineerDashboard && groupingPreference === "free";
   let isGrouping = false;
   let blockClick = false;
   const selectedIds = new Set();

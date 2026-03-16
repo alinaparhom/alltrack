@@ -10799,7 +10799,14 @@
         }
 
         .info-by-dates-calendar__actions {
-          grid-template-columns: 1fr;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 8px;
+        }
+
+        .info-by-dates-calendar__action-button {
+          min-height: 38px;
+          padding: 9px 10px;
+          font-size: 12px;
         }
 
         .info-by-dates-tab {

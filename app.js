@@ -4036,9 +4036,15 @@ function normalizeEnergyOrganizationSettings(raw) {
   const telegramGroups = normalizeTelegramGroupsList(source.telegramGroups);
   const access = {};
   energySettingsRoles.forEach((role) => {
-    const allowed = Array.isArray(source.access?.[role])
-      ? source.access[role]
-      : defaults.access[role];
+    const roleAccessFromSettings = source.access?.[role];
+    const hasRoleAccessInSettings = Array.isArray(roleAccessFromSettings);
+    const fallbackRole = role === chiefEngineerRole ? responsibleRole : role;
+    const fallbackAccessFromSettings = source.access?.[fallbackRole];
+    const allowed = hasRoleAccessInSettings
+      ? roleAccessFromSettings
+      : Array.isArray(fallbackAccessFromSettings)
+      ? fallbackAccessFromSettings
+      : defaults.access[fallbackRole] ?? defaults.access[role];
     access[role] = allowed.filter((actionId) =>
       defaults.access[role].includes(actionId)
     );

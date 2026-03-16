@@ -3714,6 +3714,26 @@ export function renderRole(user) {
                     />
                   </label>
                 </div>
+                <div class="info-moves-history-filters__row">
+                  <label class="form-field">
+                    <span>По передающему</span>
+                    <input
+                      class="form-input"
+                      type="text"
+                      placeholder="Введите ФИО"
+                      data-info-moves-history-filter-sender
+                    />
+                  </label>
+                  <label class="form-field">
+                    <span>По принимающему</span>
+                    <input
+                      class="form-input"
+                      type="text"
+                      placeholder="Введите ФИО"
+                      data-info-moves-history-filter-receiver
+                    />
+                  </label>
+                </div>
                 <div class="info-moves-history-filters__row info-moves-history-filters__row--dates">
                   <div class="form-field info-moves-history-date-field">
                     <span>Дата перемещения</span>

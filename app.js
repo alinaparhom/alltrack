@@ -5613,6 +5613,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const infoMovesHistoryFilterAccountingEl = contentEl.querySelector(
     "[data-info-moves-history-filter-accounting]"
   );
+  const infoMovesHistoryFilterSenderEl = contentEl.querySelector(
+    "[data-info-moves-history-filter-sender]"
+  );
+  const infoMovesHistoryFilterReceiverEl = contentEl.querySelector(
+    "[data-info-moves-history-filter-receiver]"
+  );
   const infoMovesHistoryFilterMoveDateFromEl = contentEl.querySelector(
     "[data-info-moves-history-filter-move-date-from]"
   );
@@ -10291,6 +10297,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const moveAccounting = String(move?.["Бух.номер"] ?? "")
         .trim()
         .toLowerCase();
+      const moveSender = String(move?.["Переместил"] ?? "")
+        .trim()
+        .toLowerCase();
+      const moveReceiver = String(move?.["Принял"] ?? "")
+        .trim()
+        .toLowerCase();
       const moveDate = formatIsoDateValue(parseDateValue(move?.["Дата перемещения"]));
       const responseDate = formatIsoDateValue(parseDateValue(move?.["Дата ответа"]));
       if (normalizedNumber && moveNumber !== normalizedNumber) return false;
@@ -12737,6 +12749,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const getInfoMovesHistoryFilters = () => ({
     number: String(infoMovesHistoryFilterNumberEl?.value ?? "").trim(),
     accounting: String(infoMovesHistoryFilterAccountingEl?.value ?? "").trim(),
+    sender: String(infoMovesHistoryFilterSenderEl?.value ?? "").trim(),
+    receiver: String(infoMovesHistoryFilterReceiverEl?.value ?? "").trim(),
     moveDateFrom: String(infoMovesHistoryFilterMoveDateFromEl?.value ?? "").trim(),
     moveDateTo: String(infoMovesHistoryFilterMoveDateToEl?.value ?? "").trim(),
     responseDateFrom: String(infoMovesHistoryFilterResponseDateFromEl?.value ?? "").trim(),
@@ -12769,15 +12783,29 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const applyInfoMovesHistoryFilters = (moves, filters) => {
     const normalizedNumber = normalizeToolNumberValue(filters.number);
     const normalizedAccounting = filters.accounting.toLowerCase();
+    const normalizedSender = filters.sender.toLowerCase();
+    const normalizedReceiver = filters.receiver.toLowerCase();
     return moves.filter((move) => {
       const moveNumber = normalizeToolNumberValue(move?.["Номер"] ?? "");
       const moveAccounting = String(move?.["Бух.номер"] ?? "")
+        .trim()
+        .toLowerCase();
+      const moveSender = String(move?.["Переместил"] ?? "")
+        .trim()
+        .toLowerCase();
+      const moveReceiver = String(move?.["Принял"] ?? "")
         .trim()
         .toLowerCase();
       const moveDate = formatIsoDateValue(parseDateValue(move?.["Дата перемещения"]));
       const responseDate = formatIsoDateValue(parseDateValue(move?.["Дата ответа"]));
       if (normalizedNumber && moveNumber !== normalizedNumber) return false;
       if (normalizedAccounting && !moveAccounting.includes(normalizedAccounting)) {
+        return false;
+      }
+      if (normalizedSender && !moveSender.includes(normalizedSender)) {
+        return false;
+      }
+      if (normalizedReceiver && !moveReceiver.includes(normalizedReceiver)) {
         return false;
       }
       if (!isDateInRange(moveDate, filters.moveDateFrom, filters.moveDateTo)) return false;
@@ -14099,6 +14127,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   [
     infoMovesHistoryFilterNumberEl,
     infoMovesHistoryFilterAccountingEl,
+    infoMovesHistoryFilterSenderEl,
+    infoMovesHistoryFilterReceiverEl,
     infoMovesHistoryFilterMoveDateFromEl,
     infoMovesHistoryFilterMoveDateToEl,
     infoMovesHistoryFilterResponseDateFromEl,

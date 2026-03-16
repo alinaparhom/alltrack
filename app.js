@@ -157,7 +157,6 @@ const energyDashboardRoles = new Set([
   accountingRole,
 ]);
 const energyResponsibleAccessRoles = new Set([
-  chiefEngineerRole,
   leaderRole,
   accountingRole,
 ]);

@@ -3837,6 +3837,49 @@ export function renderRole(user) {
             </div>
           </div>
         </div>
+        <div class="settings-modal info-by-dates-modal is-hidden" data-info-by-dates-modal>
+          <div class="settings-modal__backdrop" data-info-by-dates-backdrop></div>
+          <div
+            class="settings-modal__panel info-by-dates-modal__panel"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Действия по датам"
+          >
+            <div class="settings-modal__header info-by-dates-modal__header">
+              <div class="settings-modal__title">
+                <h2>По датам</h2>
+                <p data-info-by-dates-subtitle>Выберите дату или диапазон дат.</p>
+              </div>
+              <button class="button-icon" type="button" data-info-by-dates-close aria-label="Закрыть">
+                <span class="button-icon-emoji" aria-hidden="true">✕</span>
+              </button>
+            </div>
+            <div class="settings-modal__body info-by-dates-modal__body">
+              <div class="info-by-dates-calendar" data-info-by-dates-calendar>
+                <div class="download-moves-calendar__header">
+                  <button type="button" class="download-moves-calendar__nav" data-info-by-dates-calendar-prev aria-label="Предыдущий месяц">◀</button>
+                  <div class="download-moves-calendar__month" data-info-by-dates-calendar-month-label></div>
+                  <button type="button" class="download-moves-calendar__nav" data-info-by-dates-calendar-next aria-label="Следующий месяц">▶</button>
+                </div>
+                <div class="download-moves-calendar__weekdays" aria-hidden="true">
+                  <span>Пн</span><span>Вт</span><span>Ср</span><span>Чт</span><span>Пт</span><span>Сб</span><span>Вс</span>
+                </div>
+                <div class="download-moves-calendar__days" data-info-by-dates-calendar-days></div>
+                <div class="download-moves-calendar__selected" data-info-by-dates-calendar-selected-range></div>
+              </div>
+
+              <div class="info-by-dates-tabs" data-info-by-dates-tabs>
+                <button type="button" class="info-by-dates-tab is-active" data-info-by-dates-tab="registrations">Регистрации</button>
+                <button type="button" class="info-by-dates-tab" data-info-by-dates-tab="moves">Перемещения</button>
+                <button type="button" class="info-by-dates-tab" data-info-by-dates-tab="writeoff">Списания</button>
+              </div>
+
+              <div class="info-by-dates-summary" data-info-by-dates-summary></div>
+              <div class="info-by-dates-list" data-info-by-dates-list></div>
+              <div class="tools-empty is-hidden" data-info-by-dates-empty>За выбранные даты данных нет.</div>
+            </div>
+          </div>
+        </div>
         <div class="quick-access" data-quick-access>
           <div class="quick-access-list" data-quick-access-list></div>
         </div>

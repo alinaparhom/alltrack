@@ -120,6 +120,7 @@
       body[data-theme="dark"] .info-moves-history-modal__panel,
       body[data-theme="dark"] .info-moves-history-filters,
       body[data-theme="dark"] .info-moves-history-item,
+      body[data-theme="dark"] .info-by-dates-tab,
       body[data-theme="dark"] .button-icon,
       body[data-theme="dark"] .button-secondary,
       body[data-theme="dark"] .registration-note,
@@ -3774,6 +3775,90 @@
 
       .info-moves-history-modal {
         z-index: 60;
+      }
+
+      .info-by-dates-modal {
+        z-index: 64;
+      }
+
+      .info-by-dates-modal__panel {
+        width: 100vw;
+        max-width: 100vw;
+        height: 100vh;
+        height: 100svh;
+        height: 100dvh;
+        max-height: 100vh;
+        max-height: 100svh;
+        max-height: 100dvh;
+        border-radius: 0;
+        overflow: hidden;
+        background: linear-gradient(180deg, rgba(248, 251, 255, 0.99), rgba(241, 246, 255, 0.97));
+      }
+
+      .info-by-dates-modal__header {
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: start;
+      }
+
+      .info-by-dates-modal__body {
+        display: grid;
+        grid-template-rows: auto auto auto minmax(0, 1fr);
+        gap: 10px;
+        min-height: 0;
+        overflow: hidden;
+        padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+      }
+
+      .info-by-dates-calendar {
+        position: sticky;
+        top: 0;
+        z-index: 20;
+      }
+
+      .info-by-dates-tabs {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
+      }
+
+      .info-by-dates-tab {
+        min-height: 40px;
+        border-radius: 12px;
+        border: 1px solid rgba(148, 163, 184, 0.28);
+        background: rgba(255, 255, 255, 0.78);
+        color: var(--text);
+        font-size: 13px;
+        font-weight: 700;
+      }
+
+      .info-by-dates-tab.is-active {
+        border-color: rgba(59, 125, 255, 0.42);
+        background: linear-gradient(135deg, rgba(93, 155, 255, 0.95), rgba(59, 125, 255, 0.95));
+        color: #fff;
+      }
+
+      .info-by-dates-summary {
+        font-size: var(--text-sm);
+        color: var(--muted);
+      }
+
+      .info-by-dates-list {
+        display: grid;
+        gap: 8px;
+        min-height: 0;
+        overflow: auto;
+        padding-right: 2px;
+        padding-bottom: 16px;
+      }
+
+      body[data-theme="dark"] .info-by-dates-modal__panel {
+        background: linear-gradient(180deg, rgba(10, 16, 30, 0.98), rgba(15, 22, 40, 0.95));
+      }
+
+      body[data-theme="dark"] .info-by-dates-tab {
+        background: rgba(23, 31, 52, 0.92);
+        border-color: rgba(148, 170, 210, 0.35);
+        color: var(--text);
       }
 
       .info-moves-history-modal__panel {
@@ -10643,6 +10728,10 @@
         .info-hub-option {
           min-height: 72px;
           padding: 11px;
+        }
+
+        .info-by-dates-tabs {
+          grid-template-columns: 1fr;
         }
       }
 

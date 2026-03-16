@@ -5946,7 +5946,7 @@
 
       .tools-move-modal .settings-modal__footer {
         display: flex;
-        flex-wrap: wrap;
+        flex-wrap: nowrap;
         gap: 10px;
         align-items: center;
         justify-content: flex-end;
@@ -5982,14 +5982,14 @@
         }
 
         .tools-move-modal .settings-modal__footer {
-          justify-content: stretch;
+          justify-content: space-between;
         }
 
         .tools-move-modal .settings-modal__footer .action-primary,
         .tools-move-modal .settings-modal__footer .action-secondary {
-          width: 100%;
-          min-width: 100%;
-          max-width: 100%;
+          width: calc(50% - 5px);
+          min-width: 0;
+          max-width: none;
         }
       }
 

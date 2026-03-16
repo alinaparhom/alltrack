@@ -5586,6 +5586,39 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const infoPendingCalendarSelectedRangeEl = contentEl.querySelector(
     "[data-info-pending-calendar-selected-range]"
   );
+  const infoMovesHistoryModalEl = contentEl.querySelector(
+    "[data-info-moves-history-modal]"
+  );
+  const infoMovesHistoryBackdropEl = contentEl.querySelector(
+    "[data-info-moves-history-backdrop]"
+  );
+  const infoMovesHistoryCloseButton = contentEl.querySelector(
+    "[data-info-moves-history-close]"
+  );
+  const infoMovesHistorySubtitleEl = contentEl.querySelector(
+    "[data-info-moves-history-subtitle]"
+  );
+  const infoMovesHistorySummaryEl = contentEl.querySelector(
+    "[data-info-moves-history-summary]"
+  );
+  const infoMovesHistoryListEl = contentEl.querySelector(
+    "[data-info-moves-history-list]"
+  );
+  const infoMovesHistoryEmptyEl = contentEl.querySelector(
+    "[data-info-moves-history-empty]"
+  );
+  const infoMovesHistoryFilterNumberEl = contentEl.querySelector(
+    "[data-info-moves-history-filter-number]"
+  );
+  const infoMovesHistoryFilterAccountingEl = contentEl.querySelector(
+    "[data-info-moves-history-filter-accounting]"
+  );
+  const infoMovesHistoryFilterMoveDateEl = contentEl.querySelector(
+    "[data-info-moves-history-filter-move-date]"
+  );
+  const infoMovesHistoryFilterResponseDateEl = contentEl.querySelector(
+    "[data-info-moves-history-filter-response-date]"
+  );
   const toolsCancelMoveModalEl = contentEl.querySelector(
     "[data-tools-cancel-move-modal]"
   );
@@ -6126,6 +6159,16 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     isFiltersOpen: false,
     isDatePickerOpen: false,
     isSortOpen: false,
+  };
+  const infoMovesHistoryState = {
+    allMoves: [],
+    filteredMoves: [],
+    filters: {
+      number: "",
+      accounting: "",
+      moveDate: "",
+      responseDate: "",
+    },
   };
   const pendingMovePhotoViewerEl = document.createElement("div");
   pendingMovePhotoViewerEl.className = "settings-modal pending-photo-viewer is-hidden";
@@ -12636,6 +12679,161 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     await loadInfoPendingList();
   };
 
+  const getInfoMovesHistoryFilters = () => ({
+    number: String(infoMovesHistoryFilterNumberEl?.value ?? "").trim(),
+    accounting: String(infoMovesHistoryFilterAccountingEl?.value ?? "").trim(),
+    moveDate: String(infoMovesHistoryFilterMoveDateEl?.value ?? "").trim(),
+    responseDate: String(infoMovesHistoryFilterResponseDateEl?.value ?? "").trim(),
+  });
+
+  const applyInfoMovesHistoryFilters = (moves, filters) => {
+    const normalizedNumber = normalizeToolNumberValue(filters.number);
+    const normalizedAccounting = filters.accounting.toLowerCase();
+    return moves.filter((move) => {
+      const moveNumber = normalizeToolNumberValue(move?.["Номер"] ?? "");
+      const moveAccounting = String(move?.["Бух.номер"] ?? "")
+        .trim()
+        .toLowerCase();
+      const moveDate = formatIsoDateValue(parseDateValue(move?.["Дата перемещения"]));
+      const responseDate = formatIsoDateValue(parseDateValue(move?.["Дата ответа"]));
+      if (normalizedNumber && moveNumber !== normalizedNumber) return false;
+      if (normalizedAccounting && !moveAccounting.includes(normalizedAccounting)) {
+        return false;
+      }
+      if (filters.moveDate && moveDate !== filters.moveDate) return false;
+      if (filters.responseDate && responseDate !== filters.responseDate) return false;
+      return true;
+    });
+  };
+
+  const buildInfoMovesHistoryRow = (label, value) => {
+    const row = document.createElement("div");
+    row.className = "info-moves-history-item__row";
+    const labelEl = document.createElement("div");
+    labelEl.className = "info-moves-history-item__label";
+    labelEl.textContent = label;
+    const valueEl = document.createElement("div");
+    valueEl.className = "info-moves-history-item__value";
+    valueEl.textContent = formatInfoValue(value);
+    row.append(labelEl, valueEl);
+    return row;
+  };
+
+  const renderInfoMovesHistoryList = () => {
+    if (infoMovesHistoryListEl) infoMovesHistoryListEl.innerHTML = "";
+    infoMovesHistoryState.filters = getInfoMovesHistoryFilters();
+    const filteredMoves = applyInfoMovesHistoryFilters(
+      infoMovesHistoryState.allMoves,
+      infoMovesHistoryState.filters
+    );
+    infoMovesHistoryState.filteredMoves = filteredMoves;
+
+    if (infoMovesHistorySummaryEl) {
+      infoMovesHistorySummaryEl.textContent = infoMovesHistoryState.allMoves.length
+        ? `Показано: ${filteredMoves.length} из ${infoMovesHistoryState.allMoves.length}`
+        : "Перемещений пока нет.";
+    }
+
+    if (infoMovesHistoryEmptyEl) {
+      infoMovesHistoryEmptyEl.classList.toggle("is-hidden", filteredMoves.length > 0);
+      if (infoMovesHistoryState.allMoves.length > 0 && filteredMoves.length === 0) {
+        infoMovesHistoryEmptyEl.textContent = "По заданным фильтрам перемещений нет.";
+      } else {
+        infoMovesHistoryEmptyEl.textContent = "Перемещения не найдены.";
+      }
+    }
+
+    if (!infoMovesHistoryListEl) return;
+    filteredMoves.forEach((move) => {
+      const item = document.createElement("article");
+      item.className = "info-moves-history-item";
+      const response = String(move?.["Ответ"] ?? "").trim().toLowerCase();
+      if (response === "не принял") {
+        item.classList.add("info-moves-history-item--danger");
+      }
+
+      const title = document.createElement("div");
+      title.className = "info-moves-history-item__title";
+      title.textContent = formatInfoValue(move?.["Дата перемещения"]);
+
+      const grid = document.createElement("div");
+      grid.className = "info-moves-history-item__grid";
+      grid.append(
+        buildInfoMovesHistoryRow("Номер инструмента", move?.["Номер"]),
+        buildInfoMovesHistoryRow("Бух.номер", move?.["Бух.номер"]),
+        buildInfoMovesHistoryRow("Переместил", move?.["Переместил"]),
+        buildInfoMovesHistoryRow("Принял", move?.["Принял"]),
+        buildInfoMovesHistoryRow("Старый объект", move?.["Старый объект"]),
+        buildInfoMovesHistoryRow("Новый объект", move?.["Новый объект"]),
+        buildInfoMovesHistoryRow("Дата ответа", move?.["Дата ответа"]),
+        buildInfoMovesHistoryRow("Ответ", move?.["Ответ"])
+      );
+
+      item.append(title, grid);
+      infoMovesHistoryListEl.appendChild(item);
+    });
+  };
+
+  const loadInfoMovesHistory = async () => {
+    if (infoMovesHistorySubtitleEl) {
+      infoMovesHistorySubtitleEl.textContent = "Загружаем данные...";
+    }
+    if (!context.orgFolderName) {
+      infoMovesHistoryState.allMoves = [];
+      renderInfoMovesHistoryList();
+      if (infoMovesHistorySubtitleEl) {
+        infoMovesHistorySubtitleEl.textContent = "Не удалось определить организацию.";
+      }
+      return;
+    }
+
+    const movesPath = `./${context.orgFolderName}/Перемещения.json`;
+    let moves = [];
+    try {
+      const rawMoves = await loadJson(movesPath);
+      moves = Array.isArray(rawMoves)
+        ? rawMoves
+        : Array.isArray(rawMoves?.moves)
+          ? rawMoves.moves
+          : [];
+    } catch (error) {
+      console.warn("Не удалось загрузить историю перемещений.", error);
+    }
+
+    infoMovesHistoryState.allMoves = moves
+      .filter(
+        (move) => String(move?.["Ответ"] ?? "").trim().toLowerCase() !== "отменено"
+      )
+      .sort((a, b) => {
+        const aDate = parseDateValue(a?.["Дата перемещения"]);
+        const bDate = parseDateValue(b?.["Дата перемещения"]);
+        if (!aDate && !bDate) return 0;
+        if (!aDate) return 1;
+        if (!bDate) return -1;
+        return bDate - aDate;
+      });
+
+    if (infoMovesHistorySubtitleEl) {
+      infoMovesHistorySubtitleEl.textContent = context.organizationName
+        ? `${context.organizationName} · перемещения инструмента`
+        : "Перемещения инструмента";
+    }
+    renderInfoMovesHistoryList();
+  };
+
+  const openInfoMovesHistoryModal = async () => {
+    if (!infoMovesHistoryModalEl) return;
+    infoMovesHistoryModalEl.classList.remove("is-hidden");
+    document.body.style.overflow = "hidden";
+    await loadInfoMovesHistory();
+  };
+
+  const closeInfoMovesHistoryModal = () => {
+    if (!infoMovesHistoryModalEl) return;
+    infoMovesHistoryModalEl.classList.add("is-hidden");
+    document.body.style.overflow = "";
+  };
+
   const closeInfoPendingModal = () => {
     if (!infoPendingModalEl) return;
     infoPendingModalEl.classList.add("is-hidden");
@@ -13637,6 +13835,27 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const isoDate = String(button?.dataset?.date ?? "").trim();
     if (!isoDate) return;
     handleInfoPendingDateSelect(isoDate);
+  });
+
+  if (infoMovesHistoryBackdropEl) {
+    infoMovesHistoryBackdropEl.addEventListener("click", closeInfoMovesHistoryModal);
+  }
+  if (infoMovesHistoryCloseButton) {
+    infoMovesHistoryCloseButton.addEventListener("click", closeInfoMovesHistoryModal);
+  }
+  infoMovesHistoryModalEl?.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      closeInfoMovesHistoryModal();
+    }
+  });
+  [
+    infoMovesHistoryFilterNumberEl,
+    infoMovesHistoryFilterAccountingEl,
+    infoMovesHistoryFilterMoveDateEl,
+    infoMovesHistoryFilterResponseDateEl,
+  ].forEach((input) => {
+    input?.addEventListener("input", renderInfoMovesHistoryList);
+    input?.addEventListener("change", renderInfoMovesHistoryList);
   });
   document.addEventListener("click", (event) => {
     const target = event.target instanceof Node ? event.target : null;
@@ -22029,7 +22248,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (!button) return;
     const option = String(button.dataset.energyInfoOption ?? "").trim();
     if (option === "moves-history") {
-      // Кнопку оставляем в интерфейсе, но переход отключён по бизнес-требованию.
+      closeInfoModal();
+      void openInfoMovesHistoryModal();
       return;
     }
     if (option === "pending-list") {

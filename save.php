@@ -1838,11 +1838,6 @@ function buildPendingAcceptanceMailingText(string $organization, string $fullNam
   }
 
   $totalCurrentFine = $currentBalance + $currentPendingFine;
-  $firstMove = $pendingMoves[0] ?? [];
-  $toolName = trim((string) ($firstMove["Инструмент"] ?? $firstMove["Название"] ?? $firstMove["Наименование"] ?? ""));
-  $fromObject = trim((string) ($firstMove["Старый объект"] ?? ""));
-  $toObject = trim((string) ($firstMove["Новый объект"] ?? ""));
-
   $text = "🔔 Напоминание по инструментам на принятии\n"
     . "🏢 Организация: {$organization}\n"
     . "👤 Получатель: {$fullName}\n"
@@ -1852,11 +1847,37 @@ function buildPendingAcceptanceMailingText(string $organization, string $fullNam
     . "   • Закрытые перемещения: " . formatMoneyLabel($currentBalance) . "\n"
     . "   • Открытые без ответа: " . formatMoneyLabel($currentPendingFine);
 
-  if ($toolName !== "") {
-    $text .= "\n\nПервый в списке: {$toolName}";
+  $maxMovesToPrint = 20;
+  $printedMoves = 0;
+  foreach ($pendingMoves as $move) {
+    if (!is_array($move)) {
+      continue;
+    }
+    if ($printedMoves >= $maxMovesToPrint) {
+      break;
+    }
+
+    $toolName = trim((string) ($move["Инструмент"] ?? $move["Название"] ?? $move["Наименование"] ?? ""));
+    $fromObject = trim((string) ($move["Старый объект"] ?? ""));
+    $toObject = trim((string) ($move["Новый объект"] ?? ""));
+    $moveDate = trim((string) ($move["Дата перемещения"] ?? ""));
+    $reason = trim((string) ($move["Причина перемещения"] ?? ""));
+    $moveFine = resolveMoveCurrentLateFine($move, $lateFineConfig, $now, $timezone);
+
+    $printedMoves++;
+    $text .= "\n\n{$printedMoves}) " . ($toolName !== "" ? $toolName : "Без названия");
+    $text .= "\n   Маршрут: " . ($fromObject !== "" ? $fromObject : "—") . " → " . ($toObject !== "" ? $toObject : "—");
+    if ($moveDate !== "") {
+      $text .= "\n   Дата: {$moveDate}";
+    }
+    if ($reason !== "") {
+      $text .= "\n   Причина: {$reason}";
+    }
+    $text .= "\n   Штраф по перемещению: " . formatMoneyLabel($moveFine);
   }
-  if ($fromObject !== "" || $toObject !== "") {
-    $text .= "\nМаршрут: " . ($fromObject !== "" ? $fromObject : "—") . " → " . ($toObject !== "" ? $toObject : "—");
+
+  if ($count > $printedMoves) {
+    $text .= "\n\n⚠️ Показаны первые {$printedMoves} из {$count} перемещений.";
   }
 
   return $text;

@@ -9650,6 +9650,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const renderToolsTable = (items) => {
     const table = document.createElement("div");
     table.className = "tools-table";
+    const shouldHighlightToolStatus = ["user", "search", "move-other"].includes(
+      toolsState.mode
+    );
 
     items.forEach((tool, moveIndex) => {
       const row = document.createElement("div");
@@ -9681,6 +9684,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const manufacturerModelLine = [manufacturer, model].filter(Boolean).join(" · ");
       const costLine = formatToolCostLabel(tool);
       const metaLines = [manufacturerModelLine, costLine].filter(Boolean);
+      const isMovingNow = Boolean(tool?.__pendingMove);
+      const status = String(tool?.["Статус"] ?? "").trim();
+      const statusText = isMovingNow
+        ? "в процессе перемещения"
+        : status || "не указан";
       if (metaLines.length === 0) {
         meta.textContent = "—";
       } else {
@@ -9689,6 +9697,19 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           lineEl.textContent = line;
           meta.appendChild(lineEl);
         });
+      }
+      if (shouldHighlightToolStatus) {
+        const statusLine = document.createElement("div");
+        const label = document.createElement("span");
+        label.textContent = "Статус инструмента:";
+        label.style.fontWeight = "700";
+        label.style.textDecoration = "underline";
+        const value = document.createElement("span");
+        value.textContent = ` ${statusText}`;
+        value.style.fontWeight = "700";
+        value.style.textDecoration = "underline";
+        statusLine.append(label, value);
+        meta.appendChild(statusLine);
       }
       infoCell.append(title, meta);
       const photoCell = document.createElement("div");

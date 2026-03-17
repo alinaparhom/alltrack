@@ -8768,7 +8768,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       return false;
     if (!tool) return false;
     if (tool.__pendingMove) return false;
-    if (toolsState.mode === "move-other") return true;
+    if (toolsState.mode === "move-other" || toolsState.mode === "user") return true;
     const photoCount = Number.parseInt(tool?.["Количество фото"] ?? 0, 10);
     const hasPhoto = Number.isFinite(photoCount) && photoCount > 0;
     return hasPhoto;

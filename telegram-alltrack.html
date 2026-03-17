@@ -6966,6 +6966,26 @@
         border-radius: 0;
       }
 
+      .tools-modal--my-tools .tools-controls__row {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .tools-modal--my-tools .tools-list.is-list,
+      .tools-modal--my-tools .tools-list.is-large,
+      .tools-modal--my-tools .tools-list.is-compact {
+        grid-template-columns: 1fr;
+        gap: 10px;
+      }
+
+      .tools-modal--my-tools .tools-card {
+        width: 100%;
+      }
+
+      .tools-modal--my-tools .tools-card__media {
+        aspect-ratio: 4 / 3;
+      }
+
       .writeoff-modal__panel {
         width: 100vw;
         height: 100vh;
@@ -8395,6 +8415,21 @@
 
         .tools-list.is-compact .tools-card__media {
           aspect-ratio: 1 / 1;
+        }
+
+        .tools-modal--my-tools .tools-controls__row {
+          gap: 10px;
+        }
+
+        .tools-modal--my-tools .tools-list.is-list,
+        .tools-modal--my-tools .tools-list.is-large,
+        .tools-modal--my-tools .tools-list.is-compact {
+          grid-template-columns: 1fr;
+          gap: 10px;
+        }
+
+        .tools-modal--my-tools .tools-card__media {
+          aspect-ratio: 4 / 3;
         }
 
         .tools-list.is-table .tools-table__row {

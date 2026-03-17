@@ -8570,6 +8570,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     });
   };
 
+  const syncToolsModalModeClass = () => {
+    if (!toolsModalEl) return;
+    toolsModalEl.classList.toggle("tools-modal--my-tools", toolsState.mode === "user");
+  };
+
   const isWriteOffPendingMode = () => toolsState.mode === "write-off-pending";
 
   const setToolsStatusStandaloneVisibility = (isVisible) => {
@@ -10120,6 +10125,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     syncToolsFilterValue("responsible", []);
     syncToolsFilterValue("object", []);
     setToolsResponsibleFilterVisibility(false);
+    syncToolsModalModeClass();
     updateToolsReplacementPendingLinkVisibility();
     syncToolsMapViewButtonVisibility();
     toolsModalEl.classList.remove("is-hidden");
@@ -10158,6 +10164,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     syncToolsFilterValue("object", []);
     setToolsResponsibleFilterVisibility(false);
     setToolsTitle(`Инструменты ${formatFullName(normalizedFullName)}`);
+    syncToolsModalModeClass();
     updateToolsReplacementPendingLinkVisibility();
     syncToolsMapViewButtonVisibility();
     toolsModalEl.classList.remove("is-hidden");
@@ -10185,6 +10192,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     toolsState.view = normalizeToolsView(toolsState.previousView);
     setToolsTitle("База");
     setToolsResponsibleFilterVisibility(true);
+    syncToolsModalModeClass();
     updateToolsReplacementPendingLinkVisibility();
     syncToolsMapViewButtonVisibility();
     toolsModalEl.classList.remove("is-hidden");
@@ -10211,6 +10219,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     setToolsTitle("На списание");
     setToolsStatusStandaloneVisibility(true);
     setToolsResponsibleFilterVisibility(true);
+    syncToolsModalModeClass();
     updateToolsReplacementPendingLinkVisibility();
     syncToolsMapViewButtonVisibility();
     toolsModalEl.classList.remove("is-hidden");
@@ -10241,6 +10250,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     setToolsStatusStandaloneVisibility(false);
     setToolsTitle("Поиск");
     setToolsResponsibleFilterVisibility(true);
+    syncToolsModalModeClass();
     updateToolsReplacementPendingLinkVisibility();
     syncToolsMapViewButtonVisibility();
     toolsModalEl.classList.remove("is-hidden");
@@ -10267,6 +10277,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     toolsState.view = normalizeToolsView(toolsState.previousView);
     setToolsTitle("Переместить за других");
     setToolsResponsibleFilterVisibility(true);
+    syncToolsModalModeClass();
     updateToolsReplacementPendingLinkVisibility();
     syncToolsMapViewButtonVisibility();
     toolsModalEl.classList.remove("is-hidden");
@@ -10291,6 +10302,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     toolsModalEl.classList.add("is-hidden");
     updateToolsReplacementPendingLinkVisibility();
     toolsModalEl.classList.remove("tools-modal--searching");
+    toolsModalEl.classList.remove("tools-modal--my-tools");
     document.body.style.overflow = "";
     resetToolsSelection();
     closeToolsMoveModal();

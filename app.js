@@ -426,6 +426,8 @@ function buildWriteOffNumberSearchLine(value) {
 }
 
 const toolPhotoExtensions = new Set(["jpg", "jpeg", "png", "webp"]);
+const toolPhotoUrlCache = new Map();
+const toolPhotoMissingCache = new Set();
 
 function extractDirectoryListingLinks(html = "") {
   if (!html) return [];
@@ -632,22 +634,39 @@ const applyToolPhotoWithFallback = ({
   hasPhoto,
 }) => {
   if (!(img instanceof HTMLImageElement)) return;
+  img.loading = "lazy";
+  img.decoding = "async";
+  const normalizedToolNumber = normalizeToolNumberValue(toolNumber);
+  const cacheKey = `${String(orgFolder ?? "").trim()}::${normalizedToolNumber}`;
   const candidates = hasPhoto
     ? buildToolPhotoCandidates(orgFolder, toolNumber)
     : [];
   let candidateIndex = 0;
   const fallbackToDirectoryListing = async () => {
-    if (!orgFolder || !toolNumber) return;
+    if (!orgFolder || !toolNumber) {
+      if (cacheKey) toolPhotoMissingCache.add(cacheKey);
+      return;
+    }
     const resolved = await resolvePhotoUrlFromDirectoryListing(
       orgFolder,
       toolNumber
     );
     if (resolved) {
+      if (cacheKey) {
+        toolPhotoUrlCache.set(cacheKey, resolved);
+        toolPhotoMissingCache.delete(cacheKey);
+      }
       img.src = resolved;
       img.classList.remove("is-placeholder");
+      return;
     }
+    if (cacheKey) toolPhotoMissingCache.add(cacheKey);
   };
   const markLoaded = () => {
+    if (cacheKey) {
+      toolPhotoUrlCache.set(cacheKey, img.src);
+      toolPhotoMissingCache.delete(cacheKey);
+    }
     img.classList.remove("is-placeholder");
     img
       .closest(".tools-card__media")
@@ -682,6 +701,15 @@ const applyToolPhotoWithFallback = ({
   img.onload = () => {
     markLoaded();
   };
+  if (cacheKey && toolPhotoUrlCache.has(cacheKey)) {
+    img.src = toolPhotoUrlCache.get(cacheKey);
+    return;
+  }
+  if (cacheKey && toolPhotoMissingCache.has(cacheKey)) {
+    img.src = toolPhotoPlaceholder;
+    img.classList.add("is-placeholder");
+    return;
+  }
   if (candidates.length) {
     tryCandidate();
   } else {

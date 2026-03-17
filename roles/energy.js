@@ -910,15 +910,6 @@ export function renderRole(user) {
                       </button>
                     </div>
                     <button
-                      class="tools-filters-toggle tools-sort-toggle"
-                      type="button"
-                      data-tools-sort-toggle
-                      aria-label="Сортировка по номеру инструмента: по убыванию"
-                      title="Сортировка по номеру инструмента: по убыванию"
-                    >
-                      <span class="tools-sort-toggle__icon" aria-hidden="true">↕</span>
-                    </button>
-                    <button
                       class="action-primary tools-move-button"
                       type="button"
                       data-tools-move-trigger
@@ -947,6 +938,15 @@ export function renderRole(user) {
                       title="Выделить все доступные для перемещения инструменты"
                     >
                       <span class="tools-select-all-check" aria-hidden="true"></span>
+                    </button>
+                    <button
+                      class="tools-filters-toggle tools-sort-toggle"
+                      type="button"
+                      data-tools-sort-toggle
+                      aria-label="Сортировка по номеру инструмента: по убыванию"
+                      title="Сортировка по номеру инструмента: по убыванию"
+                    >
+                      <span class="tools-sort-toggle__icon" aria-hidden="true">↑↓</span>
                     </button>
                     <button
                       class="tools-filters-toggle"

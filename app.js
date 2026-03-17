@@ -15638,6 +15638,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       }
       const tool = toolsState.toolMap.get(item.dataset.toolId);
       if (!toolsState.isSelecting) {
+        if (toolsState.mode === "move-other" && isToolSelectableForMove(tool)) {
+          toolsState.isSelecting = true;
+          toolsState.selectedIds.add(item.dataset.toolId);
+          item.classList.add("is-selected");
+          updateToolsSelectionUi();
+          return;
+        }
         if (tool) {
           openToolsInfoModal(tool);
         }

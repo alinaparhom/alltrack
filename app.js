@@ -428,6 +428,18 @@ function buildWriteOffNumberSearchLine(value) {
 const toolPhotoExtensions = new Set(["jpg", "jpeg", "png", "webp"]);
 const toolPhotoUrlCache = new Map();
 const toolPhotoMissingCache = new Set();
+const toolPhotoDirectoryIndexCache = new Map();
+
+function buildToolPhotoDirectoryCacheKey(orgFolder, folderName) {
+  return `${String(orgFolder ?? "").trim()}::${String(folderName ?? "").trim()}`;
+}
+
+function collectToolPhotoNumberFromFileName(fileName) {
+  const leadingNumber = getLeadingToolNumberFromFileName(fileName);
+  if (leadingNumber) return leadingNumber;
+  const fallbackMatch = String(fileName).match(/^(\d+)[_-]/);
+  return fallbackMatch ? fallbackMatch[1] : "";
+}
 
 function extractDirectoryListingLinks(html = "") {
   if (!html) return [];
@@ -585,6 +597,84 @@ async function resolvePhotoUrlFromDirectoryListing(orgFolder, toolNumber) {
   );
 }
 
+async function getToolPhotoDirectoryIndexForFolder(orgFolder, folderName) {
+  if (!orgFolder || !folderName) return null;
+  const cacheKey = buildToolPhotoDirectoryCacheKey(orgFolder, folderName);
+  if (toolPhotoDirectoryIndexCache.has(cacheKey)) {
+    return toolPhotoDirectoryIndexCache.get(cacheKey);
+  }
+  const loader = (async () => {
+    const index = new Map();
+    const endpointPayload = JSON.stringify({
+      entries: [
+        {
+          type: "list-photos",
+          path: `${orgFolder}/${folderName}`,
+          ...buildUploadUserMeta(),
+        },
+      ],
+    });
+    try {
+      const response = await fetch(saveEndpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: endpointPayload,
+      });
+      const text = await response.text();
+      if (response.ok && text) {
+        const parsed = JSON.parse(text);
+        const files = Array.isArray(parsed?.files) ? parsed.files : [];
+        for (const file of files) {
+          let decoded = file;
+          try {
+            decoded = decodeURIComponent(file);
+          } catch (error) {
+            decoded = file;
+          }
+          const extension = decoded.split(".").pop()?.toLowerCase() || "";
+          if (!toolPhotoExtensions.has(extension)) continue;
+          const number = collectToolPhotoNumberFromFileName(decoded);
+          if (!number) continue;
+          index.set(
+            normalizeToolNumberValue(number),
+            new URL(
+              `./${orgFolder}/${folderName}/${encodeURIComponent(decoded)}`,
+              window.location.href
+            ).toString()
+          );
+        }
+      }
+    } catch (error) {
+      // Ничего: попробуем fallback ниже.
+    }
+    if (index.size) return index;
+    const folderPath = `./${orgFolder}/${folderName}/`;
+    const response = await fetch(folderPath, { cache: "no-store" });
+    if (!response.ok) return index;
+    const html = await response.text();
+    const links = extractDirectoryListingLinks(html);
+    for (const link of links) {
+      const fileName = extractFileNameFromHref(link);
+      if (!fileName) continue;
+      let decoded = fileName;
+      try {
+        decoded = decodeURIComponent(fileName);
+      } catch (error) {
+        decoded = fileName;
+      }
+      const extension = decoded.split(".").pop()?.toLowerCase() || "";
+      if (!toolPhotoExtensions.has(extension)) continue;
+      const number = collectToolPhotoNumberFromFileName(decoded);
+      if (!number) continue;
+      const absoluteUrl = new URL(link, new URL(folderPath, window.location.href));
+      index.set(normalizeToolNumberValue(number), absoluteUrl.toString());
+    }
+    return index;
+  })().catch(() => null);
+  toolPhotoDirectoryIndexCache.set(cacheKey, loader);
+  return loader;
+}
+
 function buildToolPhotoCandidatesForFolder(orgFolder, folderName, toolNumber) {
   if (!orgFolder) return [];
   const variants = getToolNumberVariants(toolNumber);
@@ -705,12 +795,39 @@ const applyToolPhotoWithFallback = ({
     img.src = toolPhotoUrlCache.get(cacheKey);
     return;
   }
+  const resolvedFromDirectoryCache = async () => {
+    const index = await getToolPhotoDirectoryIndexForFolder(
+      orgFolder,
+      "Фото инструментов"
+    );
+    const numberVariants = getToolNumberVariants(toolNumber)
+      .map((variant) => normalizeToolNumberValue(variant))
+      .filter(Boolean);
+    for (const variant of numberVariants) {
+      const value = index?.get(variant);
+      if (!value) continue;
+      toolPhotoUrlCache.set(cacheKey, value);
+      toolPhotoMissingCache.delete(cacheKey);
+      img.src = value;
+      return true;
+    }
+    return false;
+  };
   if (cacheKey && toolPhotoMissingCache.has(cacheKey)) {
     img.src = toolPhotoPlaceholder;
     img.classList.add("is-placeholder");
     return;
   }
-  if (candidates.length) {
+  if (hasPhoto) {
+    resolvedFromDirectoryCache().then((resolved) => {
+      if (resolved) return;
+      if (candidates.length) {
+        tryCandidate();
+        return;
+      }
+      setPlaceholder();
+    });
+  } else if (candidates.length) {
     tryCandidate();
   } else {
     setPlaceholder();

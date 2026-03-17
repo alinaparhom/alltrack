@@ -9492,6 +9492,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const infoLine = isCompactMobile ? numberLine : fullLine;
     const bodyLine = isCompactMobile ? numberLine : infoLine;
     const isMovingNow = Boolean(tool?.__pendingMove);
+    const shouldHighlightToolStatus = ["user", "search", "move-other"].includes(
+      toolsState.mode
+    );
     const statusText = isMovingNow
       ? "в процессе перемещения"
       : status || "не указан";
@@ -9504,6 +9507,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const value = document.createElement("span");
       value.className = "tools-card__status-value";
       value.textContent = ` ${statusText}`;
+      if (shouldHighlightToolStatus) {
+        label.style.fontWeight = "700";
+        label.style.textDecoration = "underline";
+        value.style.fontWeight = "700";
+        value.style.textDecoration = "underline";
+      }
       container.append(label, value);
     };
 
@@ -9528,7 +9537,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           ? ""
           : accountingNumber,
         tool?.["Граппа инструментов"],
-        tool?.["Статус"],
+        shouldHighlightToolStatus ? "" : tool?.["Статус"],
         tool?.["Объект"],
       ]
         .filter((value) => value && String(value).trim())
@@ -9544,6 +9553,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         const costMetaLineEl = document.createElement("div");
         costMetaLineEl.textContent = costMetaLine;
         meta.appendChild(costMetaLineEl);
+      }
+      if (shouldHighlightToolStatus) {
+        const statusMeta = document.createElement("div");
+        statusMeta.className = "tools-row__status";
+        fillToolStatusMeta(statusMeta);
+        meta.appendChild(statusMeta);
       }
       if (!mainMetaLine && !costMetaLine) {
         meta.textContent = "—";

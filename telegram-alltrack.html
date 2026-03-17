@@ -6972,6 +6972,19 @@
         gap: 10px;
       }
 
+      .tools-modal--my-tools .tools-modal__header {
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        padding-top: calc(12px + env(safe-area-inset-top));
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.97), rgba(255, 255, 255, 0.9));
+        backdrop-filter: blur(8px);
+      }
+
+      .tools-modal--my-tools .tools-modal__body {
+        gap: 12px;
+      }
+
       .tools-modal--my-tools .tools-controls,
       .tools-modal--my-tools .tools-list {
         padding-left: 0;
@@ -6992,6 +7005,7 @@
 
       .tools-modal--my-tools .tools-card {
         width: 100%;
+        min-height: 188px;
       }
 
       .tools-modal--my-tools .tools-card__media {
@@ -8465,7 +8479,8 @@
         }
 
         .tools-modal--my-tools .tools-card__media {
-          aspect-ratio: 4 / 3;
+          aspect-ratio: auto;
+          height: 188px;
         }
 
         .tools-list.is-table .tools-table__row {

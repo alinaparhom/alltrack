@@ -8768,7 +8768,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       return false;
     if (!tool) return false;
     if (tool.__pendingMove) return false;
-    if (toolsState.mode === "move-other" || toolsState.mode === "user") return true;
+    if (toolsState.mode === "move-other") return true;
     const photoCount = Number.parseInt(tool?.["Количество фото"] ?? 0, 10);
     const hasPhoto = Number.isFinite(photoCount) && photoCount > 0;
     return hasPhoto;
@@ -9503,7 +9503,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       container.textContent = "";
       const label = document.createElement("span");
       label.className = "tools-card__status-label";
-      label.textContent = "Статус:";
+      label.textContent = "Статус инструмента:";
       const value = document.createElement("span");
       value.className = "tools-card__status-value";
       value.textContent = ` ${statusText}`;
@@ -9701,7 +9701,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       if (shouldHighlightToolStatus) {
         const statusLine = document.createElement("div");
         const label = document.createElement("span");
-        label.textContent = "Статус:";
+        label.textContent = "Статус инструмента:";
         label.style.fontWeight = "700";
         label.style.textDecoration = "underline";
         const value = document.createElement("span");

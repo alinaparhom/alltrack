@@ -4886,6 +4886,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const toolsFiltersToggleEl = contentEl.querySelector(
     "[data-tools-filters-toggle]"
   );
+  const toolsSortToggleEl = contentEl.querySelector("[data-tools-sort-toggle]");
   if (toolsFiltersPanelEl) {
     const hasStatus = toolsFiltersPanelEl.querySelector("[data-tools-filters-status]");
     if (!hasStatus) {
@@ -6319,6 +6320,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     toolMap: new Map(),
     activeReplacementResponsible: "",
     statusStandalone: "",
+    searchSortDirection: "desc",
   };
   const pendingMovesState = {
     pendingItems: [],
@@ -8598,9 +8600,34 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     });
   };
 
+  const updateToolsSortToggleUi = () => {
+    if (!toolsSortToggleEl) return;
+    const isDesc = toolsState.searchSortDirection === "desc";
+    toolsSortToggleEl.setAttribute(
+      "aria-label",
+      isDesc
+        ? "Сортировка по номеру инструмента: по убыванию"
+        : "Сортировка по номеру инструмента: по возрастанию"
+    );
+    toolsSortToggleEl.setAttribute(
+      "title",
+      isDesc
+        ? "Сортировка по номеру инструмента: по убыванию"
+        : "Сортировка по номеру инструмента: по возрастанию"
+    );
+  };
+
+  const setToolsSortToggleVisibility = () => {
+    if (!toolsSortToggleEl) return;
+    const shouldShow = toolsState.mode === "search";
+    toolsSortToggleEl.classList.toggle("is-hidden", !shouldShow);
+  };
+
   const syncToolsModalModeClass = () => {
     if (!toolsModalEl) return;
     toolsModalEl.classList.toggle("tools-modal--my-tools", toolsState.mode === "user");
+    setToolsSortToggleVisibility();
+    updateToolsSortToggleUi();
   };
 
   const isWriteOffPendingMode = () => toolsState.mode === "write-off-pending";
@@ -9066,6 +9093,17 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
   const canUseToolsMapView = () =>
     toolsState.mode === "search" || toolsState.mode === "user";
+
+  const sortToolsByNumber = (tools) => {
+    const direction =
+      toolsState.mode === "search" && toolsState.searchSortDirection === "asc" ? 1 :
+      toolsState.mode === "search" ? -1 : 1;
+    return [...tools].sort((a, b) =>
+      resolveToolNumberValue(a).localeCompare(resolveToolNumberValue(b), "ru", {
+        numeric: true,
+      }) * direction
+    );
+  };
 
   const syncToolsMapViewButtonVisibility = () => {
     if (!toolsSearchMapViewButtonEl) return;
@@ -9813,7 +9851,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const applyToolsFilters = () => {
     const search = toolsState.search.trim();
     const tokens = search ? search.split(/\s+/).filter(Boolean) : [];
-    toolsState.filtered = toolsState.tools.filter((tool) => {
+    const filtered = toolsState.tools.filter((tool) => {
       const hasSelected = (key) =>
         Array.isArray(toolsState.filters[key]) && toolsState.filters[key].length > 0;
       const includesSelected = (key, value) =>
@@ -9880,6 +9918,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       }
       return true;
     });
+    toolsState.filtered = sortToolsByNumber(filtered);
     renderToolsList();
   };
 
@@ -10335,6 +10374,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (!toolsModalEl) return;
     toolsState.mode = "search";
     toolsState.view = "table";
+    toolsState.searchSortDirection = "desc";
     setToolsStatusStandaloneVisibility(false);
     setToolsTitle("Поиск");
     setToolsResponsibleFilterVisibility(true);
@@ -15036,6 +15076,16 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       toolsFiltersToggleEl.setAttribute("aria-expanded", String(isOpen));
     }
   };
+
+  if (toolsSortToggleEl) {
+    toolsSortToggleEl.addEventListener("click", () => {
+      if (toolsState.mode !== "search") return;
+      toolsState.searchSortDirection =
+        toolsState.searchSortDirection === "desc" ? "asc" : "desc";
+      updateToolsSortToggleUi();
+      applyToolsFilters();
+    });
+  }
 
   if (toolsFiltersToggleEl) {
     toolsFiltersToggleEl.addEventListener("click", () => {

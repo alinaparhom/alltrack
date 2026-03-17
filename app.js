@@ -9478,6 +9478,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const manufacturer = String(tool?.["Производитель"] ?? "").trim();
     const model = String(tool?.["Модель"] ?? "").trim();
     const accountingNumber = String(tool?.["Бух.номер"] ?? "").trim();
+    const status = String(tool?.["Статус"] ?? "").trim();
     const photoCount = Number.parseInt(tool?.["Количество фото"] ?? 0, 10);
     const hasPhoto = Number.isFinite(photoCount) && photoCount > 0;
     const isCompactMobile =
@@ -9490,6 +9491,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const fullLine = lineParts.join(" ");
     const infoLine = isCompactMobile ? numberLine : fullLine;
     const bodyLine = isCompactMobile ? numberLine : infoLine;
+    const statusLine = status ? `Статус: ${status}` : "Статус: не указан";
 
     if (viewMode === "list") {
       const row = document.createElement("div");
@@ -9580,7 +9582,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const title = document.createElement("div");
       title.className = "tools-card__title";
       title.textContent = infoLine || "Без названия";
+      const statusMeta = document.createElement("div");
+      statusMeta.className = "tools-card__status";
+      statusMeta.textContent = statusLine;
       overlay.appendChild(title);
+      overlay.appendChild(statusMeta);
       media.appendChild(overlay);
       if (viewMode === "large" || isCompactMobile) {
         card.appendChild(media);
@@ -9593,7 +9599,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const title = document.createElement("div");
     title.className = "tools-card__title";
     title.textContent = bodyLine || "Без названия";
+    const statusMeta = document.createElement("div");
+    statusMeta.className = "tools-card__status";
+    statusMeta.textContent = statusLine;
     body.appendChild(title);
+    body.appendChild(statusMeta);
     card.append(media, body);
     return card;
   };

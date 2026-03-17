@@ -161,10 +161,54 @@ const energyResponsibleAccessRoles = new Set([
   accountingRole,
 ]);
 const responsibleLikeRoles = new Set([responsibleRole, chiefEngineerRole]);
+const globalLoadingEl = document.querySelector("[data-global-loading]");
+const globalLoadingState = {
+  activeRequests: 0,
+  delayTimer: null,
+};
 
 if (isIosMobile) {
   document.body?.classList.add("is-ios");
 }
+
+function setGlobalLoadingVisible(isVisible) {
+  if (!globalLoadingEl) return;
+  const visible = Boolean(isVisible);
+  globalLoadingEl.classList.toggle("is-visible", visible);
+  globalLoadingEl.setAttribute("aria-hidden", String(!visible));
+}
+
+function updateGlobalLoadingState(change) {
+  globalLoadingState.activeRequests = Math.max(
+    0,
+    globalLoadingState.activeRequests + change
+  );
+
+  if (globalLoadingState.activeRequests > 0) {
+    if (globalLoadingState.delayTimer) return;
+    globalLoadingState.delayTimer = window.setTimeout(() => {
+      globalLoadingState.delayTimer = null;
+      if (globalLoadingState.activeRequests > 0) {
+        setGlobalLoadingVisible(true);
+      }
+    }, 140);
+    return;
+  }
+
+  if (globalLoadingState.delayTimer) {
+    window.clearTimeout(globalLoadingState.delayTimer);
+    globalLoadingState.delayTimer = null;
+  }
+  setGlobalLoadingVisible(false);
+}
+
+const nativeFetch = window.fetch.bind(window);
+window.fetch = (...args) => {
+  updateGlobalLoadingState(1);
+  return nativeFetch(...args).finally(() => {
+    updateGlobalLoadingState(-1);
+  });
+};
 
 function withCacheBuster(path) {
   if (!cacheBuster) return path;

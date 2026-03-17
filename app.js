@@ -9491,7 +9491,21 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const fullLine = lineParts.join(" ");
     const infoLine = isCompactMobile ? numberLine : fullLine;
     const bodyLine = isCompactMobile ? numberLine : infoLine;
-    const statusLine = status ? `Статус: ${status}` : "Статус: не указан";
+    const isMovingNow = Boolean(tool?.__pendingMove);
+    const statusText = isMovingNow
+      ? "в процессе перемещения"
+      : status || "не указан";
+    const fillToolStatusMeta = (container) => {
+      if (!container) return;
+      container.textContent = "";
+      const label = document.createElement("span");
+      label.className = "tools-card__status-label";
+      label.textContent = "Статус инструмента:";
+      const value = document.createElement("span");
+      value.className = "tools-card__status-value";
+      value.textContent = ` ${statusText}`;
+      container.append(label, value);
+    };
 
     if (viewMode === "list") {
       const row = document.createElement("div");
@@ -9584,7 +9598,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       title.textContent = infoLine || "Без названия";
       const statusMeta = document.createElement("div");
       statusMeta.className = "tools-card__status";
-      statusMeta.textContent = statusLine;
+      fillToolStatusMeta(statusMeta);
       overlay.appendChild(title);
       overlay.appendChild(statusMeta);
       media.appendChild(overlay);
@@ -9601,7 +9615,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     title.textContent = bodyLine || "Без названия";
     const statusMeta = document.createElement("div");
     statusMeta.className = "tools-card__status";
-    statusMeta.textContent = statusLine;
+    fillToolStatusMeta(statusMeta);
     body.appendChild(title);
     body.appendChild(statusMeta);
     card.append(media, body);

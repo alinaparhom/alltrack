@@ -9503,7 +9503,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       container.textContent = "";
       const label = document.createElement("span");
       label.className = "tools-card__status-label";
-      label.textContent = "Статус инструмента:";
+      label.textContent = "Статус:";
       const value = document.createElement("span");
       value.className = "tools-card__status-value";
       value.textContent = ` ${statusText}`;
@@ -9701,7 +9701,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       if (shouldHighlightToolStatus) {
         const statusLine = document.createElement("div");
         const label = document.createElement("span");
-        label.textContent = "Статус инструмента:";
+        label.textContent = "Статус:";
         label.style.fontWeight = "700";
         label.style.textDecoration = "underline";
         const value = document.createElement("span");

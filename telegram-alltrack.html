@@ -6986,47 +6986,6 @@
         aspect-ratio: 4 / 3;
       }
 
-      .tools-modal--my-tools .tools-list.is-table .tools-table__row {
-        grid-template-columns: 1fr;
-        grid-template-areas:
-          "number"
-          "object"
-          "info"
-          "thumb";
-        row-gap: 8px;
-        padding: 12px;
-      }
-
-      .tools-modal--my-tools .tools-list.is-table .tools-table__cell--number {
-        grid-area: number;
-      }
-
-      .tools-modal--my-tools .tools-list.is-table .tools-table__cell--object {
-        grid-area: object;
-        width: 100%;
-        min-width: 100%;
-        max-width: 100%;
-        justify-items: start;
-        text-align: left;
-      }
-
-      .tools-modal--my-tools .tools-list.is-table .tools-table__cell:not(
-          .tools-table__cell--number
-        ):not(.tools-table__cell--object):not(.tools-table__cell--thumb) {
-        grid-area: info;
-      }
-
-      .tools-modal--my-tools .tools-list.is-table .tools-table__cell--thumb {
-        grid-area: thumb;
-        justify-self: start;
-      }
-
-      .tools-modal--my-tools .tools-list.is-table .tools-table__thumb {
-        width: 56px;
-        height: 56px;
-        border-radius: 14px;
-      }
-
       .writeoff-modal__panel {
         width: 100vw;
         height: 100vh;
@@ -8494,30 +8453,6 @@
 
         .tools-modal--my-tools .tools-card__media {
           aspect-ratio: 4 / 3;
-        }
-
-        .tools-modal--my-tools .tools-list.is-table .tools-table__row {
-          grid-template-columns: 1fr;
-          grid-template-areas:
-            "number"
-            "object"
-            "info"
-            "thumb";
-          row-gap: 8px;
-          padding: 12px;
-          column-gap: 0;
-        }
-
-        .tools-modal--my-tools .tools-list.is-table .tools-table__cell--object {
-          width: 100%;
-          min-width: 100%;
-          max-width: 100%;
-        }
-
-        .tools-modal--my-tools .tools-list.is-table .tools-table__thumb {
-          width: 56px;
-          height: 56px;
-          border-radius: 14px;
         }
 
         .tools-list.is-table .tools-table__row {

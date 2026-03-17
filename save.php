@@ -503,7 +503,7 @@ function runNoPhotoFineRecalculation(array $options = []): array {
 function runNoPhotoFineRecalculationIfNeeded(): void {
   $timezone = new DateTimeZone("Europe/Moscow");
   $now = new DateTimeImmutable("now", $timezone);
-  $scheduleTime = "14:30";
+  $scheduleTime = "08:45";
   $currentMinuteStamp = $now->format("Y-m-d H:i");
   $scheduledMinuteStamp = $now->format("Y-m-d") . " " . $scheduleTime;
 

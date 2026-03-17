@@ -8619,7 +8619,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
   const setToolsSortToggleVisibility = () => {
     if (!toolsSortToggleEl) return;
-    const shouldShow = toolsState.mode === "search";
+    const shouldShow = toolsState.mode === "search" || toolsState.mode === "user";
     toolsSortToggleEl.classList.toggle("is-hidden", !shouldShow);
   };
 
@@ -9095,9 +9095,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     toolsState.mode === "search" || toolsState.mode === "user";
 
   const sortToolsByNumber = (tools) => {
-    const direction =
-      toolsState.mode === "search" && toolsState.searchSortDirection === "asc" ? 1 :
-      toolsState.mode === "search" ? -1 : 1;
+    const direction = toolsState.searchSortDirection === "asc" ? 1 : -1;
     return [...tools].sort((a, b) =>
       resolveToolNumberValue(a).localeCompare(resolveToolNumberValue(b), "ru", {
         numeric: true,
@@ -10245,6 +10243,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     toolsState.mode = "user";
     setToolsStatusStandaloneVisibility(false);
     toolsState.activeReplacementResponsible = "";
+    toolsState.searchSortDirection = "desc";
     setToolsTitle("Мои инструменты");
     toolsState.filters.responsible = [];
     toolsState.filters.object = [];
@@ -15079,7 +15078,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
   if (toolsSortToggleEl) {
     toolsSortToggleEl.addEventListener("click", () => {
-      if (toolsState.mode !== "search") return;
       toolsState.searchSortDirection =
         toolsState.searchSortDirection === "desc" ? "asc" : "desc";
       updateToolsSortToggleUi();

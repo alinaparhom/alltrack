@@ -12588,7 +12588,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         lineEl.className =
           line.startsWith("Отправил:") || line.startsWith("Переместил энергетик:")
             ? "pending-move-responsible"
-            : "pending-move-meta";
+            : line.startsWith("Комментарий:")
+              ? "pending-move-comment"
+              : "pending-move-meta";
         lineEl.textContent = line;
         meta.appendChild(lineEl);
       });
@@ -13054,16 +13056,20 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         ? "Ответственный до перемещения"
         : "Переместил";
       const moveDate = String(move?.["Дата перемещения"] ?? "").trim();
+      const moveComment = String(move?.["Причина перемещения"] ?? "").trim();
       [
         receiver ? `Принял: ${receiver}` : "",
         sender ? `${senderLabel}: ${sender}` : "",
         moveDate ? `Дата перемещения: ${moveDate}` : "",
+        moveComment ? `Комментарий: ${moveComment}` : "",
         formatToolCostLabel(tool),
       ]
         .filter(Boolean)
         .forEach((line) => {
           const lineEl = document.createElement("div");
-          lineEl.className = "pending-move-meta";
+          lineEl.className = line.startsWith("Комментарий:")
+            ? "pending-move-comment"
+            : "pending-move-meta";
           lineEl.textContent = line;
           meta.appendChild(lineEl);
         });

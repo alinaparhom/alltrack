@@ -6289,12 +6289,22 @@
       .tools-modal--selecting .tools-move-button,
       .tools-modal--selecting .tools-cancel-button {
         min-height: auto;
-        width: 96px;
+        width: auto;
+        min-width: 78px;
         justify-content: center;
-        padding: 8px 12px;
+        padding: 8px 10px;
         font-size: 12px;
         font-weight: 600;
         white-space: nowrap;
+      }
+
+      .tools-modal--selecting .tools-actions {
+        flex-wrap: nowrap;
+        gap: 4px;
+      }
+
+      .tools-modal--selecting .tools-filters-toggle {
+        margin-left: 0;
       }
 
       .tools-card.is-selected,
@@ -8533,6 +8543,24 @@
           align-items: center;
         }
 
+        .tools-modal--selecting .tools-actions {
+          display: flex;
+          flex-wrap: nowrap;
+          justify-content: flex-start;
+          gap: 4px;
+          overflow-x: auto;
+          scrollbar-width: none;
+          -webkit-overflow-scrolling: touch;
+        }
+
+        .tools-modal--selecting .tools-actions::-webkit-scrollbar {
+          display: none;
+        }
+
+        .tools-modal--selecting .tools-actions > * {
+          flex: 0 0 auto;
+        }
+
         .tools-move-button {
           justify-content: center;
         }
@@ -8540,8 +8568,14 @@
         .tools-modal--selecting .tools-move-button,
         .tools-modal--selecting .tools-cancel-button {
           min-height: auto;
-          padding: 8px 14px;
-          font-size: 12px;
+          min-width: 74px;
+          padding: 8px 10px;
+          font-size: 11px;
+        }
+
+        .tools-modal--selecting .tools-selection-count {
+          padding: 0 10px;
+          font-size: 11px;
         }
 
         .tools-modal--selecting .tools-select-all-button {

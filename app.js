@@ -20332,13 +20332,15 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     showOnFocus: true,
   });
 
-  attachDynamicSuggestions({
-    inputEl: toolsEditGroupInput,
-    containerEl: toolsEditGroupSuggestionsEl,
-    getItems: (query) =>
-      getSelectableSuggestions(toolsEditState.groupOptions, query),
-    showOnFocus: true,
-  });
+  if (!(toolsEditGroupInput instanceof HTMLSelectElement)) {
+    attachDynamicSuggestions({
+      inputEl: toolsEditGroupInput,
+      containerEl: toolsEditGroupSuggestionsEl,
+      getItems: (query) =>
+        getSelectableSuggestions(toolsEditState.groupOptions, query),
+      showOnFocus: true,
+    });
+  }
 
   attachDynamicSuggestions({
     inputEl: toolsMoveResponsibleInput,

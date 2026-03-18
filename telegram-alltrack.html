@@ -7399,8 +7399,8 @@
       }
 
       .writeoff-selection {
-        display: inline-flex;
-        flex-wrap: wrap;
+        display: flex;
+        flex-wrap: nowrap;
         align-items: center;
         gap: 10px;
         padding: 8px 14px;
@@ -7409,13 +7409,18 @@
         color: #1d4ed8;
         font-weight: 600;
         font-size: 13px;
-        width: fit-content;
+        width: 100%;
+        min-height: 40px;
+        justify-content: space-between;
       }
 
       .writeoff-selection__filter {
         border: 1px solid rgba(15, 23, 42, 0.2);
         background: rgba(255, 255, 255, 0.85);
         color: var(--text);
+        width: 180px;
+        min-width: 180px;
+        min-height: 32px;
         padding: 6px 12px;
         border-radius: 999px;
         font-size: 12px;
@@ -7441,6 +7446,7 @@
         gap: 10px;
         overflow: auto;
         padding-bottom: 10px;
+        grid-auto-rows: minmax(64px, auto);
       }
 
       .writeoff-item {
@@ -7449,12 +7455,26 @@
         gap: 12px;
         align-items: center;
         padding: 12px 14px;
+        min-height: 64px;
         border-radius: 16px;
         border: 1px solid rgba(226, 232, 240, 0.9);
         background: rgba(255, 255, 255, 0.88);
         box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
         cursor: pointer;
         transition: all 0.2s ease;
+      }
+
+      .writeoff-modal__footer {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+      }
+
+      .writeoff-modal__footer .action-secondary,
+      .writeoff-modal__footer .action-primary {
+        width: 100%;
+        min-height: 44px;
+        margin: 0;
       }
 
       .writeoff-item.is-selected {
@@ -7544,9 +7564,15 @@
 
       .writeoff-confirm-actions {
         display: flex;
-        flex-wrap: wrap;
+        flex-wrap: nowrap;
         gap: 10px;
         justify-content: flex-end;
+      }
+
+      .writeoff-confirm-actions .action-secondary,
+      .writeoff-confirm-actions .action-primary {
+        min-width: 160px;
+        min-height: 44px;
       }
 
       .tools-card {

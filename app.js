@@ -8939,12 +8939,30 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   };
 
   const updateToolsEditPhotoCount = (count) => {
+    const hasPhotos = Number(count) > 0;
     if (toolsEditPhotoCountEl) {
       toolsEditPhotoCountEl.textContent = String(count ?? 0);
+      toolsEditPhotoCountEl.disabled = !hasPhotos;
+      toolsEditPhotoCountEl.setAttribute(
+        "aria-label",
+        hasPhotos ? "Открыть фото инструмента" : "У инструмента нет фото"
+      );
     }
     if (toolsEditRemovePhotoButton) {
-      toolsEditRemovePhotoButton.disabled = !count;
+      toolsEditRemovePhotoButton.disabled = !hasPhotos;
     }
+  };
+
+  const openToolsEditPhotoViewer = async () => {
+    const tool = toolsEditState.tool;
+    if (!tool) return;
+    const photoCount = Number.parseInt(tool?.["Количество фото"] ?? 0, 10);
+    if (!(Number.isFinite(photoCount) && photoCount > 0)) return;
+    await openPendingMovePhotoViewer({
+      tool,
+      fallbackNumber: resolveToolNumberValue(tool),
+      title: buildToolDisplayTitle(tool),
+    });
   };
 
   const resetToolsCancelMoveState = () => {
@@ -14536,6 +14554,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       if (files.length) {
         handleToolsEditPhotoUpload(files);
       }
+    });
+  }
+  if (toolsEditPhotoCountEl) {
+    toolsEditPhotoCountEl.addEventListener("click", () => {
+      openToolsEditPhotoViewer().catch((error) => {
+        console.warn("Не удалось открыть просмотр фото инструмента.", error);
+      });
     });
   }
   if (toolsEditRemovePhotoButton) {

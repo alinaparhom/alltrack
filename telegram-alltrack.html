@@ -5641,12 +5641,31 @@
         justify-content: center;
         min-width: 36px;
         padding: 4px 10px;
+        cursor: pointer;
         border-radius: 999px;
         font-size: 12px;
         font-weight: 600;
         color: #1d4ed8;
         background: rgba(219, 234, 254, 0.9);
         border: 1px solid rgba(59, 130, 246, 0.3);
+        -webkit-appearance: none;
+        appearance: none;
+        line-height: 1.2;
+        transition: transform 0.16s ease, box-shadow 0.16s ease;
+      }
+
+      .tools-edit-photo-count:disabled {
+        cursor: default;
+        opacity: 0.6;
+      }
+
+      .tools-edit-photo-count:not(:disabled):active {
+        transform: scale(0.97);
+      }
+
+      .tools-edit-photo-count:focus-visible {
+        outline: 2px solid rgba(59, 130, 246, 0.5);
+        outline-offset: 2px;
       }
 
       .tools-edit-photo-actions {

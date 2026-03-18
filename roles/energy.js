@@ -1276,6 +1276,15 @@ export function renderRole(user) {
                 </div>
                 <div class="form-message" data-tools-edit-message></div>
                 <div class="tools-edit-action-groups">
+                  <div class="tools-edit-actions tools-edit-actions--danger">
+                    <button
+                      class="action-danger tools-edit-actions__delete"
+                      type="button"
+                      data-tools-edit-delete
+                    >
+                      Удалить инструмент
+                    </button>
+                  </div>
                   <div class="tools-edit-actions tools-edit-actions--save">
                     <div class="tools-edit-actions__main">
                       <button
@@ -1286,15 +1295,6 @@ export function renderRole(user) {
                         Сохранить
                       </button>
                     </div>
-                  </div>
-                  <div class="tools-edit-actions tools-edit-actions--danger">
-                    <button
-                      class="action-danger tools-edit-actions__delete"
-                      type="button"
-                      data-tools-edit-delete
-                    >
-                      Удалить инструмент
-                    </button>
                   </div>
                 </div>
               </form>

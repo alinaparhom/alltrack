@@ -1236,15 +1236,20 @@ export function renderRole(user) {
                   </label>
                   <label class="form-field">
                     <span class="form-label">Группа инструментов</span>
-                    <span class="tools-edit-group-select-wrap">
-                      <select
-                        class="form-input tools-edit-group-select"
+                    <div class="suggestions-field">
+                      <input
+                        class="form-input"
+                        type="text"
+                        inputmode="text"
                         data-placeholder="Выберите группу из списка"
                         data-tools-edit-group
-                      >
-                        <option value="">Выберите группу из списка</option>
-                      </select>
-                    </span>
+                        autocomplete="off"
+                      />
+                      <div
+                        class="suggestions is-hidden"
+                        data-tools-edit-group-suggestions
+                      ></div>
+                    </div>
                   </label>
                 </div>
                 <div class="form-card tools-edit-kit" data-tools-edit-kit-block>

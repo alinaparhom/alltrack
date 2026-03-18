@@ -5183,6 +5183,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   );
   const toolsEditSerialInput = contentEl.querySelector("[data-tools-edit-serial]");
   const toolsEditGroupInput = contentEl.querySelector("[data-tools-edit-group]");
+  const toolsEditGroupOptionsEl = contentEl.querySelector(
+    "[data-tools-edit-group-options]"
+  );
   const toolsEditGroupSuggestionsEl = contentEl.querySelector(
     "[data-tools-edit-group-suggestions]"
   );
@@ -10663,6 +10666,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (!inputEl) return;
     const basePlaceholder =
       inputEl.dataset.placeholder ?? "Выберите значение";
+    if (toolsEditGroupOptionsEl) {
+      toolsEditGroupOptionsEl.innerHTML = options
+        .map((option) => `<option value="${escapeHtml(option)}"></option>`)
+        .join("");
+    }
     if (options.length) {
       inputEl.disabled = false;
       inputEl.placeholder = basePlaceholder;

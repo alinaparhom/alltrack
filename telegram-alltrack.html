@@ -8462,6 +8462,10 @@
           flex-wrap: nowrap;
           gap: 4px;
           width: 100%;
+          min-width: 0;
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) auto auto;
+          align-items: center;
         }
 
         .tools-move-button {
@@ -8484,10 +8488,37 @@
 
         .tools-filters-toggle {
           width: auto;
-          min-width: 34px;
+          min-width: 40px;
+          height: 36px;
+          min-height: 36px;
           justify-content: center;
           margin-left: 0;
-          padding: 5px 6px;
+          padding: 0 8px;
+          font-size: 11px;
+          border-radius: 11px;
+        }
+
+        .tools-sort-toggle {
+          margin-left: 0;
+          width: 36px;
+          min-width: 36px;
+          height: 36px;
+          min-height: 36px;
+          border-radius: 11px;
+        }
+
+        .tools-view-toggle {
+          width: 100%;
+          min-width: 0;
+          gap: 2px;
+          padding: 3px;
+        }
+
+        .tools-view-button {
+          min-width: 0;
+          padding: 6px 8px;
+          font-size: 11px;
+          letter-spacing: -0.01em;
         }
 
         .tools-filters {

@@ -1235,7 +1235,7 @@ export function renderRole(user) {
                     />
                   </label>
                   <label class="form-field">
-                    <span class="form-label">Граппа инструментов</span>
+                    <span class="form-label">Группа инструментов</span>
                     <input
                       class="form-input"
                       type="text"
@@ -1277,7 +1277,7 @@ export function renderRole(user) {
                 <div class="form-message" data-tools-edit-message></div>
                 <div class="tools-edit-actions">
                   <button
-                    class="action-danger"
+                    class="action-danger tools-edit-actions__delete"
                     type="button"
                     data-tools-edit-delete
                   >
@@ -1285,14 +1285,7 @@ export function renderRole(user) {
                   </button>
                   <div class="tools-edit-actions__main">
                     <button
-                      class="action-secondary"
-                      type="button"
-                      data-tools-edit-cancel
-                    >
-                      Закрыть
-                    </button>
-                    <button
-                      class="action-primary"
+                      class="action-primary tools-edit-actions__save"
                       type="submit"
                       data-tools-edit-save
                     >

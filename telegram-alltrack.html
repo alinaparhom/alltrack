@@ -6275,10 +6275,6 @@
 
       .tools-modal--selecting .tools-move-button {
         display: inline-flex;
-        min-height: auto;
-        padding: 8px 14px;
-        font-size: 12px;
-        font-weight: 600;
       }
 
       .tools-modal--selecting .tools-selection-count {
@@ -6290,11 +6286,15 @@
         display: inline-flex;
       }
 
+      .tools-modal--selecting .tools-move-button,
       .tools-modal--selecting .tools-cancel-button {
         min-height: auto;
-        padding: 8px 14px;
+        width: 96px;
+        justify-content: center;
+        padding: 8px 12px;
         font-size: 12px;
         font-weight: 600;
+        white-space: nowrap;
       }
 
       .tools-card.is-selected,

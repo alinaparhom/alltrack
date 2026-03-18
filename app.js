@@ -5183,13 +5183,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   );
   const toolsEditSerialInput = contentEl.querySelector("[data-tools-edit-serial]");
   const toolsEditGroupInput = contentEl.querySelector("[data-tools-edit-group]");
-  const toolsEditKitBlockEl = contentEl.querySelector("[data-tools-edit-kit-block]");
-  const toolsEditKitToggleButton = contentEl.querySelector(
+  let toolsEditKitBlockEl = contentEl.querySelector("[data-tools-edit-kit-block]");
+  let toolsEditKitToggleButton = contentEl.querySelector(
     "[data-tools-edit-kit-toggle]"
   );
-  const toolsEditKitPanelEl = contentEl.querySelector("[data-tools-edit-kit-panel]");
-  const toolsEditKitListEl = contentEl.querySelector("[data-tools-edit-kit-list]");
-  const toolsEditKitAddButton = contentEl.querySelector("[data-tools-edit-kit-add]");
+  let toolsEditKitPanelEl = contentEl.querySelector("[data-tools-edit-kit-panel]");
+  let toolsEditKitListEl = contentEl.querySelector("[data-tools-edit-kit-list]");
+  let toolsEditKitAddButton = contentEl.querySelector("[data-tools-edit-kit-add]");
   const toolsEditPhotoInput = contentEl.querySelector("[data-tools-edit-photo-add]");
   const toolsEditPhotoCountEl = contentEl.querySelector(
     "[data-tools-edit-photo-count]"
@@ -5197,6 +5197,64 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const toolsEditRemovePhotoButton = contentEl.querySelector(
     "[data-tools-edit-photo-remove]"
   );
+
+  const ensureToolsEditKitBlock = () => {
+    if (
+      !toolsEditFormEl ||
+      (toolsEditKitBlockEl &&
+        toolsEditKitToggleButton &&
+        toolsEditKitPanelEl &&
+        toolsEditKitListEl &&
+        toolsEditKitAddButton)
+    ) {
+      return;
+    }
+
+    const block = document.createElement("div");
+    block.className = "tools-edit-kit";
+    block.setAttribute("data-tools-edit-kit-block", "");
+    block.innerHTML = `
+      <button
+        class="button-secondary tools-edit-kit__toggle"
+        type="button"
+        data-tools-edit-kit-toggle
+        aria-expanded="false"
+      >
+        Добавить комплектацию
+      </button>
+      <div class="tools-edit-kit__panel is-hidden" data-tools-edit-kit-panel>
+        <div class="tools-edit-kit__list" data-tools-edit-kit-list></div>
+        <button
+          class="button-secondary tools-edit-kit__add"
+          type="button"
+          data-tools-edit-kit-add
+        >
+          + Добавить позицию
+        </button>
+      </div>
+    `;
+
+    const photoInput = toolsEditFormEl.querySelector("[data-tools-edit-photo-add]");
+    const insertBeforeTarget =
+      photoInput?.closest(".tools-edit-photos") ||
+      photoInput?.closest(".tools-edit-photo") ||
+      photoInput?.closest(".form-field") ||
+      photoInput;
+
+    if (insertBeforeTarget?.parentElement) {
+      insertBeforeTarget.parentElement.insertBefore(block, insertBeforeTarget);
+    } else {
+      toolsEditFormEl.appendChild(block);
+    }
+
+    toolsEditKitBlockEl = block;
+    toolsEditKitToggleButton = block.querySelector("[data-tools-edit-kit-toggle]");
+    toolsEditKitPanelEl = block.querySelector("[data-tools-edit-kit-panel]");
+    toolsEditKitListEl = block.querySelector("[data-tools-edit-kit-list]");
+    toolsEditKitAddButton = block.querySelector("[data-tools-edit-kit-add]");
+  };
+  ensureToolsEditKitBlock();
+
   const addPhotoModalEl = contentEl.querySelector("[data-add-photo-modal]");
   const addPhotoBackdropEl = contentEl.querySelector(
     "[data-add-photo-backdrop]"

@@ -8796,6 +8796,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const setToolsSortToggleVisibility = () => {
     if (!toolsSortToggleEl) return;
     const shouldShow =
+      toolsState.mode === "base" ||
       toolsState.mode === "search" ||
       toolsState.mode === "user" ||
       toolsState.mode === "move-other";

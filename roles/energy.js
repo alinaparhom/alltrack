@@ -1237,7 +1237,7 @@ export function renderRole(user) {
                   <label class="form-field">
                     <span class="form-label">Группа инструментов</span>
                     <select
-                      class="form-input"
+                      class="form-input tools-edit-group-select"
                       data-placeholder="Выберите группу из списка"
                       data-tools-edit-group
                     >

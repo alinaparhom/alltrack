@@ -1247,9 +1247,14 @@ export function renderRole(user) {
                 <div class="form-card tools-edit-photo-card">
                   <div class="tools-edit-photo-header">
                     Фото инструмента
-                    <span class="tools-edit-photo-count" data-tools-edit-photo-count>
+                    <button
+                      class="tools-edit-photo-count"
+                      type="button"
+                      data-tools-edit-photo-count
+                      aria-label="Открыть фото инструмента"
+                    >
                       0
-                    </span>
+                    </button>
                   </div>
                   <div class="tools-edit-photo-actions">
                     <label class="action-secondary tools-edit-photo-add">
@@ -1270,9 +1275,6 @@ export function renderRole(user) {
                       Удалить фото
                     </button>
                   </div>
-                  <p class="form-hint">
-                    Фото сохраняются в карточке инструмента и доступны в базе.
-                  </p>
                 </div>
                 <div class="form-message" data-tools-edit-message></div>
                 <div class="tools-edit-action-groups">

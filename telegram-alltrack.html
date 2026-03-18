@@ -6298,9 +6298,115 @@
         white-space: nowrap;
       }
 
+      .tools-modal--selecting .tools-move-button {
+        color: #0f5132;
+        background: linear-gradient(
+          145deg,
+          rgba(74, 222, 128, 0.5),
+          rgba(236, 253, 245, 0.88)
+        );
+        border: 1px solid rgba(34, 197, 94, 0.42);
+        box-shadow:
+          0 12px 24px rgba(34, 197, 94, 0.2),
+          inset 0 1px 0 rgba(255, 255, 255, 0.46);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+      }
+
+      .tools-modal--selecting .tools-move-button:hover,
+      .tools-modal--selecting .tools-move-button:focus-visible {
+        color: #064e3b;
+        border-color: rgba(22, 163, 74, 0.6);
+        background: linear-gradient(
+          145deg,
+          rgba(34, 197, 94, 0.6),
+          rgba(220, 252, 231, 0.94)
+        );
+        box-shadow:
+          0 14px 28px rgba(21, 128, 61, 0.24),
+          inset 0 1px 0 rgba(255, 255, 255, 0.54);
+      }
+
+      .tools-modal--selecting .tools-cancel-button {
+        color: #7f1d1d;
+        background: linear-gradient(
+          145deg,
+          rgba(248, 113, 113, 0.48),
+          rgba(255, 241, 242, 0.9)
+        );
+        border: 1px solid rgba(239, 68, 68, 0.42);
+        box-shadow:
+          0 12px 24px rgba(239, 68, 68, 0.2),
+          inset 0 1px 0 rgba(255, 255, 255, 0.46);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+      }
+
+      .tools-modal--selecting .tools-cancel-button:hover,
+      .tools-modal--selecting .tools-cancel-button:focus-visible {
+        color: #7f1d1d;
+        border-color: rgba(220, 38, 38, 0.58);
+        background: linear-gradient(
+          145deg,
+          rgba(239, 68, 68, 0.58),
+          rgba(255, 228, 230, 0.94)
+        );
+        box-shadow:
+          0 14px 28px rgba(220, 38, 38, 0.24),
+          inset 0 1px 0 rgba(255, 255, 255, 0.56);
+      }
+
       .tools-modal--selecting .tools-actions {
         flex-wrap: nowrap;
         gap: 4px;
+      }
+
+      body[data-theme="dark"] .tools-modal--selecting .tools-move-button {
+        color: #bbf7d0;
+        background: linear-gradient(
+          145deg,
+          rgba(22, 163, 74, 0.44),
+          rgba(15, 118, 110, 0.36)
+        );
+        border-color: rgba(74, 222, 128, 0.46);
+        box-shadow:
+          0 12px 24px rgba(5, 46, 22, 0.48),
+          inset 0 1px 0 rgba(187, 247, 208, 0.18);
+      }
+
+      body[data-theme="dark"] .tools-modal--selecting .tools-move-button:hover,
+      body[data-theme="dark"] .tools-modal--selecting .tools-move-button:focus-visible {
+        color: #dcfce7;
+        border-color: rgba(134, 239, 172, 0.66);
+        background: linear-gradient(
+          145deg,
+          rgba(22, 163, 74, 0.56),
+          rgba(13, 148, 136, 0.42)
+        );
+      }
+
+      body[data-theme="dark"] .tools-modal--selecting .tools-cancel-button {
+        color: #fecaca;
+        background: linear-gradient(
+          145deg,
+          rgba(220, 38, 38, 0.42),
+          rgba(127, 29, 29, 0.4)
+        );
+        border-color: rgba(248, 113, 113, 0.44);
+        box-shadow:
+          0 12px 24px rgba(69, 10, 10, 0.5),
+          inset 0 1px 0 rgba(254, 202, 202, 0.16);
+      }
+
+      body[data-theme="dark"] .tools-modal--selecting .tools-cancel-button:hover,
+      body[data-theme="dark"] .tools-modal--selecting .tools-cancel-button:focus-visible {
+        color: #fee2e2;
+        border-color: rgba(252, 165, 165, 0.66);
+        background: linear-gradient(
+          145deg,
+          rgba(220, 38, 38, 0.56),
+          rgba(153, 27, 27, 0.48)
+        );
       }
 
       .tools-modal--selecting .tools-filters-toggle {

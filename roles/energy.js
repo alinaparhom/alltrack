@@ -908,15 +908,6 @@ export function renderRole(user) {
                       >
                         Карта
                       </button>
-                      <button
-                        class="tools-filters-toggle tools-sort-toggle"
-                        type="button"
-                        data-tools-sort-toggle
-                        aria-label="Сортировка по номеру инструмента: по убыванию"
-                        title="Сортировка по номеру инструмента: по убыванию"
-                      >
-                        <span class="tools-sort-toggle__icon" aria-hidden="true">↑↓</span>
-                      </button>
                     </div>
                     <button
                       class="action-primary tools-move-button"
@@ -948,16 +939,27 @@ export function renderRole(user) {
                     >
                       <span class="tools-select-all-check" aria-hidden="true"></span>
                     </button>
-                    <button
-                      class="tools-filters-toggle"
-                      type="button"
-                      data-tools-filters-toggle
-                      aria-expanded="false"
-                      aria-controls="tools-filters-panel"
-                      aria-label="Фильтры"
-                    >
-                      <span class="tools-filters-toggle__label">Фильтры</span>
-                    </button>
+                    <div class="tools-filter-actions" role="group" aria-label="Сортировка и фильтры">
+                      <button
+                        class="tools-filters-toggle tools-sort-toggle"
+                        type="button"
+                        data-tools-sort-toggle
+                        aria-label="Сортировка по номеру инструмента: по убыванию"
+                        title="Сортировка по номеру инструмента: по убыванию"
+                      >
+                        <span class="tools-sort-toggle__icon" aria-hidden="true">↑↓</span>
+                      </button>
+                      <button
+                        class="tools-filters-toggle"
+                        type="button"
+                        data-tools-filters-toggle
+                        aria-expanded="false"
+                        aria-controls="tools-filters-panel"
+                        aria-label="Фильтры"
+                      >
+                        <span class="tools-filters-toggle__label">Фильтры</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
                 <div class="tools-filters" id="tools-filters-panel" data-tools-filters-panel>

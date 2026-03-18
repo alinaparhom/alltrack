@@ -663,6 +663,7 @@
       body[data-theme="dark"] .tools-search__input,
       body[data-theme="dark"] .tools-filter .form-input,
       body[data-theme="dark"] .tools-filters-toggle,
+      body[data-theme="dark"] .tools-filter-actions,
       body[data-theme="dark"] .tools-filters,
       body[data-theme="dark"] .tools-move-modal__panel {
         background: rgba(18, 26, 46, 0.9);
@@ -6578,7 +6579,7 @@
         );
       }
 
-      .tools-modal--selecting .tools-filters-toggle {
+      .tools-modal--selecting .tools-filter-actions {
         margin-left: auto;
       }
 
@@ -6891,6 +6892,18 @@
         }
       }
 
+      .tools-filter-actions {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        margin-left: auto;
+        padding: 3px;
+        border-radius: 999px;
+        border: 1px solid rgba(226, 232, 240, 0.75);
+        background: rgba(255, 255, 255, 0.58);
+        backdrop-filter: blur(8px);
+      }
+
       .tools-filters-toggle {
         display: inline-flex;
         align-items: center;
@@ -6909,7 +6922,6 @@
         cursor: pointer;
         transition: all 0.2s ease;
         box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
-        margin-left: auto;
       }
 
       .tools-filters-toggle:hover {
@@ -6927,7 +6939,7 @@
       }
 
       .tools-sort-toggle {
-        margin-left: 8px;
+        margin-left: 0;
         padding: 0;
         width: var(--tools-selection-control-size);
       }
@@ -8846,7 +8858,7 @@
           flex: 0 0 auto;
         }
 
-        .tools-modal--selecting .tools-filters-toggle {
+        .tools-modal--selecting .tools-filter-actions {
           margin-left: auto;
           position: sticky;
           right: 0;
@@ -8874,6 +8886,13 @@
           height: var(--tools-selection-control-size);
           min-height: var(--tools-selection-control-size);
           padding: 0;
+        }
+
+        .tools-filter-actions {
+          margin-left: 0;
+          justify-self: end;
+          gap: 4px;
+          padding: 2px;
         }
 
         .tools-filters-toggle {

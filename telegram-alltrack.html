@@ -6895,15 +6895,16 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        min-width: var(--tools-selection-control-size);
-        height: var(--tools-selection-control-size);
-        min-height: var(--tools-selection-control-size);
-        border-radius: 10px;
-        padding: 0 12px;
+        min-width: 0;
+        height: 32px;
+        min-height: 32px;
+        border-radius: 999px;
+        padding: 6px 10px;
         border: 1px solid rgba(226, 232, 240, 0.9);
         background: rgba(255, 255, 255, 0.86);
         font-size: 12px;
         font-weight: 600;
+        line-height: 1;
         color: var(--accent);
         cursor: pointer;
         transition: all 0.2s ease;
@@ -8877,14 +8878,14 @@
 
         .tools-filters-toggle {
           width: auto;
-          min-width: 40px;
-          height: 36px;
-          min-height: 36px;
+          min-width: 0;
+          height: auto;
+          min-height: 0;
           justify-content: center;
           margin-left: 0;
-          padding: 0 8px;
+          padding: 6px 8px;
           font-size: 11px;
-          border-radius: 11px;
+          border-radius: 999px;
         }
 
         .tools-sort-toggle {

@@ -1254,6 +1254,11 @@ export function renderRole(user) {
                     Добавить комплектацию
                   </button>
                   <div class="tools-edit-kit__panel is-hidden" data-tools-edit-kit-panel>
+                    <div class="tools-edit-kit__title">Комплектация</div>
+                    <p class="tools-edit-kit__hint">
+                      Добавьте позиции комплектации. Наименование обязательно,
+                      количество и бух.номер — по необходимости.
+                    </p>
                     <div class="tools-edit-kit__list" data-tools-edit-kit-list></div>
                     <button
                       class="action-secondary tools-edit-kit__add"

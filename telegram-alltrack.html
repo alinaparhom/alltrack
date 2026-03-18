@@ -8528,15 +8528,18 @@
           min-width: 0;
           gap: 2px;
           padding: 2px;
+          width: 100%;
         }
 
         .tools-modal--my-tools .tools-view-button {
+          flex: 1 1 0;
           min-width: 0;
-          padding: 4px 6px;
-          font-size: 10px;
+          padding: 4px 5px;
+          font-size: clamp(8px, 2.5vw, 10px);
           line-height: 1.1;
           letter-spacing: -0.01em;
           white-space: nowrap;
+          text-align: center;
         }
 
         .tools-modal--my-tools .tools-view-button--icon {
@@ -8550,16 +8553,28 @@
           flex: 0 0 auto;
           width: auto;
           justify-content: flex-end;
-          gap: 4px;
+          gap: 3px;
+          min-width: 0;
         }
 
         .tools-modal--my-tools .tools-filters-toggle {
           min-width: 30px;
+          width: 30px;
           height: 30px;
           min-height: 30px;
-          padding: 0 6px;
-          font-size: 10px;
+          padding: 0;
+          font-size: 0;
           border-radius: 8px;
+        }
+
+        .tools-modal--my-tools .tools-filters-toggle__label {
+          display: none;
+        }
+
+        .tools-modal--my-tools .tools-filters-toggle::before {
+          content: "⚙️";
+          font-size: 13px;
+          line-height: 1;
         }
 
         .tools-modal--my-tools .tools-sort-toggle {
@@ -8567,6 +8582,16 @@
           min-width: 30px;
           height: 30px;
           min-height: 30px;
+        }
+
+        .tools-modal--my-tools .tools-view-button[data-tools-view="map"] {
+          font-size: 0;
+        }
+
+        .tools-modal--my-tools .tools-view-button[data-tools-view="map"]::before {
+          content: "🗺";
+          font-size: 13px;
+          line-height: 1;
         }
 
         .tools-modal--my-tools .tools-list.is-list,

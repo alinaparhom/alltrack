@@ -5183,6 +5183,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   );
   const toolsEditSerialInput = contentEl.querySelector("[data-tools-edit-serial]");
   const toolsEditGroupInput = contentEl.querySelector("[data-tools-edit-group]");
+  const toolsEditKitBlockEl = contentEl.querySelector("[data-tools-edit-kit-block]");
+  const toolsEditKitToggleButton = contentEl.querySelector(
+    "[data-tools-edit-kit-toggle]"
+  );
+  const toolsEditKitPanelEl = contentEl.querySelector("[data-tools-edit-kit-panel]");
+  const toolsEditKitListEl = contentEl.querySelector("[data-tools-edit-kit-list]");
+  const toolsEditKitAddButton = contentEl.querySelector("[data-tools-edit-kit-add]");
   const toolsEditPhotoInput = contentEl.querySelector("[data-tools-edit-photo-add]");
   const toolsEditPhotoCountEl = contentEl.querySelector(
     "[data-tools-edit-photo-count]"
@@ -6615,6 +6622,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     orgFolder: "",
     isSaving: false,
   };
+  let toolsEditKitRowCounter = 0;
   const toolsInfoState = {
     tool: null,
     orgFolder: "",
@@ -10633,6 +10641,134 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (toolsEditPhotoInput) {
       toolsEditPhotoInput.value = "";
     }
+    if (toolsEditKitListEl) {
+      toolsEditKitListEl.innerHTML = "";
+    }
+    toolsEditKitRowCounter = 0;
+    if (toolsEditKitToggleButton) {
+      toolsEditKitToggleButton.setAttribute("aria-expanded", "false");
+      toolsEditKitToggleButton.textContent = "Добавить комплектацию";
+    }
+    toolsEditKitPanelEl?.classList.add("is-hidden");
+    toolsEditKitBlockEl?.classList.remove("is-open");
+  };
+
+  const normalizeToolsKitItem = (item) => ({
+    "Наименование": String(item?.["Наименование"] ?? "").trim(),
+    "Количество": String(item?.["Количество"] ?? "").trim(),
+    "Бух.номер": String(item?.["Бух.номер"] ?? "").trim(),
+  });
+
+  const setToolsEditKitExpanded = (expanded) => {
+    if (!toolsEditKitToggleButton || !toolsEditKitPanelEl) return;
+    toolsEditKitToggleButton.setAttribute("aria-expanded", expanded ? "true" : "false");
+    toolsEditKitPanelEl.classList.toggle("is-hidden", !expanded);
+    toolsEditKitBlockEl?.classList.toggle("is-open", expanded);
+    toolsEditKitToggleButton.textContent = expanded
+      ? "Скрыть комплектацию"
+      : "Добавить комплектацию";
+  };
+
+  const createToolsEditKitRow = (item = null) => {
+    if (!toolsEditKitListEl) return;
+    toolsEditKitRowCounter += 1;
+    const rowId = String(toolsEditKitRowCounter);
+    const normalized = normalizeToolsKitItem(item);
+    const rowEl = document.createElement("div");
+    rowEl.className = "tools-edit-kit__row";
+    rowEl.dataset.toolsEditKitRow = rowId;
+    rowEl.innerHTML = `
+      <label class="form-field form-field--required tools-edit-kit__field tools-edit-kit__field--name">
+        <span class="form-label">Позиция комплекта</span>
+        <input
+          class="form-input"
+          type="text"
+          name="tools-edit-kit-name-${rowId}"
+          value="${escapeHtml(normalized["Наименование"])}"
+          placeholder="Например, кейс"
+          autocomplete="off"
+        />
+      </label>
+      <label class="form-field tools-edit-kit__field tools-edit-kit__field--count">
+        <span class="form-label">Количество</span>
+        <input
+          class="form-input"
+          type="text"
+          inputmode="numeric"
+          name="tools-edit-kit-count-${rowId}"
+          value="${escapeHtml(normalized["Количество"])}"
+          placeholder="Необязательно"
+          autocomplete="off"
+        />
+      </label>
+      <label class="form-field tools-edit-kit__field tools-edit-kit__field--accounting">
+        <span class="form-label">Бух.номер</span>
+        <input
+          class="form-input"
+          type="text"
+          inputmode="numeric"
+          name="tools-edit-kit-accounting-${rowId}"
+          value="${escapeHtml(normalized["Бух.номер"])}"
+          placeholder="Необязательно"
+          autocomplete="off"
+        />
+      </label>
+      <button
+        class="button-icon tools-edit-kit__remove"
+        type="button"
+        data-tools-edit-kit-remove
+        aria-label="Удалить позицию"
+      >
+        <span class="button-icon-emoji" aria-hidden="true">✕</span>
+      </button>
+    `;
+    toolsEditKitListEl.append(rowEl);
+  };
+
+  const fillToolsEditKitRows = (tool) => {
+    if (!toolsEditKitListEl) return;
+    toolsEditKitListEl.innerHTML = "";
+    toolsEditKitRowCounter = 0;
+    const kit = Array.isArray(tool?.["Комплектация"]) ? tool["Комплектация"] : [];
+    const items = kit
+      .map((item) => normalizeToolsKitItem(item))
+      .filter(
+        (item) =>
+          item["Наименование"] || item["Количество"] || item["Бух.номер"]
+      );
+    if (items.length) {
+      items.forEach((item) => createToolsEditKitRow(item));
+      setToolsEditKitExpanded(true);
+      return;
+    }
+    setToolsEditKitExpanded(false);
+  };
+
+  const collectToolsEditKitItems = () => {
+    if (!toolsEditKitListEl) return [];
+    const rows = Array.from(
+      toolsEditKitListEl.querySelectorAll("[data-tools-edit-kit-row]")
+    );
+    return rows
+      .map((row) => {
+        const nameInput = row.querySelector('input[name^="tools-edit-kit-name-"]');
+        const countInput = row.querySelector('input[name^="tools-edit-kit-count-"]');
+        const accountingInput = row.querySelector(
+          'input[name^="tools-edit-kit-accounting-"]'
+        );
+        return {
+          item: {
+            "Наименование": String(nameInput?.value ?? "").trim(),
+            "Количество": String(countInput?.value ?? "").trim(),
+            "Бух.номер": String(accountingInput?.value ?? "").trim(),
+          },
+          nameInput,
+        };
+      })
+      .filter(
+        ({ item }) =>
+          item["Наименование"] || item["Количество"] || item["Бух.номер"]
+      );
   };
 
   const setToolsInfoTab = (tab) => {
@@ -11134,6 +11270,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (toolsEditGroupInput) {
       toolsEditGroupInput.value = String(tool?.["Граппа инструментов"] ?? "");
     }
+    fillToolsEditKitRows(tool);
     const count = Number.parseInt(tool?.["Количество фото"] ?? 0, 10);
     updateToolsEditPhotoCount(Number.isFinite(count) ? count : 0);
     setToolsEditMessage("");
@@ -11183,6 +11320,18 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     toolsEditState.isSaving = true;
     setToolsEditMessage("Сохраняем изменения...", "info");
 
+    const kitItems = collectToolsEditKitItems();
+    const invalidKitItem = kitItems.find(({ item }) => !item["Наименование"]);
+    if (invalidKitItem?.nameInput) {
+      setToolsEditMessage(
+        "Для позиции комплектации заполните наименование.",
+        "error"
+      );
+      invalidKitItem.nameInput.focus();
+      toolsEditState.isSaving = false;
+      return;
+    }
+
     const updatedFields = {
       "Бух.номер": String(toolsEditAccountingInput?.value ?? "").trim(),
       "Наименование": String(toolsEditNameInput?.value ?? "").trim(),
@@ -11193,6 +11342,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       ).trim(),
       "Серийный номер": String(toolsEditSerialInput?.value ?? "").trim(),
       "Граппа инструментов": String(toolsEditGroupInput?.value ?? "").trim(),
+      "Комплектация": kitItems.map(({ item }) => item),
     };
     const matcher = buildToolsEditMatcher({
       "Номер": toolsEditState.matchNumber,
@@ -14539,6 +14689,35 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     input?.addEventListener("input", renderToolsInfoMoves);
     input?.addEventListener("change", renderToolsInfoMoves);
   });
+  if (toolsEditKitToggleButton) {
+    toolsEditKitToggleButton.addEventListener("click", () => {
+      const expanded =
+        toolsEditKitToggleButton.getAttribute("aria-expanded") === "true";
+      setToolsEditKitExpanded(!expanded);
+      if (!expanded && !toolsEditKitListEl?.children.length) {
+        createToolsEditKitRow();
+      }
+    });
+  }
+  if (toolsEditKitAddButton) {
+    toolsEditKitAddButton.addEventListener("click", () => {
+      if (toolsEditKitPanelEl?.classList.contains("is-hidden")) {
+        setToolsEditKitExpanded(true);
+      }
+      createToolsEditKitRow();
+    });
+  }
+  if (toolsEditKitListEl) {
+    toolsEditKitListEl.addEventListener("click", (event) => {
+      const button = event.target.closest("[data-tools-edit-kit-remove]");
+      if (!button) return;
+      const row = button.closest("[data-tools-edit-kit-row]");
+      row?.remove();
+      if (!toolsEditKitListEl.children.length) {
+        setToolsEditKitExpanded(false);
+      }
+    });
+  }
   if (toolsEditFormEl) {
     toolsEditFormEl.addEventListener("submit", (event) => {
       event.preventDefault();

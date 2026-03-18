@@ -1244,6 +1244,26 @@ export function renderRole(user) {
                     />
                   </label>
                 </div>
+                <div class="form-card tools-edit-kit" data-tools-edit-kit-block>
+                  <button
+                    class="action-secondary tools-edit-kit__toggle"
+                    type="button"
+                    data-tools-edit-kit-toggle
+                    aria-expanded="false"
+                  >
+                    Добавить комплектацию
+                  </button>
+                  <div class="tools-edit-kit__panel is-hidden" data-tools-edit-kit-panel>
+                    <div class="tools-edit-kit__list" data-tools-edit-kit-list></div>
+                    <button
+                      class="action-secondary tools-edit-kit__add"
+                      type="button"
+                      data-tools-edit-kit-add
+                    >
+                      + Добавить позицию
+                    </button>
+                  </div>
+                </div>
                 <div class="form-card tools-edit-photo-card">
                   <div class="tools-edit-photo-header">
                     Фото инструмента

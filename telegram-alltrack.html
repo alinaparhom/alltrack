@@ -110,6 +110,8 @@
       body[data-theme="dark"] .writeoff-item,
       body[data-theme="dark"] .writeoff-confirm-item,
       body[data-theme="dark"] .writeoff-confirm-card,
+      body[data-theme="dark"] .tools-edit-kit,
+      body[data-theme="dark"] .tools-edit-kit__row,
       body[data-theme="dark"] .tools-edit-photo-card,
       body[data-theme="dark"] .tools-edit-actions,
       body[data-theme="dark"] .tools-edit-action-groups,
@@ -5624,6 +5626,58 @@
       .tools-edit-photo-card {
         display: grid;
         gap: 10px;
+      }
+
+      .tools-edit-kit {
+        display: grid;
+        gap: 10px;
+      }
+
+      .tools-edit-kit__toggle,
+      .tools-edit-kit__add {
+        width: 100%;
+        min-height: 42px;
+        justify-content: center;
+      }
+
+      .tools-edit-kit__panel {
+        display: grid;
+        gap: 10px;
+      }
+
+      .tools-edit-kit__list {
+        display: grid;
+        gap: 10px;
+      }
+
+      .tools-edit-kit__row {
+        display: grid;
+        gap: 10px;
+        padding: 12px;
+        border-radius: 14px;
+        border: 1px solid rgba(191, 219, 254, 0.5);
+        background: linear-gradient(
+          130deg,
+          rgba(255, 255, 255, 0.92),
+          rgba(239, 246, 255, 0.86)
+        );
+        box-shadow: 0 10px 22px rgba(59, 130, 246, 0.08);
+      }
+
+      .tools-edit-kit__remove {
+        justify-self: end;
+      }
+
+      .tools-edit-kit.is-open {
+        border-color: rgba(59, 130, 246, 0.35);
+        box-shadow: 0 12px 28px rgba(59, 130, 246, 0.12);
+      }
+
+      @media (min-width: 720px) {
+        .tools-edit-kit__row {
+          grid-template-columns: minmax(0, 1.4fr) minmax(0, 0.8fr) minmax(0, 1fr) auto;
+          align-items: end;
+        }
       }
 
       .tools-edit-photo-header {

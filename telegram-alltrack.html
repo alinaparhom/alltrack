@@ -8517,7 +8517,56 @@
         }
 
         .tools-modal--my-tools .tools-controls__row {
-          gap: 10px;
+          flex-direction: row;
+          align-items: center;
+          flex-wrap: nowrap;
+          gap: 6px;
+        }
+
+        .tools-modal--my-tools .tools-view-toggle {
+          flex: 1 1 auto;
+          min-width: 0;
+          gap: 2px;
+          padding: 2px;
+        }
+
+        .tools-modal--my-tools .tools-view-button {
+          min-width: 0;
+          padding: 4px 6px;
+          font-size: 10px;
+          line-height: 1.1;
+          letter-spacing: -0.01em;
+          white-space: nowrap;
+        }
+
+        .tools-modal--my-tools .tools-view-button--icon {
+          width: 26px;
+          min-width: 26px;
+          height: 26px;
+          padding: 0;
+        }
+
+        .tools-modal--my-tools .tools-actions {
+          flex: 0 0 auto;
+          width: auto;
+          justify-content: flex-end;
+          gap: 4px;
+        }
+
+        .tools-modal--my-tools .tools-filters-toggle {
+          min-width: 30px;
+          height: 30px;
+          min-height: 30px;
+          padding: 0 6px;
+          font-size: 10px;
+          border-radius: 8px;
+        }
+
+        .tools-modal--my-tools .tools-sort-toggle {
+          width: 30px;
+          min-width: 30px;
+          height: 30px;
+          min-height: 30px;
         }
 
         .tools-modal--my-tools .tools-list.is-list,

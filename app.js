@@ -5183,6 +5183,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   );
   const toolsEditSerialInput = contentEl.querySelector("[data-tools-edit-serial]");
   const toolsEditGroupInput = contentEl.querySelector("[data-tools-edit-group]");
+  const toolsEditGroupSuggestionsEl = contentEl.querySelector(
+    "[data-tools-edit-group-suggestions]"
+  );
   const toolsEditKitBlockEl = contentEl.querySelector("[data-tools-edit-kit-block]");
   const toolsEditKitToggleButton = contentEl.querySelector(
     "[data-tools-edit-kit-toggle]"
@@ -6620,6 +6623,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     matchNumber: "",
     matchAccounting: "",
     orgFolder: "",
+    groupOptions: [],
     isSaving: false,
   };
   let toolsEditKitRowCounter = 0;
@@ -10636,6 +10640,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     toolsEditState.tool = null;
     toolsEditState.matchNumber = "";
     toolsEditState.matchAccounting = "";
+    toolsEditState.groupOptions = [];
     toolsEditState.isSaving = false;
     setToolsEditMessage("");
     if (toolsEditPhotoInput) {
@@ -10651,6 +10656,53 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
     toolsEditKitPanelEl?.classList.add("is-hidden");
     toolsEditKitBlockEl?.classList.remove("is-open");
+    toolsEditGroupSuggestionsEl?.classList.add("is-hidden");
+  };
+
+  const updateToolsEditGroupState = (inputEl, options, emptyPlaceholder) => {
+    if (!inputEl) return;
+    const basePlaceholder =
+      inputEl.dataset.placeholder ?? "Выберите значение";
+    if (options.length) {
+      inputEl.disabled = false;
+      inputEl.placeholder = basePlaceholder;
+      return;
+    }
+    inputEl.disabled = true;
+    inputEl.placeholder = emptyPlaceholder;
+    inputEl.value = "";
+  };
+
+  const loadToolsEditGroupOptions = async (orgFolder) => {
+    if (!orgFolder) {
+      toolsEditState.groupOptions = [];
+      updateToolsEditGroupState(toolsEditGroupInput, [], "Нет групп");
+      return;
+    }
+    const settingsPath = `./${orgFolder}/Настройки.json`;
+    let rawSettings = {};
+    try {
+      rawSettings = await loadJson(settingsPath);
+    } catch (error) {
+      rawSettings = {};
+    }
+    const settingsData = ensureSettingsData(rawSettings);
+    const organizationSettings = getEnergyOrganizationSettings(settingsData);
+    const groupOptions = Array.isArray(organizationSettings.stcGroups)
+      ? organizationSettings.stcGroups
+      : [];
+    toolsEditState.groupOptions = Array.from(
+      new Set(
+        groupOptions
+          .map((group) => sanitizeToolGroupName(group))
+          .filter(Boolean)
+      )
+    ).sort((a, b) => a.localeCompare(b, "ru"));
+    updateToolsEditGroupState(
+      toolsEditGroupInput,
+      toolsEditState.groupOptions,
+      "Нет групп"
+    );
   };
 
   const normalizeToolsKitItem = (item) => ({
@@ -11224,7 +11276,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     await Promise.all([loadToolsInfoData(), syncToolsInfoCancelMoveButton(tool)]);
   };
 
-  const openToolsEditModal = (tool) => {
+  const openToolsEditModal = async (tool) => {
     if (!toolsEditModalEl || !tool) return;
     toolsEditState.tool = tool;
     toolsEditState.matchNumber = normalizeToolNumberValue(tool?.["Номер"] ?? "");
@@ -11259,6 +11311,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (toolsEditSerialInput) {
       toolsEditSerialInput.value = String(tool?.["Серийный номер"] ?? "");
     }
+    await loadToolsEditGroupOptions(toolsEditState.orgFolder);
     if (toolsEditGroupInput) {
       toolsEditGroupInput.value = String(tool?.["Граппа инструментов"] ?? "");
     }
@@ -11333,9 +11386,26 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         toolsEditAccountingNameInput?.value ?? ""
       ).trim(),
       "Серийный номер": String(toolsEditSerialInput?.value ?? "").trim(),
-      "Граппа инструментов": String(toolsEditGroupInput?.value ?? "").trim(),
+      "Граппа инструментов": "",
       "Комплектация": kitItems.map(({ item }) => item),
     };
+    if (!toolsEditState.groupOptions.length) {
+      setToolsEditMessage("В организации нет групп инструментов.", "error");
+      toolsEditGroupInput?.focus();
+      toolsEditState.isSaving = false;
+      return;
+    }
+    const groupName = findOptionMatch(
+      toolsEditGroupInput?.value ?? "",
+      toolsEditState.groupOptions
+    );
+    if (!groupName) {
+      setToolsEditMessage("Выберите группу инструментов из списка.", "error");
+      toolsEditGroupInput?.focus();
+      toolsEditState.isSaving = false;
+      return;
+    }
+    updatedFields["Граппа инструментов"] = groupName;
     const matcher = buildToolsEditMatcher({
       "Номер": toolsEditState.matchNumber,
       "Бух.номер": toolsEditState.matchAccounting,
@@ -20234,6 +20304,14 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     containerEl: addToolGroupSuggestionsEl,
     getItems: (query) =>
       getSelectableSuggestions(addToolState.groupOptions, query),
+    showOnFocus: true,
+  });
+
+  attachDynamicSuggestions({
+    inputEl: toolsEditGroupInput,
+    containerEl: toolsEditGroupSuggestionsEl,
+    getItems: (query) =>
+      getSelectableSuggestions(toolsEditState.groupOptions, query),
     showOnFocus: true,
   });
 

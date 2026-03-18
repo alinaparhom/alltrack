@@ -10666,18 +10666,31 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (!inputEl) return;
     const basePlaceholder =
       inputEl.dataset.placeholder ?? "Выберите значение";
-    if (toolsEditGroupOptionsEl) {
+    const placeholderLabel = options.length ? basePlaceholder : emptyPlaceholder;
+    if (inputEl instanceof HTMLSelectElement) {
+      inputEl.innerHTML = [
+        `<option value="">${escapeHtml(placeholderLabel)}</option>`,
+        ...options.map(
+          (option) =>
+            `<option value="${escapeHtml(option)}">${escapeHtml(option)}</option>`
+        ),
+      ].join("");
+    } else if (toolsEditGroupOptionsEl) {
       toolsEditGroupOptionsEl.innerHTML = options
         .map((option) => `<option value="${escapeHtml(option)}"></option>`)
         .join("");
     }
     if (options.length) {
       inputEl.disabled = false;
-      inputEl.placeholder = basePlaceholder;
+      if (!(inputEl instanceof HTMLSelectElement)) {
+        inputEl.placeholder = basePlaceholder;
+      }
       return;
     }
     inputEl.disabled = true;
-    inputEl.placeholder = emptyPlaceholder;
+    if (!(inputEl instanceof HTMLSelectElement)) {
+      inputEl.placeholder = emptyPlaceholder;
+    }
     inputEl.value = "";
   };
 
@@ -11321,7 +11334,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
     await loadToolsEditGroupOptions(toolsEditState.orgFolder);
     if (toolsEditGroupInput) {
-      toolsEditGroupInput.value = String(tool?.["Граппа инструментов"] ?? "");
+      const groupValue = String(tool?.["Граппа инструментов"] ?? "").trim();
+      const hasOption = toolsEditState.groupOptions.some(
+        (option) => option === groupValue
+      );
+      toolsEditGroupInput.value = hasOption ? groupValue : "";
     }
     fillToolsEditKitRows(tool);
     const count = Number.parseInt(tool?.["Количество фото"] ?? 0, 10);

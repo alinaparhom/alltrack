@@ -1240,11 +1240,16 @@ export function renderRole(user) {
                       class="form-input"
                       type="text"
                       inputmode="text"
+                      list="tools-edit-group-options"
                       data-placeholder="Выберите группу"
                       placeholder="Выберите группу"
                       autocomplete="off"
                       data-tools-edit-group
                     />
+                    <datalist
+                      id="tools-edit-group-options"
+                      data-tools-edit-group-options
+                    ></datalist>
                     <div
                       class="suggestions is-hidden"
                       data-tools-edit-group-suggestions

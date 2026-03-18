@@ -12573,6 +12573,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const previousResponsibleLabel = movedByEnergy
         ? "Ответственный"
         : "Ответственный до перемещения";
+      const moveComment = String(move?.["Причина перемещения"] ?? "").trim();
       const metaLines = [
         [manufacturer, model].filter(Boolean).join(" · "),
         senderValue ? `${senderLabel}: ${senderValue}` : "",
@@ -12580,6 +12581,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         previousResponsible
           ? `${previousResponsibleLabel}: ${previousResponsible}`
           : "",
+        moveComment ? `Комментарий: ${moveComment}` : "",
       ].filter(Boolean);
       metaLines.forEach((line) => {
         const lineEl = document.createElement("div");

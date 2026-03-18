@@ -10713,14 +10713,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           autocomplete="off"
         />
       </label>
-      <button
-        class="button-icon tools-edit-kit__remove"
-        type="button"
-        data-tools-edit-kit-remove
-        aria-label="Удалить позицию"
-      >
-        <span class="button-icon-emoji" aria-hidden="true">✕</span>
-      </button>
     `;
     toolsEditKitListEl.append(rowEl);
   };

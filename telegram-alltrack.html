@@ -7389,6 +7389,8 @@
 
       .writeoff-modal__body {
         display: grid;
+        grid-template-rows: auto auto minmax(0, 1fr);
+        align-content: start;
         gap: 12px;
         overflow: hidden;
       }
@@ -7447,6 +7449,7 @@
         overflow: auto;
         padding-bottom: 10px;
         grid-auto-rows: minmax(64px, auto);
+        align-content: start;
       }
 
       .writeoff-item {
@@ -7456,6 +7459,7 @@
         align-items: center;
         padding: 12px 14px;
         min-height: 64px;
+        height: 64px;
         border-radius: 16px;
         border: 1px solid rgba(226, 232, 240, 0.9);
         background: rgba(255, 255, 255, 0.88);

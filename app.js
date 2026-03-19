@@ -9892,10 +9892,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const title = document.createElement("div");
       title.className = "tools-card__title";
       title.textContent = infoLine || "Без названия";
+      const responsibleStatusLine = createResponsibleStatusLine();
       const statusMeta = document.createElement("div");
       statusMeta.className = "tools-card__status";
       fillToolStatusMeta(statusMeta);
       overlay.appendChild(title);
+      overlay.appendChild(responsibleStatusLine);
       overlay.appendChild(statusMeta);
       media.appendChild(overlay);
       if (viewMode === "large" || isCompactMobile) {

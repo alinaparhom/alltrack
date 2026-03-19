@@ -11669,9 +11669,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       "is-active",
       writeOffState.filterWriteOffOnly
     );
-    writeOffFilterButton.textContent = writeOffState.filterWriteOffOnly
-      ? "Показаны «На списание»"
-      : "Только «На списание»";
+    writeOffFilterButton.textContent = "Фильтры";
   };
 
   const renderWriteOffList = () => {

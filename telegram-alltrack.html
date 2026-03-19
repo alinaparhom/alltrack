@@ -7456,10 +7456,9 @@
         display: grid;
         grid-template-columns: auto minmax(0, 1fr);
         gap: 12px;
-        align-items: center;
+        align-items: start;
         padding: 12px 14px;
         min-height: 64px;
-        height: 64px;
         border-radius: 16px;
         border: 1px solid rgba(226, 232, 240, 0.9);
         background: rgba(255, 255, 255, 0.88);
@@ -7600,9 +7599,17 @@
       }
 
       .writeoff-item__meta {
+        display: grid;
+        gap: 2px;
         font-size: 12px;
         color: var(--muted);
         margin-top: 4px;
+      }
+
+      .writeoff-item__status-line {
+        font-weight: 700;
+        text-decoration: underline;
+        text-underline-offset: 2px;
       }
 
       .writeoff-confirm-modal__panel {

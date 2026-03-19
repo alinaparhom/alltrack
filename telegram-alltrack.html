@@ -7444,12 +7444,11 @@
       }
 
       .writeoff-list {
-        display: grid;
-        gap: 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
         overflow: auto;
-        padding-bottom: 10px;
-        grid-auto-rows: minmax(64px, auto);
-        align-content: start;
+        padding-bottom: 12px;
       }
 
       .writeoff-item {
@@ -7458,7 +7457,7 @@
         gap: 12px;
         align-items: start;
         padding: 14px;
-        min-height: 96px;
+        min-height: 112px;
         height: auto;
         border-radius: 16px;
         border: 1px solid rgba(226, 232, 240, 0.9);
@@ -7608,11 +7607,11 @@
 
       .writeoff-item__meta {
         display: grid;
-        gap: 4px;
+        gap: 6px;
         font-size: 12px;
         color: var(--muted);
         margin-top: 4px;
-        line-height: 1.35;
+        line-height: 1.45;
         white-space: normal;
         overflow-wrap: anywhere;
       }
@@ -7631,6 +7630,8 @@
         font-weight: 700;
         text-decoration: underline;
         text-underline-offset: 2px;
+        display: block;
+        padding-bottom: 2px;
       }
 
       .writeoff-confirm-modal__panel {

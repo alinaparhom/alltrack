@@ -7403,7 +7403,7 @@
 
       .writeoff-modal__body {
         display: grid;
-        grid-template-rows: auto auto minmax(0, 1fr) auto;
+        grid-template-rows: auto auto auto minmax(0, 1fr) auto;
         align-content: start;
         gap: 6px;
         overflow: hidden;
@@ -7502,6 +7502,15 @@
         color: #fff;
         border-color: rgba(15, 23, 42, 0.9);
         box-shadow: 0 14px 26px rgba(15, 23, 42, 0.24);
+      }
+
+      .writeoff-modal .tools-filters[data-writeoff-filters-panel] {
+        display: none;
+        margin-bottom: 2px;
+      }
+
+      .writeoff-modal .tools-filters[data-writeoff-filters-panel].is-open {
+        display: grid;
       }
 
       @media (max-width: 520px) {

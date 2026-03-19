@@ -11681,10 +11681,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const item = document.createElement("div");
       item.className = "writeoff-item";
       item.dataset.writeoffId = tool.__selectionId;
-      const statusText = String(tool?.["Статус"] ?? "").trim().toLowerCase();
-      if (statusText === "на списание") {
-        item.classList.add("writeoff-item--pending");
-      }
+      item.classList.toggle("tools-item--pending-response", Boolean(tool?.__pendingMove));
+      applyToolStatusClasses(item, tool);
       if (writeOffState.selectedIds.has(tool.__selectionId)) {
         item.classList.add("is-selected");
       }
@@ -11701,11 +11699,15 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         [accounting || number, name].filter(Boolean).join(" · ") || "Без названия";
       const meta = document.createElement("div");
       meta.className = "writeoff-item__meta";
+      const isMovingNow = Boolean(tool?.__pendingMove);
+      const statusText = isMovingNow
+        ? "в процессе перемещения"
+        : String(tool?.["Статус"] ?? "").trim();
       meta.textContent = [
         accounting ? `Бух.номер: ${accounting}` : "",
         number && number !== accounting ? `Номер: ${number}` : "",
         tool?.["Объект"],
-        tool?.["Статус"],
+        statusText,
       ]
         .filter((value) => value && String(value).trim())
         .join(" · ");
@@ -11766,10 +11768,17 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       console.warn("Не удалось загрузить базу инструментов.", error);
       rawTools = [];
     }
+    const { pendingNumbers, pendingAccountingNumbers } =
+      await loadPendingMoves(orgFolder);
     writeOffState.toolMap.clear();
     writeOffState.tools = rawTools
       .map((tool, index) => {
         const selectionId = buildToolSelectionId(tool, index);
+        const number = String(tool?.["Номер"] ?? "").trim();
+        const accounting = String(tool?.["Бух.номер"] ?? "").trim();
+        const hasPendingMove =
+          (number && pendingNumbers.has(number)) ||
+          (accounting && pendingAccountingNumbers.has(accounting));
         const entry = {
           ...tool,
           __selectionId: selectionId,
@@ -11777,6 +11786,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           __accountingSearchLine: buildWriteOffNumberSearchLine(
             tool?.["Бух.номер"]
           ),
+          __pendingMove: hasPendingMove,
+          __statusTone: resolveToolStatusTone(tool),
         };
         writeOffState.toolMap.set(selectionId, entry);
         return entry;

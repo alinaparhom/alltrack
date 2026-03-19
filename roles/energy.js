@@ -1528,6 +1528,91 @@ export function renderRole(user) {
                   Фильтры
                 </button>
               </div>
+              <div class="tools-filters" data-writeoff-filters-panel>
+                <div class="tools-filters-grid">
+                  <div class="tools-filter-dropdown" data-tools-filter="group">
+                    <button type="button" class="form-input tools-filter-dropdown__trigger" data-tools-filter-trigger>
+                      Все
+                    </button>
+                    <div class="tools-filter-dropdown__menu is-hidden" data-tools-filter-menu>
+                      <button type="button" class="tools-filter-dropdown__clear" data-tools-filter-clear>
+                        Снять выбор
+                      </button>
+                      <div class="tools-filter-dropdown__options" data-tools-filter-options></div>
+                    </div>
+                  </div>
+                  <div class="tools-filter-dropdown" data-tools-filter="object">
+                    <button type="button" class="form-input tools-filter-dropdown__trigger" data-tools-filter-trigger>
+                      Все
+                    </button>
+                    <div class="tools-filter-dropdown__menu is-hidden" data-tools-filter-menu>
+                      <button type="button" class="tools-filter-dropdown__clear" data-tools-filter-clear>
+                        Снять выбор
+                      </button>
+                      <div class="tools-filter-dropdown__options" data-tools-filter-options></div>
+                    </div>
+                  </div>
+                  <div class="tools-filter-dropdown" data-tools-filter="status">
+                    <button type="button" class="form-input tools-filter-dropdown__trigger" data-tools-filter-trigger>
+                      Все
+                    </button>
+                    <div class="tools-filter-dropdown__menu is-hidden" data-tools-filter-menu>
+                      <button type="button" class="tools-filter-dropdown__clear" data-tools-filter-clear>
+                        Снять выбор
+                      </button>
+                      <div class="tools-filter-dropdown__options" data-tools-filter-options></div>
+                    </div>
+                  </div>
+                  <div class="tools-filter-dropdown" data-tools-filter="responsible">
+                    <button type="button" class="form-input tools-filter-dropdown__trigger" data-tools-filter-trigger>
+                      Все
+                    </button>
+                    <div class="tools-filter-dropdown__menu is-hidden" data-tools-filter-menu>
+                      <button type="button" class="tools-filter-dropdown__clear" data-tools-filter-clear>
+                        Снять выбор
+                      </button>
+                      <div class="tools-filter-dropdown__options" data-tools-filter-options></div>
+                    </div>
+                  </div>
+                  <div class="tools-filter-dropdown" data-tools-filter="manufacturer">
+                    <button type="button" class="form-input tools-filter-dropdown__trigger" data-tools-filter-trigger>
+                      Все
+                    </button>
+                    <div class="tools-filter-dropdown__menu is-hidden" data-tools-filter-menu>
+                      <button type="button" class="tools-filter-dropdown__clear" data-tools-filter-clear>
+                        Снять выбор
+                      </button>
+                      <div class="tools-filter-dropdown__options" data-tools-filter-options></div>
+                    </div>
+                  </div>
+                  <div class="tools-filter-dropdown" data-tools-filter="model">
+                    <button type="button" class="form-input tools-filter-dropdown__trigger" data-tools-filter-trigger>
+                      Все
+                    </button>
+                    <div class="tools-filter-dropdown__menu is-hidden" data-tools-filter-menu>
+                      <button type="button" class="tools-filter-dropdown__clear" data-tools-filter-clear>
+                        Снять выбор
+                      </button>
+                      <div class="tools-filter-dropdown__options" data-tools-filter-options></div>
+                    </div>
+                  </div>
+                  <div class="tools-filter-dropdown" data-tools-filter="photo">
+                    <button type="button" class="form-input tools-filter-dropdown__trigger" data-tools-filter-trigger>
+                      Все
+                    </button>
+                    <div class="tools-filter-dropdown__menu is-hidden" data-tools-filter-menu>
+                      <button type="button" class="tools-filter-dropdown__clear" data-tools-filter-clear>
+                        Снять выбор
+                      </button>
+                      <div class="tools-filter-dropdown__options" data-tools-filter-options></div>
+                    </div>
+                  </div>
+                </div>
+                <div class="tools-filters-controls">
+                  <div class="tools-filters-status" data-tools-filters-status>Фильтры не выбраны</div>
+                  <button type="button" class="tools-filters-reset is-hidden" data-tools-filters-reset>Сбросить всё</button>
+                </div>
+              </div>
               <div class="writeoff-list" data-writeoff-list></div>
               <div class="tools-empty is-hidden" data-writeoff-empty>
                 Инструменты не найдены. Попробуйте другой бух.номер.

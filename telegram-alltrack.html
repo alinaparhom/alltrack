@@ -7458,7 +7458,8 @@
         gap: 12px;
         align-items: start;
         padding: 12px 14px;
-        min-height: 64px;
+        min-height: 72px;
+        height: auto;
         border-radius: 16px;
         border: 1px solid rgba(226, 232, 240, 0.9);
         background: rgba(255, 255, 255, 0.88);
@@ -7600,10 +7601,23 @@
 
       .writeoff-item__meta {
         display: grid;
-        gap: 2px;
+        gap: 4px;
         font-size: 12px;
         color: var(--muted);
         margin-top: 4px;
+        line-height: 1.35;
+        white-space: normal;
+        overflow-wrap: anywhere;
+      }
+
+      .writeoff-item__meta-line {
+        white-space: normal;
+        overflow-wrap: anywhere;
+      }
+
+      .writeoff-item__meta-line--main {
+        font-weight: 600;
+        color: var(--text);
       }
 
       .writeoff-item__status-line {

@@ -9762,6 +9762,21 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const statusText = isMovingNow
       ? "в процессе перемещения"
       : status || "не указан";
+    const responsible = String(tool?.["Ответственный"] ?? "").trim() || "не указан";
+    const createResponsibleStatusLine = () => {
+      const line = document.createElement("div");
+      line.className = "tools-card__responsible-status";
+      const responsibleLabel = document.createElement("span");
+      responsibleLabel.textContent = `Ответственный: ${responsible} · `;
+      const statusLabel = document.createElement("span");
+      statusLabel.textContent = "Статус: ";
+      const statusValue = document.createElement("span");
+      statusValue.textContent = statusText;
+      statusValue.style.fontWeight = "700";
+      statusValue.style.textDecoration = "underline";
+      line.append(responsibleLabel, statusLabel, statusValue);
+      return line;
+    };
     const fillToolStatusMeta = (container) => {
       if (!container) return;
       container.textContent = "";
@@ -9818,6 +9833,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         costMetaLineEl.textContent = costMetaLine;
         meta.appendChild(costMetaLineEl);
       }
+      meta.appendChild(createResponsibleStatusLine());
       if (shouldHighlightToolStatus) {
         const statusMeta = document.createElement("div");
         statusMeta.className = "tools-row__status";
@@ -9826,6 +9842,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       }
       if (!mainMetaLine && !costMetaLine) {
         meta.textContent = "—";
+        meta.appendChild(createResponsibleStatusLine());
       }
       main.append(title, meta);
       row.appendChild(main);
@@ -9895,7 +9912,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const statusMeta = document.createElement("div");
     statusMeta.className = "tools-card__status";
     fillToolStatusMeta(statusMeta);
+    const responsibleStatusLine = createResponsibleStatusLine();
     body.appendChild(title);
+    body.appendChild(responsibleStatusLine);
     body.appendChild(statusMeta);
     card.append(media, body);
     return card;

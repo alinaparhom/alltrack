@@ -6041,6 +6041,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const writeOffSubtitleEl = contentEl.querySelector("[data-writeoff-subtitle]");
   const writeOffMessageEl = contentEl.querySelector("[data-writeoff-message]");
   const writeOffNextButton = contentEl.querySelector("[data-writeoff-next]");
+  const writeOffStatusOnlyButton = contentEl.querySelector("[data-writeoff-status-only]");
   const writeOffFilterButton = contentEl.querySelector("[data-writeoff-filter]");
   const writeOffConfirmModalEl = contentEl.querySelector(
     "[data-writeoff-confirm-modal]"
@@ -11664,12 +11665,20 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   };
 
   const updateWriteOffFilterButton = () => {
+    const isStatusOnly = writeOffState.filterWriteOffOnly;
+    if (writeOffStatusOnlyButton) {
+      writeOffStatusOnlyButton.classList.toggle("is-active", isStatusOnly);
+      writeOffStatusOnlyButton.setAttribute("aria-pressed", isStatusOnly ? "true" : "false");
+    }
     if (!writeOffFilterButton) return;
-    writeOffFilterButton.classList.toggle(
-      "is-active",
-      writeOffState.filterWriteOffOnly
-    );
+    writeOffFilterButton.classList.toggle("is-active", isStatusOnly);
     writeOffFilterButton.textContent = "Фильтры";
+  };
+
+  const toggleWriteOffStatusOnly = () => {
+    writeOffState.filterWriteOffOnly = !writeOffState.filterWriteOffOnly;
+    updateWriteOffFilterButton();
+    applyWriteOffFilters();
   };
 
   const renderWriteOffList = () => {
@@ -14888,12 +14897,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       applyWriteOffFilters();
     });
   }
+  if (writeOffStatusOnlyButton) {
+    writeOffStatusOnlyButton.addEventListener("click", toggleWriteOffStatusOnly);
+  }
   if (writeOffFilterButton) {
-    writeOffFilterButton.addEventListener("click", () => {
-      writeOffState.filterWriteOffOnly = !writeOffState.filterWriteOffOnly;
-      updateWriteOffFilterButton();
-      applyWriteOffFilters();
-    });
+    writeOffFilterButton.addEventListener("click", toggleWriteOffStatusOnly);
   }
   if (writeOffListEl) {
     writeOffListEl.addEventListener("click", (event) => {

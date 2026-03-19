@@ -1510,7 +1510,7 @@ export function renderRole(user) {
               </label>
               <div class="writeoff-selection" data-writeoff-selection>
                 <div class="writeoff-selection__block writeoff-selection__block--count">
-                  <span class="writeoff-selection__count-label">Выбрано</span>
+                  <span class="writeoff-selection__count-label">Выбрано:</span>
                   <strong class="writeoff-selection__count-value" data-writeoff-count>0</strong>
                 </div>
                 <button

@@ -7480,13 +7480,19 @@
         display: grid;
         grid-template-columns: minmax(92px, 0.36fr) minmax(0, 1fr);
         gap: 8px;
-        align-items: start;
+        align-items: stretch;
       }
 
       .writeoff-item__column {
         min-width: 0;
         display: grid;
         gap: 3px;
+      }
+
+      .writeoff-item__column--accounting {
+        display: flex;
+        align-items: center;
+        justify-content: center;
       }
 
       .writeoff-item__column-title {

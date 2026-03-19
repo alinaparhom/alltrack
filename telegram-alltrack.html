@@ -7580,7 +7580,7 @@
 
       .writeoff-modal__footer {
         display: flex;
-        justify-content: center;
+        justify-content: space-between;
         align-items: center;
         padding-inline: 12px;
         gap: 10px;
@@ -7588,8 +7588,9 @@
 
       .writeoff-modal__footer .action-secondary,
       .writeoff-modal__footer .action-primary {
-        width: calc(50% - 6px);
-        max-width: 180px;
+        flex: 1 1 0;
+        width: auto;
+        max-width: none;
         min-height: 42px;
         margin: 0;
       }

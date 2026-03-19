@@ -7594,6 +7594,76 @@
         margin: 0;
       }
 
+      .writeoff-modal__footer [data-writeoff-cancel],
+      .writeoff-modal__footer [data-writeoff-next] {
+        border-width: 1px;
+        border-style: solid;
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+      }
+
+      .writeoff-modal__footer [data-writeoff-cancel] {
+        color: #b91c1c;
+        border-color: rgba(220, 38, 38, 0.3);
+        background: linear-gradient(
+          135deg,
+          rgba(254, 242, 242, 0.9),
+          rgba(254, 226, 226, 0.72)
+        );
+        box-shadow:
+          0 8px 20px rgba(220, 38, 38, 0.2),
+          0 0 0 1px rgba(255, 255, 255, 0.35) inset;
+      }
+
+      .writeoff-modal__footer [data-writeoff-next] {
+        color: #14532d;
+        border-color: rgba(22, 163, 74, 0.32);
+        background: linear-gradient(
+          135deg,
+          rgba(240, 253, 244, 0.92),
+          rgba(220, 252, 231, 0.74)
+        );
+        box-shadow:
+          0 8px 22px rgba(22, 163, 74, 0.2),
+          0 0 0 1px rgba(255, 255, 255, 0.35) inset;
+      }
+
+      .writeoff-modal__footer [data-writeoff-cancel]:hover,
+      .writeoff-modal__footer [data-writeoff-cancel]:focus-visible {
+        border-color: rgba(220, 38, 38, 0.45);
+        box-shadow:
+          0 10px 24px rgba(220, 38, 38, 0.24),
+          0 0 0 2px rgba(254, 202, 202, 0.5);
+      }
+
+      .writeoff-modal__footer [data-writeoff-next]:hover,
+      .writeoff-modal__footer [data-writeoff-next]:focus-visible {
+        border-color: rgba(22, 163, 74, 0.46);
+        box-shadow:
+          0 10px 24px rgba(22, 163, 74, 0.24),
+          0 0 0 2px rgba(187, 247, 208, 0.55);
+      }
+
+      body[data-theme="dark"] .writeoff-modal__footer [data-writeoff-cancel] {
+        color: #fecaca;
+        border-color: rgba(248, 113, 113, 0.4);
+        background: linear-gradient(
+          135deg,
+          rgba(127, 29, 29, 0.45),
+          rgba(69, 10, 10, 0.38)
+        );
+      }
+
+      body[data-theme="dark"] .writeoff-modal__footer [data-writeoff-next] {
+        color: #bbf7d0;
+        border-color: rgba(74, 222, 128, 0.42);
+        background: linear-gradient(
+          135deg,
+          rgba(20, 83, 45, 0.5),
+          rgba(5, 46, 22, 0.4)
+        );
+      }
+
       .writeoff-item.is-selected {
         border-color: rgba(59, 130, 246, 0.55);
         box-shadow: 0 16px 30px rgba(59, 130, 246, 0.16);

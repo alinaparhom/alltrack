@@ -6043,6 +6043,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const writeOffNextButton = contentEl.querySelector("[data-writeoff-next]");
   const writeOffStatusOnlyButton = contentEl.querySelector("[data-writeoff-status-only]");
   const writeOffFilterButton = contentEl.querySelector("[data-writeoff-filter]");
+  const writeOffFiltersPanelEl = contentEl.querySelector("[data-writeoff-filters-panel]");
   const writeOffConfirmModalEl = contentEl.querySelector(
     "[data-writeoff-confirm-modal]"
   );
@@ -10045,69 +10046,66 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     updateToolsSelectionUi();
   };
 
+  const doesToolMatchSelectedFilters = (
+    tool,
+    { includeStandaloneStatus = false } = {}
+  ) => {
+    const hasSelected = (key) =>
+      Array.isArray(toolsState.filters[key]) && toolsState.filters[key].length > 0;
+    const includesSelected = (key, value) =>
+      toolsState.filters[key].includes(String(value ?? "").trim());
+    if (
+      hasSelected("group") &&
+      !includesSelected("group", tool?.["Граппа инструментов"])
+    ) {
+      return false;
+    }
+    if (hasSelected("object") && !includesSelected("object", tool?.["Объект"])) {
+      return false;
+    }
+    if (includeStandaloneStatus && isWriteOffPendingMode()) {
+      const selectedStatus = String(toolsState.statusStandalone ?? "").trim();
+      if (selectedStatus && String(tool?.["Статус"] ?? "").trim() !== selectedStatus) {
+        return false;
+      }
+    } else if (hasSelected("status") && !includesSelected("status", tool?.["Статус"])) {
+      return false;
+    }
+    if (
+      hasSelected("responsible") &&
+      !includesSelected("responsible", tool?.["Ответственный"])
+    ) {
+      return false;
+    }
+    if (
+      hasSelected("manufacturer") &&
+      !includesSelected("manufacturer", tool?.["Производитель"])
+    ) {
+      return false;
+    }
+    if (hasSelected("model") && !includesSelected("model", tool?.["Модель"])) {
+      return false;
+    }
+    if (hasSelected("photo")) {
+      const photoFilters = toolsState.filters.photo;
+      const hasWith = photoFilters.includes("with");
+      const hasWithout = photoFilters.includes("without");
+      if (hasWith !== hasWithout) {
+        const count = Number.parseInt(tool?.["Количество фото"] ?? 0, 10);
+        const hasPhoto = Number.isFinite(count) && count > 0;
+        if (hasWith && !hasPhoto) return false;
+        if (hasWithout && hasPhoto) return false;
+      }
+    }
+    return true;
+  };
+
   const applyToolsFilters = () => {
     const search = toolsState.search.trim();
     const tokens = search ? search.split(/\s+/).filter(Boolean) : [];
     const filtered = toolsState.tools.filter((tool) => {
-      const hasSelected = (key) =>
-        Array.isArray(toolsState.filters[key]) && toolsState.filters[key].length > 0;
-      const includesSelected = (key, value) =>
-        toolsState.filters[key].includes(String(value ?? "").trim());
-      if (
-        hasSelected("group") &&
-        !includesSelected("group", tool?.["Граппа инструментов"])
-      ) {
+      if (!doesToolMatchSelectedFilters(tool, { includeStandaloneStatus: true })) {
         return false;
-      }
-      if (
-        hasSelected("object") &&
-        !includesSelected("object", tool?.["Объект"])
-      ) {
-        return false;
-      }
-      if (isWriteOffPendingMode()) {
-        const selectedStatus = String(toolsState.statusStandalone ?? "").trim();
-        if (selectedStatus && String(tool?.["Статус"] ?? "").trim() !== selectedStatus) {
-          return false;
-        }
-      } else if (
-        hasSelected("status") &&
-        !includesSelected("status", tool?.["Статус"])
-      ) {
-        return false;
-      }
-      if (
-        hasSelected("responsible") &&
-        !includesSelected("responsible", tool?.["Ответственный"])
-      ) {
-        return false;
-      }
-      if (
-        hasSelected("manufacturer") &&
-        !includesSelected("manufacturer", tool?.["Производитель"])
-      ) {
-        return false;
-      }
-      if (
-        hasSelected("model") &&
-        !includesSelected("model", tool?.["Модель"])
-      ) {
-        return false;
-      }
-      if (hasSelected("photo")) {
-        const photoFilters = toolsState.filters.photo;
-        const hasWith = photoFilters.includes("with");
-        const hasWithout = photoFilters.includes("without");
-        if (hasWith !== hasWithout) {
-          const count = Number.parseInt(tool?.["Количество фото"] ?? 0, 10);
-          const hasPhoto = Number.isFinite(count) && count > 0;
-          if (hasWith && !hasPhoto) {
-            return false;
-          }
-          if (hasWithout && hasPhoto) {
-            return false;
-          }
-        }
       }
       if (tokens.length) {
         const searchLine = tool.__searchLine ?? "";
@@ -10117,6 +10115,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     });
     toolsState.filtered = sortToolsByNumber(filtered);
     renderToolsList();
+    if (writeOffModalEl && !writeOffModalEl.classList.contains("is-hidden")) {
+      applyWriteOffFilters();
+    }
   };
 
   const renderToolsFilterTriggerLabel = (containerEl, selectedValues) => {
@@ -10203,18 +10204,18 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       toolsFiltersToggleEl.classList.toggle("is-active", appliedCount > 0);
       toolsFiltersToggleEl.dataset.appliedCount = String(appliedCount);
     }
-    const statusEl = contentEl.querySelector("[data-tools-filters-status]");
-    if (statusEl) {
+    const statusEls = contentEl.querySelectorAll("[data-tools-filters-status]");
+    statusEls.forEach((statusEl) => {
       statusEl.textContent =
         appliedCount > 0
           ? `Фильтры: ${appliedCount} выбр.`
           : "Фильтры не выбраны";
       statusEl.classList.toggle("is-active", appliedCount > 0);
-    }
-    const resetButtonEl = contentEl.querySelector("[data-tools-filters-reset]");
-    if (resetButtonEl) {
+    });
+    const resetButtonEls = contentEl.querySelectorAll("[data-tools-filters-reset]");
+    resetButtonEls.forEach((resetButtonEl) => {
       resetButtonEl.classList.toggle("is-hidden", appliedCount === 0);
-    }
+    });
   };
 
   const resetToolsFilters = () => {
@@ -11680,6 +11681,15 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     applyWriteOffFilters();
   };
 
+  const setWriteOffFiltersOpen = (isOpen) => {
+    if (!writeOffFiltersPanelEl) return;
+    writeOffFiltersPanelEl.classList.toggle("is-open", isOpen);
+    if (writeOffFilterButton) {
+      writeOffFilterButton.classList.toggle("is-active", isOpen);
+      writeOffFilterButton.setAttribute("aria-expanded", String(isOpen));
+    }
+  };
+
   const renderWriteOffList = () => {
     if (!writeOffListEl) return;
     writeOffListEl.innerHTML = "";
@@ -11751,21 +11761,24 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
             String(tool?.["Статус"] ?? "").trim().toLowerCase() === "на списание"
         )
       : writeOffState.tools;
+    const filteredByDropdowns = availableTools.filter((tool) =>
+      doesToolMatchSelectedFilters(tool)
+    );
     if (tokens.length) {
       const numericTokens = tokens.filter((token) => /\d/.test(token));
       if (numericTokens.length === tokens.length) {
-        writeOffState.filtered = availableTools.filter((tool) => {
+        writeOffState.filtered = filteredByDropdowns.filter((tool) => {
           const searchLine = tool.__accountingSearchLine ?? "";
           return numericTokens.every((token) => searchLine.includes(token));
         });
       } else {
-        writeOffState.filtered = availableTools.filter((tool) => {
+        writeOffState.filtered = filteredByDropdowns.filter((tool) => {
           const searchLine = tool.__searchLine ?? "";
           return tokens.every((token) => searchLine.includes(token));
         });
       }
     } else {
-      writeOffState.filtered = [...availableTools];
+      writeOffState.filtered = [...filteredByDropdowns];
     }
     renderWriteOffList();
   };
@@ -11829,6 +11842,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (writeOffSearchInput) {
       writeOffSearchInput.value = "";
     }
+    setWriteOffFiltersOpen(false);
     updateWriteOffFilterButton();
     updateWriteOffSelectionUi();
   };
@@ -14901,8 +14915,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   }
   if (writeOffFilterButton) {
     writeOffFilterButton.addEventListener("click", () => {
-      const isOpen = toolsFiltersPanelEl?.classList.contains("is-open");
-      setToolsFiltersOpen(!isOpen);
+      const isOpen = writeOffFiltersPanelEl?.classList.contains("is-open");
+      setWriteOffFiltersOpen(!isOpen);
     });
   }
   if (writeOffListEl) {
@@ -15590,14 +15604,14 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     });
   }
 
-  const toolsFiltersResetButtonEl = contentEl.querySelector(
+  const toolsFiltersResetButtonEls = contentEl.querySelectorAll(
     "[data-tools-filters-reset]"
   );
-  if (toolsFiltersResetButtonEl) {
+  toolsFiltersResetButtonEls.forEach((toolsFiltersResetButtonEl) => {
     toolsFiltersResetButtonEl.addEventListener("click", () => {
       resetToolsFilters();
     });
-  }
+  });
 
   if (typeof window !== "undefined" && toolsFiltersPanelEl) {
     const mediaQuery = window.matchMedia("(max-width: 520px)");

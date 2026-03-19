@@ -1529,85 +1529,104 @@ export function renderRole(user) {
                 </button>
               </div>
               <div class="tools-filters" data-writeoff-filters-panel>
-                <div class="tools-filters-grid">
+                <label class="tools-filter">
+                  <span>Группа</span>
                   <div class="tools-filter-dropdown" data-tools-filter="group">
                     <button type="button" class="form-input tools-filter-dropdown__trigger" data-tools-filter-trigger>
                       Все
                     </button>
                     <div class="tools-filter-dropdown__menu is-hidden" data-tools-filter-menu>
                       <button type="button" class="tools-filter-dropdown__clear" data-tools-filter-clear>
-                        Снять выбор
+                        Выбрать всё
                       </button>
                       <div class="tools-filter-dropdown__options" data-tools-filter-options></div>
                     </div>
                   </div>
+                </label>
+                <label class="tools-filter">
+                  <span>Объект</span>
                   <div class="tools-filter-dropdown" data-tools-filter="object">
                     <button type="button" class="form-input tools-filter-dropdown__trigger" data-tools-filter-trigger>
                       Все
                     </button>
                     <div class="tools-filter-dropdown__menu is-hidden" data-tools-filter-menu>
                       <button type="button" class="tools-filter-dropdown__clear" data-tools-filter-clear>
-                        Снять выбор
+                        Выбрать всё
                       </button>
                       <div class="tools-filter-dropdown__options" data-tools-filter-options></div>
                     </div>
                   </div>
+                </label>
+                <label class="tools-filter">
+                  <span>Статус</span>
                   <div class="tools-filter-dropdown" data-tools-filter="status">
                     <button type="button" class="form-input tools-filter-dropdown__trigger" data-tools-filter-trigger>
                       Все
                     </button>
                     <div class="tools-filter-dropdown__menu is-hidden" data-tools-filter-menu>
                       <button type="button" class="tools-filter-dropdown__clear" data-tools-filter-clear>
-                        Снять выбор
+                        Выбрать всё
                       </button>
                       <div class="tools-filter-dropdown__options" data-tools-filter-options></div>
                     </div>
                   </div>
+                </label>
+                <label class="tools-filter">
+                  <span>Ответственный</span>
                   <div class="tools-filter-dropdown" data-tools-filter="responsible">
                     <button type="button" class="form-input tools-filter-dropdown__trigger" data-tools-filter-trigger>
                       Все
                     </button>
                     <div class="tools-filter-dropdown__menu is-hidden" data-tools-filter-menu>
                       <button type="button" class="tools-filter-dropdown__clear" data-tools-filter-clear>
-                        Снять выбор
+                        Выбрать всё
                       </button>
                       <div class="tools-filter-dropdown__options" data-tools-filter-options></div>
                     </div>
                   </div>
+                </label>
+                <label class="tools-filter">
+                  <span>Производитель</span>
                   <div class="tools-filter-dropdown" data-tools-filter="manufacturer">
                     <button type="button" class="form-input tools-filter-dropdown__trigger" data-tools-filter-trigger>
                       Все
                     </button>
                     <div class="tools-filter-dropdown__menu is-hidden" data-tools-filter-menu>
                       <button type="button" class="tools-filter-dropdown__clear" data-tools-filter-clear>
-                        Снять выбор
+                        Выбрать всё
                       </button>
                       <div class="tools-filter-dropdown__options" data-tools-filter-options></div>
                     </div>
                   </div>
+                </label>
+                <label class="tools-filter">
+                  <span>Модель</span>
                   <div class="tools-filter-dropdown" data-tools-filter="model">
                     <button type="button" class="form-input tools-filter-dropdown__trigger" data-tools-filter-trigger>
                       Все
                     </button>
                     <div class="tools-filter-dropdown__menu is-hidden" data-tools-filter-menu>
                       <button type="button" class="tools-filter-dropdown__clear" data-tools-filter-clear>
-                        Снять выбор
+                        Выбрать всё
                       </button>
                       <div class="tools-filter-dropdown__options" data-tools-filter-options></div>
                     </div>
                   </div>
+                </label>
+                <label class="tools-filter">
+                  <span>Фото</span>
                   <div class="tools-filter-dropdown" data-tools-filter="photo">
                     <button type="button" class="form-input tools-filter-dropdown__trigger" data-tools-filter-trigger>
                       Все
                     </button>
                     <div class="tools-filter-dropdown__menu is-hidden" data-tools-filter-menu>
                       <button type="button" class="tools-filter-dropdown__clear" data-tools-filter-clear>
-                        Снять выбор
+                        Выбрать всё
                       </button>
                       <div class="tools-filter-dropdown__options" data-tools-filter-options></div>
                     </div>
                   </div>
-                </div>
+                </label>
                 <div class="tools-filters-controls">
                   <div class="tools-filters-status" data-tools-filters-status>Фильтры не выбраны</div>
                   <button type="button" class="tools-filters-reset is-hidden" data-tools-filters-reset>Сбросить всё</button>

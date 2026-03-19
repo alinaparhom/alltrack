@@ -11671,9 +11671,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       writeOffStatusOnlyButton.setAttribute("aria-pressed", isStatusOnly ? "true" : "false");
     }
     if (!writeOffFilterButton) return;
-    writeOffFilterButton.classList.toggle("is-active", isStatusOnly);
-    writeOffFilterButton.setAttribute("aria-pressed", isStatusOnly ? "true" : "false");
-    writeOffFilterButton.textContent = isStatusOnly ? "Фильтры: 1" : "Фильтры";
+    writeOffFilterButton.textContent = "Фильтры";
   };
 
   const toggleWriteOffStatusOnly = () => {
@@ -14903,12 +14901,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   }
   if (writeOffFilterButton) {
     writeOffFilterButton.addEventListener("click", () => {
-      if (toolsFiltersPanelEl) {
-        const isOpen = toolsFiltersPanelEl.classList.contains("is-open");
-        setToolsFiltersOpen(!isOpen);
-        return;
-      }
-      toggleWriteOffStatusOnly();
+      const isOpen = toolsFiltersPanelEl?.classList.contains("is-open");
+      setToolsFiltersOpen(!isOpen);
     });
   }
   if (writeOffListEl) {

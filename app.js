@@ -11703,14 +11703,16 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const statusText = isMovingNow
         ? "в процессе перемещения"
         : String(tool?.["Статус"] ?? "").trim();
-      meta.textContent = [
-        accounting ? `Бух.номер: ${accounting}` : "",
-        number && number !== accounting ? `Номер: ${number}` : "",
-        tool?.["Объект"],
-        statusText,
-      ]
-        .filter((value) => value && String(value).trim())
-        .join(" · ");
+      const objectLine = document.createElement("div");
+      objectLine.textContent = String(tool?.["Объект"] ?? "").trim() || "Объект: —";
+      const numberLine = document.createElement("div");
+      numberLine.textContent = number || accounting || "—";
+      const costLine = document.createElement("div");
+      costLine.textContent = formatToolCostLabel(tool);
+      const statusLine = document.createElement("div");
+      statusLine.className = "writeoff-item__status-line";
+      statusLine.textContent = `Статус: ${statusText || "—"}`;
+      meta.append(objectLine, numberLine, costLine, statusLine);
       content.append(title, meta);
       item.append(check, content);
       writeOffListEl.appendChild(item);

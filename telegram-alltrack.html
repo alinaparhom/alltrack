@@ -7457,8 +7457,8 @@
         grid-template-columns: auto minmax(0, 1fr);
         gap: 12px;
         align-items: start;
-        padding: 12px 14px;
-        min-height: 72px;
+        padding: 14px;
+        min-height: 96px;
         height: auto;
         border-radius: 16px;
         border: 1px solid rgba(226, 232, 240, 0.9);
@@ -7466,6 +7466,12 @@
         box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
         cursor: pointer;
         transition: all 0.2s ease;
+      }
+
+      .writeoff-item > div:last-child {
+        min-width: 0;
+        display: grid;
+        gap: 6px;
       }
 
       .writeoff-modal__footer {

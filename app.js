@@ -11671,7 +11671,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       writeOffStatusOnlyButton.setAttribute("aria-pressed", isStatusOnly ? "true" : "false");
     }
     if (!writeOffFilterButton) return;
-    writeOffFilterButton.classList.toggle("is-active", isStatusOnly);
     writeOffFilterButton.textContent = "Фильтры";
   };
 
@@ -14901,7 +14900,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     writeOffStatusOnlyButton.addEventListener("click", toggleWriteOffStatusOnly);
   }
   if (writeOffFilterButton) {
-    writeOffFilterButton.addEventListener("click", toggleWriteOffStatusOnly);
+    writeOffFilterButton.addEventListener("click", () => {
+      const isOpen = toolsFiltersPanelEl?.classList.contains("is-open");
+      setToolsFiltersOpen(!isOpen);
+    });
   }
   if (writeOffListEl) {
     writeOffListEl.addEventListener("click", (event) => {

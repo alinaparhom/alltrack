@@ -11704,15 +11704,16 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         ? "в процессе перемещения"
         : String(tool?.["Статус"] ?? "").trim();
       const objectLine = document.createElement("div");
-      objectLine.textContent = String(tool?.["Объект"] ?? "").trim() || "Объект: —";
-      const numberLine = document.createElement("div");
-      numberLine.textContent = number || accounting || "—";
+      objectLine.className = "writeoff-item__meta-line writeoff-item__meta-line--main";
+      const objectValue = String(tool?.["Объект"] ?? "").trim() || "—";
+      const numberValue = number || accounting || "—";
+      objectLine.textContent = `№ ${numberValue} · Объект: ${objectValue}`;
       const costLine = document.createElement("div");
       costLine.textContent = formatToolCostLabel(tool);
       const statusLine = document.createElement("div");
       statusLine.className = "writeoff-item__status-line";
       statusLine.textContent = `Статус: ${statusText || "—"}`;
-      meta.append(objectLine, numberLine, costLine, statusLine);
+      meta.append(objectLine, costLine, statusLine);
       content.append(title, meta);
       item.append(check, content);
       writeOffListEl.appendChild(item);

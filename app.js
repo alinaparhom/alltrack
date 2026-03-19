@@ -11697,9 +11697,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       accountingColumn.className = "writeoff-item__column writeoff-item__column--accounting";
       const infoColumn = document.createElement("div");
       infoColumn.className = "writeoff-item__column writeoff-item__column--info";
-      const accountingTitle = document.createElement("div");
-      accountingTitle.className = "writeoff-item__column-title";
-      accountingTitle.textContent = "Бух.номер";
       const title = document.createElement("div");
       title.className = "writeoff-item__title";
       const accounting = String(tool?.["Бух.номер"] ?? "").trim();
@@ -11726,7 +11723,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       statusLine.className = "writeoff-item__status-line";
       statusLine.textContent = `Статус: ${statusText || "—"}`;
       meta.append(objectLine, costLine, statusLine);
-      accountingColumn.append(accountingTitle, accountingValue);
+      accountingColumn.append(accountingValue);
       infoColumn.append(title, meta);
       details.append(accountingColumn, infoColumn);
       content.append(details);

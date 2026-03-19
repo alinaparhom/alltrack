@@ -11752,6 +11752,47 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     updateWriteOffSelectionUi();
   };
 
+  const prepareWriteOffFilters = () => {
+    const collectValues = (field) => {
+      const set = new Set();
+      writeOffState.tools.forEach((tool) => {
+        const value = String(tool?.[field] ?? "").trim();
+        if (value) set.add(value);
+      });
+      return Array.from(set).sort((a, b) =>
+        a.localeCompare(b, "ru", { numeric: true })
+      );
+    };
+
+    fillToolsFilterOptions("group", collectValues("Граппа инструментов"));
+    fillToolsFilterOptions("object", collectValues("Объект"));
+    fillToolsFilterOptions("status", collectValues("Статус"));
+    fillToolsFilterOptions("responsible", collectValues("Ответственный"));
+    fillToolsFilterOptions("model", collectValues("Модель"));
+    fillToolsFilterOptions(
+      "photo",
+      [
+        { value: "with", label: "С фото" },
+        { value: "without", label: "Без фото" },
+      ].map((item) => item.label)
+    );
+
+    const photoContainerEl = contentEl.querySelector(
+      '.writeoff-modal .tools-filter-dropdown[data-tools-filter="photo"]'
+    );
+    if (photoContainerEl) {
+      const checkboxes = photoContainerEl.querySelectorAll(
+        'input[type="checkbox"][data-tools-filter-checkbox="photo"]'
+      );
+      checkboxes.forEach((checkboxEl) => {
+        const label = String(checkboxEl.value ?? "").trim();
+        checkboxEl.value = label === "С фото" ? "with" : "without";
+        checkboxEl.checked = toolsState.filters.photo.includes(checkboxEl.value);
+      });
+      renderToolsFilterTriggerLabel(photoContainerEl, toolsState.filters.photo);
+    }
+  };
+
   const applyWriteOffFilters = () => {
     const query = writeOffState.search.trim();
     const tokens = query ? query.split(/\s+/).filter(Boolean) : [];
@@ -11831,6 +11872,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           numeric: true,
         })
       );
+    prepareWriteOffFilters();
     applyWriteOffFilters();
   };
 

@@ -1509,14 +1509,18 @@ export function renderRole(user) {
                 />
               </label>
               <div class="writeoff-selection" data-writeoff-selection>
-                <span>Выбрано:</span>
-                <strong data-writeoff-count>0</strong>
+                <div class="writeoff-selection__block writeoff-selection__block--count">
+                  Выбрано: <strong data-writeoff-count>0</strong>
+                </div>
+                <div class="writeoff-selection__block writeoff-selection__block--status">
+                  На списание
+                </div>
                 <button
-                  class="writeoff-selection__filter"
+                  class="writeoff-selection__block writeoff-selection__block--filters writeoff-selection__filter"
                   type="button"
                   data-writeoff-filter
                 >
-                  Только «На списание»
+                  Фильтры
                 </button>
               </div>
               <div class="writeoff-list" data-writeoff-list></div>

@@ -7401,27 +7401,50 @@
       }
 
       .writeoff-selection {
-        display: flex;
-        flex-wrap: nowrap;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
         align-items: center;
-        gap: 10px;
+        column-gap: 8px;
         padding: 8px 14px;
-        border-radius: 999px;
-        background: rgba(59, 130, 246, 0.12);
+        border-radius: 14px;
+        background: rgba(255, 255, 255, 0.72);
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+        border: 1px solid rgba(148, 163, 184, 0.28);
         color: #1d4ed8;
         font-weight: 600;
         font-size: 13px;
         width: 100%;
         min-height: 40px;
-        justify-content: space-between;
+      }
+
+      .writeoff-selection__block {
+        min-width: 0;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        white-space: nowrap;
+      }
+
+      .writeoff-selection__block--count {
+        justify-self: start;
+      }
+
+      .writeoff-selection__block--status {
+        justify-self: center;
+        color: #1e40af;
+      }
+
+      .writeoff-selection__block--filters {
+        justify-self: end;
       }
 
       .writeoff-selection__filter {
         border: 1px solid rgba(15, 23, 42, 0.2);
         background: rgba(255, 255, 255, 0.85);
         color: var(--text);
-        width: 180px;
-        min-width: 180px;
+        width: auto;
+        min-width: 96px;
         min-height: 32px;
         padding: 6px 12px;
         border-radius: 999px;
@@ -7441,6 +7464,20 @@
         color: #fff;
         border-color: rgba(15, 23, 42, 0.9);
         box-shadow: 0 14px 26px rgba(15, 23, 42, 0.24);
+      }
+
+      @media (max-width: 520px) {
+        .writeoff-selection {
+          grid-template-columns: minmax(0, 1fr) auto auto;
+          padding: 8px 10px;
+          font-size: 12px;
+        }
+
+        .writeoff-selection__filter {
+          min-width: 84px;
+          padding: 6px 10px;
+          font-size: 11px;
+        }
       }
 
       .writeoff-list {

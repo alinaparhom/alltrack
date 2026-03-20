@@ -10255,6 +10255,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
   const updateToolsFiltersUi = () => {
     const appliedCount = countAppliedToolsFilters();
+    const isFiltersPanelOpen = Boolean(
+      toolsFiltersPanelEl?.classList.contains("is-open")
+    );
     if (toolsFiltersToggleEl) {
       toolsFiltersToggleEl.classList.toggle("is-active", appliedCount > 0);
       toolsFiltersToggleEl.dataset.appliedCount = String(appliedCount);
@@ -10264,7 +10267,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       statusEl.textContent =
         appliedCount > 0
           ? `Фильтры: ${appliedCount} выбр.`
-          : "Фильтры не выбраны";
+          : isFiltersPanelOpen
+            ? ""
+            : "Фильтры не выбраны";
       statusEl.classList.toggle("is-active", appliedCount > 0);
     });
     const resetButtonEls = contentEl.querySelectorAll("[data-tools-filters-reset]");
@@ -15683,6 +15688,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (toolsFiltersToggleEl) {
       toolsFiltersToggleEl.setAttribute("aria-expanded", String(isOpen));
     }
+    updateToolsFiltersUi();
   };
 
   if (toolsSortToggleEl) {

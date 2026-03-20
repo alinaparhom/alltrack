@@ -688,6 +688,11 @@
         background: rgba(18, 26, 46, 0.94);
       }
 
+      body[data-theme="dark"] .tools-filter-actions.is-open + .tools-filters.is-open {
+        border-top-color: rgba(148, 170, 210, 0.3);
+      }
+
+
       body[data-theme="dark"] .tools-table__row--header {
         background: rgba(22, 32, 54, 0.95);
       }
@@ -6929,6 +6934,9 @@
       }
 
       .tools-filter-actions.is-open {
+        position: relative;
+        z-index: 2;
+        margin-bottom: -1px;
         border-radius: 16px 16px 0 0;
         border-bottom-color: transparent;
         background: rgba(248, 250, 255, 0.8);
@@ -7005,8 +7013,12 @@
       }
 
       .tools-filter-actions.is-open + .tools-filters.is-open {
-        margin-top: -1px;
+        position: relative;
+        z-index: 1;
+        margin-top: 0;
         border-radius: 16px;
+        border-top-right-radius: 0;
+        border-top: 1px solid rgba(226, 232, 240, 0.7);
       }
 
       .tools-filter {
@@ -9286,6 +9298,7 @@
         .tools-filter-actions.is-open {
           width: 100%;
           justify-content: flex-end;
+          margin-bottom: -1px;
           border-radius: 14px 14px 0 0;
         }
 

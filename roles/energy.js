@@ -939,8 +939,7 @@ export function renderRole(user) {
                     >
                       <span class="tools-select-all-check" aria-hidden="true"></span>
                     </button>
-                    <div class="tools-filters-shell">
-                      <div class="tools-filter-actions" role="group" aria-label="Сортировка и фильтры">
+                    <div class="tools-filter-actions" role="group" aria-label="Сортировка и фильтры">
                       <button
                         class="tools-filters-toggle tools-sort-toggle"
                         type="button"
@@ -960,8 +959,10 @@ export function renderRole(user) {
                       >
                         <span class="tools-filters-toggle__label">Фильтры</span>
                       </button>
-                      </div>
-                      <div class="tools-filters" id="tools-filters-panel" data-tools-filters-panel>
+                    </div>
+                  </div>
+                </div>
+                <div class="tools-filters" id="tools-filters-panel" data-tools-filters-panel>
                   <label class="tools-filter">
                     <span>Группа</span>
                     <div class="tools-filter-dropdown" data-tools-filter="group">
@@ -1060,9 +1061,6 @@ export function renderRole(user) {
                       </div>
                     </div>
                   </label>
-                      </div>
-                    </div>
-                  </div>
                 </div>
                 <div class="tools-standalone-filter is-hidden" data-tools-status-standalone-wrap>
                   <label class="tools-filter tools-filter--standalone">

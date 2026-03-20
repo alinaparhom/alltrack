@@ -9775,7 +9775,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const statusValue = document.createElement("span");
       statusValue.textContent = statusText;
       statusValue.style.fontWeight = "700";
-      statusValue.style.textDecoration = "underline";
       line.append(responsibleLabel, statusLabel, statusValue);
       return line;
     };
@@ -9789,10 +9788,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       value.className = "tools-card__status-value";
       value.textContent = ` ${statusText}`;
       if (shouldHighlightToolStatus) {
-        label.style.fontWeight = "700";
-        label.style.textDecoration = "underline";
+        label.style.fontWeight = "400";
+        label.style.textDecoration = "none";
         value.style.fontWeight = "700";
-        value.style.textDecoration = "underline";
+        value.style.textDecoration = "none";
       }
       container.append(label, value);
     };
@@ -10009,12 +10008,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const statusLine = document.createElement("div");
       const label = document.createElement("span");
       label.textContent = "Статус: ";
-      label.style.fontWeight = "700";
-      label.style.textDecoration = "underline";
+      label.style.fontWeight = "400";
+      label.style.textDecoration = "none";
       const value = document.createElement("span");
       value.textContent = statusText;
       value.style.fontWeight = "700";
-      value.style.textDecoration = "underline";
+      value.style.textDecoration = "none";
       statusLine.append(label, value);
       meta.appendChild(statusLine);
 
@@ -10023,11 +10022,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         const toolStatusLabel = document.createElement("span");
         toolStatusLabel.textContent = "Статус инструмента:";
         toolStatusLabel.style.fontWeight = "700";
-        toolStatusLabel.style.textDecoration = "underline";
+        toolStatusLabel.style.textDecoration = "none";
         const toolStatusValue = document.createElement("span");
         toolStatusValue.textContent = ` ${statusText}`;
         toolStatusValue.style.fontWeight = "700";
-        toolStatusValue.style.textDecoration = "underline";
+        toolStatusValue.style.textDecoration = "none";
         toolStatusLine.append(toolStatusLabel, toolStatusValue);
         meta.appendChild(toolStatusLine);
       }

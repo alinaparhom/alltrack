@@ -6266,7 +6266,7 @@
       }
 
       .tools-controls {
-        --tools-control-height: 40px;
+        --tools-control-height: 31px;
         --tools-control-radius: 14px;
         display: grid;
         gap: 10px;
@@ -7000,7 +7000,8 @@
       }
 
       .tools-filter--standalone .form-input {
-        min-height: 42px;
+        min-height: var(--tools-control-height);
+        height: var(--tools-control-height);
       }
 
       .tools-filters {
@@ -7116,7 +7117,7 @@
       .tools-filter-dropdown__options {
         display: grid;
         gap: 6px;
-        max-height: min(220px, 40vh);
+        max-height: min(170px, 31vh);
         overflow-y: auto;
         padding-right: 2px;
       }
@@ -9193,9 +9194,9 @@
 
         .tools-search__input {
           font-size: 16px;
-          height: 40px;
-          min-height: 40px;
-          max-height: 40px;
+          height: var(--tools-control-height);
+          min-height: var(--tools-control-height);
+          max-height: var(--tools-control-height);
           padding: 0 14px;
         }
 

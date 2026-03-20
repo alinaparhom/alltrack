@@ -5047,6 +5047,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const toolsFiltersToggleEl = contentEl.querySelector(
     "[data-tools-filters-toggle]"
   );
+  const toolsFilterActionsEl = contentEl.querySelector(".tools-filter-actions");
   const toolsSortToggleEl = contentEl.querySelector("[data-tools-sort-toggle]");
   if (toolsFiltersPanelEl) {
     const hasStatus = toolsFiltersPanelEl.querySelector("[data-tools-filters-status]");
@@ -15684,6 +15685,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const setToolsFiltersOpen = (isOpen) => {
     if (toolsFiltersPanelEl) {
       toolsFiltersPanelEl.classList.toggle("is-open", isOpen);
+    }
+    if (toolsFilterActionsEl) {
+      toolsFilterActionsEl.classList.toggle("is-open", isOpen);
     }
     if (toolsFiltersToggleEl) {
       toolsFiltersToggleEl.setAttribute("aria-expanded", String(isOpen));

@@ -677,20 +677,20 @@
       body[data-theme="dark"] .tools-search__input,
       body[data-theme="dark"] .tools-filter .form-input,
       body[data-theme="dark"] .tools-filters-toggle,
-      body[data-theme="dark"] .tools-filter-actions,
-      body[data-theme="dark"] .tools-filters,
       body[data-theme="dark"] .tools-move-modal__panel {
         background: rgba(18, 26, 46, 0.9);
         border-color: rgba(148, 170, 210, 0.3);
       }
 
-      body[data-theme="dark"] .tools-filter-actions.is-open {
-        background: rgba(18, 26, 46, 0.94);
+      body[data-theme="dark"] .tools-filter-actions {
+        background: transparent;
+        border-color: transparent;
       }
 
-      body[data-theme="dark"] .tools-filter-actions.is-open + .tools-filters.is-open {
-        border-top: 0;
-        background: rgba(18, 26, 46, 0.94);
+      body[data-theme="dark"] .tools-filter-actions.is-open + .tools-filters.is-open,
+      body[data-theme="dark"] .tools-filters {
+        background: transparent;
+        border-color: transparent;
       }
 
 
@@ -6930,20 +6930,20 @@
         margin-left: auto;
         min-height: var(--tools-control-height);
         height: var(--tools-control-height);
-        padding: 3px;
-        border-radius: var(--tools-control-radius);
-        border: 1px solid rgba(226, 232, 240, 0.75);
-        background: rgba(255, 255, 255, 0.58);
-        backdrop-filter: blur(8px);
+        padding: 0;
+        border-radius: 0;
+        border: 0;
+        background: transparent;
+        backdrop-filter: none;
       }
 
       .tools-filter-actions.is-open {
         position: relative;
         z-index: 2;
         margin-bottom: -1px;
-        border-radius: 16px 16px 0 0;
-        border-bottom-color: rgba(226, 232, 240, 0.75);
-        background: rgba(248, 250, 255, 0.9);
+        border-radius: 0;
+        border-bottom-color: transparent;
+        background: transparent;
       }
 
       .tools-filters-toggle {
@@ -7010,8 +7010,8 @@
         gap: 8px;
         padding: 8px;
         border-radius: var(--tools-control-radius);
-        background: rgba(248, 250, 255, 0.7);
-        border: 1px solid rgba(226, 232, 240, 0.7);
+        background: transparent;
+        border: 0;
         height: fit-content;
         align-content: start;
         align-items: start;
@@ -7021,9 +7021,9 @@
         position: relative;
         z-index: 1;
         margin-top: 0;
-        border-radius: 0 0 var(--tools-control-radius) var(--tools-control-radius);
+        border-radius: 0;
         border-top: 0;
-        background: rgba(248, 250, 255, 0.9);
+        background: transparent;
       }
 
       .tools-filter {
@@ -7212,10 +7212,10 @@
         gap: 4px;
         flex-wrap: nowrap;
         align-self: start;
-        padding: 4px;
+        padding: 0;
         border-radius: var(--tools-control-radius);
-        background: rgba(255, 255, 255, 0.8);
-        border: 1px solid rgba(226, 232, 240, 0.9);
+        background: transparent;
+        border: 0;
         width: fit-content;
       }
 
@@ -7230,6 +7230,7 @@
         justify-content: center;
         font-size: 12px;
         font-weight: 600;
+        line-height: 1;
         color: var(--muted);
         background: transparent;
         cursor: pointer;
@@ -9302,15 +9303,15 @@
           gap: 4px;
           min-height: var(--tools-control-height);
           height: var(--tools-control-height);
-          padding: 2px;
+          padding: 0;
         }
 
         .tools-filter-actions.is-open {
           width: 100%;
           justify-content: flex-end;
           margin-bottom: -1px;
-          border-radius: 14px 14px 0 0;
-          border-bottom-color: rgba(226, 232, 240, 0.75);
+          border-radius: 0;
+          border-bottom-color: transparent;
         }
 
         .tools-filters-toggle {
@@ -9340,7 +9341,7 @@
           min-width: 0;
           justify-self: start;
           gap: 2px;
-          padding: 3px;
+          padding: 0;
         }
 
         .tools-view-button {
@@ -9360,7 +9361,7 @@
 
         .tools-filters.is-open {
           display: grid;
-          border-radius: 0 0 14px 14px;
+          border-radius: 0;
           border-top: 0;
         }
 

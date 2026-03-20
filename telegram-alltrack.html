@@ -689,7 +689,7 @@
       }
 
       body[data-theme="dark"] .tools-filter-actions.is-open + .tools-filters.is-open {
-        border-top-color: transparent;
+        border-top: 0;
         background: rgba(18, 26, 46, 0.94);
       }
 
@@ -6939,7 +6939,7 @@
         z-index: 2;
         margin-bottom: -1px;
         border-radius: 16px 16px 0 0;
-        border-bottom-color: transparent;
+        border-bottom-color: rgba(226, 232, 240, 0.75);
         background: rgba(248, 250, 255, 0.9);
       }
 
@@ -7017,8 +7017,8 @@
         position: relative;
         z-index: 1;
         margin-top: 0;
-        border-radius: 0 16px 16px 16px;
-        border-top: 1px solid transparent;
+        border-radius: 0 0 16px 16px;
+        border-top: 0;
         background: rgba(248, 250, 255, 0.9);
       }
 
@@ -9301,6 +9301,7 @@
           justify-content: flex-end;
           margin-bottom: -1px;
           border-radius: 14px 14px 0 0;
+          border-bottom-color: rgba(226, 232, 240, 0.75);
         }
 
         .tools-filters-toggle {
@@ -9350,8 +9351,8 @@
 
         .tools-filters.is-open {
           display: grid;
-          border-radius: 0 14px 14px 14px;
-          border-top: 1px solid transparent;
+          border-radius: 0 0 14px 14px;
+          border-top: 0;
         }
 
         .tools-filter--standalone {

@@ -9759,6 +9759,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const shouldHighlightToolStatus = ["user", "search", "move-other"].includes(
       toolsState.mode
     );
+    const shouldShowResponsibleAndToolStatus = toolsState.mode !== "user";
     const statusText = isMovingNow
       ? "в процессе перемещения"
       : status || "не указан";
@@ -9833,16 +9834,22 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         costMetaLineEl.textContent = costMetaLine;
         meta.appendChild(costMetaLineEl);
       }
-      meta.appendChild(createResponsibleStatusLine());
+      if (shouldShowResponsibleAndToolStatus) {
+        meta.appendChild(createResponsibleStatusLine());
+      }
       if (shouldHighlightToolStatus) {
         const statusMeta = document.createElement("div");
         statusMeta.className = "tools-row__status";
         fillToolStatusMeta(statusMeta);
-        meta.appendChild(statusMeta);
+        if (shouldShowResponsibleAndToolStatus) {
+          meta.appendChild(statusMeta);
+        }
       }
       if (!mainMetaLine && !costMetaLine) {
         meta.textContent = "—";
-        meta.appendChild(createResponsibleStatusLine());
+        if (shouldShowResponsibleAndToolStatus) {
+          meta.appendChild(createResponsibleStatusLine());
+        }
       }
       main.append(title, meta);
       row.appendChild(main);
@@ -9892,13 +9899,15 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const title = document.createElement("div");
       title.className = "tools-card__title";
       title.textContent = infoLine || "Без названия";
-      const responsibleStatusLine = createResponsibleStatusLine();
-      const statusMeta = document.createElement("div");
-      statusMeta.className = "tools-card__status";
-      fillToolStatusMeta(statusMeta);
       overlay.appendChild(title);
-      overlay.appendChild(responsibleStatusLine);
-      overlay.appendChild(statusMeta);
+      if (shouldShowResponsibleAndToolStatus) {
+        const responsibleStatusLine = createResponsibleStatusLine();
+        const statusMeta = document.createElement("div");
+        statusMeta.className = "tools-card__status";
+        fillToolStatusMeta(statusMeta);
+        overlay.appendChild(responsibleStatusLine);
+        overlay.appendChild(statusMeta);
+      }
       media.appendChild(overlay);
       if (viewMode === "large" || isCompactMobile) {
         card.appendChild(media);
@@ -9911,13 +9920,15 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const title = document.createElement("div");
     title.className = "tools-card__title";
     title.textContent = bodyLine || "Без названия";
-    const statusMeta = document.createElement("div");
-    statusMeta.className = "tools-card__status";
-    fillToolStatusMeta(statusMeta);
-    const responsibleStatusLine = createResponsibleStatusLine();
     body.appendChild(title);
-    body.appendChild(responsibleStatusLine);
-    body.appendChild(statusMeta);
+    if (shouldShowResponsibleAndToolStatus) {
+      const statusMeta = document.createElement("div");
+      statusMeta.className = "tools-card__status";
+      fillToolStatusMeta(statusMeta);
+      const responsibleStatusLine = createResponsibleStatusLine();
+      body.appendChild(responsibleStatusLine);
+      body.appendChild(statusMeta);
+    }
     card.append(media, body);
     return card;
   };
@@ -9983,14 +9994,16 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           meta.appendChild(lineEl);
         });
       }
-      const responsibleLine = document.createElement("div");
-      const responsibleLabel = document.createElement("span");
-      responsibleLabel.textContent = "Ответственный: ";
-      const responsibleValue = document.createElement("span");
-      responsibleValue.textContent =
-        String(tool?.["Ответственный"] ?? "").trim() || "не указан";
-      responsibleLine.append(responsibleLabel, responsibleValue);
-      meta.appendChild(responsibleLine);
+      if (toolsState.mode !== "user") {
+        const responsibleLine = document.createElement("div");
+        const responsibleLabel = document.createElement("span");
+        responsibleLabel.textContent = "Ответственный: ";
+        const responsibleValue = document.createElement("span");
+        responsibleValue.textContent =
+          String(tool?.["Ответственный"] ?? "").trim() || "не указан";
+        responsibleLine.append(responsibleLabel, responsibleValue);
+        meta.appendChild(responsibleLine);
+      }
 
       const statusLine = document.createElement("div");
       const label = document.createElement("span");
@@ -10004,7 +10017,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       statusLine.append(label, value);
       meta.appendChild(statusLine);
 
-      if (shouldHighlightToolStatus) {
+      if (shouldHighlightToolStatus && toolsState.mode !== "user") {
         const toolStatusLine = document.createElement("div");
         const toolStatusLabel = document.createElement("span");
         toolStatusLabel.textContent = "Статус инструмента:";

@@ -1852,18 +1852,18 @@ export function renderRole(user) {
             <div class="settings-modal__header pending-moves-decline-modal__header">
               <div class="settings-modal__title pending-moves-decline-modal__title-row">
                 <h2>Почему не принимаете?</h2>
+                <button
+                  class="button-icon pending-moves-decline-modal__close"
+                  type="button"
+                  data-pending-moves-decline-close
+                  aria-label="Закрыть окно причины"
+                >
+                  <span class="button-icon-emoji" aria-hidden="true">✕</span>
+                </button>
               </div>
-              <button
-                class="button-icon pending-moves-decline-modal__close"
-                type="button"
-                data-pending-moves-decline-close
-                aria-label="Закрыть окно причины"
-              >
-                <span class="button-icon-emoji" aria-hidden="true">✕</span>
-              </button>
             </div>
             <form class="settings-modal__body" data-pending-moves-decline-form>
-              <label class="form-field">
+              <label class="form-field pending-moves-decline-field">
                 <span class="form-label">Причина</span>
                 <textarea
                   class="form-input pending-moves-decline-textarea"
@@ -1873,8 +1873,8 @@ export function renderRole(user) {
                   required
                 ></textarea>
               </label>
-              <label class="form-field">
-                <span class="form-label">Фото отказа (необязательно)</span>
+              <label class="form-field pending-moves-decline-field">
+                <span class="form-label">Фото отказов (необязательно)</span>
                 <input
                   class="form-input pending-moves-decline-file"
                   type="file"

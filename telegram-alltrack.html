@@ -8830,16 +8830,20 @@
       }
 
       .pending-moves-decline-modal__panel {
-        max-width: 560px;
+        width: min(92vw, 520px);
+        max-width: 520px;
       }
 
       .pending-moves-decline-modal__header {
-        align-items: center;
+        align-items: stretch;
       }
 
       .pending-moves-decline-modal__title-row {
         display: flex;
         align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        width: 100%;
         min-width: 0;
       }
 
@@ -8848,7 +8852,25 @@
       }
 
       .pending-moves-decline-modal__close {
-        margin-left: auto;
+        flex: 0 0 auto;
+      }
+
+      .pending-moves-decline-modal .settings-modal__body {
+        display: grid;
+        gap: 12px;
+      }
+
+      .pending-moves-decline-field {
+        margin: 0;
+        gap: 8px;
+      }
+
+      .pending-moves-decline-field .form-label {
+        display: block;
+        font-size: 15px;
+        line-height: 1.4;
+        font-weight: 600;
+        margin: 0;
       }
 
       .pending-moves-bulk-confirm-modal__panel {
@@ -8929,8 +8951,12 @@
 
       .pending-moves-decline-actions .action-secondary,
       .pending-moves-decline-actions .action-primary {
-        flex: 1;
-        min-width: 160px;
+        flex: 0 1 auto;
+        min-width: 132px;
+        width: auto;
+        min-height: 0;
+        padding: 10px 16px;
+        line-height: 1.2;
       }
 
       .pending-moves-decline-actions__cancel {

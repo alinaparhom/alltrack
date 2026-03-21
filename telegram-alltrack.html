@@ -8988,17 +8988,29 @@
 
       .tools-cancel-move-modal__title-row {
         display: flex;
-        align-items: center;
+        align-items: flex-start;
         justify-content: space-between;
         gap: 10px;
       }
 
       .tools-cancel-move-modal__title-row h2 {
         margin: 0;
+        line-height: 1.2;
       }
 
       .tools-cancel-move-modal__close {
         flex: 0 0 auto;
+        align-self: flex-start;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: flex-start;
+        justify-content: center;
+        padding-top: 8px;
+      }
+
+      .tools-cancel-move-modal__close .button-icon-emoji {
+        line-height: 1;
       }
 
       .tools-cancel-move-info {
@@ -9024,7 +9036,12 @@
 
       .tools-cancel-move-actions > button {
         width: 100%;
-        min-height: 44px;
+        min-height: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 12px 14px;
+        line-height: 1.2;
       }
 
       .tools-cancel-move-actions__keep {

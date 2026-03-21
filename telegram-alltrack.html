@@ -8830,10 +8830,10 @@
       }
 
       .pending-moves-decline-modal__panel {
-        width: min(94vw, 520px);
-        max-width: 520px;
+        width: min(92vw, 560px);
+        max-width: 560px;
         height: auto;
-        max-height: min(92vh, calc(100dvh - 24px));
+        max-height: min(92vh, calc(100dvh - 40px));
         border-radius: 24px;
         grid-template-rows: auto 1fr;
       }
@@ -8861,9 +8861,9 @@
 
       .pending-moves-decline-modal .settings-modal__body {
         display: grid;
-        gap: 12px;
+        gap: 18px;
         overflow: visible;
-        padding-right: 0;
+        padding: 10px 0 6px;
       }
 
       .pending-moves-decline-field {
@@ -8951,17 +8951,17 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
-        gap: 10px;
-        margin-top: 12px;
+        gap: 12px;
+        margin-top: 0;
       }
 
       .pending-moves-decline-actions .action-secondary,
       .pending-moves-decline-actions .action-primary {
-        flex: 0 0 auto;
-        min-width: 0;
-        width: auto;
+        flex: 1 1 0;
+        min-width: 132px;
+        width: 100%;
         min-height: auto;
-        padding: 8px 14px;
+        padding: 10px 16px;
         line-height: 1.2;
       }
 
@@ -8993,14 +8993,15 @@
 
       @media (max-width: 480px) {
         .pending-moves-decline-modal__panel {
-          width: calc(100vw - 16px);
-          max-height: calc(100dvh - 16px);
+          width: calc(100vw - 24px);
+          max-height: calc(100dvh - 24px);
           border-radius: 20px;
         }
 
         .pending-moves-decline-actions .action-secondary,
         .pending-moves-decline-actions .action-primary {
-          padding: 8px 12px;
+          min-width: 0;
+          padding: 10px 12px;
           font-size: 14px;
         }
       }

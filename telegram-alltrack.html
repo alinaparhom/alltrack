@@ -8982,8 +8982,8 @@
         border-radius: 24px;
         overflow: hidden;
         grid-template-rows: auto auto auto;
-        gap: 14px;
-        padding: 14px;
+        gap: 18px;
+        padding: 18px;
       }
 
       .tools-cancel-move-modal__header {
@@ -9013,20 +9013,22 @@
         align-self: center;
         width: 40px;
         height: 40px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+        display: grid;
+        place-items: center;
         padding: 0;
       }
 
       .tools-cancel-move-modal__close .button-icon-emoji {
+        display: block;
         line-height: 1;
+        font-size: 19px;
+        transform: translateY(-0.5px);
       }
 
       .tools-cancel-move-info {
         display: grid;
-        gap: 4px;
-        padding: 14px 16px;
+        gap: 6px;
+        padding: 18px;
         border-radius: var(--radius-card);
         background: linear-gradient(
           140deg,
@@ -9042,14 +9044,14 @@
       }
 
       .tools-cancel-move-modal__panel .settings-modal__body {
-        gap: 14px;
+        gap: 18px;
         padding: 0;
       }
 
       .tools-cancel-move-actions {
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 14px;
+        gap: 18px;
         padding: 0;
       }
 

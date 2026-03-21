@@ -5760,6 +5760,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const pendingMovesBulkConfirmCancelButton = contentEl.querySelector(
     "[data-pending-moves-bulk-confirm-cancel]"
   );
+  const pendingMovesBulkConfirmCloseButton = contentEl.querySelector(
+    "[data-pending-moves-bulk-confirm-close]"
+  );
   const pendingMovesBulkConfirmSubmitButton = contentEl.querySelector(
     "[data-pending-moves-bulk-confirm-submit]"
   );
@@ -15231,6 +15234,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   }
   if (pendingMovesBulkConfirmCancelButton) {
     pendingMovesBulkConfirmCancelButton.addEventListener("click", () => {
+      closePendingMovesBulkConfirmModal();
+    });
+  }
+  if (pendingMovesBulkConfirmCloseButton) {
+    pendingMovesBulkConfirmCloseButton.addEventListener("click", () => {
       closePendingMovesBulkConfirmModal();
     });
   }

@@ -9757,9 +9757,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const infoLine = isCompactMobile ? numberLine : fullLine;
     const bodyLine = isCompactMobile ? numberLine : infoLine;
     const isMovingNow = Boolean(tool?.__pendingMove);
-    const shouldHighlightToolStatus = ["user", "search", "move-other"].includes(
-      toolsState.mode
-    );
+    const shouldHighlightToolStatus = ["user", "move-other"].includes(toolsState.mode);
+    const isSearchMode = toolsState.mode === "search";
     const shouldShowResponsibleAndToolStatus = toolsState.mode !== "user";
     const statusText = isMovingNow
       ? "в процессе перемещения"
@@ -9812,12 +9811,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       title.textContent = infoLine || "Без названия";
       const meta = document.createElement("div");
       meta.className = "tools-row__meta";
-      const accountingMetaLine =
-        toolsState.numberKey === "Бух.номер" && accountingNumber === number
-          ? ""
-          : accountingNumber
-            ? `Бух.номер: ${accountingNumber}`
-            : "";
+      const shouldHideAccountingLine =
+        !isSearchMode && toolsState.numberKey === "Бух.номер" && accountingNumber === number;
+      const accountingMetaLine = shouldHideAccountingLine
+        ? ""
+        : accountingNumber
+          ? `Бух.номер: ${accountingNumber}`
+          : "Бух.номер: Нет";
       const mainMetaLine = [
         tool?.["Граппа инструментов"],
         shouldHighlightToolStatus ? "" : tool?.["Статус"],
@@ -9834,7 +9834,16 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       }
       if (accountingMetaLine) {
         const accountingMetaLineEl = document.createElement("div");
-        accountingMetaLineEl.textContent = accountingMetaLine;
+        if (!accountingNumber && !shouldHideAccountingLine) {
+          accountingMetaLineEl.append("Бух.номер: ");
+          const missingAccountingEl = document.createElement("span");
+          missingAccountingEl.textContent = "Нет";
+          missingAccountingEl.style.color = "#dc2626";
+          missingAccountingEl.style.fontWeight = "700";
+          accountingMetaLineEl.appendChild(missingAccountingEl);
+        } else {
+          accountingMetaLineEl.textContent = accountingMetaLine;
+        }
         meta.appendChild(accountingMetaLineEl);
       }
       if (costMetaLine) {
@@ -9954,9 +9963,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const renderToolsTable = (items) => {
     const table = document.createElement("div");
     table.className = "tools-table";
-    const shouldHighlightToolStatus = ["user", "search", "move-other"].includes(
-      toolsState.mode
-    );
+    const shouldHighlightToolStatus = ["user", "move-other"].includes(toolsState.mode);
+    const isSearchMode = toolsState.mode === "search";
 
     items.forEach((tool, moveIndex) => {
       const row = document.createElement("div");
@@ -9988,7 +9996,15 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const manufacturerModelLine = [manufacturer, model].filter(Boolean).join(" · ");
       const costLine = formatToolCostLabel(tool);
       const accountingNumber = String(tool?.["Бух.номер"] ?? "").trim();
-      const accountingLine = accountingNumber ? `Бух.номер: ${accountingNumber}` : "";
+      const hideAccountingLine =
+        !isSearchMode &&
+        toolsState.numberKey === "Бух.номер" &&
+        accountingNumber === number;
+      const accountingLine = hideAccountingLine
+        ? ""
+        : accountingNumber
+          ? `Бух.номер: ${accountingNumber}`
+          : "Бух.номер: Нет";
       const metaLines = [manufacturerModelLine, accountingLine, costLine].filter(Boolean);
       const isMovingNow = Boolean(tool?.__pendingMove);
       const status = String(tool?.["Статус"] ?? "").trim();
@@ -10000,7 +10016,16 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       } else {
         metaLines.forEach((line) => {
           const lineEl = document.createElement("div");
-          lineEl.textContent = line;
+          if (line === "Бух.номер: Нет") {
+            lineEl.append("Бух.номер: ");
+            const missingAccountingEl = document.createElement("span");
+            missingAccountingEl.textContent = "Нет";
+            missingAccountingEl.style.color = "#dc2626";
+            missingAccountingEl.style.fontWeight = "700";
+            lineEl.appendChild(missingAccountingEl);
+          } else {
+            lineEl.textContent = line;
+          }
           meta.appendChild(lineEl);
         });
       }

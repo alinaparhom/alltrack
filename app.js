@@ -9949,7 +9949,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         badge.textContent = "Без фото";
         row.appendChild(badge);
       }
-      if (isSearchMode && hasKit) {
+      if (hasKit) {
         const kitBadge = document.createElement("button");
         kitBadge.type = "button";
         kitBadge.className = "tools-kit-badge";
@@ -9989,7 +9989,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       badge.textContent = "Нет фото";
       media.appendChild(badge);
     }
-    if (isSearchMode && hasKit) {
+    if (hasKit) {
       const kitBadge = document.createElement("button");
       kitBadge.type = "button";
       kitBadge.className = "tools-kit-badge tools-kit-badge--card";
@@ -10143,7 +10143,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       statusLine.append(label, value);
       meta.appendChild(statusLine);
       const kitItems = getToolKitItems(tool);
-      if (isSearchMode && kitItems.length > 0) {
+      if (kitItems.length > 0) {
         const kitLine = document.createElement("div");
         const kitBadge = document.createElement("button");
         kitBadge.type = "button";

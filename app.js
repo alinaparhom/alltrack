@@ -5772,6 +5772,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const pendingMovesBulkConfirmTextEl = contentEl.querySelector(
     "[data-pending-moves-bulk-confirm-text]"
   );
+  const pendingMovesBulkConfirmReasonBlockEl = contentEl.querySelector(
+    "[data-pending-moves-bulk-confirm-reason-block]"
+  );
+  const pendingMovesBulkConfirmReasonEl = contentEl.querySelector(
+    "[data-pending-moves-bulk-confirm-reason]"
+  );
   const pendingMovesDeclineModalEl = contentEl.querySelector(
     "[data-pending-moves-decline-modal]"
   );
@@ -13107,6 +13113,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (!pendingMovesBulkConfirmModalEl) return;
     pendingMovesBulkConfirmModalEl.classList.add("is-hidden");
     pendingMovesState.bulkConfirmAction = null;
+    if (pendingMovesBulkConfirmReasonEl) {
+      pendingMovesBulkConfirmReasonEl.value = "";
+      pendingMovesBulkConfirmReasonEl.classList.remove("is-invalid");
+    }
+    pendingMovesBulkConfirmReasonBlockEl?.classList.add("is-hidden");
     pendingMovesBulkConfirmSubmitButton?.classList.remove(
       "pending-moves-bulk-confirm-submit--accept",
       "pending-moves-bulk-confirm-submit--decline"
@@ -13129,13 +13140,14 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
     if (pendingMovesBulkConfirmTextEl) {
       pendingMovesBulkConfirmTextEl.textContent = isAccept
-        ? `Подтвердите, что хотите принять все (${total}) ожидающих инструментов.`
-        : `Подтвердите, что хотите отклонить все (${total}) ожидающих инструментов.`;
+        ? `Будут приняты все (${total}) ожидающих инструментов.`
+        : "";
+      pendingMovesBulkConfirmTextEl.classList.toggle("is-hidden", !isAccept);
     }
     if (pendingMovesBulkConfirmSubmitButton) {
       pendingMovesBulkConfirmSubmitButton.textContent = isAccept
         ? "Да, принять всё"
-        : "Да, не принять всё";
+        : "Не принять всё";
       pendingMovesBulkConfirmSubmitButton.classList.toggle(
         "pending-moves-bulk-confirm-submit--accept",
         isAccept
@@ -13145,6 +13157,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         !isAccept
       );
     }
+    pendingMovesBulkConfirmReasonBlockEl?.classList.toggle("is-hidden", isAccept);
+    if (!isAccept && pendingMovesBulkConfirmReasonEl) {
+      pendingMovesBulkConfirmReasonEl.value = "";
+      pendingMovesBulkConfirmReasonEl.classList.remove("is-invalid");
+      pendingMovesBulkConfirmReasonEl.focus();
+    }
     pendingMovesBulkConfirmModalEl.classList.remove("is-hidden");
   };
 
@@ -13152,12 +13170,24 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const action = pendingMovesState.bulkConfirmAction;
     if (!action) return;
     const indexes = pendingMovesState.pendingItems.map((item) => item.moveIndex);
-    closePendingMovesBulkConfirmModal();
     if (action === "accept") {
+      closePendingMovesBulkConfirmModal();
       applyPendingMovesDecision({ moveIndexes: indexes, decision: "Принял" });
       return;
     }
-    applyPendingMovesDecision({ moveIndexes: indexes, decision: "Не принял" });
+    const declineReason = String(pendingMovesBulkConfirmReasonEl?.value ?? "").trim();
+    if (!declineReason) {
+      pendingMovesBulkConfirmReasonEl?.classList.add("is-invalid");
+      pendingMovesBulkConfirmReasonEl?.focus();
+      return;
+    }
+    pendingMovesBulkConfirmReasonEl?.classList.remove("is-invalid");
+    closePendingMovesBulkConfirmModal();
+    applyPendingMovesDecision({
+      moveIndexes: indexes,
+      decision: "Не принял",
+      declineReason,
+    });
   };
 
   const resolveInfoPendingSender = (move) => {
@@ -14547,7 +14577,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     renderInfoPendingList();
   };
 
-  const applyPendingMovesDecision = async ({ moveIndexes, decision }) => {
+  const applyPendingMovesDecision = async ({
+    moveIndexes,
+    decision,
+    declineReason: providedDeclineReason = "",
+    declinePhotoFile: providedDeclinePhotoFile = null,
+  }) => {
     if (pendingMovesState.isSaving) return;
     if (!moveIndexes.length) {
       setPendingMovesMessage("Нет перемещений для ответа.", "info");
@@ -14556,9 +14591,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     let declineReason = "";
     let declinePhotoFile = null;
     if (decision === "Не принял") {
-      const declinePayload = await requestPendingMovesDeclineReason();
-      declineReason = String(declinePayload?.reason ?? "").trim();
-      declinePhotoFile = declinePayload?.photoFile ?? null;
+      declineReason = String(providedDeclineReason ?? "").trim();
+      declinePhotoFile = providedDeclinePhotoFile ?? null;
+      if (!declineReason) {
+        const declinePayload = await requestPendingMovesDeclineReason();
+        declineReason = String(declinePayload?.reason ?? "").trim();
+        declinePhotoFile = declinePayload?.photoFile ?? null;
+      }
       if (!declineReason) {
         return;
       }
@@ -15245,6 +15284,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   if (pendingMovesBulkConfirmSubmitButton) {
     pendingMovesBulkConfirmSubmitButton.addEventListener("click", () => {
       applyPendingMovesBulkAction();
+    });
+  }
+  if (pendingMovesBulkConfirmReasonEl) {
+    pendingMovesBulkConfirmReasonEl.addEventListener("input", () => {
+      pendingMovesBulkConfirmReasonEl.classList.remove("is-invalid");
     });
   }
   pendingMovesBulkConfirmModalEl?.addEventListener("keydown", (event) => {

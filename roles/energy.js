@@ -1849,13 +1849,12 @@ export function renderRole(user) {
             aria-modal="true"
             aria-label="Причина отказа"
           >
-            <div class="settings-modal__header">
-              <div class="settings-modal__title">
+            <div class="settings-modal__header pending-moves-decline-modal__header">
+              <div class="settings-modal__title pending-moves-decline-modal__title-row">
                 <h2>Почему не принимаете?</h2>
-                <p>Причина обязательна и попадёт в историю перемещений.</p>
               </div>
               <button
-                class="button-icon"
+                class="button-icon pending-moves-decline-modal__close"
                 type="button"
                 data-pending-moves-decline-close
                 aria-label="Закрыть окно причины"
@@ -1882,20 +1881,20 @@ export function renderRole(user) {
                   accept="image/*"
                   data-pending-moves-decline-photo
                 />
-                <span class="form-hint">
-                  Фото добавится в уведомление и сохранится в папку «Фото отказов».
-                </span>
               </label>
               <div class="pending-moves-decline-actions">
                 <button
-                  class="action-secondary"
+                  class="action-secondary pending-moves-decline-actions__cancel"
                   type="button"
                   data-pending-moves-decline-cancel
                 >
                   Отмена
                 </button>
-                <button class="action-primary" type="submit">
-                  Сохранить причину
+                <button
+                  class="action-primary pending-moves-decline-actions__submit"
+                  type="submit"
+                >
+                  Не принять
                 </button>
               </div>
               <div class="form-message" data-pending-moves-decline-message></div>

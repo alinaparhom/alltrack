@@ -8169,6 +8169,123 @@
         backdrop-filter: blur(8px);
       }
 
+      .tools-kit-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: fit-content;
+        border: 1px solid rgba(59, 130, 246, 0.42);
+        background: linear-gradient(
+          135deg,
+          rgba(239, 246, 255, 0.92),
+          rgba(219, 234, 254, 0.86)
+        );
+        color: #1e3a8a;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 700;
+        line-height: 1;
+        padding: 6px 10px;
+        box-shadow: 0 10px 18px rgba(59, 130, 246, 0.14);
+        cursor: pointer;
+      }
+
+      .tools-kit-badge--card {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        z-index: 2;
+      }
+
+      .tools-kit-badge--inline {
+        margin-top: 2px;
+      }
+
+      .tools-kit-preview-modal {
+        position: fixed;
+        inset: 0;
+        z-index: 18000;
+        display: grid;
+        place-items: center;
+        padding: 16px;
+      }
+
+      .tools-kit-preview-modal.is-hidden {
+        display: none;
+      }
+
+      .tools-kit-preview-modal__backdrop {
+        position: absolute;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.42);
+        backdrop-filter: blur(4px);
+      }
+
+      .tools-kit-preview-modal__panel {
+        position: relative;
+        width: min(100%, 420px);
+        max-height: min(72vh, 560px);
+        border-radius: 20px;
+        border: 1px solid rgba(226, 232, 240, 0.92);
+        background: linear-gradient(
+          145deg,
+          rgba(255, 255, 255, 0.95),
+          rgba(241, 245, 249, 0.9)
+        );
+        box-shadow: 0 24px 52px rgba(15, 23, 42, 0.24);
+        display: grid;
+        grid-template-rows: auto minmax(0, 1fr);
+        overflow: hidden;
+      }
+
+      .tools-kit-preview-modal__header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 14px 10px;
+        border-bottom: 1px solid rgba(226, 232, 240, 0.9);
+      }
+
+      .tools-kit-preview-modal__title {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--text);
+      }
+
+      .tools-kit-preview-modal__body {
+        padding: 12px;
+        overflow: auto;
+      }
+
+      .tools-kit-preview-modal__list {
+        display: grid;
+        gap: 8px;
+      }
+
+      .tools-kit-preview-modal__item {
+        border: 1px solid rgba(226, 232, 240, 0.9);
+        border-radius: 14px;
+        background: rgba(255, 255, 255, 0.84);
+        padding: 10px 12px;
+        display: grid;
+        gap: 4px;
+      }
+
+      .tools-kit-preview-modal__item-title {
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--text);
+      }
+
+      .tools-kit-preview-modal__item-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px 12px;
+        font-size: 12px;
+        color: var(--muted);
+      }
+
       .tools-card.tools-card--no-photo {
         border-width: 2px;
         border-color: rgba(100, 116, 139, 0.72);
@@ -9493,6 +9610,56 @@
         box-shadow:
           0 0 0 1px rgba(219, 234, 254, 0.24) inset,
           0 10px 20px rgba(30, 64, 175, 0.44);
+      }
+
+      body[data-theme="dark"] .tools-kit-badge {
+        border-color: rgba(96, 165, 250, 0.5);
+        background: linear-gradient(
+          140deg,
+          rgba(30, 58, 138, 0.74),
+          rgba(37, 99, 235, 0.52)
+        );
+        color: #dbeafe;
+        box-shadow: 0 10px 18px rgba(30, 64, 175, 0.28);
+      }
+
+      body[data-theme="dark"] .tools-kit-preview-modal__panel {
+        border-color: rgba(71, 85, 105, 0.86);
+        background: linear-gradient(
+          145deg,
+          rgba(15, 23, 42, 0.94),
+          rgba(30, 41, 59, 0.92)
+        );
+      }
+
+      body[data-theme="dark"] .tools-kit-preview-modal__header {
+        border-bottom-color: rgba(71, 85, 105, 0.8);
+      }
+
+      body[data-theme="dark"] .tools-kit-preview-modal__item {
+        border-color: rgba(71, 85, 105, 0.82);
+        background: rgba(30, 41, 59, 0.82);
+      }
+
+      body[data-theme="dark"] .tools-kit-preview-modal__item-title {
+        color: #e2e8f0;
+      }
+
+      @media (max-width: 520px) {
+        .tools-kit-preview-modal {
+          padding: 12px;
+          align-items: end;
+        }
+
+        .tools-kit-preview-modal__panel {
+          width: 100%;
+          max-height: min(76vh, 560px);
+          border-radius: 18px;
+        }
+
+        .tools-kit-preview-modal__title {
+          font-size: 15px;
+        }
       }
 
       .tools-empty {

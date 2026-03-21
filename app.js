@@ -5035,6 +5035,27 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const toolsSearchMapViewButtonEl = contentEl.querySelector(
     "[data-tools-search-map-view]"
   );
+  const toolsKitPreviewModalEl = document.createElement("div");
+  toolsKitPreviewModalEl.className = "tools-kit-preview-modal is-hidden";
+  toolsKitPreviewModalEl.innerHTML = `
+    <div class="tools-kit-preview-modal__backdrop" data-tools-kit-preview-close></div>
+    <section class="tools-kit-preview-modal__panel" role="dialog" aria-modal="true" aria-label="Комплектация инструмента">
+      <header class="tools-kit-preview-modal__header">
+        <h3 class="tools-kit-preview-modal__title" data-tools-kit-preview-title>Комплектация</h3>
+        <button type="button" class="settings-modal__close" data-tools-kit-preview-close aria-label="Закрыть">✕</button>
+      </header>
+      <div class="tools-kit-preview-modal__body">
+        <div class="tools-kit-preview-modal__list" data-tools-kit-preview-list></div>
+      </div>
+    </section>
+  `;
+  contentEl.appendChild(toolsKitPreviewModalEl);
+  const toolsKitPreviewTitleEl = toolsKitPreviewModalEl.querySelector(
+    "[data-tools-kit-preview-title]"
+  );
+  const toolsKitPreviewListEl = toolsKitPreviewModalEl.querySelector(
+    "[data-tools-kit-preview-list]"
+  );
   const toolsEmptyEl = contentEl.querySelector("[data-tools-empty]");
   const toolsSubtitleEl = contentEl.querySelector("[data-tools-subtitle]");
   const toolsZoneSubtitleEl = contentEl.querySelector("[data-tools-zone-subtitle]");
@@ -9186,6 +9207,54 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     return raw || "—";
   };
 
+  const getToolKitItems = (tool) => {
+    const rawKit = Array.isArray(tool?.["Комплектация"]) ? tool["Комплектация"] : [];
+    return rawKit
+      .map((item) => ({
+        "Наименование": String(item?.["Наименование"] ?? "").trim(),
+        "Количество": String(item?.["Количество"] ?? "").trim(),
+        "Бух.номер": String(item?.["Бух.номер"] ?? "").trim(),
+      }))
+      .filter(
+        (item) => item["Наименование"] || item["Количество"] || item["Бух.номер"]
+      );
+  };
+
+  const closeToolsKitPreviewModal = () => {
+    toolsKitPreviewModalEl.classList.add("is-hidden");
+  };
+
+  const openToolsKitPreviewModal = (tool) => {
+    if (!toolsKitPreviewListEl) return;
+    const items = getToolKitItems(tool);
+    if (!items.length) return;
+    const toolLabel =
+      resolveToolNumberValue(tool) ||
+      String(tool?.["Наименование"] ?? "").trim() ||
+      "Инструмент";
+    if (toolsKitPreviewTitleEl) {
+      toolsKitPreviewTitleEl.textContent = `Комплектация · ${toolLabel}`;
+    }
+    toolsKitPreviewListEl.innerHTML = "";
+    items.forEach((item, index) => {
+      const row = document.createElement("div");
+      row.className = "tools-kit-preview-modal__item";
+      const countLabel = formatInfoValue(item["Количество"]);
+      const accountingLabel = formatInfoValue(item["Бух.номер"]);
+      row.innerHTML = `
+        <div class="tools-kit-preview-modal__item-title">${index + 1}. ${escapeHtml(
+          formatInfoValue(item["Наименование"])
+        )}</div>
+        <div class="tools-kit-preview-modal__item-meta">
+          <span>Кол-во: ${escapeHtml(countLabel)}</span>
+          <span>Бух.номер: ${escapeHtml(accountingLabel)}</span>
+        </div>
+      `;
+      toolsKitPreviewListEl.appendChild(row);
+    });
+    toolsKitPreviewModalEl.classList.remove("is-hidden");
+  };
+
   const formatDateWithDays = ({ dateLabel, startDate, endDate }) => {
     if (!startDate) return formatInfoValue(dateLabel);
     const safeEndDate = endDate || new Date();
@@ -9760,6 +9829,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const shouldHighlightToolStatus = ["user", "move-other"].includes(toolsState.mode);
     const isSearchMode = toolsState.mode === "search";
     const shouldShowResponsibleAndToolStatus = toolsState.mode !== "user";
+    const kitItems = getToolKitItems(tool);
+    const hasKit = kitItems.length > 0;
     const statusText = isMovingNow
       ? "в процессе перемещения"
       : status || "не указан";
@@ -9876,6 +9947,15 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         badge.textContent = "Без фото";
         row.appendChild(badge);
       }
+      if (isSearchMode && hasKit) {
+        const kitBadge = document.createElement("button");
+        kitBadge.type = "button";
+        kitBadge.className = "tools-kit-badge";
+        kitBadge.dataset.toolsKitOpen = "true";
+        kitBadge.textContent = `Комплект: ${kitItems.length}`;
+        kitBadge.setAttribute("aria-label", "Открыть комплектацию инструмента");
+        row.appendChild(kitBadge);
+      }
       return row;
     }
 
@@ -9906,6 +9986,15 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       badge.className = "tools-card__badge";
       badge.textContent = "Нет фото";
       media.appendChild(badge);
+    }
+    if (isSearchMode && hasKit) {
+      const kitBadge = document.createElement("button");
+      kitBadge.type = "button";
+      kitBadge.className = "tools-kit-badge tools-kit-badge--card";
+      kitBadge.dataset.toolsKitOpen = "true";
+      kitBadge.textContent = `Комплект: ${kitItems.length}`;
+      kitBadge.setAttribute("aria-label", "Открыть комплектацию инструмента");
+      media.appendChild(kitBadge);
     }
 
     if (viewMode === "large" || isCompactMobile) {
@@ -10051,6 +10140,18 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       value.style.textDecoration = "none";
       statusLine.append(label, value);
       meta.appendChild(statusLine);
+      const kitItems = getToolKitItems(tool);
+      if (isSearchMode && kitItems.length > 0) {
+        const kitLine = document.createElement("div");
+        const kitBadge = document.createElement("button");
+        kitBadge.type = "button";
+        kitBadge.className = "tools-kit-badge tools-kit-badge--inline";
+        kitBadge.dataset.toolsKitOpen = "true";
+        kitBadge.textContent = `Комплект: ${kitItems.length}`;
+        kitBadge.setAttribute("aria-label", "Открыть комплектацию инструмента");
+        kitLine.appendChild(kitBadge);
+        meta.appendChild(kitLine);
+      }
 
       if (shouldHighlightToolStatus && toolsState.mode !== "user") {
         const toolStatusLine = document.createElement("div");
@@ -16309,6 +16410,17 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
   };
 
+  toolsKitPreviewModalEl.addEventListener("click", (event) => {
+    if (event.target.closest("[data-tools-kit-preview-close]")) {
+      closeToolsKitPreviewModal();
+    }
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && !toolsKitPreviewModalEl.classList.contains("is-hidden")) {
+      closeToolsKitPreviewModal();
+    }
+  });
+
   if (toolsListEl) {
     toolsListEl.addEventListener("pointerdown", (event) => {
       if (toolsState.mode === "base" || toolsState.mode === "search")
@@ -16353,6 +16465,16 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     });
 
     toolsListEl.addEventListener("click", (event) => {
+      const openKitButton = event.target.closest("[data-tools-kit-open]");
+      if (openKitButton) {
+        const item = openKitButton.closest("[data-tools-item]");
+        if (!item) return;
+        const tool = toolsState.toolMap.get(item.dataset.toolId);
+        if (tool) {
+          openToolsKitPreviewModal(tool);
+        }
+        return;
+      }
       const photoButton = event.target.closest("[data-pending-photo-open]");
       if (photoButton) {
         const toolIndex = Number.parseInt(

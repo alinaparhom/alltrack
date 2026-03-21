@@ -1804,29 +1804,42 @@ export function renderRole(user) {
             data-pending-moves-bulk-confirm-backdrop
           ></div>
           <div
-            class="settings-modal__panel pending-moves-bulk-confirm-modal__panel"
+            class="settings-modal__panel pending-moves-bulk-confirm-modal__panel pending-moves-decline-modal__panel"
             role="dialog"
             aria-modal="true"
             aria-label="Подтверждение массового действия"
           >
-            <div class="settings-modal__header">
-              <div class="settings-modal__title">
+            <div class="settings-modal__header pending-moves-decline-modal__header">
+              <div class="settings-modal__title pending-moves-decline-modal__title-row">
                 <h2 data-pending-moves-bulk-confirm-title>Подтвердите действие</h2>
+                <button
+                  class="button-icon pending-moves-decline-modal__close"
+                  type="button"
+                  data-pending-moves-bulk-confirm-close
+                  aria-label="Закрыть окно подтверждения"
+                >
+                  <span class="button-icon-emoji" aria-hidden="true">✕</span>
+                </button>
+              </div>
+            </div>
+            <div class="settings-modal__body">
+              <div class="form-field pending-moves-decline-field">
+                <span class="form-label">Подтверждение</span>
                 <p data-pending-moves-bulk-confirm-text>
                   Вы уверены, что хотите применить действие ко всем инструментам?
                 </p>
               </div>
             </div>
-            <div class="settings-modal__footer pending-moves-bulk-confirm-actions">
+            <div class="settings-modal__footer pending-moves-bulk-confirm-actions pending-moves-decline-actions">
               <button
-                class="pending-moves-bulk-confirm-submit"
+                class="action-primary pending-moves-decline-actions__submit pending-moves-bulk-confirm-submit"
                 type="button"
                 data-pending-moves-bulk-confirm-submit
               >
                 Подтвердить
               </button>
               <button
-                class="pending-moves-bulk-confirm-cancel"
+                class="action-secondary pending-moves-decline-actions__cancel pending-moves-bulk-confirm-cancel"
                 type="button"
                 data-pending-moves-bulk-confirm-cancel
               >

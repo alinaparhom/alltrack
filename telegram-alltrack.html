@@ -8917,6 +8917,7 @@
       .pending-moves-bulk-confirm-actions {
         display: flex;
         flex-wrap: nowrap;
+        flex-direction: row;
         align-items: center;
         justify-content: stretch;
         gap: 10px;
@@ -9879,6 +9880,7 @@
           justify-content: stretch;
           gap: 8px;
           flex-wrap: nowrap;
+          flex-direction: row;
         }
 
         .pending-moves-bulk-confirm-cancel,
@@ -12035,6 +12037,13 @@
         .settings-modal__footer {
           flex-direction: column-reverse;
           align-items: stretch;
+        }
+
+        .pending-moves-bulk-confirm-modal
+          .settings-modal__footer.pending-moves-bulk-confirm-actions {
+          flex-direction: row;
+          align-items: center;
+          justify-content: space-between;
         }
 
         .writeoff-modal__footer {

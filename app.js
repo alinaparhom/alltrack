@@ -9007,8 +9007,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const title = nameParts.length ? nameParts.join(" ") : "—";
     const number =
       String(move?.["Номер"] ?? "").trim() ||
-      String(move?.["Бух.номер"] ?? "").trim() ||
+      String(tool?.["Номер"] ?? "").trim() ||
       resolveToolNumberValue(tool) ||
+      "—";
+    const accountingNumber =
+      String(move?.["Бух.номер"] ?? "").trim() ||
+      String(tool?.["Бух.номер"] ?? "").trim() ||
       "—";
     const responsible = String(move?.["Принял"] ?? "").trim() || "—";
     const targetObject = String(move?.["Новый объект"] ?? "").trim() || "—";
@@ -9016,6 +9020,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     return [
       `Инструмент: ${title}`,
       `Номер: ${number}`,
+      `Бух.номер: ${accountingNumber}`,
       `Новый ответственный: ${responsible}`,
       `Новый объект: ${targetObject}`,
       `Дата перемещения: ${moveDate}`,

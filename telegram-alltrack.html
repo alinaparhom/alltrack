@@ -9330,6 +9330,24 @@
           align-items: center;
         }
 
+        .tools-modal--my-tools .tools-actions {
+          display: flex;
+          flex-wrap: nowrap;
+          justify-content: flex-start;
+          overflow-x: auto;
+          scrollbar-width: none;
+          -webkit-overflow-scrolling: touch;
+          touch-action: pan-x;
+        }
+
+        .tools-modal--my-tools .tools-actions::-webkit-scrollbar {
+          display: none;
+        }
+
+        .tools-modal--my-tools .tools-actions > * {
+          flex: 0 0 auto;
+        }
+
         .tools-modal--selecting .tools-actions {
           display: flex;
           flex-wrap: nowrap;

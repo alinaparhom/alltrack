@@ -6401,7 +6401,10 @@
         justify-content: center;
         height: var(--tools-selection-control-size);
         min-height: var(--tools-selection-control-size);
+        max-height: var(--tools-selection-control-size);
         padding: 0 14px;
+        box-sizing: border-box;
+        line-height: 1;
         border-radius: 999px;
         font-size: 12px;
         font-weight: 600;
@@ -6420,6 +6423,7 @@
       .tools-cancel-button {
         display: none;
         min-height: 40px;
+        box-sizing: border-box;
         padding: 10px 18px;
         font-size: 14px;
         border-radius: 999px;
@@ -6433,7 +6437,9 @@
         width: var(--tools-selection-control-size);
         height: var(--tools-selection-control-size);
         min-height: var(--tools-selection-control-size);
+        max-height: var(--tools-selection-control-size);
         padding: 0;
+        box-sizing: border-box;
         border-radius: 10px;
         box-shadow: 0 10px 24px rgba(15, 23, 42, 0.1);
       }
@@ -7457,10 +7463,17 @@
 
       .tools-modal--my-tools .tools-card {
         width: 100%;
+        min-height: 248px;
+        max-height: 248px;
+        height: 248px;
+        grid-template-rows: 168px minmax(0, 1fr);
       }
 
       .tools-modal--my-tools .tools-card__media {
-        aspect-ratio: 4 / 3;
+        aspect-ratio: auto;
+        min-height: 168px;
+        max-height: 168px;
+        height: 168px;
       }
 
       .writeoff-modal__panel {
@@ -9464,8 +9477,18 @@
           gap: 8px;
         }
 
+        .tools-modal--my-tools .tools-card {
+          min-height: 248px;
+          max-height: 248px;
+          height: 248px;
+          grid-template-rows: 168px minmax(0, 1fr);
+        }
+
         .tools-modal--my-tools .tools-card__media {
-          aspect-ratio: 4 / 3;
+          aspect-ratio: auto;
+          min-height: 168px;
+          max-height: 168px;
+          height: 168px;
         }
 
         .tools-list.is-table .tools-table__row {

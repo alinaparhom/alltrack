@@ -15740,6 +15740,26 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     });
   };
 
+  const syncToolsFilterDropdownMenuWidth = (containerEl, menuEl) => {
+    if (!containerEl || !menuEl) return;
+    const shouldStretchToPanel =
+      toolsModalEl?.classList.contains("tools-modal--my-tools") &&
+      typeof window !== "undefined" &&
+      window.matchMedia("(max-width: 640px)").matches;
+    if (!shouldStretchToPanel || !toolsFiltersPanelEl) {
+      menuEl.style.left = "";
+      menuEl.style.right = "";
+      menuEl.style.width = "";
+      return;
+    }
+    const panelRect = toolsFiltersPanelEl.getBoundingClientRect();
+    const containerRect = containerEl.getBoundingClientRect();
+    const offsetLeft = panelRect.left - containerRect.left;
+    menuEl.style.left = `${offsetLeft}px`;
+    menuEl.style.right = "auto";
+    menuEl.style.width = `${panelRect.width}px`;
+  };
+
   toolsFilterEls.forEach((containerEl) => {
     const key = containerEl.dataset.toolsFilter;
     const triggerEl = containerEl.querySelector("[data-tools-filter-trigger]");
@@ -15751,6 +15771,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         closeAllToolsFilterDropdowns();
         menuEl.classList.toggle("is-hidden", isOpen);
         containerEl.classList.toggle("is-open", !isOpen);
+        if (!isOpen) {
+          syncToolsFilterDropdownMenuWidth(containerEl, menuEl);
+        }
       });
     }
     if (clearEl && key) {
@@ -15785,6 +15808,20 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       if (!(target instanceof Element)) return;
       if (target.closest(".tools-filter-dropdown")) return;
       closeAllToolsFilterDropdowns();
+    });
+  }
+
+  if (typeof window !== "undefined") {
+    const refreshOpenToolsFilterMenus = () => {
+      toolsFilterEls.forEach((containerEl) => {
+        if (!containerEl.classList.contains("is-open")) return;
+        const menuEl = containerEl.querySelector("[data-tools-filter-menu]");
+        syncToolsFilterDropdownMenuWidth(containerEl, menuEl);
+      });
+    };
+    window.addEventListener("resize", refreshOpenToolsFilterMenus);
+    toolsFiltersPanelEl?.addEventListener("scroll", refreshOpenToolsFilterMenus, {
+      passive: true,
     });
   }
 

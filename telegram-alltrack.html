@@ -6399,6 +6399,7 @@
         display: none;
         align-items: center;
         justify-content: center;
+        height: var(--tools-selection-control-size);
         min-height: var(--tools-selection-control-size);
         padding: 0 14px;
         border-radius: 999px;
@@ -6480,6 +6481,8 @@
 
       .tools-modal--selecting .tools-selection-count {
         display: inline-flex;
+        height: var(--tools-selection-control-size);
+        min-height: var(--tools-selection-control-size);
       }
 
       .tools-modal--selecting .tools-select-all-button,
@@ -6489,7 +6492,8 @@
 
       .tools-modal--selecting .tools-move-button,
       .tools-modal--selecting .tools-cancel-button {
-        min-height: auto;
+        height: var(--tools-selection-control-size);
+        min-height: var(--tools-selection-control-size);
         width: auto;
         min-width: 78px;
         justify-content: center;
@@ -7263,6 +7267,9 @@
         gap: 10px;
         overflow: auto;
         padding-bottom: 12px;
+        align-content: start;
+        align-items: start;
+        grid-auto-rows: max-content;
       }
 
       .tools-search-map {
@@ -9312,13 +9319,16 @@
 
         .tools-modal--selecting .tools-move-button,
         .tools-modal--selecting .tools-cancel-button {
-          min-height: auto;
+          height: var(--tools-selection-control-size);
+          min-height: var(--tools-selection-control-size);
           min-width: 74px;
           padding: 8px 10px;
           font-size: 11px;
         }
 
         .tools-modal--selecting .tools-selection-count {
+          height: var(--tools-selection-control-size);
+          min-height: var(--tools-selection-control-size);
           padding: 0 10px;
           font-size: 11px;
         }

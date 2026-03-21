@@ -8499,8 +8499,8 @@
       }
 
       .pending-moves-modal__panel .tools-modal__header {
-        padding-left: calc(14px + max(0px, env(safe-area-inset-left)));
-        padding-right: calc(14px + max(0px, env(safe-area-inset-right)));
+        padding-left: max(0px, env(safe-area-inset-left));
+        padding-right: max(0px, env(safe-area-inset-right));
       }
 
       .pending-moves-modal__panel .tools-modal__body {
@@ -8509,7 +8509,7 @@
       }
 
       .pending-moves-modal__panel .tools-modal__close {
-        margin-right: 6px;
+        margin-right: 0;
       }
 
       .pending-moves-modal__panel [data-pending-moves-message]:empty {

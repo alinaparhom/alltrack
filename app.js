@@ -11265,7 +11265,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (!toolsInfoModalEl || !tool) return;
     toolsInfoState.tool = tool;
     toolsInfoState.orgFolder = toolsState.orgFolder || context.orgFolderName || "";
-    const toolNumber = resolveToolNumberValue(tool) || "—";
     const nameParts = [
       String(tool?.["Наименование"] ?? "").trim(),
       String(tool?.["Производитель"] ?? "").trim(),
@@ -11276,7 +11275,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       toolsInfoTitleEl.textContent = title;
     }
     if (toolsInfoSubtitleEl) {
-      toolsInfoSubtitleEl.textContent = `№${toolNumber}`;
+      toolsInfoSubtitleEl.textContent = "Детальная информация";
     }
     toolsInfoState.kitExpanded = false;
     renderToolsInfoGrid(tool);

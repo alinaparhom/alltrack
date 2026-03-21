@@ -8975,7 +8975,13 @@
       }
 
       .tools-cancel-move-modal__panel {
+        width: min(94vw, 520px);
+        height: auto;
+        max-height: min(90vh, 680px);
         max-width: 520px;
+        border-radius: 24px;
+        overflow: hidden;
+        grid-template-rows: auto auto auto;
       }
 
       .tools-cancel-move-modal__header {
@@ -9014,6 +9020,8 @@
       }
 
       .tools-cancel-move-info {
+        display: grid;
+        gap: 4px;
         padding: 14px 16px;
         border-radius: 16px;
         background: linear-gradient(
@@ -9026,6 +9034,7 @@
         font-size: 13px;
         line-height: 1.4;
         white-space: pre-line;
+        height: fit-content;
       }
 
       .tools-cancel-move-actions {
@@ -9036,12 +9045,13 @@
 
       .tools-cancel-move-actions > button {
         width: 100%;
-        min-height: 0;
+        min-height: auto;
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        padding: 12px 14px;
+        padding: 10px 14px;
         line-height: 1.2;
+        white-space: nowrap;
       }
 
       .tools-cancel-move-actions__keep {

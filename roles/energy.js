@@ -1738,19 +1738,21 @@ export function renderRole(user) {
             aria-modal="true"
             aria-label="Отмена перемещения"
           >
-            <div class="settings-modal__header">
-              <div class="settings-modal__title">
-                <h2>Отмена перемещения</h2>
+            <div class="settings-modal__header tools-cancel-move-modal__header">
+              <div class="settings-modal__title tools-cancel-move-modal__title">
+                <div class="tools-cancel-move-modal__title-row">
+                  <h2>Отмена перемещения</h2>
+                  <button
+                    class="button-icon tools-cancel-move-modal__close"
+                    type="button"
+                    data-tools-cancel-move-close
+                    aria-label="Закрыть окно отмены"
+                  >
+                    <span class="button-icon-emoji" aria-hidden="true">✕</span>
+                  </button>
+                </div>
                 <p>Перемещение ещё ожидает ответа.</p>
               </div>
-              <button
-                class="button-icon"
-                type="button"
-                data-tools-cancel-move-close
-                aria-label="Закрыть окно отмены"
-              >
-                <span class="button-icon-emoji" aria-hidden="true">✕</span>
-              </button>
             </div>
             <div class="settings-modal__body">
               <div
@@ -1761,14 +1763,14 @@ export function renderRole(user) {
             </div>
             <div class="settings-modal__footer tools-cancel-move-actions">
               <button
-                class="action-secondary"
+                class="action-danger tools-cancel-move-actions__keep"
                 type="button"
                 data-tools-cancel-move-cancel
               >
                 Не отменять
               </button>
               <button
-                class="action-danger"
+                class="action-primary tools-cancel-move-actions__confirm"
                 type="button"
                 data-tools-cancel-move-confirm
               >

@@ -8978,6 +8978,29 @@
         max-width: 520px;
       }
 
+      .tools-cancel-move-modal__header {
+        display: block;
+      }
+
+      .tools-cancel-move-modal__title {
+        width: 100%;
+      }
+
+      .tools-cancel-move-modal__title-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+      }
+
+      .tools-cancel-move-modal__title-row h2 {
+        margin: 0;
+      }
+
+      .tools-cancel-move-modal__close {
+        flex: 0 0 auto;
+      }
+
       .tools-cancel-move-info {
         padding: 14px 16px;
         border-radius: 16px;
@@ -8994,15 +9017,57 @@
       }
 
       .tools-cancel-move-actions {
-        display: flex;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 10px;
-        flex-wrap: wrap;
       }
 
-      .tools-cancel-move-actions .action-secondary,
-      .tools-cancel-move-actions .action-danger {
-        flex: 1;
-        min-width: 180px;
+      .tools-cancel-move-actions > button {
+        width: 100%;
+        min-height: 44px;
+      }
+
+      .tools-cancel-move-actions__keep {
+        border: 1px solid rgba(220, 38, 38, 0.28);
+        background: linear-gradient(
+          135deg,
+          rgba(254, 226, 226, 0.88),
+          rgba(254, 242, 242, 0.78)
+        );
+        color: #b91c1c;
+        box-shadow: 0 12px 24px rgba(239, 68, 68, 0.12);
+      }
+
+      .tools-cancel-move-actions__keep:hover {
+        background: linear-gradient(
+          135deg,
+          rgba(254, 202, 202, 0.92),
+          rgba(254, 226, 226, 0.82)
+        );
+      }
+
+      .tools-cancel-move-actions__confirm {
+        border: 1px solid rgba(22, 163, 74, 0.28);
+        border-radius: 14px;
+        background: linear-gradient(
+          135deg,
+          rgba(220, 252, 231, 0.9),
+          rgba(240, 253, 244, 0.8)
+        );
+        color: #166534;
+        font-weight: 700;
+        letter-spacing: 0.01em;
+        cursor: pointer;
+        box-shadow: 0 12px 24px rgba(34, 197, 94, 0.12);
+        backdrop-filter: blur(10px);
+      }
+
+      .tools-cancel-move-actions__confirm:hover {
+        background: linear-gradient(
+          135deg,
+          rgba(187, 247, 208, 0.95),
+          rgba(220, 252, 231, 0.85)
+        );
       }
 
       .tools-writeoff-pending-confirm-modal__panel {

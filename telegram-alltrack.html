@@ -8917,6 +8917,7 @@
       .pending-moves-bulk-confirm-actions {
         display: flex;
         flex-wrap: nowrap;
+        align-items: center;
         justify-content: stretch;
         gap: 10px;
         width: 100%;
@@ -8924,7 +8925,7 @@
 
       .pending-moves-bulk-confirm-cancel,
       .pending-moves-bulk-confirm-submit {
-        flex: 1 1 50%;
+        flex: 1 1 0;
         width: 100%;
         min-width: 0;
         min-height: 44px;
@@ -9877,6 +9878,13 @@
         .pending-moves-bulk-confirm-actions {
           justify-content: stretch;
           gap: 8px;
+          flex-wrap: nowrap;
+        }
+
+        .pending-moves-bulk-confirm-cancel,
+        .pending-moves-bulk-confirm-submit {
+          flex: 1 1 0;
+          min-width: 0;
         }
 
         .pending-moves-tools-table .pending-move-action--decline {

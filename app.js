@@ -797,6 +797,9 @@ const applyToolPhotoWithFallback = ({
     if (cacheKey) toolPhotoMissingCache.add(cacheKey);
   };
   const markLoaded = () => {
+    if (img.classList.contains("is-placeholder")) {
+      return;
+    }
     if (cacheKey) {
       toolPhotoUrlCache.set(cacheKey, img.src);
       toolPhotoMissingCache.delete(cacheKey);

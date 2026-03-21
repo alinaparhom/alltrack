@@ -1822,28 +1822,32 @@ export function renderRole(user) {
                 </button>
               </div>
             </div>
-            <div class="settings-modal__body">
-              <div class="form-field pending-moves-decline-field">
-                <span class="form-label">Подтверждение</span>
-                <p data-pending-moves-bulk-confirm-text>
-                  Вы уверены, что хотите применить действие ко всем инструментам?
-                </p>
+            <div class="settings-modal__body pending-moves-bulk-confirm-body">
+              <p class="pending-moves-bulk-confirm-text" data-pending-moves-bulk-confirm-text></p>
+              <div class="form-field pending-moves-decline-field pending-moves-bulk-confirm-reason is-hidden" data-pending-moves-bulk-confirm-reason-block>
+                <span class="form-label">Причина отказа</span>
+                <textarea
+                  class="form-input pending-moves-decline-textarea"
+                  data-pending-moves-bulk-confirm-reason
+                  rows="4"
+                  placeholder="Коротко опишите причину"
+                ></textarea>
               </div>
             </div>
             <div class="settings-modal__footer pending-moves-bulk-confirm-actions pending-moves-decline-actions">
-              <button
-                class="action-primary pending-moves-decline-actions__submit pending-moves-bulk-confirm-submit"
-                type="button"
-                data-pending-moves-bulk-confirm-submit
-              >
-                Подтвердить
-              </button>
               <button
                 class="action-secondary pending-moves-decline-actions__cancel pending-moves-bulk-confirm-cancel"
                 type="button"
                 data-pending-moves-bulk-confirm-cancel
               >
                 Отмена
+              </button>
+              <button
+                class="action-primary pending-moves-decline-actions__submit pending-moves-bulk-confirm-submit"
+                type="button"
+                data-pending-moves-bulk-confirm-submit
+              >
+                Подтвердить
               </button>
             </div>
           </div>

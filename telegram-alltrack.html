@@ -8982,10 +8982,14 @@
         border-radius: 24px;
         overflow: hidden;
         grid-template-rows: auto auto auto;
+        gap: 14px;
+        padding: 14px;
       }
 
       .tools-cancel-move-modal__header {
         display: block;
+        padding: 0;
+        border-bottom: none;
       }
 
       .tools-cancel-move-modal__title {
@@ -8994,7 +8998,7 @@
 
       .tools-cancel-move-modal__title-row {
         display: flex;
-        align-items: flex-start;
+        align-items: center;
         justify-content: space-between;
         gap: 10px;
       }
@@ -9006,13 +9010,13 @@
 
       .tools-cancel-move-modal__close {
         flex: 0 0 auto;
-        align-self: flex-start;
+        align-self: center;
         width: 40px;
         height: 40px;
         display: flex;
-        align-items: flex-start;
+        align-items: center;
         justify-content: center;
-        padding-top: 8px;
+        padding: 0;
       }
 
       .tools-cancel-move-modal__close .button-icon-emoji {
@@ -9023,7 +9027,7 @@
         display: grid;
         gap: 4px;
         padding: 14px 16px;
-        border-radius: 16px;
+        border-radius: var(--radius-card);
         background: linear-gradient(
           140deg,
           rgba(219, 234, 254, 0.9),
@@ -9037,10 +9041,16 @@
         height: fit-content;
       }
 
+      .tools-cancel-move-modal__panel .settings-modal__body {
+        gap: 14px;
+        padding: 0;
+      }
+
       .tools-cancel-move-actions {
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 10px;
+        gap: 14px;
+        padding: 0;
       }
 
       .tools-cancel-move-actions > button {
@@ -9052,6 +9062,7 @@
         padding: 10px 14px;
         line-height: 1.2;
         white-space: nowrap;
+        border-radius: var(--radius-card);
       }
 
       .tools-cancel-move-actions__keep {

@@ -9812,10 +9812,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       title.textContent = infoLine || "Без названия";
       const meta = document.createElement("div");
       meta.className = "tools-row__meta";
-      const mainMetaLine = [
+      const accountingMetaLine =
         toolsState.numberKey === "Бух.номер" && accountingNumber === number
           ? ""
-          : accountingNumber,
+          : accountingNumber
+            ? `Бух.номер: ${accountingNumber}`
+            : "";
+      const mainMetaLine = [
         tool?.["Граппа инструментов"],
         shouldHighlightToolStatus ? "" : tool?.["Статус"],
         tool?.["Объект"],
@@ -9828,6 +9831,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         const mainMetaLineEl = document.createElement("div");
         mainMetaLineEl.textContent = mainMetaLine;
         meta.appendChild(mainMetaLineEl);
+      }
+      if (accountingMetaLine) {
+        const accountingMetaLineEl = document.createElement("div");
+        accountingMetaLineEl.textContent = accountingMetaLine;
+        meta.appendChild(accountingMetaLineEl);
       }
       if (costMetaLine) {
         const costMetaLineEl = document.createElement("div");
@@ -9845,7 +9853,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           meta.appendChild(statusMeta);
         }
       }
-      if (!mainMetaLine && !costMetaLine) {
+      if (!mainMetaLine && !accountingMetaLine && !costMetaLine) {
         meta.textContent = "—";
         if (shouldShowResponsibleAndToolStatus) {
           meta.appendChild(createResponsibleStatusLine());
@@ -9979,7 +9987,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const model = String(tool?.["Модель"] ?? "").trim();
       const manufacturerModelLine = [manufacturer, model].filter(Boolean).join(" · ");
       const costLine = formatToolCostLabel(tool);
-      const metaLines = [manufacturerModelLine, costLine].filter(Boolean);
+      const accountingNumber = String(tool?.["Бух.номер"] ?? "").trim();
+      const accountingLine = accountingNumber ? `Бух.номер: ${accountingNumber}` : "";
+      const metaLines = [manufacturerModelLine, accountingLine, costLine].filter(Boolean);
       const isMovingNow = Boolean(tool?.__pendingMove);
       const status = String(tool?.["Статус"] ?? "").trim();
       const statusText = isMovingNow

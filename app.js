@@ -15729,6 +15729,20 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
   const syncToolsFilterDropdownMenuWidth = (containerEl, menuEl) => {
     if (!containerEl || !menuEl) return;
+    const isSearchMode = toolsModalEl?.classList.contains("tools-modal--searching");
+    if (isSearchMode && typeof window !== "undefined") {
+      const viewportPadding = 12;
+      const viewportWidth =
+        window.visualViewport?.width ?? window.innerWidth ?? document.documentElement.clientWidth;
+      const containerRect = containerEl.getBoundingClientRect();
+      const width = Math.max(220, Math.floor(viewportWidth - viewportPadding * 2));
+      const offsetLeft = viewportPadding - containerRect.left;
+      menuEl.style.left = `${offsetLeft}px`;
+      menuEl.style.right = "auto";
+      menuEl.style.width = `${width}px`;
+      menuEl.style.transform = "none";
+      return;
+    }
     const shouldStretchToPanel =
       toolsModalEl?.classList.contains("tools-modal--my-tools") &&
       typeof window !== "undefined" &&
@@ -15737,6 +15751,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       menuEl.style.left = "";
       menuEl.style.right = "";
       menuEl.style.width = "";
+      menuEl.style.transform = "";
       return;
     }
     const panelRect = toolsFiltersPanelEl.getBoundingClientRect();
@@ -15745,6 +15760,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     menuEl.style.left = `${offsetLeft}px`;
     menuEl.style.right = "auto";
     menuEl.style.width = `${panelRect.width}px`;
+    menuEl.style.transform = "";
   };
 
   toolsFilterEls.forEach((containerEl) => {

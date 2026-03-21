@@ -10270,7 +10270,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     );
     if (toolsFiltersToggleEl) {
       toolsFiltersToggleEl.classList.toggle("is-active", appliedCount > 0);
-      toolsFiltersToggleEl.dataset.appliedCount = String(appliedCount);
     }
     const statusEls = contentEl.querySelectorAll("[data-tools-filters-status]");
     statusEls.forEach((statusEl) => {

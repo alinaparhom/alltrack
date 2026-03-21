@@ -5042,7 +5042,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     <section class="tools-kit-preview-modal__panel" role="dialog" aria-modal="true" aria-label="Комплектация инструмента">
       <header class="tools-kit-preview-modal__header">
         <h3 class="tools-kit-preview-modal__title" data-tools-kit-preview-title>Комплектация</h3>
-        <button type="button" class="settings-modal__close" data-tools-kit-preview-close aria-label="Закрыть">✕</button>
+        <button type="button" class="icon-button tools-kit-preview-modal__close" data-tools-kit-preview-close aria-label="Закрыть окно комплектации">
+          <span aria-hidden="true">✕</span>
+        </button>
       </header>
       <div class="tools-kit-preview-modal__body">
         <div class="tools-kit-preview-modal__list" data-tools-kit-preview-list></div>

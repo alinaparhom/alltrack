@@ -7421,6 +7421,11 @@
         padding-bottom: 4px;
       }
 
+      .tools-modal--my-tools .tools-modal__panel {
+        grid-template-rows: auto minmax(0, 1fr);
+        align-content: start;
+      }
+
       .tools-modal--my-tools .tools-modal__body {
         grid-template-rows: auto minmax(0, 1fr);
         align-content: start;
@@ -7432,6 +7437,12 @@
       .tools-modal--my-tools .tools-controls {
         align-self: start;
         gap: 8px;
+      }
+
+      .tools-modal--my-tools .tools-actions {
+        align-items: center;
+        align-content: center;
+        min-height: var(--tools-selection-control-size);
       }
 
       .tools-modal--my-tools .tools-controls__row {
@@ -9464,6 +9475,12 @@
           gap: 10px;
         }
 
+        .tools-modal--my-tools .tools-actions {
+          align-items: center;
+          align-content: center;
+          min-height: var(--tools-selection-control-size);
+        }
+
         .tools-modal--my-tools .tools-controls__row {
           gap: 10px;
         }
@@ -9491,6 +9508,9 @@
           margin-top: 0;
           padding-top: 0;
           gap: 8px;
+          align-content: start;
+          align-items: start;
+          grid-auto-rows: max-content;
         }
 
         .tools-modal--my-tools .tools-list.is-list,

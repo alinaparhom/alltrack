@@ -7442,7 +7442,15 @@
       .tools-modal--my-tools .tools-actions {
         align-items: center;
         align-content: center;
+        justify-content: flex-end;
         min-height: var(--tools-selection-control-size);
+      }
+
+      .tools-modal--my-tools .tools-filter-actions {
+        margin-left: auto;
+        position: sticky;
+        right: 0;
+        z-index: 3;
       }
 
       .tools-modal--my-tools .tools-controls__row {
@@ -9339,8 +9347,8 @@
         .tools-modal--my-tools .tools-actions {
           display: flex;
           flex-wrap: nowrap;
-          justify-content: flex-start;
-          overflow-x: auto;
+          justify-content: flex-end;
+          overflow-x: visible;
           scrollbar-width: none;
           -webkit-overflow-scrolling: touch;
           touch-action: pan-x;
@@ -9415,7 +9423,6 @@
         }
 
         .tools-filter-actions.is-open {
-          width: 100%;
           justify-content: flex-end;
           margin-bottom: -1px;
           border-radius: 0;

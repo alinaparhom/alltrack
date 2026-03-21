@@ -8803,6 +8803,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const syncToolsModalModeClass = () => {
     if (!toolsModalEl) return;
     toolsModalEl.classList.toggle("tools-modal--my-tools", toolsState.mode === "user");
+    toolsModalEl.classList.toggle("tools-modal--searching", toolsState.mode === "search");
     setToolsSortToggleVisibility();
     updateToolsSortToggleUi();
   };

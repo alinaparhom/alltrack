@@ -7403,6 +7403,8 @@
       .tools-modal--my-tools .tools-modal__header {
         padding-top: calc(16px + env(safe-area-inset-top) + var(--telegram-top-spacing, 0px));
         padding-bottom: 4px;
+        padding-left: max(0px, env(safe-area-inset-left));
+        padding-right: max(0px, env(safe-area-inset-right));
       }
 
       .tools-modal--my-tools .tools-modal__panel {
@@ -9716,6 +9718,8 @@
         .tools-modal--my-tools .tools-modal__header {
           padding-top: calc(16px + env(safe-area-inset-top) + var(--telegram-top-spacing, 0px));
           padding-bottom: 4px;
+          padding-left: max(0px, env(safe-area-inset-left));
+          padding-right: max(0px, env(safe-area-inset-right));
         }
 
         .tools-modal--my-tools .tools-controls {
@@ -9749,7 +9753,7 @@
         }
 
         .tools-modal--my-tools .tools-modal__close {
-          margin-right: 6px;
+          margin-right: 0;
         }
 
         .tools-modal--my-tools .tools-list {

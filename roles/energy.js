@@ -1863,7 +1863,7 @@ export function renderRole(user) {
               </div>
             </div>
             <form class="settings-modal__body" data-pending-moves-decline-form>
-              <label class="form-field pending-moves-decline-field">
+              <div class="form-field pending-moves-decline-field">
                 <span class="form-label">Причина</span>
                 <textarea
                   class="form-input pending-moves-decline-textarea"
@@ -1872,8 +1872,8 @@ export function renderRole(user) {
                   data-pending-moves-decline-reason
                   required
                 ></textarea>
-              </label>
-              <label class="form-field pending-moves-decline-field">
+              </div>
+              <div class="form-field pending-moves-decline-field">
                 <span class="form-label">Фото отказов (необязательно)</span>
                 <input
                   class="form-input pending-moves-decline-file"
@@ -1881,7 +1881,7 @@ export function renderRole(user) {
                   accept="image/*"
                   data-pending-moves-decline-photo
                 />
-              </label>
+              </div>
               <div class="pending-moves-decline-actions">
                 <button
                   class="action-secondary pending-moves-decline-actions__cancel"

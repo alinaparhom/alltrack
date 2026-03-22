@@ -8835,8 +8835,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
   const syncToolsModalModeClass = () => {
     if (!toolsModalEl) return;
-    toolsModalEl.classList.toggle("tools-modal--my-tools", toolsState.mode === "user");
-    toolsModalEl.classList.toggle("tools-modal--searching", toolsState.mode === "search");
+    const isSearchLikeMode = toolsState.mode === "search" || toolsState.mode === "user";
+    toolsModalEl.classList.toggle("tools-modal--my-tools", false);
+    toolsModalEl.classList.toggle("tools-modal--searching", isSearchLikeMode);
     setToolsSortToggleVisibility();
     updateToolsSortToggleUi();
   };
@@ -10114,9 +10115,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
   const renderToolsTable = (items) => {
     const table = document.createElement("div");
-    table.className = "tools-table tools-table--my-tools";
+    const isSearchLikeMode = toolsState.mode === "search" || toolsState.mode === "user";
+    table.className = "tools-table";
     const shouldHighlightToolStatus = ["user", "move-other"].includes(toolsState.mode);
     const isSearchMode = toolsState.mode === "search";
+    const shouldUseSearchLayout = isSearchLikeMode;
     const getStatusAccentColor = (rawStatus) => {
       const normalized = String(rawStatus ?? "").trim().toLocaleLowerCase("ru");
       if (normalized === "в ремонте") return "#ea580c";
@@ -10308,7 +10311,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         thumb.setAttribute("aria-label", "Открыть фото инструмента");
       }
       photoCell.appendChild(thumb);
-      if (isSearchMode) {
+      if (shouldUseSearchLayout) {
         row.classList.add("tools-table__row--search");
       }
       row.append(numberCell, infoCell, photoCell);
@@ -10764,7 +10767,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     setToolsTitle("Мои инструменты");
     toolsState.filters.responsible = [];
     toolsState.filters.object = [];
-    toolsState.view = normalizeToolsView(toolsState.previousView);
+    toolsState.view = "table";
     syncToolsFilterValue("responsible", []);
     syncToolsFilterValue("object", []);
     setToolsResponsibleFilterVisibility(false);

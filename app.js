@@ -5079,6 +5079,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   );
   const toolsFilterActionsEl = contentEl.querySelector(".tools-filter-actions");
   const toolsSortToggleEl = contentEl.querySelector("[data-tools-sort-toggle]");
+  const toolsSortToggleIconEl = toolsSortToggleEl?.querySelector(
+    ".tools-sort-toggle__icon"
+  );
   if (toolsFiltersPanelEl) {
     const hasStatus = toolsFiltersPanelEl.querySelector("[data-tools-filters-status]");
     if (!hasStatus) {
@@ -8803,6 +8806,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const updateToolsSortToggleUi = () => {
     if (!toolsSortToggleEl) return;
     const isDesc = toolsState.searchSortDirection === "desc";
+    if (toolsSortToggleIconEl) {
+      toolsSortToggleIconEl.textContent = isDesc ? "⌄" : "⌃";
+    }
     toolsSortToggleEl.setAttribute(
       "aria-label",
       isDesc

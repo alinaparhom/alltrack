@@ -9837,17 +9837,52 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       ? "в процессе перемещения"
       : status || "не указан";
     const responsible = String(tool?.["Ответственный"] ?? "").trim() || "не указан";
+    const getStatusAccentColor = (rawStatus) => {
+      const normalized = String(rawStatus ?? "").trim().toLocaleLowerCase("ru");
+      if (normalized === "в ремонте") return "#c2410c";
+      if (normalized === "сломан") return "#ca8a04";
+      if (normalized === "на списание") return "#dc2626";
+      if (normalized === "в процессе перемещения") return "#2563eb";
+      return "";
+    };
+    const appendResponsibleValue = (container, valueText) => {
+      const normalized = String(valueText ?? "").trim() || "не указан";
+      if (isSearchMode) {
+        const [surname, ...rest] = normalized.split(/\s+/).filter(Boolean);
+        if (surname) {
+          const surnameEl = document.createElement("span");
+          surnameEl.style.fontWeight = "700";
+          surnameEl.textContent = surname;
+          container.appendChild(surnameEl);
+          if (rest.length > 0) {
+            container.append(` ${rest.join(" ")}`);
+          }
+          return;
+        }
+      }
+      container.textContent = normalized;
+    };
     const createResponsibleStatusLine = () => {
       const line = document.createElement("div");
       line.className = "tools-card__responsible-status";
-      const responsibleLabel = document.createElement("span");
-      responsibleLabel.textContent = `Ответственный: ${responsible} · `;
+      if (!isSearchMode) {
+        const responsibleLabel = document.createElement("span");
+        responsibleLabel.textContent = "Ответственный: ";
+        line.appendChild(responsibleLabel);
+      }
+      const responsibleValue = document.createElement("span");
+      appendResponsibleValue(responsibleValue, responsible);
+      line.appendChild(responsibleValue);
+      line.append(" · ");
       const statusLabel = document.createElement("span");
-      statusLabel.textContent = "Статус: ";
+      statusLabel.textContent = isSearchMode ? "" : "Статус: ";
       const statusValue = document.createElement("span");
       statusValue.textContent = statusText;
       statusValue.style.fontWeight = "700";
-      line.append(responsibleLabel, statusLabel, statusValue);
+      if (isSearchMode) {
+        statusValue.style.color = getStatusAccentColor(statusText);
+      }
+      line.append(statusLabel, statusValue);
       return line;
     };
     const fillToolStatusMeta = (container) => {
@@ -9889,8 +9924,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const accountingMetaLine = shouldHideAccountingLine
         ? ""
         : accountingNumber
-          ? `Бух.номер: ${accountingNumber}`
-          : "Бух.номер: Нет";
+          ? isSearchMode
+            ? accountingNumber
+            : `Бух.номер: ${accountingNumber}`
+          : isSearchMode
+            ? "Нет"
+            : "Бух.номер: Нет";
       const mainMetaLine = [
         tool?.["Граппа инструментов"],
         shouldHighlightToolStatus ? "" : tool?.["Статус"],
@@ -9908,7 +9947,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       if (accountingMetaLine) {
         const accountingMetaLineEl = document.createElement("div");
         if (!accountingNumber && !shouldHideAccountingLine) {
-          accountingMetaLineEl.append("Бух.номер: ");
+          accountingMetaLineEl.append(isSearchMode ? "" : "Бух.номер: ");
           const missingAccountingEl = document.createElement("span");
           missingAccountingEl.textContent = "Нет";
           missingAccountingEl.style.color = "#dc2626";
@@ -9921,7 +9960,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       }
       if (costMetaLine) {
         const costMetaLineEl = document.createElement("div");
-        costMetaLineEl.textContent = costMetaLine;
+        costMetaLineEl.textContent = isSearchMode
+          ? formatInfoValue(tool?.["Стоимость"])
+          : costMetaLine;
         meta.appendChild(costMetaLineEl);
       }
       if (shouldShowResponsibleAndToolStatus) {
@@ -10056,6 +10097,31 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     table.className = "tools-table";
     const shouldHighlightToolStatus = ["user", "move-other"].includes(toolsState.mode);
     const isSearchMode = toolsState.mode === "search";
+    const getStatusAccentColor = (rawStatus) => {
+      const normalized = String(rawStatus ?? "").trim().toLocaleLowerCase("ru");
+      if (normalized === "в ремонте") return "#c2410c";
+      if (normalized === "сломан") return "#ca8a04";
+      if (normalized === "на списание") return "#dc2626";
+      if (normalized === "в процессе перемещения") return "#2563eb";
+      return "";
+    };
+    const appendResponsibleValue = (container, valueText) => {
+      const normalized = String(valueText ?? "").trim() || "не указан";
+      if (isSearchMode) {
+        const [surname, ...rest] = normalized.split(/\s+/).filter(Boolean);
+        if (surname) {
+          const surnameEl = document.createElement("span");
+          surnameEl.style.fontWeight = "700";
+          surnameEl.textContent = surname;
+          container.appendChild(surnameEl);
+          if (rest.length > 0) {
+            container.append(` ${rest.join(" ")}`);
+          }
+          return;
+        }
+      }
+      container.textContent = normalized;
+    };
 
     items.forEach((tool, moveIndex) => {
       const row = document.createElement("div");
@@ -10094,9 +10160,18 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const accountingLine = hideAccountingLine
         ? ""
         : accountingNumber
-          ? `Бух.номер: ${accountingNumber}`
-          : "Бух.номер: Нет";
-      const metaLines = [manufacturerModelLine, accountingLine, costLine].filter(Boolean);
+          ? isSearchMode
+            ? accountingNumber
+            : `Бух.номер: ${accountingNumber}`
+          : isSearchMode
+            ? "Нет"
+            : "Бух.номер: Нет";
+      const normalizedCostLine = isSearchMode
+        ? formatInfoValue(tool?.["Стоимость"])
+        : costLine;
+      const metaLines = [manufacturerModelLine, accountingLine, normalizedCostLine].filter(
+        Boolean
+      );
       const isMovingNow = Boolean(tool?.__pendingMove);
       const status = String(tool?.["Статус"] ?? "").trim();
       const statusText = isMovingNow
@@ -10107,8 +10182,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       } else {
         metaLines.forEach((line) => {
           const lineEl = document.createElement("div");
-          if (line === "Бух.номер: Нет") {
-            lineEl.append("Бух.номер: ");
+          if (line === "Бух.номер: Нет" || line === "Нет") {
+            lineEl.append(isSearchMode ? "" : "Бух.номер: ");
             const missingAccountingEl = document.createElement("span");
             missingAccountingEl.textContent = "Нет";
             missingAccountingEl.style.color = "#dc2626";
@@ -10122,24 +10197,33 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       }
       if (toolsState.mode !== "user") {
         const responsibleLine = document.createElement("div");
-        const responsibleLabel = document.createElement("span");
-        responsibleLabel.textContent = "Ответственный: ";
         const responsibleValue = document.createElement("span");
-        responsibleValue.textContent =
-          String(tool?.["Ответственный"] ?? "").trim() || "не указан";
-        responsibleLine.append(responsibleLabel, responsibleValue);
+        appendResponsibleValue(
+          responsibleValue,
+          String(tool?.["Ответственный"] ?? "").trim() || "не указан"
+        );
+        if (!isSearchMode) {
+          const responsibleLabel = document.createElement("span");
+          responsibleLabel.textContent = "Ответственный: ";
+          responsibleLine.append(responsibleLabel, responsibleValue);
+        } else {
+          responsibleLine.append(responsibleValue);
+        }
         meta.appendChild(responsibleLine);
       }
 
       const statusLine = document.createElement("div");
       const label = document.createElement("span");
-      label.textContent = "Статус: ";
+      label.textContent = isSearchMode ? "" : "Статус: ";
       label.style.fontWeight = "400";
       label.style.textDecoration = "none";
       const value = document.createElement("span");
       value.textContent = statusText;
       value.style.fontWeight = "700";
       value.style.textDecoration = "none";
+      if (isSearchMode) {
+        value.style.color = getStatusAccentColor(statusText);
+      }
       statusLine.append(label, value);
       meta.appendChild(statusLine);
       const kitItems = getToolKitItems(tool);

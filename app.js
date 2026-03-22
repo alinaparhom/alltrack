@@ -10146,7 +10146,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         numberCell.appendChild(numberValueEl);
         const objectValueEl = document.createElement("div");
         objectValueEl.className = "tools-table__number-object";
-        objectValueEl.textContent = objectName ? `Объект: ${objectName}` : "Объект: —";
+        objectValueEl.textContent = objectName || "—";
         objectValueEl.title = objectName || "Объект не указан";
         numberCell.appendChild(objectValueEl);
       } else {
@@ -10180,10 +10180,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
             ? "Нет"
             : "Бух.номер: Нет";
       const normalizedCostLine = isSearchMode
-        ? `Стоимость: ${formatInfoValue(tool?.["Стоимость"])}`
+        ? formatInfoValue(tool?.["Стоимость"])
         : costLine;
-      const accountingWithLabel =
-        accountingLine && isSearchMode ? `Бух.номер: ${accountingLine}` : accountingLine;
+      const accountingWithLabel = accountingLine;
       const accountingCostLine =
         isSearchMode && (accountingWithLabel || normalizedCostLine)
           ? [accountingWithLabel, normalizedCostLine].filter(Boolean).join(" · ")

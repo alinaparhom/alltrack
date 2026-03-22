@@ -10189,7 +10189,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const normalizedCostLine = isSearchMode
         ? formatSearchCostValue(tool?.["Стоимость"])
         : formatToolCostValue(tool);
-      const accountingWithLabel = accountingLine;
+      const accountingWithLabel = accountingLine
+        ? `Бух.номер: ${accountingLine}`
+        : "";
       const accountingCostLine =
         isSearchMode && (accountingWithLabel || normalizedCostLine)
           ? [accountingWithLabel, normalizedCostLine].filter(Boolean).join(" · ")

@@ -7033,17 +7033,20 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
+        position: relative;
       }
 
       .tools-sort-toggle__icon {
-        display: grid;
-        place-items: center;
-        width: 100%;
-        height: 100%;
+        position: absolute;
+        inset: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
         margin: 0;
         font-size: 16px;
         line-height: 1;
         text-align: center;
+        pointer-events: none;
       }
 
       .tools-standalone-filter {

@@ -10067,7 +10067,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       title.className = "tools-card__title";
       title.textContent = infoLine || "Без названия";
       overlay.appendChild(title);
-      if (shouldShowResponsibleAndToolStatus) {
+      if (isCompactMobile && shouldShowResponsibleAndToolStatus) {
         const responsibleStatusLine = createResponsibleStatusLine();
         overlay.appendChild(responsibleStatusLine);
         if (isCompactMobile) {
@@ -10078,8 +10078,24 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         }
       }
       media.appendChild(overlay);
-      if (viewMode === "large" || isCompactMobile) {
+      if (isCompactMobile) {
         card.appendChild(media);
+        return card;
+      }
+      if (viewMode === "large") {
+        const body = document.createElement("div");
+        body.className = "tools-card__body tools-card__body--large";
+        if (shouldShowResponsibleAndToolStatus) {
+          const responsibleStatusLine = createResponsibleStatusLine();
+          body.appendChild(responsibleStatusLine);
+        }
+        if (shouldHighlightToolStatus && shouldShowResponsibleAndToolStatus) {
+          const statusMeta = document.createElement("div");
+          statusMeta.className = "tools-card__status";
+          fillToolStatusMeta(statusMeta);
+          body.appendChild(statusMeta);
+        }
+        card.append(media, body);
         return card;
       }
     }

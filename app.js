@@ -10116,7 +10116,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const renderToolsTable = (items) => {
     const table = document.createElement("div");
     const isSearchLikeMode = toolsState.mode === "search" || toolsState.mode === "user";
+    const isMyToolsMode = toolsState.mode === "user";
     table.className = "tools-table";
+    if (isMyToolsMode) {
+      table.classList.add("tools-table--my-tools");
+    }
     const shouldHighlightToolStatus = ["user", "move-other"].includes(toolsState.mode);
     const isSearchMode = toolsState.mode === "search";
     const shouldUseSearchLayout = isSearchLikeMode;

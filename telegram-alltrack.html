@@ -7443,8 +7443,8 @@
       .tools-modal--my-tools .tools-modal__header {
         padding-top: calc(16px + env(safe-area-inset-top) + var(--telegram-top-spacing, 0px));
         padding-bottom: 4px;
-        padding-left: max(0px, env(safe-area-inset-left));
-        padding-right: max(0px, env(safe-area-inset-right));
+        padding-left: calc(var(--tools-horizontal-gutter) / 2 + max(0px, env(safe-area-inset-left)));
+        padding-right: calc(var(--tools-horizontal-gutter) / 2 + max(0px, env(safe-area-inset-right)));
       }
 
       .tools-modal--my-tools .tools-modal__panel {
@@ -7506,6 +7506,8 @@
       .tools-modal--my-tools .tools-list {
         margin-top: 0;
         padding-top: 0;
+        padding-left: calc(var(--tools-horizontal-gutter) / 2);
+        padding-right: calc(var(--tools-horizontal-gutter) / 2);
         gap: 8px;
         align-content: start;
         grid-auto-rows: max-content;
@@ -8385,6 +8387,11 @@
       .tools-table--my-tools .tools-table__row {
         grid-template-columns: max-content minmax(0, 1fr) auto;
         column-gap: 10px;
+      }
+
+      .tools-table--my-tools .tools-table__cell--number {
+        justify-items: center;
+        text-align: center;
       }
 
       .tools-table__row--header {
@@ -9993,8 +10000,8 @@
         .tools-modal--my-tools .tools-modal__header {
           padding-top: calc(16px + env(safe-area-inset-top) + var(--telegram-top-spacing, 0px));
           padding-bottom: 4px;
-          padding-left: max(0px, env(safe-area-inset-left));
-          padding-right: max(0px, env(safe-area-inset-right));
+          padding-left: calc(var(--tools-horizontal-gutter) / 2 + max(0px, env(safe-area-inset-left)));
+          padding-right: calc(var(--tools-horizontal-gutter) / 2 + max(0px, env(safe-area-inset-right)));
         }
 
         .tools-modal--my-tools .tools-controls {
@@ -10034,6 +10041,8 @@
         .tools-modal--my-tools .tools-list {
           margin-top: 0;
           padding-top: 0;
+          padding-left: calc(var(--tools-horizontal-gutter) / 2);
+          padding-right: calc(var(--tools-horizontal-gutter) / 2);
           gap: 8px;
           align-content: start;
           align-items: start;

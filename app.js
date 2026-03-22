@@ -10069,11 +10069,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       overlay.appendChild(title);
       if (shouldShowResponsibleAndToolStatus) {
         const responsibleStatusLine = createResponsibleStatusLine();
-        const statusMeta = document.createElement("div");
-        statusMeta.className = "tools-card__status";
-        fillToolStatusMeta(statusMeta);
         overlay.appendChild(responsibleStatusLine);
-        overlay.appendChild(statusMeta);
+        if (isCompactMobile) {
+          const statusMeta = document.createElement("div");
+          statusMeta.className = "tools-card__status";
+          fillToolStatusMeta(statusMeta);
+          overlay.appendChild(statusMeta);
+        }
       }
       media.appendChild(overlay);
       if (viewMode === "large" || isCompactMobile) {

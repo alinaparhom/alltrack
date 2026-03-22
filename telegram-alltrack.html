@@ -8366,6 +8366,7 @@
 
       .tools-table__row--search {
         grid-template-columns: max-content minmax(0, 1fr) auto;
+        column-gap: 12px;
       }
 
       .tools-table__row--header {
@@ -8409,6 +8410,10 @@
       .tools-table__cell--number {
         font-weight: 600;
         color: var(--title);
+      }
+
+      .tools-table__row--search .tools-table__cell--number {
+        padding-right: 4px;
       }
 
       .tools-table__number-value {
@@ -8464,8 +8469,8 @@
 
       
       .tools-table__row--search .tools-table__thumb {
-        width: 74px;
-        height: 74px;
+        width: 88px;
+        height: 88px;
         border-radius: 16px;
       }
 
@@ -10038,6 +10043,7 @@
 
         .tools-list.is-table .tools-table__row--search {
           grid-template-columns: max-content minmax(0, 1fr) auto;
+          column-gap: 10px;
         }
 
         .tools-list.is-table .tools-table__cell--object {
@@ -10053,8 +10059,8 @@
         }
 
         .tools-list.is-table .tools-table__row--search .tools-table__thumb {
-          width: 64px;
-          height: 64px;
+          width: 72px;
+          height: 72px;
           border-radius: 14px;
         }
 

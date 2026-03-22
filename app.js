@@ -9209,6 +9209,15 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     return raw || "—";
   };
 
+  const formatSearchCostValue = (value) => {
+    const normalizedValue = formatInfoValue(value);
+    if (normalizedValue === "—") return normalizedValue;
+    if (/(?:\bр\.?\b|₽|руб\.?|рублей|рубля)/iu.test(normalizedValue)) {
+      return normalizedValue;
+    }
+    return `${normalizedValue} р.`;
+  };
+
   const getToolKitItems = (tool) => {
     const rawKit = Array.isArray(tool?.["Комплектация"]) ? tool["Комплектация"] : [];
     return rawKit
@@ -9961,7 +9970,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       if (costMetaLine) {
         const costMetaLineEl = document.createElement("div");
         costMetaLineEl.textContent = isSearchMode
-          ? formatInfoValue(tool?.["Стоимость"])
+          ? formatSearchCostValue(tool?.["Стоимость"])
           : costMetaLine;
         meta.appendChild(costMetaLineEl);
       }
@@ -10180,7 +10189,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
             ? "Нет"
             : "Бух.номер: Нет";
       const normalizedCostLine = isSearchMode
-        ? formatInfoValue(tool?.["Стоимость"])
+        ? formatSearchCostValue(tool?.["Стоимость"])
         : costLine;
       const accountingWithLabel = accountingLine;
       const accountingCostLine =

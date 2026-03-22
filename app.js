@@ -1143,6 +1143,10 @@ function formatToolCostLabel(tool) {
   return `Стоимость: ${formatNotificationCost(tool?.["Стоимость"])}`;
 }
 
+function formatToolCostValue(tool) {
+  return formatNotificationCost(tool?.["Стоимость"]);
+}
+
 function escapeTelegramHtml(value) {
   return String(value ?? "")
     .replace(/&/g, "&amp;")
@@ -9848,8 +9852,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const responsible = String(tool?.["Ответственный"] ?? "").trim() || "не указан";
     const getStatusAccentColor = (rawStatus) => {
       const normalized = String(rawStatus ?? "").trim().toLocaleLowerCase("ru");
-      if (normalized === "в ремонте") return "#c2410c";
-      if (normalized === "сломан") return "#ca8a04";
+      if (normalized === "в ремонте") return "#ea580c";
+      if (normalized === "сломан") return "#eab308";
       if (normalized === "на списание") return "#dc2626";
       if (normalized === "в процессе перемещения") return "#2563eb";
       return "";
@@ -9884,12 +9888,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       line.appendChild(responsibleValue);
       line.append(" · ");
       const statusLabel = document.createElement("span");
-      statusLabel.textContent = isSearchMode ? "" : "Статус: ";
+      statusLabel.textContent = "";
       const statusValue = document.createElement("span");
       statusValue.textContent = statusText;
       statusValue.style.fontWeight = "700";
-      if (isSearchMode) {
-        statusValue.style.color = getStatusAccentColor(statusText);
+      const statusAccentColor = getStatusAccentColor(statusText);
+      if (statusAccentColor) {
+        statusValue.style.color = statusAccentColor;
       }
       line.append(statusLabel, statusValue);
       return line;
@@ -9897,19 +9902,18 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const fillToolStatusMeta = (container) => {
       if (!container) return;
       container.textContent = "";
-      const label = document.createElement("span");
-      label.className = "tools-card__status-label";
-      label.textContent = "Статус инструмента:";
       const value = document.createElement("span");
       value.className = "tools-card__status-value";
-      value.textContent = ` ${statusText}`;
+      value.textContent = statusText;
+      const statusAccentColor = getStatusAccentColor(statusText);
+      if (statusAccentColor) {
+        value.style.color = statusAccentColor;
+      }
       if (shouldHighlightToolStatus) {
-        label.style.fontWeight = "400";
-        label.style.textDecoration = "none";
         value.style.fontWeight = "700";
         value.style.textDecoration = "none";
       }
-      container.append(label, value);
+      container.append(value);
     };
 
     if (viewMode === "list") {
@@ -9935,10 +9939,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         : accountingNumber
           ? isSearchMode
             ? accountingNumber
-            : `Бух.номер: ${accountingNumber}`
+            : accountingNumber
           : isSearchMode
             ? "Нет"
-            : "Бух.номер: Нет";
+            : "Нет";
       const mainMetaLine = [
         tool?.["Граппа инструментов"],
         shouldHighlightToolStatus ? "" : tool?.["Статус"],
@@ -9956,7 +9960,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       if (accountingMetaLine) {
         const accountingMetaLineEl = document.createElement("div");
         if (!accountingNumber && !shouldHideAccountingLine) {
-          accountingMetaLineEl.append(isSearchMode ? "" : "Бух.номер: ");
           const missingAccountingEl = document.createElement("span");
           missingAccountingEl.textContent = "Нет";
           missingAccountingEl.style.color = "#dc2626";
@@ -9971,7 +9974,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         const costMetaLineEl = document.createElement("div");
         costMetaLineEl.textContent = isSearchMode
           ? formatSearchCostValue(tool?.["Стоимость"])
-          : costMetaLine;
+          : formatToolCostValue(tool);
         meta.appendChild(costMetaLineEl);
       }
       if (shouldShowResponsibleAndToolStatus) {

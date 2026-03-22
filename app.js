@@ -10106,7 +10106,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
   const renderToolsTable = (items) => {
     const table = document.createElement("div");
-    table.className = "tools-table";
+    table.className = "tools-table tools-table--my-tools";
     const shouldHighlightToolStatus = ["user", "move-other"].includes(toolsState.mode);
     const isSearchMode = toolsState.mode === "search";
     const getStatusAccentColor = (rawStatus) => {
@@ -10151,20 +10151,15 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const number = resolveToolNumberValue(tool);
       const photoNumber = resolveToolPhotoNumber(tool);
       const objectName = String(tool?.["Объект"] ?? "").trim();
-      if (isSearchMode) {
-        const numberValueEl = document.createElement("div");
-        numberValueEl.className = "tools-table__number-value";
-        numberValueEl.textContent = number || "—";
-        numberCell.appendChild(numberValueEl);
-        const objectValueEl = document.createElement("div");
-        objectValueEl.className = "tools-table__number-object";
-        objectValueEl.textContent = objectName || "—";
-        objectValueEl.title = objectName || "Объект не указан";
-        numberCell.appendChild(objectValueEl);
-      } else {
-        numberCell.textContent = number || "—";
-      }
-      const objectCell = buildToolObjectCell(tool);
+      const numberValueEl = document.createElement("div");
+      numberValueEl.className = "tools-table__number-value";
+      numberValueEl.textContent = number || "—";
+      numberCell.appendChild(numberValueEl);
+      const objectValueEl = document.createElement("div");
+      objectValueEl.className = "tools-table__number-object";
+      objectValueEl.textContent = objectName || "—";
+      objectValueEl.title = objectName || "Объект не указан";
+      numberCell.appendChild(objectValueEl);
       const infoCell = document.createElement("div");
       infoCell.className = "tools-table__cell";
       const title = document.createElement("div");
@@ -10190,13 +10185,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         ? formatSearchCostValue(tool?.["Стоимость"])
         : formatToolCostValue(tool);
       const accountingWithLabel = accountingLine;
-      const accountingCostLine =
-        isSearchMode && (accountingWithLabel || normalizedCostLine)
-          ? [accountingWithLabel, normalizedCostLine].filter(Boolean).join(" · ")
-          : "";
+      const accountingCostLine = [accountingWithLabel, normalizedCostLine]
+        .filter(Boolean)
+        .join(" · ");
       const metaLines = isSearchMode
         ? [manufacturerModelLine, accountingCostLine].filter(Boolean)
-        : [manufacturerModelLine, accountingLine, normalizedCostLine].filter(Boolean);
+        : [manufacturerModelLine, accountingCostLine].filter(Boolean);
       const isMovingNow = Boolean(tool?.__pendingMove);
       const status = String(tool?.["Статус"] ?? "").trim();
       const statusText = isMovingNow
@@ -10295,10 +10289,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       photoCell.appendChild(thumb);
       if (isSearchMode) {
         row.classList.add("tools-table__row--search");
-        row.append(numberCell, infoCell, photoCell);
-      } else {
-        row.append(numberCell, objectCell, infoCell, photoCell);
       }
+      row.append(numberCell, infoCell, photoCell);
       table.appendChild(row);
     });
 

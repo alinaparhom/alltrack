@@ -8135,7 +8135,6 @@
       .tools-card__overlay {
         position: absolute;
         inset: 0;
-        z-index: 2;
         display: grid;
         align-content: end;
         gap: 6px;
@@ -8144,24 +8143,10 @@
         text-shadow: 0 4px 16px rgba(15, 23, 42, 0.6);
         background: linear-gradient(
           180deg,
-          rgba(15, 23, 42, 0.08) 0%,
-          rgba(15, 23, 42, 0.58) 58%,
-          rgba(15, 23, 42, 0.82) 100%
+          rgba(15, 23, 42, 0) 0%,
+          rgba(15, 23, 42, 0.5) 64%,
+          rgba(15, 23, 42, 0.75) 100%
         );
-      }
-
-      .tools-card__overlay .tools-card__title,
-      .tools-card__overlay .tools-card__responsible-status,
-      .tools-card__overlay .tools-card__status {
-        width: fit-content;
-        max-width: 100%;
-        padding: 4px 8px;
-        border-radius: 10px;
-        background: rgba(15, 23, 42, 0.52);
-        border: 1px solid rgba(226, 232, 240, 0.2);
-        backdrop-filter: blur(8px);
-        -webkit-backdrop-filter: blur(8px);
-        overflow-wrap: anywhere;
       }
 
       .tools-card__title {

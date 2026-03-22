@@ -10111,8 +10111,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const isSearchMode = toolsState.mode === "search";
     const getStatusAccentColor = (rawStatus) => {
       const normalized = String(rawStatus ?? "").trim().toLocaleLowerCase("ru");
-      if (normalized === "в ремонте") return "#c2410c";
-      if (normalized === "сломан") return "#ca8a04";
+      if (normalized === "в ремонте") return "#ea580c";
+      if (normalized === "сломан") return "#eab308";
       if (normalized === "на списание") return "#dc2626";
       if (normalized === "в процессе перемещения") return "#2563eb";
       return "";
@@ -10176,7 +10176,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const manufacturer = String(tool?.["Производитель"] ?? "").trim();
       const model = String(tool?.["Модель"] ?? "").trim();
       const manufacturerModelLine = [manufacturer, model].filter(Boolean).join(" · ");
-      const costLine = formatToolCostLabel(tool);
       const accountingNumber = String(tool?.["Бух.номер"] ?? "").trim();
       const hideAccountingLine =
         !isSearchMode &&
@@ -10185,15 +10184,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const accountingLine = hideAccountingLine
         ? ""
         : accountingNumber
-          ? isSearchMode
-            ? accountingNumber
-            : `Бух.номер: ${accountingNumber}`
-          : isSearchMode
-            ? "Нет"
-            : "Бух.номер: Нет";
+          ? accountingNumber
+          : "Нет";
       const normalizedCostLine = isSearchMode
         ? formatSearchCostValue(tool?.["Стоимость"])
-        : costLine;
+        : formatToolCostValue(tool);
       const accountingWithLabel = accountingLine;
       const accountingCostLine =
         isSearchMode && (accountingWithLabel || normalizedCostLine)
@@ -10212,8 +10207,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       } else {
         metaLines.forEach((line) => {
           const lineEl = document.createElement("div");
-          if (line === "Бух.номер: Нет" || line === "Нет") {
-            lineEl.append(isSearchMode ? "" : "Бух.номер: ");
+          if (line === "Нет") {
             const missingAccountingEl = document.createElement("span");
             missingAccountingEl.textContent = "Нет";
             missingAccountingEl.style.color = "#dc2626";
@@ -10243,18 +10237,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       }
 
       const statusLine = document.createElement("div");
-      const label = document.createElement("span");
-      label.textContent = isSearchMode ? "" : "Статус: ";
-      label.style.fontWeight = "400";
-      label.style.textDecoration = "none";
       const value = document.createElement("span");
       value.textContent = statusText;
       value.style.fontWeight = "700";
       value.style.textDecoration = "none";
-      if (isSearchMode) {
-        value.style.color = getStatusAccentColor(statusText);
-      }
-      statusLine.append(label, value);
+      value.style.color = getStatusAccentColor(statusText);
+      statusLine.append(value);
       meta.appendChild(statusLine);
       const kitItems = getToolKitItems(tool);
       if (kitItems.length > 0) {

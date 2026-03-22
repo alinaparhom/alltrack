@@ -10185,9 +10185,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         ? formatSearchCostValue(tool?.["Стоимость"])
         : formatToolCostValue(tool);
       const accountingWithLabel = accountingLine;
-      const accountingCostLine = [accountingWithLabel, normalizedCostLine]
-        .filter(Boolean)
-        .join(" · ");
+      const accountingCostLineParts = [accountingWithLabel, normalizedCostLine].filter(Boolean);
+      const accountingCostLine = accountingCostLineParts.join(" / ");
       const metaLines = isSearchMode
         ? [manufacturerModelLine, accountingCostLine].filter(Boolean)
         : [manufacturerModelLine, accountingCostLine].filter(Boolean);
@@ -10201,7 +10200,21 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       } else {
         metaLines.forEach((line) => {
           const lineEl = document.createElement("div");
-          if (line === "Нет") {
+          if (line === accountingCostLine) {
+            const [accountingPart, costPart] = accountingCostLineParts;
+            if (accountingPart === "Нет") {
+              const missingAccountingEl = document.createElement("span");
+              missingAccountingEl.textContent = "Нет";
+              missingAccountingEl.style.color = "#dc2626";
+              missingAccountingEl.style.fontWeight = "700";
+              lineEl.appendChild(missingAccountingEl);
+              if (costPart) {
+                lineEl.append(" / ", costPart);
+              }
+            } else {
+              lineEl.textContent = line;
+            }
+          } else if (line === "Нет") {
             const missingAccountingEl = document.createElement("span");
             missingAccountingEl.textContent = "Нет";
             missingAccountingEl.style.color = "#dc2626";

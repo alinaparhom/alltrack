@@ -940,7 +940,7 @@ export function renderRole(user) {
                         aria-label="Сортировка по номеру инструмента: по убыванию"
                         title="Сортировка по номеру инструмента: по убыванию"
                       >
-                        <span class="tools-sort-toggle__icon" aria-hidden="true">↑↓</span>
+                        <span class="tools-sort-toggle__icon" aria-hidden="true">⌄</span>
                       </button>
                       <button
                         class="tools-filters-toggle"

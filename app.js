@@ -10138,7 +10138,20 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       numberCell.className = "tools-table__cell tools-table__cell--number";
       const number = resolveToolNumberValue(tool);
       const photoNumber = resolveToolPhotoNumber(tool);
-      numberCell.textContent = number || "—";
+      const objectName = String(tool?.["Объект"] ?? "").trim();
+      if (isSearchMode) {
+        const numberValueEl = document.createElement("div");
+        numberValueEl.className = "tools-table__number-value";
+        numberValueEl.textContent = number || "—";
+        numberCell.appendChild(numberValueEl);
+        const objectValueEl = document.createElement("div");
+        objectValueEl.className = "tools-table__number-object";
+        objectValueEl.textContent = objectName ? `Объект: ${objectName}` : "Объект: —";
+        objectValueEl.title = objectName || "Объект не указан";
+        numberCell.appendChild(objectValueEl);
+      } else {
+        numberCell.textContent = number || "—";
+      }
       const objectCell = buildToolObjectCell(tool);
       const infoCell = document.createElement("div");
       infoCell.className = "tools-table__cell";
@@ -10167,11 +10180,17 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
             ? "Нет"
             : "Бух.номер: Нет";
       const normalizedCostLine = isSearchMode
-        ? formatInfoValue(tool?.["Стоимость"])
+        ? `Стоимость: ${formatInfoValue(tool?.["Стоимость"])}`
         : costLine;
-      const metaLines = [manufacturerModelLine, accountingLine, normalizedCostLine].filter(
-        Boolean
-      );
+      const accountingWithLabel =
+        accountingLine && isSearchMode ? `Бух.номер: ${accountingLine}` : accountingLine;
+      const accountingCostLine =
+        isSearchMode && (accountingWithLabel || normalizedCostLine)
+          ? [accountingWithLabel, normalizedCostLine].filter(Boolean).join(" · ")
+          : "";
+      const metaLines = isSearchMode
+        ? [manufacturerModelLine, accountingCostLine].filter(Boolean)
+        : [manufacturerModelLine, accountingLine, normalizedCostLine].filter(Boolean);
       const isMovingNow = Boolean(tool?.__pendingMove);
       const status = String(tool?.["Статус"] ?? "").trim();
       const statusText = isMovingNow
@@ -10275,7 +10294,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         thumb.setAttribute("aria-label", "Открыть фото инструмента");
       }
       photoCell.appendChild(thumb);
-      row.append(numberCell, objectCell, infoCell, photoCell);
+      if (isSearchMode) {
+        row.classList.add("tools-table__row--search");
+        row.append(numberCell, infoCell, photoCell);
+      } else {
+        row.append(numberCell, objectCell, infoCell, photoCell);
+      }
       table.appendChild(row);
     });
 

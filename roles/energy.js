@@ -885,13 +885,6 @@ export function renderRole(user) {
                         Крупные
                       </button>
                       <button
-                        class="tools-view-button"
-                        type="button"
-                        data-tools-view="compact"
-                      >
-                        Обычные
-                      </button>
-                      <button
                         class="tools-view-button is-active"
                         type="button"
                         data-tools-view="table"

@@ -5643,6 +5643,19 @@
         justify-self: end;
         align-self: start;
         margin-top: 2px;
+        border: none;
+        background: transparent;
+        box-shadow: none;
+      }
+
+      .tools-modal__close:hover,
+      .tools-modal__close:focus-visible {
+        transform: none;
+        box-shadow: none;
+      }
+
+      .tools-modal__close .button-icon-emoji {
+        font-weight: 800;
       }
 
       .tools-modal__body {
@@ -7153,6 +7166,10 @@
       .tools-modal--searching .tools-standalone-filter {
         padding-left: calc(var(--tools-horizontal-gutter) / 2);
         padding-right: calc(var(--tools-horizontal-gutter) / 2);
+      }
+
+      .tools-modal--searching .tools-search__input {
+        padding-left: 12px;
       }
 
       .tools-modal--searching .tools-filter-dropdown__menu {

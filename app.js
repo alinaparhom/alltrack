@@ -6493,7 +6493,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     numberType: "",
     isSaving: false,
   };
-  const toolsViewOptions = new Set(["large", "compact", "table", "map"]);
+  const toolsViewOptions = new Set(["large", "table", "map"]);
   const normalizeToolsView = (value) =>
     toolsViewOptions.has(value) ? value : "table";
   const savedToolsView = normalizeToolsView(

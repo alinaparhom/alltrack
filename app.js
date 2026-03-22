@@ -8807,7 +8807,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (!toolsSortToggleEl) return;
     const isDesc = toolsState.searchSortDirection === "desc";
     if (toolsSortToggleIconEl) {
-      toolsSortToggleIconEl.textContent = isDesc ? "↓" : "↑";
+      toolsSortToggleIconEl.textContent = isDesc ? "⌄" : "⌃";
     }
     toolsSortToggleEl.setAttribute(
       "aria-label",
@@ -10078,7 +10078,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         }
       }
       media.appendChild(overlay);
-      if (isCompactMobile) {
+      if (viewMode === "large" || isCompactMobile) {
         card.appendChild(media);
         return card;
       }

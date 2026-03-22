@@ -7039,8 +7039,9 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        width: 100%;
-        height: 100%;
+        width: 16px;
+        height: 16px;
+        margin: auto;
         font-size: 16px;
         line-height: 1;
       }
@@ -7168,7 +7169,8 @@
       }
 
       .tools-modal--searching .tools-modal__close {
-        margin-right: 10px;
+        margin-right: -2px;
+        margin-top: -2px;
       }
 
       .tools-modal--searching .tools-modal__body,
@@ -7461,7 +7463,7 @@
       }
 
       .tools-list.is-large {
-        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
       }
 
       .tools-list.is-large .tools-card,
@@ -10028,6 +10030,10 @@
 
         .tools-list.is-large {
           grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .tools-list.is-large .tools-card {
+          min-height: 0;
         }
 
         .tools-list.is-compact {

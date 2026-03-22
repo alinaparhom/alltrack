@@ -11216,22 +11216,35 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       String(tool?.["Производитель"] ?? "").trim(),
       String(tool?.["Модель"] ?? "").trim(),
     ].filter(Boolean);
+    const isSearchMode = toolsState.mode === "search";
     const info = [
       { label: "Номер", value: toolNumber },
-      { label: "Бух.номер", value: accountingNumber },
+      {
+        label: "Бух.номер",
+        value: tool?.["Бух.номер"],
+        hideLabelInSearch: true,
+      },
       { label: "Наименование", value: nameParts.join(" ") },
-      { label: "Стоимость", value: tool?.["Стоимость"] },
+      {
+        label: "Стоимость",
+        value: tool?.["Стоимость"],
+        hideLabelInSearch: true,
+      },
       { label: "Дата покупки", value: tool?.["Дата покупки"] },
       { label: "Ответственный", value: tool?.["Ответственный"] },
-      { label: "Объект", value: tool?.["Объект"] },
+      {
+        label: "Объект",
+        value: tool?.["Объект"],
+        hideLabelInSearch: true,
+      },
       { label: "Статус", value: tool?.["Статус"] },
     ];
-    info.forEach(({ label, value }) => {
+    info.forEach(({ label, value, hideLabelInSearch }) => {
       const row = document.createElement("div");
       row.className = "tools-info-row";
       const labelEl = document.createElement("div");
       labelEl.className = "tools-info-label";
-      labelEl.textContent = label;
+      labelEl.textContent = isSearchMode && hideLabelInSearch ? "" : label;
       const valueEl = document.createElement("div");
       valueEl.className = "tools-info-value";
       valueEl.textContent = formatInfoValue(value);

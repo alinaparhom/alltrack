@@ -8771,13 +8771,21 @@
       }
 
       .pending-moves-modal__panel .tools-modal__header {
-        padding-left: calc(var(--tools-horizontal-gutter) + max(0px, env(safe-area-inset-left)));
-        padding-right: calc(var(--tools-horizontal-gutter) + max(0px, env(safe-area-inset-right)));
+        padding-left: calc(var(--tools-horizontal-gutter) * 2 + max(0px, env(safe-area-inset-left)));
+        padding-right: calc(var(--tools-horizontal-gutter) * 2 + max(0px, env(safe-area-inset-right)));
       }
 
       .pending-moves-modal__panel .tools-modal__body {
         gap: 10px;
         align-content: start;
+      }
+
+      .pending-moves-modal__panel .tools-list,
+      .pending-moves-modal__panel .tools-empty,
+      .pending-moves-modal__panel [data-pending-moves-message],
+      .pending-moves-modal__panel .pending-moves-actions {
+        padding-left: calc(var(--tools-horizontal-gutter) * 2);
+        padding-right: calc(var(--tools-horizontal-gutter) * 2);
       }
 
       .pending-moves-modal__panel .tools-modal__close {

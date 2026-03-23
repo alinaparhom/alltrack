@@ -8836,6 +8836,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const syncToolsModalModeClass = () => {
     if (!toolsModalEl) return;
     const isSearchLikeMode =
+      toolsState.mode === "base" ||
       toolsState.mode === "search" ||
       toolsState.mode === "user" ||
       toolsState.mode === "move-other";
@@ -9874,7 +9875,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const isMovingNow = Boolean(tool?.__pendingMove);
     const shouldHighlightToolStatus = ["user", "move-other"].includes(toolsState.mode);
     const isSearchMode =
-      toolsState.mode === "search" || toolsState.mode === "move-other";
+      toolsState.mode === "base" ||
+      toolsState.mode === "search" ||
+      toolsState.mode === "move-other";
     const shouldShowResponsibleAndToolStatus = toolsState.mode !== "user";
     const kitItems = getToolKitItems(tool);
     const hasKit = kitItems.length > 0;
@@ -10155,6 +10158,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const renderToolsTable = (items) => {
     const table = document.createElement("div");
     const isSearchLikeMode =
+      toolsState.mode === "base" ||
       toolsState.mode === "search" ||
       toolsState.mode === "user" ||
       toolsState.mode === "move-other";
@@ -10165,7 +10169,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
     const shouldHighlightToolStatus = ["user", "move-other"].includes(toolsState.mode);
     const isSearchMode =
-      toolsState.mode === "search" || toolsState.mode === "move-other";
+      toolsState.mode === "base" ||
+      toolsState.mode === "search" ||
+      toolsState.mode === "move-other";
     const shouldUseSearchLayout = isSearchLikeMode;
     const getStatusAccentColor = (rawStatus) => {
       const normalized = String(rawStatus ?? "").trim().toLocaleLowerCase("ru");

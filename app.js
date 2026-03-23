@@ -10091,7 +10091,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         }
       }
       media.appendChild(overlay);
-      if (viewMode === "large" || isCompactMobile) {
+      if (isCompactMobile) {
         card.appendChild(media);
         return card;
       }

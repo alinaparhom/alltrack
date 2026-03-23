@@ -9831,8 +9831,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const number = resolveToolNumberValue(tool);
     const photoNumber = resolveToolPhotoNumber(tool);
     const name = String(tool?.["Наименование"] ?? "").trim();
+    const accountingName = String(tool?.["Наименование по бухгалтерии"] ?? "").trim();
     const manufacturer = String(tool?.["Производитель"] ?? "").trim();
     const model = String(tool?.["Модель"] ?? "").trim();
+    const serialNumber = String(tool?.["Серийный номер"] ?? "").trim();
     const accountingNumber = String(tool?.["Бух.номер"] ?? "").trim();
     const status = String(tool?.["Статус"] ?? "").trim();
     const photoCount = Number.parseInt(tool?.["Количество фото"] ?? 0, 10);
@@ -9844,17 +9846,24 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       window.matchMedia("(max-width: 520px)").matches;
     const primaryNumber = number || photoNumber;
     const numberLine = primaryNumber || "Без номера";
-    const lineParts = [primaryNumber, name, manufacturer, model].filter(Boolean);
+    const lineParts = [
+      primaryNumber,
+      name || accountingName,
+      manufacturer,
+      model,
+    ].filter(Boolean);
     const fullLine = lineParts.join(" ");
     const hasPrimaryInfo = lineParts.length > 0;
     const fallbackTitle = "Инструмент без данных";
     const infoLine = isCompactMobile ? numberLine : fullLine;
     const safeInfoLine = infoLine || numberLine || fallbackTitle;
     const bodyLine = isCompactMobile ? numberLine : safeInfoLine;
+    const objectName = String(tool?.["Объект"] ?? "").trim();
     const secondaryLine = [
       [manufacturer, model].filter(Boolean).join(" · "),
       accountingNumber ? `Бух: ${accountingNumber}` : "",
-      String(tool?.["Объект"] ?? "").trim(),
+      serialNumber && serialNumber !== "-" ? `S/N: ${serialNumber}` : "",
+      objectName,
     ]
       .filter(Boolean)
       .join(" · ");
@@ -10087,6 +10096,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       overlay.appendChild(metaLine);
       if (!hasPrimaryInfo && !secondaryLine && !objectName) {
         overlay.classList.add("tools-card__overlay--empty");
+        title.textContent = fallbackTitle;
+        metaLine.textContent = fallbackSecondaryLine;
       }
       if (shouldShowResponsibleAndToolStatus) {
         const responsibleStatusLine = createResponsibleStatusLine();

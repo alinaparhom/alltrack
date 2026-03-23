@@ -10074,11 +10074,14 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         : "tools-card__overlay";
       const title = document.createElement("div");
       title.className = "tools-card__title";
-      title.textContent = infoLine || "Без названия";
+      title.textContent = infoLine || numberLine || "Без названия";
       overlay.appendChild(title);
       const metaLine = document.createElement("div");
       metaLine.className = "tools-card__meta";
-      metaLine.textContent = secondaryLine || fallbackSecondaryLine;
+      metaLine.textContent =
+        secondaryLine ||
+        String(tool?.["Объект"] ?? "").trim() ||
+        fallbackSecondaryLine;
       overlay.appendChild(metaLine);
       if (shouldShowResponsibleAndToolStatus) {
         const responsibleStatusLine = createResponsibleStatusLine();

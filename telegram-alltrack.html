@@ -7779,6 +7779,65 @@
         display: grid;
       }
 
+      .writeoff-modal .tools-filter-dropdown__menu {
+        border: 1px solid rgba(191, 219, 254, 0.85);
+        background: linear-gradient(
+          145deg,
+          rgba(255, 255, 255, 0.95),
+          rgba(239, 246, 255, 0.92)
+        );
+        box-shadow:
+          0 16px 28px rgba(15, 23, 42, 0.14),
+          inset 0 1px 0 rgba(255, 255, 255, 0.8);
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+      }
+
+      .writeoff-modal .tools-filter-dropdown__options {
+        max-height: min(200px, 34vh);
+      }
+
+      .writeoff-modal .tools-filter-dropdown__option {
+        border: 1px solid rgba(148, 163, 184, 0.18);
+        background: rgba(255, 255, 255, 0.84);
+      }
+
+      .writeoff-modal .tools-filter-dropdown__clear {
+        border: 1px solid rgba(147, 197, 253, 0.65);
+        color: #1d4ed8;
+        background: linear-gradient(
+          135deg,
+          rgba(219, 234, 254, 0.92),
+          rgba(239, 246, 255, 0.88)
+        );
+      }
+
+      body[data-theme="dark"] .writeoff-modal .tools-filter-dropdown__menu {
+        border-color: rgba(96, 165, 250, 0.38);
+        background: linear-gradient(
+          145deg,
+          rgba(15, 23, 42, 0.95),
+          rgba(30, 41, 59, 0.92)
+        );
+        box-shadow:
+          0 18px 34px rgba(2, 6, 23, 0.45),
+          inset 0 1px 0 rgba(148, 163, 184, 0.2);
+      }
+
+      body[data-theme="dark"] .writeoff-modal .tools-filter-dropdown__option {
+        border-color: rgba(148, 163, 184, 0.24);
+        background: rgba(30, 41, 59, 0.78);
+      }
+
+      body[data-theme="dark"] .writeoff-modal .tools-filter-dropdown__clear {
+        border-color: rgba(96, 165, 250, 0.45);
+        background: linear-gradient(
+          145deg,
+          rgba(30, 58, 138, 0.58),
+          rgba(30, 64, 175, 0.46)
+        );
+      }
+
       @media (max-width: 520px) {
         .writeoff-selection {
           grid-template-columns: 1fr 1fr 1fr;
@@ -7801,6 +7860,13 @@
           width: 100%;
           min-height: 34px;
           font-size: 13px;
+        }
+
+        .writeoff-modal .tools-filter-dropdown__menu {
+          left: 50%;
+          right: auto;
+          width: min(420px, calc(100vw - 26px));
+          transform: translateX(-50%);
         }
       }
 

@@ -9842,8 +9842,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       typeof window !== "undefined" &&
       window.matchMedia &&
       window.matchMedia("(max-width: 520px)").matches;
-    const numberLine = number || "Без номера";
-    const lineParts = [number, name, manufacturer, model].filter(Boolean);
+    const primaryNumber = number || photoNumber;
+    const numberLine = primaryNumber || "Без номера";
+    const lineParts = [primaryNumber, name, manufacturer, model].filter(Boolean);
     const fullLine = lineParts.join(" ");
     const hasPrimaryInfo = lineParts.length > 0;
     const fallbackTitle = "Инструмент без данных";

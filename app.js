@@ -9847,6 +9847,14 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const fullLine = lineParts.join(" ");
     const infoLine = isCompactMobile ? numberLine : fullLine;
     const bodyLine = isCompactMobile ? numberLine : infoLine;
+    const secondaryLine = [
+      [manufacturer, model].filter(Boolean).join(" · "),
+      accountingNumber ? `Бух: ${accountingNumber}` : "",
+      String(tool?.["Объект"] ?? "").trim(),
+    ]
+      .filter(Boolean)
+      .join(" · ");
+    const fallbackSecondaryLine = "Данные заполняются";
     const isMovingNow = Boolean(tool?.__pendingMove);
     const shouldHighlightToolStatus = ["user", "move-other"].includes(toolsState.mode);
     const isSearchMode = toolsState.mode === "search";
@@ -10068,6 +10076,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       title.className = "tools-card__title";
       title.textContent = infoLine || "Без названия";
       overlay.appendChild(title);
+      const metaLine = document.createElement("div");
+      metaLine.className = "tools-card__meta";
+      metaLine.textContent = secondaryLine || fallbackSecondaryLine;
+      overlay.appendChild(metaLine);
       if (shouldShowResponsibleAndToolStatus) {
         const responsibleStatusLine = createResponsibleStatusLine();
         overlay.appendChild(responsibleStatusLine);
@@ -10091,6 +10103,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     title.className = "tools-card__title";
     title.textContent = bodyLine || "Без названия";
     body.appendChild(title);
+    const metaLine = document.createElement("div");
+    metaLine.className = "tools-card__meta";
+    metaLine.textContent = secondaryLine || fallbackSecondaryLine;
+    body.appendChild(metaLine);
     if (shouldShowResponsibleAndToolStatus) {
       const statusMeta = document.createElement("div");
       statusMeta.className = "tools-card__status";

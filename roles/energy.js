@@ -1489,7 +1489,6 @@ export function renderRole(user) {
                     aria-controls="writeoff-filters-panel"
                     aria-label="Фильтры"
                   >
-                    <span class="writeoff-selection__filters-icon" aria-hidden="true">⚙︎</span>
                     <span class="tools-filters-toggle__label">Фильтры</span>
                   </button>
                 </div>

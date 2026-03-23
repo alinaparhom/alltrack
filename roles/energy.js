@@ -1446,7 +1446,7 @@ export function renderRole(user) {
                 <p data-writeoff-subtitle>Выберите инструменты для списания</p>
               </div>
               <button
-                class="button-icon"
+                class="button-icon tools-modal__close"
                 type="button"
                 data-writeoff-close
                 aria-label="Закрыть окно списания"
@@ -1476,13 +1476,15 @@ export function renderRole(user) {
                 >
                   На списание
                 </button>
-                <button
-                  class="writeoff-selection__block writeoff-selection__block--filters writeoff-selection__filter"
-                  type="button"
-                  data-writeoff-filter
-                >
-                  Фильтры
-                </button>
+                <div class="writeoff-selection__block writeoff-selection__block--filters">
+                  <button
+                    class="writeoff-selection__filter tools-filters-toggle"
+                    type="button"
+                    data-writeoff-filter
+                  >
+                    <span class="tools-filters-toggle__label">Фильтры</span>
+                  </button>
+                </div>
               </div>
               <div class="tools-filters" data-writeoff-filters-panel>
                 <label class="tools-filter">

@@ -8771,8 +8771,8 @@
       }
 
       .pending-moves-modal__panel .tools-modal__header {
-        padding-left: calc(var(--tools-horizontal-gutter) * 2 + max(0px, env(safe-area-inset-left)));
-        padding-right: calc(var(--tools-horizontal-gutter) * 2 + max(0px, env(safe-area-inset-right)));
+        padding-left: calc(var(--tools-horizontal-gutter) + max(0px, env(safe-area-inset-left)));
+        padding-right: calc(var(--tools-horizontal-gutter) + max(0px, env(safe-area-inset-right)));
       }
 
       .pending-moves-modal__panel .tools-modal__body {
@@ -8784,8 +8784,8 @@
       .pending-moves-modal__panel .tools-empty,
       .pending-moves-modal__panel [data-pending-moves-message],
       .pending-moves-modal__panel .pending-moves-actions {
-        padding-left: calc(var(--tools-horizontal-gutter) * 2);
-        padding-right: calc(var(--tools-horizontal-gutter) * 2);
+        padding-left: var(--tools-horizontal-gutter);
+        padding-right: var(--tools-horizontal-gutter);
       }
 
       .pending-moves-modal__panel .tools-modal__close {

@@ -12047,8 +12047,17 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
   };
 
+  const countAppliedWriteOffFilters = () =>
+    Object.values(toolsState.filters).reduce((total, value) => {
+      if (!Array.isArray(value)) return total;
+      return total + value.length;
+    }, 0);
+
   const updateWriteOffFilterButton = () => {
     const isStatusOnly = writeOffState.filterWriteOffOnly;
+    const appliedFiltersCount = countAppliedWriteOffFilters();
+    const hasAppliedFilters = appliedFiltersCount > 0;
+    const isFiltersOpen = Boolean(writeOffFiltersPanelEl?.classList.contains("is-open"));
     if (writeOffStatusOnlyButton) {
       writeOffStatusOnlyButton.classList.toggle("is-active", isStatusOnly);
       writeOffStatusOnlyButton.setAttribute("aria-pressed", isStatusOnly ? "true" : "false");
@@ -12058,6 +12067,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (labelEl) {
       labelEl.textContent = "Фильтры";
     }
+    writeOffFilterButton.classList.toggle("is-active", hasAppliedFilters || isFiltersOpen);
+    const ariaLabel = hasAppliedFilters ? `Фильтры: выбрано ${appliedFiltersCount}` : "Фильтры";
+    writeOffFilterButton.setAttribute("aria-label", ariaLabel);
   };
 
   const toggleWriteOffStatusOnly = () => {
@@ -12207,6 +12219,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       writeOffState.filtered = [...filteredByDropdowns];
     }
     renderWriteOffList();
+    updateWriteOffFilterButton();
   };
 
   const loadWriteOffTools = async () => {

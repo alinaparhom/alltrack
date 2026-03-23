@@ -1476,7 +1476,11 @@ export function renderRole(user) {
                 >
                   На списание
                 </button>
-                <div class="writeoff-selection__block writeoff-selection__block--filters">
+                <div
+                  class="writeoff-selection__block writeoff-selection__block--filters tools-filter-actions"
+                  role="group"
+                  aria-label="Фильтры"
+                >
                   <button
                     class="tools-filters-toggle"
                     type="button"

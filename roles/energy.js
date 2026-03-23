@@ -1470,7 +1470,7 @@ export function renderRole(user) {
                   <strong class="writeoff-selection__count-value" data-writeoff-count>0</strong>
                 </div>
                 <button
-                  class="writeoff-selection__block writeoff-selection__block--status writeoff-selection__filter"
+                  class="writeoff-selection__block writeoff-selection__block--status writeoff-selection__status-toggle"
                   type="button"
                   data-writeoff-status-only
                 >
@@ -1478,15 +1478,18 @@ export function renderRole(user) {
                 </button>
                 <div class="writeoff-selection__block writeoff-selection__block--filters">
                   <button
-                    class="writeoff-selection__filter tools-filters-toggle"
+                    class="tools-filters-toggle"
                     type="button"
                     data-writeoff-filter
+                    aria-expanded="false"
+                    aria-controls="writeoff-filters-panel"
+                    aria-label="Фильтры"
                   >
                     <span class="tools-filters-toggle__label">Фильтры</span>
                   </button>
                 </div>
               </div>
-              <div class="tools-filters" data-writeoff-filters-panel>
+              <div class="tools-filters" id="writeoff-filters-panel" data-writeoff-filters-panel>
                 <label class="tools-filter">
                   <span>Группа</span>
                   <div class="tools-filter-dropdown" data-tools-filter="group">

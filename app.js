@@ -12054,7 +12054,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       writeOffStatusOnlyButton.setAttribute("aria-pressed", isStatusOnly ? "true" : "false");
     }
     if (!writeOffFilterButton) return;
-    writeOffFilterButton.textContent = "Фильтры";
+    const labelEl = writeOffFilterButton.querySelector(".tools-filters-toggle__label");
+    if (labelEl) {
+      labelEl.textContent = "Фильтры";
+    }
   };
 
   const toggleWriteOffStatusOnly = () => {

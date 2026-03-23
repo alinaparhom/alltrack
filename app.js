@@ -11705,6 +11705,58 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     applyToolsFilters();
   };
 
+  const markToolsPendingMoveInStates = (toolsForPending = []) => {
+    if (!Array.isArray(toolsForPending) || !toolsForPending.length) return;
+    const numbers = new Set();
+    const accountingNumbers = new Set();
+    toolsForPending.forEach((tool) => {
+      const number = String(tool?.["Номер"] ?? "").trim();
+      const accounting = String(tool?.["Бух.номер"] ?? "").trim();
+      if (number) numbers.add(number);
+      if (accounting) accountingNumbers.add(accounting);
+    });
+    if (!numbers.size && !accountingNumbers.size) return;
+    const hasPendingMatch = (tool) => {
+      const number = String(tool?.["Номер"] ?? "").trim();
+      const accounting = String(tool?.["Бух.номер"] ?? "").trim();
+      return (number && numbers.has(number)) || (accounting && accountingNumbers.has(accounting));
+    };
+    toolsState.tools = toolsState.tools.map((tool) =>
+      hasPendingMatch(tool)
+        ? {
+            ...tool,
+            __pendingMove: true,
+          }
+        : tool
+    );
+    toolsState.toolMap = new Map(
+      toolsState.tools.map((tool) => [tool.__selectionId, tool])
+    );
+    if (Array.isArray(writeOffState?.tools) && writeOffState.tools.length) {
+      writeOffState.tools = writeOffState.tools.map((tool) =>
+        hasPendingMatch(tool)
+          ? {
+              ...tool,
+              __pendingMove: true,
+            }
+          : tool
+      );
+      writeOffState.toolMap = new Map(
+        writeOffState.tools.map((tool) => [tool.__selectionId, tool])
+      );
+      if (Array.isArray(writeOffState.filtered) && writeOffState.filtered.length) {
+        writeOffState.filtered = writeOffState.filtered.map((tool) =>
+          hasPendingMatch(tool)
+            ? {
+                ...tool,
+                __pendingMove: true,
+              }
+            : tool
+        );
+      }
+    }
+  };
+
   const saveToolsEditChanges = async () => {
     if (toolsEditState.isSaving) return;
     const tool = toolsEditState.tool;
@@ -16518,6 +16570,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         if (notificationStatus.shouldHoldOnError) {
           return;
         }
+        markToolsPendingMoveInStates(eligibleTools);
+        applyToolsFilters();
         setTimeout(() => {
           closeToolsMoveModal();
           resetToolsSelection();

@@ -1482,13 +1482,14 @@ export function renderRole(user) {
                   aria-label="Фильтры"
                 >
                   <button
-                    class="tools-filters-toggle"
+                    class="tools-filters-toggle writeoff-selection__filters-toggle"
                     type="button"
                     data-writeoff-filter
                     aria-expanded="false"
                     aria-controls="writeoff-filters-panel"
                     aria-label="Фильтры"
                   >
+                    <span class="writeoff-selection__filters-icon" aria-hidden="true">⚙︎</span>
                     <span class="tools-filters-toggle__label">Фильтры</span>
                   </button>
                 </div>

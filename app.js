@@ -9845,8 +9845,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const numberLine = number || "Без номера";
     const lineParts = [number, name, manufacturer, model].filter(Boolean);
     const fullLine = lineParts.join(" ");
+    const hasPrimaryInfo = lineParts.length > 0;
+    const fallbackTitle = "Инструмент без данных";
     const infoLine = isCompactMobile ? numberLine : fullLine;
-    const bodyLine = isCompactMobile ? numberLine : infoLine;
+    const safeInfoLine = infoLine || numberLine || fallbackTitle;
+    const bodyLine = isCompactMobile ? numberLine : safeInfoLine;
     const secondaryLine = [
       [manufacturer, model].filter(Boolean).join(" · "),
       accountingNumber ? `Бух: ${accountingNumber}` : "",
@@ -10074,15 +10077,16 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         : "tools-card__overlay";
       const title = document.createElement("div");
       title.className = "tools-card__title";
-      title.textContent = infoLine || numberLine || "Без названия";
+      title.textContent = safeInfoLine;
       overlay.appendChild(title);
       const metaLine = document.createElement("div");
       metaLine.className = "tools-card__meta";
-      metaLine.textContent =
-        secondaryLine ||
-        String(tool?.["Объект"] ?? "").trim() ||
-        fallbackSecondaryLine;
+      const objectName = String(tool?.["Объект"] ?? "").trim();
+      metaLine.textContent = secondaryLine || objectName || fallbackSecondaryLine;
       overlay.appendChild(metaLine);
+      if (!hasPrimaryInfo && !secondaryLine && !objectName) {
+        overlay.classList.add("tools-card__overlay--empty");
+      }
       if (shouldShowResponsibleAndToolStatus) {
         const responsibleStatusLine = createResponsibleStatusLine();
         overlay.appendChild(responsibleStatusLine);
@@ -10104,7 +10108,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     body.className = "tools-card__body";
     const title = document.createElement("div");
     title.className = "tools-card__title";
-    title.textContent = bodyLine || "Без названия";
+    title.textContent = bodyLine || fallbackTitle;
     body.appendChild(title);
     const metaLine = document.createElement("div");
     metaLine.className = "tools-card__meta";

@@ -6075,6 +6075,18 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const writeOffStatusOnlyButton = contentEl.querySelector("[data-writeoff-status-only]");
   const writeOffFilterButton = contentEl.querySelector("[data-writeoff-filter]");
   const writeOffFiltersPanelEl = contentEl.querySelector("[data-writeoff-filters-panel]");
+  if (writeOffFiltersPanelEl) {
+    const hasStatus = writeOffFiltersPanelEl.querySelector("[data-tools-filters-status]");
+    if (!hasStatus) {
+      const controls = document.createElement("div");
+      controls.className = "tools-filters-controls";
+      controls.innerHTML = `
+        <div class="tools-filters-status" data-tools-filters-status>Фильтры не выбраны</div>
+        <button type="button" class="tools-filters-reset is-hidden" data-tools-filters-reset>Сбросить всё</button>
+      `;
+      writeOffFiltersPanelEl.appendChild(controls);
+    }
+  }
   const writeOffConfirmModalEl = contentEl.querySelector(
     "[data-writeoff-confirm-modal]"
   );

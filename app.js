@@ -8835,7 +8835,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
   const syncToolsModalModeClass = () => {
     if (!toolsModalEl) return;
-    const isSearchLikeMode = toolsState.mode === "search" || toolsState.mode === "user";
+    const isSearchLikeMode =
+      toolsState.mode === "search" ||
+      toolsState.mode === "user" ||
+      toolsState.mode === "move-other";
     toolsModalEl.classList.toggle("tools-modal--my-tools", false);
     toolsModalEl.classList.toggle("tools-modal--searching", isSearchLikeMode);
     setToolsSortToggleVisibility();
@@ -9870,7 +9873,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const fallbackSecondaryLine = "Данные заполняются";
     const isMovingNow = Boolean(tool?.__pendingMove);
     const shouldHighlightToolStatus = ["user", "move-other"].includes(toolsState.mode);
-    const isSearchMode = toolsState.mode === "search";
+    const isSearchMode =
+      toolsState.mode === "search" || toolsState.mode === "move-other";
     const shouldShowResponsibleAndToolStatus = toolsState.mode !== "user";
     const kitItems = getToolKitItems(tool);
     const hasKit = kitItems.length > 0;
@@ -10150,14 +10154,18 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
   const renderToolsTable = (items) => {
     const table = document.createElement("div");
-    const isSearchLikeMode = toolsState.mode === "search" || toolsState.mode === "user";
+    const isSearchLikeMode =
+      toolsState.mode === "search" ||
+      toolsState.mode === "user" ||
+      toolsState.mode === "move-other";
     const isMyToolsMode = toolsState.mode === "user";
     table.className = "tools-table";
     if (isMyToolsMode) {
       table.classList.add("tools-table--my-tools");
     }
     const shouldHighlightToolStatus = ["user", "move-other"].includes(toolsState.mode);
-    const isSearchMode = toolsState.mode === "search";
+    const isSearchMode =
+      toolsState.mode === "search" || toolsState.mode === "move-other";
     const shouldUseSearchLayout = isSearchLikeMode;
     const getStatusAccentColor = (rawStatus) => {
       const normalized = String(rawStatus ?? "").trim().toLocaleLowerCase("ru");
@@ -10960,7 +10968,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (!toolsModalEl) return;
     toolsState.mode = "move-other";
     setToolsStatusStandaloneVisibility(false);
-    toolsState.view = normalizeToolsView(toolsState.previousView);
+    toolsState.view = "table";
     setToolsTitle("Переместить за других");
     setToolsResponsibleFilterVisibility(true);
     syncToolsModalModeClass();

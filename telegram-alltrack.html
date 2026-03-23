@@ -7680,11 +7680,11 @@
         justify-self: stretch;
         margin-left: 0;
         width: 100%;
-        justify-content: stretch;
+        justify-content: flex-end;
       }
 
       .writeoff-selection__block--filters .tools-filters-toggle {
-        width: 100%;
+        min-width: 96px;
       }
 
       .writeoff-selection__status-toggle {
@@ -7722,13 +7722,11 @@
         display: none;
         margin: 0;
         padding: 0;
-        gap: 10px;
+        gap: 8px;
       }
 
       .writeoff-modal .tools-filters[data-writeoff-filters-panel].is-open {
         display: grid;
-        margin-bottom: 2px;
-        padding-bottom: 2px;
       }
 
       @media (max-width: 520px) {
@@ -7746,6 +7744,11 @@
           min-height: 34px;
           padding: 6px 10px;
           font-size: 13px;
+        }
+
+        .writeoff-selection__block--filters .tools-filters-toggle {
+          min-width: 0;
+          width: 100%;
         }
       }
 

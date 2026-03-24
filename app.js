@@ -8819,7 +8819,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (!toolsSortToggleEl) return;
     const isDesc = toolsState.searchSortDirection === "desc";
     if (toolsSortToggleIconEl) {
-      toolsSortToggleIconEl.textContent = isDesc ? "⌄" : "⌃";
+      const directionClass = isDesc ? "is-desc" : "is-asc";
+      toolsSortToggleIconEl.classList.remove("is-desc", "is-asc");
+      toolsSortToggleIconEl.classList.add(directionClass);
     }
     toolsSortToggleEl.setAttribute(
       "aria-label",

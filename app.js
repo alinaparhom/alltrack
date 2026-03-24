@@ -9895,16 +9895,20 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const shouldShowResponsibleAndToolStatus = toolsState.mode !== "user";
     const kitItems = getToolKitItems(tool);
     const hasKit = kitItems.length > 0;
-    const statusText = isMovingNow
-      ? "в процессе перемещения"
-      : status || "не указан";
+    const formatToolCardStatus = (rawStatus, movingNow) => {
+      if (movingNow) return "Перемещается";
+      const normalized = String(rawStatus ?? "").trim().toLocaleLowerCase("ru");
+      if (normalized === "рабочий") return "Исправный";
+      return String(rawStatus ?? "").trim() || "не указан";
+    };
+    const statusText = formatToolCardStatus(status, isMovingNow);
     const responsible = String(tool?.["Ответственный"] ?? "").trim() || "не указан";
     const getStatusAccentColor = (rawStatus) => {
       const normalized = String(rawStatus ?? "").trim().toLocaleLowerCase("ru");
       if (normalized === "в ремонте") return "#ea580c";
       if (normalized === "сломан") return "#eab308";
       if (normalized === "на списание") return "#dc2626";
-      if (normalized === "в процессе перемещения") return "#2563eb";
+      if (normalized === "в процессе перемещения" || normalized === "перемещается") return "#2563eb";
       return "";
     };
     const appendResponsibleValue = (container, valueText) => {
@@ -10056,7 +10060,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         kitBadge.type = "button";
         kitBadge.className = "tools-kit-badge";
         kitBadge.dataset.toolsKitOpen = "true";
-        kitBadge.textContent = `Комплект: ${kitItems.length}`;
+        kitBadge.textContent = `Комплектация: ${kitItems.length}`;
         kitBadge.setAttribute("aria-label", "Открыть комплектацию инструмента");
         row.appendChild(kitBadge);
       }
@@ -10096,7 +10100,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       kitBadge.type = "button";
       kitBadge.className = "tools-kit-badge tools-kit-badge--card";
       kitBadge.dataset.toolsKitOpen = "true";
-      kitBadge.textContent = `Комплект: ${kitItems.length}`;
+      kitBadge.textContent = `Комплектация: ${kitItems.length}`;
       kitBadge.setAttribute("aria-label", "Открыть комплектацию инструмента");
       media.appendChild(kitBadge);
     }
@@ -10192,7 +10196,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       if (normalized === "в ремонте") return "#ea580c";
       if (normalized === "сломан") return "#eab308";
       if (normalized === "на списание") return "#dc2626";
-      if (normalized === "в процессе перемещения") return "#2563eb";
+      if (normalized === "в процессе перемещения" || normalized === "перемещается") return "#2563eb";
       return "";
     };
     const appendResponsibleValue = (container, valueText) => {
@@ -10270,9 +10274,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         : [manufacturerModelLine, accountingCostLine].filter(Boolean);
       const isMovingNow = Boolean(tool?.__pendingMove);
       const status = String(tool?.["Статус"] ?? "").trim();
-      const statusText = isMovingNow
-        ? "в процессе перемещения"
-        : status || "не указан";
+      const statusText = formatToolCardStatus(status, isMovingNow);
       if (metaLines.length === 0) {
         meta.textContent = "—";
       } else {
@@ -10336,7 +10338,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         kitBadge.type = "button";
         kitBadge.className = "tools-kit-badge tools-kit-badge--inline";
         kitBadge.dataset.toolsKitOpen = "true";
-        kitBadge.textContent = `Комплект: ${kitItems.length}`;
+        kitBadge.textContent = `Комплектация: ${kitItems.length}`;
         kitBadge.setAttribute("aria-label", "Открыть комплектацию инструмента");
         kitLine.appendChild(kitBadge);
         meta.appendChild(kitLine);

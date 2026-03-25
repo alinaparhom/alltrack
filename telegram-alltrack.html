@@ -7539,7 +7539,22 @@
         padding-bottom: 4px;
         padding-left: calc(var(--tools-horizontal-gutter) / 2 + max(0px, env(safe-area-inset-left)));
         padding-right: calc(var(--tools-horizontal-gutter) / 2 + max(0px, env(safe-area-inset-right)));
-        align-items: start;
+        align-items: center;
+        grid-template-columns: minmax(0, 1fr) auto;
+        position: sticky;
+        top: 0;
+        z-index: 5;
+        background: inherit;
+      }
+
+      .tools-modal--my-tools .tools-modal__header .settings-modal__title {
+        min-width: 0;
+      }
+
+      .tools-modal--my-tools .tools-modal__header .settings-modal__title h2 {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
 
       .tools-modal--my-tools .tools-modal__panel {
@@ -7595,8 +7610,9 @@
       }
 
       .tools-modal--my-tools .tools-modal__close {
-        margin-top: -72px;
+        margin-top: 0;
         margin-right: -2px;
+        align-self: center;
       }
 
       .tools-modal--my-tools .tools-list {
@@ -10493,7 +10509,7 @@
           padding-bottom: 4px;
           padding-left: calc(var(--tools-horizontal-gutter) / 2 + max(0px, env(safe-area-inset-left)));
           padding-right: calc(var(--tools-horizontal-gutter) / 2 + max(0px, env(safe-area-inset-right)));
-          align-items: start;
+          align-items: center;
         }
 
         .tools-modal--my-tools .tools-controls {
@@ -10527,8 +10543,9 @@
         }
 
         .tools-modal--my-tools .tools-modal__close {
-          margin-top: -42px;
+          margin-top: 0;
           margin-right: -2px;
+          align-self: center;
         }
 
         .tools-modal--my-tools .tools-list {

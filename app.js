@@ -9906,6 +9906,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const responsible = String(tool?.["Ответственный"] ?? "").trim() || "не указан";
     const getStatusAccentColor = (rawStatus) => {
       const normalized = String(rawStatus ?? "").trim().toLocaleLowerCase("ru");
+      if (normalized === "рабочий" || normalized === "исправный") return "#16a34a";
       if (normalized === "в ремонте") return "#ea580c";
       if (normalized === "сломан") return "#eab308";
       if (normalized === "на списание") return "#dc2626";
@@ -9969,6 +9970,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       }
       container.append(value);
     };
+    const isLargeMyToolsCard = viewMode === "large" && toolsState.mode === "user";
+    const myToolsPrimaryLine = fullLine || numberLine || fallbackTitle;
+    const myToolsSecondaryLine = `${accountingNumber || "—"} / ${objectName || "—"}`;
 
     if (viewMode === "list") {
       const row = document.createElement("div");
@@ -10118,12 +10122,19 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           : "tools-card__overlay";
         const title = document.createElement("div");
         title.className = "tools-card__title";
-        title.textContent = safeInfoLine;
+        if (isLargeMyToolsCard) {
+          title.classList.add("tools-card__title--my-tools");
+        }
+        title.textContent = isLargeMyToolsCard ? myToolsPrimaryLine : safeInfoLine;
         overlay.appendChild(title);
         const metaLine = document.createElement("div");
         metaLine.className = "tools-card__meta";
-        const objectName = String(tool?.["Объект"] ?? "").trim();
-        metaLine.textContent = secondaryLine || objectName || fallbackSecondaryLine;
+        if (isLargeMyToolsCard) {
+          metaLine.classList.add("tools-card__meta--my-tools");
+        }
+        metaLine.textContent = isLargeMyToolsCard
+          ? myToolsSecondaryLine
+          : secondaryLine || objectName || fallbackSecondaryLine;
         overlay.appendChild(metaLine);
         if (!hasPrimaryInfo && !secondaryLine && !objectName) {
           overlay.classList.add("tools-card__overlay--empty");
@@ -10139,6 +10150,16 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
             fillToolStatusMeta(statusMeta);
             overlay.appendChild(statusMeta);
           }
+        }
+        if (isLargeMyToolsCard) {
+          const statusLine = document.createElement("div");
+          statusLine.className = "tools-card__status tools-card__status--my-tools";
+          statusLine.textContent = statusText || "не указан";
+          const statusAccentColor = getStatusAccentColor(statusText);
+          if (statusAccentColor) {
+            statusLine.style.color = statusAccentColor;
+          }
+          overlay.appendChild(statusLine);
         }
         media.appendChild(overlay);
       }
@@ -10166,11 +10187,19 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     body.className = "tools-card__body";
     const title = document.createElement("div");
     title.className = "tools-card__title";
-    title.textContent = bodyLine || fallbackTitle;
+    if (isLargeMyToolsCard) {
+      title.classList.add("tools-card__title--my-tools");
+    }
+    title.textContent = isLargeMyToolsCard ? myToolsPrimaryLine : bodyLine || fallbackTitle;
     body.appendChild(title);
     const metaLine = document.createElement("div");
     metaLine.className = "tools-card__meta";
-    metaLine.textContent = secondaryLine || fallbackSecondaryLine;
+    if (isLargeMyToolsCard) {
+      metaLine.classList.add("tools-card__meta--my-tools");
+    }
+    metaLine.textContent = isLargeMyToolsCard
+      ? myToolsSecondaryLine
+      : secondaryLine || fallbackSecondaryLine;
     body.appendChild(metaLine);
     if (shouldShowResponsibleAndToolStatus) {
       const statusMeta = document.createElement("div");
@@ -10179,6 +10208,16 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const responsibleStatusLine = createResponsibleStatusLine();
       body.appendChild(responsibleStatusLine);
       body.appendChild(statusMeta);
+    }
+    if (isLargeMyToolsCard) {
+      const statusLine = document.createElement("div");
+      statusLine.className = "tools-card__status tools-card__status--my-tools";
+      statusLine.textContent = statusText || "не указан";
+      const statusAccentColor = getStatusAccentColor(statusText);
+      if (statusAccentColor) {
+        statusLine.style.color = statusAccentColor;
+      }
+      body.appendChild(statusLine);
     }
     card.append(media, body);
     return card;

@@ -10090,7 +10090,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
     media.appendChild(img);
 
-    if (!hasPhoto && viewMode !== "large") {
+    if (!hasPhoto) {
       const badge = document.createElement("div");
       badge.className = "tools-card__badge";
       if (hasKit) {
@@ -10172,12 +10172,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     metaLine.className = "tools-card__meta";
     metaLine.textContent = secondaryLine || fallbackSecondaryLine;
     body.appendChild(metaLine);
-    if (viewMode === "large" && !hasPhoto) {
-      const noPhotoLabel = document.createElement("div");
-      noPhotoLabel.className = "tools-card__meta tools-card__meta--no-photo";
-      noPhotoLabel.textContent = "Нет фото";
-      body.appendChild(noPhotoLabel);
-    }
     if (shouldShowResponsibleAndToolStatus) {
       const statusMeta = document.createElement("div");
       statusMeta.className = "tools-card__status";

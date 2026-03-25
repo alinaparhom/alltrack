@@ -10118,7 +10118,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
 
     if (viewMode === "large" || isCompactMobile) {
-      const shouldRenderOverlay = hasPhoto || isCompactMobile;
+      const shouldRenderOverlay = hasPhoto || isCompactMobile || isLargeMyToolsCard;
       if (shouldRenderOverlay) {
         const overlay = document.createElement("div");
         overlay.className = isCompactMobile
@@ -10181,7 +10181,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         card.appendChild(media);
         return card;
       }
-      if (viewMode === "large" && hasPhoto) {
+      if (viewMode === "large" && (hasPhoto || isLargeMyToolsCard)) {
         card.appendChild(media);
         return card;
       }

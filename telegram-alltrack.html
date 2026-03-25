@@ -855,6 +855,14 @@
           0 14px 28px rgba(6, 95, 70, 0.36);
       }
 
+      body[data-theme="dark"] .tools-list.is-large .tools-card.tools-item--broken,
+      body[data-theme="dark"] .tools-list.is-large .tools-card.tools-item--repair,
+      body[data-theme="dark"] .tools-list.is-large .tools-card.tools-item--writeoff,
+      body[data-theme="dark"] .tools-list.is-large .tools-card.tools-item--pending-response,
+      body[data-theme="dark"] .tools-list.is-large .tools-card.is-selected {
+        border-width: 4px;
+      }
+
       body[data-theme="dark"] .tools-selection-count {
         color: #bfdbfe;
         background: linear-gradient(
@@ -6709,6 +6717,14 @@
         box-shadow: 0 16px 30px rgba(47, 158, 103, 0.24);
       }
 
+      .tools-list.is-large .tools-card.tools-item--broken,
+      .tools-list.is-large .tools-card.tools-item--repair,
+      .tools-list.is-large .tools-card.tools-item--writeoff,
+      .tools-list.is-large .tools-card.tools-item--pending-response,
+      .tools-list.is-large .tools-card.is-selected {
+        border-width: 4px;
+      }
+
       .tools-card.tools-item--broken,
       .tools-row.tools-item--broken,
       .tools-table__row.tools-item--broken {
@@ -8795,6 +8811,12 @@
       .tools-card.tools-card--no-photo .tools-card__overlay .tools-card__responsible-status {
         color: #ffffff;
         text-shadow: 0 3px 12px rgba(15, 23, 42, 0.6);
+      }
+
+      .tools-list.is-large .tools-card.tools-card--my-tools-large-no-photo .tools-card__overlay .tools-card__meta,
+      .tools-list.is-large .tools-card.tools-card--my-tools-large-no-photo .tools-card__overlay .tools-card__meta--my-tools {
+        color: rgba(226, 232, 240, 0.9);
+        font-size: 10px;
       }
 
       .tools-list.is-large .tools-card.tools-card--my-tools-large-no-photo .tools-card__body .tools-card__title,

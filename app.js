@@ -12772,9 +12772,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   };
 
   const setPendingMovesSubtitle = (text) => {
-    if (pendingMovesSubtitleEl) {
-      pendingMovesSubtitleEl.textContent = text;
-    }
+    if (!pendingMovesSubtitleEl) return;
+    const subtitle = String(text ?? "").trim();
+    pendingMovesSubtitleEl.textContent = subtitle;
+    pendingMovesSubtitleEl.classList.toggle("is-hidden", !subtitle);
+    pendingMovesSubtitleEl.setAttribute("aria-hidden", String(!subtitle));
   };
 
   const setPendingMovesBulkActionsVisible = (isVisible) => {
@@ -13577,10 +13579,14 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       });
 
     pendingMovesState.pendingItems = pendingItems;
-    const subtitlePrefix = targetFullName
-      ? `Ожидают ответа за ${formatFullName(targetFullName)}`
-      : "Ожидают ответа";
-    setPendingMovesSubtitle(`${subtitlePrefix}: ${pendingItems.length}`);
+    if (!pendingItems.length) {
+      setPendingMovesSubtitle("");
+    } else {
+      const subtitlePrefix = targetFullName
+        ? `Ожидают ответа за ${formatFullName(targetFullName)}`
+        : "Ожидают ответа";
+      setPendingMovesSubtitle(`${subtitlePrefix}: ${pendingItems.length}`);
+    }
     renderPendingMovesList();
   };
 

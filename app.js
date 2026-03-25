@@ -5774,6 +5774,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const pendingMovesLoadingEl = contentEl.querySelector(
     "[data-pending-moves-loading]"
   );
+  const pendingMovesActionsEl = contentEl.querySelector(
+    "[data-pending-moves-actions]"
+  );
   const pendingMovesAcceptAllButton = contentEl.querySelector(
     "[data-pending-moves-accept-all]"
   );
@@ -12774,6 +12777,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
   };
 
+  const setPendingMovesBulkActionsVisible = (isVisible) => {
+    if (!pendingMovesActionsEl) return;
+    const visible = Boolean(isVisible);
+    pendingMovesActionsEl.classList.toggle("is-hidden", !visible);
+    pendingMovesActionsEl.setAttribute("aria-hidden", String(!visible));
+  };
+
   const setPendingMovesMessage = (text, type = "info") => {
     if (!pendingMovesMessageEl) return;
     pendingMovesMessageEl.textContent = text;
@@ -13370,9 +13380,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const items = pendingMovesState.pendingItems;
     if (!items.length) {
       pendingMovesEmptyEl?.classList.remove("is-hidden");
+      setPendingMovesBulkActionsVisible(false);
       return;
     }
     pendingMovesEmptyEl?.classList.add("is-hidden");
+    setPendingMovesBulkActionsVisible(true);
     const table = document.createElement("div");
     table.className = "tools-table pending-moves-tools-table";
 

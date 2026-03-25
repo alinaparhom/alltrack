@@ -9892,6 +9892,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       toolsState.mode === "search" ||
       toolsState.mode === "move-other";
     const shouldShowResponsibleAndToolStatus = toolsState.mode !== "user";
+    const isLargeMyToolsCard = viewMode === "large" && toolsState.mode === "user";
     const kitItems = getToolKitItems(tool);
     const hasKit = kitItems.length > 0;
     const normalizeToolStatusLabel = (rawStatus, movingNow = false) => {
@@ -9906,6 +9907,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const responsible = String(tool?.["Ответственный"] ?? "").trim() || "не указан";
     const getStatusAccentColor = (rawStatus) => {
       const normalized = String(rawStatus ?? "").trim().toLocaleLowerCase("ru");
+      if (isLargeMyToolsCard && (normalized === "рабочий" || normalized === "исправный")) {
+        return "";
+      }
       if (normalized === "рабочий" || normalized === "исправный") return "#16a34a";
       if (normalized === "в ремонте") return "#ea580c";
       if (normalized === "сломан") return "#eab308";
@@ -9970,7 +9974,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       }
       container.append(value);
     };
-    const isLargeMyToolsCard = viewMode === "large" && toolsState.mode === "user";
     const myToolsPrimaryLine = fullLine || numberLine || fallbackTitle;
     const myToolsSecondaryLine = `${accountingNumber || "—"} / ${objectName || "—"}`;
 

@@ -9845,7 +9845,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     });
   };
 
-  const renderToolCard = (tool, viewMode, orgFolder) => {
+  const renderToolCard = (tool, viewMode, orgFolder, toolIndex) => {
     const number = resolveToolNumberValue(tool);
     const photoNumber = resolveToolPhotoNumber(tool);
     const name = String(tool?.["Наименование"] ?? "").trim();
@@ -10094,6 +10094,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (!hasPhoto) {
       const badge = document.createElement("div");
       badge.className = "tools-card__badge";
+      if (hasKit) {
+        badge.classList.add("tools-card__badge--with-kit");
+      }
       badge.textContent = "Нет фото";
       media.appendChild(badge);
     }
@@ -10108,35 +10111,49 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
 
     if (viewMode === "large" || isCompactMobile) {
-      const overlay = document.createElement("div");
-      overlay.className = isCompactMobile
-        ? "tools-card__overlay tools-card__overlay--compact"
-        : "tools-card__overlay";
-      const title = document.createElement("div");
-      title.className = "tools-card__title";
-      title.textContent = safeInfoLine;
-      overlay.appendChild(title);
-      const metaLine = document.createElement("div");
-      metaLine.className = "tools-card__meta";
-      const objectName = String(tool?.["Объект"] ?? "").trim();
-      metaLine.textContent = secondaryLine || objectName || fallbackSecondaryLine;
-      overlay.appendChild(metaLine);
-      if (!hasPrimaryInfo && !secondaryLine && !objectName) {
-        overlay.classList.add("tools-card__overlay--empty");
-        title.textContent = fallbackTitle;
-        metaLine.textContent = fallbackSecondaryLine;
-      }
-      if (shouldShowResponsibleAndToolStatus) {
-        const responsibleStatusLine = createResponsibleStatusLine();
-        overlay.appendChild(responsibleStatusLine);
-        if (isCompactMobile) {
-          const statusMeta = document.createElement("div");
-          statusMeta.className = "tools-card__status";
-          fillToolStatusMeta(statusMeta);
-          overlay.appendChild(statusMeta);
+      const shouldRenderOverlay = hasPhoto || isCompactMobile;
+      if (shouldRenderOverlay) {
+        const overlay = document.createElement("div");
+        overlay.className = isCompactMobile
+          ? "tools-card__overlay tools-card__overlay--compact"
+          : "tools-card__overlay";
+        const title = document.createElement("div");
+        title.className = "tools-card__title";
+        title.textContent = safeInfoLine;
+        overlay.appendChild(title);
+        const metaLine = document.createElement("div");
+        metaLine.className = "tools-card__meta";
+        const objectName = String(tool?.["Объект"] ?? "").trim();
+        metaLine.textContent = secondaryLine || objectName || fallbackSecondaryLine;
+        overlay.appendChild(metaLine);
+        if (!hasPrimaryInfo && !secondaryLine && !objectName) {
+          overlay.classList.add("tools-card__overlay--empty");
+          title.textContent = fallbackTitle;
+          metaLine.textContent = fallbackSecondaryLine;
         }
+        if (shouldShowResponsibleAndToolStatus) {
+          const responsibleStatusLine = createResponsibleStatusLine();
+          overlay.appendChild(responsibleStatusLine);
+          if (isCompactMobile) {
+            const statusMeta = document.createElement("div");
+            statusMeta.className = "tools-card__status";
+            fillToolStatusMeta(statusMeta);
+            overlay.appendChild(statusMeta);
+          }
+        }
+        media.appendChild(overlay);
       }
-      media.appendChild(overlay);
+      const photoButton = document.createElement("button");
+      photoButton.type = "button";
+      photoButton.className = "tools-card__photo-trigger";
+      photoButton.dataset.pendingPhotoOpen = "true";
+      photoButton.dataset.pendingPhotoMoveIndex = String(toolIndex);
+      photoButton.setAttribute(
+        "aria-label",
+        hasPhoto ? "Открыть фото инструмента" : "Открыть окно с фото инструмента"
+      );
+      photoButton.textContent = "🖼️";
+      media.appendChild(photoButton);
       if (isCompactMobile) {
         card.appendChild(media);
         return card;
@@ -10419,9 +10436,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     } else if (viewMode === "table") {
       toolsListEl.appendChild(renderToolsTable(items));
     } else {
-      items.forEach((tool) => {
+      items.forEach((tool, toolIndex) => {
         toolsListEl.appendChild(
-          renderToolCard(tool, viewMode, toolsState.orgFolder)
+          renderToolCard(tool, viewMode, toolsState.orgFolder, toolIndex)
         );
       });
     }

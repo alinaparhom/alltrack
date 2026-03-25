@@ -9155,18 +9155,30 @@
         padding-top: calc(12px + env(safe-area-inset-top));
       }
 
-      .tools-modal.pending-moves-modal--empty .pending-moves-modal__panel .tools-modal__header {
+      .pending-moves-modal__panel .tools-modal__header {
         display: flex;
-        align-items: center;
+        align-items: flex-start;
         justify-content: space-between;
+        flex-wrap: nowrap;
         gap: 12px;
+        position: sticky;
+        top: 0;
+        z-index: 6;
+        background: linear-gradient(
+          180deg,
+          rgba(255, 255, 255, 0.96) 0%,
+          rgba(255, 255, 255, 0.9) 100%
+        );
+        backdrop-filter: blur(10px) saturate(1.05);
+        -webkit-backdrop-filter: blur(10px) saturate(1.05);
       }
 
-      .tools-modal.pending-moves-modal--empty .pending-moves-modal__panel .settings-modal__title {
+      .pending-moves-modal__panel .settings-modal__title {
         min-width: 0;
+        flex: 1 1 auto;
       }
 
-      .tools-modal.pending-moves-modal--empty .pending-moves-modal__panel .settings-modal__title h2 {
+      .pending-moves-modal__panel .settings-modal__title h2 {
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;

@@ -6629,7 +6629,14 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           <h2>Фото инструмента</h2>
           <p data-pending-photo-viewer-counter>1 / 1</p>
         </div>
-        <button type="button" class="icon-button" data-pending-photo-viewer-close aria-label="Закрыть">✕</button>
+        <button
+          type="button"
+          class="button-icon tools-modal__close pending-photo-viewer__close"
+          data-pending-photo-viewer-close
+          aria-label="Закрыть фото инструмента"
+        >
+          <span class="button-icon-emoji" aria-hidden="true">✕</span>
+        </button>
       </header>
       <div class="settings-modal__body pending-photo-viewer__body">
         <div class="pending-photo-viewer__image-wrap" data-pending-photo-viewer-image-wrap>

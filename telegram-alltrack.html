@@ -9155,6 +9155,29 @@
         padding-top: calc(12px + env(safe-area-inset-top));
       }
 
+      .tools-modal.pending-moves-modal--empty .pending-moves-modal__panel .tools-modal__header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .tools-modal.pending-moves-modal--empty .pending-moves-modal__panel .settings-modal__title {
+        min-width: 0;
+      }
+
+      .tools-modal.pending-moves-modal--empty .pending-moves-modal__panel .settings-modal__title h2 {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .tools-modal.pending-moves-modal--empty
+        .pending-moves-modal__panel
+        [data-pending-moves-subtitle] {
+        display: none;
+      }
+
       .pending-moves-modal__panel .tools-modal__header {
         padding-left: calc(var(--tools-horizontal-gutter) + max(0px, env(safe-area-inset-left)));
         padding-right: calc(var(--tools-horizontal-gutter) + max(0px, env(safe-area-inset-right)));

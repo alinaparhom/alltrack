@@ -10075,6 +10075,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const card = document.createElement("div");
     card.className = "tools-card";
     card.classList.toggle("tools-card--no-photo", !hasPhoto);
+    card.classList.toggle(
+      "tools-card--my-tools-large-no-photo",
+      isLargeMyToolsCard && !hasPhoto
+    );
     card.classList.toggle("is-selected", toolsState.selectedIds.has(tool.__selectionId));
     card.classList.toggle("tools-item--pending-response", tool.__pendingMove);
     applyToolStatusClasses(card, tool);

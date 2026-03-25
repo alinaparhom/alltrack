@@ -757,7 +757,6 @@ const toolPhotoPlaceholder = `data:image/svg+xml;utf8,${encodeURIComponent(
     <path d="M106 138h108v24H106z" fill="#cbd5f5"/>
     <circle cx="120" cy="110" r="18" fill="#cbd5f5"/>
     <path d="M150 170l28-36 22 28 18-22 36 30H150z" fill="#dbeafe"/>
-    <text x="160" y="206" text-anchor="middle" font-size="14" fill="#94a3b8" font-family="Inter, sans-serif">Нет фото</text>
   </svg>`
 )}`;
 
@@ -10173,6 +10172,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     metaLine.className = "tools-card__meta";
     metaLine.textContent = secondaryLine || fallbackSecondaryLine;
     body.appendChild(metaLine);
+    if (viewMode === "large" && !hasPhoto) {
+      const noPhotoLabel = document.createElement("div");
+      noPhotoLabel.className = "tools-card__meta tools-card__meta--no-photo";
+      noPhotoLabel.textContent = "Нет фото";
+      body.appendChild(noPhotoLabel);
+    }
     if (shouldShowResponsibleAndToolStatus) {
       const statusMeta = document.createElement("div");
       statusMeta.className = "tools-card__status";

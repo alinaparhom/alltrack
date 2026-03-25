@@ -751,6 +751,12 @@
         color: #ffffff;
       }
 
+      body[data-theme="dark"] .tools-card__body .tools-card__meta--no-photo {
+        color: #e2e8f0;
+        background: rgba(51, 65, 85, 0.74);
+        border-color: rgba(148, 163, 184, 0.72);
+      }
+
       body[data-theme="dark"] .tools-card.tools-item--broken,
       body[data-theme="dark"] .tools-row.tools-item--broken,
       body[data-theme="dark"] .tools-table__row.tools-item--broken {
@@ -8458,6 +8464,18 @@
 
       .tools-card__body .tools-card__meta {
         color: var(--muted);
+      }
+
+      .tools-card__body .tools-card__meta--no-photo {
+        width: fit-content;
+        margin-top: 2px;
+        padding: 2px 8px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 600;
+        color: #475569;
+        background: rgba(241, 245, 249, 0.92);
+        border: 1px solid rgba(203, 213, 225, 0.95);
       }
 
       .tools-card__badge {

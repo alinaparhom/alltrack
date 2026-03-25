@@ -10091,7 +10091,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
     media.appendChild(img);
 
-    if (!hasPhoto) {
+    if (!hasPhoto && viewMode !== "large") {
       const badge = document.createElement("div");
       badge.className = "tools-card__badge";
       if (hasKit) {
@@ -10143,18 +10143,21 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         }
         media.appendChild(overlay);
       }
-      const photoButton = document.createElement("button");
-      photoButton.type = "button";
-      photoButton.className = "tools-card__photo-trigger";
-      photoButton.dataset.pendingPhotoOpen = "true";
-      photoButton.dataset.pendingPhotoMoveIndex = String(toolIndex);
-      photoButton.setAttribute(
-        "aria-label",
-        hasPhoto ? "Открыть фото инструмента" : "Открыть окно с фото инструмента"
-      );
-      photoButton.textContent = "🖼️";
-      media.appendChild(photoButton);
+      if (hasPhoto) {
+        const photoButton = document.createElement("button");
+        photoButton.type = "button";
+        photoButton.className = "tools-card__photo-trigger";
+        photoButton.dataset.pendingPhotoOpen = "true";
+        photoButton.dataset.pendingPhotoMoveIndex = String(toolIndex);
+        photoButton.setAttribute("aria-label", "Открыть фото инструмента");
+        photoButton.textContent = "🖼️";
+        media.appendChild(photoButton);
+      }
       if (isCompactMobile) {
+        card.appendChild(media);
+        return card;
+      }
+      if (viewMode === "large" && hasPhoto) {
         card.appendChild(media);
         return card;
       }

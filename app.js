@@ -13378,6 +13378,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (!pendingMovesListEl) return;
     pendingMovesListEl.innerHTML = "";
     const items = pendingMovesState.pendingItems;
+    pendingMovesModalEl?.classList.toggle(
+      "pending-moves-modal--empty",
+      !items.length
+    );
     if (!items.length) {
       pendingMovesEmptyEl?.classList.remove("is-hidden");
       setPendingMovesBulkActionsVisible(false);

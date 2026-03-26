@@ -13430,7 +13430,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         ? String(move?.["Ответственный до перемещения"] ?? "").trim()
         : "";
       const movedByEnergy = String(move?.["Переместил энергетик"] ?? "").trim();
-      const senderLabel = movedByEnergy ? "Переместил энергетик" : "Отправил";
       const senderValue = movedByEnergy || sender;
       const previousResponsibleLabel = movedByEnergy
         ? "Ответственный"
@@ -13440,7 +13439,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const targetObject = String(move?.["Новый объект"] ?? "").trim();
       const moveRoute =
         sourceObject || targetObject
-          ? `Объект: ${sourceObject || "—"} → ${targetObject || "—"}`
+          ? `${sourceObject || "—"} → ${targetObject || "—"}`
           : "";
       const metaLines = [
         {
@@ -13452,7 +13451,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           className: "pending-move-meta",
         },
         {
-          text: senderValue ? `${senderLabel}: ${senderValue}` : "",
+          text: senderValue ? senderValue : "",
           className: "pending-move-responsible",
         },
         {
@@ -13460,7 +13459,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           className: "pending-move-meta",
         },
         {
-          text: moveDate ? `Дата перемещения: ${moveDate}` : "",
+          text: moveDate,
           className: "pending-move-meta",
         },
         {
@@ -13998,11 +13997,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const targetObject = String(move?.["Новый объект"] ?? "").trim();
       const moveRoute =
         sourceObject && targetObject
-          ? `Перемещение: ${sourceObject} → ${targetObject}`
+          ? `${sourceObject} → ${targetObject}`
           : sourceObject
-            ? `Перемещение: ${sourceObject} → —`
+            ? `${sourceObject} → —`
             : targetObject
-              ? `Перемещение: — → ${targetObject}`
+              ? `— → ${targetObject}`
               : "";
       const appendMetaLine = (text, className = "pending-move-meta") => {
         if (!text) return;
@@ -14016,7 +14015,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         const value = String(fullName ?? "").trim();
         if (!normalizedLabel || !value) return;
         if (!normalizedLabel.startsWith("ответственный")) {
-          appendMetaLine(`${label}: ${value}`);
+          appendMetaLine(value);
           return;
         }
         const lineEl = document.createElement("div");
@@ -14044,10 +14043,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         const routeEl = document.createElement("div");
         routeEl.className = "pending-move-meta pending-move-route";
 
-        const routeLabelEl = document.createElement("span");
-        routeLabelEl.className = "pending-move-route__label";
-        routeLabelEl.textContent = "Перемещение:";
-
         const routeFromEl = document.createElement("span");
         routeFromEl.className = "pending-move-route__point";
         routeFromEl.textContent = sourceObject || "—";
@@ -14061,10 +14056,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         routeToEl.className = "pending-move-route__point";
         routeToEl.textContent = targetObject || "—";
 
-        routeEl.append(routeLabelEl, routeFromEl, routeArrowEl, routeToEl);
+        routeEl.append(routeFromEl, routeArrowEl, routeToEl);
         meta.appendChild(routeEl);
       }
-      appendMetaLine(moveDate ? `Дата перемещения: ${moveDate}` : "");
+      appendMetaLine(moveDate);
       appendMetaLine(moveComment ? `Комментарий: ${moveComment}` : "", "pending-move-comment");
       appendMetaLine(formatToolCostLabel(tool));
       infoCell.append(title, meta);

@@ -13416,6 +13416,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       meta.className = "tools-table__meta tools-table__meta--stack";
       const manufacturer = String(tool?.["Производитель"] ?? "").trim();
       const model = String(tool?.["Модель"] ?? "").trim();
+      const accountingNumber =
+        String(tool?.["Бух.номер"] ?? "").trim() ||
+        String(move?.["Бух.номер"] ?? "").trim() ||
+        "—";
       const sender = String(move?.["Переместил"] ?? "").trim();
       const moveDate = String(move?.["Дата перемещения"] ?? "").trim();
       const hasPreviousResponsible = Object.prototype.hasOwnProperty.call(
@@ -13433,23 +13437,60 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         : "Ответственный до перемещения";
       const moveComment = String(move?.["Причина перемещения"] ?? "").trim();
       const metaLines = [
-        [manufacturer, model].filter(Boolean).join(" · "),
-        senderValue ? `${senderLabel}: ${senderValue}` : "",
-        moveDate ? `Дата перемещения: ${moveDate}` : "",
-        previousResponsible
-          ? `${previousResponsibleLabel}: ${previousResponsible}`
-          : "",
-        moveComment ? `Комментарий: ${moveComment}` : "",
-      ].filter(Boolean);
+        {
+          text: [manufacturer, model].filter(Boolean).join(" · "),
+          className: "pending-move-meta",
+        },
+        {
+          text: `Бухгалтерский номер: ${accountingNumber}`,
+          className: "pending-move-meta",
+        },
+        {
+          text: senderValue ? `${senderLabel}: ${senderValue}` : "",
+          className: "pending-move-responsible",
+        },
+        {
+          text: moveDate ? `Дата перемещения: ${moveDate}` : "",
+          className: "pending-move-meta",
+        },
+        {
+          text: previousResponsible
+            ? `${previousResponsibleLabel}: ${previousResponsible}`
+            : "",
+          className: "pending-move-responsible",
+          label: previousResponsibleLabel,
+          value: previousResponsible,
+        },
+        {
+          text: moveComment ? `Комментарий: ${moveComment}` : "",
+          className: "pending-move-comment",
+        },
+      ].filter((item) => item.text);
       metaLines.forEach((line) => {
         const lineEl = document.createElement("div");
-        lineEl.className =
-          line.startsWith("Отправил:") || line.startsWith("Переместил энергетик:")
-            ? "pending-move-responsible"
-            : line.startsWith("Комментарий:")
-              ? "pending-move-comment"
-              : "pending-move-meta";
-        lineEl.textContent = line;
+        lineEl.className = line.className;
+        if (
+          line.label &&
+          line.value &&
+          normalizePersonName(line.label).startsWith("ответственный")
+        ) {
+          const [surname, ...rest] = String(line.value).trim().split(/\s+/);
+          lineEl.textContent = `${line.label}: `;
+          if (surname) {
+            const surnameEl = document.createElement("strong");
+            surnameEl.textContent = surname;
+            lineEl.appendChild(surnameEl);
+            if (rest.length) {
+              lineEl.appendChild(
+                document.createTextNode(` ${rest.join(" ")}`)
+              );
+            }
+          } else {
+            lineEl.append(line.value);
+          }
+        } else {
+          lineEl.textContent = line.text;
+        }
         meta.appendChild(lineEl);
       });
       infoCell.append(title, meta);

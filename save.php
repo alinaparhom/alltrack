@@ -2051,7 +2051,7 @@ function runMoveRepliesMailing(array $options = []): array {
     }
 
     $settingsPath = $orgPath . DIRECTORY_SEPARATOR . "Настройки.json";
-    $movesPath = $orgPath . DIRECTORY_SEPARATOR . "Перемещения открытые.json";
+    $movesPath = $orgPath . DIRECTORY_SEPARATOR . "Перемещения.json";
     if (!file_exists($settingsPath) || !file_exists($movesPath)) {
       continue;
     }
@@ -2218,7 +2218,7 @@ function runPendingAcceptanceMailing(array $options = []): array {
     }
 
     $settingsPath = $orgPath . DIRECTORY_SEPARATOR . "Настройки.json";
-    $movesPath = $orgPath . DIRECTORY_SEPARATOR . "Перемещения открытые.json";
+    $movesPath = $orgPath . DIRECTORY_SEPARATOR . "Перемещения.json";
     if (!file_exists($settingsPath) || !file_exists($movesPath)) {
       continue;
     }
@@ -2524,7 +2524,6 @@ function getNewOrganizations(string $targetPath, $data): array {
 function createOrganizationFolders(array $newOrganizations): void {
   $jsonFiles = [
     "База с инструментами.json" => [],
-    "Перемещения открытые.json" => [],
     "Перемещения.json" => [],
     "Перемещения история.json" => [],
     "Объекты.json" => [],
@@ -2588,7 +2587,6 @@ function resolveTargetPath(array $entry, array $allowedFiles): string {
     "Настройки.json",
     "Объекты.json",
     "База с инструментами.json",
-    "Перемещения открытые.json",
     "Перемещения.json",
     "Перемещения история.json",
     "Заявки.json",

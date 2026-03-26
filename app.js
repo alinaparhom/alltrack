@@ -14050,7 +14050,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         const routeArrowEl = document.createElement("span");
         routeArrowEl.className = "pending-move-route__arrow";
         routeArrowEl.setAttribute("aria-hidden", "true");
-        routeArrowEl.textContent = "➜";
+        routeArrowEl.textContent = "➤";
 
         const routeToEl = document.createElement("span");
         routeToEl.className = "pending-move-route__point";

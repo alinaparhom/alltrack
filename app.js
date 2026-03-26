@@ -319,18 +319,49 @@ function normalizePersonName(value) {
     .replace(/\s+/g, " ");
 }
 
+const OPEN_MOVES_FILE_NAME = "Перемещения открытые.json";
+const CLOSED_MOVES_FILE_NAME = "Перемещения.json";
+
+function extractMovesArray(rawMoves) {
+  if (Array.isArray(rawMoves)) return rawMoves;
+  if (Array.isArray(rawMoves?.moves)) return rawMoves.moves;
+  return [];
+}
+
+async function loadOpenMoves(orgFolderName) {
+  if (!orgFolderName) return [];
+  const movesPath = `./${orgFolderName}/${OPEN_MOVES_FILE_NAME}`;
+  try {
+    return extractMovesArray(await loadJson(movesPath));
+  } catch (error) {
+    return [];
+  }
+}
+
+async function loadClosedMoves(orgFolderName) {
+  if (!orgFolderName) return [];
+  const movesPath = `./${orgFolderName}/${CLOSED_MOVES_FILE_NAME}`;
+  try {
+    return extractMovesArray(await loadJson(movesPath));
+  } catch (error) {
+    return [];
+  }
+}
+
+async function loadAllMoves(orgFolderName) {
+  const [openMoves, closedMoves] = await Promise.all([
+    loadOpenMoves(orgFolderName),
+    loadClosedMoves(orgFolderName),
+  ]);
+  return [...openMoves, ...closedMoves];
+}
+
 async function loadUserPendingMoves(orgFolderName, user) {
   if (!orgFolderName || !user) return [];
   const userName = normalizePersonName(user.full_name ?? user.fullName ?? "");
   if (!userName) return [];
-  const movesPath = `./${orgFolderName}/Перемещения.json`;
   try {
-    const rawMoves = await loadJson(movesPath);
-    const moves = Array.isArray(rawMoves)
-      ? rawMoves
-      : Array.isArray(rawMoves?.moves)
-        ? rawMoves.moves
-        : [];
+    const moves = await loadOpenMoves(orgFolderName);
     return moves.filter((move) => {
       const responseDate = String(move?.["Дата ответа"] ?? "").trim();
       if (responseDate) return false;
@@ -9341,14 +9372,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (!orgFolder) {
       return { pendingNumbers, pendingAccountingNumbers };
     }
-    const movesPath = `./${orgFolder}/Перемещения.json`;
     try {
-      const rawMoves = await loadJson(movesPath);
-      const moves = Array.isArray(rawMoves)
-        ? rawMoves
-        : Array.isArray(rawMoves?.moves)
-          ? rawMoves.moves
-          : [];
+      const moves = await loadOpenMoves(orgFolder);
       moves.forEach((move) => {
         const responseDate = String(move?.["Дата ответа"] ?? "").trim();
         if (responseDate) return;
@@ -11615,19 +11640,14 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       return;
     }
     const matcher = buildToolsInfoMatcher(tool);
-    const movesPath = `./${orgFolder}/Перемещения.json`;
     const breakdownsPath = `./${orgFolder}/Поломки.json`;
     const repairsPath = `./${orgFolder}/Ремонты.json`;
     const [rawMoves, rawBreakdowns, rawRepairs] = await Promise.all([
-      loadJson(movesPath).catch(() => []),
+      loadAllMoves(orgFolder).catch(() => []),
       loadJson(breakdownsPath).catch(() => []),
       loadJson(repairsPath).catch(() => []),
     ]);
-    const moves = Array.isArray(rawMoves)
-      ? rawMoves
-      : Array.isArray(rawMoves?.moves)
-        ? rawMoves.moves
-        : [];
+    const moves = Array.isArray(rawMoves) ? rawMoves : [];
     const breakdowns = Array.isArray(rawBreakdowns)
       ? rawBreakdowns
       : Array.isArray(rawBreakdowns?.breakdowns)
@@ -12546,7 +12566,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const orgFolder = context.orgFolderName;
     const toolsPath = `./${orgFolder}/База с инструментами.json`;
     const writeOffPath = `./${orgFolder}/Списания.json`;
-    const movesPath = `./${orgFolder}/Перемещения.json`;
+    const movesPath = `./${orgFolder}/${OPEN_MOVES_FILE_NAME}`;
     const movesHistoryPath = `./${orgFolder}/Перемещения история.json`;
     const writeOffDate = formatDateValue(new Date());
     const writeOffUser = String(user?.full_name ?? "").trim();
@@ -12895,7 +12915,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const orgFolder = context.orgFolderName ?? "";
     if (!orgFolder) return;
     try {
-      const rawMoves = await loadJson(`./${orgFolder}/Перемещения.json`);
+      const rawMoves = await loadJson(`./${orgFolder}/${OPEN_MOVES_FILE_NAME}`);
       const normalizedMoves = normalizeCollectionPayload(rawMoves, "moves");
       const pendingEntry = findPendingMoveForTool(normalizedMoves.items, tool);
       if (!pendingEntry) return;
@@ -12990,7 +13010,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       setToolsCancelMoveMessage("Не удалось определить организацию.", "error");
       return;
     }
-    const movesPath = `./${orgFolder}/Перемещения.json`;
+    const movesPath = `./${orgFolder}/${OPEN_MOVES_FILE_NAME}`;
     try {
       const rawMoves = await loadJson(movesPath);
       const normalizedMoves = normalizeCollectionPayload(rawMoves, "moves");
@@ -13071,18 +13091,25 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           }
         : {}),
     };
-    const movesPath = `./${context.orgFolderName}/Перемещения.json`;
+    const openMovesPath = `./${context.orgFolderName}/${OPEN_MOVES_FILE_NAME}`;
+    const closedMovesPath = `./${context.orgFolderName}/${CLOSED_MOVES_FILE_NAME}`;
+    const canceledMove = updatedMoves[moveIndex];
+    const remainingOpenMoves = updatedMoves.filter((_, index) => index !== moveIndex);
     const movesPayloadOut = movesPayload.wrapper
-      ? { ...movesPayload.wrapper, [movesPayload.key]: updatedMoves }
-      : updatedMoves;
+      ? { ...movesPayload.wrapper, [movesPayload.key]: remainingOpenMoves }
+      : remainingOpenMoves;
     try {
-      await saveJson(movesPath, movesPayloadOut, { user });
-      await registerMoveCancelFine(updatedMoves[moveIndex]);
+      const closedMoves = await loadClosedMoves(context.orgFolderName);
+      await saveEntries([
+        { path: openMovesPath, data: movesPayloadOut, user },
+        { path: closedMovesPath, data: [...closedMoves, canceledMove], user },
+      ]);
+      await registerMoveCancelFine(canceledMove);
       const usersData = await loadJson(usersFilePath).catch(() => ({ users: [] }));
       const organizationName = findUserOrganizationName(user, usersData);
       await notifyMoveCancel({
         tool,
-        move: updatedMoves[moveIndex],
+        move: canceledMove,
         orgFolder: context.orgFolderName,
         organizationName,
         canceledBy: String(user?.full_name ?? "").trim(),
@@ -13516,7 +13543,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
     toolsState.orgFolder = orgFolder;
     setPendingMovesSubtitle("Загружаем список...");
-    const movesPath = `./${orgFolder}/Перемещения.json`;
+    const movesPath = `./${orgFolder}/${OPEN_MOVES_FILE_NAME}`;
     let moves = [];
     try {
       const rawMoves = await loadJson(movesPath);
@@ -14024,7 +14051,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     toolsState.orgFolder = orgFolder;
     if (infoPendingSubtitleEl) infoPendingSubtitleEl.textContent = "Загружаем список...";
 
-    const movesPath = `./${orgFolder}/Перемещения.json`;
+    const movesPath = `./${orgFolder}/${OPEN_MOVES_FILE_NAME}`;
     let moves = [];
     try {
       const rawMoves = await loadJson(movesPath);
@@ -14605,15 +14632,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       return;
     }
 
-    const movesPath = `./${context.orgFolderName}/Перемещения.json`;
     let moves = [];
     try {
-      const rawMoves = await loadJson(movesPath);
-      moves = Array.isArray(rawMoves)
-        ? rawMoves
-        : Array.isArray(rawMoves?.moves)
-          ? rawMoves.moves
-          : [];
+      moves = await loadClosedMoves(context.orgFolderName);
     } catch (error) {
       console.warn("Не удалось загрузить историю перемещений.", error);
     }
@@ -14867,7 +14888,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
     const orgFolder = context.orgFolderName;
     const toolsPath = `./${orgFolder}/База с инструментами.json`;
-    const movesPath = `./${orgFolder}/Перемещения.json`;
     const writeoffPath = `./${orgFolder}/Списания.json`;
 
     let toolsRaw = [];
@@ -14879,7 +14899,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       console.warn("Не удалось загрузить регистрации по датам.", error);
     }
     try {
-      movesRaw = await loadJson(movesPath);
+      movesRaw = await loadAllMoves(orgFolder);
     } catch (error) {
       console.warn("Не удалось загрузить перемещения по датам.", error);
     }
@@ -15269,7 +15289,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         }
       }
     });
-    const movesPath = `./${context.orgFolderName}/Перемещения.json`;
+    const openMovesPath = `./${context.orgFolderName}/${OPEN_MOVES_FILE_NAME}`;
+    const closedMovesPath = `./${context.orgFolderName}/${CLOSED_MOVES_FILE_NAME}`;
     if (toolsNormalized) {
       toolsPayload = toolsNormalized.wrapper
         ? { ...toolsNormalized.wrapper, [toolsNormalized.key]: toolsNormalized.items }
@@ -15289,7 +15310,18 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       if (declinePhotoEntries.length) {
         await uploadPhotoEntriesInBatches(declinePhotoEntries);
       }
-      const entries = [{ path: movesPath, data: updatedMoves, user }];
+      const decidedIndexes = new Set(moveIndexes);
+      const decidedMoves = [];
+      const remainingOpenMoves = updatedMoves.filter((move, index) => {
+        if (!decidedIndexes.has(index)) return true;
+        decidedMoves.push(move);
+        return false;
+      });
+      const closedMoves = await loadClosedMoves(context.orgFolderName);
+      const entries = [
+        { path: openMovesPath, data: remainingOpenMoves, user },
+        { path: closedMovesPath, data: [...closedMoves, ...decidedMoves], user },
+      ];
       if (toolsPayload) {
         entries.push({
           path: `./${context.orgFolderName}/База с инструментами.json`,
@@ -15305,7 +15337,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         });
       }
       await saveEntries(entries);
-      pendingMovesState.allMoves = updatedMoves;
+      pendingMovesState.allMoves = remainingOpenMoves;
       setPendingMovesMessage("Ответы сохранены.", "success");
       const usersData = await loadJson(usersFilePath).catch(() => ({ users: [] }));
       const organizationName = findUserOrganizationName(user, usersData);
@@ -16637,7 +16669,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         return;
       }
 
-      const movesPath = `./${context.orgFolderName}/Перемещения.json`;
+      const movesPath = `./${context.orgFolderName}/${OPEN_MOVES_FILE_NAME}`;
       let movesData = [];
       try {
         const rawMoves = await loadJson(movesPath);
@@ -20457,11 +20489,17 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         entries.push({ path: objectsPath, data: objectsState.items, ...meta });
         if (nameChanged) {
           const orgFolder = context.orgFolderName ?? "";
-          const movesPath = orgFolder ? `./${orgFolder}/Перемещения.json` : "";
+          const openMovesPath = orgFolder ? `./${orgFolder}/${OPEN_MOVES_FILE_NAME}` : "";
+          const closedMovesPath = orgFolder ? `./${orgFolder}/${CLOSED_MOVES_FILE_NAME}` : "";
           const updateTargets = [
             { key: "tools", path: toolsDatabasePath },
             { key: "demand", path: demandPath },
-            ...(movesPath ? [{ key: "moves", path: movesPath }] : []),
+            ...(openMovesPath
+              ? [
+                  { key: "moves-open", path: openMovesPath },
+                  { key: "moves-closed", path: closedMovesPath },
+                ]
+              : []),
           ];
           const results = await Promise.allSettled(
             updateTargets.map((target) => loadJson(target.path))

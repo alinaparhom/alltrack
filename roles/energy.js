@@ -1776,6 +1776,8 @@ export function renderRole(user) {
                 Нет инструментов, которые ждут ответа.
               </div>
               <div class="form-message" data-pending-moves-message></div>
+            </div>
+            <div class="settings-modal__footer pending-moves-modal__footer">
               <div class="pending-moves-actions" data-pending-moves-actions>
                 <button
                   class="action-secondary pending-moves-action-button pending-moves-action-button--decline"

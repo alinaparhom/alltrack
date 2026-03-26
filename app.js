@@ -14004,23 +14004,43 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
             : targetObject
               ? `Перемещение: — → ${targetObject}`
               : "";
-      [
-        receiver ? `Принял: ${receiver}` : "",
-        sender ? `${senderLabel}: ${sender}` : "",
-        moveRoute,
-        moveDate ? `Дата перемещения: ${moveDate}` : "",
-        moveComment ? `Комментарий: ${moveComment}` : "",
-        formatToolCostLabel(tool),
-      ]
-        .filter(Boolean)
-        .forEach((line) => {
-          const lineEl = document.createElement("div");
-          lineEl.className = line.startsWith("Комментарий:")
-            ? "pending-move-comment"
-            : "pending-move-meta";
-          lineEl.textContent = line;
-          meta.appendChild(lineEl);
-        });
+      const appendMetaLine = (text, className = "pending-move-meta") => {
+        if (!text) return;
+        const lineEl = document.createElement("div");
+        lineEl.className = className;
+        lineEl.textContent = text;
+        meta.appendChild(lineEl);
+      };
+
+      appendMetaLine(receiver ? `Принял: ${receiver}` : "");
+      appendMetaLine(sender ? `${senderLabel}: ${sender}` : "");
+      if (moveRoute) {
+        const routeEl = document.createElement("div");
+        routeEl.className = "pending-move-meta pending-move-route";
+
+        const routeLabelEl = document.createElement("span");
+        routeLabelEl.className = "pending-move-route__label";
+        routeLabelEl.textContent = "Перемещение:";
+
+        const routeFromEl = document.createElement("span");
+        routeFromEl.className = "pending-move-route__point";
+        routeFromEl.textContent = sourceObject || "—";
+
+        const routeArrowEl = document.createElement("span");
+        routeArrowEl.className = "pending-move-route__arrow";
+        routeArrowEl.setAttribute("aria-hidden", "true");
+        routeArrowEl.textContent = "→";
+
+        const routeToEl = document.createElement("span");
+        routeToEl.className = "pending-move-route__point";
+        routeToEl.textContent = targetObject || "—";
+
+        routeEl.append(routeLabelEl, routeFromEl, routeArrowEl, routeToEl);
+        meta.appendChild(routeEl);
+      }
+      appendMetaLine(moveDate ? `Дата перемещения: ${moveDate}` : "");
+      appendMetaLine(moveComment ? `Комментарий: ${moveComment}` : "", "pending-move-comment");
+      appendMetaLine(formatToolCostLabel(tool));
       infoCell.append(title, meta);
 
       const fine = document.createElement("div");

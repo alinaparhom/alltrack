@@ -9497,8 +9497,12 @@
 
       .pending-move-responsible {
         font-size: 10px;
-        font-weight: 600;
+        font-weight: 400;
         color: var(--title);
+      }
+
+      .pending-move-responsible strong {
+        font-weight: 700;
       }
 
       .pending-move-meta {
@@ -9511,6 +9515,13 @@
         align-items: center;
         gap: 4px;
         flex-wrap: wrap;
+      }
+
+      .pending-move-route__label,
+      .pending-move-route__point,
+      .pending-move-route__arrow {
+        display: inline-flex;
+        align-items: center;
       }
 
       .pending-move-route__arrow {

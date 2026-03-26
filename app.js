@@ -11355,7 +11355,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         <div class="tools-info-kit-item__name">${escapeHtml(name)}</div>
         <div class="tools-info-kit-item__meta">
           <span>Кол-во: ${escapeHtml(count)}</span>
-          <span>Бух.номер: ${escapeHtml(accounting)}</span>
+          <span>Бухгалтерский номер: ${escapeHtml(accounting)}</span>
         </div>
       `;
       toolsInfoKitListEl.appendChild(itemEl);
@@ -11389,7 +11389,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const info = [
       { label: "Номер", value: toolNumber },
       {
-        label: "Бух.номер",
+        label: "Бухгалтерский номер",
         value: tool?.["Бух.номер"],
         hideLabelInSearch: true,
       },
@@ -11470,7 +11470,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const movedByEnergy = String(move?.["Переместил энергетик"] ?? "").trim();
       grid.append(
         buildToolsInfoRow("Номер инструмента", move?.["Номер"]),
-        buildToolsInfoRow("Бух.номер", move?.["Бух.номер"]),
+        buildToolsInfoRow("Бухгалтерский номер", move?.["Бух.номер"]),
         buildToolsInfoRow("Переместил", move?.["Переместил"]),
         buildToolsInfoRow("Старый объект", move?.["Старый объект"]),
         buildToolsInfoRow("Принял", move?.["Принял"]),

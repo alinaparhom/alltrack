@@ -14011,9 +14011,35 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         lineEl.textContent = text;
         meta.appendChild(lineEl);
       };
+      const appendResponsibleMetaLine = (label, fullName) => {
+        const normalizedLabel = normalizePersonName(label);
+        const value = String(fullName ?? "").trim();
+        if (!normalizedLabel || !value) return;
+        if (!normalizedLabel.startsWith("ответственный")) {
+          appendMetaLine(`${label}: ${value}`);
+          return;
+        }
+        const lineEl = document.createElement("div");
+        lineEl.className = "pending-move-meta";
+        lineEl.textContent = `${label}: `;
+        const [surname, ...rest] = value.split(/\s+/);
+        if (surname) {
+          const surnameEl = document.createElement("strong");
+          surnameEl.textContent = surname;
+          lineEl.appendChild(surnameEl);
+          if (rest.length) {
+            lineEl.appendChild(document.createTextNode(` ${rest.join(" ")}`));
+          }
+        } else {
+          lineEl.appendChild(document.createTextNode(value));
+        }
+        meta.appendChild(lineEl);
+      };
 
       appendMetaLine(receiver ? `Принял: ${receiver}` : "");
-      appendMetaLine(sender ? `${senderLabel}: ${sender}` : "");
+      if (sender) {
+        appendResponsibleMetaLine(senderLabel, sender);
+      }
       if (moveRoute) {
         const routeEl = document.createElement("div");
         routeEl.className = "pending-move-meta pending-move-route";

@@ -13984,9 +13984,20 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         : "Переместил";
       const moveDate = String(move?.["Дата перемещения"] ?? "").trim();
       const moveComment = String(move?.["Причина перемещения"] ?? "").trim();
+      const sourceObject = String(move?.["Старый объект"] ?? "").trim();
+      const targetObject = String(move?.["Новый объект"] ?? "").trim();
+      const moveRoute =
+        sourceObject && targetObject
+          ? `Перемещение: ${sourceObject} → ${targetObject}`
+          : sourceObject
+            ? `Перемещение: ${sourceObject} → —`
+            : targetObject
+              ? `Перемещение: — → ${targetObject}`
+              : "";
       [
         receiver ? `Принял: ${receiver}` : "",
         sender ? `${senderLabel}: ${sender}` : "",
+        moveRoute,
         moveDate ? `Дата перемещения: ${moveDate}` : "",
         moveComment ? `Комментарий: ${moveComment}` : "",
         formatToolCostLabel(tool),

@@ -13436,6 +13436,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         ? "Ответственный"
         : "Ответственный до перемещения";
       const moveComment = String(move?.["Причина перемещения"] ?? "").trim();
+      const sourceObject = String(move?.["Старый объект"] ?? "").trim();
+      const targetObject = String(move?.["Новый объект"] ?? "").trim();
+      const moveRoute =
+        sourceObject || targetObject
+          ? `Объект: ${sourceObject || "—"} → ${targetObject || "—"}`
+          : "";
       const metaLines = [
         {
           text: [manufacturer, model].filter(Boolean).join(" · "),
@@ -13448,6 +13454,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         {
           text: senderValue ? `${senderLabel}: ${senderValue}` : "",
           className: "pending-move-responsible",
+        },
+        {
+          text: moveRoute,
+          className: "pending-move-meta",
         },
         {
           text: moveDate ? `Дата перемещения: ${moveDate}` : "",

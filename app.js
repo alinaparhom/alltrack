@@ -13439,7 +13439,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const targetObject = String(move?.["Новый объект"] ?? "").trim();
       const moveRoute =
         sourceObject || targetObject
-          ? `${sourceObject || "—"} — ${targetObject || "—"}`
+          ? `${sourceObject || "—"} → ${targetObject || "—"}`
           : "";
       const metaLines = [
         {

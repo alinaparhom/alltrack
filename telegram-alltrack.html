@@ -9432,12 +9432,13 @@
       .pending-moves-tools-table .pending-move-number-cell {
         align-self: stretch;
         justify-self: stretch;
-        display: grid;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         width: 100%;
         max-width: 100%;
         min-width: 0;
         min-height: 100%;
-        place-items: center;
         padding-inline: 0 !important;
         text-align: center;
         font-size: 12px;
@@ -10760,8 +10761,9 @@
 
         .pending-moves-tools-table .tools-table__cell--number,
         .pending-moves-tools-table .pending-move-number-cell {
-          display: grid;
-          place-items: center;
+          display: flex;
+          align-items: center;
+          justify-content: center;
           justify-self: stretch;
           align-self: stretch;
           width: 100%;

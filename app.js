@@ -14047,16 +14047,16 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         routeFromEl.className = "pending-move-route__point";
         routeFromEl.textContent = sourceObject || "—";
 
-        const routeArrowEl = document.createElement("span");
-        routeArrowEl.className = "pending-move-route__arrow";
-        routeArrowEl.setAttribute("aria-hidden", "true");
-        routeArrowEl.textContent = "➤";
+        const routeSeparatorEl = document.createElement("span");
+        routeSeparatorEl.className = "pending-move-route__separator";
+        routeSeparatorEl.setAttribute("aria-hidden", "true");
+        routeSeparatorEl.textContent = " ";
 
         const routeToEl = document.createElement("span");
         routeToEl.className = "pending-move-route__point";
         routeToEl.textContent = targetObject || "—";
 
-        routeEl.append(routeFromEl, routeArrowEl, routeToEl);
+        routeEl.append(routeFromEl, routeSeparatorEl, routeToEl);
         meta.appendChild(routeEl);
       }
       appendMetaLine(moveDate);

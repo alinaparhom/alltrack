@@ -9430,15 +9430,15 @@
 
       .pending-moves-tools-table .tools-table__cell--number,
       .pending-moves-tools-table .pending-move-number-cell {
-        align-self: center;
+        align-self: stretch;
         justify-self: stretch;
-        display: flex;
+        display: grid;
         width: 100%;
         max-width: 100%;
+        min-width: 0;
         min-height: 100%;
-        align-items: center;
-        justify-content: center;
-        padding-inline: 0;
+        place-items: center;
+        padding-inline: 0 !important;
         text-align: center;
         font-size: 12px;
         letter-spacing: 0.02em;
@@ -10760,12 +10760,14 @@
 
         .pending-moves-tools-table .tools-table__cell--number,
         .pending-moves-tools-table .pending-move-number-cell {
-          justify-content: center;
-          align-items: center;
+          display: grid;
+          place-items: center;
           justify-self: stretch;
+          align-self: stretch;
           width: 100%;
+          min-width: 0;
           text-align: center;
-          padding-inline: 0;
+          padding-inline: 0 !important;
           white-space: nowrap;
         }
 

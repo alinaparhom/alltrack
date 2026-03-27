@@ -13632,10 +13632,20 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (!pendingItems.length) {
       setPendingMovesSubtitle("");
     } else {
+      const totalFineAmount = pendingItems.reduce(
+        (sum, item) => sum + Number(item?.fineAmount ?? 0),
+        0
+      );
       const subtitlePrefix = targetFullName
         ? `Ожидают ответа за ${formatFullName(targetFullName)}`
         : "Ожидают ответа";
-      setPendingMovesSubtitle(`${subtitlePrefix}: ${pendingItems.length}`);
+      const fineText =
+        totalFineAmount > 0
+          ? ` · Текущий штраф: ${formatNotificationCostWithoutCurrency(totalFineAmount)}`
+          : " · Текущий штраф: 0";
+      setPendingMovesSubtitle(
+        `${subtitlePrefix}: ${pendingItems.length}${fineText}`
+      );
     }
     renderPendingMovesList();
   };

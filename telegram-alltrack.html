@@ -8874,6 +8874,9 @@
 
       .tools-table__row--search .tools-table__cell--number {
         padding-right: 0;
+        width: 86px;
+        min-width: 86px;
+        max-width: 86px;
         justify-items: center;
         text-align: center;
       }
@@ -8890,12 +8893,17 @@
       }
 
       .tools-table__number-object {
+        display: block;
+        width: 100%;
         font-size: 11px;
         font-weight: 500;
         color: #64748b;
         line-height: 1.2;
         text-align: center;
         justify-self: center;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
 
       .tools-table__cell--object {

@@ -9442,6 +9442,8 @@
         text-align: center;
         font-size: 12px;
         letter-spacing: 0.02em;
+        white-space: nowrap;
+        font-variant-numeric: tabular-nums;
       }
 
       .pending-moves-tools-table .tools-table__cell--number .tools-table__number-value,
@@ -10760,8 +10762,11 @@
         .pending-moves-tools-table .pending-move-number-cell {
           justify-content: center;
           align-items: center;
+          justify-self: stretch;
+          width: 100%;
           text-align: center;
           padding-inline: 0;
+          white-space: nowrap;
         }
 
         .pending-moves-tools-table .tools-table__cell--actions {

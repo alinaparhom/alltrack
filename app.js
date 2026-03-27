@@ -13439,7 +13439,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const targetObject = String(move?.["Новый объект"] ?? "").trim();
       const moveRoute =
         sourceObject || targetObject
-          ? `${sourceObject || "—"} → ${targetObject || "—"}`
+          ? `${sourceObject || "—"} ⟶ ${targetObject || "—"}`
           : "";
       const metaLines = [
         {
@@ -14060,7 +14060,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         const routeSeparatorEl = document.createElement("span");
         routeSeparatorEl.className = "pending-move-route__separator";
         routeSeparatorEl.setAttribute("aria-hidden", "true");
-        routeSeparatorEl.textContent = " ";
+        routeSeparatorEl.textContent = "⟶";
 
         const routeToEl = document.createElement("span");
         routeToEl.className = "pending-move-route__point";

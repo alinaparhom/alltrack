@@ -2536,6 +2536,7 @@ function createOrganizationFolders(array $newOrganizations): void {
   ];
   $folders = [
     "Фото инструментов",
+    "Фото непонятно",
     "Фото инструментов. Списание",
     "Акты списания",
     "Акты ремонтов",
@@ -2676,6 +2677,7 @@ function resolveFilePathValue(string $path, array $entry): string {
   $photoFolderSafe = sanitizeFolderName($photoFolder);
   $allowedFolders = [
     "Фото инструментов",
+    "Фото непонятно",
     "Фото инструментов. Списание",
     "Накладные покупка",
     "Фото отказов",
@@ -2756,6 +2758,7 @@ function resolvePhotoFolderPath(array $entry): string {
   $photoFolderSafe = sanitizeFolderName($photoFolder);
   $allowedFolders = [
     "Фото инструментов",
+    "Фото непонятно",
     "Фото инструментов. Списание",
     "Накладные покупка",
     "Фото отказов",

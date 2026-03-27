@@ -26539,6 +26539,28 @@ function setupSuperAdmin() {
     return normalizeToolNumberValue(match[1]);
   };
 
+  const normalizeAccountingPhotoNumberValue = (value) => {
+    const raw = String(value ?? "").trim();
+    if (!raw) return "";
+    const digitsOnly = raw.replace(/\D+/g, "");
+    if (!digitsOnly) return "";
+    const trimmed = digitsOnly.replace(/^0+/, "");
+    return trimmed || "0";
+  };
+
+  const parseAccountingPhotoKeyFromName = (fileName) => {
+    if (!fileName) return "";
+    const baseName = String(fileName).replace(/\.[^.]+$/, "").trim();
+    if (!baseName) return "";
+    const accountingMatch = baseName.match(/^(?:№|N)?\s*([0-9][0-9/\-]*)/i);
+    if (accountingMatch?.[1]) {
+      return normalizeAccountingPhotoNumberValue(accountingMatch[1]);
+    }
+    const fallbackMatch = baseName.match(/^(\d+)(?:_|$)/);
+    if (!fallbackMatch?.[1]) return "";
+    return normalizeAccountingPhotoNumberValue(fallbackMatch[1]);
+  };
+
   const resolveUploadOrganization = async () => {
     const selectedOrganization = String(selectedOrgName ?? "").trim();
     let organizationName = selectedOrganization || String(currentUser?.organization ?? "").trim();
@@ -27477,24 +27499,45 @@ function setupSuperAdmin() {
         return;
       }
 
-      const numberKey = "Номер";
+      const usesAccountingNumber = numberType === "Бухгалтерский номер";
+      const numberKeys = usesAccountingNumber
+        ? ["Бух.номер", "Бухгалтерский номер", "Номер"]
+        : ["Номер", "Бух.номер"];
       const toolIndexByNumber = new Map();
       tools.forEach((tool, index) => {
-        const key = normalizeToolNumberValue(tool?.[numberKey]);
-        if (!key) return;
-        if (!toolIndexByNumber.has(key)) {
-          toolIndexByNumber.set(key, index);
-        }
+        numberKeys.forEach((keyName) => {
+          const rawValue = tool?.[keyName];
+          const key = usesAccountingNumber
+            ? normalizeAccountingPhotoNumberValue(rawValue)
+            : normalizeToolNumberValue(rawValue);
+          if (!key) return;
+          if (!toolIndexByNumber.has(key)) {
+            toolIndexByNumber.set(key, index);
+          }
+        });
       });
+
+      const unknownPhotoFiles = [];
+      const collectUnknownPhoto = (file, reason) => {
+        unknownPhotoFiles.push({
+          file,
+          reason,
+          safeName: resolvePhotoFileName(file?.name ?? ""),
+        });
+      };
 
       if (!toolIndexByNumber.size) {
         setUploadStatus(
-          "В базе инструментов не найдены номера для проверки фото.",
+          usesAccountingNumber
+            ? "В базе не найдены бухгалтерские номера для проверки фото."
+            : "В базе инструментов не найдены номера для проверки фото.",
           "error"
         );
         setUploadProgress(0, {
           label: "Нет номеров",
-          hint: "Проверьте, что в базе заполнена колонка «Номер».",
+          hint: usesAccountingNumber
+            ? "Проверьте, что в базе заполнена колонка «Бух.номер»."
+            : "Проверьте, что в базе заполнена колонка «Номер».",
         });
         return;
       }
@@ -27518,12 +27561,15 @@ function setupSuperAdmin() {
           }
           return;
         }
-        const key = parsePhotoKeyFromName(file.name);
+        const key = usesAccountingNumber
+          ? parseAccountingPhotoKeyFromName(file.name)
+          : parsePhotoKeyFromName(file.name);
         if (!key) {
           skipped.invalidName += 1;
           if (skipped.invalidSamples.length < 5) {
             skipped.invalidSamples.push(file.name);
           }
+          collectUnknownPhoto(file, "invalid-name");
           return;
         }
         const toolIndex = toolIndexByNumber.get(key);
@@ -27532,6 +27578,7 @@ function setupSuperAdmin() {
           if (skipped.noMatchSamples.length < 5) {
             skipped.noMatchSamples.push(file.name);
           }
+          collectUnknownPhoto(file, "no-match");
           return;
         }
         const safeName = resolvePhotoFileName(file.name) || file.name;
@@ -27601,6 +27648,21 @@ function setupSuperAdmin() {
         });
       }
 
+      for (let index = 0; index < unknownPhotoFiles.length; index += 1) {
+        const entry = unknownPhotoFiles[index];
+        const content = await readFileAsBase64(entry.file);
+        const fallbackName = `unknown_${Date.now()}_${index + 1}_${entry.reason}.jpg`;
+        const safeName = entry.safeName || fallbackName;
+        fileEntries.push({
+          type: "file",
+          path: `${orgFolder}/Фото непонятно/${safeName}`,
+          content,
+          encoding: "base64",
+          mime: entry.file.type || "image/*",
+          ...buildUploadUserMeta({ organizationName: selectedOrgName }),
+        });
+      }
+
       const updatedTools = tools.map((tool, index) => {
         const count = matchedCounts.get(index) ?? 0;
         if (!count) return tool;
@@ -27645,8 +27707,11 @@ function setupSuperAdmin() {
       const skippedNote = skippedParts.length
         ? ` Пропущено ${skippedTotal} (${skippedParts.join(", ")}).`
         : "";
+      const unknownNote = unknownPhotoFiles.length
+        ? ` В «Фото непонятно» сохранено: ${unknownPhotoFiles.length}.`
+        : "";
       setUploadStatus(
-        `Фото загружены: ${matchedFiles.length}.${skippedNote}`,
+        `Фото загружены: ${matchedFiles.length}.${skippedNote}${unknownNote}`,
         "success"
       );
       setUploadProgress(100, {

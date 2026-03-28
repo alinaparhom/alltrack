@@ -13725,6 +13725,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     );
   };
 
+  const getPendingMovesTotalCost = () =>
+    pendingMovesState.pendingItems.reduce((sum, item) => {
+      const toolCost = normalizeCostValue(item?.tool?.["Стоимость"]);
+      return sum + (Number.isFinite(toolCost) ? toolCost : 0);
+    }, 0);
+
   const openPendingMovesBulkConfirmModal = (action) => {
     if (!pendingMovesBulkConfirmModalEl || pendingMovesState.isSaving) return;
     const total = pendingMovesState.pendingItems.length;
@@ -13740,8 +13746,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         : "Не принять все инструменты?";
     }
     if (pendingMovesBulkConfirmTextEl) {
+      const totalPendingToolsCost = getPendingMovesTotalCost();
       pendingMovesBulkConfirmTextEl.textContent = isAccept
-        ? `Будут приняты все (${total}) ожидающих инструментов.`
+        ? `Будут приняты все (${total}) ожидающих инструментов на общую сумму ${formatNotificationCostWithoutCurrency(totalPendingToolsCost)} р.`
         : "";
       pendingMovesBulkConfirmTextEl.classList.toggle("is-hidden", !isAccept);
     }

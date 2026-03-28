@@ -1372,33 +1372,45 @@ export function renderRole(user) {
                   </div>
                 </div>
               </div>
-              <div class="tools-info-tabs" role="tablist" aria-label="История">
+              <div class="tools-info-top-actions">
+                <details class="tools-info-history-menu" data-tools-info-history-menu>
+                  <summary class="tools-info-history-menu__trigger">История</summary>
+                  <div class="tools-info-tabs" role="tablist" aria-label="История">
+                    <button
+                      class="tools-info-tab is-active"
+                      type="button"
+                      role="tab"
+                      aria-selected="true"
+                      data-tools-info-tab="moves"
+                    >
+                      Перемещения
+                    </button>
+                    <button
+                      class="tools-info-tab"
+                      type="button"
+                      role="tab"
+                      aria-selected="false"
+                      data-tools-info-tab="breakdowns"
+                    >
+                      Поломки
+                    </button>
+                    <button
+                      class="tools-info-tab"
+                      type="button"
+                      role="tab"
+                      aria-selected="false"
+                      data-tools-info-tab="repairs"
+                    >
+                      Ремонты
+                    </button>
+                  </div>
+                </details>
                 <button
-                  class="tools-info-tab is-active"
+                  class="action-primary tools-info-move"
                   type="button"
-                  role="tab"
-                  aria-selected="true"
-                  data-tools-info-tab="moves"
+                  data-tools-info-move
                 >
-                  Перемещения
-                </button>
-                <button
-                  class="tools-info-tab"
-                  type="button"
-                  role="tab"
-                  aria-selected="false"
-                  data-tools-info-tab="breakdowns"
-                >
-                  Поломки
-                </button>
-                <button
-                  class="tools-info-tab"
-                  type="button"
-                  role="tab"
-                  aria-selected="false"
-                  data-tools-info-tab="repairs"
-                >
-                  Ремонты
+                  Переместить
                 </button>
               </div>
               <div class="tools-info-panels">

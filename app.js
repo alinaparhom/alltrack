@@ -5191,6 +5191,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const toolsInfoCancelMoveButton = contentEl.querySelector(
     "[data-tools-info-cancel-move]"
   );
+  const toolsInfoMoveButton = contentEl.querySelector("[data-tools-info-move]");
+  const toolsInfoHistoryMenuEl = contentEl.querySelector(
+    "[data-tools-info-history-menu]"
+  );
   const toolsEditAccountingInput = contentEl.querySelector(
     "[data-tools-edit-accounting]"
   );
@@ -11725,6 +11729,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       toolsInfoBreakdownsEmptyEl.classList.add("is-hidden");
     }
     if (toolsInfoRepairsEmptyEl) toolsInfoRepairsEmptyEl.classList.add("is-hidden");
+    if (toolsInfoHistoryMenuEl) {
+      toolsInfoHistoryMenuEl.open = false;
+    }
     setToolsInfoTab("moves");
     toolsInfoModalEl.classList.remove("is-hidden");
     document.body.style.overflow = "hidden";
@@ -15518,7 +15525,21 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         const tab = button.dataset.toolsInfoTab;
         if (!tab) return;
         setToolsInfoTab(tab);
+        if (toolsInfoHistoryMenuEl) {
+          toolsInfoHistoryMenuEl.open = false;
+        }
       });
+    });
+  }
+  if (toolsInfoMoveButton) {
+    toolsInfoMoveButton.addEventListener("click", async () => {
+      const tool = toolsInfoState.tool;
+      const selectionId = String(tool?.__selectionId ?? "").trim();
+      if (!selectionId) return;
+      toolsState.selectedIds.clear();
+      toolsState.selectedIds.add(selectionId);
+      closeToolsInfoModal();
+      await openToolsMoveModal();
     });
   }
   if (toolsEditKitToggleButton) {

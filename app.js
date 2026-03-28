@@ -13439,9 +13439,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const movedByEnergy = String(move?.["Переместил энергетик"] ?? "").trim();
       const senderValue = movedByEnergy || sender;
       const senderLabel = movedByEnergy ? "Переместил энергетик" : "Переместил";
+      const senderShortName = formatFullName(senderValue, 2);
       const previousResponsibleLabel = movedByEnergy
         ? "Ответственный"
         : "Ответственный до перемещения";
+      const previousResponsibleShortName = formatFullName(previousResponsible, 2);
       const moveComment = String(move?.["Причина перемещения"] ?? "").trim();
       const sourceObject = String(move?.["Старый объект"] ?? "").trim();
       const targetObject = String(move?.["Новый объект"] ?? "").trim();
@@ -13459,8 +13461,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           className: "pending-move-meta",
         },
         {
-          text: senderValue ? `${senderLabel}: ${senderValue}` : "",
+          text: senderValue ? `${senderLabel}: ${senderShortName}` : "",
           className: "pending-move-responsible",
+          label: senderLabel,
+          value: senderShortName,
         },
         {
           text: moveRoute,
@@ -13472,11 +13476,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         },
         {
           text: previousResponsible
-            ? `${previousResponsibleLabel}: ${previousResponsible}`
+            ? `${previousResponsibleLabel}: ${previousResponsibleShortName}`
             : "",
           className: "pending-move-responsible",
           label: previousResponsibleLabel,
-          value: previousResponsible,
+          value: previousResponsibleShortName,
         },
         {
           text: moveComment ? `Комментарий: ${moveComment}` : "",
@@ -13486,25 +13490,24 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       metaLines.forEach((line) => {
         const lineEl = document.createElement("div");
         lineEl.className = line.className;
-        if (
+        if (line.label && line.value && line.label === "Переместил энергетик") {
+          const labelEl = document.createElement("strong");
+          labelEl.textContent = line.label;
+          lineEl.append(labelEl, document.createTextNode(`: ${line.value}`));
+        } else if (
           line.label &&
           line.value &&
           normalizePersonName(line.label).startsWith("ответственный")
         ) {
-          const [surname, ...rest] = String(line.value).trim().split(/\s+/);
-          lineEl.textContent = `${line.label}: `;
-          if (surname) {
-            const surnameEl = document.createElement("strong");
-            surnameEl.textContent = surname;
-            lineEl.appendChild(surnameEl);
-            if (rest.length) {
-              lineEl.appendChild(
-                document.createTextNode(` ${rest.join(" ")}`)
-              );
-            }
-          } else {
-            lineEl.append(line.value);
-          }
+          lineEl.textContent = line.value;
+        } else if (line.className === "pending-move-comment" && moveComment) {
+          const labelEl = document.createElement("span");
+          labelEl.textContent = "Комментарий: ";
+          const valueEl = document.createElement("strong");
+          const underlinedValueEl = document.createElement("u");
+          underlinedValueEl.textContent = moveComment;
+          valueEl.appendChild(underlinedValueEl);
+          lineEl.append(labelEl, valueEl);
         } else {
           lineEl.textContent = line.text;
         }

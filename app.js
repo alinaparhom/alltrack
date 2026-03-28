@@ -13469,7 +13469,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           className: "pending-move-meta",
         },
         {
-          text: `Бух.номер: ${accountingNumber} · Стоимость: ${toolCostText}`,
+          text: `Бух.номер: ${accountingNumber} · ${toolCostText}`,
           className: "pending-move-meta",
         },
         {

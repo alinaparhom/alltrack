@@ -1362,7 +1362,7 @@ export function renderRole(user) {
                     type="button"
                     data-tools-info-kit-toggle
                   >
-                    Показать комплектность
+                    Комплектация (0)
                   </button>
                   <div
                     class="tools-info-kit__content is-hidden"

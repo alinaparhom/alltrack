@@ -13431,6 +13431,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         : "";
       const movedByEnergy = String(move?.["Переместил энергетик"] ?? "").trim();
       const senderValue = movedByEnergy || sender;
+      const senderLabel = movedByEnergy ? "Переместил энергетик" : "Переместил";
       const previousResponsibleLabel = movedByEnergy
         ? "Ответственный"
         : "Ответственный до перемещения";
@@ -13451,7 +13452,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           className: "pending-move-meta",
         },
         {
-          text: senderValue ? senderValue : "",
+          text: senderValue ? `${senderLabel}: ${senderValue}` : "",
           className: "pending-move-responsible",
         },
         {

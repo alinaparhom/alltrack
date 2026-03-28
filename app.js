@@ -14114,9 +14114,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         )}`;
         moveDateLine.appendChild(fineEl);
       }
-      meta.appendChild(moveDateLine);
       appendMetaLine(moveComment ? `Комментарий: ${moveComment}` : "", "pending-move-comment");
       appendMetaLine(formatToolCostLabel(tool));
+      meta.appendChild(moveDateLine);
       infoCell.append(title, meta);
 
       const photoCell = document.createElement("div");

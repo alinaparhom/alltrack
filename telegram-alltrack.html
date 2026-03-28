@@ -9709,10 +9709,11 @@
       }
 
       .pending-move-route {
-        display: flex;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
         align-items: center;
-        gap: 4px;
-        flex-wrap: wrap;
+        column-gap: 6px;
+        width: 100%;
       }
 
       .pending-move-route__label,
@@ -9721,6 +9722,23 @@
       .pending-move-route__separator {
         display: inline-flex;
         align-items: center;
+        min-width: 0;
+      }
+
+      .pending-move-route__point {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .pending-move-route__point--from {
+        justify-self: start;
+        text-align: left;
+      }
+
+      .pending-move-route__point--to {
+        justify-self: end;
+        text-align: right;
       }
 
       .pending-move-route__arrow,

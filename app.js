@@ -13481,9 +13481,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         {
           text: moveRoute,
           className: "pending-move-meta",
-          isRoute: true,
-          sourceObject: sourceObject || "—",
-          targetObject: targetObject || "—",
         },
         {
           text: moveDate,
@@ -13538,26 +13535,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           underlinedValueEl.textContent = moveComment;
           valueEl.appendChild(underlinedValueEl);
           lineEl.append(labelEl, valueEl);
-        } else if (line.isRoute) {
-          const routeEl = document.createElement("div");
-          routeEl.className = "pending-move-meta pending-move-route";
-
-          const routeFromEl = document.createElement("span");
-          routeFromEl.className = "pending-move-route__point pending-move-route__point--from";
-          routeFromEl.textContent = line.sourceObject;
-
-          const routeSeparatorEl = document.createElement("span");
-          routeSeparatorEl.className = "pending-move-route__separator";
-          routeSeparatorEl.setAttribute("aria-hidden", "true");
-          routeSeparatorEl.textContent = "➜";
-
-          const routeToEl = document.createElement("span");
-          routeToEl.className = "pending-move-route__point pending-move-route__point--to";
-          routeToEl.textContent = line.targetObject;
-
-          routeEl.append(routeFromEl, routeSeparatorEl, routeToEl);
-          meta.appendChild(routeEl);
-          return;
         } else {
           lineEl.textContent = line.text;
         }
@@ -14111,7 +14088,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         routeEl.className = "pending-move-meta pending-move-route";
 
         const routeFromEl = document.createElement("span");
-        routeFromEl.className = "pending-move-route__point pending-move-route__point--from";
+        routeFromEl.className = "pending-move-route__point";
         routeFromEl.textContent = sourceObject || "—";
 
         const routeSeparatorEl = document.createElement("span");
@@ -14120,7 +14097,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         routeSeparatorEl.textContent = "➜";
 
         const routeToEl = document.createElement("span");
-        routeToEl.className = "pending-move-route__point pending-move-route__point--to";
+        routeToEl.className = "pending-move-route__point";
         routeToEl.textContent = targetObject || "—";
 
         routeEl.append(routeFromEl, routeSeparatorEl, routeToEl);

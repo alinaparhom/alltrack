@@ -13483,11 +13483,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           className: "pending-move-meta",
         },
         {
-          text: moveDate,
-          className: "pending-move-meta",
-          isMoveDate: true,
-        },
-        {
           text: previousResponsible
             ? `${previousResponsibleLabel}: ${previousResponsibleShortName}`
             : "",
@@ -13498,6 +13493,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         {
           text: moveComment ? `Комментарий: ${moveComment}` : "",
           className: "pending-move-comment",
+        },
+        {
+          text: moveDate,
+          className: "pending-move-meta",
+          isMoveDate: true,
         },
       ].filter((item) => item.text);
       metaLines.forEach((line) => {
@@ -13669,12 +13669,17 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const subtitlePrefix = targetFullName
         ? `Ожидают ответа за ${formatFullName(targetFullName)}`
         : "Ожидают ответа";
+      const totalPendingToolsCost = pendingItems.reduce((sum, item) => {
+        const toolCost = normalizeCostValue(item?.tool?.["Стоимость"]);
+        return sum + (Number.isFinite(toolCost) ? toolCost : 0);
+      }, 0);
       const fineText =
         totalFineAmount > 0
           ? ` · Текущий штраф: ${formatNotificationCostWithoutCurrency(totalFineAmount)}`
           : " · Текущий штраф: 0";
+      const totalCostText = ` · На сумму: ${formatNotificationCostWithoutCurrency(totalPendingToolsCost)} р.`;
       setPendingMovesSubtitle(
-        `${subtitlePrefix}: ${pendingItems.length}${fineText}`
+        `${subtitlePrefix}: ${pendingItems.length}${fineText}${totalCostText}`
       );
     }
     renderPendingMovesList();

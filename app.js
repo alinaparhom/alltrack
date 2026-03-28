@@ -13435,6 +13435,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         String(tool?.["Бух.номер"] ?? "").trim() ||
         String(move?.["Бух.номер"] ?? "").trim() ||
         "—";
+      const toolCost = normalizeCostValue(tool?.["Стоимость"]);
+      const toolCostText = Number.isFinite(toolCost)
+        ? `${formatNotificationCostWithoutCurrency(toolCost)} р.`
+        : "—";
       const sender = String(move?.["Переместил"] ?? "").trim();
       const moveDate = String(move?.["Дата перемещения"] ?? "").trim();
       const hasPreviousResponsible = Object.prototype.hasOwnProperty.call(
@@ -13465,7 +13469,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           className: "pending-move-meta",
         },
         {
-          text: accountingNumber,
+          text: `Бух.номер: ${accountingNumber} · Стоимость: ${toolCostText}`,
           className: "pending-move-meta",
         },
         {
@@ -13510,7 +13514,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
             fineEl.className = "pending-move-meta__fine";
             fineEl.textContent = ` · Штраф: ${formatNotificationCostWithoutCurrency(
               fineAmount
-            )}`;
+            )} р.`;
             lineEl.appendChild(fineEl);
           }
         } else if (
@@ -13675,8 +13679,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       }, 0);
       const fineText =
         totalFineAmount > 0
-          ? ` · Текущий штраф: ${formatNotificationCostWithoutCurrency(totalFineAmount)}`
-          : " · Текущий штраф: 0";
+          ? ` · Штраф: ${formatNotificationCostWithoutCurrency(totalFineAmount)}`
+          : " · Штраф: 0";
       const totalCostText = ` · На сумму: ${formatNotificationCostWithoutCurrency(totalPendingToolsCost)} р.`;
       setPendingMovesSubtitle(
         `${subtitlePrefix}: ${pendingItems.length}${fineText}${totalCostText}`

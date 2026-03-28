@@ -9424,7 +9424,7 @@
         --pending-tools-horizontal-gap: 10px;
         --pending-tools-number-column-width: 72px;
         grid-template-columns: var(--pending-tools-number-column-width) minmax(0, 1fr) auto;
-        column-gap: 10px;
+        column-gap: var(--pending-tools-horizontal-gap);
         row-gap: 8px;
         padding: 8px var(--pending-tools-horizontal-gap);
       }
@@ -10716,7 +10716,7 @@
           --pending-tools-horizontal-gap: 10px;
           --pending-tools-number-column-width: 64px;
           grid-template-columns: var(--pending-tools-number-column-width) minmax(0, 1fr) auto;
-          column-gap: 2px;
+          column-gap: var(--pending-tools-horizontal-gap);
           row-gap: 6px;
           padding: 8px var(--pending-tools-horizontal-gap);
           align-items: stretch;

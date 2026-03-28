@@ -13465,11 +13465,15 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           className: "pending-move-meta",
         },
         {
-          text: `Бухгалтерский номер: ${accountingNumber}`,
+          text: accountingNumber,
           className: "pending-move-meta",
         },
         {
-          text: senderValue ? `${senderLabel}: ${senderShortName}` : "",
+          text: senderValue
+            ? movedByEnergy
+              ? `${senderLabel}: ${senderShortName}`
+              : senderShortName
+            : "",
           className: "pending-move-responsible",
           label: senderLabel,
           value: senderShortName,
@@ -13481,6 +13485,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         {
           text: moveDate,
           className: "pending-move-meta",
+          isMoveDate: true,
         },
         {
           text: previousResponsible
@@ -13498,7 +13503,21 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       metaLines.forEach((line) => {
         const lineEl = document.createElement("div");
         lineEl.className = line.className;
-        if (line.label && line.value && line.label === "Переместил энергетик") {
+        if (line.isMoveDate) {
+          lineEl.textContent = line.text;
+          if (fineAmount > 0) {
+            const fineEl = document.createElement("span");
+            fineEl.className = "pending-move-meta__fine";
+            fineEl.textContent = ` · Штраф: ${formatNotificationCostWithoutCurrency(
+              fineAmount
+            )}`;
+            lineEl.appendChild(fineEl);
+          }
+        } else if (
+          line.label &&
+          line.value &&
+          line.label === "Переместил энергетик"
+        ) {
           const labelEl = document.createElement("strong");
           labelEl.textContent = line.label;
           lineEl.append(labelEl, document.createTextNode(`: ${line.value}`));
@@ -13522,14 +13541,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         meta.appendChild(lineEl);
       });
       infoCell.append(title, meta);
-      if (fineAmount > 0) {
-        const fine = document.createElement("div");
-        fine.className = "pending-move-fine";
-        fine.textContent = `Штраф: ${formatNotificationCostWithoutCurrency(
-          fineAmount
-        )}`;
-        infoCell.appendChild(fine);
-      }
 
       const photoCell = document.createElement("div");
       photoCell.className = "tools-table__cell tools-table__cell--thumb";
@@ -14043,6 +14054,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         const normalizedLabel = normalizePersonName(label);
         const value = String(fullName ?? "").trim();
         if (!normalizedLabel || !value) return;
+        if (normalizedLabel === "переместил") {
+          appendMetaLine(value);
+          return;
+        }
         if (!normalizedLabel.startsWith("ответственный")) {
           appendMetaLine(value);
           return;
@@ -14088,17 +14103,21 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         routeEl.append(routeFromEl, routeSeparatorEl, routeToEl);
         meta.appendChild(routeEl);
       }
-      appendMetaLine(moveDate);
+      const moveDateLine = document.createElement("div");
+      moveDateLine.className = "pending-move-meta";
+      moveDateLine.textContent = moveDate;
+      if (fineAmount > 0) {
+        const fineEl = document.createElement("span");
+        fineEl.className = "pending-move-meta__fine";
+        fineEl.textContent = ` · Штраф: ${formatNotificationCostWithoutCurrency(
+          fineAmount
+        )}`;
+        moveDateLine.appendChild(fineEl);
+      }
+      meta.appendChild(moveDateLine);
       appendMetaLine(moveComment ? `Комментарий: ${moveComment}` : "", "pending-move-comment");
       appendMetaLine(formatToolCostLabel(tool));
       infoCell.append(title, meta);
-
-      const fine = document.createElement("div");
-      fine.className = "pending-move-fine";
-      fine.textContent = `Текущий штраф: ${formatNotificationCostWithoutCurrency(
-        fineAmount
-      )}`;
-      infoCell.appendChild(fine);
 
       const photoCell = document.createElement("div");
       photoCell.className = "tools-table__cell tools-table__cell--thumb";

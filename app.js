@@ -11333,18 +11333,28 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const renderToolsInfoKit = (tool) => {
     if (!toolsInfoKitEl || !toolsInfoKitToggleButton || !toolsInfoKitListEl) return;
     const kit = Array.isArray(tool?.["Комплектация"]) ? tool["Комплектация"] : [];
+    const parseKitCount = (value) => {
+      if (value == null) return 0;
+      const normalized = String(value).replace(",", ".").trim();
+      const parsed = Number.parseFloat(normalized);
+      return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+    };
     const hasKit = kit.some((item) => {
       const name = String(item?.["Наименование"] ?? "").trim();
       const count = String(item?.["Количество"] ?? "").trim();
       const accounting = String(item?.["Бух.номер"] ?? "").trim();
       return Boolean(name || count || accounting);
     });
+    const totalKitUnits = Math.round(
+      kit.reduce((sum, item) => sum + parseKitCount(item?.["Количество"]), 0)
+    );
+    const kitToggleLabel = `Комплектация (${totalKitUnits})`;
     toolsInfoKitEl.classList.toggle("is-hidden", !hasKit);
     if (!hasKit) {
       toolsInfoKitListEl.innerHTML = "";
       toolsInfoState.kitExpanded = false;
       toolsInfoKitContentEl?.classList.add("is-hidden");
-      toolsInfoKitToggleButton.textContent = "Показать комплектность";
+      toolsInfoKitToggleButton.textContent = "Комплектация (0)";
       return;
     }
 
@@ -11365,9 +11375,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       toolsInfoKitListEl.appendChild(itemEl);
     });
     toolsInfoKitContentEl?.classList.toggle("is-hidden", !toolsInfoState.kitExpanded);
-    toolsInfoKitToggleButton.textContent = toolsInfoState.kitExpanded
-      ? "Скрыть комплектность"
-      : "Показать комплектность";
+    toolsInfoKitToggleButton.textContent = kitToggleLabel;
   };
 
   const toggleToolsInfoKit = () => {

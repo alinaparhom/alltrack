@@ -13679,7 +13679,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       }, 0);
       const fineText =
         totalFineAmount > 0
-          ? ` · Штраф: ${formatNotificationCostWithoutCurrency(totalFineAmount)}`
+          ? ` · Штраф: ${formatNotificationCostWithoutCurrency(totalFineAmount)} р.`
           : " · Штраф: 0";
       const totalCostText = ` · На сумму: ${formatNotificationCostWithoutCurrency(totalPendingToolsCost)} р.`;
       setPendingMovesSubtitle(

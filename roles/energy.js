@@ -1377,10 +1377,10 @@ export function renderRole(user) {
                   <summary class="tools-info-history-menu__trigger">История</summary>
                   <div class="tools-info-tabs" role="tablist" aria-label="История">
                     <button
-                      class="tools-info-tab is-active"
+                      class="tools-info-tab"
                       type="button"
                       role="tab"
-                      aria-selected="true"
+                      aria-selected="false"
                       data-tools-info-tab="moves"
                     >
                       Перемещения

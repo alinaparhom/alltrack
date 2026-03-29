@@ -5155,6 +5155,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     "[data-tools-info-kit-content]"
   );
   const toolsInfoKitListEl = contentEl.querySelector("[data-tools-info-kit-list]");
+  const toolsInfoPhotosSectionEl = contentEl.querySelector("[data-tools-info-photos]");
+  const toolsInfoPhotosSummaryEl = contentEl.querySelector(
+    "[data-tools-info-photos-summary]"
+  );
+  const toolsInfoPhotosGridEl = contentEl.querySelector("[data-tools-info-photos-grid]");
+  const toolsInfoPhotosEmptyEl = contentEl.querySelector("[data-tools-info-photos-empty]");
   const toolsInfoTabButtons = Array.from(
     contentEl.querySelectorAll("[data-tools-info-tab]")
   );
@@ -6692,9 +6698,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     tool: null,
     orgFolder: "",
     tab: "moves",
+    historyOpened: false,
     moves: [],
     breakdowns: [],
     repairs: [],
+    photos: [],
     kitExpanded: false,
   };
   let pendingMovesDeclineResolver = null;
@@ -11330,6 +11338,21 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     });
   };
 
+  const setToolsInfoHistoryOpened = (opened) => {
+    toolsInfoState.historyOpened = Boolean(opened);
+    if (toolsInfoPhotosSectionEl) {
+      toolsInfoPhotosSectionEl.classList.toggle("is-hidden", toolsInfoState.historyOpened);
+    }
+    if (toolsInfoPanels.length) {
+      toolsInfoPanels.forEach((panel) => {
+        panel.classList.toggle("is-active", false);
+      });
+      if (toolsInfoState.historyOpened) {
+        setToolsInfoTab(toolsInfoState.tab || "moves");
+      }
+    }
+  };
+
   const renderToolsInfoKit = (tool) => {
     if (!toolsInfoKitEl || !toolsInfoKitToggleButton || !toolsInfoKitListEl) return;
     const kit = Array.isArray(tool?.["Комплектация"]) ? tool["Комплектация"] : [];
@@ -11512,6 +11535,42 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     });
   };
 
+  const renderToolsInfoPhotos = () => {
+    if (toolsInfoPhotosGridEl) toolsInfoPhotosGridEl.innerHTML = "";
+    const files = Array.isArray(toolsInfoState.photos) ? toolsInfoState.photos : [];
+    if (toolsInfoPhotosSummaryEl) {
+      toolsInfoPhotosSummaryEl.textContent = files.length
+        ? `Фото инструмента: ${files.length}`
+        : "Фото инструмента пока не загружены.";
+    }
+    if (toolsInfoPhotosEmptyEl) {
+      toolsInfoPhotosEmptyEl.classList.toggle("is-hidden", files.length > 0);
+    }
+    if (!toolsInfoPhotosGridEl || !files.length) return;
+    files.forEach((file, index) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "tools-info-photo-tile";
+      button.setAttribute("aria-label", `Открыть фото ${index + 1}`);
+      const image = document.createElement("img");
+      image.className = "tools-info-photo-tile__image";
+      image.src = file?.url || toolPhotoPlaceholder;
+      image.alt = file?.name ? `Фото инструмента: ${file.name}` : `Фото ${index + 1}`;
+      image.loading = "lazy";
+      button.appendChild(image);
+      button.addEventListener("click", () => {
+        const tool = toolsInfoState.tool;
+        if (!tool) return;
+        openPendingMovePhotoViewer({
+          tool,
+          fallbackNumber: resolveToolNumberValue(tool),
+          title: toolsInfoTitleEl?.textContent || "Инструмент",
+        });
+      });
+      toolsInfoPhotosGridEl.appendChild(button);
+    });
+  };
+
   const renderToolsInfoBreakdowns = () => {
     if (toolsInfoBreakdownsListEl) toolsInfoBreakdownsListEl.innerHTML = "";
     const breakdowns = toolsInfoState.breakdowns;
@@ -11621,20 +11680,31 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       toolsInfoState.moves = [];
       toolsInfoState.breakdowns = [];
       toolsInfoState.repairs = [];
+      toolsInfoState.photos = [];
       renderToolsInfoMoves();
       renderToolsInfoBreakdowns();
       renderToolsInfoRepairs();
+      renderToolsInfoPhotos();
       return;
     }
     const matcher = buildToolsInfoMatcher(tool);
     const movesPath = `./${orgFolder}/Перемещения.json`;
     const breakdownsPath = `./${orgFolder}/Поломки.json`;
     const repairsPath = `./${orgFolder}/Ремонты.json`;
+    const primaryPhotoNumber = resolveToolPhotoNumber(tool);
+    const toolNumber = String(tool?.["Номер"] ?? "").trim();
+    const accountingNumber = String(tool?.["Бух.номер"] ?? "").trim();
     const [rawMoves, rawBreakdowns, rawRepairs] = await Promise.all([
       loadJson(movesPath).catch(() => []),
       loadJson(breakdownsPath).catch(() => []),
       loadJson(repairsPath).catch(() => []),
     ]);
+    const { files: photoFiles = [] } = await loadToolPhotoFiles(
+      orgFolder,
+      primaryPhotoNumber,
+      toolNumber,
+      accountingNumber
+    );
     const moves = Array.isArray(rawMoves)
       ? rawMoves
       : Array.isArray(rawMoves?.moves)
@@ -11684,9 +11754,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         if (!bDate) return -1;
         return bDate - aDate;
       });
+    toolsInfoState.photos = Array.isArray(photoFiles) ? photoFiles : [];
     renderToolsInfoMoves();
     renderToolsInfoBreakdowns();
     renderToolsInfoRepairs();
+    renderToolsInfoPhotos();
   };
 
   const closeToolsInfoModal = () => {
@@ -11694,6 +11766,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     toolsInfoModalEl.classList.add("is-hidden");
     document.body.style.overflow = "";
     toolsInfoState.tool = null;
+    toolsInfoState.historyOpened = false;
+    toolsInfoState.photos = [];
     toolsInfoState.kitExpanded = false;
     if (toolsInfoCancelMoveButton) {
       toolsInfoCancelMoveButton.classList.add("is-hidden");
@@ -11741,6 +11815,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       toolsInfoHistoryMenuEl.open = false;
     }
     setToolsInfoTab("moves");
+    setToolsInfoHistoryOpened(false);
     toolsInfoModalEl.classList.remove("is-hidden");
     document.body.style.overflow = "hidden";
     await Promise.all([loadToolsInfoData(), syncToolsInfoCancelMoveButton(tool)]);
@@ -15573,10 +15648,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         const tab = button.dataset.toolsInfoTab;
         if (!tab) return;
         setToolsInfoTab(tab);
-        if (toolsInfoHistoryMenuEl) {
-          toolsInfoHistoryMenuEl.open = false;
-        }
+        setToolsInfoHistoryOpened(true);
       });
+    });
+  }
+  if (toolsInfoHistoryMenuEl) {
+    toolsInfoHistoryMenuEl.addEventListener("toggle", () => {
+      setToolsInfoHistoryOpened(toolsInfoHistoryMenuEl.open);
     });
   }
   if (toolsInfoMoveButton) {

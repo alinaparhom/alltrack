@@ -1413,8 +1413,15 @@ export function renderRole(user) {
                   Переместить
                 </button>
               </div>
+              <section class="tools-info-photos" data-tools-info-photos>
+                <div class="tools-info-summary" data-tools-info-photos-summary></div>
+                <div class="tools-info-photos-grid" data-tools-info-photos-grid></div>
+                <div class="tools-info-empty is-hidden" data-tools-info-photos-empty>
+                  Фото инструмента пока не загружены.
+                </div>
+              </section>
               <div class="tools-info-panels">
-                <section class="tools-info-panel is-active" data-tools-info-panel="moves">
+                <section class="tools-info-panel" data-tools-info-panel="moves">
                   <div class="tools-info-summary" data-tools-info-moves-summary></div>
                   <div class="tools-info-list" data-tools-info-moves-list></div>
                   <div class="tools-info-empty is-hidden" data-tools-info-moves-empty>

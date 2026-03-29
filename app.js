@@ -13752,8 +13752,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (pendingMovesBulkConfirmTextEl) {
       const totalPendingToolsCost = getPendingMovesTotalCost();
       pendingMovesBulkConfirmTextEl.textContent = isAccept
-        ? `Будут приняты все (${total}) ожидающих инструментов на общую сумму ${formatNotificationCostWithoutCurrency(totalPendingToolsCost)} р.`
+        ? `Будут приняты все (${total}) ожидающих инструментов
+на общую сумму ${formatNotificationCostWithoutCurrency(totalPendingToolsCost)} р.`
         : "";
+      pendingMovesBulkConfirmTextEl.style.whiteSpace = "pre-line";
       pendingMovesBulkConfirmTextEl.classList.toggle("is-hidden", !isAccept);
     }
     if (pendingMovesBulkConfirmSubmitButton) {

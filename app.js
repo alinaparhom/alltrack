@@ -6699,6 +6699,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     orgFolder: "",
     tab: "moves",
     historyOpened: false,
+    historyLoaded: false,
     moves: [],
     breakdowns: [],
     repairs: [],
@@ -11349,6 +11350,20 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       });
       if (toolsInfoState.historyOpened) {
         setToolsInfoTab(toolsInfoState.tab || "moves");
+        if (!toolsInfoState.historyLoaded) {
+          if (toolsInfoMovesSummaryEl) {
+            toolsInfoMovesSummaryEl.textContent = "Загружаем перемещения...";
+          }
+          if (toolsInfoBreakdownsSummaryEl) {
+            toolsInfoBreakdownsSummaryEl.textContent = "Загружаем поломки...";
+          }
+          if (toolsInfoRepairsSummaryEl) {
+            toolsInfoRepairsSummaryEl.textContent = "Загружаем ремонты...";
+          }
+          void loadToolsInfoData({ includeHistory: true }).catch((error) => {
+            console.warn("Не удалось загрузить историю инструмента.", error);
+          });
+        }
       }
     }
   };
@@ -11451,7 +11466,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       labelEl.textContent = isSearchMode && hideLabelInSearch ? "" : label;
       const valueEl = document.createElement("div");
       valueEl.className = "tools-info-value";
-      valueEl.textContent = formatInfoValue(value);
+      const formattedValue = formatInfoValue(value);
+      if (label === "Стоимость" && formattedValue !== "—") {
+        valueEl.textContent = `${formattedValue} р.`;
+      } else {
+        valueEl.textContent = formattedValue;
+      }
       row.append(labelEl, valueEl);
       toolsInfoGridEl.appendChild(row);
     });
@@ -11673,7 +11693,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     });
   };
 
-  const loadToolsInfoData = async () => {
+  const loadToolsInfoData = async ({ includeHistory = false } = {}) => {
     const tool = toolsInfoState.tool;
     const orgFolder = toolsInfoState.orgFolder;
     if (!tool || !orgFolder) {
@@ -11688,23 +11708,28 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       return;
     }
     const matcher = buildToolsInfoMatcher(tool);
-    const movesPath = `./${orgFolder}/Перемещения.json`;
-    const breakdownsPath = `./${orgFolder}/Поломки.json`;
-    const repairsPath = `./${orgFolder}/Ремонты.json`;
     const primaryPhotoNumber = resolveToolPhotoNumber(tool);
     const toolNumber = String(tool?.["Номер"] ?? "").trim();
     const accountingNumber = String(tool?.["Бух.номер"] ?? "").trim();
-    const [rawMoves, rawBreakdowns, rawRepairs] = await Promise.all([
-      loadJson(movesPath).catch(() => []),
-      loadJson(breakdownsPath).catch(() => []),
-      loadJson(repairsPath).catch(() => []),
-    ]);
     const { files: photoFiles = [] } = await loadToolPhotoFiles(
       orgFolder,
       primaryPhotoNumber,
       toolNumber,
       accountingNumber
     );
+    toolsInfoState.photos = Array.isArray(photoFiles) ? photoFiles : [];
+    renderToolsInfoPhotos();
+    if (!includeHistory) {
+      return;
+    }
+    const movesPath = `./${orgFolder}/Перемещения.json`;
+    const breakdownsPath = `./${orgFolder}/Поломки.json`;
+    const repairsPath = `./${orgFolder}/Ремонты.json`;
+    const [rawMoves, rawBreakdowns, rawRepairs] = await Promise.all([
+      loadJson(movesPath).catch(() => []),
+      loadJson(breakdownsPath).catch(() => []),
+      loadJson(repairsPath).catch(() => []),
+    ]);
     const moves = Array.isArray(rawMoves)
       ? rawMoves
       : Array.isArray(rawMoves?.moves)
@@ -11754,11 +11779,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         if (!bDate) return -1;
         return bDate - aDate;
       });
-    toolsInfoState.photos = Array.isArray(photoFiles) ? photoFiles : [];
+    toolsInfoState.historyLoaded = true;
     renderToolsInfoMoves();
     renderToolsInfoBreakdowns();
     renderToolsInfoRepairs();
-    renderToolsInfoPhotos();
   };
 
   const closeToolsInfoModal = () => {
@@ -11767,6 +11791,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     document.body.style.overflow = "";
     toolsInfoState.tool = null;
     toolsInfoState.historyOpened = false;
+    toolsInfoState.historyLoaded = false;
     toolsInfoState.photos = [];
     toolsInfoState.kitExpanded = false;
     if (toolsInfoCancelMoveButton) {
@@ -11792,16 +11817,17 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       toolsInfoSubtitleEl.textContent = "Детальная информация";
     }
     toolsInfoState.kitExpanded = false;
+    toolsInfoState.historyLoaded = false;
     renderToolsInfoGrid(tool);
     renderToolsInfoKit(tool);
-    if (toolsInfoMovesSummaryEl) {
-      toolsInfoMovesSummaryEl.textContent = "Загружаем перемещения...";
-    }
-    if (toolsInfoBreakdownsSummaryEl) {
-      toolsInfoBreakdownsSummaryEl.textContent = "Загружаем поломки...";
-    }
-    if (toolsInfoRepairsSummaryEl) {
-      toolsInfoRepairsSummaryEl.textContent = "Загружаем ремонты...";
+    toolsInfoState.moves = [];
+    toolsInfoState.breakdowns = [];
+    toolsInfoState.repairs = [];
+    renderToolsInfoMoves();
+    renderToolsInfoBreakdowns();
+    renderToolsInfoRepairs();
+    if (toolsInfoPhotosSummaryEl) {
+      toolsInfoPhotosSummaryEl.textContent = "Загружаем фото...";
     }
     if (toolsInfoMovesListEl) toolsInfoMovesListEl.innerHTML = "";
     if (toolsInfoBreakdownsListEl) toolsInfoBreakdownsListEl.innerHTML = "";
@@ -11818,7 +11844,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     setToolsInfoHistoryOpened(false);
     toolsInfoModalEl.classList.remove("is-hidden");
     document.body.style.overflow = "hidden";
-    await Promise.all([loadToolsInfoData(), syncToolsInfoCancelMoveButton(tool)]);
+    await Promise.all([
+      loadToolsInfoData({ includeHistory: false }),
+      syncToolsInfoCancelMoveButton(tool),
+    ]);
   };
 
   const openToolsEditModal = async (tool) => {

@@ -5164,6 +5164,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const toolsInfoTabButtons = Array.from(
     contentEl.querySelectorAll("[data-tools-info-tab]")
   );
+  const toolsInfoPanelsContainerEl = contentEl.querySelector(
+    "[data-tools-info-panels]"
+  );
   const toolsInfoPanels = Array.from(
     contentEl.querySelectorAll("[data-tools-info-panel]")
   );
@@ -5198,6 +5201,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     "[data-tools-info-cancel-move]"
   );
   const toolsInfoMoveButton = contentEl.querySelector("[data-tools-info-move]");
+  const toolsInfoShareButton = contentEl.querySelector("[data-tools-info-share]");
+  const toolsInfoCopyButton = contentEl.querySelector("[data-tools-info-copy]");
   const toolsInfoHistoryMenuEl = contentEl.querySelector(
     "[data-tools-info-history-menu]"
   );
@@ -11344,6 +11349,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (toolsInfoPhotosSectionEl) {
       toolsInfoPhotosSectionEl.classList.toggle("is-hidden", toolsInfoState.historyOpened);
     }
+    if (toolsInfoPanelsContainerEl) {
+      toolsInfoPanelsContainerEl.classList.toggle("is-hidden", !toolsInfoState.historyOpened);
+    }
     if (toolsInfoPanels.length) {
       toolsInfoPanels.forEach((panel) => {
         panel.classList.toggle("is-active", false);
@@ -11475,6 +11483,42 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       row.append(labelEl, valueEl);
       toolsInfoGridEl.appendChild(row);
     });
+  };
+
+  const buildToolsInfoShareText = (tool) => {
+    if (!tool) return "";
+    const number =
+      String(tool?.["Номер"] ?? "").trim() || resolveToolNumberValue(tool) || "—";
+    const accounting = String(tool?.["Бух.номер"] ?? "").trim() || "—";
+    const toolName = [
+      String(tool?.["Наименование"] ?? "").trim(),
+      String(tool?.["Производитель"] ?? "").trim(),
+      String(tool?.["Модель"] ?? "").trim(),
+    ]
+      .filter(Boolean)
+      .join(" ");
+    const responsible = String(tool?.["Ответственный"] ?? "").trim() || "—";
+    const objectName = String(tool?.["Объект"] ?? "").trim() || "—";
+    const status = String(tool?.["Статус"] ?? "").trim() || "—";
+    return [
+      "Информация об инструменте:",
+      `• Название: ${toolName || "—"}`,
+      `• Номер: ${number}`,
+      `• Бухгалтерский номер: ${accounting}`,
+      `• Ответственный: ${responsible}`,
+      `• Объект: ${objectName}`,
+      `• Статус: ${status}`,
+    ].join("\n");
+  };
+
+  const setToolsInfoSubtitleMessage = (message) => {
+    if (!toolsInfoSubtitleEl) return;
+    toolsInfoSubtitleEl.textContent = message;
+    window.setTimeout(() => {
+      if (toolsInfoState.tool && toolsInfoSubtitleEl.textContent === message) {
+        toolsInfoSubtitleEl.textContent = "Детальная информация";
+      }
+    }, 1800);
   };
 
   const buildToolsInfoMatcher = (tool) => {
@@ -15695,6 +15739,49 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       toolsState.selectedIds.add(selectionId);
       closeToolsInfoModal();
       await openToolsMoveModal();
+    });
+  }
+  if (toolsInfoShareButton) {
+    toolsInfoShareButton.addEventListener("click", async () => {
+      const tool = toolsInfoState.tool;
+      if (!tool) return;
+      const shareText = buildToolsInfoShareText(tool);
+      const canShare = typeof navigator !== "undefined" && typeof navigator.share === "function";
+      if (canShare) {
+        try {
+          await navigator.share({ text: shareText });
+          return;
+        } catch (error) {
+          if (error?.name === "AbortError") return;
+        }
+      }
+      try {
+        if (navigator?.clipboard?.writeText) {
+          await navigator.clipboard.writeText(shareText);
+          setToolsInfoSubtitleMessage("Информация скопирована.");
+          return;
+        }
+      } catch (error) {
+        console.warn("Не удалось скопировать информацию об инструменте.", error);
+      }
+      setToolsInfoSubtitleMessage("Поделиться не удалось.");
+    });
+  }
+  if (toolsInfoCopyButton) {
+    toolsInfoCopyButton.addEventListener("click", async () => {
+      const tool = toolsInfoState.tool;
+      if (!tool) return;
+      const shareText = buildToolsInfoShareText(tool);
+      try {
+        if (navigator?.clipboard?.writeText) {
+          await navigator.clipboard.writeText(shareText);
+          setToolsInfoSubtitleMessage("Информация скопирована.");
+          return;
+        }
+      } catch (error) {
+        console.warn("Не удалось скопировать информацию об инструменте.", error);
+      }
+      setToolsInfoSubtitleMessage("Не удалось скопировать.");
     });
   }
   if (toolsEditKitToggleButton) {

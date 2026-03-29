@@ -1405,13 +1405,35 @@ export function renderRole(user) {
                     </button>
                   </div>
                 </details>
-                <button
-                  class="action-primary tools-info-move"
-                  type="button"
-                  data-tools-info-move
-                >
-                  Переместить
-                </button>
+                <div class="tools-info-actions-right">
+                  <div class="tools-info-quick-actions" aria-label="Поделиться инструментом">
+                    <button
+                      class="button-icon tools-info-quick-action"
+                      type="button"
+                      data-tools-info-share
+                      aria-label="Поделиться инструментом"
+                      title="Поделиться"
+                    >
+                      <span class="button-icon-emoji" aria-hidden="true">🔗</span>
+                    </button>
+                    <button
+                      class="button-icon tools-info-quick-action"
+                      type="button"
+                      data-tools-info-copy
+                      aria-label="Скопировать информацию об инструменте"
+                      title="Копировать"
+                    >
+                      <span class="button-icon-emoji" aria-hidden="true">📋</span>
+                    </button>
+                  </div>
+                  <button
+                    class="action-primary tools-info-move"
+                    type="button"
+                    data-tools-info-move
+                  >
+                    Переместить
+                  </button>
+                </div>
               </div>
               <section class="tools-info-photos" data-tools-info-photos>
                 <div class="tools-info-summary" data-tools-info-photos-summary></div>
@@ -1420,7 +1442,7 @@ export function renderRole(user) {
                   Фото инструмента пока не загружены.
                 </div>
               </section>
-              <div class="tools-info-panels">
+              <div class="tools-info-panels" data-tools-info-panels>
                 <section class="tools-info-panel" data-tools-info-panel="moves">
                   <div class="tools-info-summary" data-tools-info-moves-summary></div>
                   <div class="tools-info-list" data-tools-info-moves-list></div>

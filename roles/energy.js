@@ -1440,24 +1440,24 @@ export function renderRole(user) {
                       <span class="tools-info-inline-action__icon" aria-hidden="true">
                         <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
                           <rect
-                            x="9"
-                            y="9"
-                            width="10"
-                            height="10"
-                            rx="2.2"
+                            x="8"
+                            y="8"
+                            width="11"
+                            height="11"
+                            rx="2.5"
                             fill="none"
                             stroke="currentColor"
-                            stroke-width="1.8"
+                            stroke-width="2"
                           ></rect>
                           <rect
                             x="5"
                             y="5"
-                            width="10"
-                            height="10"
-                            rx="2.2"
+                            width="11"
+                            height="11"
+                            rx="2.5"
                             fill="none"
                             stroke="currentColor"
-                            stroke-width="1.8"
+                            stroke-width="2"
                           ></rect>
                         </svg>
                       </span>

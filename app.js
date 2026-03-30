@@ -11532,60 +11532,68 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     ].join("\n");
   };
 
-  const getToolsInfoPrimaryPhoto = () => {
-    const firstPhoto = Array.isArray(toolsInfoState.photos)
-      ? toolsInfoState.photos.find((file) => String(file?.url ?? "").trim())
-      : null;
-    if (!firstPhoto?.url) return null;
-    const rawUrl = String(firstPhoto.url).trim();
-    if (!rawUrl) return null;
-    try {
-      const resolvedUrl = new URL(rawUrl, window.location.href);
-      const fileName =
-        String(firstPhoto?.name ?? "").trim() ||
-        decodeURIComponent(resolvedUrl.pathname.split("/").pop() || "") ||
-        "tool-photo.jpg";
-      return { url: resolvedUrl.href, fileName };
-    } catch (error) {
-      return {
-        url: rawUrl,
-        fileName: String(firstPhoto?.name ?? "").trim() || "tool-photo.jpg",
-      };
-    }
+  const getToolsInfoSharePhotos = () => {
+    if (!Array.isArray(toolsInfoState.photos)) return [];
+    return toolsInfoState.photos
+      .map((photo, index) => {
+        const rawUrl = String(photo?.url ?? "").trim();
+        if (!rawUrl) return null;
+        try {
+          const resolvedUrl = new URL(rawUrl, window.location.href);
+          const fileName =
+            String(photo?.name ?? "").trim() ||
+            decodeURIComponent(resolvedUrl.pathname.split("/").pop() || "") ||
+            `tool-photo-${index + 1}.jpg`;
+          return { url: resolvedUrl.href, fileName };
+        } catch (error) {
+          return {
+            url: rawUrl,
+            fileName:
+              String(photo?.name ?? "").trim() || `tool-photo-${index + 1}.jpg`,
+          };
+        }
+      })
+      .filter(Boolean);
   };
 
   const shareToolsInfoPhoto = async ({ tool, shareText }) => {
     if (!tool || typeof navigator?.share !== "function") return false;
-    const primaryPhoto = getToolsInfoPrimaryPhoto();
-    if (!primaryPhoto?.url) return false;
-    let response;
-    try {
-      response = await fetch(primaryPhoto.url, { cache: "no-store" });
-    } catch (error) {
-      console.warn("Не удалось загрузить фото для отправки.", error);
-      return false;
+    const photos = getToolsInfoSharePhotos();
+    if (!photos.length) return false;
+    const photoFiles = [];
+    for (const photo of photos) {
+      let response;
+      try {
+        response = await fetch(photo.url, { cache: "no-store" });
+      } catch (error) {
+        console.warn("Не удалось загрузить фото для отправки.", error);
+        continue;
+      }
+      if (!response?.ok) continue;
+      const photoBlob = await response.blob();
+      if (!photoBlob || !photoBlob.size) continue;
+      const mimeType = String(photoBlob.type || "").trim() || "image/jpeg";
+      const extension =
+        mimeType === "image/png"
+          ? "png"
+          : mimeType === "image/webp"
+            ? "webp"
+            : "jpg";
+      const safeFileName = String(photo.fileName || "").trim();
+      const fileName = safeFileName.includes(".")
+        ? safeFileName
+        : `${safeFileName || "tool-photo"}.${extension}`;
+      photoFiles.push(new File([photoBlob], fileName, { type: mimeType }));
     }
-    if (!response?.ok) {
-      return false;
-    }
-    const photoBlob = await response.blob();
-    if (!photoBlob || !photoBlob.size) return false;
-    const mimeType = String(photoBlob.type || "").trim() || "image/jpeg";
-    const extension =
-      mimeType === "image/png" ? "png" : mimeType === "image/webp" ? "webp" : "jpg";
-    const safeFileName = String(primaryPhoto.fileName || "").trim();
-    const fileName = safeFileName.includes(".")
-      ? safeFileName
-      : `${safeFileName || "tool-photo"}.${extension}`;
-    const photoFile = new File([photoBlob], fileName, { type: mimeType });
+    if (!photoFiles.length) return false;
     if (typeof navigator.canShare === "function") {
-      if (!navigator.canShare({ files: [photoFile] })) {
+      if (!navigator.canShare({ files: photoFiles })) {
         return false;
       }
     }
     try {
       await navigator.share({
-        files: [photoFile],
+        files: photoFiles,
         text: shareText,
         title: `Инструмент ${resolveToolNumberValue(tool) || ""}`.trim(),
       });

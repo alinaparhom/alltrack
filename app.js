@@ -11469,6 +11469,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     info.forEach(({ label, value, hideLabelInSearch }) => {
       const row = document.createElement("div");
       row.className = "tools-info-row";
+      if (label === "Статус") {
+        row.classList.add("tools-info-row--status");
+      }
       const labelEl = document.createElement("div");
       labelEl.className = "tools-info-label";
       labelEl.textContent = isSearchMode && hideLabelInSearch ? "" : label;
@@ -11477,6 +11480,24 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const formattedValue = formatInfoValue(value);
       if (label === "Стоимость" && formattedValue !== "—") {
         valueEl.textContent = `${formattedValue} р.`;
+      } else if (label === "Статус") {
+        const statusLine = document.createElement("div");
+        statusLine.className = "tools-info-status-line";
+        const statusText = document.createElement("span");
+        statusText.className = "tools-info-status-text";
+        statusText.textContent = formattedValue;
+        statusLine.appendChild(statusText);
+        const statusActions = document.createElement("div");
+        statusActions.className = "tools-info-inline-actions";
+        [toolsInfoShareButton, toolsInfoCopyButton].forEach((button) => {
+          if (!button) return;
+          button.classList.add("tools-info-inline-action");
+          statusActions.appendChild(button);
+        });
+        if (statusActions.children.length) {
+          statusLine.appendChild(statusActions);
+        }
+        valueEl.appendChild(statusLine);
       } else {
         valueEl.textContent = formattedValue;
       }

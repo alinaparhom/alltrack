@@ -1120,7 +1120,7 @@ function formatNotificationValue(value, fallback = "—") {
 
 function formatNotificationCost(value) {
   if (typeof value === "number" && Number.isFinite(value)) {
-    return `${value.toLocaleString("ru-RU")} руб.`;
+    return `${value.toLocaleString("ru-RU")} р.`;
   }
   const text = String(value ?? "").trim();
   return text ? text : "—";
@@ -1134,6 +1134,7 @@ function formatNotificationCostWithoutCurrency(value) {
   if (!text) return "—";
   return text
     .replace(/\s?₽/g, "")
+    .replace(/\s?р\.?/gi, "")
     .replace(/\s?(руб\.|рублей|рубля)/gi, "")
     .trim();
 }

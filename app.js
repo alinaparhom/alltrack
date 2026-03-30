@@ -11532,6 +11532,18 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     ].join("\n");
   };
 
+  const buildToolsInfoPrimaryPhotoShareUrl = () => {
+    const firstPhoto = Array.isArray(toolsInfoState.photos)
+      ? toolsInfoState.photos.find((file) => String(file?.url ?? "").trim())
+      : null;
+    if (!firstPhoto?.url) return "";
+    try {
+      return new URL(firstPhoto.url, window.location.href).href;
+    } catch (error) {
+      return String(firstPhoto.url).trim();
+    }
+  };
+
   const setToolsInfoSubtitleMessage = (message) => {
     if (!toolsInfoSubtitleEl) return;
     toolsInfoSubtitleEl.textContent = message;
@@ -15767,25 +15779,17 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const tool = toolsInfoState.tool;
       if (!tool) return;
       const shareText = buildToolsInfoShareText(tool);
-      const canShare = typeof navigator !== "undefined" && typeof navigator.share === "function";
-      if (canShare) {
-        try {
-          await navigator.share({ text: shareText });
-          return;
-        } catch (error) {
-          if (error?.name === "AbortError") return;
-        }
+      const photoUrl = buildToolsInfoPrimaryPhotoShareUrl();
+      const telegramShareUrl = new URL("https://t.me/share/url");
+      telegramShareUrl.searchParams.set("text", shareText);
+      if (photoUrl) {
+        telegramShareUrl.searchParams.set("url", photoUrl);
       }
-      try {
-        if (navigator?.clipboard?.writeText) {
-          await navigator.clipboard.writeText(shareText);
-          setToolsInfoSubtitleMessage("Информация скопирована.");
-          return;
-        }
-      } catch (error) {
-        console.warn("Не удалось скопировать информацию об инструменте.", error);
+      if (window.Telegram?.WebApp?.openTelegramLink) {
+        window.Telegram.WebApp.openTelegramLink(telegramShareUrl.href);
+        return;
       }
-      setToolsInfoSubtitleMessage("Поделиться не удалось.");
+      window.open(telegramShareUrl.href, "_blank", "noopener");
     });
   }
   if (toolsInfoCopyButton) {

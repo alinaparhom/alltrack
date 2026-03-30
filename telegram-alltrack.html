@@ -6159,6 +6159,10 @@
         gap: 4px;
       }
 
+      .tools-info-row--status .tools-info-value {
+        width: 100%;
+      }
+
       .tools-info-label {
         font-size: 11px;
         font-weight: 700;
@@ -6192,10 +6196,44 @@
         gap: 8px;
       }
 
+      .tools-info-quick-actions.is-hidden {
+        display: none;
+      }
+
       .tools-info-quick-action {
         min-height: 42px;
         width: 100%;
         border-radius: 999px;
+      }
+
+      .tools-info-status-line {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+      }
+
+      .tools-info-status-text {
+        min-width: 0;
+      }
+
+      .tools-info-inline-actions {
+        display: inline-flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 8px;
+        margin-left: auto;
+        flex-shrink: 0;
+      }
+
+      .tools-info-inline-action {
+        min-height: 34px;
+        width: 34px;
+        border-radius: 999px;
+      }
+
+      .tools-info-inline-action .button-icon-emoji {
+        font-size: 15px;
       }
 
       .tools-info-history-menu {

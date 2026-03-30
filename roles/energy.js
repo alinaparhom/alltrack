@@ -1406,9 +1406,9 @@ export function renderRole(user) {
                   </div>
                 </details>
                 <div class="tools-info-actions-right">
-                  <div class="tools-info-quick-actions" aria-label="Поделиться инструментом">
+                  <div class="tools-info-quick-actions is-hidden" aria-hidden="true">
                     <button
-                      class="button-icon tools-info-quick-action"
+                      class="button-icon tools-info-quick-action tools-info-inline-action"
                       type="button"
                       data-tools-info-share
                       aria-label="Поделиться инструментом"
@@ -1417,7 +1417,7 @@ export function renderRole(user) {
                       <span class="button-icon-emoji" aria-hidden="true">🔗</span>
                     </button>
                     <button
-                      class="button-icon tools-info-quick-action"
+                      class="button-icon tools-info-quick-action tools-info-inline-action"
                       type="button"
                       data-tools-info-copy
                       aria-label="Скопировать информацию об инструменте"

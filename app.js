@@ -11743,7 +11743,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const files = Array.isArray(toolsInfoState.photos) ? toolsInfoState.photos : [];
     if (toolsInfoPhotosSummaryEl) {
       toolsInfoPhotosSummaryEl.textContent = files.length
-        ? `Загружено фото: ${files.length}`
+        ? ""
         : "Фото пока не загружены.";
     }
     if (toolsInfoPhotosEmptyEl) {

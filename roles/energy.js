@@ -1416,11 +1416,14 @@ export function renderRole(user) {
                     >
                       <span class="tools-info-inline-action__icon" aria-hidden="true">
                         <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+                          <circle cx="6.5" cy="12" r="3.5" fill="currentColor"></circle>
+                          <circle cx="17.5" cy="5.5" r="3.5" fill="currentColor"></circle>
+                          <circle cx="17.5" cy="18.5" r="3.5" fill="currentColor"></circle>
                           <path
-                            d="M14.8 6.2a3.4 3.4 0 0 1 4.8 4.8l-1.6 1.6a3.4 3.4 0 0 1-4.8 0m-2.4 4.8a3.4 3.4 0 0 1-4.8 0A3.4 3.4 0 0 1 6 12.6L7.6 11a3.4 3.4 0 0 1 4.8 0m-5.6 1.8 10.4-10.4"
+                            d="M9.7 10.1l4.7-2.8M9.7 13.9l4.7 2.8"
                             fill="none"
                             stroke="currentColor"
-                            stroke-width="1.8"
+                            stroke-width="1.9"
                             stroke-linecap="round"
                             stroke-linejoin="round"
                           ></path>

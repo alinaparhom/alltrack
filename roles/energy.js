@@ -1342,7 +1342,7 @@ export function renderRole(user) {
             <div class="settings-modal__header tools-modal__header">
               <div class="settings-modal__title">
                 <h2 data-tools-info-title>Инструмент</h2>
-                <p data-tools-info-subtitle>Детальная информация</p>
+                <p data-tools-info-subtitle></p>
               </div>
               <button
                 class="button-icon tools-modal__close"

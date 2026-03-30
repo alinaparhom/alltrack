@@ -5142,6 +5142,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const toolsEditTitleEl = contentEl.querySelector("[data-tools-edit-title]");
   const toolsEditSubtitleEl = contentEl.querySelector("[data-tools-edit-subtitle]");
   const toolsInfoModalEl = contentEl.querySelector("[data-tools-info-modal]");
+  const toolsInfoModalPanelEl = contentEl.querySelector(".tools-info-modal__panel");
   const toolsInfoBackdropEl = contentEl.querySelector("[data-tools-info-backdrop]");
   const toolsInfoCloseButton = contentEl.querySelector("[data-tools-info-close]");
   const toolsInfoTitleEl = contentEl.querySelector("[data-tools-info-title]");
@@ -11634,9 +11635,29 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     toolsInfoSubtitleEl.textContent = message;
     window.setTimeout(() => {
       if (toolsInfoState.tool && toolsInfoSubtitleEl.textContent === message) {
-        toolsInfoSubtitleEl.textContent = "Детальная информация";
+        toolsInfoSubtitleEl.textContent = "";
       }
     }, 1800);
+  };
+
+  const applyToolsInfoPanelTone = (tool) => {
+    if (!toolsInfoModalPanelEl) return;
+    toolsInfoModalPanelEl.classList.toggle(
+      "tools-item--broken",
+      tool?.__statusTone === "broken"
+    );
+    toolsInfoModalPanelEl.classList.toggle(
+      "tools-item--repair",
+      tool?.__statusTone === "repair"
+    );
+    toolsInfoModalPanelEl.classList.toggle(
+      "tools-item--writeoff",
+      tool?.__statusTone === "writeoff"
+    );
+    toolsInfoModalPanelEl.classList.toggle(
+      "tools-item--pending-response",
+      Boolean(tool?.__pendingMove)
+    );
   };
 
   const buildToolsInfoMatcher = (tool) => {
@@ -11722,8 +11743,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const files = Array.isArray(toolsInfoState.photos) ? toolsInfoState.photos : [];
     if (toolsInfoPhotosSummaryEl) {
       toolsInfoPhotosSummaryEl.textContent = files.length
-        ? `Фото инструмента: ${files.length}`
-        : "Фото инструмента пока не загружены.";
+        ? `Загружено фото: ${files.length}`
+        : "Фото пока не загружены.";
     }
     if (toolsInfoPhotosEmptyEl) {
       toolsInfoPhotosEmptyEl.classList.toggle("is-hidden", files.length > 0);
@@ -11960,6 +11981,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       toolsInfoCancelMoveButton.classList.add("is-hidden");
       toolsInfoCancelMoveButton.disabled = true;
     }
+    applyToolsInfoPanelTone(null);
   };
 
   const openToolsInfoModal = async (tool) => {
@@ -11976,8 +11998,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       toolsInfoTitleEl.textContent = title;
     }
     if (toolsInfoSubtitleEl) {
-      toolsInfoSubtitleEl.textContent = "Детальная информация";
+      toolsInfoSubtitleEl.textContent = "";
     }
+    applyToolsInfoPanelTone(tool);
     toolsInfoState.kitExpanded = false;
     toolsInfoState.historyLoaded = false;
     renderToolsInfoGrid(tool);

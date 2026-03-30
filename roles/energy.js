@@ -1414,7 +1414,18 @@ export function renderRole(user) {
                       aria-label="Поделиться инструментом"
                       title="Поделиться"
                     >
-                      <span class="button-icon-emoji" aria-hidden="true">🔗</span>
+                      <span class="tools-info-inline-action__icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+                          <path
+                            d="M14.8 6.2a3.4 3.4 0 0 1 4.8 4.8l-1.6 1.6a3.4 3.4 0 0 1-4.8 0m-2.4 4.8a3.4 3.4 0 0 1-4.8 0A3.4 3.4 0 0 1 6 12.6L7.6 11a3.4 3.4 0 0 1 4.8 0m-5.6 1.8 10.4-10.4"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="1.8"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                          ></path>
+                        </svg>
+                      </span>
                     </button>
                     <button
                       class="button-icon tools-info-quick-action tools-info-inline-action"
@@ -1423,7 +1434,30 @@ export function renderRole(user) {
                       aria-label="Скопировать информацию об инструменте"
                       title="Копировать"
                     >
-                      <span class="button-icon-emoji" aria-hidden="true">📋</span>
+                      <span class="tools-info-inline-action__icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+                          <rect
+                            x="9"
+                            y="9"
+                            width="10"
+                            height="10"
+                            rx="2.2"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="1.8"
+                          ></rect>
+                          <rect
+                            x="5"
+                            y="5"
+                            width="10"
+                            height="10"
+                            rx="2.2"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="1.8"
+                          ></rect>
+                        </svg>
+                      </span>
                     </button>
                   </div>
                   <button

@@ -11497,7 +11497,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         statusLine.className = "tools-info-status-line";
         const statusText = document.createElement("span");
         statusText.className = "tools-info-status-text";
-        statusText.textContent = formattedValue;
+        statusText.textContent = normalizeToolsInfoStatus(value, Boolean(tool?.__pendingMove));
         statusLine.appendChild(statusText);
         const statusActions = document.createElement("div");
         statusActions.className = "tools-info-inline-actions";
@@ -11532,7 +11532,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       .join(" ");
     const responsible = String(tool?.["Ответственный"] ?? "").trim() || "—";
     const objectName = String(tool?.["Объект"] ?? "").trim() || "—";
-    const status = String(tool?.["Статус"] ?? "").trim() || "—";
+    const status = normalizeToolsInfoStatus(tool?.["Статус"], Boolean(tool?.__pendingMove));
     return [
       "Информация об инструменте:",
       `• Название: ${toolName || "—"}`,
@@ -11640,8 +11640,23 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }, 1800);
   };
 
+  const normalizeToolsInfoStatus = (rawStatus, movingNow = false) => {
+    if (movingNow) return "Перемещается";
+    const normalized = String(rawStatus ?? "").trim().toLocaleLowerCase("ru");
+    if (!normalized) return "—";
+    if (normalized === "рабочий") return "Исправный";
+    if (normalized === "в процессе перемещения") return "Перемещается";
+    return String(rawStatus ?? "").trim();
+  };
+
   const applyToolsInfoPanelTone = (tool) => {
     if (!toolsInfoModalPanelEl) return;
+    const rawStatus = String(tool?.["Статус"] ?? "").trim();
+    const normalizedStatus = rawStatus.toLocaleLowerCase("ru");
+    const isWorkingStatus = normalizedStatus === "рабочий" || normalizedStatus === "исправный";
+    const hasMoveStatus =
+      normalizedStatus === "в процессе перемещения" || normalizedStatus === "перемещается";
+    const shouldHighlightPending = Boolean(tool?.__pendingMove) && (!isWorkingStatus || hasMoveStatus);
     toolsInfoModalPanelEl.classList.toggle(
       "tools-item--broken",
       tool?.__statusTone === "broken"
@@ -11656,7 +11671,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     );
     toolsInfoModalPanelEl.classList.toggle(
       "tools-item--pending-response",
-      Boolean(tool?.__pendingMove)
+      shouldHighlightPending
     );
   };
 

@@ -5164,6 +5164,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const toolsInfoTabButtons = Array.from(
     contentEl.querySelectorAll("[data-tools-info-tab]")
   );
+  const toolsInfoTabsEl = contentEl.querySelector("[data-tools-info-tabs]");
   const toolsInfoPanelsContainerEl = contentEl.querySelector(
     "[data-tools-info-panels]"
   );
@@ -5203,8 +5204,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const toolsInfoMoveButton = contentEl.querySelector("[data-tools-info-move]");
   const toolsInfoShareButton = contentEl.querySelector("[data-tools-info-share]");
   const toolsInfoCopyButton = contentEl.querySelector("[data-tools-info-copy]");
-  const toolsInfoHistoryMenuEl = contentEl.querySelector(
-    "[data-tools-info-history-menu]"
+  const toolsInfoHistoryToggleButton = contentEl.querySelector(
+    "[data-tools-info-history-toggle]"
   );
   const toolsEditAccountingInput = contentEl.querySelector(
     "[data-tools-edit-accounting]"
@@ -11346,8 +11347,18 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
   const setToolsInfoHistoryOpened = (opened) => {
     toolsInfoState.historyOpened = Boolean(opened);
+    if (toolsInfoHistoryToggleButton) {
+      toolsInfoHistoryToggleButton.classList.toggle("is-active", toolsInfoState.historyOpened);
+      toolsInfoHistoryToggleButton.setAttribute(
+        "aria-pressed",
+        toolsInfoState.historyOpened ? "true" : "false"
+      );
+    }
     if (toolsInfoPhotosSectionEl) {
       toolsInfoPhotosSectionEl.classList.toggle("is-hidden", toolsInfoState.historyOpened);
+    }
+    if (toolsInfoTabsEl) {
+      toolsInfoTabsEl.classList.toggle("is-hidden", !toolsInfoState.historyOpened);
     }
     if (toolsInfoPanelsContainerEl) {
       toolsInfoPanelsContainerEl.classList.toggle("is-hidden", !toolsInfoState.historyOpened);
@@ -11988,9 +11999,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       toolsInfoBreakdownsEmptyEl.classList.add("is-hidden");
     }
     if (toolsInfoRepairsEmptyEl) toolsInfoRepairsEmptyEl.classList.add("is-hidden");
-    if (toolsInfoHistoryMenuEl) {
-      toolsInfoHistoryMenuEl.open = false;
-    }
     setToolsInfoTab("moves");
     setToolsInfoHistoryOpened(false);
     toolsInfoModalEl.classList.remove("is-hidden");
@@ -15832,9 +15840,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       });
     });
   }
-  if (toolsInfoHistoryMenuEl) {
-    toolsInfoHistoryMenuEl.addEventListener("toggle", () => {
-      setToolsInfoHistoryOpened(toolsInfoHistoryMenuEl.open);
+  if (toolsInfoHistoryToggleButton) {
+    toolsInfoHistoryToggleButton.addEventListener("click", () => {
+      setToolsInfoHistoryOpened(!toolsInfoState.historyOpened);
     });
   }
   if (toolsInfoMoveButton) {

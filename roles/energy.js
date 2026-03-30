@@ -1373,38 +1373,23 @@ export function renderRole(user) {
                 </div>
               </div>
               <div class="tools-info-top-actions">
-                <details class="tools-info-history-menu" data-tools-info-history-menu>
-                  <summary class="tools-info-history-menu__trigger">История</summary>
-                  <div class="tools-info-tabs" role="tablist" aria-label="История">
-                    <button
-                      class="tools-info-tab"
-                      type="button"
-                      role="tab"
-                      aria-selected="false"
-                      data-tools-info-tab="moves"
-                    >
-                      Перемещения
-                    </button>
-                    <button
-                      class="tools-info-tab"
-                      type="button"
-                      role="tab"
-                      aria-selected="false"
-                      data-tools-info-tab="breakdowns"
-                    >
-                      Поломки
-                    </button>
-                    <button
-                      class="tools-info-tab"
-                      type="button"
-                      role="tab"
-                      aria-selected="false"
-                      data-tools-info-tab="repairs"
-                    >
-                      Ремонты
-                    </button>
-                  </div>
-                </details>
+                <div class="tools-info-top-actions-row">
+                  <button
+                    class="tools-info-history-menu__trigger"
+                    type="button"
+                    data-tools-info-history-toggle
+                    aria-pressed="false"
+                  >
+                    История
+                  </button>
+                  <button
+                    class="action-primary tools-info-move"
+                    type="button"
+                    data-tools-info-move
+                  >
+                    Переместить
+                  </button>
+                </div>
                 <div class="tools-info-actions-right">
                   <div class="tools-info-quick-actions is-hidden" aria-hidden="true">
                     <button
@@ -1466,12 +1451,39 @@ export function renderRole(user) {
                       </span>
                     </button>
                   </div>
+                </div>
+                <div
+                  class="tools-info-tabs is-hidden"
+                  role="tablist"
+                  aria-label="История"
+                  data-tools-info-tabs
+                >
                   <button
-                    class="action-primary tools-info-move"
+                    class="tools-info-tab"
                     type="button"
-                    data-tools-info-move
+                    role="tab"
+                    aria-selected="false"
+                    data-tools-info-tab="moves"
                   >
-                    Переместить
+                    Перемещения
+                  </button>
+                  <button
+                    class="tools-info-tab"
+                    type="button"
+                    role="tab"
+                    aria-selected="false"
+                    data-tools-info-tab="breakdowns"
+                  >
+                    Поломки
+                  </button>
+                  <button
+                    class="tools-info-tab"
+                    type="button"
+                    role="tab"
+                    aria-selected="false"
+                    data-tools-info-tab="repairs"
+                  >
+                    Ремонты
                   </button>
                 </div>
               </div>

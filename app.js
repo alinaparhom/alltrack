@@ -10523,8 +10523,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (toolsEmptyEl) {
       toolsEmptyEl.classList.toggle("is-hidden", isMapView || items.length > 0);
     }
+    const totalToolsCost = toolsState.tools.reduce((sum, tool) => {
+      const toolCost = normalizeCostValue(tool?.["Стоимость"]);
+      return sum + (Number.isFinite(toolCost) ? toolCost : 0);
+    }, 0);
     setToolsSubtitle(
-      `Показано ${items.length} из ${toolsState.tools.length}`
+      `Показано ${items.length} из ${toolsState.tools.length} · На сумму ${formatNotificationCostWithoutCurrency(totalToolsCost)} р.`
     );
     updateToolsFiltersUi();
     if (!isMapView || !toolsSearchMapState.activated) {

@@ -876,6 +876,49 @@
         box-shadow: 0 12px 26px rgba(59, 130, 246, 0.22);
       }
 
+      body[data-theme="dark"] .tools-info-modal__panel.tools-item--broken {
+        background: linear-gradient(
+          120deg,
+          rgba(76, 62, 12, 0.92),
+          rgba(26, 33, 52, 0.92)
+        );
+        border-color: rgba(250, 204, 21, 0.45);
+        box-shadow: 0 20px 42px rgba(250, 204, 21, 0.18);
+      }
+
+      body[data-theme="dark"] .tools-info-modal__panel.tools-item--repair {
+        background: linear-gradient(
+          120deg,
+          rgba(124, 45, 18, 0.88),
+          rgba(26, 33, 52, 0.92)
+        );
+        border-color: rgba(249, 115, 22, 0.5);
+        box-shadow: 0 20px 42px rgba(249, 115, 22, 0.2);
+      }
+
+      body[data-theme="dark"] .tools-info-modal__panel.tools-item--writeoff {
+        background: linear-gradient(
+          120deg,
+          rgba(127, 29, 29, 0.9),
+          rgba(69, 10, 10, 0.92)
+        );
+        border-color: rgba(248, 113, 113, 0.62);
+        box-shadow:
+          0 0 0 1px rgba(248, 113, 113, 0.28) inset,
+          0 0 20px rgba(248, 113, 113, 0.22),
+          0 20px 42px rgba(127, 29, 29, 0.34);
+      }
+
+      body[data-theme="dark"] .tools-info-modal__panel.tools-item--pending-response {
+        background: linear-gradient(
+          120deg,
+          rgba(30, 58, 138, 0.75),
+          rgba(26, 33, 52, 0.92)
+        );
+        border-color: rgba(59, 130, 246, 0.55);
+        box-shadow: 0 20px 42px rgba(59, 130, 246, 0.22);
+      }
+
       body[data-theme="dark"] .tools-card.is-selected,
       body[data-theme="dark"] .tools-row.is-selected,
       body[data-theme="dark"] .tools-table__row.is-selected {
@@ -6194,7 +6237,7 @@
 
       .tools-info-top-actions {
         display: grid;
-        gap: 10px;
+        gap: 6px;
       }
 
       .tools-info-top-actions-row {
@@ -6444,6 +6487,49 @@
         height: 100%;
         object-fit: cover;
         display: block;
+      }
+
+      .tools-info-modal__panel.tools-item--broken {
+        border-color: rgba(250, 204, 21, 0.8);
+        background: linear-gradient(
+          120deg,
+          rgba(254, 249, 195, 0.95),
+          rgba(255, 255, 255, 0.92)
+        );
+        box-shadow: 0 24px 60px rgba(250, 204, 21, 0.2);
+      }
+
+      .tools-info-modal__panel.tools-item--repair {
+        border-color: rgba(249, 115, 22, 0.75);
+        background: linear-gradient(
+          120deg,
+          rgba(254, 215, 170, 0.92),
+          rgba(255, 255, 255, 0.92)
+        );
+        box-shadow: 0 24px 60px rgba(249, 115, 22, 0.2);
+      }
+
+      .tools-info-modal__panel.tools-item--writeoff {
+        border-color: rgba(239, 68, 68, 0.75);
+        background: linear-gradient(
+          120deg,
+          rgba(254, 226, 226, 0.95),
+          rgba(255, 255, 255, 0.92)
+        );
+        box-shadow:
+          0 0 0 1px rgba(239, 68, 68, 0.25) inset,
+          0 0 20px rgba(239, 68, 68, 0.18),
+          0 24px 60px rgba(239, 68, 68, 0.18);
+      }
+
+      .tools-info-modal__panel.tools-item--pending-response {
+        border-color: rgba(59, 130, 246, 0.7);
+        background: linear-gradient(
+          120deg,
+          rgba(219, 234, 254, 0.9),
+          rgba(255, 255, 255, 0.92)
+        );
+        box-shadow: 0 24px 60px rgba(59, 130, 246, 0.2);
       }
 
       @media (max-width: 560px) {

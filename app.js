@@ -11532,15 +11532,69 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     ].join("\n");
   };
 
-  const buildToolsInfoPrimaryPhotoShareUrl = () => {
+  const getToolsInfoPrimaryPhoto = () => {
     const firstPhoto = Array.isArray(toolsInfoState.photos)
       ? toolsInfoState.photos.find((file) => String(file?.url ?? "").trim())
       : null;
-    if (!firstPhoto?.url) return "";
+    if (!firstPhoto?.url) return null;
+    const rawUrl = String(firstPhoto.url).trim();
+    if (!rawUrl) return null;
     try {
-      return new URL(firstPhoto.url, window.location.href).href;
+      const resolvedUrl = new URL(rawUrl, window.location.href);
+      const fileName =
+        String(firstPhoto?.name ?? "").trim() ||
+        decodeURIComponent(resolvedUrl.pathname.split("/").pop() || "") ||
+        "tool-photo.jpg";
+      return { url: resolvedUrl.href, fileName };
     } catch (error) {
-      return String(firstPhoto.url).trim();
+      return {
+        url: rawUrl,
+        fileName: String(firstPhoto?.name ?? "").trim() || "tool-photo.jpg",
+      };
+    }
+  };
+
+  const shareToolsInfoPhoto = async ({ tool, shareText }) => {
+    if (!tool || typeof navigator?.share !== "function") return false;
+    const primaryPhoto = getToolsInfoPrimaryPhoto();
+    if (!primaryPhoto?.url) return false;
+    let response;
+    try {
+      response = await fetch(primaryPhoto.url, { cache: "no-store" });
+    } catch (error) {
+      console.warn("Не удалось загрузить фото для отправки.", error);
+      return false;
+    }
+    if (!response?.ok) {
+      return false;
+    }
+    const photoBlob = await response.blob();
+    if (!photoBlob || !photoBlob.size) return false;
+    const mimeType = String(photoBlob.type || "").trim() || "image/jpeg";
+    const extension =
+      mimeType === "image/png" ? "png" : mimeType === "image/webp" ? "webp" : "jpg";
+    const safeFileName = String(primaryPhoto.fileName || "").trim();
+    const fileName = safeFileName.includes(".")
+      ? safeFileName
+      : `${safeFileName || "tool-photo"}.${extension}`;
+    const photoFile = new File([photoBlob], fileName, { type: mimeType });
+    if (typeof navigator.canShare === "function") {
+      if (!navigator.canShare({ files: [photoFile] })) {
+        return false;
+      }
+    }
+    try {
+      await navigator.share({
+        files: [photoFile],
+        text: shareText,
+        title: `Инструмент ${resolveToolNumberValue(tool) || ""}`.trim(),
+      });
+      return true;
+    } catch (error) {
+      if (error?.name !== "AbortError") {
+        console.warn("Не удалось отправить фото инструмента.", error);
+      }
+      return false;
     }
   };
 
@@ -15779,12 +15833,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const tool = toolsInfoState.tool;
       if (!tool) return;
       const shareText = buildToolsInfoShareText(tool);
-      const photoUrl = buildToolsInfoPrimaryPhotoShareUrl();
+      const photoShared = await shareToolsInfoPhoto({ tool, shareText });
+      if (photoShared) {
+        return;
+      }
       const telegramShareUrl = new URL("https://t.me/share/url");
       telegramShareUrl.searchParams.set("text", shareText);
-      if (photoUrl) {
-        telegramShareUrl.searchParams.set("url", photoUrl);
-      }
       if (window.Telegram?.WebApp?.openTelegramLink) {
         window.Telegram.WebApp.openTelegramLink(telegramShareUrl.href);
         return;

@@ -1651,9 +1651,9 @@ function resolveLateReplyFineConfig(array $settings): array {
 function formatMoneyLabel(float $value): string {
   $normalized = round($value, 2);
   if (abs($normalized - round($normalized)) < 0.00001) {
-    return number_format((float) round($normalized), 0, '.', ' ') . " руб.";
+    return number_format((float) round($normalized), 0, '.', ' ') . " р.";
   }
-  return number_format($normalized, 2, '.', ' ') . " руб.";
+  return number_format($normalized, 2, '.', ' ') . " р.";
 }
 
 function resolveMovePendingDays(array $move, DateTimeImmutable $now, DateTimeZone $timezone): int {

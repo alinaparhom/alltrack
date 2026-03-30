@@ -1437,27 +1437,30 @@ export function renderRole(user) {
                       aria-label="Скопировать информацию об инструменте"
                       title="Копировать"
                     >
-                      <span class="tools-info-inline-action__icon" aria-hidden="true">
+                      <span
+                        class="tools-info-inline-action__icon tools-info-inline-action__icon--copy"
+                        aria-hidden="true"
+                      >
                         <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
                           <rect
-                            x="8"
-                            y="8"
-                            width="11"
-                            height="11"
+                            x="7"
+                            y="7"
+                            width="12"
+                            height="12"
                             rx="2.5"
                             fill="none"
                             stroke="currentColor"
-                            stroke-width="2"
+                            stroke-width="2.2"
                           ></rect>
                           <rect
-                            x="5"
-                            y="5"
-                            width="11"
-                            height="11"
+                            x="4"
+                            y="4"
+                            width="12"
+                            height="12"
                             rx="2.5"
                             fill="none"
                             stroke="currentColor"
-                            stroke-width="2"
+                            stroke-width="2.2"
                           ></rect>
                         </svg>
                       </span>

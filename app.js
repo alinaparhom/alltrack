@@ -11556,6 +11556,21 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       .filter(Boolean);
   };
 
+  const buildToolsInfoShareTextWithPhotoLinks = (shareText) => {
+    const baseText = String(shareText ?? "").trim();
+    const photos = getToolsInfoSharePhotos();
+    if (!photos.length) return baseText;
+    const photosList = photos
+      .map((photo, index) => {
+        const photoUrl = String(photo?.url ?? "").trim();
+        if (!photoUrl) return null;
+        return `${index + 1}. ${photoUrl}`;
+      })
+      .filter(Boolean);
+    if (!photosList.length) return baseText;
+    return [baseText, "", "Фото инструмента:", ...photosList].join("\n");
+  };
+
   const shareToolsInfoPhoto = async ({ tool, shareText }) => {
     if (!tool || typeof navigator?.share !== "function") return false;
     const photos = getToolsInfoSharePhotos();
@@ -15845,8 +15860,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       if (photoShared) {
         return;
       }
+      const shareTextWithPhotos = buildToolsInfoShareTextWithPhotoLinks(shareText);
       const telegramShareUrl = new URL("https://t.me/share/url");
-      telegramShareUrl.searchParams.set("text", shareText);
+      telegramShareUrl.searchParams.set("text", shareTextWithPhotos);
       if (window.Telegram?.WebApp?.openTelegramLink) {
         window.Telegram.WebApp.openTelegramLink(telegramShareUrl.href);
         return;

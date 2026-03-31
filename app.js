@@ -9514,16 +9514,27 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     );
 
     if (!visibleObjectNames.size) {
-      setToolsZoneSubtitle("В текущей зоне карты: 0 инструментов");
+      setToolsZoneSubtitle("В текущей зоне карты: 0 на общую сумму: 0 р");
       return;
     }
 
-    const visibleToolsCount = toolsState.filtered.reduce((sum, tool) => {
-      const objectName = sanitizeObjectName(tool?.["Объект"] ?? tool?.object ?? "").toLowerCase();
-      return visibleObjectNames.has(objectName) ? sum + 1 : sum;
-    }, 0);
+    const visibleZoneStats = toolsState.filtered.reduce(
+      (acc, tool) => {
+        const objectName = sanitizeObjectName(tool?.["Объект"] ?? tool?.object ?? "").toLowerCase();
+        if (!visibleObjectNames.has(objectName)) {
+          return acc;
+        }
+        const cost = normalizeCostValue(tool?.["Стоимость"]);
+        acc.count += 1;
+        acc.totalCost += Number.isFinite(cost) ? cost : 0;
+        return acc;
+      },
+      { count: 0, totalCost: 0 }
+    );
 
-    setToolsZoneSubtitle(`В текущей зоне карты: ${visibleToolsCount} инструментов`);
+    setToolsZoneSubtitle(
+      `В текущей зоне карты: ${visibleZoneStats.count} на общую сумму: ${formatNotificationCostWithoutCurrency(visibleZoneStats.totalCost)} р`
+    );
   };
 
   const collectFilteredToolsByObject = (objectName) => {
@@ -10506,6 +10517,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     toolsListEl.classList.toggle("is-hidden", isMapView);
     if (toolsSearchMapEl) {
       toolsSearchMapEl.classList.toggle("is-hidden", !isMapView);
+    }
+    if (toolsFilterActionsEl) {
+      toolsFilterActionsEl.classList.remove("is-hidden");
+    }
+    if (toolsFiltersToggleEl) {
+      toolsFiltersToggleEl.classList.remove("is-hidden");
     }
     const items = toolsState.filtered;
     if (isMapView) {

@@ -8818,8 +8818,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
   const setToolsZoneSubtitle = (text = "") => {
     if (!toolsZoneSubtitleEl) return;
-    toolsZoneSubtitleEl.textContent = text;
-    toolsZoneSubtitleEl.classList.toggle("is-hidden", !text);
+    toolsZoneSubtitleEl.textContent = "";
+    toolsZoneSubtitleEl.classList.add("is-hidden");
   };
 
   const setToolsTitle = (text) => {

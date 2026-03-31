@@ -9503,38 +9503,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   };
 
   const updateToolsZoneSubtitle = () => {
-    if (toolsState.view !== "map" || !toolsSearchMapState.map) {
-      setToolsZoneSubtitle("");
-      return;
-    }
-    const visibleObjectNames = new Set(
-      getVisibleToolsSearchPoints(toolsSearchMapState.points)
-        .map((point) => String(point.name ?? "").trim().toLowerCase())
-        .filter(Boolean)
-    );
-
-    if (!visibleObjectNames.size) {
-      setToolsZoneSubtitle("В текущей зоне карты: 0 на общую сумму: 0 р");
-      return;
-    }
-
-    const visibleZoneStats = toolsState.filtered.reduce(
-      (acc, tool) => {
-        const objectName = sanitizeObjectName(tool?.["Объект"] ?? tool?.object ?? "").toLowerCase();
-        if (!visibleObjectNames.has(objectName)) {
-          return acc;
-        }
-        const cost = normalizeCostValue(tool?.["Стоимость"]);
-        acc.count += 1;
-        acc.totalCost += Number.isFinite(cost) ? cost : 0;
-        return acc;
-      },
-      { count: 0, totalCost: 0 }
-    );
-
-    setToolsZoneSubtitle(
-      `В текущей зоне карты: ${visibleZoneStats.count} на общую сумму: ${formatNotificationCostWithoutCurrency(visibleZoneStats.totalCost)} р`
-    );
+    // По требованию UX верхняя зона (заголовок/подзаголовок/поиск/переключатели)
+    // не должна визуально меняться при переключении в режим карты.
+    // Поэтому дополнительный подзаголовок по зоне карты всегда очищаем.
+    setToolsZoneSubtitle("");
   };
 
   const collectFilteredToolsByObject = (objectName) => {

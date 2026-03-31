@@ -10548,11 +10548,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       `Показано ${items.length} из ${toolsState.tools.length} · На сумму ${formatNotificationCostWithoutCurrency(totalToolsCost)} р.`
     );
     updateToolsFiltersUi();
-    if (!isMapView || !toolsSearchMapState.activated) {
-      setToolsZoneSubtitle("");
-    } else {
-      updateToolsZoneSubtitle();
-    }
+    setToolsZoneSubtitle("");
     syncToolsViewButtons();
     updateToolsSelectionUi();
   };

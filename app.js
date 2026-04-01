@@ -9455,20 +9455,24 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
   };
 
+  const lockToolsTopZoneHeights = () => {
+    if (!toolsHeaderEl || !toolsControlsEl) return;
+    if (toolsTopZoneLock) return;
+    toolsTopZoneLock = {
+      header: toolsHeaderEl.offsetHeight,
+      controls: toolsControlsEl.offsetHeight,
+    };
+  };
+
   const syncToolsTopZoneStability = () => {
     if (!toolsHeaderEl || !toolsControlsEl) return;
+    lockToolsTopZoneHeights();
     if (toolsState.view === "map") {
-      if (!toolsTopZoneLock) {
-        toolsTopZoneLock = {
-          header: toolsHeaderEl.offsetHeight,
-          controls: toolsControlsEl.offsetHeight,
-        };
-      }
-      if (toolsTopZoneLock.header > 0) {
+      if (toolsTopZoneLock?.header > 0) {
         toolsHeaderEl.style.minHeight = `${toolsTopZoneLock.header}px`;
         toolsHeaderEl.style.height = `${toolsTopZoneLock.header}px`;
       }
-      if (toolsTopZoneLock.controls > 0) {
+      if (toolsTopZoneLock?.controls > 0) {
         toolsControlsEl.style.minHeight = `${toolsTopZoneLock.controls}px`;
         toolsControlsEl.style.height = `${toolsTopZoneLock.controls}px`;
       }
@@ -9479,10 +9483,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     toolsHeaderEl.style.height = "";
     toolsControlsEl.style.minHeight = "";
     toolsControlsEl.style.height = "";
-    toolsTopZoneLock = {
-      header: toolsHeaderEl.offsetHeight,
-      controls: toolsControlsEl.offsetHeight,
-    };
   };
 
   const clearToolsList = () => {

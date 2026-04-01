@@ -7993,9 +7993,13 @@
         row-gap: 0;
       }
 
+      .tools-modal--my-tools {
+        --my-tools-title-search-gap: 8px;
+      }
+
       .tools-modal--my-tools .tools-controls {
         align-self: start;
-        margin-top: 8px !important;
+        margin-top: var(--my-tools-title-search-gap) !important;
         gap: 8px;
       }
 
@@ -8008,8 +8012,7 @@
 
       .tools-modal--my-tools .tools-filter-actions {
         margin-left: auto;
-        position: sticky;
-        right: 0;
+        position: static;
         z-index: 3;
       }
 
@@ -8024,6 +8027,8 @@
       }
 
       .tools-modal--my-tools .tools-filters.is-open {
+        display: grid;
+        margin-top: 8px;
         margin-bottom: 0;
         padding-bottom: 0;
       }
@@ -10905,8 +10910,7 @@
 
         .tools-modal--selecting .tools-filter-actions {
           margin-left: auto;
-          position: sticky;
-          right: 0;
+          position: static;
         }
 
         .tools-move-button {
@@ -11033,7 +11037,7 @@
 
         .tools-modal--my-tools .tools-controls {
           align-self: start;
-          margin-top: 8px !important;
+          margin-top: var(--my-tools-title-search-gap) !important;
           gap: 10px;
         }
 
@@ -11053,6 +11057,8 @@
         }
 
         .tools-modal--my-tools .tools-filters.is-open {
+          display: grid;
+          margin-top: 8px;
           margin-bottom: 0;
           padding-bottom: 0;
         }

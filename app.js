@@ -9464,6 +9464,18 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     };
   };
 
+  const resetToolsTopZoneStability = () => {
+    toolsTopZoneLock = null;
+    if (toolsHeaderEl) {
+      toolsHeaderEl.style.minHeight = "";
+      toolsHeaderEl.style.height = "";
+    }
+    if (toolsControlsEl) {
+      toolsControlsEl.style.minHeight = "";
+      toolsControlsEl.style.height = "";
+    }
+  };
+
   const syncToolsTopZoneStability = () => {
     if (!toolsHeaderEl || !toolsControlsEl) return;
     lockToolsTopZoneHeights();
@@ -10953,6 +10965,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const openToolsModal = async (options = {}) => {
     if (!toolsModalEl) return;
     const objectFilter = sanitizeObjectName(options.objectFilter ?? "");
+    resetToolsTopZoneStability();
     toolsState.mode = "user";
     setToolsStatusStandaloneVisibility(false);
     toolsState.activeReplacementResponsible = "";
@@ -10993,6 +11006,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (!toolsModalEl) return;
     const normalizedFullName = String(replacementFullName ?? "").trim();
     if (!normalizedFullName) return;
+    resetToolsTopZoneStability();
     toolsState.activeReplacementResponsible = normalizedFullName;
     toolsState.mode = "replacement";
     setToolsStatusStandaloneVisibility(false);
@@ -11025,6 +11039,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
   const openBaseModal = async () => {
     if (!toolsModalEl) return;
+    resetToolsTopZoneStability();
     toolsState.mode = "base";
     setToolsStatusStandaloneVisibility(false);
     toolsState.activeReplacementResponsible = "";
@@ -11053,6 +11068,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
   const openWriteOffPendingModal = async () => {
     if (!toolsModalEl) return;
+    resetToolsTopZoneStability();
     toolsState.mode = "write-off-pending";
     toolsState.view = "table";
     setToolsTitle("На списание");
@@ -11084,6 +11100,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
   const openSearchModal = async () => {
     if (!toolsModalEl) return;
+    resetToolsTopZoneStability();
     toolsState.mode = "search";
     toolsState.view = "table";
     toolsState.searchSortDirection = "desc";
@@ -11112,6 +11129,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
   const openMoveOtherModal = async () => {
     if (!toolsModalEl) return;
+    resetToolsTopZoneStability();
     toolsState.mode = "move-other";
     setToolsStatusStandaloneVisibility(false);
     toolsState.view = "table";
@@ -11150,15 +11168,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (toolsInfoModalEl && !toolsInfoModalEl.classList.contains("is-hidden")) {
       closeToolsInfoModal();
     }
-    toolsTopZoneLock = null;
-    if (toolsHeaderEl) {
-      toolsHeaderEl.style.minHeight = "";
-      toolsHeaderEl.style.height = "";
-    }
-    if (toolsControlsEl) {
-      toolsControlsEl.style.minHeight = "";
-      toolsControlsEl.style.height = "";
-    }
+    resetToolsTopZoneStability();
   };
 
   const closeToolsEditModal = () => {

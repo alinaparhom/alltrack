@@ -7642,6 +7642,7 @@
       .tools-modal--searching .tools-modal__body,
       .tools-modal--searching .tools-controls,
       .tools-modal--searching .tools-list,
+      .tools-modal--searching .tools-search-map,
       .tools-modal--searching .tools-standalone-filter {
         padding-left: calc(var(--tools-horizontal-gutter) / 2);
         padding-right: calc(var(--tools-horizontal-gutter) / 2);
@@ -7807,6 +7808,13 @@
       }
 
       .tools-search-map {
+        display: grid;
+        gap: 10px;
+        overflow: auto;
+        align-content: start;
+        align-items: start;
+        grid-auto-rows: max-content;
+        padding-bottom: 12px;
         min-height: 360px;
       }
 
@@ -8044,6 +8052,14 @@
         overscroll-behavior-y: contain;
         -webkit-overflow-scrolling: touch;
         touch-action: pan-y;
+      }
+
+      .tools-modal--my-tools .tools-search-map {
+        margin-top: 0;
+        padding-top: 0;
+        padding-left: calc(var(--tools-horizontal-gutter) / 2);
+        padding-right: calc(var(--tools-horizontal-gutter) / 2);
+        gap: 8px;
       }
 
       .tools-modal--my-tools .tools-list.is-list,
@@ -11059,6 +11075,14 @@
           align-content: start;
           align-items: start;
           grid-auto-rows: max-content;
+        }
+
+        .tools-modal--my-tools .tools-search-map {
+          margin-top: 0;
+          padding-top: 0;
+          padding-left: calc(var(--tools-horizontal-gutter) / 2);
+          padding-right: calc(var(--tools-horizontal-gutter) / 2);
+          gap: 8px;
         }
 
         .tools-modal--my-tools .tools-list.is-list,

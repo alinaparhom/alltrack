@@ -9456,11 +9456,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   };
 
   const lockToolsTopZoneHeights = ({ forceRefresh = false } = {}) => {
-    if (!toolsHeaderEl || !toolsControlsEl) return;
+    if (!toolsHeaderEl) return;
     if (toolsTopZoneLock && !forceRefresh) return;
     toolsTopZoneLock = {
       header: toolsHeaderEl.offsetHeight,
-      controls: toolsControlsEl.offsetHeight,
     };
   };
 
@@ -9470,14 +9469,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       toolsHeaderEl.style.minHeight = "";
       toolsHeaderEl.style.height = "";
     }
-    if (toolsControlsEl) {
-      toolsControlsEl.style.minHeight = "";
-      toolsControlsEl.style.height = "";
-    }
   };
 
   const syncToolsTopZoneStability = () => {
-    if (!toolsHeaderEl || !toolsControlsEl) return;
+    if (!toolsHeaderEl) return;
     // Эталон снимаем только в немап-режимах.
     // Это исключает скачок пустого пространства сверху при переключении на "Карта".
     const shouldRefreshLock = toolsState.view !== "map";
@@ -9487,10 +9482,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (toolsTopZoneLock?.header > 0) {
       toolsHeaderEl.style.minHeight = `${toolsTopZoneLock.header}px`;
       toolsHeaderEl.style.height = `${toolsTopZoneLock.header}px`;
-    }
-    if (toolsTopZoneLock?.controls > 0) {
-      toolsControlsEl.style.minHeight = `${toolsTopZoneLock.controls}px`;
-      toolsControlsEl.style.height = `${toolsTopZoneLock.controls}px`;
     }
   };
 

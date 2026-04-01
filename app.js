@@ -9467,22 +9467,17 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const syncToolsTopZoneStability = () => {
     if (!toolsHeaderEl || !toolsControlsEl) return;
     lockToolsTopZoneHeights();
-    if (toolsState.view === "map") {
-      if (toolsTopZoneLock?.header > 0) {
-        toolsHeaderEl.style.minHeight = `${toolsTopZoneLock.header}px`;
-        toolsHeaderEl.style.height = `${toolsTopZoneLock.header}px`;
-      }
-      if (toolsTopZoneLock?.controls > 0) {
-        toolsControlsEl.style.minHeight = `${toolsTopZoneLock.controls}px`;
-        toolsControlsEl.style.height = `${toolsTopZoneLock.controls}px`;
-      }
-      return;
+    // По UX-требованию верхняя зона (заголовок + поиск + переключатели + фильтры)
+    // не должна менять высоту/отступы между режимами (в том числе при "Карта").
+    // Поэтому после первого измерения фиксируем размеры и не сбрасываем их.
+    if (toolsTopZoneLock?.header > 0) {
+      toolsHeaderEl.style.minHeight = `${toolsTopZoneLock.header}px`;
+      toolsHeaderEl.style.height = `${toolsTopZoneLock.header}px`;
     }
-
-    toolsHeaderEl.style.minHeight = "";
-    toolsHeaderEl.style.height = "";
-    toolsControlsEl.style.minHeight = "";
-    toolsControlsEl.style.height = "";
+    if (toolsTopZoneLock?.controls > 0) {
+      toolsControlsEl.style.minHeight = `${toolsTopZoneLock.controls}px`;
+      toolsControlsEl.style.height = `${toolsTopZoneLock.controls}px`;
+    }
   };
 
   const clearToolsList = () => {

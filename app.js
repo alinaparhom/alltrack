@@ -5063,6 +5063,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   );
   const toolsEmptyEl = contentEl.querySelector("[data-tools-empty]");
   const toolsSubtitleEl = contentEl.querySelector("[data-tools-subtitle]");
+  const toolsHeaderEl = contentEl.querySelector(".tools-modal__header");
+  const toolsControlsEl = contentEl.querySelector(".tools-controls");
   const toolsZoneSubtitleEl = contentEl.querySelector("[data-tools-zone-subtitle]");
   const toolsTitleEl = contentEl.querySelector("[data-tools-title]");
   const toolsViewButtons = contentEl.querySelectorAll("[data-tools-view]");
@@ -6560,6 +6562,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     statusStandalone: "",
     searchSortDirection: "desc",
   };
+
+  let toolsTopZoneLock = null;
   const pendingMovesState = {
     pendingItems: [],
     allMoves: [],
@@ -9451,6 +9455,32 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
   };
 
+  const syncToolsTopZoneStability = () => {
+    if (!toolsHeaderEl || !toolsControlsEl) return;
+    if (toolsState.view === "map") {
+      if (!toolsTopZoneLock) {
+        toolsTopZoneLock = {
+          header: toolsHeaderEl.offsetHeight,
+          controls: toolsControlsEl.offsetHeight,
+        };
+      }
+      if (toolsTopZoneLock.header > 0) {
+        toolsHeaderEl.style.minHeight = `${toolsTopZoneLock.header}px`;
+      }
+      if (toolsTopZoneLock.controls > 0) {
+        toolsControlsEl.style.minHeight = `${toolsTopZoneLock.controls}px`;
+      }
+      return;
+    }
+
+    toolsHeaderEl.style.minHeight = "";
+    toolsControlsEl.style.minHeight = "";
+    toolsTopZoneLock = {
+      header: toolsHeaderEl.offsetHeight,
+      controls: toolsControlsEl.offsetHeight,
+    };
+  };
+
   const clearToolsList = () => {
     if (toolsListEl) {
       toolsListEl.innerHTML = "";
@@ -10522,6 +10552,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     updateToolsFiltersUi();
     setToolsZoneSubtitle("");
     syncToolsViewButtons();
+    syncToolsTopZoneStability();
     updateToolsSelectionUi();
   };
 
@@ -11119,6 +11150,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     closeToolsCancelMoveModal();
     if (toolsInfoModalEl && !toolsInfoModalEl.classList.contains("is-hidden")) {
       closeToolsInfoModal();
+    }
+    toolsTopZoneLock = null;
+    if (toolsHeaderEl) {
+      toolsHeaderEl.style.minHeight = "";
+    }
+    if (toolsControlsEl) {
+      toolsControlsEl.style.minHeight = "";
     }
   };
 

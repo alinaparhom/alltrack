@@ -7960,8 +7960,8 @@
       .tools-modal--my-tools .tools-modal__header {
         padding-top: calc(16px + env(safe-area-inset-top) + var(--telegram-top-spacing, 0px));
         padding-bottom: 4px;
-        padding-left: calc(var(--tools-horizontal-gutter) / 2 + max(0px, env(safe-area-inset-left)));
-        padding-right: calc(var(--tools-horizontal-gutter) / 2 + max(0px, env(safe-area-inset-right)));
+        padding-left: calc(var(--tools-horizontal-gutter) + max(0px, env(safe-area-inset-left)));
+        padding-right: calc(var(--tools-horizontal-gutter) + max(0px, env(safe-area-inset-right)));
         align-items: center;
         grid-template-columns: minmax(0, 1fr) auto;
         position: sticky;
@@ -8048,8 +8048,8 @@
       .tools-modal--my-tools .tools-list {
         margin-top: 0;
         padding-top: 0;
-        padding-left: calc(var(--tools-horizontal-gutter) / 2);
-        padding-right: calc(var(--tools-horizontal-gutter) / 2);
+        padding-left: var(--tools-horizontal-gutter);
+        padding-right: var(--tools-horizontal-gutter);
         gap: 8px;
         align-content: start;
         grid-auto-rows: max-content;
@@ -8064,8 +8064,8 @@
       .tools-modal--my-tools .tools-search-map {
         margin-top: 0;
         padding-top: 0;
-        padding-left: calc(var(--tools-horizontal-gutter) / 2);
-        padding-right: calc(var(--tools-horizontal-gutter) / 2);
+        padding-left: var(--tools-horizontal-gutter);
+        padding-right: var(--tools-horizontal-gutter);
         gap: 8px;
       }
 
@@ -10795,6 +10795,10 @@
       }
 
       @media (max-width: 520px) {
+        .tools-modal--my-tools {
+          --tools-horizontal-gutter: 14px;
+        }
+
         .tools-modal {
           --tools-horizontal-gutter: 8px;
         }
@@ -11031,8 +11035,8 @@
         .tools-modal--my-tools .tools-modal__header {
           padding-top: calc(16px + env(safe-area-inset-top) + var(--telegram-top-spacing, 0px));
           padding-bottom: 4px;
-          padding-left: calc(var(--tools-horizontal-gutter) / 2 + max(0px, env(safe-area-inset-left)));
-          padding-right: calc(var(--tools-horizontal-gutter) / 2 + max(0px, env(safe-area-inset-right)));
+          padding-left: calc(var(--tools-horizontal-gutter) + max(0px, env(safe-area-inset-left)));
+          padding-right: calc(var(--tools-horizontal-gutter) + max(0px, env(safe-area-inset-right)));
           align-items: center;
         }
 
@@ -11080,8 +11084,8 @@
         .tools-modal--my-tools .tools-list {
           margin-top: 0;
           padding-top: 0;
-          padding-left: calc(var(--tools-horizontal-gutter) / 2);
-          padding-right: calc(var(--tools-horizontal-gutter) / 2);
+          padding-left: var(--tools-horizontal-gutter);
+          padding-right: var(--tools-horizontal-gutter);
           gap: 8px;
           align-content: start;
           align-items: start;
@@ -11091,8 +11095,8 @@
         .tools-modal--my-tools .tools-search-map {
           margin-top: 0;
           padding-top: 0;
-          padding-left: calc(var(--tools-horizontal-gutter) / 2);
-          padding-right: calc(var(--tools-horizontal-gutter) / 2);
+          padding-left: var(--tools-horizontal-gutter);
+          padding-right: var(--tools-horizontal-gutter);
           gap: 8px;
         }
 

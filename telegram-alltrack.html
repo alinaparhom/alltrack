@@ -7986,15 +7986,17 @@
       }
 
       .tools-modal--my-tools .tools-modal__body {
+        --my-tools-title-search-gap: 8px;
         grid-template-rows: auto minmax(0, 1fr);
         align-content: start;
         align-items: start;
         grid-auto-rows: max-content;
-        gap: 8px;
+        row-gap: var(--my-tools-title-search-gap);
       }
 
       .tools-modal--my-tools .tools-controls {
         align-self: start;
+        margin-top: 0;
         gap: 8px;
       }
 
@@ -11032,6 +11034,7 @@
 
         .tools-modal--my-tools .tools-controls {
           align-self: start;
+          margin-top: 0;
           gap: 10px;
         }
 

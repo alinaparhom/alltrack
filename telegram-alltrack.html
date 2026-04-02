@@ -8080,18 +8080,33 @@
           calc(72px + env(safe-area-inset-top) + var(--telegram-top-spacing, 0px))
         );
         z-index: 4;
+        display: grid;
+        grid-template-rows: auto auto;
+        align-items: start;
       }
 
       .tools-modal--my-tools .tools-controls__row {
         flex-direction: row;
         align-items: center;
         flex-wrap: nowrap;
+        min-height: var(--tools-control-height);
+        gap: 10px;
       }
 
       .tools-modal--my-tools .tools-search {
         flex: 1 1 auto;
         width: auto;
         min-width: 0;
+        margin: 0;
+      }
+
+      .tools-modal--my-tools .tools-filter-actions {
+        margin-left: 0;
+        flex: 0 0 auto;
+      }
+
+      .tools-modal--my-tools .tools-view-toggle {
+        flex: 0 0 auto;
       }
 
       .tools-modal--my-tools .tools-list.is-list,
@@ -11070,6 +11085,9 @@
           margin-top: 8px !important;
           gap: 8px;
           padding: 8px;
+          display: grid;
+          grid-template-rows: auto auto;
+          align-items: start;
         }
 
         .tools-modal--my-tools .tools-actions {
@@ -11083,6 +11101,7 @@
           flex-direction: row;
           align-items: center;
           flex-wrap: nowrap;
+          min-height: var(--tools-control-height);
         }
 
         .tools-modal--my-tools .tools-filters {
@@ -11139,6 +11158,7 @@
           flex: 1 1 auto;
           width: auto;
           min-width: 0;
+          margin: 0;
         }
 
         .tools-modal--my-tools .tools-card {

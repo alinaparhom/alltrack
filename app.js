@@ -9476,7 +9476,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (!toolsHeaderEl) return;
     // Эталон снимаем только в немап-режимах.
     // Это исключает скачок пустого пространства сверху при переключении на "Карта".
-    const shouldRefreshLock = toolsState.view !== "map";
+    const shouldRefreshLock = !toolsTopZoneLock && toolsState.view !== "map";
     lockToolsTopZoneHeights({ forceRefresh: shouldRefreshLock });
     // По UX-требованию верхняя зона (заголовок + поиск + переключатели + фильтры)
     // не должна менять высоту/отступы между режимами (в том числе при "Карта").

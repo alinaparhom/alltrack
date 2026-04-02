@@ -13832,42 +13832,50 @@
       }
 
 
-      /* Фиксация верхней зоны страницы "Мои инструменты" без адаптивных смещений */
+      /* Жёсткая фиксация верхней зоны страницы "Мои инструменты" */
       .tools-modal--my-tools {
         --tools-horizontal-gutter: 14px;
+        --my-tools-header-height: 94px;
+        --my-tools-controls-height: 98px;
       }
 
       .tools-modal--my-tools .tools-modal__header {
         position: sticky !important;
         top: 0 !important;
-        z-index: 20 !important;
-        min-height: 94px !important;
-        height: 94px !important;
+        z-index: 30 !important;
+        min-height: var(--my-tools-header-height) !important;
+        height: var(--my-tools-header-height) !important;
         padding: calc(16px + env(safe-area-inset-top)) 14px 4px 14px !important;
         align-items: center !important;
         grid-template-columns: minmax(0, 1fr) auto !important;
+        background: rgba(255, 255, 255, 0.96) !important;
+        backdrop-filter: blur(8px) saturate(120%);
       }
 
+      .tools-modal--my-tools .tools-modal__header .settings-modal__title h2,
       .tools-modal--my-tools .tools-modal__header .settings-modal__title p,
       .tools-modal--my-tools .tools-zone-subtitle {
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
       }
 
       .tools-modal--my-tools .tools-controls {
         position: sticky !important;
-        top: 94px !important;
-        z-index: 19 !important;
+        top: var(--my-tools-header-height) !important;
+        z-index: 29 !important;
         margin-top: 8px !important;
+        min-height: var(--my-tools-controls-height) !important;
+        height: var(--my-tools-controls-height) !important;
         padding: 8px !important;
         border-radius: 16px !important;
         gap: 8px !important;
-        background: rgba(255, 255, 255, 0.82) !important;
+        background: rgba(255, 255, 255, 0.92) !important;
         border: 1px solid rgba(226, 232, 240, 0.9) !important;
         display: grid !important;
-        grid-template-rows: auto auto !important;
+        grid-template-rows: var(--tools-control-height) minmax(0, 1fr) !important;
         align-items: start !important;
+        overflow: hidden !important;
       }
 
       .tools-modal--my-tools .tools-controls__row {
@@ -13876,6 +13884,17 @@
         flex-wrap: nowrap !important;
         gap: 10px !important;
         min-height: var(--tools-control-height) !important;
+      }
+
+      .tools-modal--my-tools .tools-filters {
+        min-height: calc(var(--my-tools-controls-height) - var(--tools-control-height) - 16px) !important;
+        margin: 0 !important;
+      }
+
+      .tools-modal--my-tools .tools-filters:not(.is-open) {
+        visibility: hidden !important;
+        pointer-events: none !important;
+        display: grid !important;
       }
 
       .tools-modal--my-tools .tools-search {

@@ -9458,8 +9458,15 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const lockToolsTopZoneHeights = ({ forceRefresh = false } = {}) => {
     if (!toolsHeaderEl) return;
     if (toolsTopZoneLock && !forceRefresh) return;
+    const modalStyles = toolsModalEl ? window.getComputedStyle(toolsModalEl) : null;
+    const cssHeaderHeight = Number.parseFloat(
+      modalStyles?.getPropertyValue("--my-tools-header-height") ?? ""
+    );
+    const stableHeaderHeight = Number.isFinite(cssHeaderHeight) && cssHeaderHeight > 0
+      ? cssHeaderHeight
+      : toolsHeaderEl.offsetHeight;
     toolsTopZoneLock = {
-      header: toolsHeaderEl.offsetHeight,
+      header: stableHeaderHeight,
     };
   };
 

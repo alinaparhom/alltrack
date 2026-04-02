@@ -1586,10 +1586,11 @@
       }
 
       .tools-map-collapsed-site {
-        font-size: 13px;
+        font-size: clamp(16px, 4.2vw, 20px);
         font-weight: 700;
         color: var(--accent);
         line-height: 1.2;
+        letter-spacing: 0.2px;
       }
 
       .tools-map-collapsed-caption {
@@ -1650,7 +1651,7 @@
         transition: transform 0.24s ease;
       }
 
-      .tools-map-toggle.is-collapsed span {
+      .tools-map-toggle--overlay.is-collapsed span {
         transform: rotate(-180deg);
       }
 

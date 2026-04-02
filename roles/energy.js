@@ -68,6 +68,17 @@ export function renderRole(user) {
               </button>
             </div>
           </div>
+          <button
+            class="tools-map-collapsed-note"
+            type="button"
+            data-tools-map-expand-hint
+            aria-label="Раскрыть карту объектов"
+          >
+            <span class="tools-map-collapsed-note__site">BIMMAX.PRO</span>
+            <span class="tools-map-collapsed-note__hint"
+              >Нажмите на плашку, чтобы раскрыть карту объектов</span
+            >
+          </button>
           <div
             class="tools-map-canvas"
             data-tools-map-canvas

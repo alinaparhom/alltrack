@@ -1173,8 +1173,8 @@
       .app-title-text {
         text-transform: none;
         letter-spacing: 0.2px;
-        font-size: var(--text-md);
-        font-weight: 600;
+        font-size: calc(var(--text-md) * 2);
+        font-weight: 700;
         line-height: 1.3;
         color: var(--accent);
         overflow: hidden;
@@ -1401,8 +1401,9 @@
       }
 
       .app-user-name {
-        font-size: var(--text-md);
-        font-weight: 600;
+        font-size: calc(var(--text-md) * 2);
+        font-weight: 700;
+        line-height: 1.15;
       }
 
       .app-user-position {
@@ -1611,14 +1612,16 @@
       }
 
       .tools-map-collapsed-site {
-        font-size: var(--text-md);
-        font-weight: 600;
+        font-size: calc(var(--text-md) * 2);
+        font-weight: 700;
         color: var(--accent);
-        line-height: 1.3;
+        line-height: 1.1;
       }
 
       .tools-map-collapsed-site strong {
+        display: block;
         color: var(--accent);
+        line-height: 1.1;
       }
 
       .tools-map-collapsed-caption {

@@ -1580,7 +1580,7 @@
         gap: 4px;
         padding: 8px 12px;
         border-radius: 14px;
-        border: 1px solid rgba(59, 125, 255, 0.22);
+        border: none;
         background: rgba(255, 255, 255, 0.66);
         backdrop-filter: blur(12px);
       }
@@ -1669,6 +1669,10 @@
 
       .tools-map-toggle--header {
         display: none;
+        width: auto;
+        min-width: 72px;
+        padding: 0 14px;
+        font-size: 13px;
       }
 
       .tools-map-header:focus-visible {
@@ -1780,7 +1784,7 @@
       }
 
       body[data-theme="dark"] .tools-map-collapsed-info {
-        border-color: rgba(123, 178, 255, 0.34);
+        border: none;
         background: rgba(18, 30, 56, 0.6);
       }
 

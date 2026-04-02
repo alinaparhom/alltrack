@@ -9455,8 +9455,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
   };
 
-  const lockToolsTopZoneHeights = () => {
-    toolsTopZoneLock = null;
+  const lockToolsTopZoneHeights = ({ forceRefresh = false } = {}) => {
+    if (!toolsHeaderEl) return;
+    if (toolsTopZoneLock && !forceRefresh) return;
+    toolsTopZoneLock = {
+      header: toolsHeaderEl.offsetHeight,
+    };
   };
 
   const resetToolsTopZoneStability = () => {
@@ -9469,8 +9473,21 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   };
 
   const syncToolsTopZoneStability = () => {
-    resetToolsTopZoneStability();
-    lockToolsTopZoneHeights();
+    if (!toolsHeaderEl) return;
+    // Эталон снимаем только в немап-режимах.
+    // Это исключает скачок пустого пространства сверху при переключении на "Карта".
+    const shouldRefreshLock = !toolsTopZoneLock && toolsState.view !== "map";
+    lockToolsTopZoneHeights({ forceRefresh: shouldRefreshLock });
+    // По UX-требованию верхняя зона (заголовок + поиск + переключатели + фильтры)
+    // не должна менять высоту/отступы между режимами (в том числе при "Карта").
+    if (toolsTopZoneLock?.header > 0) {
+      toolsHeaderEl.style.minHeight = `${toolsTopZoneLock.header}px`;
+      toolsHeaderEl.style.height = `${toolsTopZoneLock.header}px`;
+      toolsModalEl?.style.setProperty(
+        "--tools-my-tools-header-offset",
+        `${toolsTopZoneLock.header}px`
+      );
+    }
   };
 
   const clearToolsList = () => {

@@ -13957,6 +13957,7 @@
         --my-tools-panel-offset-right: max(0px, env(safe-area-inset-right));
         --my-tools-top-zone-seam: 0px;
         --my-tools-header-height: calc(94px + env(safe-area-inset-top) + var(--telegram-top-spacing, 0px));
+        --my-tools-header-title-height: 60px;
         --tools-my-tools-header-offset: var(--my-tools-header-height);
         --my-tools-controls-height: 98px;
         --my-tools-top-zone-gap: 0px !important;
@@ -13970,11 +13971,13 @@
       .tools-modal--my-tools .tools-modal__panel {
         position: relative !important;
         overflow: hidden !important;
+        contain: layout style paint !important;
       }
 
       .tools-modal--my-tools .tools-modal__body {
         padding-top: var(--my-tools-top-zone-height) !important;
         row-gap: 0 !important;
+        scrollbar-gutter: stable both-edges !important;
       }
 
       .tools-modal--my-tools .tools-modal__header {
@@ -14006,7 +14009,8 @@
 
       .tools-modal--my-tools .tools-modal__header .settings-modal__title {
         min-width: 0 !important;
-        min-height: 60px !important;
+        min-height: var(--my-tools-header-title-height) !important;
+        height: var(--my-tools-header-title-height) !important;
         display: grid !important;
         grid-template-rows: 34px 20px !important;
         align-content: center !important;
@@ -14020,6 +14024,8 @@
 
       .tools-modal--my-tools .tools-modal__header .settings-modal__title p {
         margin: 0 !important;
+        min-height: 20px !important;
+        max-height: 20px !important;
         line-height: 1.25 !important;
         align-self: start !important;
       }

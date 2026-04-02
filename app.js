@@ -10874,11 +10874,15 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (!triggerEl) return;
     const key = String(containerEl.dataset.toolsFilter ?? "").trim();
     const safeValues = Array.isArray(selectedValues) ? selectedValues : [];
+    const totalOptions = containerEl.querySelectorAll(
+      'input[type="checkbox"][data-tools-filter-checkbox]'
+    ).length;
+    const isAllSelected = totalOptions > 0 && safeValues.length === totalOptions;
     const displayValues =
       key === "photo"
         ? safeValues.map((value) => (value === "with" ? "С фото" : "Без фото"))
         : safeValues;
-    if (!displayValues.length) {
+    if (!displayValues.length || isAllSelected) {
       triggerEl.textContent = "Все";
       triggerEl.classList.remove("is-active");
       return;
@@ -10888,6 +10892,37 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       displayValues.length === 1
         ? displayValues[0]
         : `Выбрано: ${displayValues.length}`;
+  };
+
+  const getToolsFilterAllValues = (containerEl) => {
+    if (!containerEl) return [];
+    return Array.from(
+      containerEl.querySelectorAll('input[type="checkbox"][data-tools-filter-checkbox]')
+    )
+      .map((checkboxEl) => String(checkboxEl.value ?? "").trim())
+      .filter(Boolean);
+  };
+
+  const syncToolsFilterSelectAllButton = (containerEl) => {
+    if (!containerEl) return;
+    const clearEl = containerEl.querySelector("[data-tools-filter-clear]");
+    if (!clearEl) return;
+    const allValues = getToolsFilterAllValues(containerEl);
+    const checkedCount = containerEl.querySelectorAll(
+      'input[type="checkbox"][data-tools-filter-checkbox]:checked'
+    ).length;
+    const isAllSelected = allValues.length > 0 && checkedCount === allValues.length;
+    clearEl.textContent = isAllSelected ? "Отменить всё" : "Выбрать всё";
+  };
+
+  const selectAllToolsFilterValues = (key) => {
+    if (!key) return;
+    const containerEl = contentEl.querySelector(
+      `.tools-filter-dropdown[data-tools-filter="${key}"]`
+    );
+    const allValues = getToolsFilterAllValues(containerEl);
+    toolsState.filters[key] = allValues;
+    syncToolsFilterValue(key, allValues);
   };
 
   const fillToolsFilterOptions = (key, values) => {
@@ -10919,6 +10954,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         optionsEl.appendChild(optionLabelEl);
       });
       renderToolsFilterTriggerLabel(containerEl, currentValues);
+      syncToolsFilterSelectAllButton(containerEl);
     });
   };
 
@@ -10935,14 +10971,29 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         checkboxEl.checked = selectedValues.includes(String(checkboxEl.value ?? "").trim());
       });
       renderToolsFilterTriggerLabel(containerEl, selectedValues);
+      syncToolsFilterSelectAllButton(containerEl);
     });
   };
 
+  const isToolsFilterFullySelected = (key, selectedValues) => {
+    const containerEl = contentEl.querySelector(
+      `.tools-filter-dropdown[data-tools-filter="${key}"]`
+    );
+    if (!containerEl) return false;
+    const totalOptions = getToolsFilterAllValues(containerEl).length;
+    const safeValues = Array.isArray(selectedValues) ? selectedValues : [];
+    return totalOptions > 0 && safeValues.length === totalOptions;
+  };
+
   const countAppliedToolsFilters = () => {
-    const fromDropdowns = Object.values(toolsState.filters).reduce((total, value) => {
-      if (!Array.isArray(value)) return total;
-      return total + value.length;
-    }, 0);
+    const fromDropdowns = Object.entries(toolsState.filters).reduce(
+      (total, [key, value]) => {
+        if (!Array.isArray(value)) return total;
+        if (isToolsFilterFullySelected(key, value)) return total;
+        return total + value.length;
+      },
+      0
+    );
     return fromDropdowns + (isWriteOffPendingMode() && toolsState.statusStandalone ? 1 : 0);
   };
 
@@ -16961,6 +17012,17 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   }
 
   const setToolsFiltersOpen = (isOpen) => {
+    if (isOpen) {
+      Object.keys(toolsState.filters).forEach((key) => {
+        const currentValues = Array.isArray(toolsState.filters[key])
+          ? toolsState.filters[key]
+          : [];
+        if (currentValues.length === 0) {
+          selectAllToolsFilterValues(key);
+        }
+      });
+      applyToolsFilters();
+    }
     if (toolsFiltersPanelEl) {
       toolsFiltersPanelEl.classList.toggle("is-open", isOpen);
     }
@@ -17073,8 +17135,14 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
     if (clearEl && key) {
       clearEl.addEventListener("click", () => {
-        toolsState.filters[key] = [];
-        syncToolsFilterValue(key, []);
+        const allValues = getToolsFilterAllValues(containerEl);
+        const selectedValues = Array.isArray(toolsState.filters[key])
+          ? toolsState.filters[key]
+          : [];
+        const shouldReset = allValues.length > 0 && selectedValues.length === allValues.length;
+        const nextValues = shouldReset ? [] : allValues;
+        toolsState.filters[key] = nextValues;
+        syncToolsFilterValue(key, nextValues);
         applyToolsFilters();
       });
     }

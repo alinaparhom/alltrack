@@ -13837,13 +13837,29 @@
         --tools-horizontal-gutter: 14px;
         --my-tools-header-height: 94px;
         --my-tools-controls-height: 98px;
+        --my-tools-top-zone-gap: 8px;
+        --my-tools-top-zone-height: calc(
+          var(--my-tools-header-height) + var(--my-tools-controls-height) + var(--my-tools-top-zone-gap)
+        );
         --my-tools-view-toggle-width: 182px;
         --my-tools-filter-toggle-width: 118px;
       }
 
+      .tools-modal--my-tools .tools-modal__panel {
+        position: relative !important;
+        overflow: hidden !important;
+      }
+
+      .tools-modal--my-tools .tools-modal__body {
+        padding-top: var(--my-tools-top-zone-height) !important;
+        row-gap: 0 !important;
+      }
+
       .tools-modal--my-tools .tools-modal__header {
-        position: sticky !important;
+        position: absolute !important;
         top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
         z-index: 30 !important;
         min-height: var(--my-tools-header-height) !important;
         height: var(--my-tools-header-height) !important;
@@ -13863,10 +13879,12 @@
       }
 
       .tools-modal--my-tools .tools-controls {
-        position: sticky !important;
+        position: absolute !important;
         top: var(--my-tools-header-height) !important;
+        left: 14px !important;
+        right: 14px !important;
         z-index: 29 !important;
-        margin-top: 8px !important;
+        margin-top: var(--my-tools-top-zone-gap) !important;
         min-height: var(--my-tools-controls-height) !important;
         height: var(--my-tools-controls-height) !important;
         padding: 8px !important;

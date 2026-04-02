@@ -13958,7 +13958,7 @@
         --my-tools-top-zone-seam: 0px;
         --my-tools-header-height: calc(94px + env(safe-area-inset-top) + var(--telegram-top-spacing, 0px));
         --my-tools-controls-height: 98px;
-        --my-tools-top-zone-gap: 0px;
+        --my-tools-top-zone-gap: 0px !important;
         --my-tools-top-zone-height: calc(
           var(--my-tools-header-height) + var(--my-tools-controls-height) + var(--my-tools-top-zone-gap)
         );
@@ -14005,14 +14005,14 @@
 
       .tools-modal--my-tools .tools-controls {
         position: fixed !important;
-        top: var(--my-tools-header-height) !important;
+        top: calc(var(--my-tools-header-height) + var(--my-tools-top-zone-gap)) !important;
         left: 50% !important;
         width: calc(
           var(--my-tools-panel-width) - 28px - var(--my-tools-panel-offset-left) - var(--my-tools-panel-offset-right)
         ) !important;
         transform: translateX(-50%) !important;
         z-index: 29 !important;
-        margin-top: var(--my-tools-top-zone-gap) !important;
+        margin-top: 0 !important;
         min-height: var(--my-tools-controls-height) !important;
         height: var(--my-tools-controls-height) !important;
         padding: 8px !important;
@@ -14037,6 +14037,11 @@
       .tools-modal--my-tools .tools-filters {
         min-height: calc(var(--my-tools-controls-height) - var(--tools-control-height) - 16px) !important;
         margin: 0 !important;
+      }
+
+      .tools-modal--my-tools .tools-filters.is-open {
+        margin-top: 0 !important;
+        padding-top: 0 !important;
       }
 
       .tools-modal--my-tools .tools-filters:not(.is-open) {

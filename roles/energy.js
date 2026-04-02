@@ -64,7 +64,7 @@ export function renderRole(user) {
           >
             <div class="tools-map-collapsed-info">
               <span class="tools-map-collapsed-logo" aria-hidden="true">BM</span>
-              <div class="tools-map-collapsed-site"><strong>bimmax.pro</strong> · Карта объектов</div>
+              <div class="tools-map-collapsed-site"><strong>bimmax.pro</strong></div>
             </div>
             <div class="tools-map-header-actions">
               <button

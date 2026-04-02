@@ -9109,7 +9109,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       toolsState.mode === "search" ||
       toolsState.mode === "user" ||
       toolsState.mode === "move-other";
-    toolsModalEl.classList.toggle("tools-modal--my-tools", false);
+    const isMyToolsMode = toolsState.mode === "user";
+    toolsModalEl.classList.toggle("tools-modal--my-tools", isMyToolsMode);
     toolsModalEl.classList.toggle("tools-modal--searching", isSearchLikeMode);
     setToolsSortToggleVisibility();
     updateToolsSortToggleUi();

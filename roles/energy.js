@@ -10,7 +10,7 @@ export const energyActions = [
   { id: "write-off-pending", title: "На списание", icon: "📋" },
   { id: "repair", title: "Ремонт", icon: "🛠️" },
   { id: "breakdowns", title: "Поломки", icon: "⚠️" },
-  { id: "demand", title: "Потребность", icon: "📌" },
+  { id: "demand", title: "Заявки", icon: "📌" },
   { id: "objects", title: "Объекты", icon: "🏢" },
   { id: "info", title: "Информация", icon: "ℹ️" },
   { id: "download", title: "Выгрузить данные", icon: "📤" },
@@ -531,11 +531,11 @@ export function renderRole(user) {
             class="settings-modal__panel demand-modal__panel"
             role="dialog"
             aria-modal="true"
-            aria-label="Потребность"
+            aria-label="Заявки"
           >
             <div class="settings-modal__header demand-modal__header">
               <div class="settings-modal__title">
-                <h2>Потребность</h2>
+                <h2>Заявки</h2>
                 <p data-demand-subtitle>Собираем потребности по объектам</p>
               </div>
               <button

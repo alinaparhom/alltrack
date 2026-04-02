@@ -8069,6 +8069,28 @@
         gap: 8px;
       }
 
+      .tools-modal--my-tools {
+        --tools-horizontal-gutter: 14px;
+      }
+
+      .tools-modal--my-tools .tools-controls {
+        position: sticky;
+        top: calc(72px + env(safe-area-inset-top) + var(--telegram-top-spacing, 0px));
+        z-index: 4;
+      }
+
+      .tools-modal--my-tools .tools-controls__row {
+        flex-direction: row;
+        align-items: center;
+        flex-wrap: nowrap;
+      }
+
+      .tools-modal--my-tools .tools-search {
+        flex: 1 1 auto;
+        width: auto;
+        min-width: 0;
+      }
+
       .tools-modal--my-tools .tools-list.is-list,
       .tools-modal--my-tools .tools-list.is-large,
       .tools-modal--my-tools .tools-list.is-compact {
@@ -10795,10 +10817,6 @@
       }
 
       @media (max-width: 520px) {
-        .tools-modal--my-tools {
-          --tools-horizontal-gutter: 14px;
-        }
-
         .tools-modal {
           --tools-horizontal-gutter: 8px;
         }
@@ -11043,7 +11061,7 @@
         .tools-modal--my-tools .tools-controls {
           align-self: start;
           margin-top: 8px !important;
-          gap: 10px;
+          gap: 8px;
           padding: 8px;
         }
 
@@ -11055,6 +11073,9 @@
 
         .tools-modal--my-tools .tools-controls__row {
           gap: 10px;
+          flex-direction: row;
+          align-items: center;
+          flex-wrap: nowrap;
         }
 
         .tools-modal--my-tools .tools-filters {
@@ -11105,6 +11126,12 @@
         .tools-modal--my-tools .tools-list.is-compact {
           grid-template-columns: 1fr;
           gap: 8px;
+        }
+
+        .tools-modal--my-tools .tools-search {
+          flex: 1 1 auto;
+          width: auto;
+          min-width: 0;
         }
 
         .tools-modal--my-tools .tools-card {

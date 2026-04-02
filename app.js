@@ -3199,10 +3199,12 @@ async function saveCurrentUserProfilePhoto(file, context) {
 
   await uploadPhotoEntriesInBatches([
     {
+      type: "file",
       path: targetPath,
       content,
       encoding: "base64",
-      user: currentUser,
+      mime: file.type || "image/*",
+      ...buildUploadUserMeta({ organizationName: context?.orgFullName }),
     },
   ]);
 

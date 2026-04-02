@@ -923,6 +923,30 @@ function extractTelegramUserPhotoUrl() {
   return "";
 }
 
+function buildUserPhotoSrc(path) {
+  const rawPath = String(path ?? "").trim();
+  if (!rawPath) return "";
+  if (/^https?:\/\//i.test(rawPath)) return rawPath;
+  const normalized = rawPath
+    .replace(/\\/g, "/")
+    .replace(/^\.?\//, "");
+  const encodedPath = normalized
+    .split("/")
+    .filter(Boolean)
+    .map((segment) => encodeURIComponent(segment))
+    .join("/");
+  if (!encodedPath) return "";
+  return `./${encodedPath}`;
+}
+
+function resolvePreferredUserPhotoUrl(user, { forceTelegram = false } = {}) {
+  const customPhotoPath = forceTelegram ? "" : String(user?.profile_photo ?? "").trim();
+  if (customPhotoPath) {
+    return buildUserPhotoSrc(customPhotoPath);
+  }
+  return extractTelegramUserPhotoUrl();
+}
+
 function updateHeaderUserBadge(fullName = "", { forceInitials = false } = {}) {
   const initials = getInitials(fullName);
   if (userInitialsEl) {
@@ -931,7 +955,7 @@ function updateHeaderUserBadge(fullName = "", { forceInitials = false } = {}) {
 
   if (!userPhotoEl) return;
 
-  const photoUrl = forceInitials ? "" : extractTelegramUserPhotoUrl();
+  const photoUrl = forceInitials ? "" : resolvePreferredUserPhotoUrl(currentUser);
   const badgeEl = userPhotoEl.closest(".app-title-badge");
   const hasPhoto = Boolean(photoUrl);
 
@@ -2935,6 +2959,24 @@ function renderUserSettingsView(user, preferences, pendingAcceptanceMailing) {
       <form class="form-grid" data-settings-form>
         <div class="settings-section">
           <div class="settings-section-title">Профиль</div>
+          <div class="settings-profile-photo">
+            <div class="settings-profile-photo__preview">
+              <img
+                src="${escapeHtml(resolvePreferredUserPhotoUrl(user))}"
+                alt="Фото пользователя"
+                data-settings-photo-preview
+              />
+            </div>
+            <label class="button button--ghost settings-profile-photo__button">
+              <span>Заменить фото</span>
+              <input
+                class="settings-profile-photo__input"
+                type="file"
+                accept="image/*"
+                data-settings-photo-input
+              />
+            </label>
+          </div>
           <div class="form-field">
             <label class="form-label" for="user-settings-position">Должность</label>
             <input
@@ -3128,6 +3170,61 @@ async function saveCurrentUserPosition(positionValue) {
     ...currentUser,
     position: nextPosition,
   };
+}
+
+async function saveCurrentUserProfilePhoto(file, context) {
+  if (!currentUser) {
+    throw new Error("Пользователь не найден.");
+  }
+  if (!file) {
+    throw new Error("Файл не выбран.");
+  }
+  if (!String(file.type ?? "").startsWith("image/")) {
+    throw new Error("Нужен файл изображения.");
+  }
+  const userId = normalizeTelegramId(currentUser.telegram_id);
+  if (!userId) {
+    throw new Error("Не найден ID пользователя Telegram.");
+  }
+
+  const orgFolder = String(context?.orgFolderName ?? "").trim();
+  if (!orgFolder) {
+    throw new Error("Не удалось определить папку организации.");
+  }
+
+  const extension = getFileExtensionFromName(file.name);
+  const fileName = `${userId}.${extension}`;
+  const targetPath = `${orgFolder}/Фото пользователей/${fileName}`;
+  const content = await readFileAsBase64(file);
+
+  await uploadPhotoEntriesInBatches([
+    {
+      path: targetPath,
+      content,
+      encoding: "base64",
+      user: currentUser,
+    },
+  ]);
+
+  const usersData = await loadJson(usersFilePath).catch(() => ({ users: [] }));
+  const users = Array.isArray(usersData?.users) ? [...usersData.users] : [];
+  const userIndex = users.findIndex(
+    (item) => normalizeTelegramId(item?.telegram_id) === userId
+  );
+  if (userIndex >= 0) {
+    users[userIndex] = {
+      ...users[userIndex],
+      profile_photo: targetPath,
+    };
+    await saveJson(usersFilePath, { users }, { user: currentUser });
+  }
+
+  currentUser = {
+    ...currentUser,
+    profile_photo: targetPath,
+  };
+
+  return targetPath;
 }
 
 async function loadJson(path) {
@@ -29448,6 +29545,8 @@ async function showUserSettings() {
   const backButton = contentEl.querySelector("[data-settings-back]");
   const formEl = contentEl.querySelector("[data-settings-form]");
   const messageEl = contentEl.querySelector("[data-settings-message]");
+  const photoInputEl = contentEl.querySelector("[data-settings-photo-input]");
+  const photoPreviewEl = contentEl.querySelector("[data-settings-photo-preview]");
   const groupingButton = contentEl.querySelector("[data-settings-grouping]");
   const groupingInput = formEl?.querySelector("[name='grouping']");
   let messageTimer = null;
@@ -29461,7 +29560,10 @@ async function showUserSettings() {
     }, 2000);
   };
 
-  const handleFormChange = async () => {
+  const handleFormChange = async (event) => {
+    if (event?.target?.matches?.("[data-settings-photo-input]")) {
+      return;
+    }
     if (!formEl) return;
     const formData = new FormData(formEl);
     const nextPosition = String(formData.get("user-position") ?? "").trim();
@@ -29483,6 +29585,27 @@ async function showUserSettings() {
     );
     currentPreferences = savedSettings.preferences;
     updateMessage("Сохранено");
+  };
+
+  const handlePhotoChange = async (event) => {
+    const file = event?.target?.files?.[0];
+    if (!file) return;
+    updateMessage("Сохраняем фото...");
+    try {
+      const savedPath = await saveCurrentUserProfilePhoto(file, currentSettingsContext);
+      if (photoPreviewEl) {
+        photoPreviewEl.src = `${buildUserPhotoSrc(savedPath)}?v=${Date.now()}`;
+      }
+      updateHeaderUserBadge(currentUser?.full_name ?? "");
+      updateMessage("Фото обновлено");
+    } catch (error) {
+      console.warn("Не удалось сохранить фото профиля.", error);
+      updateMessage("Не удалось сохранить фото");
+    } finally {
+      if (photoInputEl) {
+        photoInputEl.value = "";
+      }
+    }
   };
 
   const handleBack = () => {
@@ -29507,6 +29630,7 @@ async function showUserSettings() {
   if (groupingButton) {
     groupingButton.onclick = handleGroupingClick;
   }
+  photoInputEl?.addEventListener("change", handlePhotoChange);
   formEl?.addEventListener("change", handleFormChange);
 }
 

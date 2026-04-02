@@ -8075,7 +8075,10 @@
 
       .tools-modal--my-tools .tools-controls {
         position: sticky;
-        top: calc(72px + env(safe-area-inset-top) + var(--telegram-top-spacing, 0px));
+        top: var(
+          --tools-my-tools-header-offset,
+          calc(72px + env(safe-area-inset-top) + var(--telegram-top-spacing, 0px))
+        );
         z-index: 4;
       }
 
@@ -10817,6 +10820,10 @@
       }
 
       @media (max-width: 520px) {
+        .tools-modal.tools-modal--my-tools {
+          --tools-horizontal-gutter: 14px;
+        }
+
         .tools-modal {
           --tools-horizontal-gutter: 8px;
         }

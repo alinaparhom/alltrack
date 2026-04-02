@@ -9469,6 +9469,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       toolsHeaderEl.style.minHeight = "";
       toolsHeaderEl.style.height = "";
     }
+    toolsModalEl?.style.removeProperty("--tools-my-tools-header-offset");
   };
 
   const syncToolsTopZoneStability = () => {
@@ -9482,6 +9483,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (toolsTopZoneLock?.header > 0) {
       toolsHeaderEl.style.minHeight = `${toolsTopZoneLock.header}px`;
       toolsHeaderEl.style.height = `${toolsTopZoneLock.header}px`;
+      toolsModalEl?.style.setProperty(
+        "--tools-my-tools-header-offset",
+        `${toolsTopZoneLock.header}px`
+      );
     }
   };
 

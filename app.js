@@ -3192,7 +3192,7 @@ async function saveCurrentUserProfilePhoto(file, context) {
     throw new Error("Не удалось определить папку организации.");
   }
 
-  const extension = getFileExtensionFromName(file.name);
+  const extension = resolveProfilePhotoExtension(file);
   const fileName = `${userId}.${extension}`;
   const targetPath = `${orgFolder}/Фото пользователей/${fileName}`;
   const content = await readFileAsBase64(file);
@@ -3366,6 +3366,30 @@ function getFileExtensionFromName(name = "") {
     .replace(/[^a-z0-9]+/g, "")
     .slice(0, 10);
   return safeExtension || "jpg";
+}
+
+function resolveProfilePhotoExtension(file) {
+  const mimeType = String(file?.type ?? "").trim().toLowerCase();
+  const extensionFromMime = {
+    "image/jpeg": "jpg",
+    "image/jpg": "jpg",
+    "image/png": "png",
+    "image/webp": "webp",
+    "image/gif": "gif",
+  }[mimeType];
+  if (extensionFromMime) {
+    return extensionFromMime;
+  }
+
+  const extensionFromName = getFileExtensionFromName(file?.name ?? "");
+  const allowedExtensions = new Set(["jpg", "jpeg", "png", "webp", "gif"]);
+  if (allowedExtensions.has(extensionFromName)) {
+    return extensionFromName === "jpeg" ? "jpg" : extensionFromName;
+  }
+
+  throw new Error(
+    "Формат фото не поддерживается. Выберите JPG, PNG, WEBP или GIF."
+  );
 }
 
 
@@ -29600,7 +29624,11 @@ async function showUserSettings() {
       updateMessage("Фото обновлено");
     } catch (error) {
       console.warn("Не удалось сохранить фото профиля.", error);
-      updateMessage("Не удалось сохранить фото");
+      const reason =
+        error instanceof Error && error.message
+          ? error.message
+          : "Не удалось сохранить фото";
+      updateMessage(reason);
     } finally {
       if (photoInputEl) {
         photoInputEl.value = "";

@@ -7958,10 +7958,10 @@
       }
 
       .tools-modal--my-tools .tools-modal__header {
-        padding-top: calc(16px + env(safe-area-inset-top) + var(--telegram-top-spacing, 0px));
+        padding-top: 16px;
         padding-bottom: 4px;
-        padding-left: calc(var(--tools-horizontal-gutter) + max(0px, env(safe-area-inset-left)));
-        padding-right: calc(var(--tools-horizontal-gutter) + max(0px, env(safe-area-inset-right)));
+        padding-left: var(--tools-horizontal-gutter);
+        padding-right: var(--tools-horizontal-gutter);
         align-items: center;
         grid-template-columns: minmax(0, 1fr) auto;
         position: sticky;
@@ -10795,7 +10795,7 @@
       }
 
       @media (max-width: 520px) {
-        .tools-modal--my-tools {
+        .tools-modal.tools-modal--my-tools {
           --tools-horizontal-gutter: 14px;
         }
 
@@ -11033,17 +11033,17 @@
         }
 
         .tools-modal--my-tools .tools-modal__header {
-          padding-top: calc(16px + env(safe-area-inset-top) + var(--telegram-top-spacing, 0px));
+          padding-top: 16px;
           padding-bottom: 4px;
-          padding-left: calc(var(--tools-horizontal-gutter) + max(0px, env(safe-area-inset-left)));
-          padding-right: calc(var(--tools-horizontal-gutter) + max(0px, env(safe-area-inset-right)));
+          padding-left: var(--tools-horizontal-gutter);
+          padding-right: var(--tools-horizontal-gutter);
           align-items: center;
         }
 
         .tools-modal--my-tools .tools-controls {
           align-self: start;
           margin-top: 8px !important;
-          gap: 10px;
+          gap: 8px;
           padding: 8px;
         }
 
@@ -11054,11 +11054,11 @@
         }
 
         .tools-modal--my-tools .tools-controls__row {
-          gap: 10px;
+          gap: 8px;
         }
 
         .tools-modal--my-tools .tools-filters {
-          gap: 10px;
+          gap: 8px;
           padding: 0;
         }
 

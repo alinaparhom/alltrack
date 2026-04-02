@@ -64,7 +64,6 @@ export function renderRole(user) {
           >
             <div class="tools-map-collapsed-info">
               <div class="tools-map-collapsed-site">bimmax.pro</div>
-              <div class="tools-map-collapsed-caption">Нажмите, чтобы раскрыть карту объектов</div>
             </div>
             <div class="tools-map-header-actions">
               <button
@@ -74,7 +73,7 @@ export function renderRole(user) {
                 aria-expanded="true"
                 aria-label="Свернуть карту"
               >
-                <span aria-hidden="true">▾</span>
+                <span aria-hidden="true">Карта</span>
               </button>
             </div>
           </div>

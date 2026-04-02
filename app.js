@@ -7272,7 +7272,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     toolsMapEl.classList.toggle("tools-map-card--collapsed", isToolsMapCollapsed);
     toolsMapCollapsedTriggerEl?.setAttribute("aria-expanded", String(!isToolsMapCollapsed));
     toolsMapToggleEls.forEach((toggleEl) => {
-      toggleEl.innerHTML = '<span aria-hidden="true">▾</span>';
+      const isHeaderToggle = toggleEl.classList.contains("tools-map-toggle--header");
+      toggleEl.innerHTML = isHeaderToggle
+        ? '<span aria-hidden="true">Карта</span>'
+        : '<span aria-hidden="true">▾</span>';
       toggleEl.classList.toggle("is-collapsed", isToolsMapCollapsed);
       toggleEl.setAttribute("aria-expanded", String(!isToolsMapCollapsed));
       toggleEl.setAttribute(

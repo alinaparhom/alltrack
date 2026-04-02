@@ -55,7 +55,17 @@ export function renderRole(user) {
     <section class="role-card">
       <div class="dashboard energy-dashboard">
         <div class="tools-map-card" data-tools-map>
-          <div class="tools-map-header">
+          <div
+            class="tools-map-header"
+            data-tools-map-collapsed-trigger
+            role="button"
+            tabindex="0"
+            aria-label="Развернуть карту объектов"
+          >
+            <div class="tools-map-collapsed-info">
+              <div class="tools-map-collapsed-site">bimmax.pro</div>
+              <div class="tools-map-collapsed-caption">Нажмите, чтобы раскрыть карту объектов</div>
+            </div>
             <div class="tools-map-header-actions">
               <button
                 class="tools-map-toggle tools-map-toggle--header"

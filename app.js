@@ -5001,7 +5001,39 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const toolsMapToggleEls = Array.from(
     contentEl.querySelectorAll("[data-tools-map-toggle], [data-tools-map-toggle-overlay]")
   );
+  const toolsMapCollapsedTriggerEl = contentEl.querySelector(
+    "[data-tools-map-collapsed-trigger]"
+  );
   let isToolsMapCollapsed = false;
+  const toolsMapCollapsedStorageKey = (() => {
+    const userKeyParts = [
+      user?.id,
+      user?.chat_id,
+      user?.username,
+      user?.full_name,
+      user?.organization,
+      user?.role,
+    ]
+      .map((value) => String(value ?? "").trim())
+      .filter(Boolean);
+    const userKey = userKeyParts.join("|") || "anonymous";
+    return `alltrack:tools-map-collapsed:${userKey}`;
+  })();
+  const loadToolsMapCollapsedState = () => {
+    try {
+      return localStorage.getItem(toolsMapCollapsedStorageKey) === "1";
+    } catch (error) {
+      console.warn("Не удалось прочитать состояние карты из localStorage.", error);
+      return false;
+    }
+  };
+  const persistToolsMapCollapsedState = () => {
+    try {
+      localStorage.setItem(toolsMapCollapsedStorageKey, isToolsMapCollapsed ? "1" : "0");
+    } catch (error) {
+      console.warn("Не удалось сохранить состояние карты в localStorage.", error);
+    }
+  };
   const updateQuickAccessOffset = () => {
     if (!quickAccessEl) return;
     const rect = quickAccessEl.getBoundingClientRect();
@@ -7238,6 +7270,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (!toolsMapEl || !toolsMapToggleEls.length) return;
     isToolsMapCollapsed = Boolean(collapsed);
     toolsMapEl.classList.toggle("tools-map-card--collapsed", isToolsMapCollapsed);
+    toolsMapCollapsedTriggerEl?.setAttribute("aria-expanded", String(!isToolsMapCollapsed));
     toolsMapToggleEls.forEach((toggleEl) => {
       toggleEl.innerHTML = '<span aria-hidden="true">▾</span>';
       toggleEl.classList.toggle("is-collapsed", isToolsMapCollapsed);
@@ -7253,6 +7286,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         "Нажмите, чтобы оживить карту, масштабировать и перемещать"
       );
     }
+    persistToolsMapCollapsedState();
   };
 
   const toolsMapState = {
@@ -7459,6 +7493,21 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     });
   }
 
+  if (toolsMapCollapsedTriggerEl) {
+    const expandToolsMapFromCollapsedHeader = (event) => {
+      if (!isToolsMapCollapsed) return;
+      event.preventDefault();
+      event.stopPropagation();
+      setToolsMapCollapsedState(false);
+      window.requestAnimationFrame(syncToolsMapCanvasSquare);
+    };
+    toolsMapCollapsedTriggerEl.addEventListener("click", expandToolsMapFromCollapsedHeader);
+    toolsMapCollapsedTriggerEl.addEventListener("keydown", (event) => {
+      if (event.key !== "Enter" && event.key !== " ") return;
+      expandToolsMapFromCollapsedHeader(event);
+    });
+  }
+
   if (toolsMapCanvasEl) {
     syncToolsMapCanvasSquare();
     window.addEventListener("resize", syncToolsMapCanvasSquare);
@@ -7471,6 +7520,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       void awakenToolsMap();
     });
   }
+
+  setToolsMapCollapsedState(loadToolsMapCollapsedState());
 
   const updateToolsMap = async () => {
     if (!toolsMapEl || !toolsMapCanvasEl) return;

@@ -13837,6 +13837,8 @@
         --tools-horizontal-gutter: 14px;
         --my-tools-header-height: 94px;
         --my-tools-controls-height: 98px;
+        --my-tools-view-toggle-width: 182px;
+        --my-tools-filter-toggle-width: 118px;
       }
 
       .tools-modal--my-tools .tools-modal__header {
@@ -13907,6 +13909,30 @@
       .tools-modal--my-tools .tools-filter-actions,
       .tools-modal--my-tools .tools-view-toggle {
         flex: 0 0 auto !important;
+      }
+
+      .tools-modal--my-tools .tools-view-toggle {
+        width: var(--my-tools-view-toggle-width) !important;
+        min-width: var(--my-tools-view-toggle-width) !important;
+        max-width: var(--my-tools-view-toggle-width) !important;
+      }
+
+      .tools-modal--my-tools .tools-view-button {
+        flex: 1 1 0 !important;
+        min-width: 0 !important;
+      }
+
+      .tools-modal--my-tools .tools-filter-actions {
+        width: var(--my-tools-filter-toggle-width) !important;
+        min-width: var(--my-tools-filter-toggle-width) !important;
+        max-width: var(--my-tools-filter-toggle-width) !important;
+      }
+
+      .tools-modal--my-tools .tools-filters-toggle {
+        width: 100% !important;
+        min-width: 100% !important;
+        max-width: 100% !important;
+        justify-content: center !important;
       }
 
       .tools-modal--my-tools .tools-list,

@@ -13838,7 +13838,7 @@
         --my-tools-panel-width: min(96vw, 980px);
         --my-tools-panel-offset-left: max(0px, env(safe-area-inset-left));
         --my-tools-panel-offset-right: max(0px, env(safe-area-inset-right));
-        --my-tools-top-zone-seam: 1px;
+        --my-tools-top-zone-seam: 0px;
         --my-tools-header-height: calc(94px + env(safe-area-inset-top) + var(--telegram-top-spacing, 0px));
         --my-tools-controls-height: 98px;
         --my-tools-top-zone-gap: 0px;
@@ -13888,7 +13888,7 @@
 
       .tools-modal--my-tools .tools-controls {
         position: fixed !important;
-        top: calc(var(--my-tools-header-height) - var(--my-tools-top-zone-seam)) !important;
+        top: var(--my-tools-header-height) !important;
         left: 50% !important;
         width: calc(
           var(--my-tools-panel-width) - 28px - var(--my-tools-panel-offset-left) - var(--my-tools-panel-offset-right)

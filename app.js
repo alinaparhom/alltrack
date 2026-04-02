@@ -5001,10 +5001,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const toolsMapToggleEls = Array.from(
     contentEl.querySelectorAll("[data-tools-map-toggle], [data-tools-map-toggle-overlay]")
   );
-  const toolsMapExpandHintEl = contentEl.querySelector("[data-tools-map-expand-hint]");
-  let isToolsMapCollapsed = Boolean(
-    settingsData.users?.[context.userKey]?.energy?.toolsMapCollapsed
-  );
+  let isToolsMapCollapsed = false;
   const updateQuickAccessOffset = () => {
     if (!quickAccessEl) return;
     const rect = quickAccessEl.getBoundingClientRect();
@@ -7237,30 +7234,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
   };
 
-  const persistToolsMapCollapsedState = (collapsed) => {
-    settingsData.users = settingsData.users ?? {};
-    const currentUserSettings = settingsData.users?.[context.userKey] ?? {};
-    settingsData.users[context.userKey] = {
-      ...currentUserSettings,
-      energy: {
-        ...(currentUserSettings.energy ?? {}),
-        toolsMapCollapsed: Boolean(collapsed),
-      },
-    };
-    return saveJson(context.settingsPath, settingsData, { user }).catch((error) => {
-      console.error("Не удалось сохранить состояние карты на главной.", error);
-    });
-  };
-
-  const setToolsMapCollapsedState = (collapsed, { persist = false } = {}) => {
+  const setToolsMapCollapsedState = (collapsed) => {
     if (!toolsMapEl || !toolsMapToggleEls.length) return;
-    const nextCollapsedState = Boolean(collapsed);
-    const hasChanged = nextCollapsedState !== isToolsMapCollapsed;
-    isToolsMapCollapsed = nextCollapsedState;
+    isToolsMapCollapsed = Boolean(collapsed);
     toolsMapEl.classList.toggle("tools-map-card--collapsed", isToolsMapCollapsed);
-    if (toolsMapExpandHintEl) {
-      toolsMapExpandHintEl.setAttribute("aria-hidden", String(!isToolsMapCollapsed));
-    }
     toolsMapToggleEls.forEach((toggleEl) => {
       toggleEl.innerHTML = '<span aria-hidden="true">▾</span>';
       toggleEl.classList.toggle("is-collapsed", isToolsMapCollapsed);
@@ -7275,9 +7252,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         "aria-label",
         "Нажмите, чтобы оживить карту, масштабировать и перемещать"
       );
-    }
-    if (persist && hasChanged) {
-      void persistToolsMapCollapsedState(isToolsMapCollapsed);
     }
   };
 
@@ -7479,21 +7453,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       toggleEl.addEventListener("click", (event) => {
         event.preventDefault();
         event.stopPropagation();
-        setToolsMapCollapsedState(!isToolsMapCollapsed, { persist: true });
+        setToolsMapCollapsedState(!isToolsMapCollapsed);
         window.requestAnimationFrame(syncToolsMapCanvasSquare);
       });
     });
   }
-
-  toolsMapExpandHintEl?.addEventListener("click", (event) => {
-    event.preventDefault();
-    event.stopPropagation();
-    if (!isToolsMapCollapsed) return;
-    setToolsMapCollapsedState(false, { persist: true });
-    window.requestAnimationFrame(syncToolsMapCanvasSquare);
-  });
-
-  setToolsMapCollapsedState(isToolsMapCollapsed);
 
   if (toolsMapCanvasEl) {
     syncToolsMapCanvasSquare();

@@ -13575,6 +13575,43 @@
         color: var(--text);
       }
 
+      .settings-profile-photo {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+
+      .settings-profile-photo__preview {
+        width: 64px;
+        height: 64px;
+        border-radius: 20px;
+        overflow: hidden;
+        border: 1px solid rgba(59, 125, 255, 0.2);
+        background: rgba(255, 255, 255, 0.75);
+        box-shadow: 0 8px 20px rgba(59, 125, 255, 0.12);
+        flex-shrink: 0;
+      }
+
+      .settings-profile-photo__preview img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+      }
+
+      .settings-profile-photo__button {
+        position: relative;
+        overflow: hidden;
+      }
+
+      .settings-profile-photo__input {
+        position: absolute;
+        inset: 0;
+        opacity: 0;
+        cursor: pointer;
+      }
+
       .settings-weekdays {
         display: flex;
         flex-wrap: wrap;

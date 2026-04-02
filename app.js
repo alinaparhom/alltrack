@@ -1211,13 +1211,8 @@ function formatToolCostLabel(tool) {
   return `Стоимость: ${formatNotificationCost(tool?.["Стоимость"])}`;
 }
 
-function formatToolCostValue(tool, options = {}) {
-  const { useShortRubLabel = false } = options;
-  const cost = tool?.["Стоимость"];
-  if (useShortRubLabel && typeof cost === "number" && Number.isFinite(cost)) {
-    return `${cost.toLocaleString("ru-RU")} р.`;
-  }
-  return formatNotificationCost(cost);
+function formatToolCostValue(tool) {
+  return formatNotificationCost(tool?.["Стоимость"]);
 }
 
 function escapeTelegramHtml(value) {
@@ -10321,9 +10316,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         const costMetaLineEl = document.createElement("div");
         costMetaLineEl.textContent = isSearchMode
           ? formatSearchCostValue(tool?.["Стоимость"])
-          : formatToolCostValue(tool, {
-              useShortRubLabel: toolsState.mode === "user" && viewMode !== "list",
-            });
+          : formatToolCostValue(tool);
         meta.appendChild(costMetaLineEl);
       }
       if (shouldShowResponsibleAndToolStatus) {

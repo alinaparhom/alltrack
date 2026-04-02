@@ -1558,6 +1558,7 @@
         justify-content: space-between;
         gap: 12px;
         flex-wrap: nowrap;
+        cursor: pointer;
       }
 
       .tools-map-card--collapsed .tools-map-header {
@@ -1571,6 +1572,30 @@
         justify-content: flex-end;
         gap: 8px;
         flex: 1 1 auto;
+      }
+
+      .tools-map-collapsed-info {
+        min-width: 0;
+        display: grid;
+        gap: 4px;
+        padding: 8px 12px;
+        border-radius: 14px;
+        border: 1px solid rgba(59, 125, 255, 0.22);
+        background: rgba(255, 255, 255, 0.66);
+        backdrop-filter: blur(12px);
+      }
+
+      .tools-map-collapsed-site {
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--accent);
+        line-height: 1.2;
+      }
+
+      .tools-map-collapsed-caption {
+        font-size: 12px;
+        line-height: 1.25;
+        color: var(--muted);
       }
 
       .tools-map-title {
@@ -1644,6 +1669,11 @@
 
       .tools-map-toggle--header {
         display: none;
+      }
+
+      .tools-map-header:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: -2px;
       }
 
       .tools-map-card--collapsed .tools-map-toggle--header {
@@ -1747,6 +1777,11 @@
           rgba(15, 20, 34, 0.8)
         );
         border-color: rgba(148, 170, 210, 0.3);
+      }
+
+      body[data-theme="dark"] .tools-map-collapsed-info {
+        border-color: rgba(123, 178, 255, 0.34);
+        background: rgba(18, 30, 56, 0.6);
       }
 
       body[data-theme="dark"] .tools-map-canvas::before {

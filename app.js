@@ -9684,9 +9684,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const cssHeaderHeight = Number.parseFloat(
       modalStyles?.getPropertyValue("--my-tools-header-height") ?? ""
     );
+    // Фиксируем только CSS-эталон высоты шапки, чтобы блок управления
+    // всегда был "приклеен" к заголовку и не плавал адаптивно от контента.
     const stableHeaderHeight = Number.isFinite(cssHeaderHeight) && cssHeaderHeight > 0
       ? cssHeaderHeight
-      : toolsHeaderEl.offsetHeight;
+      : 0;
     toolsTopZoneLock = {
       header: stableHeaderHeight,
     };
@@ -9703,9 +9705,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
   const syncToolsTopZoneStability = () => {
     if (!toolsHeaderEl) return;
-    // Эталон снимаем только в немап-режимах.
-    // Это исключает скачок пустого пространства сверху при переключении на "Карта".
-    const shouldRefreshLock = !toolsTopZoneLock && toolsState.view !== "map";
+    // Эталон высоты берём из CSS и не подстраиваем под режим/контент.
+    // Это убирает адаптивный отступ между заголовком и панелью управления.
+    const shouldRefreshLock = !toolsTopZoneLock;
     lockToolsTopZoneHeights({ forceRefresh: shouldRefreshLock });
     // По UX-требованию верхняя зона (заголовок + поиск + переключатели + фильтры)
     // не должна менять высоту/отступы между режимами (в том числе при "Карта").

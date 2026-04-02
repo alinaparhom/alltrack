@@ -947,6 +947,23 @@ function resolvePreferredUserPhotoUrl(user, { forceTelegram = false } = {}) {
   return extractTelegramUserPhotoUrl();
 }
 
+function getUserPhotoCandidates(user, { forceInitials = false } = {}) {
+  if (forceInitials) return [];
+
+  const candidates = [];
+  const customPhotoPath = String(user?.profile_photo ?? "").trim();
+  if (customPhotoPath) {
+    candidates.push(buildUserPhotoSrc(customPhotoPath));
+  }
+
+  const telegramPhoto = extractTelegramUserPhotoUrl();
+  if (telegramPhoto) {
+    candidates.push(telegramPhoto);
+  }
+
+  return Array.from(new Set(candidates.filter(Boolean)));
+}
+
 function updateHeaderUserBadge(fullName = "", { forceInitials = false } = {}) {
   const initials = getInitials(fullName);
   if (userInitialsEl) {
@@ -955,20 +972,48 @@ function updateHeaderUserBadge(fullName = "", { forceInitials = false } = {}) {
 
   if (!userPhotoEl) return;
 
-  const photoUrl = forceInitials ? "" : resolvePreferredUserPhotoUrl(currentUser);
+  const photoCandidates = getUserPhotoCandidates(currentUser, { forceInitials });
   const badgeEl = userPhotoEl.closest(".app-title-badge");
-  const hasPhoto = Boolean(photoUrl);
+  let candidateIndex = 0;
 
-  userPhotoEl.classList.toggle("is-hidden", !hasPhoto);
-  if (hasPhoto) {
-    userPhotoEl.src = photoUrl;
-  } else {
+  const applyNoPhotoState = () => {
+    userPhotoEl.classList.add("is-hidden");
     userPhotoEl.removeAttribute("src");
+    userPhotoEl.onerror = null;
+    userPhotoEl.onload = null;
+    if (badgeEl) {
+      badgeEl.dataset.hasPhoto = "false";
+    }
+  };
+
+  const tryNextCandidate = () => {
+    if (candidateIndex >= photoCandidates.length) {
+      applyNoPhotoState();
+      return;
+    }
+
+    const nextPhotoUrl = photoCandidates[candidateIndex];
+    candidateIndex += 1;
+    userPhotoEl.classList.remove("is-hidden");
+    if (badgeEl) {
+      badgeEl.dataset.hasPhoto = "true";
+    }
+    userPhotoEl.onload = () => {
+      userPhotoEl.onerror = null;
+      userPhotoEl.onload = null;
+    };
+    userPhotoEl.onerror = () => {
+      tryNextCandidate();
+    };
+    userPhotoEl.src = nextPhotoUrl;
+  };
+
+  if (!photoCandidates.length) {
+    applyNoPhotoState();
+    return;
   }
 
-  if (badgeEl) {
-    badgeEl.dataset.hasPhoto = hasPhoto ? "true" : "false";
-  }
+  tryNextCandidate();
 }
 function collectTelegramContext() {
   const webApp = window.Telegram?.WebApp ?? null;

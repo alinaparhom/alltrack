@@ -13831,6 +13831,71 @@
         }
       }
 
+
+      /* Фиксация верхней зоны страницы "Мои инструменты" без адаптивных смещений */
+      .tools-modal--my-tools {
+        --tools-horizontal-gutter: 14px;
+      }
+
+      .tools-modal--my-tools .tools-modal__header {
+        position: sticky !important;
+        top: 0 !important;
+        z-index: 20 !important;
+        min-height: 94px !important;
+        height: 94px !important;
+        padding: calc(16px + env(safe-area-inset-top)) 14px 4px 14px !important;
+        align-items: center !important;
+        grid-template-columns: minmax(0, 1fr) auto !important;
+      }
+
+      .tools-modal--my-tools .tools-modal__header .settings-modal__title p,
+      .tools-modal--my-tools .tools-zone-subtitle {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .tools-modal--my-tools .tools-controls {
+        position: sticky !important;
+        top: 94px !important;
+        z-index: 19 !important;
+        margin-top: 8px !important;
+        padding: 8px !important;
+        border-radius: 16px !important;
+        gap: 8px !important;
+        background: rgba(255, 255, 255, 0.82) !important;
+        border: 1px solid rgba(226, 232, 240, 0.9) !important;
+        display: grid !important;
+        grid-template-rows: auto auto !important;
+        align-items: start !important;
+      }
+
+      .tools-modal--my-tools .tools-controls__row {
+        flex-direction: row !important;
+        align-items: center !important;
+        flex-wrap: nowrap !important;
+        gap: 10px !important;
+        min-height: var(--tools-control-height) !important;
+      }
+
+      .tools-modal--my-tools .tools-search {
+        flex: 1 1 auto !important;
+        width: auto !important;
+        min-width: 0 !important;
+        margin: 0 !important;
+      }
+
+      .tools-modal--my-tools .tools-filter-actions,
+      .tools-modal--my-tools .tools-view-toggle {
+        flex: 0 0 auto !important;
+      }
+
+      .tools-modal--my-tools .tools-list,
+      .tools-modal--my-tools .tools-search-map {
+        padding-top: 0 !important;
+        margin-top: 0 !important;
+      }
+
     </style>
   </head>
   <body>

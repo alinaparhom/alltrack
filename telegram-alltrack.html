@@ -13983,9 +13983,16 @@
       .tools-modal--my-tools .tools-modal__header {
         position: fixed !important;
         top: 0 !important;
-        left: 50% !important;
-        width: var(--my-tools-panel-width) !important;
-        transform: translateX(-50%) !important;
+        left: max(
+          calc(50% - (var(--my-tools-panel-width) / 2)),
+          var(--my-tools-panel-offset-left)
+        ) !important;
+        right: max(
+          calc(50% - (var(--my-tools-panel-width) / 2)),
+          var(--my-tools-panel-offset-right)
+        ) !important;
+        width: auto !important;
+        transform: none !important;
         z-index: 30 !important;
         min-height: var(--tools-my-tools-header-offset) !important;
         height: var(--tools-my-tools-header-offset) !important;
@@ -14033,11 +14040,16 @@
       .tools-modal--my-tools .tools-controls {
         position: fixed !important;
         top: calc(var(--tools-my-tools-header-offset) + var(--my-tools-top-zone-gap)) !important;
-        left: 50% !important;
-        width: calc(
-          var(--my-tools-panel-width) - 28px - var(--my-tools-panel-offset-left) - var(--my-tools-panel-offset-right)
+        left: max(
+          calc(50% - (var(--my-tools-panel-width) / 2) + 14px + var(--my-tools-panel-offset-left)),
+          calc(14px + var(--my-tools-panel-offset-left))
         ) !important;
-        transform: translateX(-50%) !important;
+        right: max(
+          calc(50% - (var(--my-tools-panel-width) / 2) + 14px + var(--my-tools-panel-offset-right)),
+          calc(14px + var(--my-tools-panel-offset-right))
+        ) !important;
+        width: auto !important;
+        transform: none !important;
         z-index: 29 !important;
         margin-top: 0 !important;
         min-height: var(--my-tools-controls-height) !important;

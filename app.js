@@ -9684,11 +9684,17 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const cssHeaderHeight = Number.parseFloat(
       modalStyles?.getPropertyValue("--my-tools-header-height") ?? ""
     );
-    // Фиксируем только CSS-эталон высоты шапки, чтобы блок управления
-    // всегда был "приклеен" к заголовку и не плавал адаптивно от контента.
-    const stableHeaderHeight = Number.isFinite(cssHeaderHeight) && cssHeaderHeight > 0
-      ? cssHeaderHeight
-      : 0;
+    const measuredHeaderHeight = Number.parseFloat(
+      String(toolsHeaderEl.getBoundingClientRect().height ?? "")
+    );
+    // Сначала берём реальную высоту шапки, чтобы строка поиска не смещалась
+    // при применении фильтров и разных состояниях списка.
+    // Если измерение недоступно, откатываемся к CSS-эталону.
+    const stableHeaderHeight = Number.isFinite(measuredHeaderHeight) && measuredHeaderHeight > 0
+      ? measuredHeaderHeight
+      : Number.isFinite(cssHeaderHeight) && cssHeaderHeight > 0
+        ? cssHeaderHeight
+        : 0;
     toolsTopZoneLock = {
       header: stableHeaderHeight,
     };

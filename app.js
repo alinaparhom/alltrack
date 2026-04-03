@@ -9678,31 +9678,19 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   };
 
   const lockToolsTopZoneHeights = ({ forceRefresh = false } = {}) => {
-    if (!toolsHeaderEl || !toolsControlsEl) return;
+    if (!toolsHeaderEl) return;
     if (toolsTopZoneLock && !forceRefresh) return;
     const modalStyles = toolsModalEl ? window.getComputedStyle(toolsModalEl) : null;
-    const cssHeaderHeight = Number.parseFloat(modalStyles?.getPropertyValue("--my-tools-header-height") ?? "");
-    const cssControlsHeight = Number.parseFloat(
-      modalStyles?.getPropertyValue("--my-tools-controls-height") ?? ""
+    const cssHeaderHeight = Number.parseFloat(
+      modalStyles?.getPropertyValue("--my-tools-header-height") ?? ""
     );
-    const headerRectHeight = Math.round(toolsHeaderEl.getBoundingClientRect().height);
-    const controlsRectHeight = Math.round(toolsControlsEl.getBoundingClientRect().height);
-    // Берём фактические высоты элементов (они уже рассчитаны браузером с safe-area/env),
-    // чтобы верхняя зона больше не "прыгала" после применения фильтров.
-    const stableHeaderHeight = Number.isFinite(headerRectHeight) && headerRectHeight > 0
-      ? headerRectHeight
-      : Number.isFinite(cssHeaderHeight) && cssHeaderHeight > 0
-        ? cssHeaderHeight
-        : 0;
-    const stableControlsHeight =
-      Number.isFinite(controlsRectHeight) && controlsRectHeight > 0
-        ? controlsRectHeight
-        : Number.isFinite(cssControlsHeight) && cssControlsHeight > 0
-          ? cssControlsHeight
-          : 0;
+    // Фиксируем только CSS-эталон высоты шапки, чтобы блок управления
+    // всегда был "приклеен" к заголовку и не плавал адаптивно от контента.
+    const stableHeaderHeight = Number.isFinite(cssHeaderHeight) && cssHeaderHeight > 0
+      ? cssHeaderHeight
+      : 0;
     toolsTopZoneLock = {
       header: stableHeaderHeight,
-      controls: stableControlsHeight,
     };
   };
 
@@ -9712,13 +9700,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       toolsHeaderEl.style.minHeight = "";
       toolsHeaderEl.style.height = "";
     }
-    if (toolsControlsEl) {
-      toolsControlsEl.style.minHeight = "";
-      toolsControlsEl.style.height = "";
-    }
     toolsModalEl?.style.removeProperty("--tools-my-tools-header-offset");
-    toolsModalEl?.style.removeProperty("--my-tools-controls-height");
-    toolsModalEl?.style.removeProperty("--my-tools-top-zone-height");
   };
 
   const syncToolsTopZoneStability = () => {
@@ -9735,20 +9717,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       toolsModalEl?.style.setProperty(
         "--tools-my-tools-header-offset",
         `${toolsTopZoneLock.header}px`
-      );
-    }
-    if (toolsTopZoneLock?.controls > 0) {
-      toolsControlsEl.style.minHeight = `${toolsTopZoneLock.controls}px`;
-      toolsControlsEl.style.height = `${toolsTopZoneLock.controls}px`;
-      toolsModalEl?.style.setProperty(
-        "--my-tools-controls-height",
-        `${toolsTopZoneLock.controls}px`
-      );
-    }
-    if (toolsTopZoneLock?.header > 0 && toolsTopZoneLock?.controls > 0) {
-      toolsModalEl?.style.setProperty(
-        "--my-tools-top-zone-height",
-        `${toolsTopZoneLock.header + toolsTopZoneLock.controls}px`
       );
     }
   };

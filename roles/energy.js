@@ -1906,37 +1906,6 @@ export function renderRole(user) {
             </div>
           </div>
         </div>
-        <div class="tools-modal settings-modal is-hidden" data-outgoing-pending-moves-modal>
-          <div class="settings-modal__backdrop" data-outgoing-pending-moves-backdrop></div>
-          <div
-            class="settings-modal__panel tools-modal__panel pending-moves-modal__panel"
-            role="dialog"
-            aria-modal="true"
-            aria-label="Ждут ответ на мои перемещения"
-          >
-            <div class="settings-modal__header tools-modal__header">
-              <div class="settings-modal__title">
-                <h2>Ждут ответ на мои перемещения</h2>
-                <p data-outgoing-pending-moves-subtitle>Проверяем список...</p>
-              </div>
-              <button
-                class="button-icon tools-modal__close"
-                type="button"
-                data-outgoing-pending-moves-close
-                aria-label="Закрыть список моих перемещений"
-              >
-                <span class="button-icon-emoji" aria-hidden="true">✕</span>
-              </button>
-            </div>
-            <div class="settings-modal__body tools-modal__body">
-              <div class="tools-list is-table" data-outgoing-pending-moves-list></div>
-              <div class="tools-empty is-hidden" data-outgoing-pending-moves-empty>
-                Нет перемещений, которые ждут ответа.
-              </div>
-              <div class="form-message" data-outgoing-pending-moves-message></div>
-            </div>
-          </div>
-        </div>
         <div
           class="settings-modal is-hidden pending-moves-bulk-confirm-modal"
           data-pending-moves-bulk-confirm-modal

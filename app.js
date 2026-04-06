@@ -32,21 +32,6 @@ const energyPendingIconEl = document.querySelector("[data-energy-pending-icon]")
 const energyPendingCountEl = document.querySelector("[data-energy-pending-count]");
 const energyPendingWrapperEl = document.querySelector("[data-energy-pending-wrapper]");
 const energyPendingStatusEl = document.querySelector("[data-energy-pending-status]");
-const energyOutgoingPendingStatEl = document.querySelector(
-  "[data-energy-outgoing-pending-stat]"
-);
-const energyOutgoingPendingIconEl = document.querySelector(
-  "[data-energy-outgoing-pending-icon]"
-);
-const energyOutgoingPendingCountEl = document.querySelector(
-  "[data-energy-outgoing-pending-count]"
-);
-const energyOutgoingPendingWrapperEl = document.querySelector(
-  "[data-energy-outgoing-pending-wrapper]"
-);
-const energyOutgoingPendingStatusEl = document.querySelector(
-  "[data-energy-outgoing-pending-status]"
-);
 const appTitleMetaEl = document.querySelector("[data-app-title-meta]");
 const appTitleTextEl = document.querySelector("[data-app-title-text]");
 const appTitlePositionEl = document.querySelector("[data-app-title-position]");
@@ -362,30 +347,6 @@ async function loadUserPendingMoves(orgFolderName, user) {
 async function loadUserPendingMovesCount(orgFolderName, user) {
   const moves = await loadUserPendingMoves(orgFolderName, user);
   return moves.length;
-}
-
-async function loadUserOutgoingPendingMoves(orgFolderName, user) {
-  if (!orgFolderName || !user) return [];
-  const userName = normalizePersonName(user.full_name ?? user.fullName ?? "");
-  if (!userName) return [];
-  const movesPath = `./${orgFolderName}/Перемещения.json`;
-  try {
-    const rawMoves = await loadJson(movesPath);
-    const moves = Array.isArray(rawMoves)
-      ? rawMoves
-      : Array.isArray(rawMoves?.moves)
-        ? rawMoves.moves
-        : [];
-    return moves.filter((move) => {
-      const responseDate = String(move?.["Дата ответа"] ?? "").trim();
-      if (responseDate) return false;
-      const movedBy = normalizePersonName(move?.["Переместил"] ?? "");
-      return Boolean(movedBy) && movedBy === userName;
-    });
-  } catch (error) {
-    console.warn("Не удалось загрузить исходящие перемещения для счётчика.", error);
-  }
-  return [];
 }
 
 async function loadUserToolsCount(orgFolderName, user) {
@@ -3636,45 +3597,6 @@ function updateEnergyPendingStat({ count = 0, available = [] } = {}) {
   });
 }
 
-function updateEnergyOutgoingPendingStat({ count = 0, available = [] } = {}) {
-  if (!energyOutgoingPendingStatEl) return;
-  const pendingCount = Number.isFinite(Number(count)) ? Math.max(0, Number(count)) : 0;
-  const isWaiting = pendingCount > 0;
-  const isReady = !isWaiting;
-
-  energyOutgoingPendingStatEl.classList.toggle("is-waiting", isWaiting);
-  energyOutgoingPendingStatEl.classList.toggle("is-ready", isReady);
-  energyOutgoingPendingStatEl.setAttribute(
-    "aria-label",
-    isWaiting
-      ? `По вашим перемещениям ждут ответ: ${pendingCount}`
-      : "По вашим перемещениям ответ получен"
-  );
-  energyOutgoingPendingStatEl.setAttribute(
-    "title",
-    isWaiting
-      ? `По вашим перемещениям ждут ответ: ${pendingCount}`
-      : "По вашим перемещениям ответ получен"
-  );
-
-  if (energyOutgoingPendingIconEl) {
-    energyOutgoingPendingIconEl.textContent = isWaiting ? "⏳" : "✅";
-  }
-  if (energyOutgoingPendingStatusEl) {
-    energyOutgoingPendingStatusEl.textContent = isWaiting
-      ? `Ждут ответ: ${pendingCount}`
-      : "Все с ответом";
-  }
-  if (energyOutgoingPendingCountEl) {
-    energyOutgoingPendingCountEl.textContent = String(pendingCount);
-    energyOutgoingPendingCountEl.classList.toggle("is-hidden", !isWaiting);
-  }
-  if (energyOutgoingPendingWrapperEl) {
-    energyOutgoingPendingWrapperEl.dataset.pendingMoves = JSON.stringify(available || []);
-    energyOutgoingPendingWrapperEl.dataset.pendingCount = String(pendingCount);
-  }
-}
-
 function applyGroupingPreference(layout, actions, preference) {
   if (preference === "none") {
     return [
@@ -6131,27 +6053,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const pendingMovesDeclineMessageEl = contentEl.querySelector(
     "[data-pending-moves-decline-message]"
   );
-  const outgoingPendingMovesModalEl = contentEl.querySelector(
-    "[data-outgoing-pending-moves-modal]"
-  );
-  const outgoingPendingMovesBackdropEl = contentEl.querySelector(
-    "[data-outgoing-pending-moves-backdrop]"
-  );
-  const outgoingPendingMovesCloseButton = contentEl.querySelector(
-    "[data-outgoing-pending-moves-close]"
-  );
-  const outgoingPendingMovesListEl = contentEl.querySelector(
-    "[data-outgoing-pending-moves-list]"
-  );
-  const outgoingPendingMovesEmptyEl = contentEl.querySelector(
-    "[data-outgoing-pending-moves-empty]"
-  );
-  const outgoingPendingMovesSubtitleEl = contentEl.querySelector(
-    "[data-outgoing-pending-moves-subtitle]"
-  );
-  const outgoingPendingMovesMessageEl = contentEl.querySelector(
-    "[data-outgoing-pending-moves-message]"
-  );
   const infoPendingModalEl = contentEl.querySelector("[data-info-pending-modal]");
   const infoPendingBackdropEl = contentEl.querySelector(
     "[data-info-pending-backdrop]"
@@ -6506,10 +6407,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   );
   const savedLayout = settingsData.users?.[context.userKey]?.energy?.layout;
   const pendingMoves = await loadUserPendingMoves(context.orgFolderName, user);
-  const outgoingPendingMoves = await loadUserOutgoingPendingMoves(
-    context.orgFolderName,
-    user
-  );
   const layoutCustomized =
     settingsData.users?.[context.userKey]?.energy?.layoutCustomized ?? false;
   const normalizedPreferences = normalizePreferences(preferences);
@@ -6772,10 +6669,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   }
 
   updateEnergyPendingStat({ count: pendingMoves.length, available: pendingMoves });
-  updateEnergyOutgoingPendingStat({
-    count: outgoingPendingMoves.length,
-    available: outgoingPendingMoves,
-  });
   fitActionTitleTexts(gridEl);
   if (typeof ResizeObserver !== "undefined" && !gridEl.dataset.fitObserverAttached) {
     const fitObserver = new ResizeObserver(() => {
@@ -6881,12 +6774,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     vacationStartAt: "",
     isSaving: false,
     bulkConfirmAction: null,
-  };
-  const outgoingPendingMovesState = {
-    pendingItems: [],
-    allMoves: [],
-    toolMap: new Map(),
-    isSaving: false,
   };
   const pendingMovePhotoViewerState = {
     files: [],
@@ -13729,72 +13616,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   };
 
 
-  const applyMoveCancelByIndex = async ({
-    moveIndex,
-    tool,
-    movesPayload,
-    successMessage = "Перемещение отменено.",
-    errorMessage = "Не удалось отменить перемещение.",
-    onAfterSuccess = null,
-  } = {}) => {
-    const normalizedMoveIndex = Number.parseInt(moveIndex, 10);
-    if (!Number.isFinite(normalizedMoveIndex) || normalizedMoveIndex < 0) {
-      throw new Error("Некорректный индекс перемещения для отмены.");
-    }
-    const orgFolder = context.orgFolderName ?? "";
-    if (!orgFolder) {
-      throw new Error("Не удалось определить организацию.");
-    }
-    const movesPath = `./${orgFolder}/Перемещения.json`;
-    const sourcePayload = movesPayload ?? normalizeCollectionPayload(await loadJson(movesPath), "moves");
-    const sourceMoves = Array.isArray(sourcePayload?.items) ? sourcePayload.items : [];
-    const move = sourceMoves[normalizedMoveIndex];
-    if (!move) {
-      throw new Error("Перемещение не найдено.");
-    }
-    const responseDate = formatDateValue(new Date());
-    const fineConfig = settingsData?.organization?.fines?.lateReply ?? {};
-    const lateReplyFineAmount = resolveLateReplyFine(move, fineConfig);
-    const updatedMoves = [...sourceMoves];
-    updatedMoves[normalizedMoveIndex] = {
-      ...move,
-      "Дата ответа": responseDate,
-      Ответ: "Отмена перемещения",
-      "Комментарий к ответу": "Отмена перемещения пользователем",
-      "Отменил": String(user?.full_name ?? "").trim(),
-      "Дата отмены": responseDate,
-      ...(lateReplyFineAmount > 0
-        ? {
-            "Штраф за ответ": lateReplyFineAmount,
-            "Тип штрафа": "Поздний ответ",
-            "Штраф за поздний ответ": "Да",
-          }
-        : {}),
-    };
-    const movesPayloadOut = sourcePayload.wrapper
-      ? { ...sourcePayload.wrapper, [sourcePayload.key]: updatedMoves }
-      : updatedMoves;
-    await saveJson(movesPath, movesPayloadOut, { user });
-    await registerMoveCancelFine(updatedMoves[normalizedMoveIndex]);
-    const usersData = await loadJson(usersFilePath).catch(() => ({ users: [] }));
-    const organizationName = findUserOrganizationName(user, usersData);
-    await notifyMoveCancel({
-      tool,
-      move: updatedMoves[normalizedMoveIndex],
-      orgFolder,
-      organizationName,
-      canceledBy: String(user?.full_name ?? "").trim(),
-    });
-    if (typeof onAfterSuccess === "function") {
-      await onAfterSuccess({
-        updatedMoves,
-        updatedMove: updatedMoves[normalizedMoveIndex],
-        moveIndex: normalizedMoveIndex,
-      });
-    }
-    return { successMessage, errorMessage };
-  };
-
   const openToolsCancelMoveModal = async (tool) => {
     if (!toolsCancelMoveModalEl) return;
     resetToolsCancelMoveState();
@@ -13871,18 +13692,44 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
     toolsCancelMoveState.isSaving = true;
     setToolsCancelMoveMessage("Отменяем перемещение...", "info");
+    const responseDate = formatDateValue(new Date());
+    const fineConfig = settingsData?.organization?.fines?.lateReply ?? {};
+    const lateReplyFineAmount = resolveLateReplyFine(move, fineConfig);
+    const updatedMoves = [...movesPayload.items];
+    updatedMoves[moveIndex] = {
+      ...move,
+      "Дата ответа": responseDate,
+      Ответ: "Отмена перемещения",
+      "Комментарий к ответу": "Отмена перемещения пользователем",
+      "Отменил": String(user?.full_name ?? "").trim(),
+      "Дата отмены": responseDate,
+      ...(lateReplyFineAmount > 0
+        ? {
+            "Штраф за ответ": lateReplyFineAmount,
+            "Тип штрафа": "Поздний ответ",
+            "Штраф за поздний ответ": "Да",
+          }
+        : {}),
+    };
+    const movesPath = `./${context.orgFolderName}/Перемещения.json`;
+    const movesPayloadOut = movesPayload.wrapper
+      ? { ...movesPayload.wrapper, [movesPayload.key]: updatedMoves }
+      : updatedMoves;
     try {
-      await applyMoveCancelByIndex({
-        moveIndex,
+      await saveJson(movesPath, movesPayloadOut, { user });
+      await registerMoveCancelFine(updatedMoves[moveIndex]);
+      const usersData = await loadJson(usersFilePath).catch(() => ({ users: [] }));
+      const organizationName = findUserOrganizationName(user, usersData);
+      await notifyMoveCancel({
         tool,
-        movesPayload,
-        onAfterSuccess: async () => {
-          await loadUserTools();
-          await refreshPendingMovesIndicator();
-          await refreshOutgoingPendingMovesIndicator();
-        },
+        move: updatedMoves[moveIndex],
+        orgFolder: context.orgFolderName,
+        organizationName,
+        canceledBy: String(user?.full_name ?? "").trim(),
       });
       setToolsCancelMoveMessage("Перемещение отменено.", "success");
+      await loadUserTools();
+      await refreshPendingMovesIndicator();
       setTimeout(() => {
         closeToolsCancelMoveModal();
       }, 600);
@@ -14470,197 +14317,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const refreshPendingMovesIndicator = async () => {
     const moves = await loadUserPendingMoves(context.orgFolderName, user);
     updateEnergyPendingStat({ count: moves.length, available: moves });
-  };
-
-  const setOutgoingPendingMovesSubtitle = (text = "") => {
-    if (!outgoingPendingMovesSubtitleEl) return;
-    outgoingPendingMovesSubtitleEl.textContent = text;
-  };
-
-  const setOutgoingPendingMovesMessage = (text = "", type = "info") => {
-    if (!outgoingPendingMovesMessageEl) return;
-    outgoingPendingMovesMessageEl.textContent = text;
-    outgoingPendingMovesMessageEl.classList.remove("is-error", "is-success", "is-info");
-    if (!text) return;
-    outgoingPendingMovesMessageEl.classList.add(
-      type === "error" ? "is-error" : type === "success" ? "is-success" : "is-info"
-    );
-  };
-
-  const renderOutgoingPendingMovesList = () => {
-    if (!(outgoingPendingMovesListEl instanceof HTMLElement)) return;
-    outgoingPendingMovesListEl.innerHTML = "";
-    const items = Array.isArray(outgoingPendingMovesState.pendingItems)
-      ? outgoingPendingMovesState.pendingItems
-      : [];
-    const isEmpty = items.length === 0;
-    outgoingPendingMovesEmptyEl?.classList.toggle("is-hidden", !isEmpty);
-    outgoingPendingMovesModalEl?.classList.toggle("pending-moves-modal--empty", isEmpty);
-    if (isEmpty) return;
-
-    const groupedByReceiver = new Map();
-    items.forEach((item) => {
-      const receiver = String(item?.move?.["Принял"] ?? "").trim() || "Без получателя";
-      if (!groupedByReceiver.has(receiver)) {
-        groupedByReceiver.set(receiver, []);
-      }
-      groupedByReceiver.get(receiver).push(item);
-    });
-    const sortedGroups = Array.from(groupedByReceiver.entries()).sort((a, b) =>
-      a[0].localeCompare(b[0], "ru")
-    );
-
-    sortedGroups.forEach(([receiver, groupItems]) => {
-      const groupEl = document.createElement("section");
-      groupEl.className = "tools-filter-group";
-      const titleEl = document.createElement("h3");
-      titleEl.className = "tools-filter-group__title";
-      titleEl.textContent = `${formatFullName(receiver)} · ${groupItems.length}`;
-      groupEl.appendChild(titleEl);
-
-      const table = document.createElement("div");
-      table.className = "tools-table pending-moves-tools-table";
-      groupItems.forEach(({ move, moveIndex, tool }) => {
-        const row = document.createElement("div");
-        row.className = "tools-table__row";
-        const number = String(move?.["Номер"] ?? "").trim();
-        const accountingNumber =
-          String(move?.["Бух.номер"] ?? "").trim() ||
-          String(tool?.["Бух.номер"] ?? "").trim();
-        const meansName =
-          String(tool?.["Наименование"] ?? "").trim() ||
-          String(move?.["Наименование"] ?? "").trim() ||
-          "Инструмент";
-        const model = String(tool?.["Модель"] ?? "").trim();
-        const moveDate = String(move?.["Дата перемещения"] ?? "").trim() || "Дата не указана";
-        const moveComment = String(move?.["Причина перемещения"] ?? "").trim();
-        row.innerHTML = `
-          <div class="tools-table__cell tools-table__cell--number pending-move-number-cell">
-            <span class="tools-table__number-value">№ ${number || "—"}</span>
-            <span class="tools-table__number-object">Бух: ${accountingNumber || "—"}</span>
-          </div>
-          <div class="tools-table__cell pending-move-main-cell">
-            <div class="tools-table__title">${meansName}</div>
-            <div class="pending-move-meta">${model || "Модель не указана"}</div>
-            <div class="pending-move-meta">${moveDate}</div>
-            ${
-              moveComment
-                ? `<div class="pending-move-comment">Комментарий: <strong><u>${moveComment}</u></strong></div>`
-                : ""
-            }
-          </div>
-          <div class="tools-table__cell tools-table__cell--actions">
-            <button class="pending-move-action pending-move-action--decline" type="button" data-outgoing-pending-cancel data-move-index="${moveIndex}">
-              Отменить перемещение
-            </button>
-          </div>
-        `;
-        table.appendChild(row);
-      });
-      groupEl.appendChild(table);
-      outgoingPendingMovesListEl.appendChild(groupEl);
-    });
-  };
-
-  const loadOutgoingPendingMovesList = async () => {
-    const orgFolder = context.orgFolderName ?? "";
-    outgoingPendingMovesState.pendingItems = [];
-    outgoingPendingMovesState.allMoves = [];
-    if (!orgFolder) {
-      setOutgoingPendingMovesSubtitle("Организация не найдена.");
-      renderOutgoingPendingMovesList();
-      return;
-    }
-    setOutgoingPendingMovesSubtitle("Загружаем список...");
-    const movesPath = `./${orgFolder}/Перемещения.json`;
-    let moves = [];
-    try {
-      const rawMoves = await loadJson(movesPath);
-      moves = Array.isArray(rawMoves)
-        ? rawMoves
-        : Array.isArray(rawMoves?.moves)
-          ? rawMoves.moves
-          : [];
-    } catch (error) {
-      console.warn("Не удалось загрузить исходящие перемещения.", error);
-      moves = [];
-    }
-    outgoingPendingMovesState.allMoves = moves;
-    outgoingPendingMovesState.toolMap = await buildPendingToolsMap(orgFolder);
-    const userName = normalizePersonName(user?.full_name ?? "");
-    const pendingItems = moves
-      .map((move, index) => ({ move, moveIndex: index }))
-      .filter(({ move }) => {
-        const responseDate = String(move?.["Дата ответа"] ?? "").trim();
-        if (responseDate) return false;
-        const movedBy = normalizePersonName(move?.["Переместил"] ?? "");
-        return Boolean(movedBy) && movedBy === userName;
-      })
-      .map((entry) => {
-        const number = String(entry.move?.["Номер"] ?? "").trim();
-        const accounting = String(entry.move?.["Бух.номер"] ?? "").trim();
-        const tool =
-          outgoingPendingMovesState.toolMap.get(`n:${number}`) ??
-          outgoingPendingMovesState.toolMap.get(`a:${accounting}`) ??
-          null;
-        return { ...entry, tool };
-      });
-    outgoingPendingMovesState.pendingItems = pendingItems;
-    setOutgoingPendingMovesSubtitle(
-      pendingItems.length
-        ? `Ожидают ответа: ${pendingItems.length}`
-        : "Нет активных перемещений"
-    );
-    renderOutgoingPendingMovesList();
-  };
-
-  const refreshOutgoingPendingMovesIndicator = async () => {
-    const moves = await loadUserOutgoingPendingMoves(context.orgFolderName, user);
-    updateEnergyOutgoingPendingStat({ count: moves.length, available: moves });
-  };
-
-  const closeOutgoingPendingMovesModal = () => {
-    if (!outgoingPendingMovesModalEl) return;
-    if (outgoingPendingMovesState.isSaving) return;
-    outgoingPendingMovesModalEl.classList.add("is-hidden");
-    document.body.style.overflow = "";
-    setOutgoingPendingMovesMessage("");
-  };
-
-  const openOutgoingPendingMovesModal = async () => {
-    if (!outgoingPendingMovesModalEl) return;
-    outgoingPendingMovesModalEl.classList.remove("is-hidden");
-    document.body.style.overflow = "hidden";
-    await loadOutgoingPendingMovesList();
-  };
-
-  const cancelOutgoingPendingMove = async (moveIndex) => {
-    if (outgoingPendingMovesState.isSaving) return;
-    const normalizedIndex = Number.parseInt(moveIndex, 10);
-    if (!Number.isFinite(normalizedIndex)) return;
-    const selectedItem = outgoingPendingMovesState.pendingItems.find(
-      (item) => item.moveIndex === normalizedIndex
-    );
-    if (!selectedItem) return;
-    outgoingPendingMovesState.isSaving = true;
-    setOutgoingPendingMovesMessage("Отменяем перемещение...", "info");
-    try {
-      await applyMoveCancelByIndex({
-        moveIndex: normalizedIndex,
-        tool: selectedItem.tool,
-      });
-      setOutgoingPendingMovesMessage("Перемещение отменено.", "success");
-      await Promise.all([
-        refreshPendingMovesIndicator(),
-        refreshOutgoingPendingMovesIndicator(),
-        loadOutgoingPendingMovesList(),
-      ]);
-    } catch (error) {
-      console.error(error);
-      setOutgoingPendingMovesMessage("Не удалось отменить перемещение.", "error");
-    } finally {
-      outgoingPendingMovesState.isSaving = false;
-    }
   };
 
   const closePendingMovesModal = () => {
@@ -16476,7 +16132,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         vacationStartAt: pendingMovesState.vacationStartAt,
       });
       await refreshPendingMovesIndicator();
-      await refreshOutgoingPendingMovesIndicator();
     } catch (error) {
       console.error(error);
       setPendingMovesMessage("Не удалось сохранить ответы.", "error");
@@ -16899,12 +16554,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       openPendingMovesModal();
     });
   }
-  if (energyOutgoingPendingWrapperEl) {
-    energyOutgoingPendingWrapperEl.addEventListener("click", () => {
-      if (energyOutgoingPendingWrapperEl.classList.contains("is-hidden")) return;
-      openOutgoingPendingMovesModal();
-    });
-  }
   if (pendingMovesListEl) {
     pendingMovesListEl.addEventListener("click", (event) => {
       const photoButton = event.target.closest("[data-pending-photo-open]");
@@ -16974,29 +16623,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       closePendingMovesBulkConfirmModal();
     });
   }
-  if (outgoingPendingMovesBackdropEl) {
-    outgoingPendingMovesBackdropEl.addEventListener(
-      "click",
-      closeOutgoingPendingMovesModal
-    );
-  }
-  if (outgoingPendingMovesCloseButton) {
-    outgoingPendingMovesCloseButton.addEventListener(
-      "click",
-      closeOutgoingPendingMovesModal
-    );
-  }
-  outgoingPendingMovesModalEl?.addEventListener("keydown", (event) => {
-    if (event.key === "Escape") {
-      closeOutgoingPendingMovesModal();
-    }
-  });
-  outgoingPendingMovesListEl?.addEventListener("click", (event) => {
-    const cancelButton = event.target.closest("[data-outgoing-pending-cancel]");
-    if (!cancelButton) return;
-    const moveIndex = cancelButton.dataset.moveIndex;
-    void cancelOutgoingPendingMove(moveIndex);
-  });
   if (pendingMovesBulkConfirmCancelButton) {
     pendingMovesBulkConfirmCancelButton.addEventListener("click", () => {
       closePendingMovesBulkConfirmModal();
@@ -30048,9 +29674,6 @@ async function renderUserRoleView() {
   if (energyPendingStatEl) {
     energyPendingStatEl.classList.toggle("is-hidden", !isEnergyDashboardRole);
   }
-  if (energyOutgoingPendingStatEl) {
-    energyOutgoingPendingStatEl.classList.toggle("is-hidden", !isEnergyDashboardRole);
-  }
   if (appTitleMetaEl) {
     appTitleMetaEl.classList.toggle("is-hidden", !isEnergyDashboardRole);
     if (!isEnergyDashboardRole) {
@@ -30106,9 +29729,6 @@ async function showUserSettings() {
   setUserSettingsMode(true);
   if (energyPendingStatEl) {
     energyPendingStatEl.classList.add("is-hidden");
-  }
-  if (energyOutgoingPendingStatEl) {
-    energyOutgoingPendingStatEl.classList.add("is-hidden");
   }
   if (appTitleMetaEl) {
     appTitleMetaEl.classList.add("is-hidden");

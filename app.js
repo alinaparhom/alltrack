@@ -349,6 +349,30 @@ async function loadUserPendingMovesCount(orgFolderName, user) {
   return moves.length;
 }
 
+async function loadUserAwaitingReplyMoves(orgFolderName, user) {
+  if (!orgFolderName || !user) return [];
+  const userName = normalizePersonName(user.full_name ?? user.fullName ?? "");
+  if (!userName) return [];
+  const movesPath = `./${orgFolderName}/Перемещения.json`;
+  try {
+    const rawMoves = await loadJson(movesPath);
+    const moves = Array.isArray(rawMoves)
+      ? rawMoves
+      : Array.isArray(rawMoves?.moves)
+        ? rawMoves.moves
+        : [];
+    return moves.filter((move) => {
+      const responseDate = String(move?.["Дата ответа"] ?? "").trim();
+      if (responseDate) return false;
+      const movedBy = normalizePersonName(move?.["Переместил"] ?? "");
+      return movedBy && movedBy === userName;
+    });
+  } catch (error) {
+    console.warn("Не удалось загрузить отправленные перемещения для счётчика.", error);
+  }
+  return [];
+}
+
 async function loadUserToolsCount(orgFolderName, user) {
   if (!orgFolderName || !user) return 0;
   const userName = normalizePersonName(user.full_name ?? user.fullName ?? "");
@@ -3459,6 +3483,7 @@ function normalizeEnergyLayout(layout, actions, options = {}) {
   const usedIds = new Set();
   let hasToggle = false;
   let hasPending = false;
+  let hasAwaitingReply = false;
 
   if (Array.isArray(layout)) {
     layout.forEach((item) => {
@@ -3475,6 +3500,13 @@ function normalizeEnergyLayout(layout, actions, options = {}) {
         if (!hasPending) {
           normalized.push({ type: "pending" });
           hasPending = true;
+        }
+        return;
+      }
+      if (item.type === "awaiting-reply") {
+        if (!hasAwaitingReply) {
+          normalized.push({ type: "awaiting-reply" });
+          hasAwaitingReply = true;
         }
         return;
       }
@@ -3512,6 +3544,10 @@ function normalizeEnergyLayout(layout, actions, options = {}) {
   if (!hasPending) {
     normalized.unshift({ type: "pending" });
     hasPending = true;
+  }
+
+  if (!hasAwaitingReply) {
+    normalized.splice(hasPending ? 1 : 0, 0, { type: "awaiting-reply" });
   }
 
   if (!hasToggle) {
@@ -3597,16 +3633,42 @@ function updateEnergyPendingStat({ count = 0, available = [] } = {}) {
   });
 }
 
+function updateEnergyAwaitingReplyStat({ count = 0 } = {}) {
+  const safeCount = Number.isFinite(Number(count)) ? Math.max(0, Number(count)) : 0;
+  const hasItems = safeCount > 0;
+  const icons = document.querySelectorAll("[data-awaiting-reply-icon]");
+  icons.forEach((iconEl) => {
+    iconEl.textContent = hasItems ? "📤" : "✅";
+  });
+  const counts = document.querySelectorAll("[data-awaiting-reply-count]");
+  counts.forEach((countEl) => {
+    countEl.textContent = String(safeCount);
+    countEl.classList.toggle("is-hidden", !hasItems);
+  });
+  const buttons = document.querySelectorAll(
+    "[data-awaiting-reply-button], [data-quick-access-awaiting-reply]"
+  );
+  const title = hasItems
+    ? `Ждут ответа на мои перемещения: ${safeCount}`
+    : "По моим перемещениям ответы получены";
+  buttons.forEach((button) => {
+    button.setAttribute("title", title);
+    button.setAttribute("aria-label", title);
+  });
+}
+
 function applyGroupingPreference(layout, actions, preference) {
   if (preference === "none") {
     return [
       { type: "pending" },
+      { type: "awaiting-reply" },
       ...actions.map((action) => ({ type: "action", id: action.id })),
     ];
   }
   if (preference === "all-group") {
     return [
       { type: "pending" },
+      { type: "awaiting-reply" },
       {
         type: "group",
         id: "group-all",
@@ -3699,6 +3761,25 @@ function createEnergyGroupToggleCard() {
   return button;
 }
 
+function createEnergyAwaitingReplyCard() {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "pending-stat pending-stat--grid action-card";
+  button.dataset.energyItem = "";
+  button.dataset.energyItemType = "awaiting-reply";
+  button.dataset.actionId = "awaiting-reply";
+  button.dataset.awaitingReplyButton = "true";
+  button.innerHTML = `
+    <span class="pending-icon" data-awaiting-reply-icon aria-hidden="true">📤</span>
+    <span class="pending-info">
+      <span class="pending-title">Мои перемещения</span>
+      <span class="pending-status">Ожидают ответа</span>
+    </span>
+    <span class="pending-badge is-hidden" data-awaiting-reply-count>0</span>
+  `;
+  return button;
+}
+
 const ACTION_TITLE_MIN_FONT_SIZE = 9;
 const ACTION_TITLE_FIT_STEP = 0.5;
 
@@ -3745,6 +3826,8 @@ function buildEnergyLayoutFromDom(gridEl) {
       if (actionId) layout.push({ type: "action", id: actionId });
     } else if (type === "pending") {
       layout.push({ type: "pending" });
+    } else if (type === "awaiting-reply") {
+      layout.push({ type: "awaiting-reply" });
     } else if (type === "group") {
       let groupItems = [];
       if (item.dataset.groupItems) {
@@ -6053,6 +6136,21 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const pendingMovesDeclineMessageEl = contentEl.querySelector(
     "[data-pending-moves-decline-message]"
   );
+  const awaitingReplyModalEl = contentEl.querySelector("[data-awaiting-reply-modal]");
+  const awaitingReplyBackdropEl = contentEl.querySelector(
+    "[data-awaiting-reply-backdrop]"
+  );
+  const awaitingReplyCloseButton = contentEl.querySelector(
+    "[data-awaiting-reply-close]"
+  );
+  const awaitingReplySubtitleEl = contentEl.querySelector(
+    "[data-awaiting-reply-subtitle]"
+  );
+  const awaitingReplyListEl = contentEl.querySelector("[data-awaiting-reply-list]");
+  const awaitingReplyEmptyEl = contentEl.querySelector("[data-awaiting-reply-empty]");
+  const awaitingReplyMessageEl = contentEl.querySelector(
+    "[data-awaiting-reply-message]"
+  );
   const infoPendingModalEl = contentEl.querySelector("[data-info-pending-modal]");
   const infoPendingBackdropEl = contentEl.querySelector(
     "[data-info-pending-backdrop]"
@@ -6398,15 +6496,21 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     title: "Перемещения",
     icon: "🚚",
   };
+  const awaitingReplyQuickAccessOption = {
+    id: "awaiting-reply",
+    title: "Мои перемещения",
+    icon: "📤",
+  };
   const actionsMap = new Map(availableActions.map((action) => [action.id, action]));
   const quickAccessOptions = isChiefEngineerDashboard
     ? [...availableActions]
-    : [...availableActions, pendingQuickAccessOption];
+    : [...availableActions, pendingQuickAccessOption, awaitingReplyQuickAccessOption];
   const quickAccessOptionsMap = new Map(
     quickAccessOptions.map((action) => [action.id, action])
   );
   const savedLayout = settingsData.users?.[context.userKey]?.energy?.layout;
   const pendingMoves = await loadUserPendingMoves(context.orgFolderName, user);
+  const awaitingReplyMoves = await loadUserAwaitingReplyMoves(context.orgFolderName, user);
   const layoutCustomized =
     settingsData.users?.[context.userKey]?.energy?.layoutCustomized ?? false;
   const normalizedPreferences = normalizePreferences(preferences);
@@ -6550,6 +6654,25 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     return button;
   };
 
+  const createQuickAccessAwaitingReplyItem = (action) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "quick-access-item quick-access-item--pending";
+    button.dataset.actionId = action.id;
+    button.dataset.energyItemType = "awaiting-reply";
+    button.dataset.quickAccessAwaitingReply = "true";
+    button.setAttribute("aria-label", action.title);
+    button.innerHTML = `
+      <span class="quick-access-item__icon" data-awaiting-reply-icon aria-hidden="true">
+        📤
+      </span>
+      <span class="quick-access-item__badge is-hidden" data-awaiting-reply-count>
+        0
+      </span>
+    `;
+    return button;
+  };
+
   const syncQuickAccessPendingIndicator = () => {
     if (!energyPendingWrapperEl) return;
     const pendingCount = Number(energyPendingWrapperEl.dataset.pendingCount ?? 0);
@@ -6575,10 +6698,15 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         quickAccessListEl.appendChild(createQuickAccessPendingItem(action));
         return;
       }
+      if (actionId === "awaiting-reply") {
+        quickAccessListEl.appendChild(createQuickAccessAwaitingReplyItem(action));
+        return;
+      }
       quickAccessListEl.appendChild(createQuickAccessItem(action));
     });
     updateQuickAccessOffset();
     syncQuickAccessPendingIndicator();
+    updateEnergyAwaitingReplyStat({ count: awaitingReplyMoves.length });
     updateToolsReplacementIndicator();
     updateMyToolsBadge(myToolsCount);
   };
@@ -6630,6 +6758,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         energyPendingStatEl.dataset.energyItemType = "pending";
         energyPendingStatEl.dataset.actionId = "pending";
         gridEl.appendChild(energyPendingStatEl);
+      } else if (item.type === "awaiting-reply") {
+        if (quickAccessSet.has("awaiting-reply")) return;
+        gridEl.appendChild(createEnergyAwaitingReplyCard());
       } else if (item.type === "action") {
         if (quickAccessSet.has(item.id)) return;
         const action = actionsMap.get(item.id);
@@ -6669,6 +6800,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   }
 
   updateEnergyPendingStat({ count: pendingMoves.length, available: pendingMoves });
+  updateEnergyAwaitingReplyStat({ count: awaitingReplyMoves.length });
   fitActionTitleTexts(gridEl);
   if (typeof ResizeObserver !== "undefined" && !gridEl.dataset.fitObserverAttached) {
     const fitObserver = new ResizeObserver(() => {
@@ -6774,6 +6906,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     vacationStartAt: "",
     isSaving: false,
     bulkConfirmAction: null,
+  };
+  const awaitingReplyState = {
+    items: [],
+    toolMap: new Map(),
+    isSaving: false,
   };
   const pendingMovePhotoViewerState = {
     files: [],
@@ -13730,6 +13867,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       setToolsCancelMoveMessage("Перемещение отменено.", "success");
       await loadUserTools();
       await refreshPendingMovesIndicator();
+      await refreshAwaitingReplyIndicator();
       setTimeout(() => {
         closeToolsCancelMoveModal();
       }, 600);
@@ -14317,6 +14455,228 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const refreshPendingMovesIndicator = async () => {
     const moves = await loadUserPendingMoves(context.orgFolderName, user);
     updateEnergyPendingStat({ count: moves.length, available: moves });
+  };
+
+  const refreshAwaitingReplyIndicator = async () => {
+    const moves = await loadUserAwaitingReplyMoves(context.orgFolderName, user);
+    updateEnergyAwaitingReplyStat({ count: moves.length });
+  };
+
+  const setAwaitingReplySubtitle = (text = "") => {
+    if (!awaitingReplySubtitleEl) return;
+    awaitingReplySubtitleEl.textContent = text;
+  };
+
+  const setAwaitingReplyMessage = (text = "", type = "info") => {
+    if (!awaitingReplyMessageEl) return;
+    awaitingReplyMessageEl.textContent = text;
+    awaitingReplyMessageEl.classList.remove("is-error", "is-success", "is-info");
+    if (!text) return;
+    awaitingReplyMessageEl.classList.add(
+      type === "error" ? "is-error" : type === "success" ? "is-success" : "is-info"
+    );
+  };
+
+  const renderAwaitingReplyList = () => {
+    if (!awaitingReplyListEl) return;
+    awaitingReplyListEl.innerHTML = "";
+    const items = awaitingReplyState.items;
+    if (!items.length) {
+      awaitingReplyEmptyEl?.classList.remove("is-hidden");
+      return;
+    }
+    awaitingReplyEmptyEl?.classList.add("is-hidden");
+    const table = document.createElement("div");
+    table.className = "tools-table pending-moves-tools-table awaiting-reply-tools-table";
+    let currentReceiver = "";
+    items.forEach(({ move, moveIndex, tool }) => {
+      const receiver = String(move?.["Принял"] ?? "").trim() || "Не указан принимающий";
+      if (receiver !== currentReceiver) {
+        currentReceiver = receiver;
+        const groupRow = document.createElement("div");
+        groupRow.className = "tools-table__row awaiting-reply-group-row";
+        const groupCell = document.createElement("div");
+        groupCell.className = "tools-table__cell awaiting-reply-group-cell";
+        groupCell.setAttribute("role", "heading");
+        groupCell.setAttribute("aria-level", "3");
+        groupCell.textContent = receiver;
+        groupRow.appendChild(groupCell);
+        table.appendChild(groupRow);
+      }
+      const row = document.createElement("div");
+      row.className = "tools-table__row";
+      const number =
+        String(move?.["Номер"] ?? "").trim() ||
+        String(move?.["Бух.номер"] ?? "").trim();
+      const numberCell = document.createElement("div");
+      numberCell.className = "tools-table__cell tools-table__cell--number pending-move-number-cell";
+      numberCell.textContent = number || "—";
+      const infoCell = document.createElement("div");
+      infoCell.className = "tools-table__cell pending-move-main-cell";
+      const title = document.createElement("div");
+      title.className = "tools-table__title";
+      title.textContent = String(tool?.["Наименование"] ?? "").trim() || "Без названия";
+      const meta = document.createElement("div");
+      meta.className = "tools-table__meta tools-table__meta--stack";
+      const oldObject = String(move?.["Старый объект"] ?? "").trim();
+      const newObject = String(move?.["Новый объект"] ?? "").trim();
+      const moveDate = String(move?.["Дата перемещения"] ?? "").trim();
+      const moveComment = String(move?.["Причина перемещения"] ?? "").trim();
+      [oldObject || newObject ? `${oldObject || "—"} → ${newObject || "—"}` : "", moveDate]
+        .filter(Boolean)
+        .forEach((text) => {
+          const line = document.createElement("div");
+          line.className = "pending-move-meta";
+          line.textContent = text;
+          meta.appendChild(line);
+        });
+      if (moveComment) {
+        const comment = document.createElement("div");
+        comment.className = "pending-move-comment";
+        comment.textContent = `Комментарий: ${moveComment}`;
+        meta.appendChild(comment);
+      }
+      infoCell.append(title, meta);
+      const actionsCell = document.createElement("div");
+      actionsCell.className = "tools-table__cell tools-table__cell--actions";
+      actionsCell.innerHTML = `
+        <button class="pending-move-action pending-move-action--cancel" type="button" data-awaiting-reply-action="cancel" data-move-index="${moveIndex}" aria-label="Отменить перемещение">Отменить перемещение</button>
+      `;
+      row.append(numberCell, infoCell, actionsCell);
+      table.appendChild(row);
+    });
+    awaitingReplyListEl.appendChild(table);
+  };
+
+  const loadAwaitingReplyList = async () => {
+    const orgFolder = context.orgFolderName ?? "";
+    if (!orgFolder) {
+      awaitingReplyState.items = [];
+      setAwaitingReplySubtitle("Организация не найдена.");
+      renderAwaitingReplyList();
+      return;
+    }
+    let moves = [];
+    try {
+      const rawMoves = await loadJson(`./${orgFolder}/Перемещения.json`);
+      moves = Array.isArray(rawMoves)
+        ? rawMoves
+        : Array.isArray(rawMoves?.moves)
+          ? rawMoves.moves
+          : [];
+    } catch (error) {
+      console.warn("Не удалось загрузить отправленные перемещения.", error);
+    }
+    awaitingReplyState.toolMap = await buildPendingToolsMap(orgFolder);
+    const moverName = normalizePersonName(user?.full_name ?? "");
+    awaitingReplyState.items = moves
+      .map((move, moveIndex) => ({ move, moveIndex }))
+      .filter(({ move }) => {
+        if (String(move?.["Дата ответа"] ?? "").trim()) return false;
+        return normalizePersonName(move?.["Переместил"] ?? "") === moverName;
+      })
+      .map((entry) => {
+        const number = String(entry.move?.["Номер"] ?? "").trim();
+        const accounting = String(entry.move?.["Бух.номер"] ?? "").trim();
+        const tool =
+          awaitingReplyState.toolMap.get(`n:${number}`) ??
+          awaitingReplyState.toolMap.get(`a:${accounting}`) ??
+          null;
+        return { ...entry, tool };
+      })
+      .sort((a, b) => {
+        const receiverA = String(a.move?.["Принял"] ?? "").trim();
+        const receiverB = String(b.move?.["Принял"] ?? "").trim();
+        const byReceiver = receiverA.localeCompare(receiverB, "ru");
+        if (byReceiver !== 0) return byReceiver;
+        const aDate = parseDateValue(a.move?.["Дата перемещения"]);
+        const bDate = parseDateValue(b.move?.["Дата перемещения"]);
+        const aTs = aDate instanceof Date ? aDate.getTime() : 0;
+        const bTs = bDate instanceof Date ? bDate.getTime() : 0;
+        return bTs - aTs;
+      });
+    setAwaitingReplySubtitle(`Ожидают ответа: ${awaitingReplyState.items.length}`);
+    renderAwaitingReplyList();
+  };
+
+  const closeAwaitingReplyModal = () => {
+    awaitingReplyModalEl?.classList.add("is-hidden");
+    if (pendingMovesModalEl && !pendingMovesModalEl.classList.contains("is-hidden")) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    setAwaitingReplyMessage("");
+  };
+
+  const openAwaitingReplyModal = async () => {
+    if (!awaitingReplyModalEl) return;
+    awaitingReplyModalEl.classList.remove("is-hidden");
+    document.body.style.overflow = "hidden";
+    setAwaitingReplySubtitle("Загружаем список...");
+    await loadAwaitingReplyList();
+  };
+
+  const applyAwaitingReplyCancel = async (moveIndex) => {
+    if (awaitingReplyState.isSaving) return;
+    if (!Number.isFinite(moveIndex)) return;
+    const item = awaitingReplyState.items.find((entry) => entry.moveIndex === moveIndex);
+    if (!item) return;
+    awaitingReplyState.isSaving = true;
+    setAwaitingReplyMessage("Отменяем перемещение...", "info");
+    const orgFolder = context.orgFolderName ?? "";
+    try {
+      const rawMoves = await loadJson(`./${orgFolder}/Перемещения.json`);
+      const movesPayload = normalizeCollectionPayload(rawMoves, "moves");
+      const move = movesPayload.items[moveIndex];
+      if (!move || String(move?.["Дата ответа"] ?? "").trim()) {
+        setAwaitingReplyMessage("Перемещение уже обработано.", "error");
+        return;
+      }
+      const responseDate = formatDateValue(new Date());
+      const fineConfig = settingsData?.organization?.fines?.lateReply ?? {};
+      const lateReplyFineAmount = resolveLateReplyFine(move, fineConfig);
+      const updatedMoves = [...movesPayload.items];
+      updatedMoves[moveIndex] = {
+        ...move,
+        "Дата ответа": responseDate,
+        Ответ: "Отмена перемещения",
+        "Комментарий к ответу": "Отмена перемещения пользователем",
+        "Отменил": String(user?.full_name ?? "").trim(),
+        "Дата отмены": responseDate,
+        ...(lateReplyFineAmount > 0
+          ? {
+              "Штраф за ответ": lateReplyFineAmount,
+              "Тип штрафа": "Поздний ответ",
+              "Штраф за поздний ответ": "Да",
+            }
+          : {}),
+      };
+      const movesPath = `./${orgFolder}/Перемещения.json`;
+      const movesPayloadOut = movesPayload.wrapper
+        ? { ...movesPayload.wrapper, [movesPayload.key]: updatedMoves }
+        : updatedMoves;
+      await saveJson(movesPath, movesPayloadOut, { user });
+      await registerMoveCancelFine(updatedMoves[moveIndex]);
+      const usersData = await loadJson(usersFilePath).catch(() => ({ users: [] }));
+      const organizationName = findUserOrganizationName(user, usersData);
+      await notifyMoveCancel({
+        tool: item.tool,
+        move: updatedMoves[moveIndex],
+        orgFolder: context.orgFolderName,
+        organizationName,
+        canceledBy: String(user?.full_name ?? "").trim(),
+      });
+      setAwaitingReplyMessage("Перемещение отменено.", "success");
+      await loadAwaitingReplyList();
+      await refreshPendingMovesIndicator();
+      await refreshAwaitingReplyIndicator();
+    } catch (error) {
+      console.error(error);
+      setAwaitingReplyMessage("Не удалось отменить перемещение.", "error");
+    } finally {
+      awaitingReplyState.isSaving = false;
+    }
   };
 
   const closePendingMovesModal = () => {
@@ -16132,6 +16492,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         vacationStartAt: pendingMovesState.vacationStartAt,
       });
       await refreshPendingMovesIndicator();
+      await refreshAwaitingReplyIndicator();
     } catch (error) {
       console.error(error);
       setPendingMovesMessage("Не удалось сохранить ответы.", "error");
@@ -16608,6 +16969,20 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       photoButton.click();
     });
   }
+  awaitingReplyBackdropEl?.addEventListener("click", closeAwaitingReplyModal);
+  awaitingReplyCloseButton?.addEventListener("click", closeAwaitingReplyModal);
+  awaitingReplyModalEl?.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      closeAwaitingReplyModal();
+    }
+  });
+  awaitingReplyListEl?.addEventListener("click", (event) => {
+    const actionButton = event.target.closest("[data-awaiting-reply-action]");
+    if (!actionButton) return;
+    const moveIndex = Number.parseInt(actionButton.dataset.moveIndex ?? "", 10);
+    if (!Number.isFinite(moveIndex)) return;
+    applyAwaitingReplyCancel(moveIndex);
+  });
   if (pendingMovesAcceptAllButton) {
     pendingMovesAcceptAllButton.addEventListener("click", () => {
       openPendingMovesBulkConfirmModal("accept");
@@ -17577,6 +17952,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         }
         markToolsPendingMoveInStates(eligibleTools);
         applyToolsFilters();
+        await refreshAwaitingReplyIndicator();
         setTimeout(() => {
           closeToolsMoveModal();
           resetToolsSelection();
@@ -25880,6 +26256,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       openPendingMovesModal();
       return true;
     }
+    if (actionId === "awaiting-reply") {
+      openAwaitingReplyModal();
+      return true;
+    }
     if (actionId === "settings") {
       openSettingsModal();
       return true;
@@ -26033,7 +26413,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
     if (
       !isGrouping &&
-      targetCard.dataset.energyItemType === "action" &&
+      (targetCard.dataset.energyItemType === "action" ||
+        targetCard.dataset.energyItemType === "awaiting-reply") &&
       handleEnergyAction(targetCard.dataset.actionId)
     ) {
       return;

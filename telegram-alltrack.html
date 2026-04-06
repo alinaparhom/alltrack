@@ -10200,6 +10200,34 @@
         background: rgba(248, 113, 113, 0.1);
       }
 
+      .pending-move-action--cancel {
+        border-color: rgba(59, 130, 246, 0.35);
+        color: #1d4ed8;
+        background: rgba(59, 130, 246, 0.1);
+        margin-left: auto;
+      }
+
+      .awaiting-reply-group-row {
+        grid-template-columns: minmax(0, 1fr) !important;
+        padding: 0;
+        background: transparent;
+        border: 0;
+        box-shadow: none;
+      }
+
+      .awaiting-reply-group-cell {
+        width: 100%;
+        padding: 10px 12px 4px;
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--title);
+        letter-spacing: 0.01em;
+      }
+
+      .awaiting-reply-tools-table .tools-table__cell--actions {
+        justify-content: flex-end;
+      }
+
       .pending-moves-decline-modal__panel {
         width: min(92vw, 560px);
         max-width: 560px;

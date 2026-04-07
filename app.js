@@ -15162,14 +15162,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const meta = document.createElement("div");
       meta.className = "tools-table__meta tools-table__meta--stack";
       const receiver = String(move?.["Принял"] ?? "").trim();
-      const sender = resolveInfoPendingSender(move);
-      const senderLabel = String(move?.["Переместил энергетик"] ?? "").trim()
-        ? "Ответственный до перемещения"
-        : "Переместил";
+      const senderEnergy = String(move?.["Переместил энергетик"] ?? "").trim();
       const moveDate = String(move?.["Дата перемещения"] ?? "").trim();
       const moveComment = String(move?.["Причина перемещения"] ?? "").trim();
       const sourceObject = String(move?.["Старый объект"] ?? "").trim();
       const targetObject = String(move?.["Новый объект"] ?? "").trim();
+      const toolAmount = formatToolCostLabel(tool);
       const moveRoute =
         sourceObject && targetObject
           ? `${sourceObject} → ${targetObject}`
@@ -15189,16 +15187,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         const normalizedLabel = normalizePersonName(label);
         const value = String(fullName ?? "").trim();
         if (!normalizedLabel || !value) return;
-        if (normalizedLabel === "переместил") {
-          appendMetaLine(value);
-          return;
-        }
-        if (!normalizedLabel.startsWith("ответственный")) {
-          appendMetaLine(value);
-          return;
-        }
         const lineEl = document.createElement("div");
-        lineEl.className = "pending-move-meta";
+        lineEl.className = "pending-move-meta pending-move-responsible";
         lineEl.textContent = `${label}: `;
         const [surname, ...rest] = value.split(/\s+/);
         if (surname) {
@@ -15211,12 +15201,20 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         } else {
           lineEl.appendChild(document.createTextNode(value));
         }
+        if (toolAmount) {
+          const amountEl = document.createElement("span");
+          amountEl.className = "pending-move-responsible__amount";
+          amountEl.textContent = ` · На сумму: ${toolAmount.replace("Стоимость: ", "")}`;
+          lineEl.appendChild(amountEl);
+        }
         meta.appendChild(lineEl);
       };
 
-      appendMetaLine(receiver ? `Принял: ${receiver}` : "");
-      if (sender) {
-        appendResponsibleMetaLine(senderLabel, sender);
+      if (receiver) {
+        appendResponsibleMetaLine("Принял", receiver);
+      }
+      if (senderEnergy) {
+        appendResponsibleMetaLine("Переместил энергетик", senderEnergy);
       }
       if (moveRoute) {
         const routeEl = document.createElement("div");
@@ -15250,7 +15248,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         moveDateLine.appendChild(fineEl);
       }
       appendMetaLine(moveComment ? `Комментарий: ${moveComment}` : "", "pending-move-comment");
-      appendMetaLine(formatToolCostLabel(tool));
+      appendMetaLine(
+        `Текущий штраф: ${formatNotificationCostWithoutCurrency(fineAmount)} р.`
+      );
       meta.appendChild(moveDateLine);
       infoCell.append(title, meta);
 
@@ -15262,11 +15262,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       img.className = "tools-table__thumb-image";
       img.alt = meansName || "Инструмент";
       const photoCount = Number.parseInt(tool?.["Количество фото"] ?? 0, 10);
-      const hasPhoto = Number.isFinite(photoCount) && photoCount > 0;
       const photoNumber =
         String(tool?.["Номер"] ?? "").trim() ||
         String(tool?.["Бух.номер"] ?? "").trim() ||
         number;
+      const hasPhoto =
+        (Number.isFinite(photoCount) && photoCount > 0) || Boolean(photoNumber);
       applyToolPhotoWithFallback({
         img,
         orgFolder: toolsState.orgFolder,

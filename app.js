@@ -9810,10 +9810,16 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
   const isOwnAwaitingReplyMove = (move, currentUserName) => {
     if (!move || !currentUserName) return false;
-    const movedBy = normalizePersonName(
-      move?.["Переместил"] ?? move?.["Переместил энергетик"] ?? ""
-    );
-    if (movedBy && movedBy !== currentUserName) return false;
+    const movedByEnergy = normalizePersonName(move?.["Переместил энергетик"] ?? "");
+    if (movedByEnergy) {
+      const previousResponsible = normalizePersonName(
+        move?.["Ответственный до перемещения"] ?? ""
+      );
+      return Boolean(previousResponsible && previousResponsible === currentUserName);
+    }
+
+    const movedBy = normalizePersonName(move?.["Переместил"] ?? "");
+    if (!movedBy || movedBy !== currentUserName) return false;
     const previousResponsible = normalizePersonName(
       move?.["Ответственный до перемещения"] ?? ""
     );

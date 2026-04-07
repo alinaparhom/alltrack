@@ -10994,8 +10994,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     tool,
     { includeStandaloneStatus = false } = {}
   ) => {
-    const hasSelected = (key) =>
-      Array.isArray(toolsState.filters[key]) && toolsState.filters[key].length > 0;
+    const hasSelected = (key) => {
+      const selectedValues = Array.isArray(toolsState.filters[key])
+        ? toolsState.filters[key]
+        : [];
+      if (selectedValues.length === 0) return false;
+      return !isToolsFilterFullySelected(key, selectedValues);
+    };
     const includesSelected = (key, value) =>
       toolsState.filters[key].includes(String(value ?? "").trim());
     if (

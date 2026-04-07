@@ -14528,6 +14528,27 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     );
   };
 
+  const resolveAwaitingReplySenderMeta = (move) => {
+    const movedByEnergy = String(move?.["Переместил энергетик"] ?? "").trim();
+    if (movedByEnergy) {
+      const responsibleBeforeMove = String(
+        move?.["Ответственный до перемещения"] ?? ""
+      ).trim();
+      return {
+        senderLabel: "Переместил энергетик",
+        senderValue: movedByEnergy,
+        detailsLabel: "Ответственный до перемещения",
+        detailsValue: responsibleBeforeMove,
+      };
+    }
+    return {
+      senderLabel: "Переместил",
+      senderValue: String(move?.["Переместил"] ?? "").trim(),
+      detailsLabel: "",
+      detailsValue: "",
+    };
+  };
+
   const renderAwaitingReplyList = () => {
     if (!awaitingReplyListEl) return;
     awaitingReplyListEl.innerHTML = "";
@@ -14584,6 +14605,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const moveComment = String(move?.["Причина перемещения"] ?? "").trim();
       const sourceObject = String(move?.["Старый объект"] ?? "").trim();
       const targetObject = String(move?.["Новый объект"] ?? "").trim();
+      const senderMeta = resolveAwaitingReplySenderMeta(move);
       const moveRoute =
         sourceObject || targetObject
           ? `${sourceObject || "—"} ➜ ${targetObject || "—"}`
@@ -14592,6 +14614,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         [manufacturer, model].filter(Boolean).join(" · "),
         `Бух.номер: ${accountingNumber} · ${toolCostText}`,
         moveRoute,
+        senderMeta.senderValue
+          ? `${senderMeta.senderLabel}: ${senderMeta.senderValue}`
+          : "",
+        senderMeta.detailsValue
+          ? `${senderMeta.detailsLabel}: ${senderMeta.detailsValue}`
+          : "",
         moveComment ? `Комментарий: ${moveComment}` : "",
         moveDate,
       ].filter(Boolean);
@@ -14682,13 +14710,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         const tool = resolvePendingToolByMove(awaitingReplyState.toolMap, entry.move);
         return { ...entry, tool };
       })
-      .filter(({ move, tool }) => {
+      .filter(({ move }) => {
         if (String(move?.["Дата ответа"] ?? "").trim()) return false;
         if (!isOwnAwaitingReplyMove(move, currentUserName)) return false;
-        const responsibleName = normalizePersonName(tool?.["Ответственный"] ?? "");
-        if (!responsibleName || responsibleName !== currentUserName) return false;
-        const status = String(tool?.["Статус"] ?? "").trim().toLocaleLowerCase("ru");
-        return status === "в процессе перемещения" || status === "перемещается";
+        return true;
       })
       .sort((a, b) => {
         const receiverA = String(a.move?.["Принял"] ?? "").trim();

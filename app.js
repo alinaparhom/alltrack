@@ -364,6 +364,13 @@ async function loadUserAwaitingReplyMoves(orgFolderName, user) {
     return moves.filter((move) => {
       const responseDate = String(move?.["Дата ответа"] ?? "").trim();
       if (responseDate) return false;
+      const movedByEnergy = normalizePersonName(move?.["Переместил энергетик"] ?? "");
+      if (movedByEnergy) {
+        const responsibleBeforeMove = normalizePersonName(
+          move?.["Ответственный до перемещения"] ?? ""
+        );
+        return responsibleBeforeMove && responsibleBeforeMove === userName;
+      }
       const movedBy = normalizePersonName(move?.["Переместил"] ?? "");
       return movedBy && movedBy === userName;
     });
@@ -14883,15 +14890,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   };
 
   const resolveInfoPendingSender = (move) => {
-    const hasPreviousResponsible = Object.prototype.hasOwnProperty.call(
-      move ?? {},
-      "Ответственный до перемещения"
-    );
-    const previousResponsible = hasPreviousResponsible
-      ? String(move?.["Ответственный до перемещения"] ?? "").trim()
-      : "";
+    const movedByEnergy = String(move?.["Переместил энергетик"] ?? "").trim();
+    const previousResponsible = String(move?.["Ответственный до перемещения"] ?? "").trim();
     const movedBy = String(move?.["Переместил"] ?? "").trim();
-    return previousResponsible || movedBy;
+    return movedByEnergy ? previousResponsible : movedBy;
   };
 
   const buildInfoPendingResponsibleOptions = () => {
@@ -15121,10 +15123,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       meta.className = "tools-table__meta tools-table__meta--stack";
       const receiver = String(move?.["Принял"] ?? "").trim();
       const sender = resolveInfoPendingSender(move);
-      const senderLabel = Object.prototype.hasOwnProperty.call(
-        move ?? {},
-        "Ответственный до перемещения"
-      )
+      const senderLabel = String(move?.["Переместил энергетик"] ?? "").trim()
         ? "Ответственный до перемещения"
         : "Переместил";
       const moveDate = String(move?.["Дата перемещения"] ?? "").trim();
@@ -15288,6 +15287,17 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     infoPendingState.allItems = moves
       .map((move, index) => ({ move, moveIndex: index }))
       .filter(({ move }) => !String(move?.["Дата ответа"] ?? "").trim())
+      .filter(({ move }) => {
+        const movedByEnergy = normalizePersonName(move?.["Переместил энергетик"] ?? "");
+        if (movedByEnergy) {
+          const responsibleBeforeMove = normalizePersonName(
+            move?.["Ответственный до перемещения"] ?? ""
+          );
+          return Boolean(responsibleBeforeMove && responsibleBeforeMove === context.userKey);
+        }
+        const movedBy = normalizePersonName(move?.["Переместил"] ?? "");
+        return Boolean(movedBy && movedBy === context.userKey);
+      })
       .map((entry) => {
         const number = String(entry.move?.["Номер"] ?? "").trim();
         const accounting = String(entry.move?.["Бух.номер"] ?? "").trim();

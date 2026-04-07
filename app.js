@@ -14560,18 +14560,36 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     awaitingReplyEmptyEl?.classList.add("is-hidden");
     const table = document.createElement("div");
     table.className = "tools-table pending-moves-tools-table awaiting-reply-tools-table";
+    const receiverStats = items.reduce((acc, { move, tool }) => {
+      const receiver = String(move?.["Принял"] ?? "").trim() || "Не указан принимающий";
+      if (!acc[receiver]) {
+        acc[receiver] = { count: 0, amount: 0 };
+      }
+      acc[receiver].count += 1;
+      const toolCost = normalizeCostValue(tool?.["Стоимость"]);
+      const moveCost = normalizeCostValue(move?.["Стоимость"]);
+      const itemCost = Number.isFinite(toolCost)
+        ? toolCost
+        : Number.isFinite(moveCost)
+          ? moveCost
+          : 0;
+      acc[receiver].amount += itemCost;
+      return acc;
+    }, {});
     let currentReceiver = "";
     items.forEach(({ move, moveIndex, tool }) => {
       const receiver = String(move?.["Принял"] ?? "").trim() || "Не указан принимающий";
       if (receiver !== currentReceiver) {
         currentReceiver = receiver;
+        const stats = receiverStats[receiver] ?? { count: 0, amount: 0 };
+        const receiverCostText = `${formatNotificationCostWithoutCurrency(stats.amount)} р.`;
         const groupRow = document.createElement("div");
         groupRow.className = "tools-table__row awaiting-reply-group-row";
         const groupCell = document.createElement("div");
         groupCell.className = "tools-table__cell awaiting-reply-group-cell";
         groupCell.setAttribute("role", "heading");
         groupCell.setAttribute("aria-level", "3");
-        groupCell.textContent = receiver;
+        groupCell.textContent = `${receiver} · ${stats.count} шт. · На сумму: ${receiverCostText}`;
         groupRow.appendChild(groupCell);
         table.appendChild(groupRow);
       }
@@ -14597,10 +14615,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         String(tool?.["Бух.номер"] ?? "").trim() ||
         String(move?.["Бух.номер"] ?? "").trim() ||
         "—";
-      const toolCost = normalizeCostValue(tool?.["Стоимость"]);
-      const toolCostText = Number.isFinite(toolCost)
-        ? `${formatNotificationCostWithoutCurrency(toolCost)} р.`
-        : "—";
       const lateReplyFineAmount = resolveLateReplyFine(
         move,
         awaitingReplyState.fineConfig
@@ -14615,7 +14629,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           ? `${sourceObject || "—"} ➜ ${targetObject || "—"}`
           : "";
       const metaLines = [
-        `Ответственный: ${receiver} · На сумму: ${toolCostText}`,
         [manufacturer, model].filter(Boolean).join(" · "),
         `Бух.номер: ${accountingNumber}`,
         moveRoute,
@@ -14625,7 +14638,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         senderMeta.detailsValue
           ? `${senderMeta.detailsLabel}: ${senderMeta.detailsValue}`
           : "",
-        `Текущий штраф по перемещению: ${formatNotificationCostWithoutCurrency(
+        `Штраф: ${formatNotificationCostWithoutCurrency(
           lateReplyFineAmount
         )} р.`,
         moveComment ? `Комментарий: ${moveComment}` : "",
@@ -14634,12 +14647,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       metaLines.forEach((text, lineIndex) => {
         const line = document.createElement("div");
         const isComment = moveComment && text === `Комментарий: ${moveComment}`;
-        const isResponsibleLine = text.startsWith("Ответственный:");
         line.className = isComment
           ? "pending-move-comment"
-          : isResponsibleLine
-            ? "pending-move-meta pending-move-responsible"
-            : "pending-move-meta";
+          : "pending-move-meta";
         if (isComment) {
           const labelEl = document.createElement("span");
           labelEl.textContent = "Комментарий: ";

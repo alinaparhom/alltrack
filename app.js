@@ -14515,34 +14515,105 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       infoCell.className = "tools-table__cell pending-move-main-cell";
       const title = document.createElement("div");
       title.className = "tools-table__title";
-      title.textContent = String(tool?.["Наименование"] ?? "").trim() || "Без названия";
+      const meansName = String(tool?.["Наименование"] ?? "").trim();
+      title.textContent = meansName || "Без названия";
       const meta = document.createElement("div");
       meta.className = "tools-table__meta tools-table__meta--stack";
-      const oldObject = String(move?.["Старый объект"] ?? "").trim();
-      const newObject = String(move?.["Новый объект"] ?? "").trim();
+      const manufacturer = String(tool?.["Производитель"] ?? "").trim();
+      const model = String(tool?.["Модель"] ?? "").trim();
+      const accountingNumber =
+        String(tool?.["Бух.номер"] ?? "").trim() ||
+        String(move?.["Бух.номер"] ?? "").trim() ||
+        "—";
+      const toolCost = normalizeCostValue(tool?.["Стоимость"]);
+      const toolCostText = Number.isFinite(toolCost)
+        ? `${formatNotificationCostWithoutCurrency(toolCost)} р.`
+        : "—";
+      const sender = String(move?.["Переместил"] ?? "").trim();
+      const movedByEnergy = String(move?.["Переместил энергетик"] ?? "").trim();
+      const senderValue = movedByEnergy || sender;
+      const senderLabel = movedByEnergy ? "Переместил энергетик" : "Переместил";
+      const senderShortName = formatFullName(senderValue, 2);
       const moveDate = String(move?.["Дата перемещения"] ?? "").trim();
       const moveComment = String(move?.["Причина перемещения"] ?? "").trim();
-      [oldObject || newObject ? `${oldObject || "—"} → ${newObject || "—"}` : "", moveDate]
-        .filter(Boolean)
-        .forEach((text) => {
-          const line = document.createElement("div");
-          line.className = "pending-move-meta";
+      const sourceObject = String(move?.["Старый объект"] ?? "").trim();
+      const targetObject = String(move?.["Новый объект"] ?? "").trim();
+      const moveRoute =
+        sourceObject || targetObject
+          ? `${sourceObject || "—"} ➜ ${targetObject || "—"}`
+          : "";
+      const metaLines = [
+        [manufacturer, model].filter(Boolean).join(" · "),
+        `Бух.номер: ${accountingNumber} · ${toolCostText}`,
+        senderValue
+          ? movedByEnergy
+            ? `${senderLabel}: ${senderShortName}`
+            : senderShortName
+          : "",
+        moveRoute,
+        moveComment ? `Комментарий: ${moveComment}` : "",
+        moveDate,
+      ].filter(Boolean);
+      metaLines.forEach((text, lineIndex) => {
+        const line = document.createElement("div");
+        const isComment = moveComment && text === `Комментарий: ${moveComment}`;
+        const isSenderLine = senderShortName && text.includes(senderShortName);
+        line.className = isComment ? "pending-move-comment" : "pending-move-meta";
+        if (isComment) {
+          const labelEl = document.createElement("span");
+          labelEl.textContent = "Комментарий: ";
+          const valueEl = document.createElement("strong");
+          const underlinedValueEl = document.createElement("u");
+          underlinedValueEl.textContent = moveComment;
+          valueEl.appendChild(underlinedValueEl);
+          line.append(labelEl, valueEl);
+        } else if (isSenderLine && movedByEnergy) {
+          const labelEl = document.createElement("strong");
+          labelEl.textContent = senderLabel;
+          line.append(labelEl, document.createTextNode(`: ${senderShortName}`));
+        } else {
           line.textContent = text;
-          meta.appendChild(line);
-        });
-      if (moveComment) {
-        const comment = document.createElement("div");
-        comment.className = "pending-move-comment";
-        comment.textContent = `Комментарий: ${moveComment}`;
-        meta.appendChild(comment);
-      }
+        }
+        if (lineIndex === metaLines.length - 1) {
+          line.classList.add("pending-move-meta--date");
+        }
+        meta.appendChild(line);
+      });
       infoCell.append(title, meta);
+      const photoCell = document.createElement("div");
+      photoCell.className = "tools-table__cell tools-table__cell--thumb";
+      const thumb = document.createElement("div");
+      thumb.className = "tools-table__thumb";
+      const img = document.createElement("img");
+      img.className = "tools-table__thumb-image";
+      img.alt = meansName || "Инструмент";
+      const photoCount = Number.parseInt(tool?.["Количество фото"] ?? 0, 10);
+      const hasPhoto = Number.isFinite(photoCount) && photoCount > 0;
+      const photoNumber =
+        String(tool?.["Номер"] ?? "").trim() ||
+        String(tool?.["Бух.номер"] ?? "").trim() ||
+        number;
+      applyToolPhotoWithFallback({
+        img,
+        orgFolder: toolsState.orgFolder,
+        toolNumber: photoNumber,
+        hasPhoto,
+      });
+      thumb.appendChild(img);
+      if (hasPhoto) {
+        thumb.dataset.pendingPhotoOpen = "true";
+        thumb.dataset.pendingPhotoMoveIndex = String(moveIndex);
+        thumb.setAttribute("role", "button");
+        thumb.tabIndex = 0;
+        thumb.setAttribute("aria-label", "Открыть фото инструмента");
+      }
+      photoCell.appendChild(thumb);
       const actionsCell = document.createElement("div");
       actionsCell.className = "tools-table__cell tools-table__cell--actions";
       actionsCell.innerHTML = `
         <button class="pending-move-action pending-move-action--cancel" type="button" data-awaiting-reply-action="cancel" data-move-index="${moveIndex}" aria-label="Отменить перемещение">Отменить перемещение</button>
       `;
-      row.append(numberCell, infoCell, actionsCell);
+      row.append(numberCell, infoCell, photoCell, actionsCell);
       table.appendChild(row);
     });
     awaitingReplyListEl.appendChild(table);

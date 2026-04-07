@@ -10201,10 +10201,13 @@
       }
 
       .pending-move-action--cancel {
-        border-color: rgba(59, 130, 246, 0.35);
-        color: #1d4ed8;
-        background: rgba(59, 130, 246, 0.1);
-        margin-left: auto;
+        border-color: rgba(234, 179, 8, 0.55);
+        color: #854d0e;
+        background: rgba(250, 204, 21, 0.28);
+        margin-inline: auto;
+        width: fit-content;
+        min-width: 0;
+        flex: 0 0 auto;
       }
 
       .awaiting-reply-group-row {
@@ -10225,7 +10228,14 @@
       }
 
       .awaiting-reply-tools-table .tools-table__cell--actions {
-        justify-content: flex-end;
+        grid-column: 1 / -1;
+        justify-content: center;
+      }
+
+      .awaiting-reply-tools-table .pending-move-action--cancel {
+        margin-inline: auto;
+        width: fit-content;
+        max-width: 100%;
       }
 
       .pending-moves-decline-modal__panel {
@@ -11357,6 +11367,12 @@
           min-height: 30px;
           padding: 6px 8px;
           font-size: 11px;
+        }
+
+        .awaiting-reply-tools-table .pending-move-action--cancel {
+          flex: 0 0 auto;
+          width: fit-content;
+          padding-inline: 12px;
         }
 
 

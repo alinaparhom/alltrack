@@ -14726,7 +14726,16 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         const bTs = bDate instanceof Date ? bDate.getTime() : 0;
         return bTs - aTs;
       });
-    setAwaitingReplySubtitle(`Ожидают ответа: ${awaitingReplyState.items.length}`);
+    const awaitingReplyTotalAmount = awaitingReplyState.items.reduce((sum, { tool, move }) => {
+      const toolCost = normalizeCostValue(tool?.["Стоимость"]);
+      if (Number.isFinite(toolCost)) return sum + toolCost;
+      const moveCost = normalizeCostValue(move?.["Стоимость"]);
+      if (Number.isFinite(moveCost)) return sum + moveCost;
+      return sum;
+    }, 0);
+    setAwaitingReplySubtitle(
+      `Ожидают ответа: ${awaitingReplyState.items.length} · На сумму: ${formatNotificationCostWithoutCurrency(awaitingReplyTotalAmount)} р.`,
+    );
     renderAwaitingReplyList();
   };
 

@@ -9801,6 +9801,21 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     );
   };
 
+  const isOwnAwaitingReplyMove = (move, currentUserName) => {
+    if (!move || !currentUserName) return false;
+    const movedBy = normalizePersonName(
+      move?.["Переместил"] ?? move?.["Переместил энергетик"] ?? ""
+    );
+    if (movedBy && movedBy !== currentUserName) return false;
+    const previousResponsible = normalizePersonName(
+      move?.["Ответственный до перемещения"] ?? ""
+    );
+    if (previousResponsible && previousResponsible !== currentUserName) {
+      return false;
+    }
+    return true;
+  };
+
   const syncToolsViewButtons = () => {
     toolsViewButtons.forEach((button) => {
       button.classList.toggle(
@@ -14656,6 +14671,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       })
       .filter(({ move, tool }) => {
         if (String(move?.["Дата ответа"] ?? "").trim()) return false;
+        if (!isOwnAwaitingReplyMove(move, currentUserName)) return false;
         const responsibleName = normalizePersonName(tool?.["Ответственный"] ?? "");
         if (!responsibleName || responsibleName !== currentUserName) return false;
         const status = String(tool?.["Статус"] ?? "").trim().toLocaleLowerCase("ru");

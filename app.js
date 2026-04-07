@@ -14542,8 +14542,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       };
     }
     return {
-      senderLabel: "Переместил",
-      senderValue: String(move?.["Переместил"] ?? "").trim(),
+      senderLabel: "",
+      senderValue: "",
       detailsLabel: "",
       detailsValue: "",
     };
@@ -14601,6 +14601,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const toolCostText = Number.isFinite(toolCost)
         ? `${formatNotificationCostWithoutCurrency(toolCost)} р.`
         : "—";
+      const lateReplyFineAmount = resolveLateReplyFine(
+        move,
+        awaitingReplyState.fineConfig
+      );
       const moveDate = String(move?.["Дата перемещения"] ?? "").trim();
       const moveComment = String(move?.["Причина перемещения"] ?? "").trim();
       const sourceObject = String(move?.["Старый объект"] ?? "").trim();
@@ -14611,8 +14615,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           ? `${sourceObject || "—"} ➜ ${targetObject || "—"}`
           : "";
       const metaLines = [
+        `Ответственный: ${receiver} · На сумму: ${toolCostText}`,
         [manufacturer, model].filter(Boolean).join(" · "),
-        `Бух.номер: ${accountingNumber} · ${toolCostText}`,
+        `Бух.номер: ${accountingNumber}`,
         moveRoute,
         senderMeta.senderValue
           ? `${senderMeta.senderLabel}: ${senderMeta.senderValue}`
@@ -14620,13 +14625,21 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         senderMeta.detailsValue
           ? `${senderMeta.detailsLabel}: ${senderMeta.detailsValue}`
           : "",
+        `Текущий штраф по перемещению: ${formatNotificationCostWithoutCurrency(
+          lateReplyFineAmount
+        )} р.`,
         moveComment ? `Комментарий: ${moveComment}` : "",
         moveDate,
       ].filter(Boolean);
       metaLines.forEach((text, lineIndex) => {
         const line = document.createElement("div");
         const isComment = moveComment && text === `Комментарий: ${moveComment}`;
-        line.className = isComment ? "pending-move-comment" : "pending-move-meta";
+        const isResponsibleLine = text.startsWith("Ответственный:");
+        line.className = isComment
+          ? "pending-move-comment"
+          : isResponsibleLine
+            ? "pending-move-meta pending-move-responsible"
+            : "pending-move-meta";
         if (isComment) {
           const labelEl = document.createElement("span");
           labelEl.textContent = "Комментарий: ";
@@ -14691,6 +14704,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       renderAwaitingReplyList();
       return;
     }
+    toolsState.orgFolder = orgFolder;
+    awaitingReplyState.fineConfig = settingsData?.organization?.fines?.lateReply ?? {};
     let moves = [];
     try {
       const rawMoves = await loadJson(`./${orgFolder}/Перемещения.json`);

@@ -9242,9 +9242,17 @@
         width: 34px;
         height: 34px;
         border-radius: 12px;
-        border: none;
-        background: rgba(255, 255, 255, 0.76);
-        box-shadow: 0 8px 18px rgba(220, 38, 38, 0.14);
+        border: 0 !important;
+        border-color: transparent !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        outline: none;
+      }
+
+      .tools-kit-preview-modal__close:hover,
+      .tools-kit-preview-modal__close:focus-visible {
+        transform: none;
+        box-shadow: none;
       }
 
       .tools-kit-preview-modal__close span {

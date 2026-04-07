@@ -11007,13 +11007,23 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (hasSelected("object") && !includesSelected("object", tool?.["Объект"])) {
       return false;
     }
+    const toolStatus = String(tool?.["Статус"] ?? "").trim();
     if (includeStandaloneStatus && isWriteOffPendingMode()) {
       const selectedStatus = String(toolsState.statusStandalone ?? "").trim();
-      if (selectedStatus && String(tool?.["Статус"] ?? "").trim() !== selectedStatus) {
-        return false;
+      if (selectedStatus) {
+        const isMovingSelected = selectedStatus === TOOLS_STATUS_MOVING_FILTER_VALUE;
+        const isMovingTool = Boolean(tool?.__pendingMove);
+        if (isMovingSelected ? !isMovingTool : toolStatus !== selectedStatus) {
+          return false;
+        }
       }
-    } else if (hasSelected("status") && !includesSelected("status", tool?.["Статус"])) {
-      return false;
+    } else if (hasSelected("status")) {
+      const selectedStatuses = toolsState.filters.status;
+      const regularStatusMatch = selectedStatuses.includes(toolStatus);
+      const movingMatch =
+        selectedStatuses.includes(TOOLS_STATUS_MOVING_FILTER_VALUE) &&
+        Boolean(tool?.__pendingMove);
+      if (!regularStatusMatch && !movingMatch) return false;
     }
     if (
       hasSelected("responsible") &&
@@ -11121,6 +11131,28 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     syncToolsFilterValue(key, allValues);
   };
 
+  const TOOLS_STATUS_MOVING_FILTER_VALUE = "__moving__";
+  const TOOLS_STATUS_WORKING_VALUE = "Рабочий";
+  const TOOLS_STATUS_WORKING_LABEL = "Исправный";
+
+  const normalizeStatusFilterOption = (option) => {
+    if (typeof option === "string") {
+      const value = option.trim();
+      if (!value) return { value: "", label: "" };
+      return {
+        value,
+        label:
+          value.toLocaleLowerCase("ru") === TOOLS_STATUS_WORKING_VALUE.toLocaleLowerCase("ru")
+            ? TOOLS_STATUS_WORKING_LABEL
+            : value,
+      };
+    }
+    const value = String(option?.value ?? "").trim();
+    const label = String(option?.label ?? value).trim();
+    if (!value) return { value: "", label: "" };
+    return { value, label: label || value };
+  };
+
   const fillToolsFilterOptions = (key, values) => {
     const containerEls = contentEl.querySelectorAll(
       `.tools-filter-dropdown[data-tools-filter="${key}"]`
@@ -11133,7 +11165,15 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const optionsEl = containerEl.querySelector("[data-tools-filter-options]");
       if (!optionsEl) return;
       optionsEl.innerHTML = "";
-      values.forEach((value, index) => {
+      values.forEach((entry, index) => {
+        const option =
+          key === "status"
+            ? normalizeStatusFilterOption(entry)
+            : {
+                value: String(entry ?? "").trim(),
+                label: String(entry ?? "").trim(),
+              };
+        if (!option.value) return;
         const id = `tools-filter-${key}-${index}`;
         const optionLabelEl = document.createElement("label");
         optionLabelEl.className = "tools-filter-dropdown__option";
@@ -11141,11 +11181,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         const checkboxEl = document.createElement("input");
         checkboxEl.type = "checkbox";
         checkboxEl.id = id;
-        checkboxEl.value = value;
-        checkboxEl.checked = currentValues.includes(value);
+        checkboxEl.value = option.value;
+        checkboxEl.checked = currentValues.includes(option.value);
         checkboxEl.dataset.toolsFilterCheckbox = key;
         const textEl = document.createElement("span");
-        textEl.textContent = value;
+        textEl.textContent = option.label;
         optionLabelEl.append(checkboxEl, textEl);
         optionsEl.appendChild(optionLabelEl);
       });
@@ -11243,14 +11283,30 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     fillToolsFilterOptions("group", collectValues("Граппа инструментов"));
     fillToolsFilterOptions("object", collectValues("Объект"));
     const statusValues = collectValues("Статус");
-    fillToolsFilterOptions("status", statusValues);
+    const statusOptions = statusValues.map((value) => ({
+      value,
+      label:
+        value.toLocaleLowerCase("ru") === TOOLS_STATUS_WORKING_VALUE.toLocaleLowerCase("ru")
+          ? TOOLS_STATUS_WORKING_LABEL
+          : value,
+    }));
+    statusOptions.push({
+      value: TOOLS_STATUS_MOVING_FILTER_VALUE,
+      label: "Перемещается",
+    });
+    fillToolsFilterOptions("status", statusOptions);
     if (toolsStatusStandaloneEl) {
       const current = String(toolsState.statusStandalone ?? "").trim();
-      const options = ["", ...statusValues];
+      const options = [{ value: "", label: "Все" }, ...statusOptions];
       toolsStatusStandaloneEl.innerHTML = options
-        .map((value) => `<option value="${escapeHtml(value)}">${escapeHtml(value || "Все")}</option>`)
+        .map(
+          (option) =>
+            `<option value="${escapeHtml(option.value)}">${escapeHtml(option.label)}</option>`
+        )
         .join("");
-      toolsStatusStandaloneEl.value = options.includes(current) ? current : "";
+      toolsStatusStandaloneEl.value = options.some((option) => option.value === current)
+        ? current
+        : "";
       toolsState.statusStandalone = toolsStatusStandaloneEl.value;
     }
     fillToolsFilterOptions("responsible", collectValues("Ответственный"));

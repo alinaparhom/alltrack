@@ -9771,11 +9771,34 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         const accounting = String(tool?.["Бух.номер"] ?? "").trim();
         if (number) map.set(`n:${number}`, tool);
         if (accounting) map.set(`a:${accounting}`, tool);
+        const normalizedNumber = normalizeToolNumberValue(number);
+        const normalizedAccounting = normalizeToolNumberValue(accounting);
+        if (normalizedNumber && !map.has(`nn:${normalizedNumber}`)) {
+          map.set(`nn:${normalizedNumber}`, tool);
+        }
+        if (normalizedAccounting && !map.has(`an:${normalizedAccounting}`)) {
+          map.set(`an:${normalizedAccounting}`, tool);
+        }
       });
     } catch (error) {
       console.warn("Не удалось загрузить базу инструментов для перемещений.", error);
     }
     return map;
+  };
+
+  const resolvePendingToolByMove = (toolMap, move) => {
+    if (!(toolMap instanceof Map) || !move) return null;
+    const number = String(move?.["Номер"] ?? "").trim();
+    const accounting = String(move?.["Бух.номер"] ?? "").trim();
+    const normalizedNumber = normalizeToolNumberValue(number);
+    const normalizedAccounting = normalizeToolNumberValue(accounting);
+    return (
+      toolMap.get(`n:${number}`) ??
+      toolMap.get(`a:${accounting}`) ??
+      toolMap.get(`nn:${normalizedNumber}`) ??
+      toolMap.get(`an:${normalizedAccounting}`) ??
+      null
+    );
   };
 
   const syncToolsViewButtons = () => {
@@ -14529,11 +14552,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const toolCostText = Number.isFinite(toolCost)
         ? `${formatNotificationCostWithoutCurrency(toolCost)} р.`
         : "—";
-      const sender = String(move?.["Переместил"] ?? "").trim();
-      const movedByEnergy = String(move?.["Переместил энергетик"] ?? "").trim();
-      const senderValue = movedByEnergy || sender;
-      const senderLabel = movedByEnergy ? "Переместил энергетик" : "Переместил";
-      const senderShortName = formatFullName(senderValue, 2);
       const moveDate = String(move?.["Дата перемещения"] ?? "").trim();
       const moveComment = String(move?.["Причина перемещения"] ?? "").trim();
       const sourceObject = String(move?.["Старый объект"] ?? "").trim();
@@ -14545,11 +14563,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const metaLines = [
         [manufacturer, model].filter(Boolean).join(" · "),
         `Бух.номер: ${accountingNumber} · ${toolCostText}`,
-        senderValue
-          ? movedByEnergy
-            ? `${senderLabel}: ${senderShortName}`
-            : senderShortName
-          : "",
         moveRoute,
         moveComment ? `Комментарий: ${moveComment}` : "",
         moveDate,
@@ -14557,7 +14570,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       metaLines.forEach((text, lineIndex) => {
         const line = document.createElement("div");
         const isComment = moveComment && text === `Комментарий: ${moveComment}`;
-        const isSenderLine = senderShortName && text.includes(senderShortName);
         line.className = isComment ? "pending-move-comment" : "pending-move-meta";
         if (isComment) {
           const labelEl = document.createElement("span");
@@ -14567,10 +14579,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           underlinedValueEl.textContent = moveComment;
           valueEl.appendChild(underlinedValueEl);
           line.append(labelEl, valueEl);
-        } else if (isSenderLine && movedByEnergy) {
-          const labelEl = document.createElement("strong");
-          labelEl.textContent = senderLabel;
-          line.append(labelEl, document.createTextNode(`: ${senderShortName}`));
         } else {
           line.textContent = text;
         }
@@ -14639,21 +14647,19 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       console.warn("Не удалось загрузить отправленные перемещения.", error);
     }
     awaitingReplyState.toolMap = await buildPendingToolsMap(orgFolder);
-    const moverName = normalizePersonName(user?.full_name ?? "");
+    const currentUserName = normalizePersonName(user?.full_name ?? "");
     awaitingReplyState.items = moves
       .map((move, moveIndex) => ({ move, moveIndex }))
-      .filter(({ move }) => {
-        if (String(move?.["Дата ответа"] ?? "").trim()) return false;
-        return normalizePersonName(move?.["Переместил"] ?? "") === moverName;
-      })
       .map((entry) => {
-        const number = String(entry.move?.["Номер"] ?? "").trim();
-        const accounting = String(entry.move?.["Бух.номер"] ?? "").trim();
-        const tool =
-          awaitingReplyState.toolMap.get(`n:${number}`) ??
-          awaitingReplyState.toolMap.get(`a:${accounting}`) ??
-          null;
+        const tool = resolvePendingToolByMove(awaitingReplyState.toolMap, entry.move);
         return { ...entry, tool };
+      })
+      .filter(({ move, tool }) => {
+        if (String(move?.["Дата ответа"] ?? "").trim()) return false;
+        const responsibleName = normalizePersonName(tool?.["Ответственный"] ?? "");
+        if (!responsibleName || responsibleName !== currentUserName) return false;
+        const status = String(tool?.["Статус"] ?? "").trim().toLocaleLowerCase("ru");
+        return status === "в процессе перемещения" || status === "перемещается";
       })
       .sort((a, b) => {
         const receiverA = String(a.move?.["Принял"] ?? "").trim();

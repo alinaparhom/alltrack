@@ -2914,15 +2914,199 @@ function saveEntry(array $entry, array $allowedFiles): void {
     $newOrganizations = getNewOrganizations($targetPath, $data);
   }
 
-  $written = file_put_contents($targetPath, $encoded . PHP_EOL, LOCK_EX);
+  $existingData = null;
+  if ($fileName === "Перемещения.json") {
+    $existingData = readJsonDecodedValue($targetPath);
+    $newHasData = hasMeaningfulJsonData($data);
+    $existingHasData = hasMeaningfulJsonData($existingData);
+
+    if (!$newHasData && $existingHasData) {
+      archiveMovesFileForCurrentHour($targetPath);
+      return;
+    }
+  }
+
+  $written = writeFileAtomically($targetPath, $encoded . PHP_EOL);
   if ($written === false) {
     http_response_code(500);
     echo json_encode(["error" => "Не удалось сохранить файл."]);
     exit;
   }
 
+  if ($fileName === "Перемещения.json") {
+    archiveMovesFileForCurrentHour($targetPath);
+  }
+
   if (!empty($newOrganizations)) {
     createOrganizationFolders($newOrganizations);
+  }
+}
+
+
+function hasMeaningfulJsonData($value): bool {
+  if (is_array($value)) {
+    return count($value) > 0;
+  }
+
+  if (is_string($value)) {
+    return trim($value) !== "";
+  }
+
+  return $value !== null;
+}
+
+function readJsonDecodedValue(string $path) {
+  if (!file_exists($path)) {
+    return null;
+  }
+  $raw = @file_get_contents($path);
+  if (!is_string($raw) || trim($raw) === "") {
+    return null;
+  }
+
+  return json_decode($raw, true);
+}
+
+function writeFileAtomically(string $path, string $content): bool {
+  $directory = dirname($path);
+  if (!ensureDirectory($directory)) {
+    return false;
+  }
+
+  $tempPath = @tempnam($directory, 'tmp_');
+  if ($tempPath === false) {
+    return false;
+  }
+
+  $bytes = @file_put_contents($tempPath, $content, LOCK_EX);
+  if ($bytes === false) {
+    @unlink($tempPath);
+    return false;
+  }
+
+  if (!@rename($tempPath, $path)) {
+    @unlink($tempPath);
+    return false;
+  }
+
+  return true;
+}
+
+function cleanupOldMoveArchives(string $archiveFolder, int $maxFiles = 24): void {
+  if (!is_dir($archiveFolder) || $maxFiles < 1) {
+    return;
+  }
+
+  $items = @scandir($archiveFolder);
+  if (!is_array($items)) {
+    return;
+  }
+
+  $files = [];
+  foreach ($items as $item) {
+    if ($item === '.' || $item === '..') {
+      continue;
+    }
+    if (!preg_match('/^Перемещения_\d{4}-\d{2}-\d{2}_\d{2}\.json$/u', $item)) {
+      continue;
+    }
+
+    $fullPath = $archiveFolder . DIRECTORY_SEPARATOR . $item;
+    if (!is_file($fullPath)) {
+      continue;
+    }
+
+    $mtime = @filemtime($fullPath);
+    $files[] = [
+      'path' => $fullPath,
+      'mtime' => $mtime !== false ? (int) $mtime : 0,
+    ];
+  }
+
+  if (count($files) <= $maxFiles) {
+    return;
+  }
+
+  usort($files, static function (array $a, array $b): int {
+    return ($a['mtime'] ?? 0) <=> ($b['mtime'] ?? 0);
+  });
+
+  $toDelete = array_slice($files, 0, count($files) - $maxFiles);
+  foreach ($toDelete as $fileInfo) {
+    $oldPath = (string) ($fileInfo['path'] ?? '');
+    if ($oldPath !== '') {
+      @unlink($oldPath);
+    }
+  }
+}
+
+function archiveMovesFileForCurrentHour(string $targetPath): void {
+  if (basename($targetPath) !== 'Перемещения.json' || !file_exists($targetPath)) {
+    return;
+  }
+
+  $organizationPath = dirname($targetPath);
+  $archiveFolder = $organizationPath . DIRECTORY_SEPARATOR . 'Архив';
+  if (!ensureDirectory($archiveFolder)) {
+    return;
+  }
+
+  $timezone = new DateTimeZone('Europe/Moscow');
+  $hourStamp = (new DateTimeImmutable('now', $timezone))->format('Y-m-d_H');
+  $archivePath = $archiveFolder . DIRECTORY_SEPARATOR . 'Перемещения_' . $hourStamp . '.json';
+
+  if (!file_exists($archivePath)) {
+    $content = @file_get_contents($targetPath);
+    if (is_string($content) && $content !== '') {
+      writeFileAtomically($archivePath, $content);
+    }
+  }
+
+  cleanupOldMoveArchives($archiveFolder, 24);
+}
+
+
+function runHourlyMoveArchivesIfNeeded(): void {
+  $timezone = new DateTimeZone('Europe/Moscow');
+  $now = new DateTimeImmutable('now', $timezone);
+  $hourKey = $now->format('Y-m-d H');
+
+  $statePath = __DIR__ . DIRECTORY_SEPARATOR . 'telegram-move-archive-state.json';
+  $state = readJsonFile($statePath, []);
+  $lastHour = trim((string) ($state['lastHour'] ?? ''));
+  if ($lastHour === $hourKey) {
+    return;
+  }
+
+  $items = @scandir(__DIR__);
+  if (!is_array($items)) {
+    return;
+  }
+
+  foreach ($items as $folder) {
+    if ($folder === '.' || $folder === '..') {
+      continue;
+    }
+    $organizationPath = __DIR__ . DIRECTORY_SEPARATOR . $folder;
+    if (!is_dir($organizationPath)) {
+      continue;
+    }
+
+    $movesPath = $organizationPath . DIRECTORY_SEPARATOR . 'Перемещения.json';
+    if (!file_exists($movesPath)) {
+      continue;
+    }
+
+    archiveMovesFileForCurrentHour($movesPath);
+  }
+
+  $nextState = [
+    'lastHour' => $hourKey,
+    'updatedAt' => $now->format(DateTimeInterface::ATOM),
+  ];
+  $encoded = json_encode($nextState, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+  if ($encoded !== false) {
+    writeFileAtomically($statePath, $encoded . PHP_EOL);
   }
 }
 
@@ -3410,6 +3594,7 @@ if ($requestedAction === "run-scheduled-mailings") {
   runNoPhotoMailingIfNeeded();
   runNoAccountingNumberMailingIfNeeded();
   runPendingAcceptanceMailingIfNeeded();
+  runHourlyMoveArchivesIfNeeded();
   echo json_encode([
     "success" => true,
     "action" => "run-scheduled-mailings",
@@ -3439,5 +3624,6 @@ runRepairsMailingIfNeeded();
 runNoPhotoMailingIfNeeded();
 runNoAccountingNumberMailingIfNeeded();
 runPendingAcceptanceMailingIfNeeded();
+runHourlyMoveArchivesIfNeeded();
 
 echo json_encode(["success" => true]);

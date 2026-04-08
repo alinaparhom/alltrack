@@ -14703,7 +14703,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         groupCell.className = "tools-table__cell awaiting-reply-group-cell";
         groupCell.setAttribute("role", "heading");
         groupCell.setAttribute("aria-level", "3");
-        groupCell.textContent = `${receiver} · ${stats.count} шт. · На сумму: ${receiverCostText}`;
+        const groupTitleLine = document.createElement("div");
+        groupTitleLine.textContent = `${receiver} · ${stats.count} шт.`;
+        const groupAmountLine = document.createElement("div");
+        groupAmountLine.textContent = `На сумму: ${receiverCostText}`;
+        groupCell.append(groupTitleLine, groupAmountLine);
         groupRow.appendChild(groupCell);
         table.appendChild(groupRow);
       }

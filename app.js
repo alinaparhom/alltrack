@@ -14648,14 +14648,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const resolveAwaitingReplySenderMeta = (move) => {
     const movedByEnergy = String(move?.["Переместил энергетик"] ?? "").trim();
     if (movedByEnergy) {
-      const responsibleBeforeMove = String(
-        move?.["Ответственный до перемещения"] ?? ""
-      ).trim();
       return {
-        senderLabel: "Переместил энергетик",
+        senderLabel: "За пользователя переместил энергетик",
         senderValue: movedByEnergy,
-        detailsLabel: "Ответственный до перемещения",
-        detailsValue: responsibleBeforeMove,
+        detailsLabel: "",
+        detailsValue: "",
       };
     }
     return {
@@ -14758,23 +14755,19 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         `Штраф: ${formatNotificationCostWithoutCurrency(
           lateReplyFineAmount
         )} р.`,
-        moveComment ? `Комментарий: ${moveComment}` : "",
+        moveComment,
         moveDate,
       ].filter(Boolean);
       metaLines.forEach((text, lineIndex) => {
         const line = document.createElement("div");
-        const isComment = moveComment && text === `Комментарий: ${moveComment}`;
+        const isComment = moveComment && text === moveComment;
         line.className = isComment
           ? "pending-move-comment"
           : "pending-move-meta";
         if (isComment) {
-          const labelEl = document.createElement("span");
-          labelEl.textContent = "Комментарий: ";
           const valueEl = document.createElement("strong");
-          const underlinedValueEl = document.createElement("u");
-          underlinedValueEl.textContent = moveComment;
-          valueEl.appendChild(underlinedValueEl);
-          line.append(labelEl, valueEl);
+          valueEl.textContent = moveComment;
+          line.append(valueEl);
         } else {
           line.textContent = text;
         }

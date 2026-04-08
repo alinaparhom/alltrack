@@ -8,6 +8,7 @@ import {
   renderRole as renderEnergy,
   energyActions,
 } from "./roles/energy.js";
+import { roleId as controlRole, renderRole as renderControl } from "./roles/control.js";
 
 const roleMap = new Map([
   [superAdminRole, renderSuperAdmin],
@@ -16,6 +17,7 @@ const roleMap = new Map([
   [leaderRole, renderLeader],
   [accountingRole, renderAccounting],
   [energyRole, renderEnergy],
+  [controlRole, renderControl],
 ]);
 
 const contentEl = document.querySelector("[data-content]");
@@ -73,6 +75,7 @@ const energySettingsRoles = [
   chiefEngineerRole,
   leaderRole,
   accountingRole,
+  controlRole,
 ];
 const energyFineOptions = [
   { id: "lateReply", title: "Поздний ответ", defaultDays: 3, defaultAmount: 0 },
@@ -153,6 +156,7 @@ const buildUploadUserMeta = ({ organizationName } = {}) => {
 };
 const energyDashboardRoles = new Set([
   energyRole,
+  controlRole,
   responsibleRole,
   chiefEngineerRole,
   leaderRole,
@@ -163,6 +167,12 @@ const energyResponsibleAccessRoles = new Set([
   accountingRole,
 ]);
 const responsibleLikeRoles = new Set([responsibleRole, chiefEngineerRole]);
+const isControlRole = (role) => String(role ?? "").trim() === controlRole;
+const isHiddenListUser = (entry) => isControlRole(entry?.role);
+const isEnergyLikeRole = (role) => {
+  const normalized = String(role ?? "").trim();
+  return normalized === energyRole || normalized === controlRole;
+};
 const globalLoadingEl = document.querySelector("[data-global-loading]");
 const globalLoadingState = {
   activeRequests: 0,
@@ -8914,7 +8924,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         .filter(Boolean);
       demandState.users = (usersData.users ?? [])
         .filter((entry) =>
-          normalizedOrgNames.includes(String(entry?.organization ?? "").trim())
+          normalizedOrgNames.includes(String(entry?.organization ?? "").trim()) &&
+          !isHiddenListUser(entry)
         )
         .map((entry) => ({
           name: String(entry?.full_name ?? "").trim(),
@@ -17925,7 +17936,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const normalizeOrg = (value) => String(value ?? "").trim().toLowerCase();
     const orgKey = normalizeOrg(orgName);
     const orgUsers = (usersData.users ?? []).filter(
-      (entry) => normalizeOrg(entry.organization) === orgKey
+      (entry) =>
+        normalizeOrg(entry.organization) === orgKey && !isHiddenListUser(entry)
     );
     const shouldSkipToolOwner = (entry) => {
       const normalizedEntryName = normalizePersonName(entry?.full_name ?? "");
@@ -20426,7 +20438,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
     const tools = await loadToolsData(orgFolder);
     const userName = normalizePersonName(user?.full_name ?? user?.fullName ?? "");
-    const canManageAllTools = user?.role === energyRole;
+    const canManageAllTools = isEnergyLikeRole(user?.role);
     repairState.toolMap = new Map();
     repairState.tools = tools
       .filter((tool) => {
@@ -20512,7 +20524,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
     const tools = await loadToolsData(orgFolder);
     const userName = normalizePersonName(user?.full_name ?? user?.fullName ?? "");
-    const canManageAllTools = user?.role === energyRole;
+    const canManageAllTools = isEnergyLikeRole(user?.role);
     breakdownsState.toolMap = new Map();
     breakdownsState.tools = tools
       .filter((tool) => {
@@ -22638,7 +22650,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const normalizedName = normalizePersonName(name ?? "");
     if (!normalizedName) return false;
     const role = toolsMoveState.responsibleRoles.get(normalizedName) ?? "";
-    return String(role).trim().toLowerCase() === "энергетик";
+    return isEnergyLikeRole(role);
   };
 
   const updateToolsMoveReasonState = (responsibleName) => {
@@ -23191,7 +23203,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         .filter(Boolean);
       const responsibleOptions = usersList
         .filter((entry) =>
-          normalizedOrgNames.includes(String(entry?.organization ?? "").trim())
+          normalizedOrgNames.includes(String(entry?.organization ?? "").trim()) &&
+          !isHiddenListUser(entry)
         )
         .map((entry) => String(entry?.full_name ?? "").trim())
         .filter(Boolean);
@@ -23800,7 +23813,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const { normalizedNames, normalizedFolders } = buildOrgNameSets(names);
     return users.filter((entry) => {
       const orgName = String(entry?.organization ?? "").trim();
-      if (!orgName) return false;
+      if (!orgName || isHiddenListUser(entry)) return false;
       return (
         normalizedNames.has(normalizeOrganizationName(orgName)) ||
         normalizedFolders.has(normalizeOrganizationFolder(orgName))
@@ -27588,7 +27601,9 @@ function setupSuperAdmin() {
     const organizations = Array.isArray(orgData?.organizations)
       ? orgData.organizations
       : [];
-    const users = Array.isArray(usersData?.users) ? usersData.users : [];
+    const users = Array.isArray(usersData?.users)
+      ? usersData.users.filter((entry) => !isHiddenListUser(entry))
+      : [];
     orgsState.organizations = organizations;
     orgsState.users = users;
     return { organizations, users };
@@ -28789,7 +28804,7 @@ function setupSuperAdmin() {
     const orgNames = getOrgNames(org);
     const orgUsers = orgsState.users.filter((user) => {
       const name = String(user?.organization ?? "").trim();
-      return orgNames.includes(name) || name === orgName;
+      return (orgNames.includes(name) || name === orgName) && !isHiddenListUser(user);
     });
     if (orgsDetailUsersEl) {
       orgsDetailUsersEl.textContent = formatUserCount(orgUsers.length);
@@ -29613,7 +29628,7 @@ function setupSuperAdmin() {
     const orgNames = org ? getOrgNames(org) : [orgName];
     const orgUsers = orgsState.users.filter((user) => {
       const name = String(user?.organization ?? "").trim();
-      return orgNames.includes(name) || name === orgName;
+      return (orgNames.includes(name) || name === orgName) && !isHiddenListUser(user);
     });
 
     if (usersDetailsCountEl) {
@@ -29642,7 +29657,7 @@ function setupSuperAdmin() {
     const orgNames = org ? getOrgNames(org) : [selectedUsersOrgName];
     const orgUsers = orgsState.users.filter((user) => {
       const name = String(user?.organization ?? "").trim();
-      return orgNames.includes(name) || name === selectedUsersOrgName;
+      return (orgNames.includes(name) || name === selectedUsersOrgName) && !isHiddenListUser(user);
     });
 
     if (usersDetailsCountEl) {

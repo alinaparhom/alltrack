@@ -821,6 +821,7 @@ export function renderRole(user) {
                     <option value="Бухгалтерия">Бухгалтерия</option>
                     <option value="Главный инженер">Главный инженер</option>
                     <option value="Энергетик">Энергетик</option>
+                    <option value="Контроль">Контроль</option>
                     <option value="Руководитель">Руководитель</option>
                     <option value="Ответственный">Ответственный</option>
                   </select>

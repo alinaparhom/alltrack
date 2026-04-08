@@ -6511,7 +6511,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   };
   const actionsMap = new Map(availableActions.map((action) => [action.id, action]));
   const quickAccessOptions = isChiefEngineerDashboard
-    ? [...availableActions]
+    ? [
+        ...availableActions,
+        ...(hasAwaitingReplyAccess ? [awaitingReplyQuickAccessOption] : []),
+      ]
     : [
         ...availableActions,
         pendingQuickAccessOption,

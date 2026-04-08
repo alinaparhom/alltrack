@@ -14762,12 +14762,18 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         moveComment,
         moveDate,
       ].filter(Boolean);
+      const senderLineText = senderMeta.senderValue
+        ? `${senderMeta.senderLabel}: ${senderMeta.senderValue}`
+        : "";
       metaLines.forEach((text, lineIndex) => {
         const line = document.createElement("div");
         const isComment = moveComment && text === moveComment;
         line.className = isComment
           ? "pending-move-comment"
           : "pending-move-meta";
+        if (!isComment && senderLineText && text === senderLineText) {
+          line.classList.add("pending-move-meta--center");
+        }
         if (isComment) {
           const valueEl = document.createElement("strong");
           valueEl.textContent = moveComment;

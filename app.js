@@ -61,6 +61,8 @@ const pendingAcceptanceMailingDefault = {
   time: "18:00",
 };
 const quickAccessDefaults = ["breakdowns", "info", "search", "tools", "move"];
+const energyExtraAccessOptions = [{ id: "awaiting-reply", title: "Мои перемещения", icon: "📤" }];
+const energyAccessOptions = [...energyActions, ...energyExtraAccessOptions];
 const quickAccessLimit = 5;
 const isIosMobile =
   /iP(ad|hone|od)/.test(navigator.userAgent) ||
@@ -3597,9 +3599,7 @@ function updateEnergyPendingStat({ count = 0, available = [] } = {}) {
     energyPendingIconEl.textContent = isWaiting ? "⏳" : "✅";
   }
   if (energyPendingStatusEl) {
-    energyPendingStatusEl.textContent = isWaiting
-      ? `На принятии: ${pendingCount}`
-      : "Все приняты";
+    energyPendingStatusEl.textContent = "";
   }
   if (energyPendingCountEl) {
     energyPendingCountEl.textContent = String(pendingCount);
@@ -3780,7 +3780,6 @@ function createEnergyAwaitingReplyCard() {
     <span class="pending-icon" data-awaiting-reply-icon aria-hidden="true">📤</span>
     <span class="pending-info">
       <span class="pending-title">Мои перемещения</span>
-      <span class="pending-status">Ожидают ответа</span>
     </span>
     <span class="pending-badge is-hidden" data-awaiting-reply-count>0</span>
   `;
@@ -4332,7 +4331,7 @@ function escapeHtml(value = "") {
 }
 
 function buildEnergyOrganizationDefaults() {
-  const actionIds = energyActions.map((action) => action.id);
+  const actionIds = energyAccessOptions.map((action) => action.id);
   const access = {};
   energySettingsRoles.forEach((role) => {
     access[role] = [...actionIds];
@@ -4581,7 +4580,7 @@ function buildEnergySettingsMarkup(settings) {
     .map((role) => {
       const roleKey = buildRoleKey(role);
       const allowed = new Set(settings.access?.[role] ?? []);
-      const actionMarkup = energyActions
+      const actionMarkup = energyAccessOptions
         .map((action) => {
           const isChecked = allowed.has(action.id);
           return `
@@ -6488,6 +6487,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   let availableActions = hasAccessConfig
     ? energyActions.filter((action) => accessList.includes(action.id))
     : energyActions;
+  const hasAwaitingReplyAccess =
+    !hasAccessConfig || accessList.includes("awaiting-reply");
   if (vacationReplacements.length > 0 && availableActions.some((action) => action.id === "tools")) {
     const replacementActions = vacationReplacements.map((replacement) => ({
       id: `${toolsReplacementActionPrefix}${replacement.fullName}`,
@@ -6511,7 +6512,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const actionsMap = new Map(availableActions.map((action) => [action.id, action]));
   const quickAccessOptions = isChiefEngineerDashboard
     ? [...availableActions]
-    : [...availableActions, pendingQuickAccessOption, awaitingReplyQuickAccessOption];
+    : [
+        ...availableActions,
+        pendingQuickAccessOption,
+        ...(hasAwaitingReplyAccess ? [awaitingReplyQuickAccessOption] : []),
+      ];
   const quickAccessOptionsMap = new Map(
     quickAccessOptions.map((action) => [action.id, action])
   );
@@ -6531,7 +6536,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     availableActions,
     groupingPreference
   );
-  const layoutToRender = isChiefEngineerDashboard
+  const layoutToRender = (isChiefEngineerDashboard
     ? layoutToRenderRaw
         .flatMap((item) => {
           if (item?.type === "action" && item.id) return [{ type: "action", id: item.id }];
@@ -6544,7 +6549,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           (item, index, list) =>
             list.findIndex((candidate) => candidate.id === item.id) === index
         )
-    : layoutToRenderRaw;
+    : layoutToRenderRaw).filter((item) =>
+    hasAwaitingReplyAccess ? true : item?.type !== "awaiting-reply"
+  );
 
   const resolveQuickAccessIds = () => {
     const saved = settingsData.users?.[context.userKey]?.energy?.quickAccess;

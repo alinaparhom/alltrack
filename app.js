@@ -27107,13 +27107,34 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
   };
 
+  const insertAwaitingReplyIntoGrid = (clientX, clientY) => {
+    const card = createEnergyAwaitingReplyCard();
+    const target = document
+      .elementsFromPoint(clientX, clientY)
+      .map((element) => element.closest?.("[data-energy-item]"))
+      .find((element) => element && gridEl.contains(element));
+    if (target) {
+      const rect = target.getBoundingClientRect();
+      const shouldInsertAfter = clientY > rect.top + rect.height / 2;
+      gridEl.insertBefore(card, shouldInsertAfter ? target.nextSibling : target);
+    } else {
+      gridEl.appendChild(card);
+    }
+  };
+
   const handleDrop = async () => {
     if (!dragState.isDragging || !dragState.item) return;
     const dropZone = resolveDropZone(dragState.lastPointerX, dragState.lastPointerY);
     const actionId = dragState.item.dataset.actionId;
     const itemType = dragState.item.dataset.energyItemType;
     if (dragState.source === "grid" && dropZone === "quick") {
-      if (!actionId || (itemType !== "action" && itemType !== "pending")) return;
+      if (
+        !actionId ||
+        (itemType !== "action" &&
+          itemType !== "pending" &&
+          itemType !== "awaiting-reply")
+      )
+        return;
       if (quickAccessIds.includes(actionId)) return;
       if (quickAccessIds.length >= quickAccessLimit) {
         setQuickAccessMessage(`Можно выбрать максимум ${quickAccessLimit} плашек.`);
@@ -27130,6 +27151,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const nextQuickAccess = quickAccessIds.filter((id) => id !== actionId);
       if (actionId === "pending") {
         insertPendingIntoGrid(dragState.lastPointerX, dragState.lastPointerY);
+      } else if (actionId === "awaiting-reply") {
+        insertAwaitingReplyIntoGrid(dragState.lastPointerX, dragState.lastPointerY);
       } else {
         const action = actionsMap.get(actionId);
         insertActionIntoGrid(action, dragState.lastPointerX, dragState.lastPointerY);

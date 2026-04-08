@@ -5018,17 +5018,46 @@ async function saveUserPreferences(context, preferences, pendingAcceptanceMailin
 }
 
 function findUserOrganizationName(user, usersData) {
+  const directOrganization = String(user?.organization ?? "").trim();
+  if (directOrganization) {
+    return directOrganization;
+  }
+
   const telegramIdKey = normalizeTelegramId(user?.telegram_id);
+  const normalizedFullName = normalizePersonName(user?.full_name ?? user?.fullName ?? "");
+  const normalizedRole = String(user?.role ?? "").trim();
+  const normalizedPosition = String(user?.position ?? "").trim();
+  const usersList = Array.isArray(usersData?.users) ? usersData.users : [];
   let matchedUser = null;
 
   if (telegramIdKey) {
-    matchedUser = usersData.users?.find(
+    const telegramMatches = usersList.filter(
       (item) => normalizeTelegramId(item.telegram_id) === telegramIdKey
     );
+    if (telegramMatches.length === 1) {
+      matchedUser = telegramMatches[0];
+    } else if (telegramMatches.length > 1) {
+      matchedUser =
+        telegramMatches.find(
+          (item) =>
+            normalizePersonName(item?.full_name ?? "") === normalizedFullName &&
+            String(item?.role ?? "").trim() === normalizedRole &&
+            String(item?.position ?? "").trim() === normalizedPosition
+        ) ??
+        telegramMatches.find(
+          (item) =>
+            normalizePersonName(item?.full_name ?? "") === normalizedFullName &&
+            String(item?.role ?? "").trim() === normalizedRole
+        ) ??
+        telegramMatches.find(
+          (item) => normalizePersonName(item?.full_name ?? "") === normalizedFullName
+        ) ??
+        null;
+    }
   }
 
   if (!matchedUser) {
-    matchedUser = usersData.users?.find(
+    matchedUser = usersList.find(
       (item) =>
         item.full_name === user?.full_name &&
         item.organization === user?.organization &&

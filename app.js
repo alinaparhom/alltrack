@@ -23725,7 +23725,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       loadJson(usersFilePath).catch(() => ({ users: [] })),
       loadJson(orgFilePath).catch(() => ({ organizations: [] })),
     ]);
-    const organizationName = findUserOrganizationName(user, usersData);
+    const organizationName = findUserOrganizationName(user, usersData ?? { users: [] });
     const orgFullName = pickOrganizationFullName(orgData, organizationName);
     const orgShortName = pickOrganizationShortName(orgData, organizationName);
     const orgNames = Array.from(
@@ -25408,33 +25408,120 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       return;
     }
 
-    const exportRows = filteredMoves.map((move) => ({
-      "Номер": String(move?.["Номер"] ?? "").trim(),
-      "Бух.номер": String(move?.["Бух.номер"] ?? "").trim(),
-      "Наименование по бухгалтерии": String(
-        move?.["Наименование по бухгалтерии"] ?? ""
-      ).trim(),
-      "Дата ответа": String(move?.["Дата ответа"] ?? "").trim(),
-      "Переместил/Ответственный до перемещения": String(
-        move?.["Ответственный до перемещения"] || move?.["Переместил"] || ""
-      ).trim(),
-      "Принял": String(move?.["Принял"] ?? "").trim(),
-      "Старый объект": String(move?.["Старый объект"] ?? "").trim(),
-      "Новый объект": String(move?.["Новый объект"] ?? "").trim(),
-    }));
+    let toolsData = [];
+    try {
+      const rawTools = await loadJson(`./${orgFolder}/База с инструментами.json`);
+      toolsData = Array.isArray(rawTools)
+        ? rawTools
+        : Array.isArray(rawTools?.tools)
+          ? rawTools.tools
+          : [];
+    } catch (error) {
+      console.warn("Не удалось загрузить базу инструментов для выгрузки перемещений.", error);
+    }
+
+    const toolByNumber = new Map();
+    const toolByAccounting = new Map();
+    toolsData.forEach((tool) => {
+      const numberKey = normalizeToolNumberValue(tool?.["Номер"] ?? "");
+      const accountingKey = String(tool?.["Бух.номер"] ?? "")
+        .trim()
+        .toLowerCase();
+      if (numberKey && !toolByNumber.has(numberKey)) {
+        toolByNumber.set(numberKey, tool);
+      }
+      if (accountingKey && !toolByAccounting.has(accountingKey)) {
+        toolByAccounting.set(accountingKey, tool);
+      }
+    });
+
+    let usersData = null;
+    try {
+      usersData = await loadJson(usersFilePath);
+    } catch (error) {
+      console.warn("Не удалось загрузить users.json для выгрузки перемещений.", error);
+    }
+    const organizationName = findUserOrganizationName(user, usersData ?? { users: [] });
+
+    const resolveToolForMove = (move) => {
+      const numberKey = normalizeToolNumberValue(move?.["Номер"] ?? "");
+      const accountingKey = String(move?.["Бух.номер"] ?? "")
+        .trim()
+        .toLowerCase();
+      if (numberKey && toolByNumber.has(numberKey)) {
+        return toolByNumber.get(numberKey);
+      }
+      if (accountingKey && toolByAccounting.has(accountingKey)) {
+        return toolByAccounting.get(accountingKey);
+      }
+      return null;
+    };
+
+    const resolveUserIdForExport = (fullName) => {
+      const userId = findUserTelegramId(usersData, {
+        fullName,
+        organization: organizationName,
+      });
+      return userId ? String(userId).trim() : "";
+    };
+
+    const exportRows = filteredMoves.map((move) => {
+      const senderName = String(
+        move?.["Ответственный до перемещения"] ||
+          move?.["Переместил"] ||
+          move?.["Переместил энергетик"] ||
+          ""
+      ).trim();
+      const receiverName = String(move?.["Принял"] ?? "").trim();
+      const tool = resolveToolForMove(move);
+      return {
+        "Дата перемещения": formatIsoDateValue(
+          parseIsoDateValue(move?.["Дата перемещения"])
+        ),
+        "Дата принятия": formatIsoDateValue(parseIsoDateValue(move?.["Дата ответа"])),
+        "Номер инструмента": String(move?.["Номер"] ?? "").trim(),
+        "Бухгалтерский номер": String(move?.["Бух.номер"] ?? "").trim(),
+        "Модель": String(tool?.["Модель"] ?? "").trim(),
+        "Описание": String(tool?.["Наименование"] ?? "").trim(),
+        "Сотрудник отправитель": senderName,
+        "ID отправителя": resolveUserIdForExport(senderName),
+        "Сотрудник получатель": receiverName,
+        "ID получателя": resolveUserIdForExport(receiverName),
+        "Старый объект": String(move?.["Старый объект"] ?? "").trim(),
+        "Новый объект": String(move?.["Новый объект"] ?? "").trim(),
+      };
+    });
 
     const worksheet = window.XLSX.utils.json_to_sheet(exportRows, {
       header: [
-        "Номер",
-        "Бух.номер",
-        "Наименование по бухгалтерии",
-        "Дата ответа",
-        "Переместил/Ответственный до перемещения",
-        "Принял",
+        "Дата перемещения",
+        "Дата принятия",
+        "Номер инструмента",
+        "Бухгалтерский номер",
+        "Модель",
+        "Описание",
+        "Сотрудник отправитель",
+        "ID отправителя",
+        "Сотрудник получатель",
+        "ID получателя",
         "Старый объект",
         "Новый объект",
       ],
     });
+    worksheet["!cols"] = [
+      { wch: 18 },
+      { wch: 15 },
+      { wch: 19 },
+      { wch: 21 },
+      { wch: 9 },
+      { wch: 30 },
+      { wch: 23 },
+      { wch: 16 },
+      { wch: 34 },
+      { wch: 15 },
+      { wch: 15 },
+      { wch: 14 },
+    ];
     const workbook = window.XLSX.utils.book_new();
     window.XLSX.utils.book_append_sheet(
       workbook,

@@ -63,7 +63,7 @@ const pendingAcceptanceMailingDefault = {
   time: "18:00",
 };
 const quickAccessDefaults = ["breakdowns", "info", "search", "tools", "move"];
-const energyExtraAccessOptions = [{ id: "awaiting-reply", title: "Мои перемещения", icon: "📤" }];
+const energyExtraAccessOptions = [{ id: "awaiting-reply", title: "Отправлено", icon: "📤" }];
 const energyAccessOptions = [...energyActions, ...energyExtraAccessOptions];
 const quickAccessLimit = 5;
 const isIosMobile =
@@ -3789,7 +3789,7 @@ function createEnergyAwaitingReplyCard() {
   button.innerHTML = `
     <span class="pending-icon" data-awaiting-reply-icon aria-hidden="true">📤</span>
     <span class="pending-info">
-      <span class="pending-title">Мои перемещения</span>
+      <span class="pending-title">Отправлено</span>
     </span>
     <span class="pending-badge is-hidden" data-awaiting-reply-count>0</span>
   `;
@@ -6540,12 +6540,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   }
   const pendingQuickAccessOption = {
     id: "pending",
-    title: "Перемещения",
+    title: "На принятии",
     icon: "🚚",
   };
   const awaitingReplyQuickAccessOption = {
     id: "awaiting-reply",
-    title: "Мои перемещения",
+    title: "Отправлено",
     icon: "📤",
   };
   const actionsMap = new Map(availableActions.map((action) => [action.id, action]));

@@ -6896,6 +6896,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       object: [],
       status: [],
       responsible: [],
+      name: [],
       manufacturer: [],
       model: [],
       photo: [],
@@ -11046,6 +11047,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     ) {
       return false;
     }
+    if (hasSelected("name") && !includesSelected("name", tool?.["Наименование"])) {
+      return false;
+    }
     if (
       hasSelected("manufacturer") &&
       !includesSelected("manufacturer", tool?.["Производитель"])
@@ -11325,6 +11329,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       toolsState.statusStandalone = toolsStatusStandaloneEl.value;
     }
     fillToolsFilterOptions("responsible", collectValues("Ответственный"));
+    fillToolsFilterOptions("name", collectValues("Наименование"));
     fillToolsFilterOptions("manufacturer", collectValues("Производитель"));
     fillToolsFilterOptions("model", collectValues("Модель"));
     fillToolsFilterOptions(
@@ -13165,6 +13170,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     fillToolsFilterOptions("object", collectValues("Объект"));
     fillToolsFilterOptions("status", collectValues("Статус"));
     fillToolsFilterOptions("responsible", collectValues("Ответственный"));
+    fillToolsFilterOptions("name", collectValues("Наименование"));
     fillToolsFilterOptions("model", collectValues("Модель"));
     fillToolsFilterOptions(
       "photo",

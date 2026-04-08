@@ -25465,14 +25465,24 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       return userId ? String(userId).trim() : "";
     };
 
+    const removePatronymic = (fullName) => {
+      const parts = String(fullName ?? "").trim().split(/\s+/).filter(Boolean);
+      if (parts.length <= 2) {
+        return parts.join(" ");
+      }
+      return parts.slice(0, 2).join(" ");
+    };
+
     const exportRows = filteredMoves.map((move) => {
-      const senderName = String(
+      const senderFullName = String(
         move?.["Ответственный до перемещения"] ||
           move?.["Переместил"] ||
           move?.["Переместил энергетик"] ||
           ""
       ).trim();
-      const receiverName = String(move?.["Принял"] ?? "").trim();
+      const receiverFullName = String(move?.["Принял"] ?? "").trim();
+      const senderName = removePatronymic(senderFullName);
+      const receiverName = removePatronymic(receiverFullName);
       const tool = resolveToolForMove(move);
       return {
         "Дата перемещения": formatIsoDateValue(
@@ -25484,9 +25494,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         "Модель": String(tool?.["Модель"] ?? "").trim(),
         "Описание": String(tool?.["Наименование"] ?? "").trim(),
         "Сотрудник отправитель": senderName,
-        "ID отправителя": resolveUserIdForExport(senderName),
+        "ID отправителя": resolveUserIdForExport(senderFullName),
         "Сотрудник получатель": receiverName,
-        "ID получателя": resolveUserIdForExport(receiverName),
+        "ID получателя": resolveUserIdForExport(receiverFullName),
         "Старый объект": String(move?.["Старый объект"] ?? "").trim(),
         "Новый объект": String(move?.["Новый объект"] ?? "").trim(),
       };

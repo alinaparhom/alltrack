@@ -25408,33 +25408,130 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       return;
     }
 
-    const exportRows = filteredMoves.map((move) => ({
-      "Номер": String(move?.["Номер"] ?? "").trim(),
-      "Бух.номер": String(move?.["Бух.номер"] ?? "").trim(),
-      "Наименование по бухгалтерии": String(
-        move?.["Наименование по бухгалтерии"] ?? ""
-      ).trim(),
-      "Дата ответа": String(move?.["Дата ответа"] ?? "").trim(),
-      "Переместил/Ответственный до перемещения": String(
-        move?.["Ответственный до перемещения"] || move?.["Переместил"] || ""
-      ).trim(),
-      "Принял": String(move?.["Принял"] ?? "").trim(),
-      "Старый объект": String(move?.["Старый объект"] ?? "").trim(),
-      "Новый объект": String(move?.["Новый объект"] ?? "").trim(),
-    }));
+    const toolsPath = `./${orgFolder}/База с инструментами.json`;
+    const usersData = await loadJson(usersFilePath).catch(() => ({ users: [] }));
+    let rawTools = [];
+    try {
+      const raw = await loadJson(toolsPath);
+      rawTools = Array.isArray(raw) ? raw : Array.isArray(raw?.tools) ? raw.tools : [];
+    } catch (error) {
+      console.warn("Не удалось загрузить базу инструментов для выгрузки перемещений.", error);
+    }
 
-    const worksheet = window.XLSX.utils.json_to_sheet(exportRows, {
-      header: [
-        "Номер",
-        "Бух.номер",
-        "Наименование по бухгалтерии",
-        "Дата ответа",
-        "Переместил/Ответственный до перемещения",
-        "Принял",
-        "Старый объект",
-        "Новый объект",
-      ],
+    const toolByNumber = new Map();
+    rawTools.forEach((tool) => {
+      const number = String(tool?.["Номер"] ?? "").trim();
+      if (!number) return;
+      if (!toolByNumber.has(number)) {
+        toolByNumber.set(number, tool);
+      }
     });
+
+    const formatMoveDateToIso = (value) => {
+      const parsed = parseDateOnly(value);
+      return parsed ? toIsoDate(parsed) : "";
+    };
+    const resolveUserTelegramId = (fullName) => {
+      const id = findUserTelegramId(usersData, {
+        fullName,
+        organization: context.organizationName ?? "",
+      });
+      return String(id ?? "").trim();
+    };
+
+    const header = [
+      "Дата перемещения",
+      "Дата принятия",
+      "Номер инструмента",
+      "Бухгалтерский номер",
+      "Модель",
+      "Описание",
+      "Сотрудник отправитель",
+      "ID отправителя",
+      "Сотрудник получатель",
+      "ID получателя",
+      "Старый объект",
+      "Новый объект",
+    ];
+
+    const rows = filteredMoves.map((move) => {
+      const moveNumber = String(move?.["Номер"] ?? "").trim();
+      const tool = toolByNumber.get(moveNumber) ?? {};
+      const sender = String(
+        move?.["Ответственный до перемещения"] || move?.["Переместил"] || ""
+      ).trim();
+      const recipient = String(move?.["Принял"] ?? "").trim();
+      return [
+        formatMoveDateToIso(move?.["Дата перемещения"]),
+        formatMoveDateToIso(move?.["Дата ответа"]),
+        moveNumber,
+        String(move?.["Бух.номер"] ?? "").trim(),
+        String(tool?.["Модель"] ?? "").trim(),
+        String(tool?.["Наименование"] ?? "").trim(),
+        sender,
+        resolveUserTelegramId(sender),
+        recipient,
+        resolveUserTelegramId(recipient),
+        String(move?.["Старый объект"] ?? "").trim(),
+        String(move?.["Новый объект"] ?? "").trim(),
+      ];
+    });
+
+    const worksheet = window.XLSX.utils.aoa_to_sheet([header, ...rows]);
+    worksheet["!cols"] = [
+      { wch: 18 },
+      { wch: 15 },
+      { wch: 19 },
+      { wch: 21 },
+      { wch: 9 },
+      { wch: 30 },
+      { wch: 23 },
+      { wch: 16 },
+      { wch: 34 },
+      { wch: 15 },
+      { wch: 15 },
+      { wch: 14 },
+    ];
+    const applyCellStyle = (cellRef, style) => {
+      if (!worksheet[cellRef]) return;
+      worksheet[cellRef].s = style;
+    };
+    const headerStyle = {
+      font: { bold: true },
+      fill: { fgColor: { rgb: "FFE699" } },
+      alignment: { horizontal: "center", vertical: "center", wrapText: true },
+      border: {
+        top: { style: "thin", color: { rgb: "000000" } },
+        bottom: { style: "thin", color: { rgb: "000000" } },
+        left: { style: "thin", color: { rgb: "000000" } },
+        right: { style: "thin", color: { rgb: "000000" } },
+      },
+    };
+    const baseCellStyle = {
+      border: {
+        top: { style: "thin", color: { rgb: "000000" } },
+        bottom: { style: "thin", color: { rgb: "000000" } },
+        left: { style: "thin", color: { rgb: "000000" } },
+        right: { style: "thin", color: { rgb: "000000" } },
+      },
+      alignment: { vertical: "center" },
+    };
+    const dateCellStyle = {
+      ...baseCellStyle,
+      numFmt: "yyyy-mm-dd",
+      alignment: { horizontal: "center", vertical: "center" },
+    };
+    for (let colIndex = 0; colIndex < header.length; colIndex += 1) {
+      const cellRef = window.XLSX.utils.encode_cell({ r: 0, c: colIndex });
+      applyCellStyle(cellRef, headerStyle);
+    }
+    for (let rowIndex = 1; rowIndex <= rows.length; rowIndex += 1) {
+      for (let colIndex = 0; colIndex < header.length; colIndex += 1) {
+        const cellRef = window.XLSX.utils.encode_cell({ r: rowIndex, c: colIndex });
+        const isDateColumn = colIndex === 0 || colIndex === 1;
+        applyCellStyle(cellRef, isDateColumn ? dateCellStyle : baseCellStyle);
+      }
+    }
     const workbook = window.XLSX.utils.book_new();
     window.XLSX.utils.book_append_sheet(
       workbook,

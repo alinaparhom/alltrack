@@ -14701,6 +14701,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         groupRow.className = "tools-table__row awaiting-reply-group-row";
         const groupCell = document.createElement("div");
         groupCell.className = "tools-table__cell awaiting-reply-group-cell";
+        groupCell.style.textAlign = "center";
         groupCell.setAttribute("role", "heading");
         groupCell.setAttribute("aria-level", "3");
         const groupTitleLine = document.createElement("div");

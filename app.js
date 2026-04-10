@@ -9960,6 +9960,14 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
   const getToolGroupingValue = (tool) => {
     if (!tool || toolsState.grouping === "none") return "";
+    const normalizeGroupingStatusLabel = (rawStatus, movingNow = false) => {
+      if (movingNow) return "Перемещается";
+      const normalized = String(rawStatus ?? "").trim().toLocaleLowerCase("ru");
+      if (!normalized) return "Не указан";
+      if (normalized === "рабочий") return "Исправный";
+      if (normalized === "в процессе перемещения") return "Перемещается";
+      return String(rawStatus ?? "").trim();
+    };
     if (toolsState.grouping === "responsible") {
       return formatFullName(String(tool?.["Ответственный"] ?? "").trim()) || "Не назначен";
     }
@@ -9967,7 +9975,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       return String(tool?.["Объект"] ?? "").trim() || "Без объекта";
     }
     if (toolsState.grouping === "status") {
-      return String(tool?.["Статус"] ?? "").trim() || "Не указан";
+      return normalizeGroupingStatusLabel(tool?.["Статус"], Boolean(tool?.__pendingMove));
     }
     if (toolsState.grouping === "name") {
       return String(tool?.["Наименование"] ?? "").trim() || "Без названия";
@@ -9976,6 +9984,23 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       return String(tool?.["Граппа инструментов"] ?? "").trim() || "Без группы";
     }
     return "";
+  };
+
+  const buildToolsGroupTitle = (group) => {
+    const titleEl = document.createElement("div");
+    titleEl.className = "tools-group-title";
+    const labelEl = document.createElement("span");
+    labelEl.textContent = String(group?.label ?? "").trim() || "Без названия";
+    const metaEl = document.createElement("span");
+    metaEl.className = "tools-group-title__meta";
+    const groupItems = Array.isArray(group?.items) ? group.items : [];
+    const totalCost = groupItems.reduce((sum, tool) => {
+      const value = normalizeCostValue(tool?.["Стоимость"]);
+      return sum + (Number.isFinite(value) ? value : 0);
+    }, 0);
+    metaEl.textContent = `Показано: ${groupItems.length} · На сумму: ${formatNotificationCostWithoutCurrency(totalCost)} р.`;
+    titleEl.append(labelEl, metaEl);
+    return titleEl;
   };
 
   const buildGroupedTools = (items) => {
@@ -11107,10 +11132,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     } else if (viewMode === "table") {
       groupedItems.forEach((group) => {
         if (toolsState.grouping !== "none") {
-          const titleEl = document.createElement("div");
-          titleEl.className = "tools-group-title";
-          titleEl.textContent = `${group.label} · ${group.items.length}`;
-          toolsListEl.appendChild(titleEl);
+          toolsListEl.appendChild(buildToolsGroupTitle(group));
         }
         toolsListEl.appendChild(renderToolsTable(group.items));
       });
@@ -11118,10 +11140,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       let cardIndex = 0;
       groupedItems.forEach((group) => {
         if (toolsState.grouping !== "none") {
-          const titleEl = document.createElement("div");
-          titleEl.className = "tools-group-title";
-          titleEl.textContent = `${group.label} · ${group.items.length}`;
-          toolsListEl.appendChild(titleEl);
+          toolsListEl.appendChild(buildToolsGroupTitle(group));
         }
         group.items.forEach((tool) => {
           toolsListEl.appendChild(

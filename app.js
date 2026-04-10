@@ -5427,6 +5427,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     "[data-tools-filters-toggle]"
   );
   const toolsFilterActionsEl = contentEl.querySelector(".tools-filter-actions");
+  const toolsGroupingDropdownEl = contentEl.querySelector("[data-tools-grouping-dropdown]");
+  const toolsGroupingToggleEl = contentEl.querySelector("[data-tools-grouping-toggle]");
+  const toolsGroupingMenuEl = contentEl.querySelector("[data-tools-grouping-menu]");
+  const toolsGroupingOptionEls = contentEl.querySelectorAll("[data-tools-grouping-option]");
   const toolsSortToggleEl = contentEl.querySelector("[data-tools-sort-toggle]");
   const toolsSortToggleIconEl = toolsSortToggleEl?.querySelector(
     ".tools-sort-toggle__icon"
@@ -6973,6 +6977,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     activeReplacementResponsible: "",
     statusStandalone: "",
     searchSortDirection: "desc",
+    grouping: "none",
   };
 
   let toolsTopZoneLock = null;
@@ -9953,6 +9958,43 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     );
   };
 
+  const getToolGroupingValue = (tool) => {
+    if (!tool || toolsState.grouping === "none") return "";
+    if (toolsState.grouping === "responsible") {
+      return formatFullName(String(tool?.["Ответственный"] ?? "").trim()) || "Не назначен";
+    }
+    if (toolsState.grouping === "object") {
+      return String(tool?.["Объект"] ?? "").trim() || "Без объекта";
+    }
+    if (toolsState.grouping === "status") {
+      return String(tool?.["Статус"] ?? "").trim() || "Не указан";
+    }
+    if (toolsState.grouping === "name") {
+      return String(tool?.["Наименование"] ?? "").trim() || "Без названия";
+    }
+    if (toolsState.grouping === "group") {
+      return String(tool?.["Граппа инструментов"] ?? "").trim() || "Без группы";
+    }
+    return "";
+  };
+
+  const buildGroupedTools = (items) => {
+    if (toolsState.grouping === "none") {
+      return [{ label: "", items }];
+    }
+    const grouped = new Map();
+    items.forEach((tool) => {
+      const label = getToolGroupingValue(tool);
+      if (!grouped.has(label)) {
+        grouped.set(label, []);
+      }
+      grouped.get(label).push(tool);
+    });
+    return Array.from(grouped.entries())
+      .sort((a, b) => a[0].localeCompare(b[0], "ru", { sensitivity: "base" }))
+      .map(([label, groupItems]) => ({ label, items: groupItems }));
+  };
+
   const syncToolsMapViewButtonVisibility = () => {
     if (!toolsSearchMapViewButtonEl) return;
     const shouldShowMapButton = canUseToolsMapView();
@@ -11058,16 +11100,35 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       toolsFiltersToggleEl.classList.remove("is-hidden");
     }
     const items = toolsState.filtered;
+    const groupedItems = buildGroupedTools(items);
     if (isMapView) {
       const points = buildToolsMapPointsByObjects(items, toolsState.objects);
       renderToolsSearchMap(points);
     } else if (viewMode === "table") {
-      toolsListEl.appendChild(renderToolsTable(items));
+      groupedItems.forEach((group) => {
+        if (toolsState.grouping !== "none") {
+          const titleEl = document.createElement("div");
+          titleEl.className = "tools-group-title";
+          titleEl.textContent = `${group.label} · ${group.items.length}`;
+          toolsListEl.appendChild(titleEl);
+        }
+        toolsListEl.appendChild(renderToolsTable(group.items));
+      });
     } else {
-      items.forEach((tool, toolIndex) => {
-        toolsListEl.appendChild(
-          renderToolCard(tool, viewMode, toolsState.orgFolder, toolIndex)
-        );
+      let cardIndex = 0;
+      groupedItems.forEach((group) => {
+        if (toolsState.grouping !== "none") {
+          const titleEl = document.createElement("div");
+          titleEl.className = "tools-group-title";
+          titleEl.textContent = `${group.label} · ${group.items.length}`;
+          toolsListEl.appendChild(titleEl);
+        }
+        group.items.forEach((tool) => {
+          toolsListEl.appendChild(
+            renderToolCard(tool, viewMode, toolsState.orgFolder, cardIndex)
+          );
+          cardIndex += 1;
+        });
       });
     }
     if (toolsEmptyEl) {
@@ -17753,6 +17814,20 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     updateToolsFiltersUi();
   };
 
+  const setToolsGroupingMenuOpen = (isOpen) => {
+    if (!toolsGroupingMenuEl) return;
+    toolsGroupingMenuEl.classList.toggle("is-hidden", !isOpen);
+    toolsGroupingDropdownEl?.classList.toggle("is-open", isOpen);
+    toolsGroupingToggleEl?.setAttribute("aria-expanded", String(isOpen));
+  };
+
+  const syncToolsGroupingUi = () => {
+    toolsGroupingOptionEls.forEach((optionEl) => {
+      const isActive = optionEl.dataset.toolsGroupingOption === toolsState.grouping;
+      optionEl.classList.toggle("is-active", isActive);
+    });
+  };
+
   if (toolsSortToggleEl) {
     toolsSortToggleEl.addEventListener("click", () => {
       toolsState.searchSortDirection =
@@ -17768,6 +17843,28 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       setToolsFiltersOpen(!isOpen);
     });
   }
+
+  if (toolsGroupingToggleEl) {
+    toolsGroupingToggleEl.addEventListener("click", () => {
+      const isOpen = !toolsGroupingMenuEl?.classList.contains("is-hidden");
+      setToolsGroupingMenuOpen(!isOpen);
+    });
+  }
+
+  toolsGroupingOptionEls.forEach((optionEl) => {
+    optionEl.addEventListener("click", () => {
+      const grouping = String(optionEl.dataset.toolsGroupingOption ?? "").trim();
+      if (!grouping || toolsState.grouping === grouping) {
+        setToolsGroupingMenuOpen(false);
+        return;
+      }
+      toolsState.grouping = grouping;
+      syncToolsGroupingUi();
+      setToolsGroupingMenuOpen(false);
+      renderToolsList();
+    });
+  });
+  syncToolsGroupingUi();
 
   const toolsFiltersResetButtonEls = contentEl.querySelectorAll(
     "[data-tools-filters-reset]"
@@ -17887,8 +17984,14 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     document.addEventListener("click", (event) => {
       const target = event.target;
       if (!(target instanceof Element)) return;
-      if (target.closest(".tools-filter-dropdown")) return;
+      if (
+        target.closest(".tools-filter-dropdown") ||
+        target.closest("[data-tools-grouping-dropdown]")
+      ) {
+        return;
+      }
       closeAllToolsFilterDropdowns();
+      setToolsGroupingMenuOpen(false);
     });
   }
 

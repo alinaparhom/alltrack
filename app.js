@@ -22771,6 +22771,26 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     return toolsMoveState.selectedResponsibleNames.has(normalizedResponsible);
   };
 
+  const buildToolsMoveObjectChangeNote = () => {
+    const selectedTools = Array.from(toolsState.selectedIds)
+      .map((id) => toolsState.toolMap.get(id))
+      .filter(Boolean);
+    const uniqueObjects = Array.from(
+      new Set(
+        selectedTools
+          .map((tool) => String(tool?.["Объект"] ?? "").trim() || "Не указан")
+          .filter(Boolean)
+      )
+    );
+    if (!uniqueObjects.length) {
+      return "Смена объекта: исходный объект не определён.";
+    }
+    if (uniqueObjects.length === 1) {
+      return `Смена объекта: перенос с объекта «${uniqueObjects[0]}».`;
+    }
+    return `Смена объекта: перенос с объектов — ${uniqueObjects.join(", ")}.`;
+  };
+
   const updateToolsMoveReasonState = (responsibleName) => {
     if (!toolsMoveReasonFieldEl || !toolsMoveReasonInput) return;
     const isObjectChangeMove = isToolsMoveObjectChange(responsibleName);
@@ -22805,6 +22825,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
     if (toolsMoveObjectChangeNoteEl) {
       toolsMoveObjectChangeNoteEl.classList.toggle("is-hidden", !isObjectChangeMove);
+      if (isObjectChangeMove) {
+        toolsMoveObjectChangeNoteEl.textContent = buildToolsMoveObjectChangeNote();
+      }
     }
   };
 

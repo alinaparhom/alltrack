@@ -22817,11 +22817,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         : "Комментарий к перемещению (необязательно)";
     }
     if (reasonHintEl) {
-      reasonHintEl.textContent = shouldRequire
-        ? "Обязательное поле: выбран пользователь с ролью «Энергетик»."
-        : isObjectChangeMove
-          ? "Поле необязательное: выполняется смена объекта."
-          : "Поле необязательное для выбранной роли.";
+      reasonHintEl.textContent = "";
+      reasonHintEl.classList.add("is-hidden");
     }
     if (toolsMoveObjectChangeNoteEl) {
       toolsMoveObjectChangeNoteEl.classList.toggle("is-hidden", !isObjectChangeMove);

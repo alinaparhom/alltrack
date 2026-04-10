@@ -2153,9 +2153,7 @@ export function renderRole(user) {
                       placeholder="Необязательно. Например: требуется проверка или ремонт"
                       data-tools-move-reason
                     ></textarea>
-                    <span class="form-hint" data-tools-move-reason-hint>
-                      Необязательно для обычного перемещения. Для ответственного «Энергетик» поле обязательно.
-                    </span>
+                    <span class="form-hint is-hidden" data-tools-move-reason-hint></span>
                   </label>
                   <div class="tools-move-object-change-note is-hidden" data-tools-move-object-change-note>
                     🔄 Смена объекта

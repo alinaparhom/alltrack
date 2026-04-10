@@ -1872,7 +1872,7 @@ function buildPendingAcceptanceMailingText(string $organization, string $fullNam
   $text = "🔔 Напоминание по инструментам на принятии\n"
     . "🏢 Организация: {$organization}\n"
     . "👤 Получатель: {$fullName}\n"
-    . "🧰 Ожидают ответа: {$count}\n"
+    . "🧰 На принятии: {$count}\n"
     . "✍️ Нужно ответить на перемещение\n"
     . "💸 Текущий штраф: " . formatMoneyLabel($totalCurrentFine) . "\n"
     . "   • Закрытые перемещения: " . formatMoneyLabel($currentBalance) . "\n"

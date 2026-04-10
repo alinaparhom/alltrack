@@ -3686,7 +3686,7 @@ function updateEnergyAwaitingReplyStat({ count = 0 } = {}) {
     "[data-awaiting-reply-button], [data-quick-access-awaiting-reply]"
   );
   const title = hasItems
-    ? `Ждут ответа на мои перемещения: ${safeCount}`
+    ? `Отправлено: ${safeCount}`
     : "По моим перемещениям ответы получены";
   buttons.forEach((button) => {
     button.setAttribute("title", title);
@@ -14728,8 +14728,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         0
       );
       const subtitlePrefix = targetFullName
-        ? `Ожидают ответа за ${formatFullName(targetFullName)}`
-        : "Ожидают ответа";
+        ? `На принятии за ${formatFullName(targetFullName)}`
+        : "На принятии";
       const totalPendingToolsCost = pendingItems.reduce((sum, item) => {
         const toolCost = normalizeCostValue(item?.tool?.["Стоимость"]);
         return sum + (Number.isFinite(toolCost) ? toolCost : 0);
@@ -15015,7 +15015,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       return sum;
     }, 0);
     setAwaitingReplySubtitle(
-      `Ожидают ответа: ${awaitingReplyState.items.length} · На сумму: ${formatNotificationCostWithoutCurrency(awaitingReplyTotalAmount)} р.`,
+      `На принятии: ${awaitingReplyState.items.length} · На сумму: ${formatNotificationCostWithoutCurrency(awaitingReplyTotalAmount)} р.`,
     );
     renderAwaitingReplyList();
   };

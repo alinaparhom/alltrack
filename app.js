@@ -6223,6 +6223,21 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const awaitingReplyMessageEl = contentEl.querySelector(
     "[data-awaiting-reply-message]"
   );
+  const awaitingReplyCancelConfirmModalEl = contentEl.querySelector(
+    "[data-awaiting-reply-cancel-confirm-modal]"
+  );
+  const awaitingReplyCancelConfirmBackdropEl = contentEl.querySelector(
+    "[data-awaiting-reply-cancel-confirm-backdrop]"
+  );
+  const awaitingReplyCancelConfirmCloseButton = contentEl.querySelector(
+    "[data-awaiting-reply-cancel-confirm-close]"
+  );
+  const awaitingReplyCancelConfirmCancelButton = contentEl.querySelector(
+    "[data-awaiting-reply-cancel-confirm-cancel]"
+  );
+  const awaitingReplyCancelConfirmSubmitButton = contentEl.querySelector(
+    "[data-awaiting-reply-cancel-confirm-submit]"
+  );
   const infoPendingModalEl = contentEl.querySelector("[data-info-pending-modal]");
   const infoPendingBackdropEl = contentEl.querySelector(
     "[data-info-pending-backdrop]"
@@ -6996,6 +7011,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     items: [],
     toolMap: new Map(),
     isSaving: false,
+    cancelMoveIndex: null,
   };
   const pendingMovePhotoViewerState = {
     files: [],
@@ -15022,6 +15038,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
   const closeAwaitingReplyModal = () => {
     awaitingReplyModalEl?.classList.add("is-hidden");
+    closeAwaitingReplyCancelConfirmModal();
     if (pendingMovesModalEl && !pendingMovesModalEl.classList.contains("is-hidden")) {
       document.body.style.overflow = "hidden";
     } else {
@@ -15036,6 +15053,26 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     document.body.style.overflow = "hidden";
     setAwaitingReplySubtitle("Загружаем список...");
     await loadAwaitingReplyList();
+  };
+
+  const closeAwaitingReplyCancelConfirmModal = () => {
+    if (!awaitingReplyCancelConfirmModalEl) return;
+    awaitingReplyCancelConfirmModalEl.classList.add("is-hidden");
+    awaitingReplyState.cancelMoveIndex = null;
+  };
+
+  const openAwaitingReplyCancelConfirmModal = (moveIndex) => {
+    if (!awaitingReplyCancelConfirmModalEl) return;
+    if (!Number.isFinite(moveIndex)) return;
+    awaitingReplyState.cancelMoveIndex = moveIndex;
+    awaitingReplyCancelConfirmModalEl.classList.remove("is-hidden");
+  };
+
+  const confirmAwaitingReplyCancel = async () => {
+    const moveIndex = awaitingReplyState.cancelMoveIndex;
+    closeAwaitingReplyCancelConfirmModal();
+    if (!Number.isFinite(moveIndex)) return;
+    await applyAwaitingReplyCancel(moveIndex);
   };
 
   const applyAwaitingReplyCancel = async (moveIndex) => {
@@ -17406,7 +17443,27 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (!actionButton) return;
     const moveIndex = Number.parseInt(actionButton.dataset.moveIndex ?? "", 10);
     if (!Number.isFinite(moveIndex)) return;
-    applyAwaitingReplyCancel(moveIndex);
+    openAwaitingReplyCancelConfirmModal(moveIndex);
+  });
+  awaitingReplyCancelConfirmBackdropEl?.addEventListener(
+    "click",
+    closeAwaitingReplyCancelConfirmModal
+  );
+  awaitingReplyCancelConfirmCloseButton?.addEventListener(
+    "click",
+    closeAwaitingReplyCancelConfirmModal
+  );
+  awaitingReplyCancelConfirmCancelButton?.addEventListener(
+    "click",
+    closeAwaitingReplyCancelConfirmModal
+  );
+  awaitingReplyCancelConfirmSubmitButton?.addEventListener("click", () => {
+    void confirmAwaitingReplyCancel();
+  });
+  awaitingReplyCancelConfirmModalEl?.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      closeAwaitingReplyCancelConfirmModal();
+    }
   });
   if (pendingMovesAcceptAllButton) {
     pendingMovesAcceptAllButton.addEventListener("click", () => {

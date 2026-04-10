@@ -1999,6 +1999,56 @@ export function renderRole(user) {
         </div>
         <div
           class="settings-modal is-hidden pending-moves-bulk-confirm-modal"
+          data-awaiting-reply-cancel-confirm-modal
+        >
+          <div
+            class="settings-modal__backdrop"
+            data-awaiting-reply-cancel-confirm-backdrop
+          ></div>
+          <div
+            class="settings-modal__panel pending-moves-bulk-confirm-modal__panel pending-moves-decline-modal__panel"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Подтверждение отмены перемещения"
+          >
+            <div class="settings-modal__header pending-moves-decline-modal__header">
+              <div class="settings-modal__title pending-moves-decline-modal__title-row">
+                <h2>Отменить перемещение?</h2>
+                <button
+                  class="button-icon tools-modal__close pending-moves-decline-modal__close"
+                  type="button"
+                  data-awaiting-reply-cancel-confirm-close
+                  aria-label="Закрыть окно подтверждения"
+                >
+                  <span class="button-icon-emoji" aria-hidden="true">✕</span>
+                </button>
+              </div>
+            </div>
+            <div class="settings-modal__body pending-moves-bulk-confirm-body">
+              <p class="pending-moves-bulk-confirm-text">
+                Подтвердите действие. После отмены перемещение получит ответ «Отмена перемещения».
+              </p>
+            </div>
+            <div class="settings-modal__footer pending-moves-bulk-confirm-actions pending-moves-decline-actions">
+              <button
+                class="action-secondary pending-moves-decline-actions__cancel pending-moves-bulk-confirm-cancel"
+                type="button"
+                data-awaiting-reply-cancel-confirm-cancel
+              >
+                Не отменять
+              </button>
+              <button
+                class="action-danger pending-moves-decline-actions__submit pending-moves-bulk-confirm-submit pending-moves-bulk-confirm-submit--decline"
+                type="button"
+                data-awaiting-reply-cancel-confirm-submit
+              >
+                Отменить перемещение
+              </button>
+            </div>
+          </div>
+        </div>
+        <div
+          class="settings-modal is-hidden pending-moves-bulk-confirm-modal"
           data-pending-moves-bulk-confirm-modal
         >
           <div

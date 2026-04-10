@@ -954,10 +954,7 @@ export function renderRole(user) {
                         >
                           <span class="tools-filters-toggle__icon tools-grouping-toggle__icon" aria-hidden="true">
                             <svg viewBox="0 0 24 24" focusable="false">
-                              <path d="M4 6.5h10M4 12h16M4 17.5h8" />
-                              <circle cx="16.5" cy="6.5" r="2" />
-                              <circle cx="8.5" cy="12" r="2" />
-                              <circle cx="14.5" cy="17.5" r="2" />
+                              <path d="M6.75 5.5h6.5a1.75 1.75 0 0 1 1.75 1.75v2.5a1.75 1.75 0 0 1-1.75 1.75h-6.5A1.75 1.75 0 0 1 5 9.75v-2.5A1.75 1.75 0 0 1 6.75 5.5Zm6 7h6.5A1.75 1.75 0 0 1 21 14.25v2.5a1.75 1.75 0 0 1-1.75 1.75h-6.5A1.75 1.75 0 0 1 11 16.75v-2.5a1.75 1.75 0 0 1 1.75-1.75Zm-6 0h2.5A1.75 1.75 0 0 1 11 14.25v2.5A1.75 1.75 0 0 1 9.25 18.5h-2.5A1.75 1.75 0 0 1 5 16.75v-2.5a1.75 1.75 0 0 1 1.75-1.75Z" />
                             </svg>
                           </span>
                         </button>
@@ -991,7 +988,11 @@ export function renderRole(user) {
                         aria-controls="tools-filters-panel"
                         aria-label="Фильтры"
                       >
-                        <span class="tools-filters-toggle__label">Фильтры</span>
+                        <span class="tools-filters-toggle__icon" aria-hidden="true">
+                          <svg viewBox="0 0 24 24" focusable="false">
+                            <path d="M4 6.75C4 5.78 4.78 5 5.75 5h12.5C19.22 5 20 5.78 20 6.75c0 .45-.17.88-.47 1.21l-4.61 5.02a1.74 1.74 0 0 0-.46 1.18v2.71c0 .57-.28 1.11-.75 1.43l-2.07 1.43A1 1 0 0 1 10 18.9v-4.74c0-.43-.16-.84-.46-1.16L4.47 7.96A1.76 1.76 0 0 1 4 6.75Z" />
+                          </svg>
+                        </span>
                       </button>
                     </div>
                   </div>
@@ -1637,7 +1638,11 @@ export function renderRole(user) {
                     aria-controls="writeoff-filters-panel"
                     aria-label="Фильтры"
                   >
-                    <span class="tools-filters-toggle__label">Фильтры</span>
+                    <span class="tools-filters-toggle__icon" aria-hidden="true">
+                      <svg viewBox="0 0 24 24" focusable="false">
+                        <path d="M4 6.75C4 5.78 4.78 5 5.75 5h12.5C19.22 5 20 5.78 20 6.75c0 .45-.17.88-.47 1.21l-4.61 5.02a1.74 1.74 0 0 0-.46 1.18v2.71c0 .57-.28 1.11-.75 1.43l-2.07 1.43A1 1 0 0 1 10 18.9v-4.74c0-.43-.16-.84-.46-1.16L4.47 7.96A1.76 1.76 0 0 1 4 6.75Z" />
+                      </svg>
+                    </span>
                   </button>
                 </div>
               </div>

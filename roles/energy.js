@@ -943,6 +943,33 @@ export function renderRole(user) {
                       <span class="tools-select-all-check" aria-hidden="true"></span>
                     </button>
                     <div class="tools-filter-actions" role="group" aria-label="Сортировка и фильтры">
+                      <div class="tools-grouping-dropdown" data-tools-grouping-dropdown>
+                        <button
+                          class="tools-filters-toggle tools-grouping-toggle"
+                          type="button"
+                          data-tools-grouping-toggle
+                          aria-expanded="false"
+                          aria-label="Группировка инструментов"
+                          title="Группировка инструментов"
+                        >
+                          <span class="tools-filters-toggle__icon tools-grouping-toggle__icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" focusable="false">
+                              <path d="M4 6.5h10M4 12h16M4 17.5h8" />
+                              <circle cx="16.5" cy="6.5" r="2" />
+                              <circle cx="8.5" cy="12" r="2" />
+                              <circle cx="14.5" cy="17.5" r="2" />
+                            </svg>
+                          </span>
+                        </button>
+                        <div class="tools-grouping-dropdown__menu is-hidden" data-tools-grouping-menu>
+                          <button type="button" class="tools-grouping-option is-active" data-tools-grouping-option="none">Без группировки</button>
+                          <button type="button" class="tools-grouping-option" data-tools-grouping-option="responsible">По ответственному</button>
+                          <button type="button" class="tools-grouping-option" data-tools-grouping-option="object">По объекту</button>
+                          <button type="button" class="tools-grouping-option" data-tools-grouping-option="status">По статусу</button>
+                          <button type="button" class="tools-grouping-option" data-tools-grouping-option="name">По наименованию</button>
+                          <button type="button" class="tools-grouping-option" data-tools-grouping-option="group">По группам</button>
+                        </div>
+                      </div>
                       <button
                         class="tools-filters-toggle tools-sort-toggle"
                         type="button"

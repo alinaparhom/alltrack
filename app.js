@@ -9645,7 +9645,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
             : "";
         toolsMoveSubtitleEl.innerHTML = `
           <div>Выбрано инструментов: ${count}</div>
-          <div style="margin-top:6px;font-size:12px;opacity:.85;">Номер • Наименование • Производитель • Модель</div>
           <div style="display:grid;gap:4px;margin-top:6px;font-size:13px;">${previewRows}${remainingCount}</div>
         `;
       } else {

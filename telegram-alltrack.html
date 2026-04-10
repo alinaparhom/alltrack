@@ -7329,12 +7329,19 @@
         outline: none;
         box-shadow: none;
         background: transparent;
+        -webkit-appearance: none;
+        appearance: none;
+        -webkit-tap-highlight-color: transparent;
       }
 
       .tools-move-modal__close:focus,
-      .tools-move-modal__close:focus-visible {
+      .tools-move-modal__close:focus-visible,
+      .tools-move-modal__close:hover,
+      .tools-move-modal .tools-move-modal__close[aria-label*="Закрыть"] {
         outline: none;
         box-shadow: none;
+        border: none;
+        background: transparent;
       }
 
       .tools-move-modal .form-card {

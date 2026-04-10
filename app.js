@@ -9624,10 +9624,33 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       toolsSelectionCountEl.classList.toggle("is-hidden", !toolsState.isSelecting);
     }
     if (toolsMoveSubtitleEl) {
-      toolsMoveSubtitleEl.textContent =
-        count > 0
-          ? `Выбрано инструментов: ${count}`
-          : "Выберите ответственного и объект";
+      if (count > 0) {
+        const selectedTools = Array.from(toolsState.selectedIds)
+          .map((id) => toolsState.toolMap.get(id))
+          .filter(Boolean);
+        const previewLimit = 6;
+        const previewRows = selectedTools
+          .slice(0, previewLimit)
+          .map((tool) => {
+            const number = escapeHtml(String(tool?.["Номер"] ?? "—").trim() || "—");
+            const name = escapeHtml(String(tool?.["Наименование"] ?? "—").trim() || "—");
+            const maker = escapeHtml(String(tool?.["Производитель"] ?? "—").trim() || "—");
+            const model = escapeHtml(String(tool?.["Модель"] ?? "—").trim() || "—");
+            return `<div>№ ${number} • ${name} • ${maker} • ${model}</div>`;
+          })
+          .join("");
+        const remainingCount =
+          selectedTools.length > previewLimit
+            ? `<div>И ещё: ${selectedTools.length - previewLimit}</div>`
+            : "";
+        toolsMoveSubtitleEl.innerHTML = `
+          <div>Выбрано инструментов: ${count}</div>
+          <div style="margin-top:6px;font-size:12px;opacity:.85;">Номер • Наименование • Производитель • Модель</div>
+          <div style="display:grid;gap:4px;margin-top:6px;font-size:13px;">${previewRows}${remainingCount}</div>
+        `;
+      } else {
+        toolsMoveSubtitleEl.textContent = "Выберите ответственного и объект";
+      }
     }
     if (toolsModalEl) {
       toolsModalEl.classList.toggle("tools-modal--selecting", toolsState.isSelecting);

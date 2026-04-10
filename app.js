@@ -18264,58 +18264,63 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           ? `Перемещение создано: ${eligibleEntries.length}. Пропущено: ${skippedCount}.`
           : `Перемещение создано: ${eligibleEntries.length}.`;
         setToolsMoveMessage(message, "success");
-        const usersData = await loadJson(usersFilePath).catch(() => ({ users: [] }));
-        const organizationName = findUserOrganizationName(user, usersData);
-        const notificationResults = await Promise.all(
-          eligibleTools.map((tool) => {
-            const previousResponsible = String(
-              tool?.["Ответственный"] ?? ""
-            ).trim();
-            const movedByName = String(user?.full_name ?? "").trim();
-            const movedByEnergy =
-              toolsState.mode === "move-other" &&
-              previousResponsible &&
-              normalizePersonName(previousResponsible) !==
-                normalizePersonName(movedByName)
-                ? movedByName
-                : "";
-            return notifyMoveTool({
-              tool,
-              orgFolder: context.orgFolderName,
-              organizationName,
-              responsibleName: responsible,
-              responsibleTelegramId,
-              targetObject,
-              movedBy: movedByName,
-              movedByEnergy,
-              moveReason,
-              vacationNote,
-              previousResponsible,
-              fineNote: movedByEnergy ? movedByEnergyFineNote : "",
-              notificationId:
-                normalizePersonName(previousResponsible) ===
-                normalizePersonName(responsible)
-                  ? "moveTool"
-                  : toolsState.mode === "move-other"
-                    ? "moveByEnergy"
-                    : "moveTool",
-              moveKind:
-                normalizePersonName(previousResponsible) ===
-                normalizePersonName(responsible)
-                  ? "objectChange"
-                  : "default",
-            });
-          })
-        );
-        const notificationStatus = analyzeNotificationResults(notificationResults);
-        if (notificationStatus.summary) {
-          setToolsMoveMessage(
-            `${message} ${notificationStatus.summary}`,
-            notificationStatus.allSent ? "success" : "error"
+        try {
+          const usersData = await loadJson(usersFilePath).catch(() => ({ users: [] }));
+          const organizationName = findUserOrganizationName(user, usersData);
+          const notificationResults = await Promise.all(
+            eligibleTools.map((tool) => {
+              const previousResponsible = String(
+                tool?.["Ответственный"] ?? ""
+              ).trim();
+              const movedByName = String(user?.full_name ?? "").trim();
+              const movedByEnergy =
+                toolsState.mode === "move-other" &&
+                previousResponsible &&
+                normalizePersonName(previousResponsible) !==
+                  normalizePersonName(movedByName)
+                  ? movedByName
+                  : "";
+              return notifyMoveTool({
+                tool,
+                orgFolder: context.orgFolderName,
+                organizationName,
+                responsibleName: responsible,
+                responsibleTelegramId,
+                targetObject,
+                movedBy: movedByName,
+                movedByEnergy,
+                moveReason,
+                vacationNote,
+                previousResponsible,
+                fineNote: movedByEnergy ? movedByEnergyFineNote : "",
+                notificationId:
+                  normalizePersonName(previousResponsible) ===
+                  normalizePersonName(responsible)
+                    ? "moveTool"
+                    : toolsState.mode === "move-other"
+                      ? "moveByEnergy"
+                      : "moveTool",
+                moveKind:
+                  normalizePersonName(previousResponsible) ===
+                  normalizePersonName(responsible)
+                    ? "objectChange"
+                    : "default",
+              });
+            })
           );
-        }
-        if (notificationStatus.shouldHoldOnError) {
-          return;
+          const notificationStatus = analyzeNotificationResults(notificationResults);
+          if (notificationStatus.summary) {
+            setToolsMoveMessage(
+              `${message} ${notificationStatus.summary}`,
+              notificationStatus.allSent ? "success" : "error"
+            );
+          }
+        } catch (notificationError) {
+          console.warn("Уведомления о перемещении не отправлены.", notificationError);
+          setToolsMoveMessage(
+            `${message} Уведомления не отправлены, но перемещение сохранено.`,
+            "error"
+          );
         }
         markToolsPendingMoveInStates(pendingEligibleTools);
         applyToolsFilters();
@@ -22733,17 +22738,15 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     return isEnergyLikeRole(role);
   };
 
-  const isToolsMoveObjectChange = (responsibleName, objectName = "") => {
+  const isToolsMoveObjectChange = (responsibleName) => {
     const normalizedResponsible = normalizePersonName(responsibleName ?? "");
-    const normalizedObject = normalizeMoveOption(objectName);
-    if (!normalizedResponsible || !normalizedObject) return false;
+    if (!normalizedResponsible) return false;
     return toolsMoveState.selectedResponsibleNames.has(normalizedResponsible);
   };
 
   const updateToolsMoveReasonState = (responsibleName) => {
     if (!toolsMoveReasonFieldEl || !toolsMoveReasonInput) return;
-    const objectName = String(toolsMoveObjectInput?.value ?? "").trim();
-    const isObjectChangeMove = isToolsMoveObjectChange(responsibleName, objectName);
+    const isObjectChangeMove = isToolsMoveObjectChange(responsibleName);
     const shouldRequire = isEnergyResponsible(responsibleName) && !isObjectChangeMove;
     const reasonHintEl = toolsMoveReasonFieldEl.querySelector(
       "[data-tools-move-reason-hint]"

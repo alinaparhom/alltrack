@@ -18077,6 +18077,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         toolsMoveState.responsibleOptions
       );
       updateToolsMoveReasonState(responsible);
+      renderToolsMoveObjectSuggestions();
     };
     toolsMoveResponsibleInput.addEventListener("input", syncMoveReason);
     toolsMoveResponsibleInput.addEventListener("blur", syncMoveReason);
@@ -18115,6 +18116,15 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       );
       if (!responsible || !targetObject) {
         setToolsMoveMessage("Выберите ответственного и объект.", "error");
+        return;
+      }
+      const blockedObjects = getToolsMoveBlockedObjects(responsible);
+      if (blockedObjects.has(normalizeMoveOption(targetObject))) {
+        setToolsMoveMessage(
+          "Нельзя выбрать текущий объект при смене объекта.",
+          "error"
+        );
+        toolsMoveObjectInput?.focus();
         return;
       }
       const responsibleTelegramId =
@@ -22711,13 +22721,20 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     showOnFocus: true,
   });
 
-  attachDynamicSuggestions({
-    inputEl: toolsMoveObjectInput,
-    containerEl: toolsMoveObjectSuggestionsEl,
-    getItems: (query) =>
-      getSelectableSuggestions(toolsMoveState.objectOptions, query),
-    showOnFocus: true,
-  });
+  if (toolsMoveObjectInput && toolsMoveObjectSuggestionsEl) {
+    const hideToolsMoveObjectSuggestions = () => {
+      toolsMoveObjectSuggestionsEl.classList.add("is-hidden");
+    };
+    toolsMoveObjectInput.addEventListener("input", () => {
+      renderToolsMoveObjectSuggestions();
+    });
+    toolsMoveObjectInput.addEventListener("focus", () => {
+      renderToolsMoveObjectSuggestions();
+    });
+    toolsMoveObjectInput.addEventListener("blur", () => {
+      setTimeout(hideToolsMoveObjectSuggestions, 120);
+    });
+  }
 
   const updateAddToolSelectState = (inputEl, options, emptyPlaceholder) => {
     if (!inputEl) return;
@@ -22750,12 +22767,73 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const normalizeMoveOption = (value = "") =>
     String(value ?? "").trim().toLowerCase();
 
+  const getToolsMoveBlockedObjects = (responsibleName) => {
+    if (!isToolsMoveObjectChange(responsibleName)) return new Set();
+    return new Set(
+      Array.from(toolsState.selectedIds)
+        .map((id) => toolsState.toolMap.get(id))
+        .filter(Boolean)
+        .map((tool) => normalizeMoveOption(tool?.["Объект"] ?? ""))
+        .filter(Boolean)
+    );
+  };
+
   const resolveMoveOptionMatch = (value, options) => {
     const normalized = normalizeMoveOption(value);
     if (!normalized) return "";
     return (
       options.find((option) => normalizeMoveOption(option) === normalized) ?? ""
     );
+  };
+
+  const getToolsMoveObjectSuggestionItems = (query = "") => {
+    const responsibleRaw = String(toolsMoveResponsibleInput?.value ?? "").trim();
+    const responsible = resolveMoveOptionMatch(
+      responsibleRaw,
+      toolsMoveState.responsibleOptions
+    );
+    const blockedObjects = getToolsMoveBlockedObjects(responsible);
+    const safeQuery = normalizeSuggestionValue(query).toLowerCase();
+    return toolsMoveState.objectOptions
+      .filter((item) =>
+        !safeQuery ? true : item.toLowerCase().includes(safeQuery)
+      )
+      .slice(0, 8)
+      .map((item) => ({
+        value: item,
+        disabled: blockedObjects.has(normalizeMoveOption(item)),
+      }));
+  };
+
+  const renderToolsMoveObjectSuggestions = () => {
+    if (!toolsMoveObjectInput || !toolsMoveObjectSuggestionsEl) return;
+    const items = getToolsMoveObjectSuggestionItems(toolsMoveObjectInput.value);
+    toolsMoveObjectSuggestionsEl.innerHTML = "";
+    if (!items.length) {
+      toolsMoveObjectSuggestionsEl.classList.add("is-hidden");
+      return;
+    }
+    items.forEach((item) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "suggestions__item";
+      if (item.disabled) {
+        button.classList.add("suggestions__item--disabled");
+        button.disabled = true;
+      }
+      button.textContent = item.disabled
+        ? `${item.value} (текущий объект)`
+        : item.value;
+      button.addEventListener("mousedown", (event) => {
+        event.preventDefault();
+        if (item.disabled) return;
+        toolsMoveObjectInput.value = item.value;
+        toolsMoveObjectInput.dispatchEvent(new Event("input", { bubbles: true }));
+        toolsMoveObjectSuggestionsEl.classList.add("is-hidden");
+      });
+      toolsMoveObjectSuggestionsEl.appendChild(button);
+    });
+    toolsMoveObjectSuggestionsEl.classList.remove("is-hidden");
   };
 
   const isEnergyResponsible = (name) => {

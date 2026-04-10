@@ -2157,6 +2157,9 @@ export function renderRole(user) {
                       Необязательно для обычного перемещения. Для ответственного «Энергетик» поле обязательно.
                     </span>
                   </label>
+                  <div class="tools-move-object-change-note is-hidden" data-tools-move-object-change-note>
+                    🔄 Смена объекта
+                  </div>
                 </div>
                 <div class="form-message" data-tools-move-message></div>
               </div>

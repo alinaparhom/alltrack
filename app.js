@@ -1350,7 +1350,15 @@ function buildNewToolNotificationMessage(
 
 function buildMoveToolNotificationMessage(
   tool,
-  { movedBy, responsible, targetObject, oldObject, moveReason, vacationNote } = {}
+  {
+    movedBy,
+    responsible,
+    targetObject,
+    oldObject,
+    moveReason,
+    vacationNote,
+    moveKind,
+  } = {}
 ) {
   const titleParts = [
     formatNotificationValue(tool?.["Наименование"], ""),
@@ -1361,7 +1369,9 @@ function buildMoveToolNotificationMessage(
     .filter(Boolean);
   const titleLine = titleParts.length ? titleParts.join(" ") : "—";
   const lines = [
-    "📦📦📦<b><u>ПЕРЕМЕЩЕНИЕ ИНСТРУМЕНТА</u></b>",
+    moveKind === "objectChange"
+      ? "🏗️<b><u>СМЕНА ОБЪЕКТА</u></b>"
+      : "📦📦📦<b><u>ПЕРЕМЕЩЕНИЕ ИНСТРУМЕНТА</u></b>",
     `1. Номер: ${escapeTelegramHtml(
       formatNotificationValue(tool?.["Номер"])
     )}`,
@@ -1387,6 +1397,9 @@ function buildMoveToolNotificationMessage(
         formatNotificationValue(moveReason)
       )}`
     );
+  }
+  if (moveKind === "objectChange") {
+    lines.push("7. Ответ: Смена объекта");
   }
   lines.push(
     "",
@@ -2548,6 +2561,7 @@ async function notifyMoveTool({
   fineNote,
   previousResponsible,
   movedByEnergy,
+  moveKind = "default",
 }) {
   const result = {
     sent: false,
@@ -2589,6 +2603,7 @@ async function notifyMoveTool({
             oldObject,
             moveReason,
             vacationNote,
+            moveKind,
           });
     let groupSent = false;
     const groupErrors = [];
@@ -5460,6 +5475,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     "[data-tools-move-reason-field]"
   );
   const toolsMoveReasonInput = contentEl.querySelector("[data-tools-move-reason]");
+  const toolsMoveObjectChangeNoteEl = contentEl.querySelector(
+    "[data-tools-move-object-change-note]"
+  );
   const toolsMoveMessageEl = contentEl.querySelector("[data-tools-move-message]");
   const toolsMoveSubtitleEl = contentEl.querySelector("[data-tools-move-subtitle]");
   const toolsEditModalEl = contentEl.querySelector("[data-tools-edit-modal]");
@@ -7117,6 +7135,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     objectOptions: [],
     responsibleRoles: new Map(),
     responsibleTelegramIds: new Map(),
+    selectedResponsibleNames: new Set(),
   };
   const addPhotoState = {
     tools: [],
@@ -17942,20 +17961,14 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       (entry) =>
         normalizeOrg(entry.organization) === orgKey && !isHiddenListUser(entry)
     );
-    const shouldSkipToolOwner = (entry) => {
-      const normalizedEntryName = normalizePersonName(entry?.full_name ?? "");
-      return Boolean(
-        normalizedEntryName && selectedResponsibleNames.has(normalizedEntryName)
-      );
-    };
     const userOptions = orgUsers
-      .filter((entry) => !shouldSkipToolOwner(entry))
       .map((entry) => String(entry?.full_name ?? "").trim())
       .filter(Boolean);
 
     toolsMoveState.responsibleOptions = Array.from(new Set(userOptions)).sort(
       (a, b) => a.localeCompare(b, "ru")
     );
+    toolsMoveState.selectedResponsibleNames = selectedResponsibleNames;
     toolsMoveState.responsibleRoles = new Map(
       orgUsers
         .map((entry) => [
@@ -17982,6 +17995,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       toolsMoveResponsibleSuggestionsEl?.classList.add("is-hidden");
     }
     updateToolsMoveReasonState("");
+    if (toolsMoveObjectChangeNoteEl) {
+      toolsMoveObjectChangeNoteEl.classList.add("is-hidden");
+    }
     if (toolsMoveReasonInput) {
       toolsMoveReasonInput.value = "";
     }
@@ -18037,6 +18053,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     };
     toolsMoveResponsibleInput.addEventListener("input", syncMoveReason);
     toolsMoveResponsibleInput.addEventListener("blur", syncMoveReason);
+    toolsMoveObjectInput?.addEventListener("input", syncMoveReason);
+    toolsMoveObjectInput?.addEventListener("blur", syncMoveReason);
   }
   if (toolsSelectionCancelButtonEl) {
     toolsSelectionCancelButtonEl.addEventListener("click", () => {
@@ -18077,7 +18095,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           normalizePersonName(responsible)
         ) ?? null;
       const moveReason = String(toolsMoveReasonInput?.value ?? "").trim();
-      if (isEnergyResponsible(responsible) && !moveReason) {
+      const hasObjectChangeMove = isToolsMoveObjectChange(responsible, targetObject);
+      if (isEnergyResponsible(responsible) && !hasObjectChangeMove && !moveReason) {
         setToolsMoveMessage("Укажите причину перемещения.", "error");
         toolsMoveReasonInput?.focus();
         return;
@@ -18091,6 +18110,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const now = new Date();
       const eligibleEntries = [];
       const eligibleTools = [];
+      const pendingEligibleTools = [];
       const isMoveByReplacement = toolsState.mode === "replacement";
       const allowMoveWithoutPhoto = toolsState.mode === "move-other";
       const settingsPath = `./${context.orgFolderName}/Настройки.json`;
@@ -18117,8 +18137,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         }
         const oldResponsible = String(tool?.["Ответственный"] ?? "").trim();
         const movedByName = String(user?.full_name ?? "").trim();
+        const isObjectChangeMove =
+          normalizePersonName(oldResponsible) === normalizePersonName(responsible);
         const isMovedByEnergy =
           allowMoveWithoutPhoto &&
+          !isObjectChangeMove &&
           oldResponsible &&
           normalizePersonName(oldResponsible) !== normalizePersonName(movedByName);
         if (isMovedByEnergy && movedByEnergyFineAmount > 0) {
@@ -18135,13 +18158,18 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           Номер: String(tool?.["Номер"] ?? "").trim(),
           "Бух.номер": accountingNumber,
           "Дата перемещения": formatDateValue(now),
-          "Дата ответа": "",
+          "Дата ответа": isObjectChangeMove ? formatDateValue(now) : "",
           Переместил: movedByName,
           Принял: responsible,
           "Старый объект": String(tool?.["Объект"] ?? "").trim(),
           "Новый объект": targetObject,
           Статус: String(tool?.["Статус"] ?? "").trim(),
         };
+        if (isObjectChangeMove) {
+          entry.Ответ = "Смена объекта";
+        } else {
+          pendingEligibleTools.push(tool);
+        }
 
         if (isMovedByEnergy) {
           entry["Причина перемещения"] = moveReason;
@@ -18180,7 +18208,46 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
       const updatedMoves = [...movesData, ...eligibleEntries];
       try {
-        await saveJson(movesPath, updatedMoves, { user });
+        let toolsPayload = null;
+        const toolsPath = `./${context.orgFolderName}/База с инструментами.json`;
+        try {
+          const rawTools = await loadJson(toolsPath);
+          const toolsNormalized = normalizeCollectionPayload(rawTools, "tools");
+          const toolsIndexMap = buildToolIndexMap(toolsNormalized.items);
+          let hasToolsChanges = false;
+          eligibleEntries.forEach((entry) => {
+            if (String(entry?.["Ответ"] ?? "").trim() !== "Смена объекта") return;
+            const number = String(entry?.["Номер"] ?? "").trim();
+            const accounting = String(entry?.["Бух.номер"] ?? "").trim();
+            const toolIndex =
+              (number && toolsIndexMap.get(`n:${number}`)) ??
+              (accounting && toolsIndexMap.get(`a:${accounting}`));
+            if (toolIndex === undefined) return;
+            const currentTool = toolsNormalized.items[toolIndex];
+            toolsNormalized.items[toolIndex] = {
+              ...currentTool,
+              Объект: String(entry?.["Новый объект"] ?? "").trim(),
+              Ответственный: String(entry?.["Принял"] ?? "").trim(),
+            };
+            hasToolsChanges = true;
+          });
+          if (hasToolsChanges) {
+            toolsPayload = toolsNormalized.wrapper
+              ? { ...toolsNormalized.wrapper, [toolsNormalized.key]: toolsNormalized.items }
+              : toolsNormalized.items;
+          }
+        } catch (error) {
+          console.warn("Не удалось обновить базу инструментов для смены объекта.", error);
+        }
+        const saveEntries = [{ path: movesPath, data: updatedMoves, user }];
+        if (toolsPayload) {
+          saveEntries.push({
+            path: toolsPath,
+            data: toolsPayload,
+            user,
+          });
+        }
+        await saveJsonBatch(saveEntries);
         if (movedByEnergySummaryUpdates.size) {
           const finesPath = `./${context.orgFolderName}/Штрафы.json`;
           const summaryUpdates = new Map();
@@ -18226,7 +18293,17 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
               previousResponsible,
               fineNote: movedByEnergy ? movedByEnergyFineNote : "",
               notificationId:
-                toolsState.mode === "move-other" ? "moveByEnergy" : "moveTool",
+                normalizePersonName(previousResponsible) ===
+                normalizePersonName(responsible)
+                  ? "moveTool"
+                  : toolsState.mode === "move-other"
+                    ? "moveByEnergy"
+                    : "moveTool",
+              moveKind:
+                normalizePersonName(previousResponsible) ===
+                normalizePersonName(responsible)
+                  ? "objectChange"
+                  : "default",
             });
           })
         );
@@ -18240,7 +18317,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         if (notificationStatus.shouldHoldOnError) {
           return;
         }
-        markToolsPendingMoveInStates(eligibleTools);
+        markToolsPendingMoveInStates(pendingEligibleTools);
         applyToolsFilters();
         await refreshAwaitingReplyIndicator();
         setTimeout(() => {
@@ -22656,9 +22733,18 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     return isEnergyLikeRole(role);
   };
 
+  const isToolsMoveObjectChange = (responsibleName, objectName = "") => {
+    const normalizedResponsible = normalizePersonName(responsibleName ?? "");
+    const normalizedObject = normalizeMoveOption(objectName);
+    if (!normalizedResponsible || !normalizedObject) return false;
+    return toolsMoveState.selectedResponsibleNames.has(normalizedResponsible);
+  };
+
   const updateToolsMoveReasonState = (responsibleName) => {
     if (!toolsMoveReasonFieldEl || !toolsMoveReasonInput) return;
-    const shouldRequire = isEnergyResponsible(responsibleName);
+    const objectName = String(toolsMoveObjectInput?.value ?? "").trim();
+    const isObjectChangeMove = isToolsMoveObjectChange(responsibleName, objectName);
+    const shouldRequire = isEnergyResponsible(responsibleName) && !isObjectChangeMove;
     const reasonHintEl = toolsMoveReasonFieldEl.querySelector(
       "[data-tools-move-reason-hint]"
     );
@@ -22683,7 +22769,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (reasonHintEl) {
       reasonHintEl.textContent = shouldRequire
         ? "Обязательное поле: выбран пользователь с ролью «Энергетик»."
-        : "Поле необязательное для выбранной роли.";
+        : isObjectChangeMove
+          ? "Поле необязательное: выполняется смена объекта."
+          : "Поле необязательное для выбранной роли.";
+    }
+    if (toolsMoveObjectChangeNoteEl) {
+      toolsMoveObjectChangeNoteEl.classList.toggle("is-hidden", !isObjectChangeMove);
     }
   };
 

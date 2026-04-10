@@ -1912,11 +1912,11 @@ export function renderRole(user) {
             class="settings-modal__panel tools-modal__panel pending-moves-modal__panel"
             role="dialog"
             aria-modal="true"
-            aria-label="Ожидают ответа"
+            aria-label="На принятии"
           >
             <div class="settings-modal__header tools-modal__header">
               <div class="settings-modal__title">
-                <h2>Ожидают ответа</h2>
+                <h2>На принятии</h2>
                 <p data-pending-moves-subtitle>Проверяем список...</p>
               </div>
               <button
@@ -1967,11 +1967,11 @@ export function renderRole(user) {
             class="settings-modal__panel tools-modal__panel pending-moves-modal__panel"
             role="dialog"
             aria-modal="true"
-            aria-label="Ждут ответа на мои перемещения"
+            aria-label="Отправлено"
           >
             <div class="settings-modal__header tools-modal__header">
               <div class="settings-modal__title">
-                <h2>Ждут ответа</h2>
+                <h2>Отправлено</h2>
                 <p data-awaiting-reply-subtitle>Загружаем список...</p>
               </div>
               <button

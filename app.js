@@ -3444,6 +3444,11 @@ async function saveJson(path, data, meta = {}) {
   return saveEntries([{ path, data, ...meta }]);
 }
 
+async function saveJsonBatch(entries = []) {
+  if (!Array.isArray(entries) || !entries.length) return;
+  return saveEntries(entries);
+}
+
 function readFileAsBase64(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();

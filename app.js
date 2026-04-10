@@ -14507,7 +14507,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           className: "pending-move-meta",
         },
         {
-          text: `Бух.номер: ${accountingNumber} · ${toolCostText}`,
+          text: `${accountingNumber} · ${toolCostText}`,
           className: "pending-move-meta",
         },
         {
@@ -14853,9 +14853,19 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         sourceObject || targetObject
           ? `${sourceObject || "—"} ➜ ${targetObject || "—"}`
           : "";
+      const toolCost = normalizeCostValue(tool?.["Стоимость"]);
+      const moveCost = normalizeCostValue(move?.["Стоимость"]);
+      const itemCost = Number.isFinite(toolCost)
+        ? toolCost
+        : Number.isFinite(moveCost)
+          ? moveCost
+          : null;
+      const itemCostText = Number.isFinite(itemCost)
+        ? `${formatNotificationCostWithoutCurrency(itemCost)} р.`
+        : "—";
       const metaLines = [
         [manufacturer, model].filter(Boolean).join(" · "),
-        `Бух.номер: ${accountingNumber}`,
+        `${accountingNumber} · ${itemCostText}`,
         moveRoute,
         senderMeta.senderValue
           ? `${senderMeta.senderLabel}: ${senderMeta.senderValue}`

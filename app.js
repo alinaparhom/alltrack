@@ -6238,6 +6238,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const awaitingReplyCancelConfirmSubmitButton = contentEl.querySelector(
     "[data-awaiting-reply-cancel-confirm-submit]"
   );
+  const awaitingReplyCancelConfirmTextEl = awaitingReplyCancelConfirmModalEl?.querySelector(
+    ".pending-moves-bulk-confirm-text"
+  );
   const infoPendingModalEl = contentEl.querySelector("[data-info-pending-modal]");
   const infoPendingBackdropEl = contentEl.querySelector(
     "[data-info-pending-backdrop]"
@@ -15065,6 +15068,33 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (!awaitingReplyCancelConfirmModalEl) return;
     if (!Number.isFinite(moveIndex)) return;
     awaitingReplyState.cancelMoveIndex = moveIndex;
+    const item = awaitingReplyState.items.find((entry) => entry.moveIndex === moveIndex);
+    const move = item?.move ?? {};
+    const tool = item?.tool ?? {};
+    const number =
+      String(move?.["Номер"] ?? "").trim() ||
+      String(tool?.["Номер"] ?? "").trim() ||
+      "—";
+    const accounting =
+      String(move?.["Бух.номер"] ?? "").trim() ||
+      String(tool?.["Бух.номер"] ?? "").trim() ||
+      "—";
+    const name =
+      String(move?.["Наименование"] ?? "").trim() ||
+      String(tool?.["Наименование"] ?? "").trim() ||
+      "—";
+    const manufacturer =
+      String(move?.["Производитель"] ?? "").trim() ||
+      String(tool?.["Производитель"] ?? "").trim() ||
+      "—";
+    const model =
+      String(move?.["Модель"] ?? "").trim() ||
+      String(tool?.["Модель"] ?? "").trim() ||
+      "—";
+    if (awaitingReplyCancelConfirmTextEl) {
+      awaitingReplyCancelConfirmTextEl.textContent =
+        `Подтвердите перемещение "${number}" - "${accounting}" "${name}" "${manufacturer}" "${model}"`;
+    }
     awaitingReplyCancelConfirmModalEl.classList.remove("is-hidden");
   };
 

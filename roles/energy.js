@@ -1576,7 +1576,7 @@ export function renderRole(user) {
                 type="button"
                 data-tools-info-cancel-move
               >
-                Отменить перемещение
+                Отменить
               </button>
             </div>
           </div>
@@ -2026,7 +2026,7 @@ export function renderRole(user) {
             </div>
             <div class="settings-modal__body pending-moves-bulk-confirm-body">
               <p class="pending-moves-bulk-confirm-text">
-                Подтвердите действие. После отмены перемещение получит ответ «Отмена перемещения».
+                Подтвердите перемещение "Номер" - "Бух.номер" "Наименование" "Производитель" "Модель"
               </p>
             </div>
             <div class="settings-modal__footer pending-moves-bulk-confirm-actions pending-moves-decline-actions">
@@ -2042,7 +2042,7 @@ export function renderRole(user) {
                 type="button"
                 data-awaiting-reply-cancel-confirm-submit
               >
-                Отменить перемещение
+                Отменить
               </button>
             </div>
           </div>

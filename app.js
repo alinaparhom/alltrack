@@ -15093,7 +15093,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       "—";
     if (awaitingReplyCancelConfirmTextEl) {
       awaitingReplyCancelConfirmTextEl.textContent =
-        `Подтвердите перемещение "${number}" - "${accounting}" "${name}" "${manufacturer}" "${model}"`;
+        `Вы действительно хотите отменить перемещение "${number}" - "${accounting}" "${name}" "${manufacturer}" "${model}"`;
     }
     awaitingReplyCancelConfirmModalEl.classList.remove("is-hidden");
   };

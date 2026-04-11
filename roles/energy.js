@@ -2026,7 +2026,7 @@ export function renderRole(user) {
             </div>
             <div class="settings-modal__body pending-moves-bulk-confirm-body">
               <p class="pending-moves-bulk-confirm-text">
-                Подтвердите перемещение "Номер" - "Бух.номер" "Наименование" "Производитель" "Модель"
+                Вы действительно хотите отменить перемещение "Номер" - "Бух.номер" "Наименование" "Производитель" "Модель"
               </p>
             </div>
             <div class="settings-modal__footer pending-moves-bulk-confirm-actions pending-moves-decline-actions">

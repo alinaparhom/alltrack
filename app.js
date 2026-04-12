@@ -12779,6 +12779,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     applyToolsInfoPanelTone(null);
   };
 
+  const syncToolsInfoMoveButtonVisibility = () => {
+    if (!toolsInfoMoveButton) return;
+    const shouldShowInInfoCard =
+      toolsState.mode === "user" || toolsState.mode === "move-other";
+    toolsInfoMoveButton.classList.toggle("is-hidden", !shouldShowInInfoCard);
+  };
+
   const openToolsInfoModal = async (tool) => {
     if (!toolsInfoModalEl || !tool) return;
     toolsInfoState.tool = tool;
@@ -12819,6 +12826,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (toolsInfoRepairsEmptyEl) toolsInfoRepairsEmptyEl.classList.add("is-hidden");
     setToolsInfoTab("moves");
     setToolsInfoHistoryOpened(false);
+    syncToolsInfoMoveButtonVisibility();
     toolsInfoModalEl.classList.remove("is-hidden");
     document.body.style.overflow = "hidden";
     await Promise.all([

@@ -9345,6 +9345,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     toolsSortToggleEl.classList.toggle("is-hidden", !shouldShow);
   };
 
+  const setToolsMoveButtonVisibility = () => {
+    if (!toolsMoveButtonEl) return;
+    const shouldShow = toolsState.mode === "user" || toolsState.mode === "move-other";
+    toolsMoveButtonEl.classList.toggle("is-hidden", !shouldShow);
+  };
+
   const syncToolsModalModeClass = () => {
     if (!toolsModalEl) return;
     const isSearchLikeMode =
@@ -9355,6 +9361,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     toolsModalEl.classList.toggle("tools-modal--my-tools", false);
     toolsModalEl.classList.toggle("tools-modal--searching", isSearchLikeMode);
     setToolsSortToggleVisibility();
+    setToolsMoveButtonVisibility();
     updateToolsSortToggleUi();
   };
 

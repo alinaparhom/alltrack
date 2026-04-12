@@ -20671,11 +20671,48 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const renderRepairTable = (items) => {
     const table = document.createElement("div");
     table.className = "tools-table";
+    const normalizeToolStatusLabel = (rawStatus, movingNow = false) => {
+      if (movingNow) return "Перемещается";
+      const normalized = String(rawStatus ?? "").trim().toLocaleLowerCase("ru");
+      if (!normalized) return "не указан";
+      if (normalized === "рабочий") return "Исправный";
+      if (normalized === "в процессе перемещения") return "Перемещается";
+      return String(rawStatus ?? "").trim();
+    };
+    const getStatusAccentColor = (rawStatus) => {
+      const normalized = String(rawStatus ?? "").trim().toLocaleLowerCase("ru");
+      if (normalized === "в ремонте") return "#ea580c";
+      if (normalized === "сломан") return "#eab308";
+      if (normalized === "на списание") return "#dc2626";
+      if (
+        normalized === "в процессе перемещения" ||
+        normalized === "перемещается"
+      ) {
+        return "#2563eb";
+      }
+      return "";
+    };
+    const appendResponsibleValue = (container, valueText) => {
+      const normalized = String(valueText ?? "").trim() || "не указан";
+      const [surname, ...rest] = normalized.split(/\s+/).filter(Boolean);
+      if (surname) {
+        const surnameEl = document.createElement("span");
+        surnameEl.style.fontWeight = "700";
+        surnameEl.textContent = surname;
+        container.appendChild(surnameEl);
+        if (rest.length > 0) {
+          container.append(` ${rest.join(" ")}`);
+        }
+        return;
+      }
+      container.textContent = normalized;
+    };
 
-    items.forEach((tool) => {
+    items.forEach((tool, moveIndex) => {
       const isBlocked = isRepairSelectionBlocked(tool);
       const row = document.createElement("div");
       row.className = "tools-table__row";
+      row.classList.toggle("tools-item--pending-response", tool.__pendingMove);
       row.dataset.repairToolId = tool.__repairId;
       row.setAttribute("role", "button");
       row.classList.toggle("is-disabled", isBlocked);
@@ -20689,7 +20726,17 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const numberCell = document.createElement("div");
       numberCell.className = "tools-table__cell tools-table__cell--number";
       const number = resolveToolNumberValue(tool);
-      numberCell.textContent = number || "—";
+      const photoNumber = resolveToolPhotoNumber(tool);
+      const objectName = String(tool?.["Объект"] ?? "").trim();
+      const numberValueEl = document.createElement("div");
+      numberValueEl.className = "tools-table__number-value";
+      numberValueEl.textContent = number || "—";
+      numberCell.appendChild(numberValueEl);
+      const objectValueEl = document.createElement("div");
+      objectValueEl.className = "tools-table__number-object";
+      objectValueEl.textContent = objectName || "—";
+      objectValueEl.title = objectName || "Объект не указан";
+      numberCell.appendChild(objectValueEl);
 
       const infoCell = document.createElement("div");
       infoCell.className = "tools-table__cell";
@@ -20704,7 +20751,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const model = String(tool?.["Модель"] ?? "").trim();
       const manufacturerModelLine = [manufacturer, model].filter(Boolean).join(" · ");
       const accountingNumber = String(tool?.["Бух.номер"] ?? "").trim();
-      const accountingLine = accountingNumber || "Нет";
+      const accountingLine = accountingNumber ? accountingNumber : "Нет";
       const normalizedCostLine = formatSearchCostValue(tool?.["Стоимость"]);
       const accountingCostLineParts = [accountingLine, normalizedCostLine].filter(Boolean);
       const accountingCostLine = accountingCostLineParts.join(" / ");
@@ -20755,6 +20802,18 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       statusValue.style.color = getStatusAccentColor(statusText);
       statusLine.append(statusValue);
       meta.appendChild(statusLine);
+      const kitItems = getToolKitItems(tool);
+      if (kitItems.length > 0) {
+        const kitLine = document.createElement("div");
+        const kitBadge = document.createElement("button");
+        kitBadge.type = "button";
+        kitBadge.className = "tools-kit-badge tools-kit-badge--inline";
+        kitBadge.dataset.toolsKitOpen = "true";
+        kitBadge.textContent = `Комплектация: ${kitItems.length}`;
+        kitBadge.setAttribute("aria-label", "Открыть комплектацию инструмента");
+        kitLine.appendChild(kitBadge);
+        meta.appendChild(kitLine);
+      }
       infoCell.append(title, meta);
 
       const photoCell = document.createElement("div");
@@ -20769,10 +20828,17 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       applyToolPhotoWithFallback({
         img,
         orgFolder: repairState.orgFolder,
-        toolNumber: number,
+        toolNumber: photoNumber,
         hasPhoto,
       });
       thumb.appendChild(img);
+      if (hasPhoto) {
+        thumb.dataset.pendingPhotoOpen = "true";
+        thumb.dataset.pendingPhotoMoveIndex = String(moveIndex);
+        thumb.setAttribute("role", "button");
+        thumb.tabIndex = 0;
+        thumb.setAttribute("aria-label", "Открыть фото инструмента");
+      }
       photoCell.appendChild(thumb);
 
       row.classList.add("tools-table__row--search");

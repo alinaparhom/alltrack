@@ -9341,7 +9341,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       toolsState.mode === "base" ||
       toolsState.mode === "search" ||
       toolsState.mode === "user" ||
-      toolsState.mode === "move-other";
+      toolsState.mode === "move-other" ||
+      toolsState.mode === "repair";
     toolsSortToggleEl.classList.toggle("is-hidden", !shouldShow);
   };
 
@@ -9357,7 +9358,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       toolsState.mode === "base" ||
       toolsState.mode === "search" ||
       toolsState.mode === "user" ||
-      toolsState.mode === "move-other";
+      toolsState.mode === "move-other" ||
+      toolsState.mode === "repair";
     toolsModalEl.classList.toggle("tools-modal--my-tools", false);
     toolsModalEl.classList.toggle("tools-modal--searching", isSearchLikeMode);
     setToolsSortToggleVisibility();
@@ -9577,7 +9579,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   };
 
   const isToolSelectableForMove = (tool) => {
-    if (toolsState.mode === "base" || toolsState.mode === "search" || toolsState.mode === "write-off-pending")
+    if (
+      toolsState.mode === "base" ||
+      toolsState.mode === "search" ||
+      toolsState.mode === "write-off-pending" ||
+      toolsState.mode === "repair"
+    )
       return false;
     if (!tool) return false;
     if (tool.__pendingMove) return false;
@@ -9588,7 +9595,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   };
 
   const selectAllToolsForMove = () => {
-    if (toolsState.mode === "base" || toolsState.mode === "search" || toolsState.mode === "write-off-pending") return;
+    if (
+      toolsState.mode === "base" ||
+      toolsState.mode === "search" ||
+      toolsState.mode === "write-off-pending" ||
+      toolsState.mode === "repair"
+    ) return;
     const selectableIds = toolsState.filtered
       .filter((tool) => isToolSelectableForMove(tool))
       .map((tool) => String(tool?.__selectionId ?? "").trim())
@@ -9608,7 +9620,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   };
 
   const updateToolsSelectionUi = () => {
-    if (toolsState.mode === "base" || toolsState.mode === "search") {
+    if (toolsState.mode === "base" || toolsState.mode === "search" || toolsState.mode === "repair") {
       toolsState.isSelecting = false;
       toolsState.selectedIds.clear();
       if (toolsMoveButtonEl) {
@@ -10557,7 +10569,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const isSearchMode =
       toolsState.mode === "base" ||
       toolsState.mode === "search" ||
-      toolsState.mode === "move-other";
+      toolsState.mode === "move-other" ||
+      toolsState.mode === "repair";
     const shouldShowResponsibleAndToolStatus = toolsState.mode !== "user";
     const isLargeMyToolsCard = viewMode === "large" && toolsState.mode === "user";
     const kitItems = getToolKitItems(tool);
@@ -10913,7 +10926,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       toolsState.mode === "base" ||
       toolsState.mode === "search" ||
       toolsState.mode === "user" ||
-      toolsState.mode === "move-other";
+      toolsState.mode === "move-other" ||
+      toolsState.mode === "repair";
     const isMyToolsMode = toolsState.mode === "user";
     table.className = "tools-table";
     if (isMyToolsMode) {
@@ -10923,7 +10937,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const isSearchMode =
       toolsState.mode === "base" ||
       toolsState.mode === "search" ||
-      toolsState.mode === "move-other";
+      toolsState.mode === "move-other" ||
+      toolsState.mode === "repair";
     const shouldUseSearchLayout = isSearchLikeMode;
     const normalizeToolStatusLabel = (rawStatus, movingNow = false) => {
       if (movingNow) return "Перемещается";
@@ -18686,7 +18701,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
   if (toolsListEl) {
     toolsListEl.addEventListener("pointerdown", (event) => {
-      if (toolsState.mode === "base" || toolsState.mode === "search")
+      if (
+        toolsState.mode === "base" ||
+        toolsState.mode === "search" ||
+        toolsState.mode === "repair"
+      )
         return;
       if (toolsState.isSelecting) return;
       const item = event.target.closest("[data-tools-item]");
@@ -18766,6 +18785,18 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         const tool = toolsState.toolMap.get(item.dataset.toolId);
         if (tool) {
           openToolsInfoModal(tool);
+        }
+        return;
+      }
+      if (toolsState.mode === "repair") {
+        const tool = toolsState.toolMap.get(item.dataset.toolId);
+        if (tool) {
+          if (isRepairSelectionBlocked(tool)) {
+            setToolsSubtitle("Инструмент уже на списании.");
+          } else {
+            repairState.orgFolder = toolsState.orgFolder;
+            openRepairFormModal(tool);
+          }
         }
         return;
       }
@@ -21560,19 +21591,44 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   };
 
   const openRepairModal = async () => {
-    if (!repairModalEl) return;
-    repairModalEl.classList.remove("is-hidden");
+    if (!toolsModalEl) return;
+    resetToolsTopZoneStability();
+    toolsState.mode = "repair";
+    toolsState.view = "table";
+    toolsState.searchSortDirection = "desc";
+    toolsState.activeReplacementResponsible = "";
+    setToolsStatusStandaloneVisibility(false);
+    setToolsTitle("Ремонт");
+    setToolsResponsibleFilterVisibility(true);
+    syncToolsModalModeClass();
+    updateToolsReplacementPendingLinkVisibility();
+    syncToolsMapViewButtonVisibility();
+    toolsModalEl.classList.remove("is-hidden");
     document.body.style.overflow = "hidden";
-    setRepairSubtitle("Загружаем список...");
-    setRepairMessage("");
-    await loadRepairTools();
+    setToolsSubtitle("Загружаем список...");
+    const numberConfig = await resolveToolsNumberConfig();
+    updateToolsNumberConfig(numberConfig);
+    await loadBaseTools();
+    const userName = normalizePersonName(user?.full_name ?? user?.fullName ?? "");
+    const canManageAllTools = isEnergyLikeRole(user?.role);
+    if (!canManageAllTools && userName) {
+      toolsState.tools = toolsState.tools.filter(
+        (tool) => normalizePersonName(tool?.["Ответственный"] ?? "") === userName
+      );
+      toolsState.toolMap = new Map(
+        toolsState.tools.map((tool) => [tool.__selectionId, tool])
+      );
+      prepareToolsFilters();
+      applyToolsFilters();
+    }
+    syncToolsViewButtons();
     if (
-      repairSearchInput &&
+      toolsSearchInput &&
       (typeof window === "undefined" ||
         !window.matchMedia ||
         !window.matchMedia("(max-width: 520px)").matches)
     ) {
-      repairSearchInput.focus();
+      toolsSearchInput.focus();
     }
   };
 

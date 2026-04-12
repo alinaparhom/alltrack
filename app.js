@@ -20655,7 +20655,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
   const renderRepairTable = (items) => {
     const table = document.createElement("div");
-    table.className = "tools-table tools-table--breakdowns";
+    table.className = "tools-table";
 
     items.forEach((tool) => {
       const isBlocked = isRepairSelectionBlocked(tool);
@@ -20675,7 +20675,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       numberCell.className = "tools-table__cell tools-table__cell--number";
       const number = resolveToolNumberValue(tool);
       numberCell.textContent = number || "—";
-      const objectCell = buildToolObjectCell(tool);
 
       const infoCell = document.createElement("div");
       infoCell.className = "tools-table__cell";
@@ -20688,24 +20687,81 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       meta.className = "tools-table__meta tools-table__meta--stack";
       const manufacturer = String(tool?.["Производитель"] ?? "").trim();
       const model = String(tool?.["Модель"] ?? "").trim();
+      const manufacturerModelLine = [manufacturer, model].filter(Boolean).join(" · ");
       const accountingNumber = String(tool?.["Бух.номер"] ?? "").trim();
+      const accountingLine = accountingNumber || "Нет";
+      const normalizedCostLine = formatSearchCostValue(tool?.["Стоимость"]);
+      const accountingCostLineParts = [accountingLine, normalizedCostLine].filter(Boolean);
+      const accountingCostLine = accountingCostLineParts.join(" / ");
+      const metaLines = [manufacturerModelLine, accountingCostLine].filter(Boolean);
+      if (metaLines.length === 0) {
+        meta.textContent = "—";
+      } else {
+        metaLines.forEach((line) => {
+          const lineEl = document.createElement("div");
+          if (line === accountingCostLine) {
+            const [accountingPart, costPart] = accountingCostLineParts;
+            if (accountingPart === "Нет") {
+              const missingAccountingEl = document.createElement("span");
+              missingAccountingEl.textContent = "Нет";
+              missingAccountingEl.style.color = "#dc2626";
+              missingAccountingEl.style.fontWeight = "700";
+              lineEl.appendChild(missingAccountingEl);
+              if (costPart) {
+                lineEl.append(" / ", costPart);
+              }
+            } else {
+              lineEl.textContent = line;
+            }
+          } else {
+            lineEl.textContent = line;
+          }
+          meta.appendChild(lineEl);
+        });
+      }
+
+      const responsibleLine = document.createElement("div");
+      const responsibleValue = document.createElement("span");
+      appendResponsibleValue(
+        responsibleValue,
+        String(tool?.["Ответственный"] ?? "").trim() || "не указан"
+      );
+      responsibleLine.append(responsibleValue);
+      meta.appendChild(responsibleLine);
+
+      const isMovingNow = Boolean(tool?.__pendingMove);
       const status = String(tool?.["Статус"] ?? "").trim();
-      const costLine = document.createElement("div");
-      costLine.textContent = formatToolCostLabel(tool);
-      const lineTop = document.createElement("div");
-      lineTop.textContent = [
-        `Производитель: ${manufacturer || "—"}`,
-        `Модель: ${model || "—"}`,
-      ].join(" · ");
-      const lineBottom = document.createElement("div");
-      lineBottom.textContent = `Бух.номер: ${accountingNumber || "—"}`;
+      const statusText = normalizeToolStatusLabel(status, isMovingNow);
       const statusLine = document.createElement("div");
-      statusLine.className = "tools-table__status-line";
-      statusLine.textContent = `Статус: ${status || "—"}`;
-      meta.append(lineTop, lineBottom, costLine, statusLine);
+      const statusValue = document.createElement("span");
+      statusValue.textContent = statusText;
+      statusValue.style.fontWeight = "700";
+      statusValue.style.textDecoration = "none";
+      statusValue.style.color = getStatusAccentColor(statusText);
+      statusLine.append(statusValue);
+      meta.appendChild(statusLine);
       infoCell.append(title, meta);
 
-      row.append(numberCell, objectCell, infoCell);
+      const photoCell = document.createElement("div");
+      photoCell.className = "tools-table__cell tools-table__cell--thumb";
+      const thumb = document.createElement("div");
+      thumb.className = "tools-table__thumb";
+      const img = document.createElement("img");
+      img.className = "tools-table__thumb-image";
+      img.alt = name || "Инструмент";
+      const photoCount = Number.parseInt(tool?.["Количество фото"] ?? 0, 10);
+      const hasPhoto = Number.isFinite(photoCount) && photoCount > 0;
+      applyToolPhotoWithFallback({
+        img,
+        orgFolder: repairState.orgFolder,
+        toolNumber: number,
+        hasPhoto,
+      });
+      thumb.appendChild(img);
+      photoCell.appendChild(thumb);
+
+      row.classList.add("tools-table__row--search");
+      row.append(numberCell, infoCell, photoCell);
       table.appendChild(row);
     });
     return table;

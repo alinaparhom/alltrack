@@ -9756,7 +9756,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const resolveToolStatusTone = (tool) => {
     const status = String(tool?.["Статус"] ?? "").trim().toLowerCase();
     if (status === "сломан") return "broken";
-    if (status === "в ремонте") return "repair";
+    if (status === "в ремонте" || status === "ремонт") return "repair";
     if (status === "на списание") return "writeoff";
     return "";
   };
@@ -20707,12 +20707,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const normalized = String(rawStatus ?? "").trim().toLocaleLowerCase("ru");
       if (!normalized) return "не указан";
       if (normalized === "рабочий") return "Исправный";
+      if (normalized === "ремонт") return "В ремонте";
       if (normalized === "в процессе перемещения") return "Перемещается";
       return String(rawStatus ?? "").trim();
     };
     const getStatusAccentColor = (rawStatus) => {
       const normalized = String(rawStatus ?? "").trim().toLocaleLowerCase("ru");
-      if (normalized === "в ремонте") return "#ea580c";
+      if (normalized === "в ремонте" || normalized === "ремонт") return "#ea580c";
       if (normalized === "сломан") return "#eab308";
       if (normalized === "на списание") return "#dc2626";
       if (
@@ -21213,8 +21214,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (!repairFormModalEl || !tool) return;
     resetRepairForm();
     repairFormState.selectedTool = tool;
-    const statusText = String(tool?.["Статус"] ?? "").trim().toLowerCase();
-    const mode = statusText === "в ремонте" ? "repaired" : "send";
+    const mode = resolveToolStatusTone(tool) === "repair" ? "repaired" : "send";
     setRepairFormMode(mode);
     fillRepairToolInfo(tool);
     if (mode === "send") {

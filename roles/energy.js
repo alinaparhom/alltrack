@@ -2657,7 +2657,7 @@ export function renderRole(user) {
                 <p data-repair-form-subtitle>Проверьте данные инструмента</p>
               </div>
               <button
-                class="button-icon repair-form__close"
+                class="button-icon tools-modal__close"
                 type="button"
                 data-repair-form-close
                 aria-label="Закрыть окно отправки в ремонт"

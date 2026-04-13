@@ -21227,8 +21227,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     setTimeout(() => {
       if (mode === "repaired") {
         repairFinalCostInput?.focus();
-      } else {
-        repairOrganizationInput?.focus();
       }
     }, 0);
   };

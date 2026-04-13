@@ -3023,38 +3023,34 @@
       }
 
       .repair-form__body {
-        overflow: visible;
-        padding-bottom: 0;
-        scroll-padding-bottom: 0;
+        overflow: auto;
+        padding-bottom: 12px;
+        scroll-padding-bottom: 88px;
+        flex: 1 1 auto;
       }
 
       .repair-form__body.settings-modal__body {
-        overflow: visible;
+        overflow: auto;
         padding-right: 0;
       }
 
       .repair-form {
-        display: block;
+        display: flex;
+        flex-direction: column;
+        min-height: 100%;
       }
 
       .repair-form.settings-modal__form {
-        display: block;
-        padding: 6px 14px 16px;
+        display: flex;
+        flex-direction: column;
+        min-height: 100%;
+        padding: 6px 14px 0;
       }
 
       .repair-form__header {
         padding-right: 18px;
         grid-template-columns: minmax(0, 1fr) auto;
         align-items: center;
-      }
-
-      .repair-form__close {
-        position: static;
-        margin-top: 0;
-        width: 40px;
-        height: 40px;
-        border-radius: 14px;
-        align-self: center;
       }
 
       .repair-form textarea.form-input {
@@ -3064,13 +3060,18 @@
       }
 
       .repair-form__footer {
-        position: static;
-        margin-top: 12px;
+        position: sticky;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        margin-top: auto;
         padding: 12px 0 calc(12px + env(safe-area-inset-bottom));
         border-top: 1px solid rgba(226, 232, 240, 0.7);
-        background: transparent;
+        background: rgba(255, 255, 255, 0.94);
+        backdrop-filter: blur(12px);
         display: grid;
         gap: 10px;
+        z-index: 2;
       }
 
       .repair-form__actions {
@@ -3740,8 +3741,8 @@
       }
 
       .repair-form-modal.is-input-focus .repair-form__footer {
-        position: static;
-        margin-top: 8px;
+        position: sticky;
+        margin-top: auto;
       }
 
       .breakdown-form-modal.is-input-focus .breakdown-form-modal__panel {

@@ -981,6 +981,21 @@ export function renderRole(user) {
                         </span>
                       </button>
                       <button
+                        class="tools-filters-toggle is-hidden"
+                        type="button"
+                        data-tools-broken-only-toggle
+                        aria-label="Показать только сломанные инструменты"
+                        title="Только сломанные"
+                        aria-pressed="false"
+                      >
+                        <span class="tools-filters-toggle__icon" aria-hidden="true">
+                          <svg viewBox="0 0 24 24" focusable="false">
+                            <path d="M20.74 4.67a.75.75 0 0 0-1.06 0l-2.35 2.35-1.68-.32-.32-1.68 2.35-2.35a.75.75 0 0 0-.77-1.24 6.58 6.58 0 0 0-3.83 8.86L3.26 20.12a2 2 0 0 0 2.83 2.83l9.83-9.83a6.58 6.58 0 0 0 8.86-3.83.75.75 0 0 0-1.24-.77l-2.35 2.35-1.68-.32-.32-1.68 2.35-2.35a.75.75 0 0 0 0-1.06Z" />
+                            <path d="m3.5 4.5 16 16" />
+                          </svg>
+                        </span>
+                      </button>
+                      <button
                         class="tools-filters-toggle"
                         type="button"
                         data-tools-filters-toggle

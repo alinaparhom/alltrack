@@ -5432,6 +5432,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const toolsGroupingMenuEl = contentEl.querySelector("[data-tools-grouping-menu]");
   const toolsGroupingOptionEls = contentEl.querySelectorAll("[data-tools-grouping-option]");
   const toolsSortToggleEl = contentEl.querySelector("[data-tools-sort-toggle]");
+  const toolsBrokenOnlyToggleEl = contentEl.querySelector(
+    "[data-tools-broken-only-toggle]"
+  );
   const toolsSortToggleIconEl = toolsSortToggleEl?.querySelector(
     ".tools-sort-toggle__icon"
   );
@@ -6996,6 +6999,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     statusStandalone: "",
     searchSortDirection: "desc",
     grouping: "none",
+    repairBrokenOnly: false,
   };
 
   let toolsTopZoneLock = null;
@@ -9346,6 +9350,20 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     toolsSortToggleEl.classList.toggle("is-hidden", !shouldShow);
   };
 
+  const updateToolsBrokenOnlyToggleUi = () => {
+    if (!toolsBrokenOnlyToggleEl) return;
+    const isRepairMode = toolsState.mode === "repair";
+    const isPressed = isRepairMode && Boolean(toolsState.repairBrokenOnly);
+    toolsBrokenOnlyToggleEl.classList.toggle("is-hidden", !isRepairMode);
+    toolsBrokenOnlyToggleEl.classList.toggle("is-active", isPressed);
+    toolsBrokenOnlyToggleEl.setAttribute("aria-pressed", isPressed ? "true" : "false");
+    const label = isPressed
+      ? "Показаны только сломанные инструменты"
+      : "Показать только сломанные инструменты";
+    toolsBrokenOnlyToggleEl.setAttribute("aria-label", label);
+    toolsBrokenOnlyToggleEl.setAttribute("title", isPressed ? "Показаны только сломанные" : "Только сломанные");
+  };
+
   const setToolsMoveButtonVisibility = () => {
     if (!toolsMoveButtonEl) return;
     const shouldShow = toolsState.mode === "user" || toolsState.mode === "move-other";
@@ -9363,6 +9381,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     toolsModalEl.classList.toggle("tools-modal--my-tools", false);
     toolsModalEl.classList.toggle("tools-modal--searching", isSearchLikeMode);
     setToolsSortToggleVisibility();
+    updateToolsBrokenOnlyToggleUi();
     setToolsMoveButtonVisibility();
     updateToolsSortToggleUi();
   };
@@ -11284,6 +11303,14 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const search = toolsState.search.trim();
     const tokens = search ? search.split(/\s+/).filter(Boolean) : [];
     const filtered = toolsState.tools.filter((tool) => {
+      if (toolsState.mode === "repair" && toolsState.repairBrokenOnly) {
+        const normalizedStatus = String(tool?.["Статус"] ?? "")
+          .trim()
+          .toLocaleLowerCase("ru");
+        if (normalizedStatus !== "сломан") {
+          return false;
+        }
+      }
       if (!doesToolMatchSelectedFilters(tool, { includeStandaloneStatus: true })) {
         return false;
       }
@@ -11456,7 +11483,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       },
       0
     );
-    return fromDropdowns + (isWriteOffPendingMode() && toolsState.statusStandalone ? 1 : 0);
+    return (
+      fromDropdowns +
+      (isWriteOffPendingMode() && toolsState.statusStandalone ? 1 : 0) +
+      (toolsState.mode === "repair" && toolsState.repairBrokenOnly ? 1 : 0)
+    );
   };
 
   const updateToolsFiltersUi = () => {
@@ -11492,6 +11523,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (toolsStatusStandaloneEl) {
       toolsStatusStandaloneEl.value = "";
     }
+    toolsState.repairBrokenOnly = false;
+    updateToolsBrokenOnlyToggleUi();
     applyToolsFilters();
   };
 
@@ -17983,6 +18016,15 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     });
   }
 
+  if (toolsBrokenOnlyToggleEl) {
+    toolsBrokenOnlyToggleEl.addEventListener("click", () => {
+      if (toolsState.mode !== "repair") return;
+      toolsState.repairBrokenOnly = !toolsState.repairBrokenOnly;
+      updateToolsBrokenOnlyToggleUi();
+      applyToolsFilters();
+    });
+  }
+
   if (toolsFiltersToggleEl) {
     toolsFiltersToggleEl.addEventListener("click", () => {
       const isOpen = toolsFiltersPanelEl?.classList.contains("is-open");
@@ -21645,6 +21687,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (!toolsModalEl) return;
     resetToolsTopZoneStability();
     toolsState.mode = "repair";
+    toolsState.repairBrokenOnly = false;
     toolsState.view = "table";
     toolsState.searchSortDirection = "desc";
     toolsState.activeReplacementResponsible = "";

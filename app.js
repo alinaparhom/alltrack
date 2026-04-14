@@ -21184,29 +21184,65 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
   };
 
-  const fillRepairToolInfo = (tool) => {
+  const loadRepairTotalCost = async (tool) => {
+    const orgFolder = repairState.orgFolder ?? context.orgFolderName ?? "";
+    if (!orgFolder || !tool) return null;
+    const repairsPath = `./${orgFolder}/Ремонты.json`;
+    const rawRepairs = await loadJson(repairsPath).catch(() => []);
+    const repairs = Array.isArray(rawRepairs)
+      ? rawRepairs
+      : Array.isArray(rawRepairs?.repairs)
+        ? rawRepairs.repairs
+        : [];
+    if (!repairs.length) return null;
+    const selectedNumber = normalizeToolNumberValue(tool?.["Номер"] ?? "");
+    const selectedAccounting = String(tool?.["Бух.номер"] ?? "").trim();
+    let total = 0;
+    let hasValue = false;
+    repairs.forEach((entry) => {
+      const entryNumber = normalizeToolNumberValue(entry?.["Номер"] ?? "");
+      const entryAccounting = String(entry?.["Бух.номер"] ?? "").trim();
+      const isMatched =
+        (selectedNumber && entryNumber === selectedNumber) ||
+        (selectedAccounting && entryAccounting === selectedAccounting);
+      if (!isMatched) return;
+      const repairCost = normalizeCostValue(entry?.["Стоимость ремонта"]);
+      if (repairCost === null) return;
+      total += repairCost;
+      hasValue = true;
+    });
+    return hasValue ? total : null;
+  };
+
+  const fillRepairToolInfo = async (tool) => {
     if (!tool) return;
     const number = resolveToolNumberValue(tool);
     const name = String(tool?.["Наименование"] ?? "").trim();
-    if (repairFormSubtitleEl) {
-      repairFormSubtitleEl.textContent = `Инструмент №${number || "—"} · ${
-        name || "Без названия"
-      }`;
-    }
+    const manufacturer = String(tool?.["Производитель"] ?? "").trim();
+    const model = String(tool?.["Модель"] ?? "").trim();
+    const accountingNumber = String(tool?.["Бух.номер"] ?? "").trim();
+    const responsible = String(tool?.["Ответственный"] ?? "").trim();
+    const status = String(tool?.["Статус"] ?? "").trim();
+    const toolCost = normalizeCostValue(tool?.["Стоимость"]);
+    const totalRepairCost = await loadRepairTotalCost(tool);
     if (repairToolTitleEl) {
-      repairToolTitleEl.textContent = name || "Инструмент";
+      repairToolTitleEl.textContent = "Информация об инструменте";
     }
     if (repairToolMetaEl) {
-      const manufacturer = String(tool?.["Производитель"] ?? "").trim();
-      const model = String(tool?.["Модель"] ?? "").trim();
-      const accountingNumber = String(tool?.["Бух.номер"] ?? "").trim();
-      const status = String(tool?.["Статус"] ?? "").trim();
-      repairToolMetaEl.textContent = [
-        `Бух.номер: ${accountingNumber || "—"}`,
-        `Производитель: ${manufacturer || "—"}`,
-        `Модель: ${model || "—"}`,
-        `Статус: ${status || "—"}`,
-      ].join(" · ");
+      const lines = [
+        `${number || "—"} - ${name || "—"} ${manufacturer || "—"} ${model || "—"}`,
+        `${accountingNumber || "—"} · ${
+          toolCost === null ? "—" : `${formatNotificationCostWithoutCurrency(toolCost)} р.`
+        }`,
+        responsible || "—",
+        status || "—",
+        totalRepairCost === null
+          ? "—"
+          : `${formatNotificationCostWithoutCurrency(totalRepairCost)} р.`,
+      ];
+      repairToolMetaEl.innerHTML = lines
+        .map((line) => escapeHtml(line))
+        .join("<br>");
     }
   };
 
@@ -21216,7 +21252,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     repairFormState.selectedTool = tool;
     const mode = resolveToolStatusTone(tool) === "repair" ? "repaired" : "send";
     setRepairFormMode(mode);
-    fillRepairToolInfo(tool);
+    await fillRepairToolInfo(tool);
     if (mode === "send") {
       await loadRepairOrganizations();
     }

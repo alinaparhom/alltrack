@@ -21186,7 +21186,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
   const loadRepairTotalCost = async (tool) => {
     const orgFolder = repairState.orgFolder ?? context.orgFolderName ?? "";
-    if (!orgFolder || !tool) return null;
+    if (!orgFolder || !tool) {
+      return {
+        hasRepairs: false,
+        totalCost: null,
+      };
+    }
     const repairsPath = `./${orgFolder}/Ремонты.json`;
     const rawRepairs = await loadJson(repairsPath).catch(() => []);
     const repairs = Array.isArray(rawRepairs)
@@ -21194,11 +21199,17 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       : Array.isArray(rawRepairs?.repairs)
         ? rawRepairs.repairs
         : [];
-    if (!repairs.length) return null;
+    if (!repairs.length) {
+      return {
+        hasRepairs: false,
+        totalCost: null,
+      };
+    }
     const selectedNumber = normalizeToolNumberValue(tool?.["Номер"] ?? "");
     const selectedAccounting = String(tool?.["Бух.номер"] ?? "").trim();
     let total = 0;
     let hasValue = false;
+    let hasRepairs = false;
     repairs.forEach((entry) => {
       const entryNumber = normalizeToolNumberValue(entry?.["Номер"] ?? "");
       const entryAccounting = String(entry?.["Бух.номер"] ?? "").trim();
@@ -21206,12 +21217,16 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         (selectedNumber && entryNumber === selectedNumber) ||
         (selectedAccounting && entryAccounting === selectedAccounting);
       if (!isMatched) return;
+      hasRepairs = true;
       const repairCost = normalizeCostValue(entry?.["Стоимость ремонта"]);
       if (repairCost === null) return;
       total += repairCost;
       hasValue = true;
     });
-    return hasValue ? total : null;
+    return {
+      hasRepairs,
+      totalCost: hasValue ? total : null,
+    };
   };
 
   const fillRepairToolInfo = async (tool) => {
@@ -21224,7 +21239,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const responsible = String(tool?.["Ответственный"] ?? "").trim();
     const status = String(tool?.["Статус"] ?? "").trim();
     const toolCost = normalizeCostValue(tool?.["Стоимость"]);
-    const totalRepairCost = await loadRepairTotalCost(tool);
+    const { hasRepairs, totalCost: totalRepairCost } = await loadRepairTotalCost(tool);
     if (repairToolTitleEl) {
       repairToolTitleEl.textContent = "Информация об инструменте";
     }
@@ -21236,9 +21251,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         }`,
         responsible || "—",
         status || "—",
-        totalRepairCost === null
-          ? "—"
-          : `${formatNotificationCostWithoutCurrency(totalRepairCost)} р.`,
+        !hasRepairs
+          ? "Не ремонтировался"
+          : totalRepairCost === null
+            ? "—"
+            : `${formatNotificationCostWithoutCurrency(totalRepairCost)} р.`,
       ];
       repairToolMetaEl.innerHTML = lines
         .map((line) => escapeHtml(line))

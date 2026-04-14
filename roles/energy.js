@@ -943,6 +943,20 @@ export function renderRole(user) {
                       <span class="tools-select-all-check" aria-hidden="true"></span>
                     </button>
                     <div class="tools-filter-actions" role="group" aria-label="Сортировка и фильтры">
+                      <button
+                        class="tools-filters-toggle is-hidden"
+                        type="button"
+                        data-tools-broken-only-toggle
+                        aria-label="Показать только сломанные инструменты"
+                        title="Только сломанные"
+                        aria-pressed="false"
+                      >
+                        <span class="tools-filters-toggle__icon" aria-hidden="true">
+                          <svg viewBox="0 0 24 24" focusable="false">
+                            <path d="M11.3 3.95a.8.8 0 0 1 1.4 0l8 14a.8.8 0 0 1-.7 1.2H4a.8.8 0 0 1-.7-1.2l8-14Zm.7 4.6a.75.75 0 0 0-.75.75v4.7a.75.75 0 1 0 1.5 0V9.3a.75.75 0 0 0-.75-.75Zm0 8.95a.95.95 0 1 0 0-1.9.95.95 0 0 0 0 1.9Z" />
+                          </svg>
+                        </span>
+                      </button>
                       <div class="tools-grouping-dropdown" data-tools-grouping-dropdown>
                         <button
                           class="tools-filters-toggle tools-grouping-toggle"
@@ -977,21 +991,6 @@ export function renderRole(user) {
                         <span class="tools-sort-toggle__icon is-desc" aria-hidden="true">
                           <svg class="tools-sort-toggle__chevron" viewBox="0 0 24 24" focusable="false">
                             <path d="M5 8.5L12 15.5L19 8.5" />
-                          </svg>
-                        </span>
-                      </button>
-                      <button
-                        class="tools-filters-toggle is-hidden"
-                        type="button"
-                        data-tools-broken-only-toggle
-                        aria-label="Показать только сломанные инструменты"
-                        title="Только сломанные"
-                        aria-pressed="false"
-                      >
-                        <span class="tools-filters-toggle__icon" aria-hidden="true">
-                          <svg viewBox="0 0 24 24" focusable="false">
-                            <path d="M20.74 4.67a.75.75 0 0 0-1.06 0l-2.35 2.35-1.68-.32-.32-1.68 2.35-2.35a.75.75 0 0 0-.77-1.24 6.58 6.58 0 0 0-3.83 8.86L3.26 20.12a2 2 0 0 0 2.83 2.83l9.83-9.83a6.58 6.58 0 0 0 8.86-3.83.75.75 0 0 0-1.24-.77l-2.35 2.35-1.68-.32-.32-1.68 2.35-2.35a.75.75 0 0 0 0-1.06Z" />
-                            <path d="m3.5 4.5 16 16" />
                           </svg>
                         </span>
                       </button>

@@ -2591,19 +2591,6 @@ export function renderRole(user) {
                       </button>
                     </div>
                     <div class="tools-filter-actions" role="group" aria-label="Сортировка и фильтры">
-                      <button
-                        class="tools-filters-toggle tools-sort-toggle"
-                        type="button"
-                        data-breakdowns-sort-toggle
-                        aria-label="Сортировка по номеру инструмента: по убыванию"
-                        title="Сортировка по номеру инструмента: по убыванию"
-                      >
-                        <span class="tools-sort-toggle__icon is-desc" aria-hidden="true">
-                          <svg class="tools-sort-toggle__chevron" viewBox="0 0 24 24" focusable="false">
-                            <path d="M5 8.5L12 15.5L19 8.5" />
-                          </svg>
-                        </span>
-                      </button>
                       <div class="tools-grouping-dropdown" data-breakdowns-grouping-dropdown>
                         <button
                           class="tools-filters-toggle tools-grouping-toggle"
@@ -2628,6 +2615,19 @@ export function renderRole(user) {
                           <button type="button" class="tools-grouping-option" data-breakdowns-grouping-option="group">По группам</button>
                         </div>
                       </div>
+                      <button
+                        class="tools-filters-toggle tools-sort-toggle"
+                        type="button"
+                        data-breakdowns-sort-toggle
+                        aria-label="Сортировка по номеру инструмента: по убыванию"
+                        title="Сортировка по номеру инструмента: по убыванию"
+                      >
+                        <span class="tools-sort-toggle__icon is-desc" aria-hidden="true">
+                          <svg class="tools-sort-toggle__chevron" viewBox="0 0 24 24" focusable="false">
+                            <path d="M5 8.5L12 15.5L19 8.5" />
+                          </svg>
+                        </span>
+                      </button>
                       <button
                         class="tools-filters-toggle"
                         type="button"

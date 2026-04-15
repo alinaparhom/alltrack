@@ -2604,6 +2604,30 @@ export function renderRole(user) {
                           </svg>
                         </span>
                       </button>
+                      <div class="tools-grouping-dropdown" data-breakdowns-grouping-dropdown>
+                        <button
+                          class="tools-filters-toggle tools-grouping-toggle"
+                          type="button"
+                          data-breakdowns-grouping-toggle
+                          aria-expanded="false"
+                          aria-label="Группировка инструментов"
+                          title="Группировка инструментов"
+                        >
+                          <span class="tools-filters-toggle__icon tools-grouping-toggle__icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" focusable="false">
+                              <path d="M5 6.25A1.25 1.25 0 0 1 6.25 5h3.5A1.25 1.25 0 0 1 11 6.25v1.5A1.25 1.25 0 0 1 9.75 9h-3.5A1.25 1.25 0 0 1 5 7.75v-1.5Zm8 0A1.25 1.25 0 0 1 14.25 5h3.5A1.25 1.25 0 0 1 19 6.25v1.5A1.25 1.25 0 0 1 17.75 9h-3.5A1.25 1.25 0 0 1 13 7.75v-1.5Zm-4 5A1.25 1.25 0 0 1 10.25 10h3.5A1.25 1.25 0 0 1 15 11.25v1.5A1.25 1.25 0 0 1 13.75 14h-3.5A1.25 1.25 0 0 1 9 12.75v-1.5Zm-4 5A1.25 1.25 0 0 1 6.25 15h3.5A1.25 1.25 0 0 1 11 16.25v1.5A1.25 1.25 0 0 1 9.75 19h-3.5A1.25 1.25 0 0 1 5 17.75v-1.5Zm8 0A1.25 1.25 0 0 1 14.25 15h3.5A1.25 1.25 0 0 1 19 16.25v1.5A1.25 1.25 0 0 1 17.75 19h-3.5A1.25 1.25 0 0 1 13 17.75v-1.5Z" />
+                            </svg>
+                          </span>
+                        </button>
+                        <div class="tools-grouping-dropdown__menu is-hidden" data-breakdowns-grouping-menu>
+                          <button type="button" class="tools-grouping-option is-active" data-breakdowns-grouping-option="none">Без группировки</button>
+                          <button type="button" class="tools-grouping-option" data-breakdowns-grouping-option="responsible">По ответственному</button>
+                          <button type="button" class="tools-grouping-option" data-breakdowns-grouping-option="object">По объекту</button>
+                          <button type="button" class="tools-grouping-option" data-breakdowns-grouping-option="status">По статусу</button>
+                          <button type="button" class="tools-grouping-option" data-breakdowns-grouping-option="name">По наименованию</button>
+                          <button type="button" class="tools-grouping-option" data-breakdowns-grouping-option="group">По группам</button>
+                        </div>
+                      </div>
                       <button
                         class="tools-filters-toggle"
                         type="button"
@@ -2622,7 +2646,7 @@ export function renderRole(user) {
                   </div>
                 </div>
                 <div class="tools-filters" id="breakdowns-filters-panel" data-breakdowns-filters-panel>
-                  <label class="tools-filter">
+                  <label class="tools-filter breakdowns-status-filter">
                     <span>По статусу</span>
                     <select
                       class="form-input"

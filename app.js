@@ -5709,6 +5709,18 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const breakdownsFiltersToggle = contentEl.querySelector(
     "[data-breakdowns-filters-toggle]"
   );
+  const breakdownsGroupingDropdown = contentEl.querySelector(
+    "[data-breakdowns-grouping-dropdown]"
+  );
+  const breakdownsGroupingToggle = contentEl.querySelector(
+    "[data-breakdowns-grouping-toggle]"
+  );
+  const breakdownsGroupingMenu = contentEl.querySelector(
+    "[data-breakdowns-grouping-menu]"
+  );
+  const breakdownsGroupingOptions = Array.from(
+    contentEl.querySelectorAll("[data-breakdowns-grouping-option]")
+  );
   const breakdownsFiltersPanel = contentEl.querySelector(
     "[data-breakdowns-filters-panel]"
   );
@@ -7242,6 +7254,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     statusFilter: "",
     view: "table",
     sortDirection: "desc",
+    grouping: "none",
     filtersOpened: false,
     isSaving: false,
     isStatusSaving: false,
@@ -18189,12 +18202,14 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       if (!(target instanceof Element)) return;
       if (
         target.closest(".tools-filter-dropdown") ||
-        target.closest("[data-tools-grouping-dropdown]")
+        target.closest("[data-tools-grouping-dropdown]") ||
+        target.closest("[data-breakdowns-grouping-dropdown]")
       ) {
         return;
       }
       closeAllToolsFilterDropdowns();
       setToolsGroupingMenuOpen(false);
+      setBreakdownsGroupingMenuOpen(false);
     });
   }
 
@@ -20874,6 +20889,71 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
   };
 
+  const setBreakdownsGroupingMenuOpen = (opened) => {
+    const isOpen = Boolean(opened);
+    breakdownsGroupingMenu?.classList.toggle("is-hidden", !isOpen);
+    breakdownsGroupingDropdown?.classList.toggle("is-open", isOpen);
+    breakdownsGroupingToggle?.setAttribute("aria-expanded", isOpen ? "true" : "false");
+  };
+
+  const syncBreakdownsGroupingUi = () => {
+    breakdownsGroupingOptions.forEach((option) => {
+      const isActive = option.dataset.breakdownsGroupingOption === breakdownsState.grouping;
+      option.classList.toggle("is-active", isActive);
+    });
+    breakdownsGroupingToggle?.classList.toggle(
+      "is-active",
+      breakdownsState.grouping !== "none"
+    );
+  };
+
+  const getBreakdownsGroupingValue = (tool) => {
+    const grouping = breakdownsState.grouping;
+    if (!tool || grouping === "none") return "";
+    const normalizeGroupingStatusLabel = (rawStatus, movingNow = false) => {
+      if (movingNow) return "Перемещается";
+      const normalized = String(rawStatus ?? "").trim().toLocaleLowerCase("ru");
+      if (!normalized) return "Не указан";
+      if (normalized === "рабочий") return "Исправный";
+      if (normalized === "ремонт") return "В ремонте";
+      if (normalized === "в процессе перемещения") return "Перемещается";
+      return String(rawStatus ?? "").trim();
+    };
+    if (grouping === "responsible") {
+      return formatFullName(String(tool?.["Ответственный"] ?? "").trim()) || "Не назначен";
+    }
+    if (grouping === "object") {
+      return String(tool?.["Объект"] ?? "").trim() || "Без объекта";
+    }
+    if (grouping === "status") {
+      return normalizeGroupingStatusLabel(tool?.["Статус"], Boolean(tool?.__pendingMove));
+    }
+    if (grouping === "name") {
+      return String(tool?.["Наименование"] ?? "").trim() || "Без названия";
+    }
+    if (grouping === "group") {
+      return String(tool?.["Граппа инструментов"] ?? "").trim() || "Без группы";
+    }
+    return "";
+  };
+
+  const buildGroupedBreakdowns = (items) => {
+    if (breakdownsState.grouping === "none") {
+      return [{ label: "", items }];
+    }
+    const grouped = new Map();
+    items.forEach((tool) => {
+      const label = getBreakdownsGroupingValue(tool);
+      if (!grouped.has(label)) {
+        grouped.set(label, []);
+      }
+      grouped.get(label).push(tool);
+    });
+    return Array.from(grouped.entries())
+      .sort((a, b) => a[0].localeCompare(b[0], "ru", { sensitivity: "base" }))
+      .map(([label, groupedItems]) => ({ label, items: groupedItems }));
+  };
+
   const renderBreakdownsCards = (items) => {
     const fragment = document.createDocumentFragment();
     items.forEach((tool, index) => {
@@ -20901,10 +20981,22 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     breakdownsListEl.innerHTML = "";
     breakdownsListEl.classList.toggle("is-table", breakdownsState.view === "table");
     breakdownsListEl.classList.toggle("is-large", breakdownsState.view === "large");
+
+    const groupedItems = buildGroupedBreakdowns(breakdownsState.filtered);
     if (breakdownsState.view === "large") {
-      breakdownsListEl.appendChild(renderBreakdownsCards(breakdownsState.filtered));
+      groupedItems.forEach((group) => {
+        if (breakdownsState.grouping !== "none") {
+          breakdownsListEl.appendChild(buildToolsGroupTitle(group));
+        }
+        breakdownsListEl.appendChild(renderBreakdownsCards(group.items));
+      });
     } else {
-      breakdownsListEl.appendChild(renderBreakdownsTable(breakdownsState.filtered));
+      groupedItems.forEach((group) => {
+        if (breakdownsState.grouping !== "none") {
+          breakdownsListEl.appendChild(buildToolsGroupTitle(group));
+        }
+        breakdownsListEl.appendChild(renderBreakdownsTable(group.items));
+      });
     }
     if (breakdownsEmptyEl) {
       breakdownsEmptyEl.classList.toggle(
@@ -22118,6 +22210,27 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       setBreakdownsFiltersOpened(!breakdownsState.filtersOpened);
     });
   }
+  if (breakdownsGroupingToggle) {
+    breakdownsGroupingToggle.addEventListener("click", () => {
+      const isOpen = !breakdownsGroupingMenu?.classList.contains("is-hidden");
+      setBreakdownsGroupingMenuOpen(!isOpen);
+    });
+  }
+
+  breakdownsGroupingOptions.forEach((option) => {
+    option.addEventListener("click", () => {
+      const grouping = String(option.dataset.breakdownsGroupingOption ?? "").trim();
+      if (!grouping || grouping === breakdownsState.grouping) {
+        setBreakdownsGroupingMenuOpen(false);
+        return;
+      }
+      breakdownsState.grouping = grouping;
+      syncBreakdownsGroupingUi();
+      setBreakdownsGroupingMenuOpen(false);
+      renderBreakdownsList();
+    });
+  });
+  syncBreakdownsGroupingUi();
   if (breakdownsListEl) {
     breakdownsListEl.addEventListener("click", (event) => {
       const row = event.target.closest("[data-breakdowns-select]");

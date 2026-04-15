@@ -2976,6 +2976,9 @@
         height: 40px;
         border-radius: 14px;
         align-self: center;
+        border-color: transparent;
+        box-shadow: none;
+        color: var(--text);
       }
 
       .breakdown-form textarea.form-input {
@@ -2985,13 +2988,16 @@
       }
 
       .breakdown-form__footer {
-        position: static;
-        margin-top: 12px;
-        padding: 12px 0 calc(12px + env(safe-area-inset-bottom));
+        position: sticky;
+        bottom: 0;
+        margin-top: auto;
+        padding: 8px 0 calc(8px + env(safe-area-inset-bottom));
         border-top: 1px solid rgba(226, 232, 240, 0.7);
-        background: transparent;
+        background: rgba(255, 255, 255, 0.92);
+        backdrop-filter: blur(10px);
         display: grid;
-        gap: 10px;
+        gap: 8px;
+        z-index: 2;
       }
 
       .breakdown-form__actions {
@@ -3004,6 +3010,8 @@
       .breakdown-form__actions .action-secondary {
         flex: 1 1 0;
         min-width: 0;
+        min-height: 40px;
+        padding: 9px 12px;
       }
 
       .breakdown-form__actions .breakdown-form__cancel {
@@ -3015,6 +3023,7 @@
       .breakdown-form__actions .breakdown-form__submit {
         background: var(--success-soft);
         color: var(--success);
+        border-color: rgba(22, 163, 74, 0.5);
       }
 
       .breakdown-form__actions .breakdown-form__cancel:hover,
@@ -3641,6 +3650,15 @@
         border-color: rgba(248, 113, 113, 0.55);
       }
 
+      .breakdown-form__close,
+      .breakdown-form__close:hover,
+      body[data-theme="dark"] .breakdown-form__close,
+      body[data-theme="dark"] .breakdown-form__close:hover {
+        border-color: transparent;
+        color: var(--text);
+        box-shadow: none;
+      }
+
       .settings-modal {
         position: fixed;
         inset: 0;
@@ -3694,7 +3712,8 @@
         max-height: 100vh;
         max-height: 100svh;
         max-height: 100dvh;
-        display: block;
+        display: grid;
+        grid-template-rows: auto minmax(0, 1fr);
       }
 
       .repair-form-modal__panel {

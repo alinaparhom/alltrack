@@ -2985,6 +2985,7 @@
         background: transparent;
         box-shadow: none;
         color: var(--text);
+        padding: 0;
       }
 
       .breakdown-form textarea.form-input {
@@ -2998,9 +2999,12 @@
         bottom: 0;
         margin-top: auto;
         padding: 0;
+        margin-bottom: 0;
         border-top: none;
+        outline: none;
         background: transparent;
         backdrop-filter: none;
+        box-shadow: none;
         display: grid;
         gap: 0;
         z-index: 2;
@@ -3010,7 +3014,8 @@
         display: flex;
         gap: 10px;
         flex-wrap: nowrap;
-        padding: 8px 0 env(safe-area-inset-bottom);
+        padding: 8px 0 0;
+        margin: 0;
       }
 
       .breakdown-form__actions .action-primary,
@@ -3030,7 +3035,7 @@
       .breakdown-form__actions .breakdown-form__submit {
         background: var(--success-soft);
         color: var(--success);
-        border: 1px solid rgba(22, 163, 74, 0.78);
+        border: 1px solid rgba(22, 163, 74, 0.9);
       }
 
       .breakdown-form__actions .breakdown-form__cancel:hover,
@@ -3657,17 +3662,21 @@
         border-color: rgba(248, 113, 113, 0.55);
       }
 
-      .breakdown-form__close,
-      .breakdown-form__close:hover,
-      .breakdown-form__close:focus-visible,
-      body[data-theme="dark"] .breakdown-form__close,
-      body[data-theme="dark"] .breakdown-form__close:hover,
-      body[data-theme="dark"] .breakdown-form__close:focus-visible {
+      .button-icon.breakdown-form__close,
+      .button-icon.breakdown-form__close:hover,
+      .button-icon.breakdown-form__close:focus-visible,
+      body[data-theme="dark"] .button-icon.breakdown-form__close,
+      body[data-theme="dark"] .button-icon.breakdown-form__close:hover,
+      body[data-theme="dark"] .button-icon.breakdown-form__close:focus-visible {
         border: none;
         outline: none;
         background: transparent;
         color: var(--text);
         box-shadow: none;
+      }
+
+      .breakdown-form__close .button-icon-emoji {
+        color: currentColor;
       }
 
       .settings-modal {

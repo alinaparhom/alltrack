@@ -3042,7 +3042,7 @@ export function renderRole(user) {
             <div class="settings-modal__header breakdown-form__header">
               <div class="settings-modal__title">
                 <h2>Поломка инструмента</h2>
-                <p data-breakdown-form-subtitle>Проверьте данные и опишите поломку</p>
+                
               </div>
               <button
                 class="button-icon breakdown-form__close"

@@ -21736,9 +21736,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     breakdownsState.selectedTool = tool;
     breakdownsState.photos = [];
     updateBreakdownPhotoPreview();
-    if (breakdownFormSubtitleEl) {
-      breakdownFormSubtitleEl.textContent = "Информация об инструменте";
-    }
     if (breakdownToolTitleEl) {
       breakdownToolTitleEl.textContent = "Данные инструмента";
     }

@@ -5700,6 +5700,18 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const breakdownsStatusFilter = contentEl.querySelector(
     "[data-breakdowns-status-filter]"
   );
+  const breakdownsViewButtons = Array.from(
+    contentEl.querySelectorAll("[data-breakdowns-view]")
+  );
+  const breakdownsSortToggle = contentEl.querySelector(
+    "[data-breakdowns-sort-toggle]"
+  );
+  const breakdownsFiltersToggle = contentEl.querySelector(
+    "[data-breakdowns-filters-toggle]"
+  );
+  const breakdownsFiltersPanel = contentEl.querySelector(
+    "[data-breakdowns-filters-panel]"
+  );
   const breakdownsListEl = contentEl.querySelector("[data-breakdowns-list]");
   const breakdownsEmptyEl = contentEl.querySelector("[data-breakdowns-empty]");
   const breakdownsSubtitleEl = contentEl.querySelector(
@@ -7228,6 +7240,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     toolMap: new Map(),
     photos: [],
     statusFilter: "",
+    view: "table",
+    sortDirection: "desc",
+    filtersOpened: false,
     isSaving: false,
     isStatusSaving: false,
   };
@@ -20821,10 +20836,76 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     return table;
   };
 
+  const syncBreakdownsViewButtons = () => {
+    breakdownsViewButtons.forEach((button) => {
+      const view = button.dataset.breakdownsView;
+      const isActive = view === breakdownsState.view;
+      button.classList.toggle("is-active", isActive);
+      button.setAttribute("aria-pressed", isActive ? "true" : "false");
+    });
+  };
+
+  const syncBreakdownsSortToggle = () => {
+    if (!breakdownsSortToggle) return;
+    const isDesc = breakdownsState.sortDirection === "desc";
+    breakdownsSortToggle.setAttribute(
+      "aria-label",
+      `Сортировка по номеру инструмента: ${isDesc ? "по убыванию" : "по возрастанию"}`
+    );
+    breakdownsSortToggle.title = `Сортировка по номеру инструмента: ${
+      isDesc ? "по убыванию" : "по возрастанию"
+    }`;
+    const icon = breakdownsSortToggle.querySelector(".tools-sort-toggle__icon");
+    if (icon) {
+      icon.classList.toggle("is-desc", isDesc);
+      icon.classList.toggle("is-asc", !isDesc);
+    }
+  };
+
+  const setBreakdownsFiltersOpened = (opened) => {
+    breakdownsState.filtersOpened = Boolean(opened);
+    breakdownsFiltersPanel?.classList.toggle("is-open", breakdownsState.filtersOpened);
+    if (breakdownsFiltersToggle) {
+      breakdownsFiltersToggle.setAttribute(
+        "aria-expanded",
+        breakdownsState.filtersOpened ? "true" : "false"
+      );
+      breakdownsFiltersToggle.classList.toggle("is-active", breakdownsState.filtersOpened);
+    }
+  };
+
+  const renderBreakdownsCards = (items) => {
+    const fragment = document.createDocumentFragment();
+    items.forEach((tool, index) => {
+      const card = renderToolCard(tool, "large", breakdownsState.orgFolder, index);
+      const toolId = tool.__breakdownId;
+      card.dataset.breakdownsToolId = toolId;
+      card.dataset.breakdownsSelect = toolId;
+      card.classList.add("tools-table__row--search");
+      const isBlocked = isBreakdownStatusBlocked(tool);
+      card.classList.toggle("is-disabled", isBlocked);
+      card.setAttribute("role", "button");
+      if (isBlocked) {
+        card.setAttribute("aria-disabled", "true");
+        card.removeAttribute("tabindex");
+      } else {
+        card.tabIndex = 0;
+      }
+      fragment.appendChild(card);
+    });
+    return fragment;
+  };
+
   const renderBreakdownsList = () => {
     if (!breakdownsListEl) return;
     breakdownsListEl.innerHTML = "";
-    breakdownsListEl.appendChild(renderBreakdownsTable(breakdownsState.filtered));
+    breakdownsListEl.classList.toggle("is-table", breakdownsState.view === "table");
+    breakdownsListEl.classList.toggle("is-large", breakdownsState.view === "large");
+    if (breakdownsState.view === "large") {
+      breakdownsListEl.appendChild(renderBreakdownsCards(breakdownsState.filtered));
+    } else {
+      breakdownsListEl.appendChild(renderBreakdownsTable(breakdownsState.filtered));
+    }
     if (breakdownsEmptyEl) {
       breakdownsEmptyEl.classList.toggle(
         "is-hidden",
@@ -20839,17 +20920,27 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const applyBreakdownsFilters = () => {
     const search = breakdownsState.search.trim();
     const tokens = search ? search.split(/\s+/).filter(Boolean) : [];
-    breakdownsState.filtered = breakdownsState.tools.filter((tool) => {
-      if (
-        breakdownsState.statusFilter &&
-        String(tool?.["Статус"] ?? "").trim() !== breakdownsState.statusFilter
-      ) {
-        return false;
-      }
-      if (!tokens.length) return true;
-      const searchLine = tool.__searchLine ?? "";
-      return tokens.every((token) => searchLine.includes(token));
-    });
+    breakdownsState.filtered = breakdownsState.tools
+      .filter((tool) => {
+        if (
+          breakdownsState.statusFilter &&
+          String(tool?.["Статус"] ?? "").trim() !== breakdownsState.statusFilter
+        ) {
+          return false;
+        }
+        if (!tokens.length) return true;
+        const searchLine = tool.__searchLine ?? "";
+        return tokens.every((token) => searchLine.includes(token));
+      })
+      .sort((a, b) => {
+        const direction = breakdownsState.sortDirection === "asc" ? 1 : -1;
+        return (
+          resolveToolNumberValue(a).localeCompare(resolveToolNumberValue(b), "ru", {
+            numeric: true,
+            sensitivity: "base",
+          }) * direction
+        );
+      });
     renderBreakdownsList();
   };
 
@@ -21850,6 +21941,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     document.body.style.overflow = "hidden";
     setBreakdownsSubtitle("Загружаем список...");
     setBreakdownsMessage("");
+    setBreakdownsFiltersOpened(false);
+    syncBreakdownsViewButtons();
+    syncBreakdownsSortToggle();
     await loadBreakdownsTools();
     if (
       breakdownsSearchInput &&
@@ -21998,6 +22092,30 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     breakdownsStatusFilter.addEventListener("change", (event) => {
       breakdownsState.statusFilter = String(event.target.value ?? "").trim();
       applyBreakdownsFilters();
+    });
+  }
+  if (breakdownsViewButtons.length) {
+    breakdownsViewButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        const nextView = button.dataset.breakdownsView === "large" ? "large" : "table";
+        if (breakdownsState.view === nextView) return;
+        breakdownsState.view = nextView;
+        syncBreakdownsViewButtons();
+        renderBreakdownsList();
+      });
+    });
+  }
+  if (breakdownsSortToggle) {
+    breakdownsSortToggle.addEventListener("click", () => {
+      breakdownsState.sortDirection =
+        breakdownsState.sortDirection === "desc" ? "asc" : "desc";
+      syncBreakdownsSortToggle();
+      applyBreakdownsFilters();
+    });
+  }
+  if (breakdownsFiltersToggle) {
+    breakdownsFiltersToggle.addEventListener("click", () => {
+      setBreakdownsFiltersOpened(!breakdownsState.filtersOpened);
     });
   }
   if (breakdownsListEl) {

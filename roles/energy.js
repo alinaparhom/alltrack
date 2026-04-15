@@ -2576,9 +2576,53 @@ export function renderRole(user) {
                       autocomplete="off"
                     />
                   </label>
+                  <div class="tools-actions">
+                    <div
+                      class="tools-view-toggle"
+                      role="group"
+                      aria-label="Вариант отображения"
+                      data-breakdowns-view-toggle
+                    >
+                      <button class="tools-view-button" type="button" data-breakdowns-view="large">
+                        Крупные
+                      </button>
+                      <button class="tools-view-button is-active" type="button" data-breakdowns-view="table">
+                        Таблица
+                      </button>
+                    </div>
+                    <div class="tools-filter-actions" role="group" aria-label="Сортировка и фильтры">
+                      <button
+                        class="tools-filters-toggle tools-sort-toggle"
+                        type="button"
+                        data-breakdowns-sort-toggle
+                        aria-label="Сортировка по номеру инструмента: по убыванию"
+                        title="Сортировка по номеру инструмента: по убыванию"
+                      >
+                        <span class="tools-sort-toggle__icon is-desc" aria-hidden="true">
+                          <svg class="tools-sort-toggle__chevron" viewBox="0 0 24 24" focusable="false">
+                            <path d="M5 8.5L12 15.5L19 8.5" />
+                          </svg>
+                        </span>
+                      </button>
+                      <button
+                        class="tools-filters-toggle"
+                        type="button"
+                        data-breakdowns-filters-toggle
+                        aria-expanded="false"
+                        aria-controls="breakdowns-filters-panel"
+                        aria-label="Фильтры"
+                      >
+                        <span class="tools-filters-toggle__icon" aria-hidden="true">
+                          <svg viewBox="0 0 24 24" focusable="false">
+                            <path d="M4 6.75C4 5.78 4.78 5 5.75 5h12.5C19.22 5 20 5.78 20 6.75c0 .45-.17.88-.47 1.21l-4.61 5.02a1.74 1.74 0 0 0-.46 1.18v2.71c0 .57-.28 1.11-.75 1.43l-2.07 1.43A1 1 0 0 1 10 18.9v-4.74c0-.43-.16-.84-.46-1.16L4.47 7.96A1.76 1.76 0 0 1 4 6.75Z" />
+                          </svg>
+                        </span>
+                      </button>
+                    </div>
+                  </div>
                 </div>
-                <div class="tools-controls__row">
-                  <label class="tools-quick-filter breakdowns-status-filter">
+                <div class="tools-filters" id="breakdowns-filters-panel" data-breakdowns-filters-panel>
+                  <label class="tools-filter">
                     <span>По статусу</span>
                     <select
                       class="form-input"

@@ -20694,6 +20694,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     };
     const getStatusAccentColor = (rawStatus) => {
       const normalized = String(rawStatus ?? "").trim().toLocaleLowerCase("ru");
+      if (normalized === "рабочий" || normalized === "исправный") return "#16a34a";
       if (normalized === "в ремонте") return "#ea580c";
       if (normalized === "сломан") return "#eab308";
       if (normalized === "на списание") return "#dc2626";

@@ -2944,23 +2944,28 @@
       }
 
       .breakdown-form__body {
-        overflow: visible;
-        padding-bottom: 0;
-        scroll-padding-bottom: 0;
+        overflow: auto;
+        padding-bottom: 12px;
+        scroll-padding-bottom: 88px;
+        flex: 1 1 auto;
       }
 
       .breakdown-form__body.settings-modal__body {
-        overflow: visible;
+        overflow: auto;
         padding-right: 0;
       }
 
       .breakdown-form {
-        display: block;
+        display: flex;
+        flex-direction: column;
+        min-height: 100%;
       }
 
       .breakdown-form.settings-modal__form {
-        display: block;
-        padding: 6px 14px 16px;
+        display: flex;
+        flex-direction: column;
+        min-height: 100%;
+        padding: 6px 14px 0;
       }
 
       .breakdown-form__header {
@@ -2974,9 +2979,10 @@
         margin-top: 0;
         width: 40px;
         height: 40px;
-        border-radius: 14px;
+        border-radius: 12px;
         align-self: center;
-        border-color: transparent;
+        border: none;
+        background: transparent;
         box-shadow: none;
         color: var(--text);
       }
@@ -3023,7 +3029,7 @@
       .breakdown-form__actions .breakdown-form__submit {
         background: var(--success-soft);
         color: var(--success);
-        border-color: rgba(22, 163, 74, 0.5);
+        border-color: rgba(22, 163, 74, 0.62);
       }
 
       .breakdown-form__actions .breakdown-form__cancel:hover,
@@ -3654,7 +3660,8 @@
       .breakdown-form__close:hover,
       body[data-theme="dark"] .breakdown-form__close,
       body[data-theme="dark"] .breakdown-form__close:hover {
-        border-color: transparent;
+        border: none;
+        background: transparent;
         color: var(--text);
         box-shadow: none;
       }
@@ -3747,7 +3754,7 @@
       }
 
       .breakdown-form-modal.is-input-focus .breakdown-form__body {
-        padding-bottom: 0;
+        padding-bottom: 88px;
       }
 
       .repair-form-modal.is-input-focus .repair-form__body {
@@ -3755,8 +3762,8 @@
       }
 
       .breakdown-form-modal.is-input-focus .breakdown-form__footer {
-        position: static;
-        margin-top: 8px;
+        position: sticky;
+        margin-top: auto;
       }
 
       .repair-form-modal.is-input-focus .repair-form__footer {

@@ -20654,7 +20654,45 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const table = document.createElement("div");
     table.className = "tools-table tools-table--breakdowns";
 
-    items.forEach((tool) => {
+    const normalizeToolStatusLabel = (rawStatus, movingNow = false) => {
+      if (movingNow) return "Перемещается";
+      const normalized = String(rawStatus ?? "").trim().toLocaleLowerCase("ru");
+      if (!normalized) return "не указан";
+      if (normalized === "рабочий") return "Исправный";
+      if (normalized === "ремонт") return "В ремонте";
+      if (normalized === "в процессе перемещения") return "Перемещается";
+      return String(rawStatus ?? "").trim();
+    };
+    const getStatusAccentColor = (rawStatus) => {
+      const normalized = String(rawStatus ?? "").trim().toLocaleLowerCase("ru");
+      if (normalized === "в ремонте" || normalized === "ремонт") return "#ea580c";
+      if (normalized === "сломан") return "#eab308";
+      if (normalized === "на списание") return "#dc2626";
+      if (
+        normalized === "в процессе перемещения" ||
+        normalized === "перемещается"
+      ) {
+        return "#2563eb";
+      }
+      return "";
+    };
+    const appendResponsibleValue = (container, valueText) => {
+      const normalized = String(valueText ?? "").trim() || "не указан";
+      const [surname, ...rest] = normalized.split(/\s+/).filter(Boolean);
+      if (surname) {
+        const surnameEl = document.createElement("span");
+        surnameEl.style.fontWeight = "700";
+        surnameEl.textContent = surname;
+        container.appendChild(surnameEl);
+        if (rest.length > 0) {
+          container.append(` ${rest.join(" ")}`);
+        }
+        return;
+      }
+      container.textContent = normalized;
+    };
+
+    items.forEach((tool, moveIndex) => {
       const isBlocked = isBreakdownStatusBlocked(tool);
       const row = document.createElement("div");
       row.className = "tools-table__row";
@@ -20672,8 +20710,17 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const numberCell = document.createElement("div");
       numberCell.className = "tools-table__cell tools-table__cell--number";
       const number = resolveToolNumberValue(tool);
-      numberCell.textContent = number || "—";
-      const objectCell = buildToolObjectCell(tool);
+      const photoNumber = resolveToolPhotoNumber(tool);
+      const objectName = String(tool?.["Объект"] ?? "").trim();
+      const numberValueEl = document.createElement("div");
+      numberValueEl.className = "tools-table__number-value";
+      numberValueEl.textContent = number || "—";
+      numberCell.appendChild(numberValueEl);
+      const objectValueEl = document.createElement("div");
+      objectValueEl.className = "tools-table__number-object";
+      objectValueEl.textContent = objectName || "—";
+      objectValueEl.title = objectName || "Объект не указан";
+      numberCell.appendChild(objectValueEl);
 
       const infoCell = document.createElement("div");
       infoCell.className = "tools-table__cell";
@@ -20686,24 +20733,83 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       meta.className = "tools-table__meta tools-table__meta--stack";
       const manufacturer = String(tool?.["Производитель"] ?? "").trim();
       const model = String(tool?.["Модель"] ?? "").trim();
+      const manufacturerModelLine = [manufacturer, model].filter(Boolean).join(" · ");
       const accountingNumber = String(tool?.["Бух.номер"] ?? "").trim();
+      const accountingLine = accountingNumber ? accountingNumber : "Нет";
+      const normalizedCostLine = formatSearchCostValue(tool?.["Стоимость"]);
+      const accountingCostLineParts = [accountingLine, normalizedCostLine].filter(Boolean);
+      const accountingCostLine = accountingCostLineParts.join(" / ");
+      const metaLines = [manufacturerModelLine, accountingCostLine].filter(Boolean);
+      if (metaLines.length === 0) {
+        meta.textContent = "—";
+      } else {
+        metaLines.forEach((line) => {
+          const lineEl = document.createElement("div");
+          if (line === accountingCostLine) {
+            const [accountingPart, costPart] = accountingCostLineParts;
+            if (accountingPart === "Нет") {
+              const missingAccountingEl = document.createElement("span");
+              missingAccountingEl.textContent = "Нет";
+              missingAccountingEl.style.color = "#dc2626";
+              missingAccountingEl.style.fontWeight = "700";
+              lineEl.appendChild(missingAccountingEl);
+              if (costPart) {
+                lineEl.append(" / ", costPart);
+              }
+            } else {
+              lineEl.textContent = line;
+            }
+          } else {
+            lineEl.textContent = line;
+          }
+          meta.appendChild(lineEl);
+        });
+      }
+      const responsibleLine = document.createElement("div");
+      const responsibleValue = document.createElement("span");
+      appendResponsibleValue(
+        responsibleValue,
+        String(tool?.["Ответственный"] ?? "").trim() || "не указан"
+      );
+      responsibleLine.append(responsibleValue);
+      meta.appendChild(responsibleLine);
+
+      const isMovingNow = Boolean(tool?.__pendingMove);
       const status = String(tool?.["Статус"] ?? "").trim();
-      const costLine = document.createElement("div");
-      costLine.textContent = formatToolCostLabel(tool);
-      const lineTop = document.createElement("div");
-      lineTop.textContent = [
-        `Производитель: ${manufacturer || "—"}`,
-        `Модель: ${model || "—"}`,
-      ].join(" · ");
-      const lineBottom = document.createElement("div");
-      lineBottom.textContent = `Бух.номер: ${accountingNumber || "—"}`;
+      const statusText = normalizeToolStatusLabel(status, isMovingNow);
       const statusLine = document.createElement("div");
-      statusLine.className = "tools-table__status-line";
-      statusLine.textContent = `Статус: ${status || "—"}`;
-      meta.append(lineTop, lineBottom, costLine, statusLine);
+      const statusValue = document.createElement("span");
+      statusValue.textContent = statusText;
+      statusValue.style.fontWeight = "700";
+      statusValue.style.textDecoration = "none";
+      statusValue.style.color = getStatusAccentColor(statusText);
+      statusLine.append(statusValue);
+      meta.appendChild(statusLine);
       infoCell.append(title, meta);
 
-      row.append(numberCell, objectCell, infoCell);
+      const photoCell = document.createElement("div");
+      photoCell.className = "tools-table__cell tools-table__cell--thumb";
+      const thumb = document.createElement("div");
+      thumb.className = "tools-table__thumb";
+      const img = document.createElement("img");
+      img.className = "tools-table__thumb-image";
+      img.alt = name || "Инструмент";
+      const photoCount = Number.parseInt(tool?.["Количество фото"] ?? 0, 10);
+      const hasPhoto = Number.isFinite(photoCount) && photoCount > 0;
+      applyToolPhotoWithFallback({
+        img,
+        orgFolder: breakdownsState.orgFolder,
+        toolNumber: photoNumber,
+        hasPhoto,
+      });
+      thumb.appendChild(img);
+      if (hasPhoto) {
+        thumb.dataset.pendingPhotoMoveIndex = String(moveIndex);
+      }
+      photoCell.appendChild(thumb);
+
+      row.classList.add("tools-table__row--search");
+      row.append(numberCell, infoCell, photoCell);
       table.appendChild(row);
     });
     return table;

@@ -20652,7 +20652,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
   const renderBreakdownsTable = (items) => {
     const table = document.createElement("div");
-    table.className = "tools-table tools-table--breakdowns";
+    table.className = "tools-table";
 
     const normalizeToolStatusLabel = (rawStatus, movingNow = false) => {
       if (movingNow) return "Перемещается";
@@ -20696,6 +20696,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const isBlocked = isBreakdownStatusBlocked(tool);
       const row = document.createElement("div");
       row.className = "tools-table__row";
+      row.classList.toggle("tools-item--pending-response", tool.__pendingMove);
       row.dataset.breakdownsToolId = tool.__breakdownId;
       row.dataset.breakdownsSelect = tool.__breakdownId;
       row.classList.toggle("is-disabled", isBlocked);
@@ -20796,6 +20797,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       img.alt = name || "Инструмент";
       const photoCount = Number.parseInt(tool?.["Количество фото"] ?? 0, 10);
       const hasPhoto = Number.isFinite(photoCount) && photoCount > 0;
+      row.classList.toggle("tools-table__row--no-photo", !hasPhoto);
       applyToolPhotoWithFallback({
         img,
         orgFolder: breakdownsState.orgFolder,
@@ -20804,7 +20806,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       });
       thumb.appendChild(img);
       if (hasPhoto) {
+        thumb.dataset.pendingPhotoOpen = "true";
         thumb.dataset.pendingPhotoMoveIndex = String(moveIndex);
+        thumb.setAttribute("role", "button");
+        thumb.tabIndex = 0;
+        thumb.setAttribute("aria-label", "Открыть фото инструмента");
       }
       photoCell.appendChild(thumb);
 

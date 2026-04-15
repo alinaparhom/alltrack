@@ -21384,6 +21384,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const tools = await loadToolsData(orgFolder);
     const userName = normalizePersonName(user?.full_name ?? user?.fullName ?? "");
     const canManageAllTools = isEnergyLikeRole(user?.role);
+    const { pendingNumbers, pendingAccountingNumbers } =
+      await loadPendingMoves(orgFolder);
     breakdownsState.toolMap = new Map();
     breakdownsState.tools = tools
       .filter((tool) => {
@@ -21392,10 +21394,16 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         return normalizePersonName(tool?.["Ответственный"] ?? "") === userName;
       })
       .map((tool, index) => {
+        const number = String(tool?.["Номер"] ?? "").trim();
+        const accounting = String(tool?.["Бух.номер"] ?? "").trim();
+        const hasPendingMove =
+          (number && pendingNumbers.has(number)) ||
+          (accounting && pendingAccountingNumbers.has(accounting));
         const enhanced = {
           ...tool,
           __searchLine: buildToolSearchLine(tool),
           __breakdownId: buildToolSelectionId(tool, index),
+          __pendingMove: hasPendingMove,
           __statusTone: resolveToolStatusTone(tool),
         };
         breakdownsState.toolMap.set(enhanced.__breakdownId, enhanced);

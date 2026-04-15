@@ -20689,13 +20689,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const normalized = String(rawStatus ?? "").trim().toLocaleLowerCase("ru");
       if (!normalized) return "не указан";
       if (normalized === "рабочий") return "Исправный";
-      if (normalized === "ремонт") return "В ремонте";
       if (normalized === "в процессе перемещения") return "Перемещается";
       return String(rawStatus ?? "").trim();
     };
     const getStatusAccentColor = (rawStatus) => {
       const normalized = String(rawStatus ?? "").trim().toLocaleLowerCase("ru");
-      if (normalized === "в ремонте" || normalized === "ремонт") return "#ea580c";
+      if (normalized === "в ремонте") return "#ea580c";
       if (normalized === "сломан") return "#eab308";
       if (normalized === "на списание") return "#dc2626";
       if (
@@ -20816,6 +20815,18 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       statusValue.style.color = getStatusAccentColor(statusText);
       statusLine.append(statusValue);
       meta.appendChild(statusLine);
+      const kitItems = getToolKitItems(tool);
+      if (kitItems.length > 0) {
+        const kitLine = document.createElement("div");
+        const kitBadge = document.createElement("button");
+        kitBadge.type = "button";
+        kitBadge.className = "tools-kit-badge tools-kit-badge--inline";
+        kitBadge.dataset.toolsKitOpen = "true";
+        kitBadge.textContent = `Комплектация: ${kitItems.length}`;
+        kitBadge.setAttribute("aria-label", "Открыть комплектацию инструмента");
+        kitLine.appendChild(kitBadge);
+        meta.appendChild(kitLine);
+      }
       infoCell.append(title, meta);
 
       const photoCell = document.createElement("div");

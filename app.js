@@ -10570,7 +10570,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     });
   };
 
-  const renderToolCard = (tool, viewMode, orgFolder, toolIndex) => {
+  const renderToolCard = (
+    tool,
+    viewMode,
+    orgFolder,
+    toolIndex,
+    options = {}
+  ) => {
     const number = resolveToolNumberValue(tool);
     const photoNumber = resolveToolPhotoNumber(tool);
     const name = String(tool?.["Наименование"] ?? "").trim();
@@ -10632,9 +10638,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     };
     const statusText = normalizeToolStatusLabel(status, isMovingNow);
     const responsible = String(tool?.["Ответственный"] ?? "").trim() || "не указан";
+    const disableWorkingStatusAccent = Boolean(options?.disableWorkingStatusAccent);
     const getStatusAccentColor = (rawStatus) => {
       const normalized = String(rawStatus ?? "").trim().toLocaleLowerCase("ru");
       if (isLargeMyToolsCard && (normalized === "рабочий" || normalized === "исправный")) {
+        return "";
+      }
+      if (disableWorkingStatusAccent && (normalized === "рабочий" || normalized === "исправный")) {
         return "";
       }
       if (normalized === "рабочий" || normalized === "исправный") return "#16a34a";
@@ -20680,6 +20690,37 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     return tone === "repair";
   };
 
+  const normalizeBreakdownToolStatusLabel = (rawStatus, movingNow = false) => {
+    if (movingNow) return "Перемещается";
+    const normalized = String(rawStatus ?? "").trim().toLocaleLowerCase("ru");
+    if (!normalized) return "—";
+    if (normalized === "рабочий") return "Исправный";
+    if (normalized === "в процессе перемещения") return "Перемещается";
+    return String(rawStatus ?? "").trim();
+  };
+
+  const buildBreakdownToolInfoLines = (tool) => {
+    const number = resolveToolNumberValue(tool);
+    const name = String(tool?.["Наименование"] ?? "").trim();
+    const manufacturer = String(tool?.["Производитель"] ?? "").trim();
+    const model = String(tool?.["Модель"] ?? "").trim();
+    const accountingNumber = String(tool?.["Бух.номер"] ?? "").trim();
+    const toolCost = normalizeCostValue(tool?.["Стоимость"]);
+    const responsible = String(tool?.["Ответственный"] ?? "").trim();
+    const status = normalizeBreakdownToolStatusLabel(
+      tool?.["Статус"],
+      Boolean(tool?.__pendingMove)
+    );
+    return [
+      `${number || "—"} - ${name || "—"} ${manufacturer || "—"} ${model || "—"}`,
+      `${accountingNumber || "—"} · ${
+        toolCost === null ? "—" : `${formatNotificationCostWithoutCurrency(toolCost)} р.`
+      }`,
+      responsible || "—",
+      status || "—",
+    ];
+  };
+
   const renderBreakdownsTable = (items) => {
     const table = document.createElement("div");
     table.className = "tools-table";
@@ -20694,7 +20735,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     };
     const getStatusAccentColor = (rawStatus) => {
       const normalized = String(rawStatus ?? "").trim().toLocaleLowerCase("ru");
-      if (normalized === "рабочий" || normalized === "исправный") return "#16a34a";
       if (normalized === "в ремонте") return "#ea580c";
       if (normalized === "сломан") return "#eab308";
       if (normalized === "на списание") return "#dc2626";
@@ -20969,7 +21009,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const renderBreakdownsCards = (items) => {
     const fragment = document.createDocumentFragment();
     items.forEach((tool, index) => {
-      const card = renderToolCard(tool, "large", breakdownsState.orgFolder, index);
+      const card = renderToolCard(tool, "large", breakdownsState.orgFolder, index, {
+        disableWorkingStatusAccent: true,
+      });
       const toolId = tool.__breakdownId;
       card.dataset.breakdownsToolId = toolId;
       card.dataset.breakdownsSelect = toolId;
@@ -21655,27 +21697,17 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
   const fillBreakdownStatusToolInfo = (tool) => {
     if (!tool) return;
-    const number = resolveToolNumberValue(tool);
-    const name = String(tool?.["Наименование"] ?? "").trim();
     if (breakdownStatusSubtitleEl) {
-      breakdownStatusSubtitleEl.textContent = `Инструмент №${number || "—"} · ${
-        name || "Без названия"
-      }`;
+      breakdownStatusSubtitleEl.textContent = "Информация об инструменте";
     }
     if (breakdownStatusToolTitleEl) {
-      breakdownStatusToolTitleEl.textContent = name || "Инструмент";
+      breakdownStatusToolTitleEl.textContent = "Данные инструмента";
     }
     if (breakdownStatusToolMetaEl) {
-      const manufacturer = String(tool?.["Производитель"] ?? "").trim();
-      const model = String(tool?.["Модель"] ?? "").trim();
-      const accountingNumber = String(tool?.["Бух.номер"] ?? "").trim();
-      const status = String(tool?.["Статус"] ?? "").trim();
-      breakdownStatusToolMetaEl.textContent = [
-        `Бух.номер: ${accountingNumber || "—"}`,
-        `Производитель: ${manufacturer || "—"}`,
-        `Модель: ${model || "—"}`,
-        `Статус: ${status || "—"}`,
-      ].join(" · ");
+      const lines = buildBreakdownToolInfoLines(tool);
+      breakdownStatusToolMetaEl.innerHTML = lines
+        .map((line) => escapeHtml(line))
+        .join("<br>");
     }
   };
 
@@ -21704,27 +21736,17 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     breakdownsState.selectedTool = tool;
     breakdownsState.photos = [];
     updateBreakdownPhotoPreview();
-    const number = resolveToolNumberValue(tool);
-    const name = String(tool?.["Наименование"] ?? "").trim();
     if (breakdownFormSubtitleEl) {
-      breakdownFormSubtitleEl.textContent = `Инструмент №${number || "—"} · ${
-        name || "Без названия"
-      }`;
+      breakdownFormSubtitleEl.textContent = "Информация об инструменте";
     }
     if (breakdownToolTitleEl) {
-      breakdownToolTitleEl.textContent = name || "Инструмент";
+      breakdownToolTitleEl.textContent = "Данные инструмента";
     }
     if (breakdownToolMetaEl) {
-      const manufacturer = String(tool?.["Производитель"] ?? "").trim();
-      const model = String(tool?.["Модель"] ?? "").trim();
-      const accountingNumber = String(tool?.["Бух.номер"] ?? "").trim();
-      const status = String(tool?.["Статус"] ?? "").trim();
-      breakdownToolMetaEl.textContent = [
-        `Бух.номер: ${accountingNumber || "—"}`,
-        `Производитель: ${manufacturer || "—"}`,
-        `Модель: ${model || "—"}`,
-        `Статус: ${status || "—"}`,
-      ].join(" · ");
+      const lines = buildBreakdownToolInfoLines(tool);
+      breakdownToolMetaEl.innerHTML = lines
+        .map((line) => escapeHtml(line))
+        .join("<br>");
     }
     setBreakdownFormMessage("");
     breakdownFormModalEl.classList.remove("is-hidden");

@@ -2949,7 +2949,7 @@
         scroll-padding-bottom: 88px;
         flex: 1 1 auto;
         display: grid;
-        gap: 12px;
+        gap: 18px;
       }
 
       .breakdown-form__body.settings-modal__body {
@@ -2967,7 +2967,12 @@
         display: flex;
         flex-direction: column;
         min-height: 100%;
-        padding: 6px 14px 0;
+        padding: 6px 0 0;
+      }
+
+      .breakdown-form .form-card,
+      .breakdown-form .breakdown-tool-card {
+        padding: 0;
       }
 
       .breakdown-form__header {
@@ -3026,15 +3031,24 @@
 
       .breakdown-form .form-file-row {
         align-items: stretch;
+        display: flex;
+        flex-wrap: nowrap;
+        gap: 12px;
       }
 
       .breakdown-form .form-file-option {
+        flex: 1 1 0;
         background: transparent;
         box-shadow: none;
       }
 
       .breakdown-form .form-file-button {
         min-height: 46px;
+        border-radius: 12px;
+        border: 1px solid rgba(59, 125, 255, 0.32);
+        background: rgba(255, 255, 255, 0.45);
+        backdrop-filter: blur(8px);
+        box-shadow: none;
       }
 
       .breakdown-form .breakdown-photo-summary,

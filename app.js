@@ -21751,7 +21751,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     attachBreakdownViewportListeners();
     updateBreakdownKeyboardOffset();
     document.body.style.overflow = "hidden";
-    breakdownDescriptionInput?.focus();
   };
 
   const closeBreakdownFormModal = () => {

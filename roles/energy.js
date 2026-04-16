@@ -3062,7 +3062,6 @@ export function renderRole(user) {
                   <div class="breakdown-tool-meta" data-breakdown-tool-meta></div>
                 </div>
                 <label class="form-field form-field--required">
-                  <span class="form-label">Описание поломки</span>
                   <textarea
                     class="form-input"
                     name="breakdown-description"

@@ -585,12 +585,7 @@ export function renderRole(user) {
                     <span class="demand-filters__icon" aria-hidden="true">
                       <svg viewBox="0 0 24 24" role="presentation" focusable="false">
                         <path
-                          d="M4 6h16l-6.5 7.5v3.5l-3 1.5v-5L4 6z"
-                          fill="none"
-                          stroke="currentColor"
-                          stroke-width="1.6"
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
+                          d="M3 4.5C3 3.67 3.67 3 4.5 3h15c.83 0 1.5.67 1.5 1.5 0 .36-.13.7-.35.98L14 13.2v5.05c0 .36-.2.7-.53.86l-3 1.5A1 1 0 0 1 9 19.66V13.2L3.35 5.48A1.5 1.5 0 0 1 3 4.5Z"
                         />
                       </svg>
                     </span>
@@ -966,10 +961,7 @@ export function renderRole(user) {
                         aria-pressed="false"
                       >
                         <span class="tools-filters-toggle__icon" aria-hidden="true">
-                          <svg viewBox="0 0 24 24" focusable="false">
-                            <path d="M14.7 4.3a.8.8 0 0 1 0 1.13l-1.18 1.17 3.88 3.88 1.17-1.18a.8.8 0 1 1 1.13 1.13l-6.79 6.8a.8.8 0 0 1-1.13-1.14l1.17-1.17-3.88-3.88-1.17 1.17a.8.8 0 0 1-1.13-1.13l6.79-6.8a.8.8 0 0 1 1.14 0ZM9.81 10.1l3.88 3.88 2.58-2.58-3.88-3.88-2.58 2.58Z" />
-                            <path d="M5.5 19.15a.8.8 0 0 1-1.13 0l-1.9-1.9a.8.8 0 0 1 1.13-1.13l1.34 1.33 3.96-4.29a.8.8 0 0 1 1.17 1.08l-4.52 4.9a.8.8 0 0 1-.59.26h-.01a.8.8 0 0 1-.56-.25Z" />
-                          </svg>
+                          🛠️
                         </span>
                       </button>
                       <div class="tools-grouping-dropdown" data-tools-grouping-dropdown>
@@ -1019,7 +1011,7 @@ export function renderRole(user) {
                       >
                         <span class="tools-filters-toggle__icon" aria-hidden="true">
                           <svg viewBox="0 0 24 24" focusable="false">
-                            <path d="M4 6.75C4 5.78 4.78 5 5.75 5h12.5C19.22 5 20 5.78 20 6.75c0 .45-.17.88-.47 1.21l-4.61 5.02a1.74 1.74 0 0 0-.46 1.18v2.71c0 .57-.28 1.11-.75 1.43l-2.07 1.43A1 1 0 0 1 10 18.9v-4.74c0-.43-.16-.84-.46-1.16L4.47 7.96A1.76 1.76 0 0 1 4 6.75Z" />
+                            <path d="M3 4.5C3 3.67 3.67 3 4.5 3h15c.83 0 1.5.67 1.5 1.5 0 .36-.13.7-.35.98L14 13.2v5.05c0 .36-.2.7-.53.86l-3 1.5A1 1 0 0 1 9 19.66V13.2L3.35 5.48A1.5 1.5 0 0 1 3 4.5Z" />
                           </svg>
                         </span>
                       </button>
@@ -1669,7 +1661,7 @@ export function renderRole(user) {
                   >
                     <span class="tools-filters-toggle__icon" aria-hidden="true">
                       <svg viewBox="0 0 24 24" focusable="false">
-                        <path d="M4 6.75C4 5.78 4.78 5 5.75 5h12.5C19.22 5 20 5.78 20 6.75c0 .45-.17.88-.47 1.21l-4.61 5.02a1.74 1.74 0 0 0-.46 1.18v2.71c0 .57-.28 1.11-.75 1.43l-2.07 1.43A1 1 0 0 1 10 18.9v-4.74c0-.43-.16-.84-.46-1.16L4.47 7.96A1.76 1.76 0 0 1 4 6.75Z" />
+                        <path d="M3 4.5C3 3.67 3.67 3 4.5 3h15c.83 0 1.5.67 1.5 1.5 0 .36-.13.7-.35.98L14 13.2v5.05c0 .36-.2.7-.53.86l-3 1.5A1 1 0 0 1 9 19.66V13.2L3.35 5.48A1.5 1.5 0 0 1 3 4.5Z" />
                       </svg>
                     </span>
                   </button>
@@ -2337,7 +2329,7 @@ export function renderRole(user) {
                         focusable="false"
                       >
                         <path
-                          d="M3 5.5a1 1 0 0 1 1-1h16a1 1 0 0 1 .8 1.6L14 13.5v4.1a1 1 0 0 1-1.5.86l-3-1.8a1 1 0 0 1-.5-.86v-2.7L3.2 6.1a1 1 0 0 1-.2-.6z"
+                          d="M3 4.5C3 3.67 3.67 3 4.5 3h15c.83 0 1.5.67 1.5 1.5 0 .36-.13.7-.35.98L14 13.2v5.05c0 .36-.2.7-.53.86l-3 1.5A1 1 0 0 1 9 19.66V13.2L3.35 5.48A1.5 1.5 0 0 1 3 4.5Z"
                         />
                       </svg>
                     </button>
@@ -2430,7 +2422,7 @@ export function renderRole(user) {
                         focusable="false"
                       >
                         <path
-                          d="M3 5.5a1 1 0 0 1 1-1h16a1 1 0 0 1 .8 1.6L14 13.5v4.1a1 1 0 0 1-1.5.86l-3-1.8a1 1 0 0 1-.5-.86v-2.7L3.2 6.1a1 1 0 0 1-.2-.6z"
+                          d="M3 4.5C3 3.67 3.67 3 4.5 3h15c.83 0 1.5.67 1.5 1.5 0 .36-.13.7-.35.98L14 13.2v5.05c0 .36-.2.7-.53.86l-3 1.5A1 1 0 0 1 9 19.66V13.2L3.35 5.48A1.5 1.5 0 0 1 3 4.5Z"
                         />
                       </svg>
                     </button>
@@ -2653,7 +2645,7 @@ export function renderRole(user) {
                       >
                         <span class="tools-filters-toggle__icon" aria-hidden="true">
                           <svg viewBox="0 0 24 24" focusable="false">
-                            <path d="M4 6.75C4 5.78 4.78 5 5.75 5h12.5C19.22 5 20 5.78 20 6.75c0 .45-.17.88-.47 1.21l-4.61 5.02a1.74 1.74 0 0 0-.46 1.18v2.71c0 .57-.28 1.11-.75 1.43l-2.07 1.43A1 1 0 0 1 10 18.9v-4.74c0-.43-.16-.84-.46-1.16L4.47 7.96A1.76 1.76 0 0 1 4 6.75Z" />
+                            <path d="M3 4.5C3 3.67 3.67 3 4.5 3h15c.83 0 1.5.67 1.5 1.5 0 .36-.13.7-.35.98L14 13.2v5.05c0 .36-.2.7-.53.86l-3 1.5A1 1 0 0 1 9 19.66V13.2L3.35 5.48A1.5 1.5 0 0 1 3 4.5Z" />
                           </svg>
                         </span>
                       </button>
@@ -4066,7 +4058,11 @@ export function renderRole(user) {
                     aria-label="Открыть фильтры"
                     aria-expanded="false"
                   >
-                    <span class="button-icon-emoji" aria-hidden="true">🔎</span>
+                    <span class="button-icon-emoji" aria-hidden="true">
+                      <svg viewBox="0 0 24 24" focusable="false">
+                        <path d="M3 4.5C3 3.67 3.67 3 4.5 3h15c.83 0 1.5.67 1.5 1.5 0 .36-.13.7-.35.98L14 13.2v5.05c0 .36-.2.7-.53.86l-3 1.5A1 1 0 0 1 9 19.66V13.2L3.35 5.48A1.5 1.5 0 0 1 3 4.5Z" />
+                      </svg>
+                    </span>
                   </button>
                   <div class="info-pending-filters__panel is-hidden" data-info-pending-filters-panel>
                     <label class="form-field">

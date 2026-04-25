@@ -14222,6 +14222,10 @@
         --my-tools-filter-toggle-width: 118px;
       }
 
+      .tools-modal--my-tools.tools-modal--selecting {
+        --my-tools-controls-height: 142px;
+      }
+
       .tools-modal--my-tools .tools-modal__panel {
         position: relative !important;
         overflow: hidden !important;
@@ -14316,7 +14320,7 @@
         display: grid !important;
         grid-template-rows: var(--tools-control-height) minmax(0, 1fr) !important;
         align-items: start !important;
-        overflow: hidden !important;
+        overflow: clip !important;
       }
 
       .tools-modal--my-tools .tools-controls__row {
@@ -14325,6 +14329,46 @@
         flex-wrap: nowrap !important;
         gap: 10px !important;
         min-height: var(--tools-control-height) !important;
+      }
+
+      .tools-modal--my-tools.tools-modal--selecting .tools-controls {
+        overflow: visible !important;
+      }
+
+      .tools-modal--my-tools.tools-modal--selecting .tools-controls__row {
+        flex-wrap: wrap !important;
+        align-items: flex-start !important;
+        row-gap: 6px !important;
+      }
+
+      .tools-modal--my-tools.tools-modal--selecting .tools-search {
+        flex: 1 1 100% !important;
+        width: 100% !important;
+      }
+
+      .tools-modal--my-tools.tools-modal--selecting .tools-actions {
+        width: 100% !important;
+        margin-left: 0 !important;
+        justify-content: flex-start !important;
+        flex-wrap: wrap !important;
+        row-gap: 6px !important;
+      }
+
+      .tools-modal--my-tools.tools-modal--selecting .tools-filter-actions {
+        width: auto !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+        margin-left: 0 !important;
+      }
+
+      .tools-modal--my-tools.tools-modal--selecting .tools-move-button,
+      .tools-modal--my-tools.tools-modal--selecting .tools-cancel-button {
+        min-width: 64px !important;
+        padding: 8px !important;
+      }
+
+      .tools-modal--my-tools.tools-modal--selecting .tools-selection-count {
+        padding: 0 10px !important;
       }
 
       .tools-modal--my-tools .tools-filters {

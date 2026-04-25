@@ -14331,6 +14331,31 @@
         min-height: var(--tools-control-height) !important;
       }
 
+      .tools-modal--my-tools .tools-controls.tools-controls--wrapped .tools-controls__row {
+        flex-wrap: wrap !important;
+        align-items: flex-start !important;
+        row-gap: 8px !important;
+      }
+
+      .tools-modal--my-tools .tools-controls.tools-controls--wrapped .tools-search {
+        flex: 1 1 100% !important;
+        width: 100% !important;
+      }
+
+      .tools-modal--my-tools .tools-controls.tools-controls--wrapped .tools-actions {
+        order: 2 !important;
+        flex: 1 1 auto !important;
+        width: auto !important;
+        margin-left: 0 !important;
+        justify-content: flex-start !important;
+      }
+
+      .tools-modal--my-tools .tools-controls.tools-controls--wrapped .tools-filter-actions,
+      .tools-modal--my-tools .tools-controls.tools-controls--wrapped .tools-view-toggle {
+        order: 3 !important;
+        margin-left: 0 !important;
+      }
+
       .tools-modal--my-tools.tools-modal--selecting .tools-controls {
         overflow: visible !important;
       }

@@ -7027,6 +7027,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   };
 
   let toolsTopZoneLock = null;
+  let toolsControlsWrapRafId = 0;
+  let toolsControlsWrapObserver = null;
   const pendingMovesState = {
     pendingItems: [],
     allMoves: [],
@@ -10139,6 +10141,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
   const resetToolsTopZoneStability = () => {
     toolsTopZoneLock = null;
+    if (typeof window !== "undefined" && toolsControlsWrapRafId) {
+      window.cancelAnimationFrame(toolsControlsWrapRafId);
+      toolsControlsWrapRafId = 0;
+    }
+    toolsControlsEl?.classList.remove("tools-controls--wrapped");
     if (toolsHeaderEl) {
       toolsHeaderEl.style.minHeight = "";
       toolsHeaderEl.style.height = "";
@@ -10163,6 +10170,59 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       );
     }
   };
+
+  const syncToolsControlsWrapState = () => {
+    if (!toolsControlsEl || !toolsModalEl) return;
+    const controlsRowEl = toolsControlsEl.querySelector(".tools-controls__row");
+    if (!controlsRowEl) return;
+    const isMyToolsMode = toolsModalEl.classList.contains("tools-modal--my-tools");
+    if (!isMyToolsMode) {
+      toolsControlsEl.classList.remove("tools-controls--wrapped");
+      return;
+    }
+    const rowRect = controlsRowEl.getBoundingClientRect();
+    if (!Number.isFinite(rowRect.width) || rowRect.width <= 0) {
+      toolsControlsEl.classList.remove("tools-controls--wrapped");
+      return;
+    }
+    const visibleChildren = Array.from(controlsRowEl.children).filter((element) => {
+      if (!(element instanceof HTMLElement)) return false;
+      if (element.classList.contains("is-hidden")) return false;
+      return element.offsetParent !== null;
+    });
+    const totalChildrenWidth = visibleChildren.reduce((total, element) => {
+      return total + element.getBoundingClientRect().width;
+    }, 0);
+    const computedStyles = window.getComputedStyle(controlsRowEl);
+    const gap = Number.parseFloat(computedStyles.columnGap || computedStyles.gap || "0");
+    const totalGap = Number.isFinite(gap) ? gap * Math.max(0, visibleChildren.length - 1) : 0;
+    const hasOverflow =
+      controlsRowEl.scrollWidth - controlsRowEl.clientWidth > 1 ||
+      totalChildrenWidth + totalGap - rowRect.width > 1;
+    toolsControlsEl.classList.toggle("tools-controls--wrapped", hasOverflow);
+  };
+
+  const queueToolsControlsWrapSync = () => {
+    if (typeof window === "undefined") return;
+    if (toolsControlsWrapRafId) {
+      window.cancelAnimationFrame(toolsControlsWrapRafId);
+    }
+    toolsControlsWrapRafId = window.requestAnimationFrame(() => {
+      toolsControlsWrapRafId = 0;
+      syncToolsControlsWrapState();
+    });
+  };
+
+  if (typeof ResizeObserver !== "undefined" && toolsControlsEl && !toolsControlsWrapObserver) {
+    const controlsRowEl = toolsControlsEl.querySelector(".tools-controls__row");
+    toolsControlsWrapObserver = new ResizeObserver(() => {
+      queueToolsControlsWrapSync();
+    });
+    toolsControlsWrapObserver.observe(toolsControlsEl);
+    if (controlsRowEl) {
+      toolsControlsWrapObserver.observe(controlsRowEl);
+    }
+  }
 
   const clearToolsList = () => {
     if (toolsListEl) {
@@ -11262,6 +11322,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     setToolsZoneSubtitle("");
     syncToolsViewButtons();
     syncToolsTopZoneStability();
+    queueToolsControlsWrapSync();
     updateToolsSelectionUi();
   };
 

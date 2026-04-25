@@ -9712,7 +9712,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       toolsSelectionSelectAllButtonEl.setAttribute("aria-pressed", allSelected ? "true" : "false");
     }
     if (toolsSelectionCountEl) {
-      toolsSelectionCountEl.textContent = `Выбрано: ${count}`;
+      toolsSelectionCountEl.textContent = String(count);
       toolsSelectionCountEl.classList.toggle("is-hidden", !toolsState.isSelecting);
     }
     if (toolsMoveSubtitleEl) {

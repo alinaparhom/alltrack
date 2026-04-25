@@ -14218,8 +14218,8 @@
         --my-tools-top-zone-height: calc(
           var(--tools-my-tools-header-offset) + var(--my-tools-controls-height) + var(--my-tools-top-zone-gap)
         );
-        --my-tools-view-toggle-width: 182px;
-        --my-tools-filter-toggle-width: 118px;
+        --my-tools-view-toggle-width: clamp(132px, 34vw, 182px);
+        --my-tools-filter-toggle-width: clamp(102px, 24vw, 118px);
       }
 
       .tools-modal--my-tools.tools-modal--selecting {
@@ -14369,6 +14369,50 @@
 
       .tools-modal--my-tools.tools-modal--selecting .tools-selection-count {
         padding: 0 10px !important;
+      }
+
+      .tools-modal--my-tools.tools-modal--selecting .tools-actions {
+        max-width: 100% !important;
+        min-width: 0 !important;
+        overflow: visible !important;
+        row-gap: 6px !important;
+        column-gap: 6px !important;
+        padding-right: max(0px, env(safe-area-inset-right)) !important;
+        box-sizing: border-box !important;
+      }
+
+      .tools-modal--my-tools.tools-modal--selecting .tools-actions > * {
+        min-width: 0 !important;
+        max-width: 100% !important;
+      }
+
+      .tools-modal--my-tools.tools-modal--selecting .tools-move-button,
+      .tools-modal--my-tools.tools-modal--selecting .tools-cancel-button {
+        flex: 0 1 auto !important;
+      }
+
+      @media (max-width: 420px) {
+        .tools-modal--my-tools.tools-modal--selecting .tools-actions {
+          display: grid !important;
+          grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+          align-items: center !important;
+        }
+
+        .tools-modal--my-tools.tools-modal--selecting .tools-move-button,
+        .tools-modal--my-tools.tools-modal--selecting .tools-cancel-button,
+        .tools-modal--my-tools.tools-modal--selecting .tools-selection-count {
+          width: 100% !important;
+          justify-content: center !important;
+        }
+
+        .tools-modal--my-tools.tools-modal--selecting .tools-select-all-button {
+          justify-self: end !important;
+        }
+
+        .tools-modal--my-tools.tools-modal--selecting .tools-filter-actions {
+          grid-column: 1 / -1 !important;
+          justify-content: flex-end !important;
+        }
       }
 
       .tools-modal--my-tools .tools-filters {

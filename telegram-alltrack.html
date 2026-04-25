@@ -14213,7 +14213,7 @@
         --my-tools-header-height: calc(94px + env(safe-area-inset-top) + var(--telegram-top-spacing, 0px));
         --my-tools-header-title-height: 60px;
         --tools-my-tools-header-offset: var(--my-tools-header-height);
-        --my-tools-controls-height: 98px;
+        --my-tools-controls-height: 142px;
         --my-tools-top-zone-gap: 0px !important;
         --my-tools-top-zone-height: calc(
           var(--tools-my-tools-header-offset) + var(--my-tools-controls-height) + var(--my-tools-top-zone-gap)
@@ -14324,14 +14324,6 @@
       }
 
       .tools-modal--my-tools .tools-controls__row {
-        flex-direction: row !important;
-        align-items: center !important;
-        flex-wrap: nowrap !important;
-        gap: 10px !important;
-        min-height: var(--tools-control-height) !important;
-      }
-
-      .tools-modal--my-tools .tools-controls.tools-controls--wrapped .tools-controls__row {
         display: grid !important;
         grid-template-columns: minmax(0, 1fr) var(--my-tools-view-toggle-width) var(--my-tools-filter-toggle-width) !important;
         grid-template-areas:
@@ -14340,23 +14332,24 @@
         align-items: center !important;
         column-gap: 10px !important;
         row-gap: 8px !important;
+        min-height: var(--tools-control-height) !important;
       }
 
-      .tools-modal--my-tools .tools-controls.tools-controls--wrapped .tools-search {
+      .tools-modal--my-tools .tools-search {
         grid-area: search !important;
         width: 100% !important;
         min-width: 0 !important;
       }
 
-      .tools-modal--my-tools .tools-controls.tools-controls--wrapped .tools-view-toggle {
+      .tools-modal--my-tools .tools-view-toggle {
         grid-area: view !important;
       }
 
-      .tools-modal--my-tools .tools-controls.tools-controls--wrapped .tools-filter-actions {
+      .tools-modal--my-tools .tools-filter-actions {
         grid-area: filters !important;
       }
 
-      .tools-modal--my-tools .tools-controls.tools-controls--wrapped .tools-actions {
+      .tools-modal--my-tools .tools-actions {
         grid-area: actions !important;
         width: 100% !important;
         min-width: 0 !important;
@@ -14487,6 +14480,7 @@
       .tools-modal--my-tools .tools-filter-actions,
       .tools-modal--my-tools .tools-view-toggle {
         flex: 0 0 auto !important;
+        margin-left: 0 !important;
       }
 
       .tools-modal--my-tools .tools-view-toggle {

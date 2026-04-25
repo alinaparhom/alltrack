@@ -9377,6 +9377,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     );
   };
 
+  const isRepairLikeMode = () =>
+    toolsState.mode === "repair" || toolsState.mode === "write-off-pending";
+
   const setToolsSortToggleVisibility = () => {
     if (!toolsSortToggleEl) return;
     const shouldShow =
@@ -9384,13 +9387,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       toolsState.mode === "search" ||
       toolsState.mode === "user" ||
       toolsState.mode === "move-other" ||
-      toolsState.mode === "repair";
+      isRepairLikeMode();
     toolsSortToggleEl.classList.toggle("is-hidden", !shouldShow);
   };
 
   const updateToolsBrokenOnlyToggleUi = () => {
     if (!toolsBrokenOnlyToggleEl) return;
-    const isRepairMode = toolsState.mode === "repair";
+    const isRepairMode = isRepairLikeMode();
     const isPressed = isRepairMode && Boolean(toolsState.repairBrokenOnly);
     toolsBrokenOnlyToggleEl.classList.toggle("is-hidden", !isRepairMode);
     toolsBrokenOnlyToggleEl.classList.toggle("is-active", isPressed);
@@ -9404,7 +9407,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
   const updateToolsInRepairOnlyToggleUi = () => {
     if (!toolsInRepairOnlyToggleEl) return;
-    const isRepairMode = toolsState.mode === "repair";
+    const isRepairMode = isRepairLikeMode();
     const isPressed = isRepairMode && Boolean(toolsState.repairInRepairOnly);
     toolsInRepairOnlyToggleEl.classList.toggle("is-hidden", !isRepairMode);
     toolsInRepairOnlyToggleEl.classList.toggle("is-active", isPressed);
@@ -9429,7 +9432,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       toolsState.mode === "search" ||
       toolsState.mode === "user" ||
       toolsState.mode === "move-other" ||
-      toolsState.mode === "repair";
+      isRepairLikeMode();
     toolsModalEl.classList.toggle("tools-modal--my-tools", false);
     toolsModalEl.classList.toggle("tools-modal--searching", isSearchLikeMode);
     setToolsSortToggleVisibility();
@@ -9692,7 +9695,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   };
 
   const updateToolsSelectionUi = () => {
-    if (toolsState.mode === "base" || toolsState.mode === "search" || toolsState.mode === "repair") {
+    if (
+      toolsState.mode === "base" ||
+      toolsState.mode === "search" ||
+      isRepairLikeMode()
+    ) {
       toolsState.isSelecting = false;
       toolsState.selectedIds.clear();
       if (toolsMoveButtonEl) {
@@ -11449,7 +11456,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const search = toolsState.search.trim();
     const tokens = search ? search.split(/\s+/).filter(Boolean) : [];
     const filtered = toolsState.tools.filter((tool) => {
-      if (toolsState.mode === "repair" && toolsState.repairBrokenOnly) {
+      if (isRepairLikeMode() && toolsState.repairBrokenOnly) {
         const normalizedStatus = String(tool?.["Статус"] ?? "")
           .trim()
           .toLocaleLowerCase("ru");
@@ -11457,7 +11464,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           return false;
         }
       }
-      if (toolsState.mode === "repair" && toolsState.repairInRepairOnly) {
+      if (isRepairLikeMode() && toolsState.repairInRepairOnly) {
         const normalizedStatus = String(tool?.["Статус"] ?? "")
           .trim()
           .toLocaleLowerCase("ru");
@@ -11640,8 +11647,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     return (
       fromDropdowns +
       (isWriteOffPendingMode() && toolsState.statusStandalone ? 1 : 0) +
-      (toolsState.mode === "repair" && toolsState.repairBrokenOnly ? 1 : 0) +
-      (toolsState.mode === "repair" && toolsState.repairInRepairOnly ? 1 : 0)
+      (isRepairLikeMode() && toolsState.repairBrokenOnly ? 1 : 0) +
+      (isRepairLikeMode() && toolsState.repairInRepairOnly ? 1 : 0)
     );
   };
 
@@ -12017,9 +12024,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (!toolsModalEl) return;
     resetToolsTopZoneStability();
     toolsState.mode = "write-off-pending";
+    toolsState.repairBrokenOnly = false;
+    toolsState.repairInRepairOnly = false;
     toolsState.view = "table";
+    toolsState.searchSortDirection = "desc";
+    toolsState.activeReplacementResponsible = "";
     setToolsTitle("На списание");
-    setToolsStatusStandaloneVisibility(true);
+    setToolsStatusStandaloneVisibility(false);
     setToolsResponsibleFilterVisibility(true);
     syncToolsModalModeClass();
     updateToolsReplacementPendingLinkVisibility();
@@ -12029,10 +12040,18 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     setToolsSubtitle("Загружаем список...");
     const numberConfig = await resolveToolsNumberConfig();
     updateToolsNumberConfig(numberConfig);
-    if (responsibleLikeRoles.has(currentUser?.role)) {
-      await loadUserTools();
-    } else {
-      await loadBaseTools();
+    await loadBaseTools();
+    const userName = normalizePersonName(user?.full_name ?? user?.fullName ?? "");
+    const canManageAllTools = isEnergyLikeRole(user?.role);
+    if (!canManageAllTools && userName) {
+      toolsState.tools = toolsState.tools.filter(
+        (tool) => normalizePersonName(tool?.["Ответственный"] ?? "") === userName
+      );
+      toolsState.toolMap = new Map(
+        toolsState.tools.map((tool) => [tool.__selectionId, tool])
+      );
+      prepareToolsFilters();
+      applyToolsFilters();
     }
     syncToolsViewButtons();
     if (
@@ -18175,7 +18194,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
   if (toolsBrokenOnlyToggleEl) {
     toolsBrokenOnlyToggleEl.addEventListener("click", () => {
-      if (toolsState.mode !== "repair") return;
+      if (!isRepairLikeMode()) return;
       toolsState.repairBrokenOnly = !toolsState.repairBrokenOnly;
       if (toolsState.repairBrokenOnly) {
         toolsState.repairInRepairOnly = false;
@@ -18188,7 +18207,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
   if (toolsInRepairOnlyToggleEl) {
     toolsInRepairOnlyToggleEl.addEventListener("click", () => {
-      if (toolsState.mode !== "repair") return;
+      if (!isRepairLikeMode()) return;
       toolsState.repairInRepairOnly = !toolsState.repairInRepairOnly;
       if (toolsState.repairInRepairOnly) {
         toolsState.repairBrokenOnly = false;
@@ -18922,7 +18941,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       if (
         toolsState.mode === "base" ||
         toolsState.mode === "search" ||
-        toolsState.mode === "repair"
+        isRepairLikeMode()
       )
         return;
       if (toolsState.isSelecting) return;

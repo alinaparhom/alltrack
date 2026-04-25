@@ -11281,6 +11281,29 @@
           flex: 0 0 auto;
         }
 
+        .tools-modal--my-tools.tools-modal--selecting .tools-actions {
+          flex-wrap: wrap;
+          overflow-x: visible;
+          row-gap: 6px;
+        }
+
+        .tools-modal--my-tools.tools-modal--selecting .tools-selection-count,
+        .tools-modal--my-tools.tools-modal--selecting .tools-select-all-button,
+        .tools-modal--my-tools.tools-modal--selecting .tools-move-button,
+        .tools-modal--my-tools.tools-modal--selecting .tools-cancel-button {
+          order: 1;
+        }
+
+        .tools-modal--my-tools.tools-modal--selecting .tools-grouping-dropdown,
+        .tools-modal--my-tools.tools-modal--selecting .tools-sort-toggle,
+        .tools-modal--my-tools.tools-modal--selecting .tools-filter-actions {
+          order: 2;
+        }
+
+        .tools-modal--my-tools.tools-modal--selecting .tools-filter-actions {
+          margin-left: 0;
+        }
+
         .tools-modal--selecting .tools-filter-actions {
           margin-left: auto;
           position: static;

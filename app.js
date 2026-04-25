@@ -9409,14 +9409,30 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (!toolsInRepairOnlyToggleEl) return;
     const isRepairMode = isRepairLikeMode();
     const isPressed = isRepairMode && Boolean(toolsState.repairInRepairOnly);
+    const isWriteOffMode = toolsState.mode === "write-off-pending";
+    const iconEl = toolsInRepairOnlyToggleEl.querySelector(".tools-filters-toggle__icon");
+    if (iconEl) {
+      iconEl.textContent = isWriteOffMode ? "🧾" : "🛠️";
+    }
     toolsInRepairOnlyToggleEl.classList.toggle("is-hidden", !isRepairMode);
     toolsInRepairOnlyToggleEl.classList.toggle("is-active", isPressed);
     toolsInRepairOnlyToggleEl.setAttribute("aria-pressed", isPressed ? "true" : "false");
-    const label = isPressed
-      ? "Показаны только инструменты в ремонте"
-      : "Показать только инструменты в ремонте";
+    const label = isWriteOffMode
+      ? isPressed
+        ? "Показаны только инструменты со статусом «На списание»"
+        : "Показать только инструменты со статусом «На списание»"
+      : isPressed
+        ? "Показаны только инструменты в ремонте"
+        : "Показать только инструменты в ремонте";
+    const title = isWriteOffMode
+      ? isPressed
+        ? "Показаны только «На списание»"
+        : "Только «На списание»"
+      : isPressed
+        ? "Показаны только в ремонте"
+        : "Только в ремонте";
     toolsInRepairOnlyToggleEl.setAttribute("aria-label", label);
-    toolsInRepairOnlyToggleEl.setAttribute("title", isPressed ? "Показаны только в ремонте" : "Только в ремонте");
+    toolsInRepairOnlyToggleEl.setAttribute("title", title);
   };
 
   const setToolsMoveButtonVisibility = () => {
@@ -11468,7 +11484,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         const normalizedStatus = String(tool?.["Статус"] ?? "")
           .trim()
           .toLocaleLowerCase("ru");
-        if (normalizedStatus !== "в ремонте") {
+        const requiredStatus = toolsState.mode === "write-off-pending" ? "на списание" : "в ремонте";
+        if (normalizedStatus !== requiredStatus) {
           return false;
         }
       }

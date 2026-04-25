@@ -583,10 +583,11 @@ export function renderRole(user) {
                     aria-expanded="false"
                   >
                     <span class="demand-filters__icon" aria-hidden="true">
-                      <svg viewBox="0 0 24 24" role="presentation" focusable="false">
-                        <path
-                          d="M3 4.5C3 3.67 3.67 3 4.5 3h15c.83 0 1.5.67 1.5 1.5 0 .36-.13.7-.35.98L14 13.2v5.05c0 .36-.2.7-.53.86l-3 1.5A1 1 0 0 1 9 19.66V13.2L3.35 5.48A1.5 1.5 0 0 1 3 4.5Z"
-                        />
+                      <svg viewBox="0 0 24 24" role="presentation" focusable="false" fill="none">
+                        <line x1="4" y1="7" x2="20" y2="7" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                        <circle cx="15" cy="7" r="2.5" fill="currentColor" />
+                        <line x1="4" y1="17" x2="20" y2="17" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                        <circle cx="9" cy="17" r="2.5" fill="currentColor" />
                       </svg>
                     </span>
                   </button>
@@ -1010,8 +1011,11 @@ export function renderRole(user) {
                         aria-label="Фильтры"
                       >
                         <span class="tools-filters-toggle__icon" aria-hidden="true">
-                          <svg viewBox="0 0 24 24" focusable="false">
-                            <path d="M3 4.5C3 3.67 3.67 3 4.5 3h15c.83 0 1.5.67 1.5 1.5 0 .36-.13.7-.35.98L14 13.2v5.05c0 .36-.2.7-.53.86l-3 1.5A1 1 0 0 1 9 19.66V13.2L3.35 5.48A1.5 1.5 0 0 1 3 4.5Z" />
+                          <svg viewBox="0 0 24 24" focusable="false" fill="none">
+                            <line x1="4" y1="7" x2="20" y2="7" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                            <circle cx="15" cy="7" r="2.5" fill="currentColor" />
+                            <line x1="4" y1="17" x2="20" y2="17" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                            <circle cx="9" cy="17" r="2.5" fill="currentColor" />
                           </svg>
                         </span>
                       </button>
@@ -1660,8 +1664,11 @@ export function renderRole(user) {
                     aria-label="Фильтры"
                   >
                     <span class="tools-filters-toggle__icon" aria-hidden="true">
-                      <svg viewBox="0 0 24 24" focusable="false">
-                        <path d="M3 4.5C3 3.67 3.67 3 4.5 3h15c.83 0 1.5.67 1.5 1.5 0 .36-.13.7-.35.98L14 13.2v5.05c0 .36-.2.7-.53.86l-3 1.5A1 1 0 0 1 9 19.66V13.2L3.35 5.48A1.5 1.5 0 0 1 3 4.5Z" />
+                      <svg viewBox="0 0 24 24" focusable="false" fill="none">
+                        <line x1="4" y1="7" x2="20" y2="7" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                        <circle cx="15" cy="7" r="2.5" fill="currentColor" />
+                        <line x1="4" y1="17" x2="20" y2="17" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                        <circle cx="9" cy="17" r="2.5" fill="currentColor" />
                       </svg>
                     </span>
                   </button>
@@ -2327,10 +2334,12 @@ export function renderRole(user) {
                         aria-hidden="true"
                         viewBox="0 0 24 24"
                         focusable="false"
+                        fill="none"
                       >
-                        <path
-                          d="M3 4.5C3 3.67 3.67 3 4.5 3h15c.83 0 1.5.67 1.5 1.5 0 .36-.13.7-.35.98L14 13.2v5.05c0 .36-.2.7-.53.86l-3 1.5A1 1 0 0 1 9 19.66V13.2L3.35 5.48A1.5 1.5 0 0 1 3 4.5Z"
-                        />
+                        <line x1="4" y1="7" x2="20" y2="7" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                        <circle cx="15" cy="7" r="2.5" fill="currentColor" />
+                        <line x1="4" y1="17" x2="20" y2="17" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                        <circle cx="9" cy="17" r="2.5" fill="currentColor" />
                       </svg>
                     </button>
                   </div>
@@ -2420,10 +2429,12 @@ export function renderRole(user) {
                         aria-hidden="true"
                         viewBox="0 0 24 24"
                         focusable="false"
+                        fill="none"
                       >
-                        <path
-                          d="M3 4.5C3 3.67 3.67 3 4.5 3h15c.83 0 1.5.67 1.5 1.5 0 .36-.13.7-.35.98L14 13.2v5.05c0 .36-.2.7-.53.86l-3 1.5A1 1 0 0 1 9 19.66V13.2L3.35 5.48A1.5 1.5 0 0 1 3 4.5Z"
-                        />
+                        <line x1="4" y1="7" x2="20" y2="7" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                        <circle cx="15" cy="7" r="2.5" fill="currentColor" />
+                        <line x1="4" y1="17" x2="20" y2="17" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                        <circle cx="9" cy="17" r="2.5" fill="currentColor" />
                       </svg>
                     </button>
                   </div>
@@ -2644,8 +2655,11 @@ export function renderRole(user) {
                         aria-label="Фильтры"
                       >
                         <span class="tools-filters-toggle__icon" aria-hidden="true">
-                          <svg viewBox="0 0 24 24" focusable="false">
-                            <path d="M3 4.5C3 3.67 3.67 3 4.5 3h15c.83 0 1.5.67 1.5 1.5 0 .36-.13.7-.35.98L14 13.2v5.05c0 .36-.2.7-.53.86l-3 1.5A1 1 0 0 1 9 19.66V13.2L3.35 5.48A1.5 1.5 0 0 1 3 4.5Z" />
+                          <svg viewBox="0 0 24 24" focusable="false" fill="none">
+                            <line x1="4" y1="7" x2="20" y2="7" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                            <circle cx="15" cy="7" r="2.5" fill="currentColor" />
+                            <line x1="4" y1="17" x2="20" y2="17" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                            <circle cx="9" cy="17" r="2.5" fill="currentColor" />
                           </svg>
                         </span>
                       </button>
@@ -4059,8 +4073,11 @@ export function renderRole(user) {
                     aria-expanded="false"
                   >
                     <span class="button-icon-emoji" aria-hidden="true">
-                      <svg viewBox="0 0 24 24" focusable="false">
-                        <path d="M3 4.5C3 3.67 3.67 3 4.5 3h15c.83 0 1.5.67 1.5 1.5 0 .36-.13.7-.35.98L14 13.2v5.05c0 .36-.2.7-.53.86l-3 1.5A1 1 0 0 1 9 19.66V13.2L3.35 5.48A1.5 1.5 0 0 1 3 4.5Z" />
+                      <svg viewBox="0 0 24 24" focusable="false" fill="none">
+                        <line x1="4" y1="7" x2="20" y2="7" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                        <circle cx="15" cy="7" r="2.5" fill="currentColor" />
+                        <line x1="4" y1="17" x2="20" y2="17" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                        <circle cx="9" cy="17" r="2.5" fill="currentColor" />
                       </svg>
                     </span>
                   </button>

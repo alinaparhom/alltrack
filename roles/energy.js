@@ -924,7 +924,7 @@ export function renderRole(user) {
                       data-tools-selection-count
                       aria-live="polite"
                     >
-                      Выбрано: 0
+                      0
                     </div>
                     <button
                       class="action-secondary tools-cancel-button"

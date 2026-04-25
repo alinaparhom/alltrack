@@ -10175,6 +10175,28 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (!toolsControlsEl || !toolsModalEl) return;
     const controlsRowEl = toolsControlsEl.querySelector(".tools-controls__row");
     if (!controlsRowEl) return;
+    const hasHorizontalOverflow = (element) => {
+      if (!(element instanceof HTMLElement)) return false;
+      if (element.classList.contains("is-hidden")) return false;
+      if (element.offsetParent === null) return false;
+      if (element.scrollWidth - element.clientWidth > 1) return true;
+      const visibleChildren = Array.from(element.children).filter((child) => {
+        if (!(child instanceof HTMLElement)) return false;
+        if (child.classList.contains("is-hidden")) return false;
+        return child.offsetParent !== null;
+      });
+      if (!visibleChildren.length) return false;
+      const childrenWidth = visibleChildren.reduce(
+        (total, child) => total + child.getBoundingClientRect().width,
+        0
+      );
+      const styles = window.getComputedStyle(element);
+      const gapValue = Number.parseFloat(styles.columnGap || styles.gap || "0");
+      const gapWidth = Number.isFinite(gapValue)
+        ? gapValue * Math.max(0, visibleChildren.length - 1)
+        : 0;
+      return childrenWidth + gapWidth - element.clientWidth > 1;
+    };
     const isMyToolsMode = toolsModalEl.classList.contains("tools-modal--my-tools");
     if (!isMyToolsMode) {
       toolsControlsEl.classList.remove("tools-controls--wrapped");
@@ -10198,7 +10220,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const totalGap = Number.isFinite(gap) ? gap * Math.max(0, visibleChildren.length - 1) : 0;
     const hasOverflow =
       controlsRowEl.scrollWidth - controlsRowEl.clientWidth > 1 ||
-      totalChildrenWidth + totalGap - rowRect.width > 1;
+      totalChildrenWidth + totalGap - rowRect.width > 1 ||
+      hasHorizontalOverflow(toolsActionsEl) ||
+      hasHorizontalOverflow(toolsFilterActionsEl);
     toolsControlsEl.classList.toggle("tools-controls--wrapped", hasOverflow);
   };
 

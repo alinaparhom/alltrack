@@ -5709,6 +5709,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const breakdownsSortToggle = contentEl.querySelector(
     "[data-breakdowns-sort-toggle]"
   );
+  const breakdownsBrokenOnlyToggle = contentEl.querySelector(
+    "[data-breakdowns-broken-only-toggle]"
+  );
   const breakdownsFiltersToggle = contentEl.querySelector(
     "[data-breakdowns-filters-toggle]"
   );
@@ -7258,6 +7261,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     toolMap: new Map(),
     photos: [],
     statusFilter: "",
+    brokenOnly: false,
     view: "table",
     sortDirection: "desc",
     grouping: "none",
@@ -21061,6 +21065,21 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
   };
 
+  const syncBreakdownsBrokenOnlyToggle = () => {
+    if (!breakdownsBrokenOnlyToggle) return;
+    const isPressed = Boolean(breakdownsState.brokenOnly);
+    breakdownsBrokenOnlyToggle.classList.toggle("is-active", isPressed);
+    breakdownsBrokenOnlyToggle.setAttribute("aria-pressed", isPressed ? "true" : "false");
+    const label = isPressed
+      ? "Показаны только инструменты со статусом Сломан"
+      : "Показать только инструменты со статусом Сломан";
+    breakdownsBrokenOnlyToggle.setAttribute("aria-label", label);
+    breakdownsBrokenOnlyToggle.setAttribute(
+      "title",
+      isPressed ? "Показаны только сломанные" : "Только сломанные"
+    );
+  };
+
   const setBreakdownsFiltersOpened = (opened) => {
     breakdownsState.filtersOpened = Boolean(opened);
     breakdownsFiltersPanel?.classList.toggle("is-open", breakdownsState.filtersOpened);
@@ -21205,6 +21224,14 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           String(tool?.["Статус"] ?? "").trim() !== breakdownsState.statusFilter
         ) {
           return false;
+        }
+        if (breakdownsState.brokenOnly) {
+          const normalizedStatus = String(tool?.["Статус"] ?? "")
+            .trim()
+            .toLocaleLowerCase("ru");
+          if (normalizedStatus !== "сломан") {
+            return false;
+          }
         }
         if (!tokens.length) return true;
         const searchLine = tool.__searchLine ?? "";
@@ -22376,6 +22403,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       applyBreakdownsFilters();
     });
   }
+  if (breakdownsBrokenOnlyToggle) {
+    breakdownsBrokenOnlyToggle.addEventListener("click", () => {
+      breakdownsState.brokenOnly = !breakdownsState.brokenOnly;
+      syncBreakdownsBrokenOnlyToggle();
+      applyBreakdownsFilters();
+    });
+  }
   if (breakdownsFiltersToggle) {
     breakdownsFiltersToggle.addEventListener("click", () => {
       setBreakdownsFiltersOpened(!breakdownsState.filtersOpened);
@@ -22402,6 +22436,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     });
   });
   syncBreakdownsGroupingUi();
+  syncBreakdownsBrokenOnlyToggle();
   if (breakdownsListEl) {
     breakdownsListEl.addEventListener("click", (event) => {
       const row = event.target.closest("[data-breakdowns-select]");

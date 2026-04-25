@@ -14332,27 +14332,42 @@
       }
 
       .tools-modal--my-tools .tools-controls.tools-controls--wrapped .tools-controls__row {
-        flex-wrap: wrap !important;
-        align-items: flex-start !important;
+        display: grid !important;
+        grid-template-columns: minmax(0, 1fr) var(--my-tools-view-toggle-width) var(--my-tools-filter-toggle-width) !important;
+        grid-template-areas:
+          "search view filters"
+          "actions actions actions" !important;
+        align-items: center !important;
+        column-gap: 10px !important;
         row-gap: 8px !important;
       }
 
       .tools-modal--my-tools .tools-controls.tools-controls--wrapped .tools-search {
-        flex: 1 1 100% !important;
+        grid-area: search !important;
         width: 100% !important;
+        min-width: 0 !important;
+      }
+
+      .tools-modal--my-tools .tools-controls.tools-controls--wrapped .tools-view-toggle {
+        grid-area: view !important;
+      }
+
+      .tools-modal--my-tools .tools-controls.tools-controls--wrapped .tools-filter-actions {
+        grid-area: filters !important;
       }
 
       .tools-modal--my-tools .tools-controls.tools-controls--wrapped .tools-actions {
-        order: 2 !important;
-        flex: 1 1 auto !important;
-        width: auto !important;
+        grid-area: actions !important;
+        width: 100% !important;
+        min-width: 0 !important;
         margin-left: 0 !important;
         justify-content: flex-start !important;
+        flex-wrap: wrap !important;
+        row-gap: 6px !important;
       }
 
       .tools-modal--my-tools .tools-controls.tools-controls--wrapped .tools-filter-actions,
       .tools-modal--my-tools .tools-controls.tools-controls--wrapped .tools-view-toggle {
-        order: 3 !important;
         margin-left: 0 !important;
       }
 

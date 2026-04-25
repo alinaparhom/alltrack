@@ -943,10 +943,10 @@ export function renderRole(user) {
                       <span class="tools-select-all-check" aria-hidden="true"></span>
                     </button>
                     <div class="tools-filter-actions" role="group" aria-label="Сортировка и фильтры">
-                      <button
-                        class="tools-filters-toggle is-hidden"
-                        type="button"
-                        data-tools-broken-only-toggle
+                    <button
+                      class="tools-filters-toggle is-hidden"
+                      type="button"
+                      data-tools-broken-only-toggle
                         aria-label="Показать только сломанные инструменты"
                         title="Только сломанные"
                         aria-pressed="false"
@@ -954,6 +954,21 @@ export function renderRole(user) {
                         <span class="tools-filters-toggle__icon" aria-hidden="true">
                           <svg viewBox="0 0 24 24" focusable="false">
                             <path d="M11.3 3.95a.8.8 0 0 1 1.4 0l8 14a.8.8 0 0 1-.7 1.2H4a.8.8 0 0 1-.7-1.2l8-14Zm.7 4.6a.75.75 0 0 0-.75.75v4.7a.75.75 0 1 0 1.5 0V9.3a.75.75 0 0 0-.75-.75Zm0 8.95a.95.95 0 1 0 0-1.9.95.95 0 0 0 0 1.9Z" />
+                          </svg>
+                        </span>
+                      </button>
+                      <button
+                        class="tools-filters-toggle is-hidden"
+                        type="button"
+                        data-tools-in-repair-only-toggle
+                        aria-label="Показать только инструменты в ремонте"
+                        title="Только в ремонте"
+                        aria-pressed="false"
+                      >
+                        <span class="tools-filters-toggle__icon" aria-hidden="true">
+                          <svg viewBox="0 0 24 24" focusable="false">
+                            <path d="M14.7 4.3a.8.8 0 0 1 0 1.13l-1.18 1.17 3.88 3.88 1.17-1.18a.8.8 0 1 1 1.13 1.13l-6.79 6.8a.8.8 0 0 1-1.13-1.14l1.17-1.17-3.88-3.88-1.17 1.17a.8.8 0 0 1-1.13-1.13l6.79-6.8a.8.8 0 0 1 1.14 0ZM9.81 10.1l3.88 3.88 2.58-2.58-3.88-3.88-2.58 2.58Z" />
+                            <path d="M5.5 19.15a.8.8 0 0 1-1.13 0l-1.9-1.9a.8.8 0 0 1 1.13-1.13l1.34 1.33 3.96-4.29a.8.8 0 0 1 1.17 1.08l-4.52 4.9a.8.8 0 0 1-.59.26h-.01a.8.8 0 0 1-.56-.25Z" />
                           </svg>
                         </span>
                       </button>

@@ -2609,6 +2609,20 @@ export function renderRole(user) {
                       </button>
                     </div>
                     <div class="tools-filter-actions" role="group" aria-label="Сортировка и фильтры">
+                      <button
+                        class="tools-filters-toggle"
+                        type="button"
+                        data-breakdowns-broken-only-toggle
+                        aria-label="Показать только инструменты со статусом Сломан"
+                        title="Только сломанные"
+                        aria-pressed="false"
+                      >
+                        <span class="tools-filters-toggle__icon" aria-hidden="true">
+                          <svg viewBox="0 0 24 24" focusable="false">
+                            <path d="M11.3 3.95a.8.8 0 0 1 1.4 0l8 14a.8.8 0 0 1-.7 1.2H4a.8.8 0 0 1-.7-1.2l8-14Zm.7 4.6a.75.75 0 0 0-.75.75v4.7a.75.75 0 1 0 1.5 0V9.3a.75.75 0 0 0-.75-.75Zm0 8.95a.95.95 0 1 0 0-1.9.95.95 0 0 0 0 1.9Z" />
+                          </svg>
+                        </span>
+                      </button>
                       <div class="tools-grouping-dropdown" data-breakdowns-grouping-dropdown>
                         <button
                           class="tools-filters-toggle tools-grouping-toggle"

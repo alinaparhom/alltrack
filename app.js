@@ -21242,26 +21242,49 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     return String(rawStatus ?? "").trim();
   };
 
-  const buildBreakdownToolInfoLines = (tool) => {
+  const buildBreakdownToolInfoFields = (tool) => {
     const number = resolveToolNumberValue(tool);
     const name = String(tool?.["Наименование"] ?? "").trim();
-    const manufacturer = String(tool?.["Производитель"] ?? "").trim();
-    const model = String(tool?.["Модель"] ?? "").trim();
     const accountingNumber = String(tool?.["Бух.номер"] ?? "").trim();
     const toolCost = normalizeCostValue(tool?.["Стоимость"]);
+    const purchaseDate = String(tool?.["Дата покупки"] ?? "").trim();
     const responsible = String(tool?.["Ответственный"] ?? "").trim();
+    const objectName = String(tool?.["Объект"] ?? "").trim();
     const status = normalizeBreakdownToolStatusLabel(
       tool?.["Статус"],
       Boolean(tool?.__pendingMove)
     );
     return [
-      `${number || "—"} - ${name || "—"} ${manufacturer || "—"} ${model || "—"}`,
-      `${accountingNumber || "—"} · ${
-        toolCost === null ? "—" : `${formatNotificationCostWithoutCurrency(toolCost)} р.`
-      }`,
-      responsible || "—",
-      status || "—",
+      { label: "Номер", value: number || "—" },
+      { label: "Бухгалтерский номер", value: accountingNumber || "—" },
+      { label: "Наименование", value: name || "—" },
+      {
+        label: "Стоимость",
+        value:
+          toolCost === null
+            ? "—"
+            : `${formatNotificationCostWithoutCurrency(toolCost)} р.`,
+      },
+      { label: "Дата покупки", value: purchaseDate || "—" },
+      { label: "Ответственный", value: responsible || "—" },
+      { label: "Объект", value: objectName || "—" },
+      { label: "Статус", value: status || "—" },
     ];
+  };
+
+  const renderBreakdownToolInfoFields = (toolMetaElement, tool) => {
+    if (!toolMetaElement) return;
+    const fields = buildBreakdownToolInfoFields(tool);
+    toolMetaElement.innerHTML = fields
+      .map(
+        (field) =>
+          `<div class="breakdown-tool-field"><div class="breakdown-tool-field__label">${escapeHtml(
+            field.label
+          )}</div><div class="breakdown-tool-field__value">${escapeHtml(
+            field.value
+          )}</div></div>`
+      )
+      .join("");
   };
 
   const renderBreakdownsTable = (items) => {
@@ -22267,14 +22290,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       breakdownStatusSubtitleEl.textContent = "Информация об инструменте";
     }
     if (breakdownStatusToolTitleEl) {
-      breakdownStatusToolTitleEl.textContent = "Данные инструмента";
+      breakdownStatusToolTitleEl.textContent = "";
     }
-    if (breakdownStatusToolMetaEl) {
-      const lines = buildBreakdownToolInfoLines(tool);
-      breakdownStatusToolMetaEl.innerHTML = lines
-        .map((line) => escapeHtml(line))
-        .join("<br>");
-    }
+    renderBreakdownToolInfoFields(breakdownStatusToolMetaEl, tool);
   };
 
   const openBreakdownStatusModal = (tool) => {
@@ -22303,14 +22321,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     breakdownsState.photos = [];
     updateBreakdownPhotoPreview();
     if (breakdownToolTitleEl) {
-      breakdownToolTitleEl.textContent = "Данные инструмента";
+      breakdownToolTitleEl.textContent = "";
     }
-    if (breakdownToolMetaEl) {
-      const lines = buildBreakdownToolInfoLines(tool);
-      breakdownToolMetaEl.innerHTML = lines
-        .map((line) => escapeHtml(line))
-        .join("<br>");
-    }
+    renderBreakdownToolInfoFields(breakdownToolMetaEl, tool);
     setBreakdownFormMessage("");
     breakdownFormModalEl.classList.remove("is-hidden");
     breakdownFormModalEl.classList.remove("is-input-focus");

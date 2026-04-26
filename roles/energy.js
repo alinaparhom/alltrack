@@ -3150,7 +3150,8 @@ export function renderRole(user) {
             </div>
             <form class="settings-modal__form breakdown-form" data-breakdown-form>
               <div class="settings-modal__body breakdown-form__body">
-                <div class="breakdown-tool-card">
+                <div class="breakdown-tool-card breakdown-tool-card--highlight">
+                  <div class="breakdown-tool-caption">Информация об инструменте</div>
                   <div class="breakdown-tool-title" data-breakdown-tool-title>
                     —
                   </div>
@@ -3168,8 +3169,8 @@ export function renderRole(user) {
                 </label>
                 <div class="form-field">
                   <span class="form-label">Фото поломки</span>
-                  <div class="form-file-row">
-                    <label class="form-file-option">
+                  <div class="form-file-row breakdown-photo-actions">
+                    <label class="form-file-option breakdown-photo-actions__item">
                       <input
                         class="form-input form-input--file"
                         type="file"
@@ -3182,7 +3183,7 @@ export function renderRole(user) {
                       </span>
                     </label>
                     <button
-                      class="form-file-option form-file-option--button"
+                      class="form-file-option form-file-option--button breakdown-photo-actions__item"
                       type="button"
                       data-breakdown-camera-trigger
                     >

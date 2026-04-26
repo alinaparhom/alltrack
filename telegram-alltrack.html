@@ -2876,6 +2876,28 @@
         gap: 6px;
       }
 
+      .breakdown-tool-card--highlight {
+        border: 1px solid rgba(148, 163, 184, 0.28);
+        background: linear-gradient(
+          135deg,
+          rgba(255, 255, 255, 0.96) 0%,
+          rgba(248, 250, 252, 0.9) 100%
+        );
+      }
+
+      .breakdown-tool-caption {
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: rgba(71, 85, 105, 0.9);
+        margin-bottom: 2px;
+      }
+
+      body[data-theme="dark"] .breakdown-tool-caption {
+        color: rgba(191, 219, 254, 0.86);
+      }
+
       .breakdown-tool-title {
         font-weight: 700;
         color: var(--text);
@@ -2885,7 +2907,7 @@
       .breakdown-tool-meta {
         font-size: var(--text-sm);
         color: var(--muted);
-        line-height: 1.4;
+        line-height: 1.45;
       }
 
       .breakdown-photo-summary {
@@ -3026,6 +3048,19 @@
 
       .breakdown-form .form-file-row {
         align-items: stretch;
+      }
+
+      .breakdown-photo-actions .breakdown-photo-actions__item {
+        display: flex;
+        min-height: 48px;
+        height: 48px;
+      }
+
+      .breakdown-photo-actions .breakdown-photo-actions__item .form-file-button {
+        width: 100%;
+        min-height: 48px;
+        height: 48px;
+        box-sizing: border-box;
       }
 
       .breakdown-form .form-file-option {

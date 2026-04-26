@@ -5715,6 +5715,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const breakdownsFiltersToggle = contentEl.querySelector(
     "[data-breakdowns-filters-toggle]"
   );
+  const breakdownsFilterActionsEl = breakdownsFiltersToggle?.closest(".tools-filter-actions");
   const breakdownsGroupingDropdown = contentEl.querySelector(
     "[data-breakdowns-grouping-dropdown]"
   );
@@ -21513,13 +21514,19 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const setBreakdownsFiltersOpened = (opened) => {
     breakdownsState.filtersOpened = Boolean(opened);
     breakdownsFiltersPanel?.classList.toggle("is-open", breakdownsState.filtersOpened);
+    breakdownsFilterActionsEl?.classList.toggle("is-open", breakdownsState.filtersOpened);
     if (breakdownsFiltersToggle) {
       breakdownsFiltersToggle.setAttribute(
         "aria-expanded",
         breakdownsState.filtersOpened ? "true" : "false"
       );
-      breakdownsFiltersToggle.classList.toggle("is-active", breakdownsState.filtersOpened);
     }
+  };
+
+  const updateBreakdownsFiltersUi = () => {
+    if (!breakdownsFiltersToggle) return;
+    const hasAppliedFilters = Boolean(breakdownsState.statusFilter);
+    breakdownsFiltersToggle.classList.toggle("is-active", hasAppliedFilters);
   };
 
   const setBreakdownsGroupingMenuOpen = (opened) => {
@@ -21677,6 +21684,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         );
       });
     renderBreakdownsList();
+    updateBreakdownsFiltersUi();
   };
 
   const renderRepairTable = (items) => {
@@ -22000,6 +22008,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       breakdownsState.statusFilter = "";
     }
     breakdownsStatusFilter.value = breakdownsState.statusFilter;
+    updateBreakdownsFiltersUi();
   };
 
   const loadBreakdownsTools = async () => {

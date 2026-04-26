@@ -1187,17 +1187,19 @@ export function renderRole(user) {
           >
             <div class="settings-modal__header tools-writeoff-pending-confirm-modal__header">
               <div class="settings-modal__title">
-                <h2>Решение по инструменту</h2>
+                <div class="tools-writeoff-pending-confirm-modal__heading-row">
+                  <h2>Решение по инструменту</h2>
+                  <button
+                    class="button-icon"
+                    type="button"
+                    data-tools-writeoff-pending-confirm-close
+                    aria-label="Закрыть подтверждение"
+                  >
+                    <span class="button-icon-emoji" aria-hidden="true">✕</span>
+                  </button>
+                </div>
                 <p data-tools-writeoff-pending-confirm-subtitle></p>
               </div>
-              <button
-                class="button-icon"
-                type="button"
-                data-tools-writeoff-pending-confirm-close
-                aria-label="Закрыть подтверждение"
-              >
-                <span class="button-icon-emoji" aria-hidden="true">✕</span>
-              </button>
             </div>
             <div class="settings-modal__body">
               <div class="form-card tools-writeoff-pending-confirm-card">

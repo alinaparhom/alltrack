@@ -10753,7 +10753,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       toolsState.mode === "base" ||
       toolsState.mode === "search" ||
       toolsState.mode === "move-other" ||
-      toolsState.mode === "repair";
+      toolsState.mode === "repair" ||
+      toolsState.mode === "write-off-pending";
     const shouldShowResponsibleAndToolStatus = toolsState.mode !== "user";
     const isLargeMyToolsCard = viewMode === "large" && toolsState.mode === "user";
     const kitItems = getToolKitItems(tool);
@@ -11114,7 +11115,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       toolsState.mode === "search" ||
       toolsState.mode === "user" ||
       toolsState.mode === "move-other" ||
-      toolsState.mode === "repair";
+      toolsState.mode === "repair" ||
+      toolsState.mode === "write-off-pending";
     const isMyToolsMode = toolsState.mode === "user";
     table.className = "tools-table";
     if (isMyToolsMode) {
@@ -11125,7 +11127,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       toolsState.mode === "base" ||
       toolsState.mode === "search" ||
       toolsState.mode === "move-other" ||
-      toolsState.mode === "repair";
+      toolsState.mode === "repair" ||
+      toolsState.mode === "write-off-pending";
     const shouldUseSearchLayout = isSearchLikeMode;
     const normalizeToolStatusLabel = (rawStatus, movingNow = false) => {
       if (movingNow) return "Перемещается";

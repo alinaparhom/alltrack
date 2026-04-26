@@ -10884,7 +10884,7 @@
 
       .tools-writeoff-pending-confirm-modal__header .button-icon {
         align-self: start;
-        margin-top: 2px;
+        margin-top: 8px;
         transform: none;
         border: none;
         background: transparent;
@@ -10994,13 +10994,13 @@
         align-items: center;
         gap: 10px;
         flex-wrap: nowrap;
-        justify-content: flex-end;
+        justify-content: space-between;
         width: 100%;
       }
 
       .tools-writeoff-pending-confirm-actions .action-primary {
-        flex: 0 0 clamp(118px, 42vw, 150px);
-        width: clamp(118px, 42vw, 150px);
+        flex: 1 1 0;
+        width: 100%;
         min-width: 0;
         white-space: nowrap;
         height: 44px;
@@ -11031,8 +11031,8 @@
 
       .settings-modal__footer.tools-writeoff-pending-confirm-actions {
         position: fixed;
-        left: 12px;
-        right: 12px;
+        left: max(12px, env(safe-area-inset-left));
+        right: max(12px, env(safe-area-inset-right));
         bottom: calc(10px + env(safe-area-inset-bottom));
         z-index: 20;
         flex-direction: row;
@@ -11081,8 +11081,8 @@
         }
 
         .tools-writeoff-pending-confirm-actions .action-primary {
-          width: clamp(110px, 41vw, 136px);
-          flex-basis: clamp(110px, 41vw, 136px);
+          width: 100%;
+          flex-basis: 0;
           min-width: 0;
           height: 42px;
           min-height: 42px;
@@ -11094,8 +11094,8 @@
 
       @media (max-width: 520px) {
         .settings-modal__footer.tools-writeoff-pending-confirm-actions {
-          left: 12px;
-          right: 12px;
+          left: max(12px, env(safe-area-inset-left));
+          right: max(12px, env(safe-area-inset-right));
           bottom: calc(8px + env(safe-area-inset-bottom));
           flex-direction: row;
           align-items: center;

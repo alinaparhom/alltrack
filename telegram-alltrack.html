@@ -10872,10 +10872,20 @@
         align-items: start;
       }
 
+      .tools-writeoff-pending-confirm-modal__header .settings-modal__title {
+        display: grid;
+        gap: 4px;
+      }
+
+      .tools-writeoff-pending-confirm-modal__header .settings-modal__title h2 {
+        margin: 0;
+        line-height: 1.35;
+      }
+
       .tools-writeoff-pending-confirm-modal__header .button-icon {
-        align-self: center;
-        margin-top: 0;
-        transform: translateY(50%);
+        align-self: start;
+        margin-top: 2px;
+        transform: none;
         border: none;
         background: transparent;
         box-shadow: none;
@@ -10984,13 +10994,13 @@
         align-items: center;
         gap: 10px;
         flex-wrap: nowrap;
-        justify-content: stretch;
+        justify-content: flex-end;
         width: 100%;
       }
 
       .tools-writeoff-pending-confirm-actions .action-primary {
-        flex: 0 1 calc(50% - 6px);
-        width: auto;
+        flex: 0 0 clamp(118px, 42vw, 150px);
+        width: clamp(118px, 42vw, 150px);
         min-width: 0;
         white-space: nowrap;
         height: 44px;
@@ -11071,7 +11081,8 @@
         }
 
         .tools-writeoff-pending-confirm-actions .action-primary {
-          width: auto;
+          width: clamp(110px, 41vw, 136px);
+          flex-basis: clamp(110px, 41vw, 136px);
           min-width: 0;
           height: 42px;
           min-height: 42px;
@@ -11083,8 +11094,8 @@
 
       @media (max-width: 520px) {
         .settings-modal__footer.tools-writeoff-pending-confirm-actions {
-          left: 10px;
-          right: 10px;
+          left: 12px;
+          right: 12px;
           bottom: calc(8px + env(safe-area-inset-bottom));
           flex-direction: row;
           align-items: center;

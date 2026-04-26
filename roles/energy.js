@@ -1202,12 +1202,10 @@ export function renderRole(user) {
             <div class="settings-modal__body">
               <div class="form-card tools-writeoff-pending-confirm-card">
                 <div class="tools-writeoff-pending-confirm-card__label">Инструмент</div>
-                <div class="tools-writeoff-pending-confirm-card__title" data-tools-writeoff-pending-confirm-title>
-                  —
-                </div>
-                <div class="tools-writeoff-pending-confirm-card__meta" data-tools-writeoff-pending-confirm-meta>
-                  —
-                </div>
+                <div
+                  class="tools-writeoff-pending-confirm-card__details"
+                  data-tools-writeoff-pending-confirm-details
+                ></div>
               </div>
               <div class="tools-writeoff-pending-confirm-history">
                 <div

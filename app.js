@@ -6503,6 +6503,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const toolsWriteOffPendingConfirmMetaEl = contentEl.querySelector(
     "[data-tools-writeoff-pending-confirm-meta]"
   );
+  const toolsWriteOffPendingConfirmDetailsEl = contentEl.querySelector(
+    "[data-tools-writeoff-pending-confirm-details]"
+  );
   const toolsWriteOffPendingConfirmMessageEl = contentEl.querySelector(
     "[data-tools-writeoff-pending-confirm-message]"
   );
@@ -9557,6 +9560,32 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       .join(" · ");
   };
 
+  const renderToolsWriteOffPendingConfirmDetails = (tool) => {
+    if (!toolsWriteOffPendingConfirmDetailsEl) return;
+    const details = [
+      ["Номер", resolveToolNumberValue(tool)],
+      ["Бухгалтерский номер", tool?.["Бух.номер"]],
+      ["Наименование", tool?.["Наименование"]],
+      ["Стоимость", tool?.["Стоимость"]],
+      ["Дата покупки", tool?.["Дата покупки"]],
+      ["Ответственный", tool?.["Ответственный"]],
+      ["Объект", tool?.["Объект"]],
+    ];
+    toolsWriteOffPendingConfirmDetailsEl.innerHTML = "";
+    details.forEach(([label, value]) => {
+      const row = document.createElement("div");
+      row.className = "tools-writeoff-pending-confirm-card__detail";
+      const labelEl = document.createElement("div");
+      labelEl.className = "tools-writeoff-pending-confirm-card__detail-label";
+      labelEl.textContent = label;
+      const valueEl = document.createElement("div");
+      valueEl.className = "tools-writeoff-pending-confirm-card__detail-value";
+      valueEl.textContent = formatInfoValue(value);
+      row.append(labelEl, valueEl);
+      toolsWriteOffPendingConfirmDetailsEl.appendChild(row);
+    });
+  };
+
   const resetToolsWriteOffPendingConfirmState = () => {
     toolsWriteOffPendingConfirmState.tool = null;
     toolsWriteOffPendingConfirmState.isSaving = false;
@@ -9580,6 +9609,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
     if (toolsWriteOffPendingConfirmSubtitleEl) {
       toolsWriteOffPendingConfirmSubtitleEl.textContent = "";
+    }
+    if (toolsWriteOffPendingConfirmDetailsEl) {
+      toolsWriteOffPendingConfirmDetailsEl.innerHTML = "";
     }
     if (toolsWriteOffPendingPhotoEl) {
       toolsWriteOffPendingPhotoEl.removeAttribute("src");
@@ -9775,6 +9807,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const meta = buildToolDisplayMeta(tool);
       toolsWriteOffPendingConfirmMetaEl.textContent = meta || "Без дополнительных данных";
     }
+    renderToolsWriteOffPendingConfirmDetails(tool);
     if (toolsWriteOffPendingConfirmSubtitleEl) {
       toolsWriteOffPendingConfirmSubtitleEl.textContent = "";
     }

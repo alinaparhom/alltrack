@@ -12679,6 +12679,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const renderToolsInfoGrid = (tool) => {
     if (!toolsInfoGridEl) return;
     toolsInfoGridEl.innerHTML = "";
+    const normalizedStatus = String(tool?.["Статус"] ?? "").trim().toLowerCase();
+    const isWriteOffInfoMode =
+      toolsState.mode === "write-off-pending" && normalizedStatus === "на списание";
+    toolsInfoGridEl.classList.toggle("tools-info-grid--writeoff", isWriteOffInfoMode);
     const toolNumber =
       String(tool?.["Номер"] ?? "").trim() || resolveToolNumberValue(tool);
     const accountingNumber = String(tool?.["Бух.номер"] ?? "").trim();
@@ -12688,7 +12692,17 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       String(tool?.["Модель"] ?? "").trim(),
     ].filter(Boolean);
     const isSearchMode = toolsState.mode === "search";
-    const info = [
+    const info = isWriteOffInfoMode
+      ? [
+          { label: "Номер", value: toolNumber },
+          { label: "Бухгалтерский номер", value: tool?.["Бух.номер"] },
+          { label: "Наименование", value: nameParts.join(" ") },
+          { label: "Стоимость", value: tool?.["Стоимость"] },
+          { label: "Дата покупки", value: tool?.["Дата покупки"] },
+          { label: "Ответственный", value: tool?.["Ответственный"] },
+          { label: "Объект", value: tool?.["Объект"] },
+        ]
+      : [
       { label: "Номер", value: toolNumber },
       {
         label: "Бухгалтерский номер",

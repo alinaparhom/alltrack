@@ -22651,7 +22651,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     document.body.style.overflow = "hidden";
     setBreakdownsSubtitle("Загружаем список...");
     setBreakdownsMessage("");
-    setBreakdownsFiltersOpened(false);
+    const shouldOpenFiltersByDefault =
+      typeof window === "undefined" ||
+      !window.matchMedia ||
+      !window.matchMedia("(max-width: 520px)").matches;
+    setBreakdownsFiltersOpened(shouldOpenFiltersByDefault);
     syncBreakdownsViewButtons();
     syncBreakdownsSortToggle();
     await loadBreakdownsTools();
@@ -22834,6 +22838,18 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     breakdownsFiltersToggle.addEventListener("click", () => {
       setBreakdownsFiltersOpened(!breakdownsState.filtersOpened);
     });
+  }
+  if (typeof window !== "undefined" && breakdownsFiltersPanel) {
+    const mediaQuery = window.matchMedia("(max-width: 520px)");
+    const syncBreakdownsFiltersVisibility = () => {
+      setBreakdownsFiltersOpened(!mediaQuery.matches);
+    };
+    syncBreakdownsFiltersVisibility();
+    if (mediaQuery.addEventListener) {
+      mediaQuery.addEventListener("change", syncBreakdownsFiltersVisibility);
+    } else if (mediaQuery.addListener) {
+      mediaQuery.addListener(syncBreakdownsFiltersVisibility);
+    }
   }
   if (breakdownsGroupingToggle) {
     breakdownsGroupingToggle.addEventListener("click", () => {

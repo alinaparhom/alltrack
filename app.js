@@ -6491,6 +6491,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const toolsWriteOffPendingConfirmSubmitButton = contentEl.querySelector(
     "[data-tools-writeoff-pending-confirm-submit]"
   );
+  const toolsWriteOffPendingConfirmWriteOffButton = contentEl.querySelector(
+    "[data-tools-writeoff-pending-confirm-writeoff]"
+  );
   const toolsWriteOffPendingConfirmSubtitleEl = contentEl.querySelector(
     "[data-tools-writeoff-pending-confirm-subtitle]"
   );
@@ -9530,6 +9533,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (toolsWriteOffPendingConfirmSubmitButton) {
       toolsWriteOffPendingConfirmSubmitButton.disabled = false;
     }
+    if (toolsWriteOffPendingConfirmWriteOffButton) {
+      toolsWriteOffPendingConfirmWriteOffButton.disabled = false;
+    }
     if (toolsWriteOffPendingConfirmTitleEl) {
       toolsWriteOffPendingConfirmTitleEl.textContent = "—";
     }
@@ -9538,7 +9544,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
     if (toolsWriteOffPendingConfirmSubtitleEl) {
       toolsWriteOffPendingConfirmSubtitleEl.textContent =
-        "Проверьте инструмент перед изменением.";
+        "Выберите действие для инструмента со статусом «На списание».";
     }
     setToolsWriteOffPendingConfirmMessage();
   };
@@ -9570,7 +9576,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
     if (toolsWriteOffPendingConfirmSubtitleEl) {
       toolsWriteOffPendingConfirmSubtitleEl.textContent =
-        "Подтвердите смену статуса на «На списание».";
+        "Можно списать инструмент или вернуть в статус «Рабочий».";
     }
     setToolsWriteOffPendingConfirmMessage();
     toolsWriteOffPendingConfirmModalEl.classList.remove("is-hidden");
@@ -17560,7 +17566,21 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         );
         return;
       }
-      void markToolAsWriteOffFromPending(tool);
+      void markToolAsWorkingFromPending(tool);
+    });
+  }
+  if (toolsWriteOffPendingConfirmWriteOffButton) {
+    toolsWriteOffPendingConfirmWriteOffButton.addEventListener("click", () => {
+      const tool = toolsWriteOffPendingConfirmState.tool;
+      if (!tool) {
+        setToolsWriteOffPendingConfirmMessage(
+          "Не удалось определить инструмент.",
+          "error"
+        );
+        return;
+      }
+      closeToolsWriteOffPendingConfirmModal();
+      openWriteOffConfirmForSingleTool(tool);
     });
   }
   toolsWriteOffPendingConfirmModalEl?.addEventListener("keydown", (event) => {
@@ -18880,22 +18900,37 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     });
   }
 
-  const markToolAsWriteOffFromPending = async (tool) => {
-    if (!tool || !toolsState.orgFolder) return;
-    const statusText = String(tool?.["Статус"] ?? "").trim().toLowerCase();
-    if (statusText === "на списание") {
-      setToolsWriteOffPendingConfirmMessage(
-        "У этого инструмента уже статус «На списание».",
-        "info"
-      );
-      return;
+
+  const openWriteOffConfirmForSingleTool = (tool) => {
+    if (!tool || !writeOffConfirmModalEl) return;
+    writeOffState.selectedIds.clear();
+    writeOffState.selectedTools = [tool];
+    renderWriteOffConfirmList([tool]);
+    if (writeOffConfirmCountEl) {
+      writeOffConfirmCountEl.textContent = "1";
     }
+    if (writeOffActsInput) {
+      writeOffActsInput.value = "";
+    }
+    setWriteOffConfirmMessage(
+      "Загрузите акт списания и подтвердите операцию.",
+      "info"
+    );
+    writeOffConfirmModalEl.classList.remove("is-hidden");
+    document.body.style.overflow = "hidden";
+  };
+
+  const markToolAsWorkingFromPending = async (tool) => {
+    if (!tool || !toolsState.orgFolder) return;
     if (toolsWriteOffPendingConfirmState.isSaving) return;
     toolsWriteOffPendingConfirmState.isSaving = true;
     if (toolsWriteOffPendingConfirmSubmitButton) {
       toolsWriteOffPendingConfirmSubmitButton.disabled = true;
     }
-    setToolsWriteOffPendingConfirmMessage("Обновляем статус...", "info");
+    if (toolsWriteOffPendingConfirmWriteOffButton) {
+      toolsWriteOffPendingConfirmWriteOffButton.disabled = true;
+    }
+    setToolsWriteOffPendingConfirmMessage("Возвращаем статус...", "info");
     try {
       const toolsPath = `./${toolsState.orgFolder}/База с инструментами.json`;
       const rawTools = await loadJson(toolsPath).catch(() => []);
@@ -18908,12 +18943,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       }
       tools[toolIndex] = {
         ...tools[toolIndex],
-        "Статус": "На списание",
+        "Статус": "Рабочий",
       };
       await saveJson(toolsPath, tools, { user: currentUser });
-      syncToolStatusInStates(tools[toolIndex], "На списание");
+      syncToolStatusInStates(tools[toolIndex], "Рабочий");
       applyToolsFilters();
-      setToolsWriteOffPendingConfirmMessage("Статус обновлён: «На списание».", "success");
+      setToolsWriteOffPendingConfirmMessage("Статус обновлён: «Рабочий».", "success");
       window.setTimeout(() => {
         closeToolsWriteOffPendingConfirmModal();
       }, 420);
@@ -18927,6 +18962,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       toolsWriteOffPendingConfirmState.isSaving = false;
       if (toolsWriteOffPendingConfirmSubmitButton) {
         toolsWriteOffPendingConfirmSubmitButton.disabled = false;
+      }
+      if (toolsWriteOffPendingConfirmWriteOffButton) {
+        toolsWriteOffPendingConfirmWriteOffButton.disabled = false;
       }
     }
   };

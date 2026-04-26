@@ -9544,24 +9544,17 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     return "Инструмент";
   };
 
-  const buildToolsWriteOffPendingConfirmInfoMarkup = (tool) => {
-    const rows = [
-      ["Номер", resolveToolNumberValue(tool)],
-      ["Бухгалтерский номер", tool?.["Бух.номер"]],
-      ["Наименование", tool?.["Наименование"]],
-      ["Стоимость", tool?.["Стоимость"]],
-      ["Дата покупки", tool?.["Дата покупки"]],
-      ["Ответственный", tool?.["Ответственный"]],
-      ["Объект", tool?.["Объект"]],
-      ["Статус", getToolStatusLabel(tool)],
-    ];
-    return rows
-      .map(([label, value]) => {
-        const safeLabel = escapeHtml(String(label));
-        const safeValue = escapeHtml(formatInfoValue(value));
-        return `<div class="tools-writeoff-pending-confirm-card__row"><div class="tools-writeoff-pending-confirm-card__field">${safeLabel}</div><div class="tools-writeoff-pending-confirm-card__value">${safeValue}</div></div>`;
-      })
-      .join("");
+  const buildToolDisplayMeta = (tool) => {
+    const accounting = String(tool?.["Бух.номер"] ?? "").trim();
+    const object = String(tool?.["Объект"] ?? "").trim();
+    const responsible = String(tool?.["Ответственный"] ?? "").trim();
+    return [
+      accounting ? `Бух.номер: ${accounting}` : "",
+      object ? `Объект: ${object}` : "",
+      responsible ? `Ответственный: ${responsible}` : "",
+    ]
+      .filter(Boolean)
+      .join(" · ");
   };
 
   const resetToolsWriteOffPendingConfirmState = () => {
@@ -9583,7 +9576,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       toolsWriteOffPendingConfirmTitleEl.textContent = "—";
     }
     if (toolsWriteOffPendingConfirmMetaEl) {
-      toolsWriteOffPendingConfirmMetaEl.innerHTML = "";
+      toolsWriteOffPendingConfirmMetaEl.textContent = "—";
     }
     if (toolsWriteOffPendingConfirmSubtitleEl) {
       toolsWriteOffPendingConfirmSubtitleEl.textContent = "";
@@ -9776,11 +9769,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       toolsWriteOffPendingConfirmSubmitButton.disabled = false;
     }
     if (toolsWriteOffPendingConfirmTitleEl) {
-      toolsWriteOffPendingConfirmTitleEl.textContent = "";
+      toolsWriteOffPendingConfirmTitleEl.textContent = buildToolDisplayTitle(tool);
     }
     if (toolsWriteOffPendingConfirmMetaEl) {
-      toolsWriteOffPendingConfirmMetaEl.innerHTML =
-        buildToolsWriteOffPendingConfirmInfoMarkup(tool);
+      const meta = buildToolDisplayMeta(tool);
+      toolsWriteOffPendingConfirmMetaEl.textContent = meta || "Без дополнительных данных";
     }
     if (toolsWriteOffPendingConfirmSubtitleEl) {
       toolsWriteOffPendingConfirmSubtitleEl.textContent = "";
@@ -19193,16 +19186,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     startY: 0,
     suppressClick: false,
   };
-  const toolsTapState = {
-    active: false,
-    pointerId: null,
-    toolId: "",
-    startX: 0,
-    startY: 0,
-    moved: false,
-    handledToolId: "",
-    handledAt: 0,
-  };
 
   const clearToolsHold = () => {
     if (toolsSelectState.holdTimer) {
@@ -19224,14 +19207,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
   if (toolsListEl) {
     toolsListEl.addEventListener("pointerdown", (event) => {
-      const item = event.target.closest("[data-tools-item]");
-      if (!item) return;
-      toolsTapState.active = true;
-      toolsTapState.pointerId = event.pointerId;
-      toolsTapState.toolId = String(item.dataset.toolId ?? "");
-      toolsTapState.startX = event.clientX;
-      toolsTapState.startY = event.clientY;
-      toolsTapState.moved = false;
       if (
         toolsState.mode === "base" ||
         toolsState.mode === "search" ||
@@ -19239,6 +19214,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       )
         return;
       if (toolsState.isSelecting) return;
+      const item = event.target.closest("[data-tools-item]");
+      if (!item) return;
       const tool = toolsState.toolMap.get(item.dataset.toolId);
       if (!isToolSelectableForMove(tool)) return;
       if (event.cancelable && event.pointerType !== "touch") {
@@ -19258,14 +19235,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     });
 
     toolsListEl.addEventListener("pointermove", (event) => {
-      if (toolsTapState.active && event.pointerId === toolsTapState.pointerId) {
-        const moved =
-          Math.abs(event.clientX - toolsTapState.startX) > 8 ||
-          Math.abs(event.clientY - toolsTapState.startY) > 8;
-        if (moved) {
-          toolsTapState.moved = true;
-        }
-      }
       if (!toolsSelectState.holdTimer) return;
       const moved =
         Math.abs(event.clientX - toolsSelectState.startX) > 8 ||
@@ -19275,37 +19244,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       }
     });
 
-    toolsListEl.addEventListener("pointerup", (event) => {
-      const isTrackedTap =
-        toolsTapState.active && event.pointerId === toolsTapState.pointerId;
-      const shouldOpenFromTap =
-        isTrackedTap &&
-        !toolsTapState.moved &&
-        toolsState.mode === "write-off-pending" &&
-        toolsTapState.toolId;
+    toolsListEl.addEventListener("pointerup", () => {
       clearToolsHold();
-      if (shouldOpenFromTap) {
-        const tool = toolsState.toolMap.get(toolsTapState.toolId);
-        if (tool) {
-          openToolsWriteOffPendingConfirmModal(tool);
-          toolsTapState.handledToolId = toolsTapState.toolId;
-          toolsTapState.handledAt = Date.now();
-        }
-      }
-      if (isTrackedTap) {
-        toolsTapState.active = false;
-        toolsTapState.pointerId = null;
-        toolsTapState.toolId = "";
-        toolsTapState.moved = false;
-      }
     });
 
     toolsListEl.addEventListener("pointercancel", () => {
       clearToolsHold();
-      toolsTapState.active = false;
-      toolsTapState.pointerId = null;
-      toolsTapState.toolId = "";
-      toolsTapState.moved = false;
     });
 
     toolsListEl.addEventListener("click", (event) => {
@@ -19336,17 +19280,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       }
       const item = event.target.closest("[data-tools-item]");
       if (!item) return;
-      const clickToolId = String(item.dataset.toolId ?? "");
-      if (
-        toolsTapState.handledToolId &&
-        clickToolId &&
-        clickToolId === toolsTapState.handledToolId &&
-        Date.now() - toolsTapState.handledAt < 500
-      ) {
-        toolsTapState.handledToolId = "";
-        toolsTapState.handledAt = 0;
-        return;
-      }
       if (toolsState.mode === "base") {
         const tool = toolsState.toolMap.get(item.dataset.toolId);
         if (tool) {

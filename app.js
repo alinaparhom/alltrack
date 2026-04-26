@@ -6497,8 +6497,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const toolsWriteOffPendingConfirmSubtitleEl = contentEl.querySelector(
     "[data-tools-writeoff-pending-confirm-subtitle]"
   );
-  const toolsWriteOffPendingConfirmDetailsEl = contentEl.querySelector(
-    "[data-tools-writeoff-pending-confirm-details]"
+  const toolsWriteOffPendingConfirmTitleEl = contentEl.querySelector(
+    "[data-tools-writeoff-pending-confirm-title]"
+  );
+  const toolsWriteOffPendingConfirmMetaEl = contentEl.querySelector(
+    "[data-tools-writeoff-pending-confirm-meta]"
   );
   const toolsWriteOffPendingConfirmMessageEl = contentEl.querySelector(
     "[data-tools-writeoff-pending-confirm-message]"
@@ -9532,37 +9535,26 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
   };
 
-  const renderToolsWriteOffPendingDetails = (tool) => {
-    if (!toolsWriteOffPendingConfirmDetailsEl) return;
-    toolsWriteOffPendingConfirmDetailsEl.innerHTML = "";
-    const amountRaw = Number.parseFloat(
-      String(tool?.["Стоимость"] ?? "").replace(",", ".")
-    );
-    const amount = Number.isFinite(amountRaw)
-      ? `${amountRaw.toFixed(2)} ₽`
-      : String(tool?.["Стоимость"] ?? "").trim();
-    const details = [
-      ["Номер", String(tool?.["Номер"] ?? "").trim() || "—"],
-      ["Бухгалтерский номер", String(tool?.["Бух.номер"] ?? "").trim() || "—"],
-      ["Наименование", String(tool?.["Наименование"] ?? "").trim() || "—"],
-      ["Стоимость", amount || "—"],
-      ["Дата покупки", formatDate(tool?.["Дата покупки"]) || "—"],
-      ["Ответственный", String(tool?.["Ответственный"] ?? "").trim() || "—"],
-      ["Объект", String(tool?.["Объект"] ?? "").trim() || "—"],
-      ["Статус", String(tool?.["Статус"] ?? "").trim() || "—"],
-    ];
-    details.forEach(([label, value]) => {
-      const row = document.createElement("div");
-      row.className = "tools-writeoff-pending-confirm-card__row";
-      const labelEl = document.createElement("div");
-      labelEl.className = "tools-writeoff-pending-confirm-card__row-label";
-      labelEl.textContent = label;
-      const valueEl = document.createElement("div");
-      valueEl.className = "tools-writeoff-pending-confirm-card__row-value";
-      valueEl.textContent = value;
-      row.append(labelEl, valueEl);
-      toolsWriteOffPendingConfirmDetailsEl.appendChild(row);
-    });
+  const buildToolDisplayTitle = (tool) => {
+    const number = resolveToolNumberValue(tool);
+    const name = String(tool?.["Наименование"] ?? "").trim();
+    if (number && name) return `№${number} · ${name}`;
+    if (name) return name;
+    if (number) return `№${number}`;
+    return "Инструмент";
+  };
+
+  const buildToolDisplayMeta = (tool) => {
+    const accounting = String(tool?.["Бух.номер"] ?? "").trim();
+    const object = String(tool?.["Объект"] ?? "").trim();
+    const responsible = String(tool?.["Ответственный"] ?? "").trim();
+    return [
+      accounting ? `Бух.номер: ${accounting}` : "",
+      object ? `Объект: ${object}` : "",
+      responsible ? `Ответственный: ${responsible}` : "",
+    ]
+      .filter(Boolean)
+      .join(" · ");
   };
 
   const resetToolsWriteOffPendingConfirmState = () => {
@@ -9580,8 +9572,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (toolsWriteOffPendingConfirmWriteOffButton) {
       toolsWriteOffPendingConfirmWriteOffButton.disabled = false;
     }
-    if (toolsWriteOffPendingConfirmDetailsEl) {
-      toolsWriteOffPendingConfirmDetailsEl.innerHTML = "";
+    if (toolsWriteOffPendingConfirmTitleEl) {
+      toolsWriteOffPendingConfirmTitleEl.textContent = "—";
+    }
+    if (toolsWriteOffPendingConfirmMetaEl) {
+      toolsWriteOffPendingConfirmMetaEl.textContent = "—";
     }
     if (toolsWriteOffPendingConfirmSubtitleEl) {
       toolsWriteOffPendingConfirmSubtitleEl.textContent = "";
@@ -9773,7 +9768,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (toolsWriteOffPendingConfirmSubmitButton) {
       toolsWriteOffPendingConfirmSubmitButton.disabled = false;
     }
-    renderToolsWriteOffPendingDetails(tool);
+    if (toolsWriteOffPendingConfirmTitleEl) {
+      toolsWriteOffPendingConfirmTitleEl.textContent = buildToolDisplayTitle(tool);
+    }
+    if (toolsWriteOffPendingConfirmMetaEl) {
+      const meta = buildToolDisplayMeta(tool);
+      toolsWriteOffPendingConfirmMetaEl.textContent = meta || "Без дополнительных данных";
+    }
     if (toolsWriteOffPendingConfirmSubtitleEl) {
       toolsWriteOffPendingConfirmSubtitleEl.textContent = "";
     }

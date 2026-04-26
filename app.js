@@ -9538,6 +9538,20 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
   };
 
+  const isToolOnWriteOffPendingStatus = (tool) =>
+    String(tool?.["Статус"] ?? "").trim().toLocaleLowerCase("ru") === "на списание";
+
+  const syncToolsWriteOffPendingSubmitButtonUi = (tool) => {
+    if (!toolsWriteOffPendingConfirmSubmitButton) return;
+    if (isToolOnWriteOffPendingStatus(tool)) {
+      toolsWriteOffPendingConfirmSubmitButton.textContent = "Исправный";
+      toolsWriteOffPendingConfirmSubmitButton.dataset.action = "set-working";
+      return;
+    }
+    toolsWriteOffPendingConfirmSubmitButton.textContent = "На списание";
+    toolsWriteOffPendingConfirmSubmitButton.dataset.action = "set-writeoff-pending";
+  };
+
   const buildToolDisplayTitle = (tool) => {
     const number = resolveToolNumberValue(tool);
     const name = String(tool?.["Наименование"] ?? "").trim();
@@ -9597,6 +9611,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     toolsWriteOffPendingConfirmState.repairs = [];
     if (toolsWriteOffPendingConfirmSubmitButton) {
       toolsWriteOffPendingConfirmSubmitButton.disabled = false;
+      toolsWriteOffPendingConfirmSubmitButton.textContent = "Исправный";
+      toolsWriteOffPendingConfirmSubmitButton.dataset.action = "set-working";
     }
     if (toolsWriteOffPendingConfirmWriteOffButton) {
       toolsWriteOffPendingConfirmWriteOffButton.disabled = false;
@@ -9800,6 +9816,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (toolsWriteOffPendingConfirmSubmitButton) {
       toolsWriteOffPendingConfirmSubmitButton.disabled = false;
     }
+    syncToolsWriteOffPendingSubmitButtonUi(tool);
     if (toolsWriteOffPendingConfirmTitleEl) {
       toolsWriteOffPendingConfirmTitleEl.textContent = buildToolDisplayTitle(tool);
     }
@@ -12290,7 +12307,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     toolsState.view = "table";
     toolsState.searchSortDirection = "desc";
     toolsState.activeReplacementResponsible = "";
-    setToolsTitle("К списанию");
+    setToolsTitle("На списание");
     setToolsStatusStandaloneVisibility(false);
     setToolsResponsibleFilterVisibility(true);
     syncToolsModalModeClass();
@@ -17824,7 +17841,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         );
         return;
       }
-      void markToolAsWorkingFromPending(tool);
+      if (isToolOnWriteOffPendingStatus(tool)) {
+        void markToolAsWorkingFromPending(tool);
+        return;
+      }
+      void markToolAsWriteOffPendingFromModal(tool);
     });
   }
   if (toolsWriteOffPendingConfirmWriteOffButton) {
@@ -19207,6 +19228,57 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       syncToolStatusInStates(tools[toolIndex], "Рабочий");
       applyToolsFilters();
       setToolsWriteOffPendingConfirmMessage("Статус обновлён: «Рабочий».", "success");
+      window.setTimeout(() => {
+        closeToolsWriteOffPendingConfirmModal();
+      }, 420);
+    } catch (error) {
+      console.error(error);
+      setToolsWriteOffPendingConfirmMessage(
+        "Не удалось обновить статус. Проверьте сервер.",
+        "error"
+      );
+    } finally {
+      toolsWriteOffPendingConfirmState.isSaving = false;
+      if (toolsWriteOffPendingConfirmSubmitButton) {
+        toolsWriteOffPendingConfirmSubmitButton.disabled = false;
+      }
+      if (toolsWriteOffPendingConfirmWriteOffButton) {
+        toolsWriteOffPendingConfirmWriteOffButton.disabled = false;
+      }
+    }
+  };
+
+  const markToolAsWriteOffPendingFromModal = async (tool) => {
+    if (!tool || !toolsState.orgFolder) return;
+    if (toolsWriteOffPendingConfirmState.isSaving) return;
+    toolsWriteOffPendingConfirmState.isSaving = true;
+    if (toolsWriteOffPendingConfirmSubmitButton) {
+      toolsWriteOffPendingConfirmSubmitButton.disabled = true;
+    }
+    if (toolsWriteOffPendingConfirmWriteOffButton) {
+      toolsWriteOffPendingConfirmWriteOffButton.disabled = true;
+    }
+    setToolsWriteOffPendingConfirmMessage("Обновляем статус...", "info");
+    try {
+      const toolsPath = `./${toolsState.orgFolder}/База с инструментами.json`;
+      const rawTools = await loadJson(toolsPath).catch(() => []);
+      const tools = normalizeToolsData(rawTools);
+      const matcher = buildToolsEditMatcher(tool);
+      const toolIndex = tools.findIndex((entry) => matcher(entry));
+      if (toolIndex < 0) {
+        setToolsWriteOffPendingConfirmMessage("Инструмент не найден в базе.", "error");
+        return;
+      }
+      const dateValue = formatDateValue(new Date());
+      tools[toolIndex] = {
+        ...tools[toolIndex],
+        "Статус": "На списание",
+        "Дата постановки статуса \"На списание\"": dateValue,
+      };
+      await saveJson(toolsPath, tools, { user: currentUser });
+      syncToolStatusInStates(tools[toolIndex], "На списание");
+      applyToolsFilters();
+      setToolsWriteOffPendingConfirmMessage("Статус обновлён: «На списание».", "success");
       window.setTimeout(() => {
         closeToolsWriteOffPendingConfirmModal();
       }, 420);

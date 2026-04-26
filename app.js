@@ -9543,8 +9543,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       toolsWriteOffPendingConfirmMetaEl.textContent = "—";
     }
     if (toolsWriteOffPendingConfirmSubtitleEl) {
-      toolsWriteOffPendingConfirmSubtitleEl.textContent =
-        "Выберите действие для инструмента со статусом «На списание».";
+      toolsWriteOffPendingConfirmSubtitleEl.textContent = "";
     }
     setToolsWriteOffPendingConfirmMessage();
   };
@@ -9575,8 +9574,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       toolsWriteOffPendingConfirmMetaEl.textContent = meta || "Без дополнительных данных";
     }
     if (toolsWriteOffPendingConfirmSubtitleEl) {
-      toolsWriteOffPendingConfirmSubtitleEl.textContent =
-        "Можно списать инструмент или вернуть в статус «Рабочий».";
+      toolsWriteOffPendingConfirmSubtitleEl.textContent = "";
     }
     setToolsWriteOffPendingConfirmMessage();
     toolsWriteOffPendingConfirmModalEl.classList.remove("is-hidden");
@@ -12055,7 +12053,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     toolsState.view = "table";
     toolsState.searchSortDirection = "desc";
     toolsState.activeReplacementResponsible = "";
-    setToolsTitle("На списание");
+    setToolsTitle("К списанию");
     setToolsStatusStandaloneVisibility(false);
     setToolsResponsibleFilterVisibility(true);
     syncToolsModalModeClass();

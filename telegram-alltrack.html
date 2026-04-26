@@ -10875,6 +10875,9 @@
       .tools-writeoff-pending-confirm-modal__header .button-icon {
         align-self: start;
         margin-top: 2px;
+        border: none;
+        background: transparent;
+        box-shadow: none;
       }
 
       .tools-writeoff-pending-confirm-card {
@@ -10915,15 +10918,14 @@
         align-items: center;
         gap: 10px;
         flex-wrap: nowrap;
-        justify-content: space-between;
+        justify-content: stretch;
         width: 100%;
       }
 
-      .tools-writeoff-pending-confirm-actions .action-secondary,
       .tools-writeoff-pending-confirm-actions .action-primary {
-        flex: 0 0 auto;
-        width: 136px;
-        min-width: 136px;
+        flex: 1 1 0;
+        width: auto;
+        min-width: 0;
         white-space: nowrap;
         height: 44px;
         min-height: 44px;
@@ -10934,23 +10936,17 @@
         transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
       }
 
-      .tools-writeoff-pending-confirm-actions__cancel {
-        order: 1;
-        border-color: rgba(214, 69, 69, 0.34);
-        background: rgba(214, 69, 69, 0.14);
-        color: #c63d3d;
-      }
-
-      .tools-writeoff-pending-confirm-actions__cancel:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 16px 40px rgba(26, 31, 46, 0.12);
-      }
-
       .tools-writeoff-pending-confirm-actions__submit {
-        order: 2;
-        margin-left: auto;
+        order: 1;
         background: var(--success-soft);
         color: var(--success);
+      }
+
+      .tools-writeoff-pending-confirm-actions__writeoff {
+        order: 2;
+        background: rgba(239, 68, 68, 0.18);
+        color: #b91c1c;
+        border: 1px solid rgba(239, 68, 68, 0.38);
       }
 
       .settings-modal__footer.tools-writeoff-pending-confirm-actions {
@@ -10963,7 +10959,11 @@
         box-shadow: 0 16px 40px rgba(26, 31, 46, 0.12);
       }
 
-      .tools-writeoff-pending-confirm-actions .action-secondary:active,
+      .tools-writeoff-pending-confirm-actions__writeoff:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 16px 40px rgba(185, 28, 28, 0.2);
+      }
+
       .tools-writeoff-pending-confirm-actions .action-primary:active {
         transform: translateY(0);
         filter: saturate(0.98);
@@ -10975,10 +10975,9 @@
           flex-wrap: nowrap;
         }
 
-        .tools-writeoff-pending-confirm-actions .action-secondary,
         .tools-writeoff-pending-confirm-actions .action-primary {
-          width: 128px;
-          min-width: 128px;
+          width: auto;
+          min-width: 0;
           height: 42px;
           min-height: 42px;
           padding-inline: 10px;

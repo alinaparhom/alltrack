@@ -1187,10 +1187,8 @@ export function renderRole(user) {
           >
             <div class="settings-modal__header tools-writeoff-pending-confirm-modal__header">
               <div class="settings-modal__title">
-                <h2>Действие с инструментом</h2>
-                <p data-tools-writeoff-pending-confirm-subtitle>
-                  Выберите действие для инструмента со статусом «На списание».
-                </p>
+                <h2>Решение по инструменту</h2>
+                <p data-tools-writeoff-pending-confirm-subtitle></p>
               </div>
               <button
                 class="button-icon"
@@ -1215,13 +1213,6 @@ export function renderRole(user) {
             </div>
             <div class="settings-modal__footer tools-writeoff-pending-confirm-actions">
               <button
-                class="action-secondary tools-writeoff-pending-confirm-actions__cancel"
-                type="button"
-                data-tools-writeoff-pending-confirm-cancel
-              >
-                Отмена
-              </button>
-              <button
                 class="action-primary tools-writeoff-pending-confirm-actions__writeoff"
                 type="button"
                 data-tools-writeoff-pending-confirm-writeoff
@@ -1233,7 +1224,7 @@ export function renderRole(user) {
                 type="button"
                 data-tools-writeoff-pending-confirm-submit
               >
-                Вернуть в «Рабочий»
+                Исправный
               </button>
             </div>
           </div>

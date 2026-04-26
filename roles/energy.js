@@ -1213,18 +1213,18 @@ export function renderRole(user) {
             </div>
             <div class="settings-modal__footer tools-writeoff-pending-confirm-actions">
               <button
-                class="action-primary tools-writeoff-pending-confirm-actions__writeoff"
-                type="button"
-                data-tools-writeoff-pending-confirm-writeoff
-              >
-                Списать
-              </button>
-              <button
                 class="action-primary tools-writeoff-pending-confirm-actions__submit"
                 type="button"
                 data-tools-writeoff-pending-confirm-submit
               >
                 Исправный
+              </button>
+              <button
+                class="action-primary tools-writeoff-pending-confirm-actions__writeoff"
+                type="button"
+                data-tools-writeoff-pending-confirm-writeoff
+              >
+                Списать
               </button>
             </div>
           </div>

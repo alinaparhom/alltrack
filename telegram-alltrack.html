@@ -10874,13 +10874,15 @@
 
       .tools-writeoff-pending-confirm-modal__header .button-icon {
         align-self: start;
-        margin-top: 2px;
+        margin-top: 0;
+        transform: translateY(-50%);
         border: none;
         background: transparent;
         box-shadow: none;
       }
 
       .tools-writeoff-pending-confirm-card {
+        margin-inline: 12px;
         border-radius: 18px;
         border: 1px solid rgba(148, 163, 184, 0.35);
         background: linear-gradient(
@@ -10937,21 +10939,40 @@
       }
 
       .tools-writeoff-pending-confirm-actions__submit {
-        order: 1;
+        order: 2;
         background: var(--success-soft);
         color: var(--success);
       }
 
       .tools-writeoff-pending-confirm-actions__writeoff {
-        order: 2;
+        order: 1;
         background: rgba(239, 68, 68, 0.18);
         color: #b91c1c;
         border: 1px solid rgba(239, 68, 68, 0.38);
       }
 
+      .tools-writeoff-pending-confirm-modal__panel .settings-modal__body {
+        padding-bottom: calc(110px + env(safe-area-inset-bottom));
+      }
+
       .settings-modal__footer.tools-writeoff-pending-confirm-actions {
+        position: fixed;
+        left: 12px;
+        right: 12px;
+        bottom: calc(10px + env(safe-area-inset-bottom));
+        z-index: 20;
         flex-direction: row;
         align-items: center;
+        padding: 10px;
+        border-radius: 16px;
+        border: 1px solid rgba(148, 163, 184, 0.28);
+        background: linear-gradient(
+          135deg,
+          rgba(255, 255, 255, 0.9),
+          rgba(241, 245, 249, 0.92)
+        );
+        backdrop-filter: blur(16px);
+        box-shadow: 0 14px 30px rgba(15, 23, 42, 0.18);
       }
 
       .tools-writeoff-pending-confirm-actions__submit:hover {
@@ -10988,6 +11009,9 @@
 
       @media (max-width: 520px) {
         .settings-modal__footer.tools-writeoff-pending-confirm-actions {
+          left: 10px;
+          right: 10px;
+          bottom: calc(8px + env(safe-area-inset-bottom));
           flex-direction: row;
           align-items: center;
         }

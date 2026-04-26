@@ -9544,17 +9544,24 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     return "Инструмент";
   };
 
-  const buildToolDisplayMeta = (tool) => {
-    const accounting = String(tool?.["Бух.номер"] ?? "").trim();
-    const object = String(tool?.["Объект"] ?? "").trim();
-    const responsible = String(tool?.["Ответственный"] ?? "").trim();
-    return [
-      accounting ? `Бух.номер: ${accounting}` : "",
-      object ? `Объект: ${object}` : "",
-      responsible ? `Ответственный: ${responsible}` : "",
-    ]
-      .filter(Boolean)
-      .join(" · ");
+  const buildToolsWriteOffPendingConfirmInfoMarkup = (tool) => {
+    const rows = [
+      ["Номер", resolveToolNumberValue(tool)],
+      ["Бухгалтерский номер", tool?.["Бух.номер"]],
+      ["Наименование", tool?.["Наименование"]],
+      ["Стоимость", tool?.["Стоимость"]],
+      ["Дата покупки", tool?.["Дата покупки"]],
+      ["Ответственный", tool?.["Ответственный"]],
+      ["Объект", tool?.["Объект"]],
+      ["Статус", getToolStatusLabel(tool)],
+    ];
+    return rows
+      .map(([label, value]) => {
+        const safeLabel = escapeHtml(String(label));
+        const safeValue = escapeHtml(formatInfoValue(value));
+        return `<div class="tools-writeoff-pending-confirm-card__row"><div class="tools-writeoff-pending-confirm-card__field">${safeLabel}</div><div class="tools-writeoff-pending-confirm-card__value">${safeValue}</div></div>`;
+      })
+      .join("");
   };
 
   const resetToolsWriteOffPendingConfirmState = () => {
@@ -9576,7 +9583,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       toolsWriteOffPendingConfirmTitleEl.textContent = "—";
     }
     if (toolsWriteOffPendingConfirmMetaEl) {
-      toolsWriteOffPendingConfirmMetaEl.textContent = "—";
+      toolsWriteOffPendingConfirmMetaEl.innerHTML = "";
     }
     if (toolsWriteOffPendingConfirmSubtitleEl) {
       toolsWriteOffPendingConfirmSubtitleEl.textContent = "";
@@ -9769,11 +9776,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       toolsWriteOffPendingConfirmSubmitButton.disabled = false;
     }
     if (toolsWriteOffPendingConfirmTitleEl) {
-      toolsWriteOffPendingConfirmTitleEl.textContent = buildToolDisplayTitle(tool);
+      toolsWriteOffPendingConfirmTitleEl.textContent = "";
     }
     if (toolsWriteOffPendingConfirmMetaEl) {
-      const meta = buildToolDisplayMeta(tool);
-      toolsWriteOffPendingConfirmMetaEl.textContent = meta || "Без дополнительных данных";
+      toolsWriteOffPendingConfirmMetaEl.innerHTML =
+        buildToolsWriteOffPendingConfirmInfoMarkup(tool);
     }
     if (toolsWriteOffPendingConfirmSubtitleEl) {
       toolsWriteOffPendingConfirmSubtitleEl.textContent = "";

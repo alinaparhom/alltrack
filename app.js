@@ -6506,6 +6506,30 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const toolsWriteOffPendingConfirmMessageEl = contentEl.querySelector(
     "[data-tools-writeoff-pending-confirm-message]"
   );
+  const toolsWriteOffPendingHistoryTabButtons = contentEl.querySelectorAll(
+    "[data-tools-writeoff-pending-history-tab]"
+  );
+  const toolsWriteOffPendingPhotoWrapEl = contentEl.querySelector(
+    "[data-tools-writeoff-pending-photo-wrap]"
+  );
+  const toolsWriteOffPendingPhotoEl = contentEl.querySelector(
+    "[data-tools-writeoff-pending-photo]"
+  );
+  const toolsWriteOffPendingPhotoEmptyEl = contentEl.querySelector(
+    "[data-tools-writeoff-pending-photo-empty]"
+  );
+  const toolsWriteOffPendingHistoryPanelEl = contentEl.querySelector(
+    "[data-tools-writeoff-pending-history-panel]"
+  );
+  const toolsWriteOffPendingHistorySummaryEl = contentEl.querySelector(
+    "[data-tools-writeoff-pending-history-summary]"
+  );
+  const toolsWriteOffPendingHistoryListEl = contentEl.querySelector(
+    "[data-tools-writeoff-pending-history-list]"
+  );
+  const toolsWriteOffPendingHistoryEmptyEl = contentEl.querySelector(
+    "[data-tools-writeoff-pending-history-empty]"
+  );
   const writeOffModalEl = contentEl.querySelector("[data-writeoff-modal]");
   const writeOffBackdropEl = contentEl.querySelector("[data-writeoff-backdrop]");
   const writeOffCloseButton = contentEl.querySelector("[data-writeoff-close]");
@@ -7176,6 +7200,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const toolsWriteOffPendingConfirmState = {
     tool: null,
     isSaving: false,
+    orgFolder: "",
+    activeHistoryTab: "",
+    photos: [],
+    moves: [],
+    breakdowns: [],
+    repairs: [],
   };
   const toolsEditState = {
     tool: null,
@@ -9530,6 +9560,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const resetToolsWriteOffPendingConfirmState = () => {
     toolsWriteOffPendingConfirmState.tool = null;
     toolsWriteOffPendingConfirmState.isSaving = false;
+    toolsWriteOffPendingConfirmState.orgFolder = "";
+    toolsWriteOffPendingConfirmState.activeHistoryTab = "";
+    toolsWriteOffPendingConfirmState.photos = [];
+    toolsWriteOffPendingConfirmState.moves = [];
+    toolsWriteOffPendingConfirmState.breakdowns = [];
+    toolsWriteOffPendingConfirmState.repairs = [];
     if (toolsWriteOffPendingConfirmSubmitButton) {
       toolsWriteOffPendingConfirmSubmitButton.disabled = false;
     }
@@ -9545,7 +9581,171 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (toolsWriteOffPendingConfirmSubtitleEl) {
       toolsWriteOffPendingConfirmSubtitleEl.textContent = "";
     }
+    if (toolsWriteOffPendingPhotoEl) {
+      toolsWriteOffPendingPhotoEl.removeAttribute("src");
+      toolsWriteOffPendingPhotoEl.classList.add("is-hidden");
+    }
+    if (toolsWriteOffPendingPhotoEmptyEl) {
+      toolsWriteOffPendingPhotoEmptyEl.classList.remove("is-hidden");
+      toolsWriteOffPendingPhotoEmptyEl.textContent = "Фото инструмента не найдено.";
+    }
+    if (toolsWriteOffPendingPhotoWrapEl) {
+      toolsWriteOffPendingPhotoWrapEl.classList.remove("is-hidden");
+    }
+    if (toolsWriteOffPendingHistoryPanelEl) {
+      toolsWriteOffPendingHistoryPanelEl.classList.add("is-hidden");
+    }
+    if (toolsWriteOffPendingHistorySummaryEl) {
+      toolsWriteOffPendingHistorySummaryEl.textContent = "";
+    }
+    if (toolsWriteOffPendingHistoryListEl) {
+      toolsWriteOffPendingHistoryListEl.innerHTML = "";
+    }
+    if (toolsWriteOffPendingHistoryEmptyEl) {
+      toolsWriteOffPendingHistoryEmptyEl.classList.add("is-hidden");
+      toolsWriteOffPendingHistoryEmptyEl.textContent = "";
+    }
+    toolsWriteOffPendingHistoryTabButtons.forEach((button) => {
+      button.classList.remove("is-active");
+      button.setAttribute("aria-selected", "false");
+    });
     setToolsWriteOffPendingConfirmMessage();
+  };
+
+  const renderToolsWriteOffPendingHistory = (tab) => {
+    if (!toolsWriteOffPendingHistorySummaryEl || !toolsWriteOffPendingHistoryListEl) return;
+    toolsWriteOffPendingHistoryListEl.innerHTML = "";
+    const entries =
+      tab === "moves"
+        ? toolsWriteOffPendingConfirmState.moves
+        : tab === "breakdowns"
+          ? toolsWriteOffPendingConfirmState.breakdowns
+          : toolsWriteOffPendingConfirmState.repairs;
+    const tabLabel =
+      tab === "moves" ? "Перемещения" : tab === "breakdowns" ? "Поломки" : "Ремонты";
+    toolsWriteOffPendingHistorySummaryEl.textContent = `${tabLabel}: ${entries.length}`;
+    if (toolsWriteOffPendingHistoryEmptyEl) {
+      toolsWriteOffPendingHistoryEmptyEl.classList.toggle("is-hidden", entries.length > 0);
+      toolsWriteOffPendingHistoryEmptyEl.textContent = `${tabLabel} не найдены.`;
+    }
+    if (!entries.length) return;
+    entries.forEach((entry) => {
+      const item = document.createElement("div");
+      item.className = "tools-info-item";
+      const title = document.createElement("div");
+      title.className = "tools-info-item__title";
+      const dateLabel =
+        tab === "moves"
+          ? entry?.["Дата перемещения"]
+          : tab === "breakdowns"
+            ? entry?.["Дата поломки"]
+            : entry?.["Дата отправки в ремонт"];
+      title.textContent = formatInfoValue(dateLabel);
+      const grid = document.createElement("div");
+      grid.className = "tools-info-item__grid";
+      if (tab === "moves") {
+        grid.append(
+          buildToolsInfoRow("Откуда", entry?.["Старый объект"]),
+          buildToolsInfoRow("Куда", entry?.["Новый объект"]),
+          buildToolsInfoRow("Переместил", entry?.["Переместил"])
+        );
+      } else if (tab === "breakdowns") {
+        grid.append(
+          buildToolsInfoRow("Описание", entry?.["Описание поломки"]),
+          buildToolsInfoRow("Дата ремонта", entry?.["Дата ремонта"] || "Сломан"),
+          buildToolsInfoRow("Ответственный", entry?.["Ответственный"])
+        );
+      } else {
+        grid.append(
+          buildToolsInfoRow("Организация", entry?.["Организация"]),
+          buildToolsInfoRow("Дата ремонта", entry?.["Дата ремонта"] || "В ремонте"),
+          buildToolsInfoRow("Ответственный", entry?.["Ответственный"])
+        );
+      }
+      item.append(title, grid);
+      toolsWriteOffPendingHistoryListEl.appendChild(item);
+    });
+  };
+
+  const setToolsWriteOffPendingHistoryTab = (tab = "") => {
+    toolsWriteOffPendingConfirmState.activeHistoryTab = tab;
+    const hasTab = Boolean(tab);
+    if (toolsWriteOffPendingPhotoWrapEl) {
+      toolsWriteOffPendingPhotoWrapEl.classList.toggle("is-hidden", hasTab);
+    }
+    if (toolsWriteOffPendingHistoryPanelEl) {
+      toolsWriteOffPendingHistoryPanelEl.classList.toggle("is-hidden", !hasTab);
+    }
+    toolsWriteOffPendingHistoryTabButtons.forEach((button) => {
+      const isActive = hasTab && button.dataset.toolsWriteoffPendingHistoryTab === tab;
+      button.classList.toggle("is-active", isActive);
+      button.setAttribute("aria-selected", isActive ? "true" : "false");
+    });
+    if (hasTab) {
+      renderToolsWriteOffPendingHistory(tab);
+    }
+  };
+
+  const loadToolsWriteOffPendingConfirmDetails = async (tool) => {
+    const orgFolder = toolsWriteOffPendingConfirmState.orgFolder;
+    if (!tool || !orgFolder) return;
+    const matcher = buildToolsInfoMatcher(tool);
+    const primaryPhotoNumber = resolveToolPhotoNumber(tool);
+    const toolNumber = String(tool?.["Номер"] ?? "").trim();
+    const accountingNumber = String(tool?.["Бух.номер"] ?? "").trim();
+    try {
+      const { files: photoFiles = [] } = await loadToolPhotoFiles(
+        orgFolder,
+        primaryPhotoNumber,
+        toolNumber,
+        accountingNumber
+      );
+      const isSameTool = toolsWriteOffPendingConfirmState.tool === tool;
+      if (!isSameTool) return;
+      toolsWriteOffPendingConfirmState.photos = Array.isArray(photoFiles) ? photoFiles : [];
+      const firstPhoto = toolsWriteOffPendingConfirmState.photos[0];
+      if (toolsWriteOffPendingPhotoEl && firstPhoto?.url) {
+        toolsWriteOffPendingPhotoEl.src = firstPhoto.url;
+        toolsWriteOffPendingPhotoEl.classList.remove("is-hidden");
+      } else if (toolsWriteOffPendingPhotoEl) {
+        toolsWriteOffPendingPhotoEl.classList.add("is-hidden");
+      }
+      if (toolsWriteOffPendingPhotoEmptyEl) {
+        toolsWriteOffPendingPhotoEmptyEl.classList.toggle("is-hidden", Boolean(firstPhoto?.url));
+      }
+
+      const [rawMoves, rawBreakdowns, rawRepairs] = await Promise.all([
+        loadJson(`./${orgFolder}/Перемещения.json`).catch(() => []),
+        loadJson(`./${orgFolder}/Поломки.json`).catch(() => []),
+        loadJson(`./${orgFolder}/Ремонты.json`).catch(() => []),
+      ]);
+      if (toolsWriteOffPendingConfirmState.tool !== tool) return;
+      const moves = Array.isArray(rawMoves)
+        ? rawMoves
+        : Array.isArray(rawMoves?.moves)
+          ? rawMoves.moves
+          : [];
+      const breakdowns = Array.isArray(rawBreakdowns)
+        ? rawBreakdowns
+        : Array.isArray(rawBreakdowns?.breakdowns)
+          ? rawBreakdowns.breakdowns
+          : [];
+      const repairs = Array.isArray(rawRepairs)
+        ? rawRepairs
+        : Array.isArray(rawRepairs?.repairs)
+          ? rawRepairs.repairs
+          : [];
+      toolsWriteOffPendingConfirmState.moves = moves.filter(matcher);
+      toolsWriteOffPendingConfirmState.breakdowns = breakdowns.filter(matcher);
+      toolsWriteOffPendingConfirmState.repairs = repairs.filter(matcher);
+      if (toolsWriteOffPendingConfirmState.activeHistoryTab) {
+        renderToolsWriteOffPendingHistory(
+          toolsWriteOffPendingConfirmState.activeHistoryTab
+        );
+      }
+    } catch (error) {
+      console.warn("Не удалось загрузить фото и историю инструмента.", error);
+    }
   };
 
   const closeToolsWriteOffPendingConfirmModal = () => {
@@ -9563,6 +9763,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (!toolsWriteOffPendingConfirmModalEl || !tool) return;
     toolsWriteOffPendingConfirmState.tool = tool;
     toolsWriteOffPendingConfirmState.isSaving = false;
+    toolsWriteOffPendingConfirmState.orgFolder =
+      toolsState.orgFolder || context.orgFolderName || "";
     if (toolsWriteOffPendingConfirmSubmitButton) {
       toolsWriteOffPendingConfirmSubmitButton.disabled = false;
     }
@@ -9577,8 +9779,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       toolsWriteOffPendingConfirmSubtitleEl.textContent = "";
     }
     setToolsWriteOffPendingConfirmMessage();
+    setToolsWriteOffPendingHistoryTab("");
     toolsWriteOffPendingConfirmModalEl.classList.remove("is-hidden");
     document.body.style.overflow = "hidden";
+    void loadToolsWriteOffPendingConfirmDetails(tool);
   };
 
   const setToolsEditMessage = (text = "", type = "") => {
@@ -17553,6 +17757,15 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       "click",
       closeToolsWriteOffPendingConfirmModal
     );
+  }
+  if (toolsWriteOffPendingHistoryTabButtons.length) {
+    toolsWriteOffPendingHistoryTabButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        const tab = button.dataset.toolsWriteoffPendingHistoryTab;
+        if (!tab) return;
+        setToolsWriteOffPendingHistoryTab(tab);
+      });
+    });
   }
   if (toolsWriteOffPendingConfirmSubmitButton) {
     toolsWriteOffPendingConfirmSubmitButton.addEventListener("click", () => {

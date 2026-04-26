@@ -1209,6 +1209,69 @@ export function renderRole(user) {
                   —
                 </div>
               </div>
+              <div class="tools-writeoff-pending-confirm-history">
+                <div
+                  class="tools-writeoff-pending-confirm-history__tabs"
+                  role="tablist"
+                  aria-label="История инструмента"
+                >
+                  <button
+                    type="button"
+                    class="tools-writeoff-pending-confirm-history__tab"
+                    data-tools-writeoff-pending-history-tab="moves"
+                  >
+                    Перемещения
+                  </button>
+                  <button
+                    type="button"
+                    class="tools-writeoff-pending-confirm-history__tab"
+                    data-tools-writeoff-pending-history-tab="breakdowns"
+                  >
+                    Поломки
+                  </button>
+                  <button
+                    type="button"
+                    class="tools-writeoff-pending-confirm-history__tab"
+                    data-tools-writeoff-pending-history-tab="repairs"
+                  >
+                    Ремонты
+                  </button>
+                </div>
+                <div
+                  class="tools-writeoff-pending-confirm-photo"
+                  data-tools-writeoff-pending-photo-wrap
+                >
+                  <img
+                    class="tools-writeoff-pending-confirm-photo__image"
+                    data-tools-writeoff-pending-photo
+                    alt="Фото инструмента"
+                    loading="lazy"
+                  />
+                  <div
+                    class="tools-writeoff-pending-confirm-photo__empty is-hidden"
+                    data-tools-writeoff-pending-photo-empty
+                  >
+                    Фото инструмента не найдено.
+                  </div>
+                </div>
+                <div
+                  class="tools-writeoff-pending-confirm-history__panel is-hidden"
+                  data-tools-writeoff-pending-history-panel
+                >
+                  <div
+                    class="tools-writeoff-pending-confirm-history__summary"
+                    data-tools-writeoff-pending-history-summary
+                  ></div>
+                  <div
+                    class="tools-writeoff-pending-confirm-history__list"
+                    data-tools-writeoff-pending-history-list
+                  ></div>
+                  <div
+                    class="tools-writeoff-pending-confirm-history__empty is-hidden"
+                    data-tools-writeoff-pending-history-empty
+                  ></div>
+                </div>
+              </div>
               <div class="form-message" data-tools-writeoff-pending-confirm-message></div>
             </div>
             <div class="settings-modal__footer tools-writeoff-pending-confirm-actions">

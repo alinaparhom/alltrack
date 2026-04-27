@@ -21246,7 +21246,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     return String(rawStatus ?? "").trim();
   };
 
-  const buildBreakdownToolInfoFields = (tool) => {
+  const buildBreakdownToolInfoFields = (tool, options = {}) => {
+    const { includeStatus = true } = options;
     const number = resolveToolNumberValue(tool);
     const name = String(tool?.["Наименование"] ?? "").trim();
     const accountingNumber = String(tool?.["Бух.номер"] ?? "").trim();
@@ -21272,13 +21273,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       { label: "Дата покупки", value: purchaseDate || "—" },
       { label: "Ответственный", value: responsible || "—" },
       { label: "Объект", value: objectName || "—" },
-      { label: "Статус", value: status || "—" },
+      ...(includeStatus ? [{ label: "Статус", value: status || "—" }] : []),
     ];
   };
 
-  const renderBreakdownToolInfoFields = (toolMetaElement, tool) => {
+  const renderBreakdownToolInfoFields = (toolMetaElement, tool, options = {}) => {
     if (!toolMetaElement) return;
-    const fields = buildBreakdownToolInfoFields(tool);
+    const fields = buildBreakdownToolInfoFields(tool, options);
     toolMetaElement.innerHTML = fields
       .map(
         (field) =>
@@ -22363,7 +22364,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (breakdownStatusToolTitleEl) {
       breakdownStatusToolTitleEl.textContent = "";
     }
-    renderBreakdownToolInfoFields(breakdownStatusToolMetaEl, tool);
+    renderBreakdownToolInfoFields(breakdownStatusToolMetaEl, tool, { includeStatus: false });
     renderBreakdownStatusInfoFields(breakdownStatusInfoMetaEl, null);
   };
 

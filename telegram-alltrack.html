@@ -3170,13 +3170,17 @@
         box-shadow: 0 16px 40px rgba(26, 31, 46, 0.12);
       }
 
+      .repair-form {
+        --repair-form-block-gap: 12px;
+      }
+
       .repair-form__body {
         overflow: auto;
-        padding-bottom: 12px;
+        padding-bottom: var(--repair-form-block-gap);
         scroll-padding-bottom: 88px;
         flex: 1 1 auto;
         display: grid;
-        gap: 12px;
+        gap: var(--repair-form-block-gap);
       }
 
       .repair-form__body.settings-modal__body {
@@ -3217,12 +3221,13 @@
         bottom: 0;
         margin-top: auto;
         margin-bottom: 0;
-        padding: 0;
-        border-top: 0;
+        padding: var(--repair-form-block-gap) 0
+          calc(var(--repair-form-block-gap) + env(safe-area-inset-bottom));
+        border-top: 1px solid rgba(226, 232, 240, 0.8);
         background: rgba(255, 255, 255, 0.96);
         backdrop-filter: blur(12px);
         display: grid;
-        gap: 0;
+        gap: var(--repair-form-block-gap);
         z-index: 4;
       }
 
@@ -3236,11 +3241,16 @@
 
       .repair-form__actions {
         display: flex;
-        gap: 10px;
+        gap: var(--repair-form-block-gap);
         flex-wrap: nowrap;
         margin: 0;
         padding: 0;
         min-height: 0;
+      }
+
+      .repair-form__section {
+        display: grid;
+        gap: var(--repair-form-block-gap);
       }
 
       .repair-form__actions .action-primary,

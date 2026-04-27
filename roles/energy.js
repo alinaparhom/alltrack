@@ -2744,14 +2744,54 @@ export function renderRole(user) {
                   </div>
                 </div>
                 <div class="tools-filters" id="breakdowns-filters-panel" data-breakdowns-filters-panel>
-                  <label class="tools-filter breakdowns-status-filter">
-                    <span>По статусу</span>
-                    <select
-                      class="form-input"
-                      data-breakdowns-status-filter
-                      aria-label="Статус"
-                    >
-                      <option value="">Всё</option>
+                  <label class="tools-filter">
+                    <span>Группа</span>
+                    <select class="form-input" data-breakdowns-filter="group" aria-label="Группа">
+                      <option value="">Все</option>
+                    </select>
+                  </label>
+                  <label class="tools-filter">
+                    <span>Объект</span>
+                    <select class="form-input" data-breakdowns-filter="object" aria-label="Объект">
+                      <option value="">Все</option>
+                    </select>
+                  </label>
+                  <label class="tools-filter">
+                    <span>Статус</span>
+                    <select class="form-input" data-breakdowns-filter="status" aria-label="Статус">
+                      <option value="">Все</option>
+                    </select>
+                  </label>
+                  <label class="tools-filter">
+                    <span>Ответственный</span>
+                    <select class="form-input" data-breakdowns-filter="responsible" aria-label="Ответственный">
+                      <option value="">Все</option>
+                    </select>
+                  </label>
+                  <label class="tools-filter">
+                    <span>Наименование</span>
+                    <select class="form-input" data-breakdowns-filter="name" aria-label="Наименование">
+                      <option value="">Все</option>
+                    </select>
+                  </label>
+                  <label class="tools-filter">
+                    <span>Производитель</span>
+                    <select class="form-input" data-breakdowns-filter="manufacturer" aria-label="Производитель">
+                      <option value="">Все</option>
+                    </select>
+                  </label>
+                  <label class="tools-filter">
+                    <span>Модель</span>
+                    <select class="form-input" data-breakdowns-filter="model" aria-label="Модель">
+                      <option value="">Все</option>
+                    </select>
+                  </label>
+                  <label class="tools-filter">
+                    <span>Фото</span>
+                    <select class="form-input" data-breakdowns-filter="photo" aria-label="Фото">
+                      <option value="">Все</option>
+                      <option value="Есть фото">Есть фото</option>
+                      <option value="Нет фото">Нет фото</option>
                     </select>
                   </label>
                 </div>

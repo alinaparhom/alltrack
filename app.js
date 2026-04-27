@@ -5701,7 +5701,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     "[data-breakdowns-search]"
   );
   const breakdownsFilterEls = contentEl.querySelectorAll(
-    "[data-breakdowns-filter]"
+    '.tools-filter-dropdown[data-breakdowns-filter]'
   );
   const breakdownsViewButtons = Array.from(
     contentEl.querySelectorAll("[data-breakdowns-view]")
@@ -5730,6 +5730,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   );
   const breakdownsFiltersPanel = contentEl.querySelector(
     "[data-breakdowns-filters-panel]"
+  );
+  const breakdownsFiltersStatusEls = contentEl.querySelectorAll(
+    "[data-breakdowns-filters-status]"
+  );
+  const breakdownsFiltersResetEls = contentEl.querySelectorAll(
+    "[data-breakdowns-filters-reset]"
   );
   const breakdownsListEl = contentEl.querySelector("[data-breakdowns-list]");
   const breakdownsEmptyEl = contentEl.querySelector("[data-breakdowns-empty]");
@@ -7301,14 +7307,14 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     toolMap: new Map(),
     photos: [],
     filters: {
-      group: "",
-      object: "",
-      status: "",
-      responsible: "",
-      name: "",
-      manufacturer: "",
-      model: "",
-      photo: "",
+      group: [],
+      object: [],
+      status: [],
+      responsible: [],
+      name: [],
+      manufacturer: [],
+      model: [],
+      photo: [],
     },
     brokenOnly: false,
     view: "table",
@@ -21568,12 +21574,83 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
   };
 
-  const updateBreakdownsFiltersUi = () => {
-    if (!breakdownsFiltersToggle) return;
-    const hasAppliedFilters = Object.values(breakdownsState.filters).some((value) =>
-      Boolean(String(value ?? "").trim())
+  const getBreakdownsFilterAllValues = (containerEl) => {
+    if (!containerEl) return [];
+    return Array.from(
+      containerEl.querySelectorAll('input[type="checkbox"][data-breakdowns-filter-checkbox]')
+    )
+      .map((checkboxEl) => String(checkboxEl.value ?? "").trim())
+      .filter(Boolean);
+  };
+
+  const renderBreakdownsFilterTriggerLabel = (containerEl, selectedValues) => {
+    if (!containerEl) return;
+    const triggerEl = containerEl.querySelector("[data-breakdowns-filter-trigger]");
+    if (!triggerEl) return;
+    const key = String(containerEl.dataset.breakdownsFilter ?? "").trim();
+    const safeValues = Array.isArray(selectedValues) ? selectedValues : [];
+    const totalOptions = getBreakdownsFilterAllValues(containerEl).length;
+    const isAllSelected = totalOptions > 0 && safeValues.length === totalOptions;
+    const displayValues =
+      key === "photo"
+        ? safeValues.map((value) => (value === "with" ? "С фото" : "Без фото"))
+        : safeValues;
+    if (!displayValues.length || isAllSelected) {
+      triggerEl.textContent = "Все";
+      triggerEl.classList.remove("is-active");
+      return;
+    }
+    triggerEl.classList.add("is-active");
+    triggerEl.textContent =
+      displayValues.length === 1
+        ? displayValues[0]
+        : `Выбрано: ${displayValues.length}`;
+  };
+
+  const syncBreakdownsFilterSelectAllButton = (containerEl) => {
+    if (!containerEl) return;
+    const clearEl = containerEl.querySelector("[data-breakdowns-filter-clear]");
+    if (!clearEl) return;
+    const allValues = getBreakdownsFilterAllValues(containerEl);
+    const checkedCount = containerEl.querySelectorAll(
+      'input[type="checkbox"][data-breakdowns-filter-checkbox]:checked'
+    ).length;
+    const isAllSelected = allValues.length > 0 && checkedCount === allValues.length;
+    clearEl.textContent = isAllSelected ? "Отменить всё" : "Выбрать всё";
+  };
+
+  const syncBreakdownsFilterValue = (key, values) => {
+    const selectedValues = Array.isArray(values) ? values : [];
+    const containerEl = contentEl.querySelector(
+      `.tools-filter-dropdown[data-breakdowns-filter="${key}"]`
     );
-    breakdownsFiltersToggle.classList.toggle("is-active", hasAppliedFilters);
+    if (!containerEl) return;
+    containerEl
+      .querySelectorAll('input[type="checkbox"][data-breakdowns-filter-checkbox]')
+      .forEach((checkboxEl) => {
+        checkboxEl.checked = selectedValues.includes(String(checkboxEl.value ?? "").trim());
+      });
+    renderBreakdownsFilterTriggerLabel(containerEl, selectedValues);
+    syncBreakdownsFilterSelectAllButton(containerEl);
+  };
+
+  const countAppliedBreakdownsFilters = () =>
+    Object.values(breakdownsState.filters).reduce((total, value) => {
+      return total + (Array.isArray(value) ? value.length : 0);
+    }, 0);
+
+  const updateBreakdownsFiltersUi = () => {
+    const appliedCount = countAppliedBreakdownsFilters();
+    if (breakdownsFiltersToggle) {
+      breakdownsFiltersToggle.classList.toggle("is-active", appliedCount > 0);
+    }
+    breakdownsFiltersStatusEls.forEach((statusEl) => {
+      statusEl.textContent = appliedCount > 0 ? `Фильтры: ${appliedCount} выбр.` : "Фильтры не выбраны";
+      statusEl.classList.toggle("is-active", appliedCount > 0);
+    });
+    breakdownsFiltersResetEls.forEach((resetEl) => {
+      resetEl.classList.toggle("is-hidden", appliedCount === 0);
+    });
   };
 
   const setBreakdownsGroupingMenuOpen = (opened) => {
@@ -21701,59 +21778,46 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const applyBreakdownsFilters = () => {
     const search = breakdownsState.search.trim();
     const tokens = search ? search.split(/\s+/).filter(Boolean) : [];
+    const hasSelected = (key) =>
+      Array.isArray(breakdownsState.filters[key]) && breakdownsState.filters[key].length > 0;
+    const includesSelected = (key, rawValue) => {
+      const normalized = String(rawValue ?? "").trim();
+      return hasSelected(key) && breakdownsState.filters[key].includes(normalized);
+    };
     breakdownsState.filtered = breakdownsState.tools
       .filter((tool) => {
-        if (
-          breakdownsState.filters.group &&
-          String(tool?.["Граппа инструментов"] ?? "").trim() !== breakdownsState.filters.group
-        ) {
+        if (hasSelected("group") && !includesSelected("group", tool?.["Граппа инструментов"])) {
           return false;
         }
-        if (
-          breakdownsState.filters.object &&
-          String(tool?.["Объект"] ?? "").trim() !== breakdownsState.filters.object
-        ) {
+        if (hasSelected("object") && !includesSelected("object", tool?.["Объект"])) {
           return false;
         }
-        if (
-          breakdownsState.filters.status &&
-          String(tool?.["Статус"] ?? "").trim() !== breakdownsState.filters.status
-        ) {
+        if (hasSelected("status") && !includesSelected("status", tool?.["Статус"])) {
           return false;
         }
-        if (
-          breakdownsState.filters.responsible &&
-          String(tool?.["Ответственный"] ?? "").trim() !==
-            breakdownsState.filters.responsible
-        ) {
+        if (hasSelected("responsible") && !includesSelected("responsible", tool?.["Ответственный"])) {
           return false;
         }
-        if (
-          breakdownsState.filters.name &&
-          String(tool?.["Наименование"] ?? "").trim() !== breakdownsState.filters.name
-        ) {
+        if (hasSelected("name") && !includesSelected("name", tool?.["Наименование"])) {
           return false;
         }
-        if (
-          breakdownsState.filters.manufacturer &&
-          String(tool?.["Производитель"] ?? "").trim() !==
-            breakdownsState.filters.manufacturer
-        ) {
+        if (hasSelected("manufacturer") && !includesSelected("manufacturer", tool?.["Производитель"])) {
           return false;
         }
-        if (
-          breakdownsState.filters.model &&
-          String(tool?.["Модель"] ?? "").trim() !== breakdownsState.filters.model
-        ) {
+        if (hasSelected("model") && !includesSelected("model", tool?.["Модель"])) {
           return false;
         }
-        if (breakdownsState.filters.photo) {
+        if (hasSelected("photo")) {
+          const photoFilters = breakdownsState.filters.photo;
+          const hasWith = photoFilters.includes("with");
+          const hasWithout = photoFilters.includes("without");
           const photoCount = Number.parseInt(tool?.["Количество фото"] ?? 0, 10);
           const hasPhoto = Number.isFinite(photoCount) && photoCount > 0;
-          if (breakdownsState.filters.photo === "Есть фото" && !hasPhoto) {
-            return false;
+          if (hasWith !== hasWithout) {
+            if (hasWith && !hasPhoto) return false;
+            if (hasWithout && hasPhoto) return false;
           }
-          if (breakdownsState.filters.photo === "Нет фото" && hasPhoto) {
+          if (!hasWith && !hasWithout) {
             return false;
           }
         }
@@ -22079,23 +22143,46 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   };
 
   const fillBreakdownsFilterOptions = (key, values) => {
-    const selectEl = contentEl.querySelector(`[data-breakdowns-filter="${key}"]`);
-    if (!selectEl) return;
-    const currentValue = String(breakdownsState.filters[key] ?? "");
-    selectEl.innerHTML = "";
-    const allOption = document.createElement("option");
-    allOption.value = "";
-    allOption.textContent = "Все";
-    selectEl.appendChild(allOption);
-    values.forEach((value) => {
-      const option = document.createElement("option");
-      option.value = value;
-      option.textContent = value;
-      selectEl.appendChild(option);
+    const containerEl = contentEl.querySelector(
+      `.tools-filter-dropdown[data-breakdowns-filter="${key}"]`
+    );
+    if (!containerEl) return;
+    const optionsEl = containerEl.querySelector("[data-breakdowns-filter-options]");
+    if (!optionsEl) return;
+    const currentValues = Array.isArray(breakdownsState.filters[key])
+      ? breakdownsState.filters[key]
+      : [];
+    const availableValues = values
+      .map((entry) =>
+        typeof entry === "object" && entry !== null
+          ? {
+              value: String(entry.value ?? "").trim(),
+              label: String(entry.label ?? entry.value ?? "").trim(),
+            }
+          : { value: String(entry ?? "").trim(), label: String(entry ?? "").trim() }
+      )
+      .filter((entry) => entry.value);
+    optionsEl.innerHTML = "";
+    availableValues.forEach((entry, index) => {
+      const id = `breakdowns-filter-${key}-${index}`;
+      const optionLabelEl = document.createElement("label");
+      optionLabelEl.className = "tools-filter-dropdown__option";
+      optionLabelEl.setAttribute("for", id);
+      const checkboxEl = document.createElement("input");
+      checkboxEl.type = "checkbox";
+      checkboxEl.id = id;
+      checkboxEl.value = entry.value;
+      checkboxEl.checked = currentValues.includes(entry.value);
+      checkboxEl.dataset.breakdownsFilterCheckbox = key;
+      const textEl = document.createElement("span");
+      textEl.textContent = entry.label;
+      optionLabelEl.append(checkboxEl, textEl);
+      optionsEl.appendChild(optionLabelEl);
     });
-    const hasCurrentValue = values.includes(currentValue);
-    breakdownsState.filters[key] = hasCurrentValue ? currentValue : "";
-    selectEl.value = breakdownsState.filters[key];
+    breakdownsState.filters[key] = currentValues.filter((value) =>
+      availableValues.some((entry) => entry.value === value)
+    );
+    syncBreakdownsFilterValue(key, breakdownsState.filters[key]);
   };
 
   const prepareBreakdownsFilters = () => {
@@ -22118,10 +22205,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     fillBreakdownsFilterOptions("manufacturer", collectValues("Производитель"));
     fillBreakdownsFilterOptions("model", collectValues("Модель"));
 
-    const photoSelectEl = contentEl.querySelector('[data-breakdowns-filter="photo"]');
-    if (photoSelectEl) {
-      photoSelectEl.value = breakdownsState.filters.photo || "";
-    }
+    fillBreakdownsFilterOptions("photo", [
+      { value: "with", label: "С фото" },
+      { value: "without", label: "Без фото" },
+    ]);
     updateBreakdownsFiltersUi();
   };
 
@@ -22956,11 +23043,58 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       applyBreakdownsFilters();
     });
   }
-  breakdownsFilterEls.forEach((selectEl) => {
-    selectEl.addEventListener("change", (event) => {
-      const key = String(event.target?.dataset?.breakdownsFilter ?? "").trim();
-      if (!key) return;
-      breakdownsState.filters[key] = String(event.target.value ?? "").trim();
+  breakdownsFilterEls.forEach((containerEl) => {
+    const key = String(containerEl.dataset.breakdownsFilter ?? "").trim();
+    if (!key) return;
+    const triggerEl = containerEl.querySelector("[data-breakdowns-filter-trigger]");
+    const menuEl = containerEl.querySelector("[data-breakdowns-filter-menu]");
+    const clearEl = containerEl.querySelector("[data-breakdowns-filter-clear]");
+    if (!triggerEl || !menuEl) return;
+    triggerEl.addEventListener("click", () => {
+      const shouldOpen = menuEl.classList.contains("is-hidden");
+      breakdownsFilterEls.forEach((itemEl) => {
+        itemEl.classList.remove("is-open");
+        itemEl.querySelector("[data-breakdowns-filter-menu]")?.classList.add("is-hidden");
+      });
+      containerEl.classList.toggle("is-open", shouldOpen);
+      menuEl.classList.toggle("is-hidden", !shouldOpen);
+    });
+    menuEl.addEventListener("change", (event) => {
+      const target = event.target;
+      if (!(target instanceof HTMLInputElement)) return;
+      if (!target.matches('input[type="checkbox"][data-breakdowns-filter-checkbox]')) return;
+      const selectedValues = Array.from(
+        containerEl.querySelectorAll(
+          'input[type="checkbox"][data-breakdowns-filter-checkbox]:checked'
+        )
+      )
+        .map((checkboxEl) => String(checkboxEl.value ?? "").trim())
+        .filter(Boolean);
+      breakdownsState.filters[key] = selectedValues;
+      syncBreakdownsFilterValue(key, selectedValues);
+      applyBreakdownsFilters();
+    });
+    if (clearEl) {
+      clearEl.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        const allValues = getBreakdownsFilterAllValues(containerEl);
+        const selectedValues = Array.isArray(breakdownsState.filters[key])
+          ? breakdownsState.filters[key]
+          : [];
+        const shouldClear = allValues.length > 0 && selectedValues.length === allValues.length;
+        breakdownsState.filters[key] = shouldClear ? [] : [...allValues];
+        syncBreakdownsFilterValue(key, breakdownsState.filters[key]);
+        applyBreakdownsFilters();
+      });
+    }
+  });
+  breakdownsFiltersResetEls.forEach((buttonEl) => {
+    buttonEl.addEventListener("click", () => {
+      Object.keys(breakdownsState.filters).forEach((key) => {
+        breakdownsState.filters[key] = [];
+        syncBreakdownsFilterValue(key, []);
+      });
       applyBreakdownsFilters();
     });
   });
@@ -23006,6 +23140,19 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     } else if (mediaQuery.addListener) {
       mediaQuery.addListener(syncBreakdownsFiltersVisibility);
     }
+  }
+  if (typeof document !== "undefined") {
+    document.addEventListener("click", (event) => {
+      const target = event.target;
+      if (!(target instanceof HTMLElement)) return;
+      if (target.closest(".tools-filter-dropdown[data-breakdowns-filter]")) return;
+      breakdownsFilterEls.forEach((containerEl) => {
+        containerEl.classList.remove("is-open");
+        containerEl
+          .querySelector("[data-breakdowns-filter-menu]")
+          ?.classList.add("is-hidden");
+      });
+    });
   }
   if (breakdownsGroupingToggle) {
     breakdownsGroupingToggle.addEventListener("click", () => {

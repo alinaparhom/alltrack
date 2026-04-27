@@ -2746,54 +2746,120 @@ export function renderRole(user) {
                 <div class="tools-filters" id="breakdowns-filters-panel" data-breakdowns-filters-panel>
                   <label class="tools-filter">
                     <span>Группа</span>
-                    <select class="form-input" data-breakdowns-filter="group" aria-label="Группа">
-                      <option value="">Все</option>
-                    </select>
+                    <div class="tools-filter-dropdown" data-breakdowns-filter="group">
+                      <button type="button" class="form-input tools-filter-dropdown__trigger" data-breakdowns-filter-trigger>
+                        Все
+                      </button>
+                      <div class="tools-filter-dropdown__menu is-hidden" data-breakdowns-filter-menu>
+                        <button type="button" class="tools-filter-dropdown__clear" data-breakdowns-filter-clear>
+                          Выбрать всё
+                        </button>
+                        <div class="tools-filter-dropdown__options" data-breakdowns-filter-options></div>
+                      </div>
+                    </div>
                   </label>
                   <label class="tools-filter">
                     <span>Объект</span>
-                    <select class="form-input" data-breakdowns-filter="object" aria-label="Объект">
-                      <option value="">Все</option>
-                    </select>
+                    <div class="tools-filter-dropdown" data-breakdowns-filter="object">
+                      <button type="button" class="form-input tools-filter-dropdown__trigger" data-breakdowns-filter-trigger>
+                        Все
+                      </button>
+                      <div class="tools-filter-dropdown__menu is-hidden" data-breakdowns-filter-menu>
+                        <button type="button" class="tools-filter-dropdown__clear" data-breakdowns-filter-clear>
+                          Выбрать всё
+                        </button>
+                        <div class="tools-filter-dropdown__options" data-breakdowns-filter-options></div>
+                      </div>
+                    </div>
                   </label>
                   <label class="tools-filter">
                     <span>Статус</span>
-                    <select class="form-input" data-breakdowns-filter="status" aria-label="Статус">
-                      <option value="">Все</option>
-                    </select>
+                    <div class="tools-filter-dropdown" data-breakdowns-filter="status">
+                      <button type="button" class="form-input tools-filter-dropdown__trigger" data-breakdowns-filter-trigger>
+                        Все
+                      </button>
+                      <div class="tools-filter-dropdown__menu is-hidden" data-breakdowns-filter-menu>
+                        <button type="button" class="tools-filter-dropdown__clear" data-breakdowns-filter-clear>
+                          Выбрать всё
+                        </button>
+                        <div class="tools-filter-dropdown__options" data-breakdowns-filter-options></div>
+                      </div>
+                    </div>
                   </label>
                   <label class="tools-filter">
                     <span>Ответственный</span>
-                    <select class="form-input" data-breakdowns-filter="responsible" aria-label="Ответственный">
-                      <option value="">Все</option>
-                    </select>
+                    <div class="tools-filter-dropdown" data-breakdowns-filter="responsible">
+                      <button type="button" class="form-input tools-filter-dropdown__trigger" data-breakdowns-filter-trigger>
+                        Все
+                      </button>
+                      <div class="tools-filter-dropdown__menu is-hidden" data-breakdowns-filter-menu>
+                        <button type="button" class="tools-filter-dropdown__clear" data-breakdowns-filter-clear>
+                          Выбрать всё
+                        </button>
+                        <div class="tools-filter-dropdown__options" data-breakdowns-filter-options></div>
+                      </div>
+                    </div>
                   </label>
                   <label class="tools-filter">
                     <span>Наименование</span>
-                    <select class="form-input" data-breakdowns-filter="name" aria-label="Наименование">
-                      <option value="">Все</option>
-                    </select>
+                    <div class="tools-filter-dropdown" data-breakdowns-filter="name">
+                      <button type="button" class="form-input tools-filter-dropdown__trigger" data-breakdowns-filter-trigger>
+                        Все
+                      </button>
+                      <div class="tools-filter-dropdown__menu is-hidden" data-breakdowns-filter-menu>
+                        <button type="button" class="tools-filter-dropdown__clear" data-breakdowns-filter-clear>
+                          Выбрать всё
+                        </button>
+                        <div class="tools-filter-dropdown__options" data-breakdowns-filter-options></div>
+                      </div>
+                    </div>
                   </label>
                   <label class="tools-filter">
                     <span>Производитель</span>
-                    <select class="form-input" data-breakdowns-filter="manufacturer" aria-label="Производитель">
-                      <option value="">Все</option>
-                    </select>
+                    <div class="tools-filter-dropdown" data-breakdowns-filter="manufacturer">
+                      <button type="button" class="form-input tools-filter-dropdown__trigger" data-breakdowns-filter-trigger>
+                        Все
+                      </button>
+                      <div class="tools-filter-dropdown__menu is-hidden" data-breakdowns-filter-menu>
+                        <button type="button" class="tools-filter-dropdown__clear" data-breakdowns-filter-clear>
+                          Выбрать всё
+                        </button>
+                        <div class="tools-filter-dropdown__options" data-breakdowns-filter-options></div>
+                      </div>
+                    </div>
                   </label>
                   <label class="tools-filter">
                     <span>Модель</span>
-                    <select class="form-input" data-breakdowns-filter="model" aria-label="Модель">
-                      <option value="">Все</option>
-                    </select>
+                    <div class="tools-filter-dropdown" data-breakdowns-filter="model">
+                      <button type="button" class="form-input tools-filter-dropdown__trigger" data-breakdowns-filter-trigger>
+                        Все
+                      </button>
+                      <div class="tools-filter-dropdown__menu is-hidden" data-breakdowns-filter-menu>
+                        <button type="button" class="tools-filter-dropdown__clear" data-breakdowns-filter-clear>
+                          Выбрать всё
+                        </button>
+                        <div class="tools-filter-dropdown__options" data-breakdowns-filter-options></div>
+                      </div>
+                    </div>
                   </label>
                   <label class="tools-filter">
                     <span>Фото</span>
-                    <select class="form-input" data-breakdowns-filter="photo" aria-label="Фото">
-                      <option value="">Все</option>
-                      <option value="Есть фото">Есть фото</option>
-                      <option value="Нет фото">Нет фото</option>
-                    </select>
+                    <div class="tools-filter-dropdown" data-breakdowns-filter="photo">
+                      <button type="button" class="form-input tools-filter-dropdown__trigger" data-breakdowns-filter-trigger>
+                        Все
+                      </button>
+                      <div class="tools-filter-dropdown__menu is-hidden" data-breakdowns-filter-menu>
+                        <button type="button" class="tools-filter-dropdown__clear" data-breakdowns-filter-clear>
+                          Выбрать всё
+                        </button>
+                        <div class="tools-filter-dropdown__options" data-breakdowns-filter-options></div>
+                      </div>
+                    </div>
                   </label>
+                  <div class="tools-filters-controls">
+                    <div class="tools-filters-status" data-breakdowns-filters-status>Фильтры не выбраны</div>
+                    <button type="button" class="tools-filters-reset is-hidden" data-breakdowns-filters-reset>Сбросить всё</button>
+                  </div>
                 </div>
               </div>
               <div class="tools-list is-table breakdowns-list" data-breakdowns-list></div>

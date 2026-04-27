@@ -21304,10 +21304,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
             label: "Кто отметил поломку",
             value: entry?.["Пользователь, который пометил поломку"] || "—",
           },
-          {
-            label: "Дата ремонта",
-            value: entry?.["Дата ремонта"] || "В работе",
-          },
         ]
       : [
           {
@@ -22362,7 +22358,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const fillBreakdownStatusToolInfo = (tool) => {
     if (!tool) return;
     if (breakdownStatusSubtitleEl) {
-      breakdownStatusSubtitleEl.textContent = "Проверьте данные инструмента";
+      breakdownStatusSubtitleEl.textContent = "";
     }
     if (breakdownStatusToolTitleEl) {
       breakdownStatusToolTitleEl.textContent = "";

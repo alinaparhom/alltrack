@@ -23056,6 +23056,18 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       applyBreakdownsFilters();
     });
   }
+  const positionBreakdownsFilterMenu = (containerEl, menuEl) => {
+    if (!containerEl || !menuEl || typeof window === "undefined") return;
+    const triggerEl = containerEl.querySelector("[data-breakdowns-filter-trigger]");
+    if (!triggerEl) return;
+    const triggerRect = triggerEl.getBoundingClientRect();
+    const viewportHeight = window.visualViewport?.height ?? window.innerHeight;
+    const top = Math.max(8, Math.round(triggerRect.bottom + 6));
+    const maxHeight = Math.max(180, Math.floor(viewportHeight - top - 12));
+    menuEl.style.top = `${top}px`;
+    menuEl.style.maxHeight = `${maxHeight}px`;
+  };
+
   breakdownsFilterEls.forEach((containerEl) => {
     const key = String(containerEl.dataset.breakdownsFilter ?? "").trim();
     if (!key) return;
@@ -23071,6 +23083,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       });
       containerEl.classList.toggle("is-open", shouldOpen);
       menuEl.classList.toggle("is-hidden", !shouldOpen);
+      if (shouldOpen) {
+        positionBreakdownsFilterMenu(containerEl, menuEl);
+      }
     });
     menuEl.addEventListener("change", (event) => {
       const target = event.target;
@@ -23165,6 +23180,20 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           .querySelector("[data-breakdowns-filter-menu]")
           ?.classList.add("is-hidden");
       });
+    });
+  }
+
+  if (typeof window !== "undefined") {
+    const refreshOpenBreakdownsFilterMenus = () => {
+      breakdownsFilterEls.forEach((containerEl) => {
+        if (!containerEl.classList.contains("is-open")) return;
+        const menuEl = containerEl.querySelector("[data-breakdowns-filter-menu]");
+        positionBreakdownsFilterMenu(containerEl, menuEl);
+      });
+    };
+    window.addEventListener("resize", refreshOpenBreakdownsFilterMenus);
+    breakdownsFiltersPanel?.addEventListener("scroll", refreshOpenBreakdownsFilterMenus, {
+      passive: true,
     });
   }
   if (breakdownsGroupingToggle) {

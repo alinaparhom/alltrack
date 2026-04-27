@@ -3175,6 +3175,8 @@
         padding-bottom: 12px;
         scroll-padding-bottom: 88px;
         flex: 1 1 auto;
+        display: grid;
+        gap: 12px;
       }
 
       .repair-form__body.settings-modal__body {
@@ -3220,6 +3222,10 @@
         display: grid;
         gap: 10px;
         z-index: 2;
+      }
+
+      .repair-form .breakdown-tool-title:empty {
+        display: none;
       }
 
       .repair-form__actions {
@@ -3889,7 +3895,8 @@
         max-height: 100vh;
         max-height: 100svh;
         max-height: 100dvh;
-        display: block;
+        display: grid;
+        grid-template-rows: auto minmax(0, 1fr);
       }
 
       .breakdown-form-modal {

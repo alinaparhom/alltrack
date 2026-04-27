@@ -2953,11 +2953,19 @@ export function renderRole(user) {
             </div>
             <form class="settings-modal__form repair-form" data-repair-form>
               <div class="settings-modal__body repair-form__body">
-                <div class="breakdown-tool-card">
+                <div class="breakdown-tool-card breakdown-tool-card--highlight">
+                  <div class="breakdown-tool-caption">Информация об инструменте</div>
                   <div class="breakdown-tool-title" data-repair-tool-title>
                     —
                   </div>
                   <div class="breakdown-tool-meta" data-repair-tool-meta></div>
+                </div>
+                <div
+                  class="breakdown-tool-card breakdown-tool-card--details is-hidden"
+                  data-repair-info-card
+                >
+                  <div class="breakdown-tool-caption">Информация о ремонте</div>
+                  <div class="breakdown-tool-meta" data-repair-info-meta></div>
                 </div>
                 <div data-repair-form-send>
                   <label class="form-field form-field--required">

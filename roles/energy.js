@@ -2980,15 +2980,15 @@ export function renderRole(user) {
             aria-modal="true"
             aria-label="Статус поломки"
           >
-            <div class="settings-modal__header breakdown-status__header">
+            <div class="settings-modal__header breakdown-form__header">
               <div class="settings-modal__title">
                 <h2>Поломка: статус</h2>
                 <p data-breakdown-status-subtitle>
-                  Выберите новый статус для инструмента
+                  Проверьте данные инструмента
                 </p>
               </div>
               <button
-                class="button-icon breakdown-status__close"
+                class="button-icon breakdown-form__close"
                 type="button"
                 data-breakdown-status-close
                 aria-label="Закрыть окно статуса"
@@ -2996,38 +2996,16 @@ export function renderRole(user) {
                 <span class="button-icon-emoji" aria-hidden="true">✕</span>
               </button>
             </div>
-            <div class="settings-modal__body breakdown-status__body">
-              <div class="breakdown-tool-card">
+            <div class="settings-modal__body breakdown-form__body">
+              <div class="breakdown-tool-card breakdown-tool-card--highlight">
+                <div class="breakdown-tool-caption">Информация об инструменте</div>
                 <div class="breakdown-tool-title" data-breakdown-status-tool-title>
                   —
                 </div>
                 <div class="breakdown-tool-meta" data-breakdown-status-tool-meta></div>
               </div>
-              <div class="breakdown-status-actions">
-                <button
-                  class="action-primary"
-                  type="button"
-                  data-breakdown-status-action="repaired"
-                >
-                  Отремонтирован
-                </button>
-                <button
-                  class="action-secondary"
-                  type="button"
-                  data-breakdown-status-action="send-repair"
-                >
-                  Отправлен в ремонт
-                </button>
-                <button
-                  class="action-danger"
-                  type="button"
-                  data-breakdown-status-action="writeoff"
-                >
-                  На списание
-                </button>
-              </div>
             </div>
-            <div class="settings-modal__footer breakdown-status__footer">
+            <div class="settings-modal__footer breakdown-form__footer breakdown-status__footer">
               <div
                 class="form-message form-message--inline"
                 role="status"
@@ -3036,11 +3014,18 @@ export function renderRole(user) {
               ></div>
               <div class="settings-modal__actions breakdown-status__actions">
                 <button
+                  class="action-primary"
+                  type="button"
+                  data-breakdown-status-action="repaired"
+                >
+                  Пометить исправный
+                </button>
+                <button
                   class="action-secondary"
                   type="button"
-                  data-breakdown-status-cancel
+                  data-breakdown-status-action="send-repair"
                 >
-                  Закрыть
+                  Отправить в ремонт
                 </button>
               </div>
             </div>

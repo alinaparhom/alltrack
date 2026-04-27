@@ -22296,7 +22296,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const fillBreakdownStatusToolInfo = (tool) => {
     if (!tool) return;
     if (breakdownStatusSubtitleEl) {
-      breakdownStatusSubtitleEl.textContent = "Информация об инструменте";
+      breakdownStatusSubtitleEl.textContent = "Проверьте данные инструмента";
     }
     if (breakdownStatusToolTitleEl) {
       breakdownStatusToolTitleEl.textContent = "";

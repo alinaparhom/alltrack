@@ -3004,6 +3004,10 @@ export function renderRole(user) {
                 </div>
                 <div class="breakdown-tool-meta" data-breakdown-status-tool-meta></div>
               </div>
+              <div class="breakdown-tool-card breakdown-tool-card--details">
+                <div class="breakdown-tool-caption">Информация о поломке</div>
+                <div class="breakdown-tool-meta" data-breakdown-status-info-meta></div>
+              </div>
             </div>
             <div class="settings-modal__footer breakdown-form__footer">
               <div

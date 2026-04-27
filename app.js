@@ -5821,6 +5821,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const breakdownStatusToolMetaEl = contentEl.querySelector(
     "[data-breakdown-status-tool-meta]"
   );
+  const breakdownStatusInfoMetaEl = contentEl.querySelector(
+    "[data-breakdown-status-info-meta]"
+  );
   const breakdownStatusMessageEl = contentEl.querySelector(
     "[data-breakdown-status-message]"
   );
@@ -21288,6 +21291,42 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       .join("");
   };
 
+  const renderBreakdownStatusInfoFields = (infoMetaElement, entry) => {
+    if (!infoMetaElement) return;
+    const fields = entry
+      ? [
+          { label: "Дата поломки", value: entry?.["Дата поломки"] || "—" },
+          {
+            label: "Описание поломки",
+            value: entry?.["Описание поломки"] || "—",
+          },
+          {
+            label: "Кто отметил поломку",
+            value: entry?.["Пользователь, который пометил поломку"] || "—",
+          },
+          {
+            label: "Дата ремонта",
+            value: entry?.["Дата ремонта"] || "В работе",
+          },
+        ]
+      : [
+          {
+            label: "Статус",
+            value: "Данные о поломке не найдены.",
+          },
+        ];
+    infoMetaElement.innerHTML = fields
+      .map(
+        (field) =>
+          `<div class="breakdown-tool-field"><div class="breakdown-tool-field__label">${escapeHtml(
+            field.label
+          )}</div><div class="breakdown-tool-field__value">${escapeHtml(
+            field.value
+          )}</div></div>`
+      )
+      .join("");
+  };
+
   const renderBreakdownsTable = (items) => {
     const table = document.createElement("div");
     table.className = "tools-table";
@@ -22293,6 +22332,33 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
   };
 
+  const loadLatestBreakdownForTool = async (tool) => {
+    const orgFolder = breakdownsState.orgFolder ?? "";
+    if (!tool || !orgFolder) return null;
+    const rawBreakdowns = await loadJson(`./${orgFolder}/Поломки.json`).catch(() => []);
+    const breakdowns = Array.isArray(rawBreakdowns)
+      ? rawBreakdowns
+      : Array.isArray(rawBreakdowns?.breakdowns)
+        ? rawBreakdowns.breakdowns
+        : [];
+    const matcher = buildToolsInfoMatcher(tool);
+    const matched = breakdowns.filter(matcher);
+    if (!matched.length) return null;
+    const sorted = matched
+      .map((entry, index) => ({
+        entry,
+        index,
+        date: parseDateValue(entry?.["Дата поломки"]),
+      }))
+      .sort((a, b) => {
+        const aTime = a.date ? a.date.getTime() : 0;
+        const bTime = b.date ? b.date.getTime() : 0;
+        if (aTime !== bTime) return bTime - aTime;
+        return b.index - a.index;
+      });
+    return sorted[0]?.entry ?? null;
+  };
+
   const fillBreakdownStatusToolInfo = (tool) => {
     if (!tool) return;
     if (breakdownStatusSubtitleEl) {
@@ -22302,15 +22368,19 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       breakdownStatusToolTitleEl.textContent = "";
     }
     renderBreakdownToolInfoFields(breakdownStatusToolMetaEl, tool);
+    renderBreakdownStatusInfoFields(breakdownStatusInfoMetaEl, null);
   };
 
-  const openBreakdownStatusModal = (tool) => {
+  const openBreakdownStatusModal = async (tool) => {
     if (!breakdownStatusModalEl || !tool) return;
     breakdownsState.statusTool = tool;
     fillBreakdownStatusToolInfo(tool);
     setBreakdownStatusMessage("");
     breakdownStatusModalEl.classList.remove("is-hidden");
     document.body.style.overflow = "hidden";
+    const latestBreakdown = await loadLatestBreakdownForTool(tool);
+    if (breakdownsState.statusTool !== tool) return;
+    renderBreakdownStatusInfoFields(breakdownStatusInfoMetaEl, latestBreakdown);
   };
 
   const closeBreakdownStatusModal = () => {

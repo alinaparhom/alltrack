@@ -21777,8 +21777,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         breakdownsState.filtered.length > 0
       );
     }
+    const filteredBreakdownsCost = breakdownsState.filtered.reduce((sum, tool) => {
+      const toolCost = normalizeCostValue(tool?.["Стоимость"]);
+      return toolCost === null ? sum : sum + toolCost;
+    }, 0);
     setBreakdownsSubtitle(
-      `Показано ${breakdownsState.filtered.length} из ${breakdownsState.tools.length}`
+      `Показано ${breakdownsState.filtered.length} из ${breakdownsState.tools.length} · На сумму ${formatNotificationCostWithoutCurrency(filteredBreakdownsCost)} р.`
     );
   };
 

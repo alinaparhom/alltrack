@@ -5700,8 +5700,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const breakdownsSearchInput = contentEl.querySelector(
     "[data-breakdowns-search]"
   );
-  const breakdownsStatusFilter = contentEl.querySelector(
-    "[data-breakdowns-status-filter]"
+  const breakdownsFilterEls = contentEl.querySelectorAll(
+    "[data-breakdowns-filter]"
   );
   const breakdownsViewButtons = Array.from(
     contentEl.querySelectorAll("[data-breakdowns-view]")
@@ -7300,7 +7300,16 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     statusTool: null,
     toolMap: new Map(),
     photos: [],
-    statusFilter: "",
+    filters: {
+      group: "",
+      object: "",
+      status: "",
+      responsible: "",
+      name: "",
+      manufacturer: "",
+      model: "",
+      photo: "",
+    },
     brokenOnly: false,
     view: "table",
     sortDirection: "desc",
@@ -21561,7 +21570,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
   const updateBreakdownsFiltersUi = () => {
     if (!breakdownsFiltersToggle) return;
-    const hasAppliedFilters = Boolean(breakdownsState.statusFilter);
+    const hasAppliedFilters = Object.values(breakdownsState.filters).some((value) =>
+      Boolean(String(value ?? "").trim())
+    );
     breakdownsFiltersToggle.classList.toggle("is-active", hasAppliedFilters);
   };
 
@@ -21693,10 +21704,58 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     breakdownsState.filtered = breakdownsState.tools
       .filter((tool) => {
         if (
-          breakdownsState.statusFilter &&
-          String(tool?.["Статус"] ?? "").trim() !== breakdownsState.statusFilter
+          breakdownsState.filters.group &&
+          String(tool?.["Граппа инструментов"] ?? "").trim() !== breakdownsState.filters.group
         ) {
           return false;
+        }
+        if (
+          breakdownsState.filters.object &&
+          String(tool?.["Объект"] ?? "").trim() !== breakdownsState.filters.object
+        ) {
+          return false;
+        }
+        if (
+          breakdownsState.filters.status &&
+          String(tool?.["Статус"] ?? "").trim() !== breakdownsState.filters.status
+        ) {
+          return false;
+        }
+        if (
+          breakdownsState.filters.responsible &&
+          String(tool?.["Ответственный"] ?? "").trim() !==
+            breakdownsState.filters.responsible
+        ) {
+          return false;
+        }
+        if (
+          breakdownsState.filters.name &&
+          String(tool?.["Наименование"] ?? "").trim() !== breakdownsState.filters.name
+        ) {
+          return false;
+        }
+        if (
+          breakdownsState.filters.manufacturer &&
+          String(tool?.["Производитель"] ?? "").trim() !==
+            breakdownsState.filters.manufacturer
+        ) {
+          return false;
+        }
+        if (
+          breakdownsState.filters.model &&
+          String(tool?.["Модель"] ?? "").trim() !== breakdownsState.filters.model
+        ) {
+          return false;
+        }
+        if (breakdownsState.filters.photo) {
+          const photoCount = Number.parseInt(tool?.["Количество фото"] ?? 0, 10);
+          const hasPhoto = Number.isFinite(photoCount) && photoCount > 0;
+          if (breakdownsState.filters.photo === "Есть фото" && !hasPhoto) {
+            return false;
+          }
+          if (breakdownsState.filters.photo === "Нет фото" && hasPhoto) {
+            return false;
+          }
         }
         if (breakdownsState.brokenOnly) {
           const normalizedStatus = String(tool?.["Статус"] ?? "")
@@ -22019,31 +22078,50 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       .filter(Boolean);
   };
 
-  const prepareBreakdownsStatusFilter = () => {
-    if (!breakdownsStatusFilter) return;
-    const values = new Set();
-    breakdownsState.tools.forEach((tool) => {
-      const status = String(tool?.["Статус"] ?? "").trim();
-      if (status) values.add(status);
-    });
-    const sortedValues = Array.from(values).sort((a, b) =>
-      a.localeCompare(b, "ru", { numeric: true })
-    );
-    breakdownsStatusFilter.innerHTML = "";
+  const fillBreakdownsFilterOptions = (key, values) => {
+    const selectEl = contentEl.querySelector(`[data-breakdowns-filter="${key}"]`);
+    if (!selectEl) return;
+    const currentValue = String(breakdownsState.filters[key] ?? "");
+    selectEl.innerHTML = "";
     const allOption = document.createElement("option");
     allOption.value = "";
     allOption.textContent = "Все";
-    breakdownsStatusFilter.appendChild(allOption);
-    sortedValues.forEach((value) => {
+    selectEl.appendChild(allOption);
+    values.forEach((value) => {
       const option = document.createElement("option");
       option.value = value;
       option.textContent = value;
-      breakdownsStatusFilter.appendChild(option);
+      selectEl.appendChild(option);
     });
-    if (breakdownsState.statusFilter && !values.has(breakdownsState.statusFilter)) {
-      breakdownsState.statusFilter = "";
+    const hasCurrentValue = values.includes(currentValue);
+    breakdownsState.filters[key] = hasCurrentValue ? currentValue : "";
+    selectEl.value = breakdownsState.filters[key];
+  };
+
+  const prepareBreakdownsFilters = () => {
+    const collectValues = (field) => {
+      const set = new Set();
+      breakdownsState.tools.forEach((tool) => {
+        const value = String(tool?.[field] ?? "").trim();
+        if (value) set.add(value);
+      });
+      return Array.from(set).sort((a, b) =>
+        a.localeCompare(b, "ru", { numeric: true })
+      );
+    };
+
+    fillBreakdownsFilterOptions("group", collectValues("Граппа инструментов"));
+    fillBreakdownsFilterOptions("object", collectValues("Объект"));
+    fillBreakdownsFilterOptions("status", collectValues("Статус"));
+    fillBreakdownsFilterOptions("responsible", collectValues("Ответственный"));
+    fillBreakdownsFilterOptions("name", collectValues("Наименование"));
+    fillBreakdownsFilterOptions("manufacturer", collectValues("Производитель"));
+    fillBreakdownsFilterOptions("model", collectValues("Модель"));
+
+    const photoSelectEl = contentEl.querySelector('[data-breakdowns-filter="photo"]');
+    if (photoSelectEl) {
+      photoSelectEl.value = breakdownsState.filters.photo || "";
     }
-    breakdownsStatusFilter.value = breakdownsState.statusFilter;
     updateBreakdownsFiltersUi();
   };
 
@@ -22092,7 +22170,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           { numeric: true }
         )
       );
-    prepareBreakdownsStatusFilter();
+    prepareBreakdownsFilters();
     applyBreakdownsFilters();
   };
 
@@ -22793,7 +22871,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     });
     prepareRepairStatusFilter();
     applyRepairFilters();
-    prepareBreakdownsStatusFilter();
+    prepareBreakdownsFilters();
     applyBreakdownsFilters();
   };
 
@@ -22878,12 +22956,14 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       applyBreakdownsFilters();
     });
   }
-  if (breakdownsStatusFilter) {
-    breakdownsStatusFilter.addEventListener("change", (event) => {
-      breakdownsState.statusFilter = String(event.target.value ?? "").trim();
+  breakdownsFilterEls.forEach((selectEl) => {
+    selectEl.addEventListener("change", (event) => {
+      const key = String(event.target?.dataset?.breakdownsFilter ?? "").trim();
+      if (!key) return;
+      breakdownsState.filters[key] = String(event.target.value ?? "").trim();
       applyBreakdownsFilters();
     });
-  }
+  });
   if (breakdownsViewButtons.length) {
     breakdownsViewButtons.forEach((button) => {
       button.addEventListener("click", () => {

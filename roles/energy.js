@@ -2984,7 +2984,7 @@ export function renderRole(user) {
               <div class="settings-modal__title">
                 <h2>Поломка: статус</h2>
                 <p data-breakdown-status-subtitle>
-                  Выберите новый статус для инструмента
+                  Информация об инструменте
                 </p>
               </div>
               <button
@@ -2997,34 +2997,10 @@ export function renderRole(user) {
               </button>
             </div>
             <div class="settings-modal__body breakdown-status__body">
-              <div class="breakdown-tool-card">
-                <div class="breakdown-tool-title" data-breakdown-status-tool-title>
-                  —
-                </div>
+              <div class="breakdown-tool-card breakdown-tool-card--highlight">
+                <div class="breakdown-tool-caption">Информация об инструменте</div>
+                <div class="breakdown-tool-title" data-breakdown-status-tool-title></div>
                 <div class="breakdown-tool-meta" data-breakdown-status-tool-meta></div>
-              </div>
-              <div class="breakdown-status-actions">
-                <button
-                  class="action-primary"
-                  type="button"
-                  data-breakdown-status-action="repaired"
-                >
-                  Отремонтирован
-                </button>
-                <button
-                  class="action-secondary"
-                  type="button"
-                  data-breakdown-status-action="send-repair"
-                >
-                  Отправлен в ремонт
-                </button>
-                <button
-                  class="action-danger"
-                  type="button"
-                  data-breakdown-status-action="writeoff"
-                >
-                  На списание
-                </button>
               </div>
             </div>
             <div class="settings-modal__footer breakdown-status__footer">
@@ -3038,9 +3014,16 @@ export function renderRole(user) {
                 <button
                   class="action-secondary"
                   type="button"
-                  data-breakdown-status-cancel
+                  data-breakdown-status-action="send-repair"
                 >
-                  Закрыть
+                  Отправить в ремонт
+                </button>
+                <button
+                  class="action-primary"
+                  type="button"
+                  data-breakdown-status-action="repaired"
+                >
+                  Пометить исправный
                 </button>
               </div>
             </div>

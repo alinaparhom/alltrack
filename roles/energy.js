@@ -3005,27 +3005,27 @@ export function renderRole(user) {
                 <div class="breakdown-tool-meta" data-breakdown-status-tool-meta></div>
               </div>
             </div>
-            <div class="settings-modal__footer breakdown-form__footer breakdown-status__footer">
+            <div class="settings-modal__footer breakdown-form__footer">
               <div
                 class="form-message form-message--inline"
                 role="status"
                 aria-live="polite"
                 data-breakdown-status-message
               ></div>
-              <div class="settings-modal__actions breakdown-status__actions">
+              <div class="settings-modal__actions breakdown-form__actions">
                 <button
-                  class="action-primary"
-                  type="button"
-                  data-breakdown-status-action="repaired"
-                >
-                  Пометить исправный
-                </button>
-                <button
-                  class="action-secondary"
+                  class="action-secondary breakdown-form__cancel"
                   type="button"
                   data-breakdown-status-action="send-repair"
                 >
                   Отправить в ремонт
+                </button>
+                <button
+                  class="action-primary breakdown-form__submit"
+                  type="button"
+                  data-breakdown-status-action="repaired"
+                >
+                  Пометить исправный
                 </button>
               </div>
             </div>

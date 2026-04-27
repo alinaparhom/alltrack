@@ -5774,6 +5774,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const repairFormTitleEl = contentEl.querySelector("[data-repair-form-title]");
   const repairToolTitleEl = contentEl.querySelector("[data-repair-tool-title]");
   const repairToolMetaEl = contentEl.querySelector("[data-repair-tool-meta]");
+  const repairInfoCardEl = contentEl.querySelector("[data-repair-info-card]");
+  const repairInfoMetaEl = contentEl.querySelector("[data-repair-info-meta]");
   const repairFormSendSection = contentEl.querySelector(
     "[data-repair-form-send]"
   );
@@ -22363,6 +22365,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       "is-hidden",
       resolvedMode !== "repaired"
     );
+    repairInfoCardEl?.classList.toggle("is-hidden", resolvedMode !== "repaired");
     if (repairFormTitleEl) {
       repairFormTitleEl.textContent =
         resolvedMode === "repaired" ? "Возврат из ремонта" : "Отправка в ремонт";
@@ -22399,82 +22402,81 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
   };
 
-  const loadRepairTotalCost = async (tool) => {
+  const loadLatestRepairForTool = async (tool) => {
     const orgFolder = repairState.orgFolder ?? context.orgFolderName ?? "";
-    if (!orgFolder || !tool) {
-      return {
-        hasRepairs: false,
-        totalCost: null,
-      };
-    }
-    const repairsPath = `./${orgFolder}/Ремонты.json`;
-    const rawRepairs = await loadJson(repairsPath).catch(() => []);
+    if (!orgFolder || !tool) return null;
+    const rawRepairs = await loadJson(`./${orgFolder}/Ремонты.json`).catch(() => []);
     const repairs = Array.isArray(rawRepairs)
       ? rawRepairs
       : Array.isArray(rawRepairs?.repairs)
         ? rawRepairs.repairs
         : [];
-    if (!repairs.length) {
-      return {
-        hasRepairs: false,
-        totalCost: null,
-      };
-    }
+    if (!repairs.length) return null;
     const selectedNumber = normalizeToolNumberValue(tool?.["Номер"] ?? "");
     const selectedAccounting = String(tool?.["Бух.номер"] ?? "").trim();
-    let total = 0;
-    let hasValue = false;
-    let hasRepairs = false;
-    repairs.forEach((entry) => {
+    let matchedEntry = null;
+    for (let index = repairs.length - 1; index >= 0; index -= 1) {
+      const entry = repairs[index];
       const entryNumber = normalizeToolNumberValue(entry?.["Номер"] ?? "");
       const entryAccounting = String(entry?.["Бух.номер"] ?? "").trim();
       const isMatched =
         (selectedNumber && entryNumber === selectedNumber) ||
         (selectedAccounting && entryAccounting === selectedAccounting);
-      if (!isMatched) return;
-      hasRepairs = true;
-      const repairCost = normalizeCostValue(entry?.["Стоимость ремонта"]);
-      if (repairCost === null) return;
-      total += repairCost;
-      hasValue = true;
-    });
-    return {
-      hasRepairs,
-      totalCost: hasValue ? total : null,
-    };
+      if (!isMatched) continue;
+      matchedEntry = entry;
+      if (!String(entry?.["Дата ремонта"] ?? "").trim()) {
+        return entry;
+      }
+    }
+    return matchedEntry;
+  };
+
+  const renderRepairInfoFields = (entry) => {
+    if (!repairInfoMetaEl) return;
+    const fields = entry
+      ? [
+          {
+            label: "Дата поломки",
+            value:
+              entry?.["Дата поломки"] || entry?.["Дата отправки в ремонт"] || "—",
+          },
+          {
+            label: "Описание поломки",
+            value: entry?.["Предварительное описание ремонта"] || "—",
+          },
+          {
+            label: "Кто отметил поломку",
+            value: entry?.["Пользователь, который отправил в ремонт"] || "—",
+          },
+        ]
+      : [
+          {
+            label: "Статус",
+            value: "Данные о ремонте не найдены.",
+          },
+        ];
+    repairInfoMetaEl.innerHTML = fields
+      .map(
+        (field) =>
+          `<div class="breakdown-tool-field"><div class="breakdown-tool-field__label">${escapeHtml(
+            field.label
+          )}</div><div class="breakdown-tool-field__value">${escapeHtml(
+            field.value
+          )}</div></div>`
+      )
+      .join("");
   };
 
   const fillRepairToolInfo = async (tool) => {
     if (!tool) return;
-    const number = resolveToolNumberValue(tool);
-    const name = String(tool?.["Наименование"] ?? "").trim();
-    const manufacturer = String(tool?.["Производитель"] ?? "").trim();
-    const model = String(tool?.["Модель"] ?? "").trim();
-    const accountingNumber = String(tool?.["Бух.номер"] ?? "").trim();
-    const responsible = String(tool?.["Ответственный"] ?? "").trim();
-    const status = String(tool?.["Статус"] ?? "").trim();
-    const toolCost = normalizeCostValue(tool?.["Стоимость"]);
-    const { hasRepairs, totalCost: totalRepairCost } = await loadRepairTotalCost(tool);
     if (repairToolTitleEl) {
-      repairToolTitleEl.textContent = "Информация об инструменте";
+      repairToolTitleEl.textContent = "";
     }
     if (repairToolMetaEl) {
-      const lines = [
-        `${number || "—"} - ${name || "—"} ${manufacturer || "—"} ${model || "—"}`,
-        `${accountingNumber || "—"} · ${
-          toolCost === null ? "—" : `${formatNotificationCostWithoutCurrency(toolCost)} р.`
-        }`,
-        responsible || "—",
-        status || "—",
-        !hasRepairs
-          ? "Не ремонтировался"
-          : totalRepairCost === null
-            ? "—"
-            : `${formatNotificationCostWithoutCurrency(totalRepairCost)} р.`,
-      ];
-      repairToolMetaEl.innerHTML = lines
-        .map((line) => escapeHtml(line))
-        .join("<br>");
+      renderBreakdownToolInfoFields(repairToolMetaEl, tool, { includeStatus: false });
+    }
+    if (repairInfoMetaEl) {
+      renderRepairInfoFields(null);
     }
   };
 
@@ -22487,16 +22489,14 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     await fillRepairToolInfo(tool);
     if (mode === "send") {
       await loadRepairOrganizations();
+    } else {
+      const latestRepair = await loadLatestRepairForTool(tool);
+      renderRepairInfoFields(latestRepair);
     }
     setRepairFormMessage("");
     updateRepairActPickerState();
     repairFormModalEl.classList.remove("is-hidden");
     document.body.style.overflow = "hidden";
-    setTimeout(() => {
-      if (mode === "repaired") {
-        repairFinalCostInput?.focus();
-      }
-    }, 0);
   };
 
   const closeRepairFormModal = () => {

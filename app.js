@@ -21583,6 +21583,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       .filter(Boolean);
   };
 
+  const getBreakdownsStatusLabel = (value) => {
+    const normalized = String(value ?? "").trim();
+    return normalized === "Рабочий" ? "Исправный" : normalized;
+  };
+
   const renderBreakdownsFilterTriggerLabel = (containerEl, selectedValues) => {
     if (!containerEl) return;
     const triggerEl = containerEl.querySelector("[data-breakdowns-filter-trigger]");
@@ -21594,7 +21599,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const displayValues =
       key === "photo"
         ? safeValues.map((value) => (value === "with" ? "С фото" : "Без фото"))
-        : safeValues;
+        : key === "status"
+          ? safeValues.map((value) => getBreakdownsStatusLabel(value))
+          : safeValues;
     if (!displayValues.length || isAllSelected) {
       triggerEl.textContent = "Все";
       triggerEl.classList.remove("is-active");
@@ -22199,7 +22206,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
     fillBreakdownsFilterOptions("group", collectValues("Граппа инструментов"));
     fillBreakdownsFilterOptions("object", collectValues("Объект"));
-    fillBreakdownsFilterOptions("status", collectValues("Статус"));
+    fillBreakdownsFilterOptions(
+      "status",
+      collectValues("Статус").map((value) => ({
+        value,
+        label: getBreakdownsStatusLabel(value),
+      }))
+    );
     fillBreakdownsFilterOptions("responsible", collectValues("Ответственный"));
     fillBreakdownsFilterOptions("name", collectValues("Наименование"));
     fillBreakdownsFilterOptions("manufacturer", collectValues("Производитель"));

@@ -2723,6 +2723,23 @@ export function renderRole(user) {
                           </svg>
                         </span>
                       </button>
+                      <button
+                        class="tools-filters-toggle"
+                        type="button"
+                        data-breakdowns-filters-toggle
+                        aria-expanded="false"
+                        aria-controls="breakdowns-filters-panel"
+                        aria-label="Фильтры"
+                      >
+                        <span class="tools-filters-toggle__icon" aria-hidden="true">
+                          <svg viewBox="0 0 24 24" focusable="false" fill="none">
+                            <line x1="4" y1="7" x2="20" y2="7" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                            <circle cx="15" cy="7" r="2.5" fill="currentColor" />
+                            <line x1="4" y1="17" x2="20" y2="17" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                            <circle cx="9" cy="17" r="2.5" fill="currentColor" />
+                          </svg>
+                        </span>
+                      </button>
                     </div>
                   </div>
                 </div>

@@ -2967,7 +2967,7 @@ export function renderRole(user) {
                   <div class="breakdown-tool-caption">Информация о ремонте</div>
                   <div class="breakdown-tool-meta" data-repair-info-meta></div>
                 </div>
-                <div data-repair-form-send>
+                <div class="repair-form__section" data-repair-form-send>
                   <label class="form-field form-field--required">
                     <span class="form-label">Организация</span>
                     <div class="suggestions-field">
@@ -3008,7 +3008,7 @@ export function renderRole(user) {
                     />
                   </label>
                 </div>
-                <div class="is-hidden" data-repair-form-complete>
+                <div class="repair-form__section is-hidden" data-repair-form-complete>
                   <label class="form-field form-field--required">
                     <span class="form-label">Стоимость ремонта</span>
                     <input

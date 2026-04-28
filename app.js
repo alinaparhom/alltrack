@@ -7271,8 +7271,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       group: "",
       status: "",
       object: "",
+      responsible: "",
+      name: "",
       manufacturer: "",
       model: "",
+      photo: "",
     },
     search: "",
     orgFolder: "",
@@ -20093,10 +20096,29 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         return false;
       }
       if (
+        noPhotoState.filters.responsible &&
+        String(tool?.["Ответственный"] ?? "").trim() !==
+          noPhotoState.filters.responsible
+      ) {
+        return false;
+      }
+      if (
+        noPhotoState.filters.name &&
+        String(tool?.["Наименование"] ?? "").trim() !== noPhotoState.filters.name
+      ) {
+        return false;
+      }
+      if (
         noPhotoState.filters.model &&
         String(tool?.["Модель"] ?? "").trim() !== noPhotoState.filters.model
       ) {
         return false;
+      }
+      if (noPhotoState.filters.photo) {
+        const photoCount = Number.parseInt(tool?.["Количество фото"] ?? 0, 10);
+        const hasPhoto = Number.isFinite(photoCount) && photoCount > 0;
+        if (noPhotoState.filters.photo === "with" && !hasPhoto) return false;
+        if (noPhotoState.filters.photo === "without" && hasPhoto) return false;
       }
       if (tokens.length) {
         const searchLine = tool.__searchLine ?? "";
@@ -20164,8 +20186,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     selectEl.appendChild(allOption);
     values.forEach((value) => {
       const option = document.createElement("option");
-      option.value = value;
-      option.textContent = value;
+      const normalizedValue = typeof value === "string" ? value : String(value?.value ?? "");
+      const label = typeof value === "string" ? value : String(value?.label ?? normalizedValue);
+      option.value = normalizedValue;
+      option.textContent = label;
       selectEl.appendChild(option);
     });
     selectEl.value = noPhotoState.filters[key] ?? "";
@@ -20183,10 +20207,16 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       );
     };
     fillNoPhotoFilterOptions("group", collectValues("Граппа инструментов"));
-    fillNoPhotoFilterOptions("status", collectValues("Статус"));
     fillNoPhotoFilterOptions("object", collectValues("Объект"));
+    fillNoPhotoFilterOptions("status", collectValues("Статус"));
+    fillNoPhotoFilterOptions("responsible", collectValues("Ответственный"));
+    fillNoPhotoFilterOptions("name", collectValues("Наименование"));
     fillNoPhotoFilterOptions("manufacturer", collectValues("Производитель"));
     fillNoPhotoFilterOptions("model", collectValues("Модель"));
+    fillNoPhotoFilterOptions("photo", [
+      { value: "with", label: "С фото" },
+      { value: "without", label: "Без фото" },
+    ]);
   };
 
   const loadNoPhotoTools = async () => {
@@ -20378,8 +20408,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       applyNoPhotoFilters();
     });
 
-    actionsEl.prepend(sortButtonEl);
-    actionsEl.prepend(groupingDropdownEl);
+    noPhotoFiltersToggleEl.insertAdjacentElement("beforebegin", groupingDropdownEl);
+    noPhotoFiltersToggleEl.insertAdjacentElement("beforebegin", sortButtonEl);
     syncGroupingUi();
     syncSortUi();
     noPhotoState.controlsReady = true;

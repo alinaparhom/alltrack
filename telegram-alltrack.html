@@ -6099,6 +6099,11 @@
         margin-top: 0;
       }
 
+      .tools-modal[data-no-photo-modal] .tools-modal__header {
+        padding-left: 12px;
+        padding-right: 12px;
+      }
+
       .tools-modal[data-no-photo-modal] .tools-modal__body {
         padding: 0 12px calc(12px + env(safe-area-inset-bottom));
       }
@@ -6106,6 +6111,14 @@
       .tools-modal[data-no-photo-modal] .tools-modal__body > * {
         margin-left: 0;
         margin-right: 0;
+      }
+
+      .tools-controls__row--no-photo-search .tools-search {
+        min-width: 0;
+      }
+
+      .tools-controls__row--no-photo-search .tools-actions {
+        margin-left: auto;
       }
 
       .tools-modal[data-no-photo-modal] .tools-actions {

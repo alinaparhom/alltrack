@@ -20018,7 +20018,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const accountingNumber = String(tool?.["Бух.номер"] ?? "").trim();
       const manufacturer = String(tool?.["Производитель"] ?? "").trim();
       const model = String(tool?.["Модель"] ?? "").trim();
-      const status = String(tool?.["Статус"] ?? "").trim();
+      const status = getNoPhotoStatusLabel(tool?.["Статус"]);
       const costLine = document.createElement("div");
       costLine.textContent = formatToolCostLabel(tool);
 
@@ -20053,8 +20053,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (noPhotoEmptyEl) {
       noPhotoEmptyEl.classList.toggle("is-hidden", items.length > 0);
     }
+    const filteredToolsCost = items.reduce(
+      (sum, tool) => sum + normalizeCostValue(tool?.["Стоимость"]),
+      0
+    );
     setNoPhotoSubtitle(
-      `Показано ${items.length} из ${noPhotoState.tools.length}`
+      `Показано ${items.length} из ${noPhotoState.tools.length} · На сумму ${formatNotificationCostWithoutCurrency(filteredToolsCost)} р.`
     );
   };
 
@@ -20127,6 +20131,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     return "";
   };
 
+  const getNoPhotoStatusLabel = (value) => {
+    const normalized = String(value ?? "").trim();
+    return normalized === "Рабочий" ? "исправный" : normalized;
+  };
+
   const resolveNoPhotoGroupingLabel = (tool) => {
     if (noPhotoState.grouping === "group") {
       return String(tool?.["Граппа инструментов"] ?? "").trim() || "Без группы";
@@ -20135,7 +20144,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       return String(tool?.["Объект"] ?? "").trim() || "Без объекта";
     }
     if (noPhotoState.grouping === "status") {
-      return String(tool?.["Статус"] ?? "").trim() || "Без статуса";
+      return getNoPhotoStatusLabel(tool?.["Статус"]) || "Без статуса";
     }
     if (noPhotoState.grouping === "manufacturer") {
       return String(tool?.["Производитель"] ?? "").trim() || "Не указан";
@@ -20283,9 +20292,14 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     actionsEl.classList.remove("is-hidden");
     noPhotoFiltersToggleEl.classList.remove("is-hidden");
     noPhotoFiltersToggleEl.innerHTML = `
-      <svg class="tools-filters-toggle__icon" viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M4 6h16v2H4zm3 5h10v2H7zm3 5h4v2h-4z"></path>
-      </svg>
+      <span class="tools-filters-toggle__icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" focusable="false" fill="none">
+          <line x1="4" y1="7" x2="20" y2="7" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+          <circle cx="15" cy="7" r="2.5" fill="currentColor" />
+          <line x1="4" y1="17" x2="20" y2="17" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+          <circle cx="9" cy="17" r="2.5" fill="currentColor" />
+        </svg>
+      </span>
     `;
     noPhotoFiltersToggleEl.title = "Фильтры";
     noPhotoFiltersToggleEl.setAttribute("aria-label", "Фильтры");
@@ -20294,9 +20308,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     groupingDropdownEl.className = "tools-grouping-dropdown no-photo-controls__grouping";
     groupingDropdownEl.innerHTML = `
       <button type="button" class="tools-filters-toggle tools-grouping-toggle" aria-expanded="false" aria-label="Группировка" title="Группировка">
-        <svg class="tools-grouping-toggle__icon" viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M4 6h8v3H4zm0 5h14v3H4zm0 5h11v3H4z"></path>
-        </svg>
+        <span class="tools-filters-toggle__icon tools-grouping-toggle__icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" focusable="false">
+            <path d="M5 6.25A1.25 1.25 0 0 1 6.25 5h3.5A1.25 1.25 0 0 1 11 6.25v1.5A1.25 1.25 0 0 1 9.75 9h-3.5A1.25 1.25 0 0 1 5 7.75v-1.5Zm8 0A1.25 1.25 0 0 1 14.25 5h3.5A1.25 1.25 0 0 1 19 6.25v1.5A1.25 1.25 0 0 1 17.75 9h-3.5A1.25 1.25 0 0 1 13 7.75v-1.5Zm-4 5A1.25 1.25 0 0 1 10.25 10h3.5A1.25 1.25 0 0 1 15 11.25v1.5A1.25 1.25 0 0 1 13.75 14h-3.5A1.25 1.25 0 0 1 9 12.75v-1.5Zm-4 5A1.25 1.25 0 0 1 6.25 15h3.5A1.25 1.25 0 0 1 11 16.25v1.5A1.25 1.25 0 0 1 9.75 19h-3.5A1.25 1.25 0 0 1 5 17.75v-1.5Zm8 0A1.25 1.25 0 0 1 14.25 15h3.5A1.25 1.25 0 0 1 19 16.25v1.5A1.25 1.25 0 0 1 17.75 19h-3.5A1.25 1.25 0 0 1 13 17.75v-1.5Z" />
+          </svg>
+        </span>
       </button>
       <div class="tools-grouping-dropdown__menu is-hidden">
         <button type="button" class="tools-grouping-option is-active" data-no-photo-grouping-option="none">Без группировки</button>
@@ -20313,9 +20329,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     sortButtonEl.setAttribute("aria-label", "Сортировка");
     sortButtonEl.title = "Сортировка";
     sortButtonEl.innerHTML = `
-      <span class="tools-sort-toggle__icon">
-        <svg class="tools-sort-toggle__chevron" viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M12 6v12M7 11l5-5 5 5"></path>
+      <span class="tools-sort-toggle__icon is-desc" aria-hidden="true">
+        <svg class="tools-sort-toggle__chevron" viewBox="0 0 24 24" focusable="false">
+          <path d="M5 8.5L12 15.5L19 8.5" />
         </svg>
       </span>
     `;

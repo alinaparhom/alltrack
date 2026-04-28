@@ -7277,6 +7277,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     search: "",
     orgFolder: "",
     toolMap: new Map(),
+    sortDirection: "desc",
+    grouping: "none",
+    controlsReady: false,
   };
   const removePhotoState = {
     tools: [],
@@ -19977,7 +19980,19 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const table = document.createElement("div");
     table.className = "tools-table tools-table--no-photo";
 
+    let previousGroupLabel = "";
     items.forEach((tool) => {
+      const groupLabel = resolveNoPhotoGroupingLabel(tool);
+      if (noPhotoState.grouping !== "none" && groupLabel !== previousGroupLabel) {
+        const groupTitleEl = document.createElement("div");
+        groupTitleEl.className = "tools-group-title";
+        groupTitleEl.innerHTML = `
+          <span>${escapeHtml(groupLabel)}</span>
+          <span class="tools-group-title__meta">${escapeHtml(getNoPhotoGroupingCaption())}</span>
+        `;
+        table.appendChild(groupTitleEl);
+        previousGroupLabel = groupLabel;
+      }
       const row = document.createElement("div");
       row.className = "tools-table__row tools-table__row--no-photo tools-table__row--search";
       row.dataset.noPhotoId = tool.__noPhotoId;
@@ -20085,7 +20100,47 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       }
       return true;
     });
+    noPhotoState.filtered.sort((a, b) => {
+      if (noPhotoState.grouping !== "none") {
+        const groupCompare = resolveNoPhotoGroupingLabel(a).localeCompare(
+          resolveNoPhotoGroupingLabel(b),
+          "ru",
+          { numeric: true, sensitivity: "base" }
+        );
+        if (groupCompare !== 0) return groupCompare;
+      }
+      const direction = noPhotoState.sortDirection === "asc" ? 1 : -1;
+      return (
+        resolveToolNumberValue(a).localeCompare(resolveToolNumberValue(b), "ru", {
+          numeric: true,
+        }) * direction
+      );
+    });
     renderNoPhotoList();
+  };
+
+  const getNoPhotoGroupingCaption = () => {
+    if (noPhotoState.grouping === "group") return "Группа";
+    if (noPhotoState.grouping === "object") return "Объект";
+    if (noPhotoState.grouping === "status") return "Статус";
+    if (noPhotoState.grouping === "manufacturer") return "Производитель";
+    return "";
+  };
+
+  const resolveNoPhotoGroupingLabel = (tool) => {
+    if (noPhotoState.grouping === "group") {
+      return String(tool?.["Граппа инструментов"] ?? "").trim() || "Без группы";
+    }
+    if (noPhotoState.grouping === "object") {
+      return String(tool?.["Объект"] ?? "").trim() || "Без объекта";
+    }
+    if (noPhotoState.grouping === "status") {
+      return String(tool?.["Статус"] ?? "").trim() || "Без статуса";
+    }
+    if (noPhotoState.grouping === "manufacturer") {
+      return String(tool?.["Производитель"] ?? "").trim() || "Не указан";
+    }
+    return "";
   };
 
   const fillNoPhotoFilterOptions = (key, values) => {
@@ -20172,6 +20227,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
   const openNoPhotoModal = async () => {
     if (!noPhotoModalEl) return;
+    ensureNoPhotoControls();
     noPhotoModalEl.classList.remove("is-hidden");
     document.body.style.overflow = "hidden";
     setNoPhotoSubtitle("Загружаем список...");
@@ -20220,13 +20276,117 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
   };
 
+  const ensureNoPhotoControls = () => {
+    if (noPhotoState.controlsReady || !noPhotoFiltersToggleEl) return;
+    const actionsEl = noPhotoFiltersToggleEl.closest(".tools-actions");
+    if (!actionsEl) return;
+    actionsEl.classList.remove("is-hidden");
+    noPhotoFiltersToggleEl.classList.remove("is-hidden");
+    noPhotoFiltersToggleEl.innerHTML = `
+      <svg class="tools-filters-toggle__icon" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M4 6h16v2H4zm3 5h10v2H7zm3 5h4v2h-4z"></path>
+      </svg>
+    `;
+    noPhotoFiltersToggleEl.title = "Фильтры";
+    noPhotoFiltersToggleEl.setAttribute("aria-label", "Фильтры");
+
+    const groupingDropdownEl = document.createElement("div");
+    groupingDropdownEl.className = "tools-grouping-dropdown no-photo-controls__grouping";
+    groupingDropdownEl.innerHTML = `
+      <button type="button" class="tools-filters-toggle tools-grouping-toggle" aria-expanded="false" aria-label="Группировка" title="Группировка">
+        <svg class="tools-grouping-toggle__icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M4 6h8v3H4zm0 5h14v3H4zm0 5h11v3H4z"></path>
+        </svg>
+      </button>
+      <div class="tools-grouping-dropdown__menu is-hidden">
+        <button type="button" class="tools-grouping-option is-active" data-no-photo-grouping-option="none">Без группировки</button>
+        <button type="button" class="tools-grouping-option" data-no-photo-grouping-option="group">По группе</button>
+        <button type="button" class="tools-grouping-option" data-no-photo-grouping-option="object">По объекту</button>
+        <button type="button" class="tools-grouping-option" data-no-photo-grouping-option="status">По статусу</button>
+        <button type="button" class="tools-grouping-option" data-no-photo-grouping-option="manufacturer">По производителю</button>
+      </div>
+    `;
+
+    const sortButtonEl = document.createElement("button");
+    sortButtonEl.type = "button";
+    sortButtonEl.className = "tools-filters-toggle tools-sort-toggle";
+    sortButtonEl.setAttribute("aria-label", "Сортировка");
+    sortButtonEl.title = "Сортировка";
+    sortButtonEl.innerHTML = `
+      <span class="tools-sort-toggle__icon">
+        <svg class="tools-sort-toggle__chevron" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M12 6v12M7 11l5-5 5 5"></path>
+        </svg>
+      </span>
+    `;
+
+    const syncGroupingUi = () => {
+      groupingDropdownEl
+        .querySelectorAll("[data-no-photo-grouping-option]")
+        .forEach((optionEl) => {
+          const isActive = optionEl.dataset.noPhotoGroupingOption === noPhotoState.grouping;
+          optionEl.classList.toggle("is-active", isActive);
+        });
+    };
+
+    const syncSortUi = () => {
+      const iconEl = sortButtonEl.querySelector(".tools-sort-toggle__icon");
+      iconEl?.classList.toggle("is-asc", noPhotoState.sortDirection === "asc");
+    };
+
+    groupingDropdownEl.querySelector(".tools-grouping-toggle")?.addEventListener("click", () => {
+      const menuEl = groupingDropdownEl.querySelector(".tools-grouping-dropdown__menu");
+      const isOpen = !menuEl?.classList.contains("is-hidden");
+      menuEl?.classList.toggle("is-hidden", isOpen);
+      groupingDropdownEl
+        .querySelector(".tools-grouping-toggle")
+        ?.setAttribute("aria-expanded", String(!isOpen));
+    });
+
+    groupingDropdownEl.querySelectorAll("[data-no-photo-grouping-option]").forEach((optionEl) => {
+      optionEl.addEventListener("click", () => {
+        const value = String(optionEl.dataset.noPhotoGroupingOption ?? "").trim();
+        if (!value) return;
+        noPhotoState.grouping = value;
+        groupingDropdownEl
+          .querySelector(".tools-grouping-dropdown__menu")
+          ?.classList.add("is-hidden");
+        syncGroupingUi();
+        applyNoPhotoFilters();
+      });
+    });
+
+    sortButtonEl.addEventListener("click", () => {
+      noPhotoState.sortDirection = noPhotoState.sortDirection === "desc" ? "asc" : "desc";
+      syncSortUi();
+      applyNoPhotoFilters();
+    });
+
+    actionsEl.prepend(sortButtonEl);
+    actionsEl.prepend(groupingDropdownEl);
+    syncGroupingUi();
+    syncSortUi();
+    noPhotoState.controlsReady = true;
+  };
+
   if (noPhotoFiltersToggleEl) {
-    noPhotoFiltersToggleEl.classList.add("is-hidden");
-    noPhotoFiltersToggleEl.closest(".tools-actions")?.classList.add("is-hidden");
+    noPhotoFiltersToggleEl.addEventListener("click", () => {
+      const isOpen = noPhotoFiltersPanelEl?.classList.contains("is-open");
+      setNoPhotoFiltersOpen(!isOpen);
+    });
   }
 
   if (typeof window !== "undefined" && noPhotoFiltersPanelEl) {
-    setNoPhotoFiltersOpen(true);
+    const mediaQuery = window.matchMedia("(max-width: 520px)");
+    const syncFiltersVisibility = () => {
+      setNoPhotoFiltersOpen(!mediaQuery.matches);
+    };
+    syncFiltersVisibility();
+    if (mediaQuery.addEventListener) {
+      mediaQuery.addEventListener("change", syncFiltersVisibility);
+    } else if (mediaQuery.addListener) {
+      mediaQuery.addListener(syncFiltersVisibility);
+    }
   }
 
   noPhotoFilterEls.forEach((selectEl) => {
@@ -20238,6 +20398,21 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       applyNoPhotoFilters();
     });
   });
+
+  if (typeof document !== "undefined") {
+    document.addEventListener("click", (event) => {
+      if (noPhotoModalEl?.classList.contains("is-hidden")) return;
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      if (target.closest(".no-photo-controls__grouping")) return;
+      contentEl
+        .querySelector(".no-photo-controls__grouping .tools-grouping-dropdown__menu")
+        ?.classList.add("is-hidden");
+      contentEl
+        .querySelector(".no-photo-controls__grouping .tools-grouping-toggle")
+        ?.setAttribute("aria-expanded", "false");
+    });
+  }
 
   if (noPhotoListEl) {
     noPhotoListEl.addEventListener("click", (event) => {

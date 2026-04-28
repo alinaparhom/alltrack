@@ -6099,6 +6099,20 @@
         margin-top: 0;
       }
 
+      .tools-modal[data-no-photo-modal] .tools-modal__body {
+        padding: 0 12px calc(12px + env(safe-area-inset-bottom));
+      }
+
+      .tools-modal[data-no-photo-modal] .tools-modal__body > * {
+        margin-left: 0;
+        margin-right: 0;
+      }
+
+      .tools-modal[data-no-photo-modal] .tools-actions {
+        justify-content: flex-end;
+        width: 100%;
+      }
+
       .tools-modal__body {
         display: grid;
         gap: 14px;

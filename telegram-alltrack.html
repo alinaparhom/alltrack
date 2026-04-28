@@ -6119,11 +6119,12 @@
 
       .tools-controls__row--no-photo-search .tools-actions {
         margin-left: auto;
+        width: auto;
       }
 
       .tools-modal[data-no-photo-modal] .tools-actions {
         justify-content: flex-end;
-        width: 100%;
+        width: fit-content;
       }
 
       .tools-modal__body {
@@ -8163,6 +8164,14 @@
         left: 50%;
         right: auto;
         width: calc(100vw - 20px);
+        transform: translateX(-50%);
+      }
+
+      .tools-modal[data-no-photo-modal] .tools-filter-dropdown__menu {
+        left: 50%;
+        right: auto;
+        width: min(420px, calc(100vw - 24px));
+        max-width: calc(100vw - 24px);
         transform: translateX(-50%);
       }
 

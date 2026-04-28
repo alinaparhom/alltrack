@@ -2475,63 +2475,11 @@ export function renderRole(user) {
                       autocomplete="off"
                     />
                   </label>
-                  <div class="tools-actions">
-                    <button
-                      class="tools-filters-toggle"
-                      type="button"
-                      data-no-photo-filters-toggle
-                      aria-expanded="false"
-                      aria-controls="no-photo-filters-panel"
-                      aria-label="Фильтры"
-                    >
-                      <svg
-                        class="tools-filters-toggle__icon"
-                        aria-hidden="true"
-                        viewBox="0 0 24 24"
-                        focusable="false"
-                        fill="none"
-                      >
-                        <line x1="4" y1="7" x2="20" y2="7" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-                        <circle cx="15" cy="7" r="2.5" fill="currentColor" />
-                        <line x1="4" y1="17" x2="20" y2="17" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-                        <circle cx="9" cy="17" r="2.5" fill="currentColor" />
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-                <div
-                  class="tools-filters"
-                  id="no-photo-filters-panel"
-                  data-no-photo-filters-panel
-                >
-                  <label class="tools-filter">
-                    <span>Группа</span>
-                    <select class="form-input" data-no-photo-filter="group"></select>
-                  </label>
-                  <label class="tools-filter">
-                    <span>Статус</span>
-                    <select class="form-input" data-no-photo-filter="status"></select>
-                  </label>
-                  <label class="tools-filter">
-                    <span>Объект</span>
-                    <select class="form-input" data-no-photo-filter="object"></select>
-                  </label>
-                  <label class="tools-filter">
-                    <span>Производитель</span>
-                    <select
-                      class="form-input"
-                      data-no-photo-filter="manufacturer"
-                    ></select>
-                  </label>
-                  <label class="tools-filter">
-                    <span>Модель</span>
-                    <select class="form-input" data-no-photo-filter="model"></select>
-                  </label>
                 </div>
               </div>
               <div class="tools-list is-table" data-no-photo-list></div>
               <div class="tools-empty is-hidden" data-no-photo-empty>
-                Инструменты без фото не найдены. Попробуйте изменить фильтры.
+                Инструменты без фото не найдены. Попробуйте изменить поисковый запрос.
               </div>
             </div>
           </div>

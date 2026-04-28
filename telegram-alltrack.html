@@ -6124,6 +6124,29 @@
       .tools-modal[data-no-photo-modal] .tools-actions {
         justify-content: flex-end;
         width: 100%;
+        margin-left: auto;
+      }
+
+      .tools-modal[data-no-photo-modal] .tools-actions > * {
+        margin-left: 0;
+      }
+
+      .tools-modal[data-no-photo-modal] .tools-filters {
+        grid-template-columns: 1fr;
+        justify-items: center;
+      }
+
+      .tools-modal[data-no-photo-modal] .tools-filter {
+        width: 100%;
+        max-width: 640px;
+        margin-left: auto;
+        margin-right: auto;
+      }
+
+      .tools-modal[data-no-photo-modal] .tools-filter-dropdown,
+      .tools-modal[data-no-photo-modal] .tools-filter-dropdown__trigger,
+      .tools-modal[data-no-photo-modal] .tools-filter-dropdown__menu {
+        width: 100%;
       }
 
       .tools-modal__body {

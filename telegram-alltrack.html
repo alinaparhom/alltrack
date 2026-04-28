@@ -8168,12 +8168,12 @@
       }
 
       .tools-modal[data-no-photo-modal] .tools-filter-dropdown__menu {
-        left: 50%;
-        right: auto;
-        width: min(420px, calc(100vw - 24px));
-        max-width: calc(100vw - 24px);
-        margin-left: calc(50vw - 50%);
-        transform: translateX(-50%);
+        left: calc(50% - 50vw + 12px + max(0px, env(safe-area-inset-left)));
+        right: calc(50% - 50vw + 12px + max(0px, env(safe-area-inset-right)));
+        width: auto;
+        max-width: none;
+        margin-left: 0;
+        transform: none;
       }
 
       .tools-filter-dropdown__clear {

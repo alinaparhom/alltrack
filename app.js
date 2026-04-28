@@ -11806,7 +11806,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const displayValues =
       key === "photo"
         ? safeValues.map((value) => (value === "with" ? "С фото" : "Без фото"))
-        : safeValues;
+        : key === "status"
+          ? safeValues.map((value) => (String(value).trim() === "Рабочий" ? "Исправный" : value))
+          : safeValues;
     if (!displayValues.length || isAllSelected) {
       triggerEl.textContent = "Все";
       triggerEl.classList.remove("is-active");
@@ -20143,7 +20145,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
   const getNoPhotoStatusLabel = (value) => {
     const normalized = String(value ?? "").trim();
-    return normalized === "Рабочий" ? "исправный" : normalized;
+    return normalized === "Рабочий" ? "Исправный" : normalized;
   };
 
   const resolveNoPhotoGroupingLabel = (tool) => {
@@ -20182,7 +20184,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const displayValues =
       key === "photo"
         ? safeValues.map((value) => (value === "with" ? "С фото" : "Без фото"))
-        : safeValues;
+        : key === "status"
+          ? safeValues.map((value) => (String(value).trim() === "Рабочий" ? "Исправный" : value))
+          : safeValues;
     if (!displayValues.length || isAllSelected) {
       triggerEl.textContent = "Все";
       triggerEl.classList.remove("is-active");
@@ -20276,7 +20280,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     };
     fillNoPhotoFilterOptions("group", collectValues("Граппа инструментов"));
     fillNoPhotoFilterOptions("object", collectValues("Объект"));
-    fillNoPhotoFilterOptions("status", collectValues("Статус"));
+    fillNoPhotoFilterOptions(
+      "status",
+      collectValues("Статус").map((value) => ({
+        value,
+        label: value === "Рабочий" ? "Исправный" : value,
+      }))
+    );
     fillNoPhotoFilterOptions("responsible", collectValues("Ответственный"));
     fillNoPhotoFilterOptions("name", collectValues("Наименование"));
     fillNoPhotoFilterOptions("manufacturer", collectValues("Производитель"));
@@ -20477,7 +20487,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     });
 
     noPhotoFiltersToggleEl.insertAdjacentElement("beforebegin", groupingDropdownEl);
-    groupingDropdownEl.insertAdjacentElement("beforebegin", sortButtonEl);
+    noPhotoFiltersToggleEl.insertAdjacentElement("beforebegin", sortButtonEl);
     syncGroupingUi();
     syncSortUi();
     noPhotoState.controlsReady = true;
@@ -20564,6 +20574,29 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     });
   }
 
+  const openAddPhotoFromNoPhotoTool = async (tool) => {
+    if (!tool) return;
+    noPhotoModalEl?.classList.add("is-hidden");
+    await openAddPhotoModal();
+    const query =
+      String(tool?.["Номер"] ?? "").trim() ||
+      String(tool?.["Бух.номер"] ?? "").trim() ||
+      String(tool?.["Наименование"] ?? "").trim();
+    Object.keys(addPhotoState.filters).forEach((key) => {
+      addPhotoState.filters[key] = "";
+    });
+    addPhotoFilterEls.forEach((selectEl) => {
+      const key = selectEl?.dataset?.addPhotoFilter;
+      if (!key) return;
+      selectEl.value = addPhotoState.filters[key] ?? "";
+    });
+    addPhotoState.search = query.toLowerCase();
+    if (addPhotoSearchInput) {
+      addPhotoSearchInput.value = query;
+    }
+    applyAddPhotoFilters();
+  };
+
   if (noPhotoListEl) {
     noPhotoListEl.addEventListener("click", (event) => {
       const row = event.target.closest("[data-no-photo-id]");
@@ -20572,7 +20605,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       if (!toolId) return;
       const tool = noPhotoState.toolMap.get(toolId);
       if (!tool) return;
-      openToolsInfoModal(tool);
+      void openAddPhotoFromNoPhotoTool(tool);
     });
   }
 

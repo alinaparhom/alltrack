@@ -20143,7 +20143,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
   const getNoPhotoStatusLabel = (value) => {
     const normalized = String(value ?? "").trim();
-    return normalized === "Рабочий" ? "Исправный" : normalized;
+    return normalized === "Рабочий" ? "исправный" : normalized;
   };
 
   const resolveNoPhotoGroupingLabel = (tool) => {
@@ -20276,13 +20276,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     };
     fillNoPhotoFilterOptions("group", collectValues("Граппа инструментов"));
     fillNoPhotoFilterOptions("object", collectValues("Объект"));
-    fillNoPhotoFilterOptions(
-      "status",
-      collectValues("Статус").map((value) => ({
-        value,
-        label: getNoPhotoStatusLabel(value),
-      }))
-    );
+    fillNoPhotoFilterOptions("status", collectValues("Статус"));
     fillNoPhotoFilterOptions("responsible", collectValues("Ответственный"));
     fillNoPhotoFilterOptions("name", collectValues("Наименование"));
     fillNoPhotoFilterOptions("manufacturer", collectValues("Производитель"));
@@ -20570,32 +20564,15 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     });
   }
 
-  const openAddPhotoFromNoPhotoTool = async (tool) => {
-    if (!tool) return;
-    const prioritySearchValue =
-      String(tool?.["Номер"] ?? "").trim() ||
-      String(tool?.["Бух.номер"] ?? "").trim() ||
-      String(tool?.["Наименование"] ?? "").trim();
-
-    closeNoPhotoModal();
-    await openAddPhotoModal();
-
-    addPhotoState.search = String(prioritySearchValue ?? "").toLowerCase();
-    if (addPhotoSearchInput) {
-      addPhotoSearchInput.value = prioritySearchValue;
-    }
-    applyAddPhotoFilters();
-  };
-
   if (noPhotoListEl) {
-    noPhotoListEl.addEventListener("click", async (event) => {
+    noPhotoListEl.addEventListener("click", (event) => {
       const row = event.target.closest("[data-no-photo-id]");
       if (!row) return;
       const toolId = row.dataset.noPhotoId;
       if (!toolId) return;
       const tool = noPhotoState.toolMap.get(toolId);
       if (!tool) return;
-      await openAddPhotoFromNoPhotoTool(tool);
+      openToolsInfoModal(tool);
     });
   }
 

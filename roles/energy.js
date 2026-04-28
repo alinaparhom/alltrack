@@ -2505,12 +2505,20 @@ export function renderRole(user) {
                     <select class="form-input" data-no-photo-filter="group"></select>
                   </label>
                   <label class="tools-filter">
+                    <span>Объект</span>
+                    <select class="form-input" data-no-photo-filter="object"></select>
+                  </label>
+                  <label class="tools-filter">
                     <span>Статус</span>
                     <select class="form-input" data-no-photo-filter="status"></select>
                   </label>
                   <label class="tools-filter">
-                    <span>Объект</span>
-                    <select class="form-input" data-no-photo-filter="object"></select>
+                    <span>Ответственный</span>
+                    <select class="form-input" data-no-photo-filter="responsible"></select>
+                  </label>
+                  <label class="tools-filter">
+                    <span>Наименование</span>
+                    <select class="form-input" data-no-photo-filter="name"></select>
                   </label>
                   <label class="tools-filter">
                     <span>Производитель</span>
@@ -2519,6 +2527,10 @@ export function renderRole(user) {
                   <label class="tools-filter">
                     <span>Модель</span>
                     <select class="form-input" data-no-photo-filter="model"></select>
+                  </label>
+                  <label class="tools-filter">
+                    <span>Фото</span>
+                    <select class="form-input" data-no-photo-filter="photo"></select>
                   </label>
                 </div>
               </div>

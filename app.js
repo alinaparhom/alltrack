@@ -20022,16 +20022,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       meta.append(accountingLine, detailsLine, costLine, statusLine);
       infoCell.append(title, meta);
 
-      const actionCell = document.createElement("div");
-      actionCell.className = "tools-table__cell tools-table__cell--action";
-      const actionButton = document.createElement("button");
-      actionButton.className = "action-secondary";
-      actionButton.type = "button";
-      actionButton.dataset.noPhotoOpen = "true";
-      actionButton.textContent = "Карточка";
-      actionCell.appendChild(actionButton);
-
-      row.append(numberCell, infoCell, actionCell);
+      row.append(numberCell, infoCell);
       table.appendChild(row);
     });
 

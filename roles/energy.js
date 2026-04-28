@@ -2502,35 +2502,115 @@ export function renderRole(user) {
                 >
                   <label class="tools-filter">
                     <span>Группа</span>
-                    <select class="form-input" data-no-photo-filter="group"></select>
+                    <div class="tools-filter-dropdown" data-no-photo-filter="group">
+                      <button type="button" class="form-input tools-filter-dropdown__trigger" data-no-photo-filter-trigger>
+                        Все
+                      </button>
+                      <div class="tools-filter-dropdown__menu is-hidden" data-no-photo-filter-menu>
+                        <button type="button" class="tools-filter-dropdown__clear" data-no-photo-filter-clear>
+                          Выбрать всё
+                        </button>
+                        <div class="tools-filter-dropdown__options" data-no-photo-filter-options></div>
+                      </div>
+                    </div>
                   </label>
                   <label class="tools-filter">
                     <span>Объект</span>
-                    <select class="form-input" data-no-photo-filter="object"></select>
+                    <div class="tools-filter-dropdown" data-no-photo-filter="object">
+                      <button type="button" class="form-input tools-filter-dropdown__trigger" data-no-photo-filter-trigger>
+                        Все
+                      </button>
+                      <div class="tools-filter-dropdown__menu is-hidden" data-no-photo-filter-menu>
+                        <button type="button" class="tools-filter-dropdown__clear" data-no-photo-filter-clear>
+                          Выбрать всё
+                        </button>
+                        <div class="tools-filter-dropdown__options" data-no-photo-filter-options></div>
+                      </div>
+                    </div>
                   </label>
                   <label class="tools-filter">
                     <span>Статус</span>
-                    <select class="form-input" data-no-photo-filter="status"></select>
+                    <div class="tools-filter-dropdown" data-no-photo-filter="status">
+                      <button type="button" class="form-input tools-filter-dropdown__trigger" data-no-photo-filter-trigger>
+                        Все
+                      </button>
+                      <div class="tools-filter-dropdown__menu is-hidden" data-no-photo-filter-menu>
+                        <button type="button" class="tools-filter-dropdown__clear" data-no-photo-filter-clear>
+                          Выбрать всё
+                        </button>
+                        <div class="tools-filter-dropdown__options" data-no-photo-filter-options></div>
+                      </div>
+                    </div>
                   </label>
                   <label class="tools-filter">
                     <span>Ответственный</span>
-                    <select class="form-input" data-no-photo-filter="responsible"></select>
+                    <div class="tools-filter-dropdown" data-no-photo-filter="responsible">
+                      <button type="button" class="form-input tools-filter-dropdown__trigger" data-no-photo-filter-trigger>
+                        Все
+                      </button>
+                      <div class="tools-filter-dropdown__menu is-hidden" data-no-photo-filter-menu>
+                        <button type="button" class="tools-filter-dropdown__clear" data-no-photo-filter-clear>
+                          Выбрать всё
+                        </button>
+                        <div class="tools-filter-dropdown__options" data-no-photo-filter-options></div>
+                      </div>
+                    </div>
                   </label>
                   <label class="tools-filter">
                     <span>Наименование</span>
-                    <select class="form-input" data-no-photo-filter="name"></select>
+                    <div class="tools-filter-dropdown" data-no-photo-filter="name">
+                      <button type="button" class="form-input tools-filter-dropdown__trigger" data-no-photo-filter-trigger>
+                        Все
+                      </button>
+                      <div class="tools-filter-dropdown__menu is-hidden" data-no-photo-filter-menu>
+                        <button type="button" class="tools-filter-dropdown__clear" data-no-photo-filter-clear>
+                          Выбрать всё
+                        </button>
+                        <div class="tools-filter-dropdown__options" data-no-photo-filter-options></div>
+                      </div>
+                    </div>
                   </label>
                   <label class="tools-filter">
                     <span>Производитель</span>
-                    <select class="form-input" data-no-photo-filter="manufacturer"></select>
+                    <div class="tools-filter-dropdown" data-no-photo-filter="manufacturer">
+                      <button type="button" class="form-input tools-filter-dropdown__trigger" data-no-photo-filter-trigger>
+                        Все
+                      </button>
+                      <div class="tools-filter-dropdown__menu is-hidden" data-no-photo-filter-menu>
+                        <button type="button" class="tools-filter-dropdown__clear" data-no-photo-filter-clear>
+                          Выбрать всё
+                        </button>
+                        <div class="tools-filter-dropdown__options" data-no-photo-filter-options></div>
+                      </div>
+                    </div>
                   </label>
                   <label class="tools-filter">
                     <span>Модель</span>
-                    <select class="form-input" data-no-photo-filter="model"></select>
+                    <div class="tools-filter-dropdown" data-no-photo-filter="model">
+                      <button type="button" class="form-input tools-filter-dropdown__trigger" data-no-photo-filter-trigger>
+                        Все
+                      </button>
+                      <div class="tools-filter-dropdown__menu is-hidden" data-no-photo-filter-menu>
+                        <button type="button" class="tools-filter-dropdown__clear" data-no-photo-filter-clear>
+                          Выбрать всё
+                        </button>
+                        <div class="tools-filter-dropdown__options" data-no-photo-filter-options></div>
+                      </div>
+                    </div>
                   </label>
                   <label class="tools-filter">
                     <span>Фото</span>
-                    <select class="form-input" data-no-photo-filter="photo"></select>
+                    <div class="tools-filter-dropdown" data-no-photo-filter="photo">
+                      <button type="button" class="form-input tools-filter-dropdown__trigger" data-no-photo-filter-trigger>
+                        Все
+                      </button>
+                      <div class="tools-filter-dropdown__menu is-hidden" data-no-photo-filter-menu>
+                        <button type="button" class="tools-filter-dropdown__clear" data-no-photo-filter-clear>
+                          Выбрать всё
+                        </button>
+                        <div class="tools-filter-dropdown__options" data-no-photo-filter-options></div>
+                      </div>
+                    </div>
                   </label>
                 </div>
               </div>

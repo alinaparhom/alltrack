@@ -5639,8 +5639,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const noPhotoSubtitleEl = contentEl.querySelector(
     "[data-no-photo-subtitle]"
   );
-  const noPhotoFilterEls = contentEl.querySelectorAll(
-    "[data-no-photo-filter]"
+  const noPhotoFilterDropdownEls = contentEl.querySelectorAll(
+    ".tools-filter-dropdown[data-no-photo-filter]"
   );
   const noPhotoFiltersPanelEl = contentEl.querySelector(
     "[data-no-photo-filters-panel]"
@@ -7268,14 +7268,14 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     tools: [],
     filtered: [],
     filters: {
-      group: "",
-      status: "",
-      object: "",
-      responsible: "",
-      name: "",
-      manufacturer: "",
-      model: "",
-      photo: "",
+      group: [],
+      status: [],
+      object: [],
+      responsible: [],
+      name: [],
+      manufacturer: [],
+      model: [],
+      photo: [],
     },
     search: "",
     orgFolder: "",
@@ -20068,57 +20068,45 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const applyNoPhotoFilters = () => {
     const search = noPhotoState.search.trim();
     const tokens = search ? search.split(/\s+/).filter(Boolean) : [];
+    const hasSelected = (key) =>
+      Array.isArray(noPhotoState.filters[key]) && noPhotoState.filters[key].length > 0;
+    const includesSelected = (key, rawValue) => {
+      const normalized = String(rawValue ?? "").trim();
+      return hasSelected(key) && noPhotoState.filters[key].includes(normalized);
+    };
     noPhotoState.filtered = noPhotoState.tools.filter((tool) => {
-      if (
-        noPhotoState.filters.group &&
-        String(tool?.["Граппа инструментов"] ?? "").trim() !==
-          noPhotoState.filters.group
-      ) {
+      if (hasSelected("group") && !includesSelected("group", tool?.["Граппа инструментов"])) {
         return false;
       }
-      if (
-        noPhotoState.filters.status &&
-        String(tool?.["Статус"] ?? "").trim() !== noPhotoState.filters.status
-      ) {
+      if (hasSelected("status") && !includesSelected("status", tool?.["Статус"])) {
         return false;
       }
-      if (
-        noPhotoState.filters.object &&
-        String(tool?.["Объект"] ?? "").trim() !== noPhotoState.filters.object
-      ) {
+      if (hasSelected("object") && !includesSelected("object", tool?.["Объект"])) {
         return false;
       }
-      if (
-        noPhotoState.filters.manufacturer &&
-        String(tool?.["Производитель"] ?? "").trim() !==
-          noPhotoState.filters.manufacturer
-      ) {
+      if (hasSelected("manufacturer") && !includesSelected("manufacturer", tool?.["Производитель"])) {
         return false;
       }
-      if (
-        noPhotoState.filters.responsible &&
-        String(tool?.["Ответственный"] ?? "").trim() !==
-          noPhotoState.filters.responsible
-      ) {
+      if (hasSelected("responsible") && !includesSelected("responsible", tool?.["Ответственный"])) {
         return false;
       }
-      if (
-        noPhotoState.filters.name &&
-        String(tool?.["Наименование"] ?? "").trim() !== noPhotoState.filters.name
-      ) {
+      if (hasSelected("name") && !includesSelected("name", tool?.["Наименование"])) {
         return false;
       }
-      if (
-        noPhotoState.filters.model &&
-        String(tool?.["Модель"] ?? "").trim() !== noPhotoState.filters.model
-      ) {
+      if (hasSelected("model") && !includesSelected("model", tool?.["Модель"])) {
         return false;
       }
-      if (noPhotoState.filters.photo) {
+      if (hasSelected("photo")) {
+        const photoFilters = noPhotoState.filters.photo;
+        const hasWith = photoFilters.includes("with");
+        const hasWithout = photoFilters.includes("without");
         const photoCount = Number.parseInt(tool?.["Количество фото"] ?? 0, 10);
         const hasPhoto = Number.isFinite(photoCount) && photoCount > 0;
-        if (noPhotoState.filters.photo === "with" && !hasPhoto) return false;
-        if (noPhotoState.filters.photo === "without" && hasPhoto) return false;
+        if (hasWith !== hasWithout) {
+          if (hasWith && !hasPhoto) return false;
+          if (hasWithout && hasPhoto) return false;
+        }
+        if (!hasWith && !hasWithout) return false;
       }
       if (tokens.length) {
         const searchLine = tool.__searchLine ?? "";
@@ -20174,25 +20162,105 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     return "";
   };
 
-  const fillNoPhotoFilterOptions = (key, values) => {
-    const selectEl = contentEl.querySelector(
-      `[data-no-photo-filter="${key}"]`
+  const getNoPhotoFilterAllValues = (containerEl) => {
+    if (!containerEl) return [];
+    return Array.from(
+      containerEl.querySelectorAll('input[type="checkbox"][data-no-photo-filter-checkbox]')
+    )
+      .map((checkboxEl) => String(checkboxEl.value ?? "").trim())
+      .filter(Boolean);
+  };
+
+  const renderNoPhotoFilterTriggerLabel = (containerEl, selectedValues) => {
+    if (!containerEl) return;
+    const triggerEl = containerEl.querySelector("[data-no-photo-filter-trigger]");
+    if (!triggerEl) return;
+    const key = String(containerEl.dataset.noPhotoFilter ?? "").trim();
+    const safeValues = Array.isArray(selectedValues) ? selectedValues : [];
+    const totalOptions = getNoPhotoFilterAllValues(containerEl).length;
+    const isAllSelected = totalOptions > 0 && safeValues.length === totalOptions;
+    const displayValues =
+      key === "photo"
+        ? safeValues.map((value) => (value === "with" ? "С фото" : "Без фото"))
+        : safeValues;
+    if (!displayValues.length || isAllSelected) {
+      triggerEl.textContent = "Все";
+      triggerEl.classList.remove("is-active");
+      return;
+    }
+    triggerEl.classList.add("is-active");
+    triggerEl.textContent =
+      displayValues.length === 1 ? displayValues[0] : `Выбрано: ${displayValues.length}`;
+  };
+
+  const syncNoPhotoFilterSelectAllButton = (containerEl) => {
+    if (!containerEl) return;
+    const clearEl = containerEl.querySelector("[data-no-photo-filter-clear]");
+    if (!clearEl) return;
+    const allValues = getNoPhotoFilterAllValues(containerEl);
+    const checkedCount = containerEl.querySelectorAll(
+      'input[type="checkbox"][data-no-photo-filter-checkbox]:checked'
+    ).length;
+    const isAllSelected = allValues.length > 0 && checkedCount === allValues.length;
+    clearEl.textContent = isAllSelected ? "Отменить всё" : "Выбрать всё";
+  };
+
+  const syncNoPhotoFilterValue = (key, values) => {
+    const selectedValues = Array.isArray(values) ? values : [];
+    const containerEl = contentEl.querySelector(
+      `.tools-filter-dropdown[data-no-photo-filter="${key}"]`
     );
-    if (!selectEl) return;
-    selectEl.innerHTML = "";
-    const allOption = document.createElement("option");
-    allOption.value = "";
-    allOption.textContent = "Все";
-    selectEl.appendChild(allOption);
-    values.forEach((value) => {
-      const option = document.createElement("option");
-      const normalizedValue = typeof value === "string" ? value : String(value?.value ?? "");
-      const label = typeof value === "string" ? value : String(value?.label ?? normalizedValue);
-      option.value = normalizedValue;
-      option.textContent = label;
-      selectEl.appendChild(option);
+    if (!containerEl) return;
+    containerEl
+      .querySelectorAll('input[type="checkbox"][data-no-photo-filter-checkbox]')
+      .forEach((checkboxEl) => {
+        checkboxEl.checked = selectedValues.includes(String(checkboxEl.value ?? "").trim());
+      });
+    renderNoPhotoFilterTriggerLabel(containerEl, selectedValues);
+    syncNoPhotoFilterSelectAllButton(containerEl);
+  };
+
+  const fillNoPhotoFilterOptions = (key, values) => {
+    const containerEl = contentEl.querySelector(
+      `.tools-filter-dropdown[data-no-photo-filter="${key}"]`
+    );
+    if (!containerEl) return;
+    const optionsEl = containerEl.querySelector("[data-no-photo-filter-options]");
+    if (!optionsEl) return;
+    const currentValues = Array.isArray(noPhotoState.filters[key])
+      ? noPhotoState.filters[key]
+      : [];
+    const availableValues = values
+      .map((entry) =>
+        typeof entry === "object" && entry !== null
+          ? {
+              value: String(entry.value ?? "").trim(),
+              label: String(entry.label ?? entry.value ?? "").trim(),
+            }
+          : { value: String(entry ?? "").trim(), label: String(entry ?? "").trim() }
+      )
+      .filter((entry) => entry.value);
+    optionsEl.innerHTML = "";
+    availableValues.forEach((entry, index) => {
+      const id = `no-photo-filter-${key}-${index}`;
+      const optionLabelEl = document.createElement("label");
+      optionLabelEl.className = "tools-filter-dropdown__option";
+      optionLabelEl.setAttribute("for", id);
+      const checkboxEl = document.createElement("input");
+      checkboxEl.type = "checkbox";
+      checkboxEl.id = id;
+      checkboxEl.value = entry.value;
+      checkboxEl.checked = currentValues.includes(entry.value);
+      checkboxEl.dataset.noPhotoFilterCheckbox = key;
+      const textEl = document.createElement("span");
+      textEl.textContent = entry.label;
+      optionLabelEl.append(checkboxEl, textEl);
+      optionsEl.appendChild(optionLabelEl);
     });
-    selectEl.value = noPhotoState.filters[key] ?? "";
+    noPhotoState.filters[key] = currentValues.filter((value) =>
+      availableValues.some((entry) => entry.value === value)
+    );
+    syncNoPhotoFilterValue(key, noPhotoState.filters[key]);
   };
 
   const prepareNoPhotoFilters = () => {
@@ -20409,7 +20477,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     });
 
     noPhotoFiltersToggleEl.insertAdjacentElement("beforebegin", groupingDropdownEl);
-    noPhotoFiltersToggleEl.insertAdjacentElement("beforebegin", sortButtonEl);
+    groupingDropdownEl.insertAdjacentElement("beforebegin", sortButtonEl);
     syncGroupingUi();
     syncSortUi();
     noPhotoState.controlsReady = true;
@@ -20435,12 +20503,42 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
   }
 
-  noPhotoFilterEls.forEach((selectEl) => {
-    selectEl.addEventListener("change", (event) => {
+  noPhotoFilterDropdownEls.forEach((containerEl) => {
+    const key = String(containerEl.dataset.noPhotoFilter ?? "").trim();
+    if (!key) return;
+    const triggerEl = containerEl.querySelector("[data-no-photo-filter-trigger]");
+    const menuEl = containerEl.querySelector("[data-no-photo-filter-menu]");
+    const clearEl = containerEl.querySelector("[data-no-photo-filter-clear]");
+    triggerEl?.addEventListener("click", () => {
+      const isOpen = !menuEl?.classList.contains("is-hidden");
+      noPhotoFilterDropdownEls.forEach((dropdownEl) => {
+        const nestedMenu = dropdownEl.querySelector("[data-no-photo-filter-menu]");
+        nestedMenu?.classList.add("is-hidden");
+      });
+      menuEl?.classList.toggle("is-hidden", isOpen);
+    });
+    menuEl?.addEventListener("change", (event) => {
       const target = event.target;
-      const key = target?.dataset?.noPhotoFilter;
-      if (!key) return;
-      noPhotoState.filters[key] = String(target.value ?? "");
+      if (!(target instanceof HTMLInputElement)) return;
+      if (target.type !== "checkbox") return;
+      noPhotoState.filters[key] = Array.from(
+        containerEl.querySelectorAll(
+          'input[type="checkbox"][data-no-photo-filter-checkbox]:checked'
+        )
+      )
+        .map((checkboxEl) => String(checkboxEl.value ?? "").trim())
+        .filter(Boolean);
+      syncNoPhotoFilterValue(key, noPhotoState.filters[key]);
+      applyNoPhotoFilters();
+    });
+    clearEl?.addEventListener("click", () => {
+      const values = getNoPhotoFilterAllValues(containerEl);
+      const allSelected =
+        Array.isArray(noPhotoState.filters[key]) &&
+        noPhotoState.filters[key].length === values.length &&
+        values.length > 0;
+      noPhotoState.filters[key] = allSelected ? [] : [...values];
+      syncNoPhotoFilterValue(key, noPhotoState.filters[key]);
       applyNoPhotoFilters();
     });
   });
@@ -20451,12 +20549,18 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const target = event.target;
       if (!(target instanceof Element)) return;
       if (target.closest(".no-photo-controls__grouping")) return;
+      if (target.closest(".tools-filter-dropdown[data-no-photo-filter]")) return;
       contentEl
         .querySelector(".no-photo-controls__grouping .tools-grouping-dropdown__menu")
         ?.classList.add("is-hidden");
       contentEl
         .querySelector(".no-photo-controls__grouping .tools-grouping-toggle")
         ?.setAttribute("aria-expanded", "false");
+      noPhotoFilterDropdownEls.forEach((containerEl) => {
+        containerEl
+          .querySelector("[data-no-photo-filter-menu]")
+          ?.classList.add("is-hidden");
+      });
     });
   }
 

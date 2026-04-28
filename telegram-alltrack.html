@@ -6118,11 +6118,21 @@
       }
 
       .tools-controls__row--no-photo-search .tools-actions {
-        margin-left: auto;
+        margin-left: 0;
+        justify-content: center;
       }
 
       .tools-modal[data-no-photo-modal] .tools-actions {
-        justify-content: flex-end;
+        justify-content: center;
+        width: 100%;
+      }
+
+      .tools-modal[data-no-photo-modal] .tools-filters {
+        grid-template-columns: repeat(auto-fit, minmax(220px, 220px));
+        justify-content: center;
+      }
+
+      .tools-modal[data-no-photo-modal] .tools-filter {
         width: 100%;
       }
 

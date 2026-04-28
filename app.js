@@ -19979,14 +19979,17 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
     items.forEach((tool) => {
       const row = document.createElement("div");
-      row.className = "tools-table__row tools-table__row--no-photo";
+      row.className = "tools-table__row tools-table__row--no-photo tools-table__row--search";
       row.dataset.noPhotoId = tool.__noPhotoId;
 
       const numberCell = document.createElement("div");
       numberCell.className = "tools-table__cell tools-table__cell--number";
       const number = String(tool?.["Номер"] ?? "").trim();
       numberCell.textContent = number || "—";
-      const objectCell = buildToolObjectCell(tool);
+      const objectLine = document.createElement("div");
+      objectLine.className = "tools-table__number-object";
+      objectLine.textContent = String(tool?.["Объект"] ?? "").trim() || "Объект не указан";
+      numberCell.appendChild(objectLine);
 
       const infoCell = document.createElement("div");
       infoCell.className = "tools-table__cell";
@@ -20028,7 +20031,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       actionButton.textContent = "Карточка";
       actionCell.appendChild(actionButton);
 
-      row.append(numberCell, objectCell, infoCell, actionCell);
+      row.append(numberCell, infoCell, actionCell);
       table.appendChild(row);
     });
 
@@ -20227,23 +20230,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   };
 
   if (noPhotoFiltersToggleEl) {
-    noPhotoFiltersToggleEl.addEventListener("click", () => {
-      const isOpen = noPhotoFiltersPanelEl?.classList.contains("is-open");
-      setNoPhotoFiltersOpen(!isOpen);
-    });
+    noPhotoFiltersToggleEl.classList.add("is-hidden");
+    noPhotoFiltersToggleEl.closest(".tools-actions")?.classList.add("is-hidden");
   }
 
   if (typeof window !== "undefined" && noPhotoFiltersPanelEl) {
-    const mediaQuery = window.matchMedia("(max-width: 520px)");
-    const syncFiltersVisibility = () => {
-      setNoPhotoFiltersOpen(!mediaQuery.matches);
-    };
-    syncFiltersVisibility();
-    if (mediaQuery.addEventListener) {
-      mediaQuery.addEventListener("change", syncFiltersVisibility);
-    } else if (mediaQuery.addListener) {
-      mediaQuery.addListener(syncFiltersVisibility);
-    }
+    setNoPhotoFiltersOpen(true);
   }
 
   noPhotoFilterEls.forEach((selectEl) => {

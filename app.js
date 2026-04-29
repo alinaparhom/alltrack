@@ -19525,7 +19525,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const row = document.createElement("div");
       row.className = "tools-table__row tools-table__row--add-photo-card";
 
-      const accountingNumber = String(tool?.["Бух.номер"] ?? "").trim();
       const name = String(tool?.["Наименование"] ?? "").trim();
       const cost = formatToolCostLabel(tool);
       const purchaseDate = String(tool?.["Дата покупки"] ?? "").trim();
@@ -19537,7 +19536,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       infoCard.innerHTML = `
         <div class="tools-info-card__title">ИНФОРМАЦИЯ ОБ ИНСТРУМЕНТЕ</div>
         <div class="tools-info-card__grid">
-          <div class="tools-info-card__label">БУХГАЛТЕРСКИЙ НОМЕР</div><div class="tools-info-card__value">${escapeHtml(accountingNumber || "—")}</div>
           <div class="tools-info-card__label">НАИМЕНОВАНИЕ</div><div class="tools-info-card__value">${escapeHtml(name || "Без названия")}</div>
           <div class="tools-info-card__label">СТОИМОСТЬ</div><div class="tools-info-card__value">${escapeHtml(cost || "—")}</div>
           <div class="tools-info-card__label">ДАТА ПОКУПКИ</div><div class="tools-info-card__value">${escapeHtml(purchaseDate || "—")}</div>
@@ -19547,7 +19545,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       `;
 
       const uploadButton = document.createElement("label");
-      uploadButton.className = "action-primary tools-info-card__upload";
+      uploadButton.className = "action-primary tools-add-photo-upload";
       uploadButton.textContent = "Добавить фото";
       const fileInput = document.createElement("input");
       fileInput.type = "file";
@@ -19560,9 +19558,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         await handleAddPhotoUpload(tool, file);
       });
       uploadButton.appendChild(fileInput);
-      infoCard.appendChild(uploadButton);
-
-      row.append(infoCard);
+      row.append(infoCard, uploadButton);
       table.appendChild(row);
     });
 

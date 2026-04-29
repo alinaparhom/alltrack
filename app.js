@@ -19544,6 +19544,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         </div>
       `;
 
+      const uploadWrap = document.createElement("div");
+      uploadWrap.className = "tools-add-photo-upload-wrap";
       const uploadButton = document.createElement("label");
       uploadButton.className = "action-primary tools-add-photo-upload";
       uploadButton.textContent = "Добавить фото";
@@ -19558,7 +19560,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         await handleAddPhotoUpload(tool, file);
       });
       uploadButton.appendChild(fileInput);
-      row.append(infoCard, uploadButton);
+      uploadWrap.appendChild(uploadButton);
+      row.append(infoCard, uploadWrap);
       table.appendChild(row);
     });
 

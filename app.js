@@ -56,7 +56,6 @@ const authLogLimit = 200;
 const fallbackBotToken = "8549452123:AAGxveuJSVf-xpNHQYTDKDmuMmHjGRVeDj0";
 const botUsernameCacheKey = "alltrack-bot-username";
 const initDataCacheKey = "alltrack-init-data";
-const initDataLocalCacheKey = "alltrack-init-data-local";
 const cacheBuster =
   window.ALLTRACK_CACHE_BUSTER || new Date().toISOString().replace(/\D/g, "");
 const defaultPreferences = {
@@ -1106,11 +1105,6 @@ function cacheInitData(value) {
   } catch (error) {
     console.warn("Не удалось сохранить initData в sessionStorage.", error);
   }
-  try {
-    localStorage.setItem(initDataLocalCacheKey, value);
-  } catch (error) {
-    console.warn("Не удалось сохранить initData в localStorage.", error);
-  }
 }
 
 function getCachedInitData() {
@@ -1120,12 +1114,7 @@ function getCachedInitData() {
   } catch (error) {
     console.warn("Не удалось прочитать initData из sessionStorage.", error);
   }
-  try {
-    return localStorage.getItem(initDataLocalCacheKey);
-  } catch (error) {
-    console.warn("Не удалось прочитать initData из localStorage.", error);
-    return null;
-  }
+  return null;
 }
 
 function getInitDataFromUrl() {

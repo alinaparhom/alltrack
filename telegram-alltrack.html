@@ -6061,6 +6061,30 @@
         padding-right: calc(var(--tools-horizontal-gutter) + max(0px, env(safe-area-inset-right)));
       }
 
+
+      .tools-modal__header--add-photo {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: nowrap;
+      }
+
+      .tools-modal__header--add-photo .settings-modal__title {
+        min-width: 0;
+      }
+
+      .tools-modal__header--add-photo .settings-modal__title h2 {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .tools-add-photo-upload {
+        width: 100%;
+        margin-top: 12px;
+        justify-content: center;
+      }
       .tools-modal__header-actions {
         display: inline-flex;
         align-items: center;

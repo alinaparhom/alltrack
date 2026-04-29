@@ -20001,16 +20001,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const row = document.createElement("div");
       row.className = "tools-table__row tools-table__row--no-photo tools-table__row--search";
       row.dataset.noPhotoId = tool.__noPhotoId;
+      row.classList.add("no-photo-info-card");
 
-      const numberCell = document.createElement("div");
-      numberCell.className = "tools-table__cell tools-table__cell--number";
       const number = String(tool?.["Номер"] ?? "").trim();
-      numberCell.textContent = number || "—";
-      const objectLine = document.createElement("div");
-      objectLine.className = "tools-table__number-object";
-      objectLine.textContent = String(tool?.["Объект"] ?? "").trim() || "Объект не указан";
-      numberCell.appendChild(objectLine);
-
       const infoCell = document.createElement("div");
       infoCell.className = "tools-table__cell";
       const title = document.createElement("div");
@@ -20039,10 +20032,34 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const statusLine = document.createElement("div");
       statusLine.className = "tools-table__status-line";
       statusLine.textContent = `Статус: ${status || "—"}`;
-      meta.append(accountingLine, detailsLine, costLine, statusLine);
+      const objectLine = document.createElement("div");
+      objectLine.textContent = `Объект: ${String(tool?.["Объект"] ?? "").trim() || "—"}`;
+      meta.append(accountingLine, detailsLine, objectLine, costLine, statusLine);
       infoCell.append(title, meta);
 
-      row.append(numberCell, infoCell);
+      const actionsCell = document.createElement("div");
+      actionsCell.className = "tools-table__cell";
+      const addPhotoButton = document.createElement("button");
+      addPhotoButton.type = "button";
+      addPhotoButton.className = "action-primary";
+      addPhotoButton.dataset.noPhotoUpload = "true";
+      addPhotoButton.textContent = "Добавить фото";
+      const fileInput = document.createElement("input");
+      fileInput.type = "file";
+      fileInput.accept = "image/*";
+      fileInput.className = "is-hidden";
+      fileInput.addEventListener("change", async () => {
+        const [file] = fileInput.files ?? [];
+        if (!file) return;
+        fileInput.value = "";
+        await handleAddPhotoUpload(tool, file);
+        closeAddPhotoModal();
+        await loadNoPhotoTools();
+      });
+      addPhotoButton.addEventListener("click", () => fileInput.click());
+      actionsCell.append(addPhotoButton, fileInput);
+
+      row.append(infoCell, actionsCell);
       table.appendChild(row);
     });
 
@@ -20058,13 +20075,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (noPhotoEmptyEl) {
       noPhotoEmptyEl.classList.toggle("is-hidden", items.length > 0);
     }
-    const filteredToolsCost = items.reduce(
-      (sum, tool) => sum + normalizeCostValue(tool?.["Стоимость"]),
-      0
-    );
-    setNoPhotoSubtitle(
-      `Показано ${items.length} из ${noPhotoState.tools.length} · На сумму ${formatNotificationCostWithoutCurrency(filteredToolsCost)} р.`
-    );
+    setNoPhotoSubtitle("");
   };
 
   const applyNoPhotoFilters = () => {
@@ -20397,8 +20408,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (noPhotoState.controlsReady || !noPhotoFiltersToggleEl) return;
     const actionsEl = noPhotoFiltersToggleEl.closest(".tools-actions");
     if (!actionsEl) return;
-    actionsEl.classList.remove("is-hidden");
-    noPhotoFiltersToggleEl.classList.remove("is-hidden");
+    actionsEl.classList.add("is-hidden");
+    noPhotoFiltersToggleEl.classList.add("is-hidden");
     noPhotoFiltersToggleEl.innerHTML = `
       <span class="tools-filters-toggle__icon" aria-hidden="true">
         <svg viewBox="0 0 24 24" focusable="false" fill="none">
@@ -20599,13 +20610,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
   if (noPhotoListEl) {
     noPhotoListEl.addEventListener("click", (event) => {
+      const target = event.target;
+      if (target instanceof Element && target.closest("[data-no-photo-upload]")) {
+        return;
+      }
       const row = event.target.closest("[data-no-photo-id]");
       if (!row) return;
-      const toolId = row.dataset.noPhotoId;
-      if (!toolId) return;
-      const tool = noPhotoState.toolMap.get(toolId);
-      if (!tool) return;
-      void openAddPhotoFromNoPhotoTool(tool);
+      event.preventDefault();
     });
   }
 

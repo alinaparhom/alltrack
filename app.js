@@ -19974,6 +19974,15 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       row.className = "tools-table__row tools-table__row--no-photo tools-table__row--search";
       row.dataset.noPhotoId = tool.__noPhotoId;
 
+      const numberCell = document.createElement("div");
+      numberCell.className = "tools-table__cell tools-table__cell--number";
+      const number = String(tool?.["Номер"] ?? "").trim();
+      numberCell.textContent = number || "—";
+      const objectLine = document.createElement("div");
+      objectLine.className = "tools-table__number-object";
+      objectLine.textContent = String(tool?.["Объект"] ?? "").trim() || "Объект не указан";
+      numberCell.appendChild(objectLine);
+
       const infoCell = document.createElement("div");
       infoCell.className = "tools-table__cell";
       const title = document.createElement("div");
@@ -19987,15 +19996,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const manufacturer = String(tool?.["Производитель"] ?? "").trim();
       const model = String(tool?.["Модель"] ?? "").trim();
       const status = getNoPhotoStatusLabel(tool?.["Статус"]);
-      const number = String(tool?.["Номер"] ?? "").trim();
-      const objectName = String(tool?.["Объект"] ?? "").trim();
       const costLine = document.createElement("div");
       costLine.textContent = formatToolCostLabel(tool);
-
-      const numberLine = document.createElement("div");
-      numberLine.textContent = `Номер: ${number || "—"}`;
-      const objectLine = document.createElement("div");
-      objectLine.textContent = `Объект: ${objectName || "—"}`;
 
       const accountingLine = document.createElement("div");
       accountingLine.textContent = `Бух.номер: ${accountingNumber || "—"}`;
@@ -20009,10 +20011,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const statusLine = document.createElement("div");
       statusLine.className = "tools-table__status-line";
       statusLine.textContent = `Статус: ${status || "—"}`;
-      meta.append(numberLine, objectLine, accountingLine, detailsLine, costLine, statusLine);
+      meta.append(accountingLine, detailsLine, costLine, statusLine);
       infoCell.append(title, meta);
 
-      row.append(infoCell);
+      row.append(numberCell, infoCell);
       table.appendChild(row);
     });
 

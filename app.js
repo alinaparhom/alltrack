@@ -19525,6 +19525,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const row = document.createElement("div");
       row.className = "tools-table__row tools-table__row--add-photo-card";
 
+      const number = String(tool?.["Номер"] ?? "").trim();
       const accountingNumber = String(tool?.["Бух.номер"] ?? "").trim();
       const name = String(tool?.["Наименование"] ?? "").trim();
       const cost = formatToolCostLabel(tool);
@@ -19537,6 +19538,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       infoCard.innerHTML = `
         <div class="tools-info-card__title">ИНФОРМАЦИЯ ОБ ИНСТРУМЕНТЕ</div>
         <div class="tools-info-card__grid">
+          <div class="tools-info-card__label">НОМЕР</div><div class="tools-info-card__value">${escapeHtml(number || "—")}</div>
           <div class="tools-info-card__label">БУХГАЛТЕРСКИЙ НОМЕР</div><div class="tools-info-card__value">${escapeHtml(accountingNumber || "—")}</div>
           <div class="tools-info-card__label">НАИМЕНОВАНИЕ</div><div class="tools-info-card__value">${escapeHtml(name || "Без названия")}</div>
           <div class="tools-info-card__label">СТОИМОСТЬ</div><div class="tools-info-card__value">${escapeHtml(cost || "—")}</div>
@@ -19561,8 +19563,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       });
       uploadButton.appendChild(fileInput);
 
-      infoCard.appendChild(uploadButton);
-      row.append(infoCard);
+      row.append(infoCard, uploadButton);
       table.appendChild(row);
     });
 

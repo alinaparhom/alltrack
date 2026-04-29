@@ -2357,7 +2357,6 @@ export function renderRole(user) {
             <div class="settings-modal__header tools-modal__header">
               <div class="settings-modal__title">
                 <h2>Добавить фото</h2>
-                <p data-add-photo-subtitle>Загружаем список...</p>
               </div>
               <button
                 class="button-icon tools-modal__close"

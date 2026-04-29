@@ -1146,6 +1146,20 @@ function getInitDataFromUrl() {
   return cached || null;
 }
 
+
+function resolveTelegramUserDisplayName() {
+  const webApp = window.Telegram?.WebApp;
+  const unsafeUser = webApp?.initDataUnsafe?.user ?? null;
+  const initDataUser = parseInitDataUser(webApp?.initData ?? null);
+  const urlInitDataUser = parseInitDataUser(getInitDataFromUrl());
+  const candidate = unsafeUser ?? initDataUser ?? urlInitDataUser;
+  if (!candidate) return "";
+  const parts = [candidate.first_name, candidate.last_name]
+    .map((item) => String(item ?? "").trim())
+    .filter(Boolean);
+  return parts.join(" ").trim();
+}
+
 function getTelegramId() {
   const webApp = window.Telegram?.WebApp;
   const initData = webApp?.initData ?? null;
@@ -33237,15 +33251,6 @@ async function loadUser() {
   void appendAuthLog("init", initialContext);
 
   const telegramId = await waitForTelegramId({ timeoutMs: 20000, intervalMs: 250 });
-  if (!telegramId) {
-    renderError("Telegram ID не получен. Откройте приложение из Telegram.");
-    if (userNameEl) userNameEl.textContent = "Гость";
-    if (appTitleTextEl) appTitleTextEl.textContent = "Гость";
-    if (userOrgEl) userOrgEl.textContent = "Откройте приложение из Telegram";
-    updateHeaderUserBadge("??", { forceInitials: true });
-    void appendAuthLog("telegram_id_missing", collectTelegramContext());
-    return;
-  }
 
   try {
     const registrationToken = getRegistrationToken();
@@ -33253,6 +33258,35 @@ async function loadUser() {
     let userLabel = "";
     const telegramIdKey = normalizeTelegramId(telegramId);
     void appendAuthLog("telegram_id_resolved", { telegramId: telegramIdKey });
+
+    if (!telegramIdKey) {
+      const data = await loadJson(usersFilePath).catch(() => ({ users: [] }));
+      const fallbackName = normalizePersonName(resolveTelegramUserDisplayName());
+      const nameMatches = (data.users ?? []).filter(
+        (item) => normalizePersonName(item?.full_name ?? "") === fallbackName
+      );
+
+      if (nameMatches.length === 1) {
+        user = nameMatches[0];
+        userLabel = `Вы вошли как <strong>${formatShortName(user?.full_name ?? "")}</strong>`;
+        void appendAuthLog("telegram_id_fallback_by_name", {
+          fullName: fallbackName,
+          resolvedUserId: normalizeTelegramId(user?.telegram_id ?? null),
+        });
+      } else {
+        renderError("Telegram ID не получен. Откройте приложение через кнопку Mini App в боте.");
+        if (userNameEl) userNameEl.textContent = "Гость";
+        if (appTitleTextEl) appTitleTextEl.textContent = "Гость";
+        if (userOrgEl) userOrgEl.textContent = "Откройте приложение из Telegram";
+        updateHeaderUserBadge("??", { forceInitials: true });
+        void appendAuthLog("telegram_id_missing", {
+          ...collectTelegramContext(),
+          fallbackName,
+          matches: nameMatches.length,
+        });
+        return;
+      }
+    }
 
     if (registrationToken) {
       user = await applyRegistrationToken(telegramId, registrationToken);

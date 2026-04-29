@@ -5626,6 +5626,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const addPhotoFiltersToggleEl = contentEl.querySelector(
     "[data-add-photo-filters-toggle]"
   );
+  if (addPhotoFiltersToggleEl) addPhotoFiltersToggleEl.style.display = "none";
   const noPhotoModalEl = contentEl.querySelector("[data-no-photo-modal]");
   const noPhotoBackdropEl = contentEl.querySelector(
     "[data-no-photo-backdrop]"
@@ -19522,51 +19523,34 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
     items.forEach((tool) => {
       const row = document.createElement("div");
-      row.className = "tools-table__row";
+      row.className = "tools-table__row tools-table__row--add-photo-card";
 
-      const numberCell = document.createElement("div");
-      numberCell.className = "tools-table__cell tools-table__cell--number";
       const number = String(tool?.["Номер"] ?? "").trim();
-      numberCell.textContent = number || "—";
-      row.dataset.addPhotoNumber = number;
-      const objectCell = buildToolObjectCell(tool);
-
-      const infoCell = document.createElement("div");
-      infoCell.className = "tools-table__cell";
-      const title = document.createElement("div");
-      title.className = "tools-table__title";
-      const name = String(tool?.["Наименование"] ?? "").trim();
-      title.textContent = name || "Без названия";
-
-      const meta = document.createElement("div");
-      meta.className = "tools-table__meta tools-table__meta--stack";
       const accountingNumber = String(tool?.["Бух.номер"] ?? "").trim();
-      const manufacturer = String(tool?.["Производитель"] ?? "").trim();
-      const model = String(tool?.["Модель"] ?? "").trim();
+      const name = String(tool?.["Наименование"] ?? "").trim();
+      const cost = formatToolCostLabel(tool);
       const purchaseDate = String(tool?.["Дата покупки"] ?? "").trim();
+      const responsible = String(tool?.["Ответственный"] ?? "").trim();
+      const object = String(tool?.["Объект"] ?? "").trim();
 
-      const accountingLine = document.createElement("div");
-      accountingLine.textContent = `Бух.номер: ${accountingNumber || "—"}`;
-      const detailsLine = document.createElement("div");
-      detailsLine.textContent = [
-        `Производитель: ${manufacturer || "—"}`,
-        `Модель: ${model || "—"}`,
-        `Дата покупки: ${purchaseDate || "—"}`,
-      ].join(" · ");
-      meta.append(accountingLine, detailsLine);
-      infoCell.append(title, meta);
+      const infoCard = document.createElement("div");
+      infoCard.className = "tools-info-card";
+      infoCard.innerHTML = `
+        <div class="tools-info-card__title">ИНФОРМАЦИЯ ОБ ИНСТРУМЕНТЕ</div>
+        <div class="tools-info-card__grid">
+          <div class="tools-info-card__label">НОМЕР</div><div class="tools-info-card__value">${escapeHtml(number || "—")}</div>
+          <div class="tools-info-card__label">БУХГАЛТЕРСКИЙ НОМЕР</div><div class="tools-info-card__value">${escapeHtml(accountingNumber || "—")}</div>
+          <div class="tools-info-card__label">НАИМЕНОВАНИЕ</div><div class="tools-info-card__value">${escapeHtml(name || "Без названия")}</div>
+          <div class="tools-info-card__label">СТОИМОСТЬ</div><div class="tools-info-card__value">${escapeHtml(cost || "—")}</div>
+          <div class="tools-info-card__label">ДАТА ПОКУПКИ</div><div class="tools-info-card__value">${escapeHtml(purchaseDate || "—")}</div>
+          <div class="tools-info-card__label">ОТВЕТСТВЕННЫЙ</div><div class="tools-info-card__value">${escapeHtml(responsible || "—")}</div>
+          <div class="tools-info-card__label">ОБЪЕКТ</div><div class="tools-info-card__value">${escapeHtml(object || "—")}</div>
+        </div>
+      `;
 
-      const photoCell = document.createElement("div");
-      photoCell.className = "tools-table__cell tools-table__cell--thumb";
-      const thumb = document.createElement("label");
-      thumb.className = "tools-table__thumb tools-table__thumb--plus";
-      thumb.setAttribute(
-        "aria-label",
-        number ? `Добавить фото для №${number}` : "Добавить фото"
-      );
-      const icon = document.createElement("span");
-      icon.className = "tools-table__thumb-icon";
-      icon.textContent = "+";
+      const uploadButton = document.createElement("label");
+      uploadButton.className = "action-primary tools-info-card__upload";
+      uploadButton.textContent = "Добавить фото";
       const fileInput = document.createElement("input");
       fileInput.type = "file";
       fileInput.accept = "image/*";
@@ -19577,10 +19561,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         fileInput.value = "";
         await handleAddPhotoUpload(tool, file);
       });
-      thumb.append(icon, fileInput);
-      photoCell.appendChild(thumb);
+      uploadButton.appendChild(fileInput);
 
-      row.append(numberCell, objectCell, infoCell, photoCell);
+      row.append(infoCard, uploadButton);
       table.appendChild(row);
     });
 
@@ -19596,9 +19579,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (addPhotoEmptyEl) {
       addPhotoEmptyEl.classList.toggle("is-hidden", items.length > 0);
     }
-    setAddPhotoSubtitle(
-      `Показано ${items.length} из ${addPhotoState.tools.length}`
-    );
+    setAddPhotoSubtitle("");
   };
 
   const buildAddPhotoFileName = (toolNumber, file) => {
@@ -19938,13 +19919,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       addPhotoFiltersToggleEl.setAttribute("aria-expanded", String(isOpen));
     }
   };
-
-  if (addPhotoFiltersToggleEl) {
-    addPhotoFiltersToggleEl.addEventListener("click", () => {
-      const isOpen = addPhotoFiltersPanelEl?.classList.contains("is-open");
-      setAddPhotoFiltersOpen(!isOpen);
-    });
-  }
 
   if (typeof window !== "undefined" && addPhotoFiltersPanelEl) {
     const mediaQuery = window.matchMedia("(max-width: 520px)");

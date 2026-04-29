@@ -19,6 +19,12 @@ const roleMap = new Map([
   [energyRole, renderEnergy],
   [controlRole, renderControl],
 ]);
+const normalizedRoleMap = new Map(
+  Array.from(roleMap.entries()).map(([roleId, render]) => [
+    String(roleId ?? "").trim().toLowerCase(),
+    roleId,
+  ])
+);
 
 const contentEl = document.querySelector("[data-content]");
 const userNameEl = document.querySelector("[data-user-name]");
@@ -173,6 +179,14 @@ const isEnergyLikeRole = (role) => {
   const normalized = String(role ?? "").trim();
   return normalized === energyRole || normalized === controlRole;
 };
+function normalizeRoleValue(role) {
+  return String(role ?? "").trim();
+}
+
+function resolveRoleId(role) {
+  const normalized = normalizeRoleValue(role).toLowerCase();
+  return normalizedRoleMap.get(normalized) ?? null;
+}
 const globalLoadingEl = document.querySelector("[data-global-loading]");
 const globalLoadingState = {
   activeRequests: 0,
@@ -32940,9 +32954,10 @@ function setupSuperAdmin() {
 
 async function renderUserRoleView() {
   if (!currentUser) return;
-  const renderRole = roleMap.get(currentUser.role);
+  const resolvedRoleId = resolveRoleId(currentUser.role);
+  const renderRole = resolvedRoleId ? roleMap.get(resolvedRoleId) : null;
   if (!renderRole) return;
-  const isEnergyDashboardRole = energyDashboardRoles.has(currentUser.role);
+  const isEnergyDashboardRole = energyDashboardRoles.has(resolvedRoleId);
 
   const userName = formatShortName(currentUser.full_name);
   if (!currentUserLabel) {
@@ -32968,7 +32983,7 @@ async function renderUserRoleView() {
     settingsBackButtonEl.classList.add("is-hidden");
   }
   if (superAdminStatEl) {
-    superAdminStatEl.classList.toggle("is-hidden", currentUser.role !== superAdminRole);
+    superAdminStatEl.classList.toggle("is-hidden", resolvedRoleId !== superAdminRole);
   }
   if (energyPendingStatEl) {
     energyPendingStatEl.classList.toggle("is-hidden", !isEnergyDashboardRole);
@@ -32983,7 +32998,7 @@ async function renderUserRoleView() {
     "is-energy-role",
     isEnergyDashboardRole
   );
-  if (currentUser.role === superAdminRole) {
+  if (resolvedRoleId === superAdminRole) {
     setupSuperAdmin();
   }
   if (isEnergyDashboardRole) {
@@ -33324,7 +33339,8 @@ async function loadUser() {
       return;
     }
 
-    const renderRole = roleMap.get(user.role);
+    const resolvedRoleId = resolveRoleId(user.role);
+    const renderRole = resolvedRoleId ? roleMap.get(resolvedRoleId) : null;
     if (!renderRole) {
       renderError("Для вашей роли ещё не создана страница.");
       if (userNameEl) userNameEl.textContent = formatShortName(user.full_name);
@@ -33339,6 +33355,7 @@ async function loadUser() {
       return;
     }
 
+    user.role = resolvedRoleId;
     currentUser = user;
     currentUserLabel = userLabel;
     currentSettingsContext = await resolveUserSettingsContext(user);

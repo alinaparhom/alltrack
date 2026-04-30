@@ -6062,31 +6062,18 @@
       }
 
 
-      .tools-modal__header--add-photo {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-        flex-wrap: nowrap;
-        min-height: 56px;
-        height: 56px;
-      }
-
-      .tools-modal__header--add-photo .settings-modal__title {
-        min-width: 0;
-      }
-
-      .tools-modal__header--add-photo .settings-modal__title h2 {
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
-
       .tools-modal[data-add-photo-modal] .tools-modal__header {
         display: flex;
         align-items: center;
         justify-content: space-between;
         gap: 12px;
+        padding-left: 12px;
+        padding-right: 12px;
+      }
+
+      .tools-modal[data-add-photo-modal] .tools-modal__close {
+        align-self: center;
+        margin-top: -14px;
       }
 
       .tools-modal[data-add-photo-modal] .tools-modal__panel {

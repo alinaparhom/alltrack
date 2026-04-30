@@ -2367,6 +2367,21 @@ export function renderRole(user) {
                 <span class="button-icon-emoji" aria-hidden="true">✕</span>
               </button>
             </div>
+            <div class="settings-modal__body tools-modal__body">
+              <div class="tools-info-card tools-info-card--add-photo-hint">
+                <div class="tools-info-card__title">ИНФОРМАЦИЯ ОБ ИНСТРУМЕНТЕ</div>
+                <div class="tools-info-card__grid">
+                  <div class="tools-info-card__label">ЧТО ПОКАЗЫВАЕТСЯ</div>
+                  <div class="tools-info-card__value">
+                    Название, стоимость, дата покупки, ответственный и объект.
+                  </div>
+                  <div class="tools-info-card__label">КАК РАБОТАТЬ</div>
+                  <div class="tools-info-card__value">
+                    Найдите инструмент в списке ниже и нажмите «Добавить фото».
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
         <div class="tools-modal settings-modal tools-modal--searching is-hidden" data-no-photo-modal>

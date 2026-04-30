@@ -6063,17 +6063,24 @@
 
 
       .tools-modal[data-add-photo-modal] .tools-modal__header {
+        position: sticky;
+        top: 0;
+        z-index: 4;
         display: flex;
         align-items: center;
         justify-content: space-between;
         gap: 12px;
-        padding-left: 12px;
-        padding-right: 12px;
+        margin: 0;
+        padding: calc(5px + env(safe-area-inset-top) + var(--telegram-top-controls-offset, 0px)) 12px 10px;
+        background: color-mix(in srgb, var(--glass) 92%, white 8%);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border-bottom: 1px solid rgba(148, 163, 184, 0.16);
       }
 
       .tools-modal[data-add-photo-modal] .tools-modal__close {
         align-self: center;
-        margin-top: -14px;
+        margin-top: 0;
       }
 
       .tools-modal[data-add-photo-modal] .tools-modal__panel {

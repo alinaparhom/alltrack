@@ -19534,6 +19534,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       row.className = "tools-table__row tools-table__row--add-photo-card";
 
       const name = String(tool?.["Наименование"] ?? "").trim();
+      const number = String(tool?.["Номер"] ?? "").trim();
+      const accountingNumber = String(tool?.["Бух.номер"] ?? "").trim();
       const cost = formatToolCostLabel(tool);
       const purchaseDate = String(tool?.["Дата покупки"] ?? "").trim();
       const responsible = String(tool?.["Ответственный"] ?? "").trim();
@@ -19542,13 +19544,36 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const infoCard = document.createElement("div");
       infoCard.className = "tools-info-card";
       infoCard.innerHTML = `
-        <div class="tools-info-card__title">ИНФОРМАЦИЯ ОБ ИНСТРУМЕНТЕ</div>
-        <div class="tools-info-card__grid">
-          <div class="tools-info-card__label">НАИМЕНОВАНИЕ</div><div class="tools-info-card__value">${escapeHtml(name || "Без названия")}</div>
-          <div class="tools-info-card__label">СТОИМОСТЬ</div><div class="tools-info-card__value">${escapeHtml(cost || "—")}</div>
-          <div class="tools-info-card__label">ДАТА ПОКУПКИ</div><div class="tools-info-card__value">${escapeHtml(purchaseDate || "—")}</div>
-          <div class="tools-info-card__label">ОТВЕТСТВЕННЫЙ</div><div class="tools-info-card__value">${escapeHtml(responsible || "—")}</div>
-          <div class="tools-info-card__label">ОБЪЕКТ</div><div class="tools-info-card__value">${escapeHtml(object || "—")}</div>
+        <div class="tools-info-card__title tools-info-card__title--add-photo">ИНФОРМАЦИЯ ОБ ИНСТРУМЕНТЕ</div>
+        <div class="tools-info-card__grid tools-info-card__grid--add-photo">
+          <div class="tools-info-card__group">
+            <div class="tools-info-card__label">НОМЕР</div>
+            <div class="tools-info-card__value">${escapeHtml(number || "—")}</div>
+          </div>
+          <div class="tools-info-card__group">
+            <div class="tools-info-card__label">БУХГАЛТЕРСКИЙ НОМЕР</div>
+            <div class="tools-info-card__value">${escapeHtml(accountingNumber || "—")}</div>
+          </div>
+          <div class="tools-info-card__group">
+            <div class="tools-info-card__label">НАИМЕНОВАНИЕ</div>
+            <div class="tools-info-card__value">${escapeHtml(name || "Без названия")}</div>
+          </div>
+          <div class="tools-info-card__group">
+            <div class="tools-info-card__label">СТОИМОСТЬ</div>
+            <div class="tools-info-card__value">${escapeHtml(cost || "—")}</div>
+          </div>
+          <div class="tools-info-card__group">
+            <div class="tools-info-card__label">ДАТА ПОКУПКИ</div>
+            <div class="tools-info-card__value">${escapeHtml(purchaseDate || "—")}</div>
+          </div>
+          <div class="tools-info-card__group">
+            <div class="tools-info-card__label">ОТВЕТСТВЕННЫЙ</div>
+            <div class="tools-info-card__value">${escapeHtml(responsible || "—")}</div>
+          </div>
+          <div class="tools-info-card__group">
+            <div class="tools-info-card__label">ОБЪЕКТ</div>
+            <div class="tools-info-card__value">${escapeHtml(object || "—")}</div>
+          </div>
         </div>
       `;
 

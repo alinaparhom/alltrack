@@ -20079,16 +20079,15 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       infoCell.append(title, meta);
 
       const openCard = (event) => {
-        if (event?.type === "pointerup" && event.pointerType === "mouse") return;
+        if (event?.type === "keydown") {
+          if (event.key !== "Enter" && event.key !== " ") return;
+          event.preventDefault();
+        }
         openNoPhotoToolCard(tool);
       };
       row.addEventListener("click", openCard);
-      row.addEventListener("pointerup", openCard);
-      row.addEventListener("keydown", (event) => {
-        if (event.key !== "Enter" && event.key !== " ") return;
-        event.preventDefault();
-        openNoPhotoToolCard(tool);
-      });
+      row.addEventListener("touchend", openCard, { passive: true });
+      row.addEventListener("keydown", openCard);
 
       row.append(numberCell, infoCell);
       table.appendChild(row);

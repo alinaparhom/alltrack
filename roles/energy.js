@@ -2354,7 +2354,7 @@ export function renderRole(user) {
             aria-modal="true"
             aria-label="Добавить фото"
           >
-            <div class="settings-modal__header tools-modal__header tools-modal__header--add-photo">
+            <div class="settings-modal__header tools-modal__header">
               <div class="settings-modal__title">
                 <h2>Добавить фото</h2>
               </div>

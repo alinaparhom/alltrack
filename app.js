@@ -11493,10 +11493,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       infoCell.className = "tools-table__cell";
       const title = document.createElement("div");
       title.className = "tools-table__title";
-      const toolNumber = String(tool?.["Номер"] ?? "").trim();
-      const accountingNumber = String(tool?.["Бухгалтерский номер"] ?? "").trim();
-      const toolNumber = String(tool?.["Номер"] ?? "").trim();
-      const accountingNumber = String(tool?.["Бухгалтерский номер"] ?? "").trim();
       const name = String(tool?.["Наименование"] ?? "").trim();
       title.textContent = name || "Без названия";
       const meta = document.createElement("div");
@@ -19548,8 +19544,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       infoCard.innerHTML = `
         <div class="tools-info-card__title">ИНФОРМАЦИЯ ОБ ИНСТРУМЕНТЕ</div>
         <div class="tools-info-card__grid">
-          <div class="tools-info-card__label">НОМЕР</div><div class="tools-info-card__value">${escapeHtml(toolNumber || "—")}</div>
-          <div class="tools-info-card__label">БУХГАЛТЕРСКИЙ НОМЕР</div><div class="tools-info-card__value">${escapeHtml(accountingNumber || "—")}</div>
           <div class="tools-info-card__label">НАИМЕНОВАНИЕ</div><div class="tools-info-card__value">${escapeHtml(name || "Без названия")}</div>
           <div class="tools-info-card__label">СТОИМОСТЬ</div><div class="tools-info-card__value">${escapeHtml(cost || "—")}</div>
           <div class="tools-info-card__label">ДАТА ПОКУПКИ</div><div class="tools-info-card__value">${escapeHtml(purchaseDate || "—")}</div>

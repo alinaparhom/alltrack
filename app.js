@@ -19579,21 +19579,32 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
       const uploadWrap = document.createElement("div");
       uploadWrap.className = "tools-add-photo-upload-wrap";
-      const uploadButton = document.createElement("label");
-      uploadButton.className = "action-primary tools-add-photo-upload";
-      uploadButton.textContent = "Добавить фото";
-      const fileInput = document.createElement("input");
-      fileInput.type = "file";
-      fileInput.accept = "image/*";
-      fileInput.className = "tools-table__thumb-input";
-      fileInput.addEventListener("change", async () => {
-        const [file] = fileInput.files ?? [];
-        if (!file) return;
-        fileInput.value = "";
-        await handleAddPhotoUpload(tool, file);
-      });
-      uploadButton.appendChild(fileInput);
-      uploadWrap.appendChild(uploadButton);
+
+      const createUploadButton = ({ label, fromCamera = false }) => {
+        const uploadButton = document.createElement("label");
+        uploadButton.className = "action-primary tools-add-photo-upload";
+        uploadButton.textContent = label;
+        const fileInput = document.createElement("input");
+        fileInput.type = "file";
+        fileInput.accept = "image/*";
+        if (fromCamera) {
+          fileInput.setAttribute("capture", "environment");
+        }
+        fileInput.className = "tools-table__thumb-input";
+        fileInput.addEventListener("change", async () => {
+          const [file] = fileInput.files ?? [];
+          if (!file) return;
+          fileInput.value = "";
+          await handleAddPhotoUpload(tool, file);
+        });
+        uploadButton.appendChild(fileInput);
+        return uploadButton;
+      };
+
+      uploadWrap.append(
+        createUploadButton({ label: "Из галереи" }),
+        createUploadButton({ label: "Сфотографировать", fromCamera: true })
+      );
       row.append(infoCard, uploadWrap);
       table.appendChild(row);
     });
@@ -19904,6 +19915,21 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (!addPhotoModalEl) return;
     addPhotoModalEl.classList.remove("is-hidden");
     document.body.style.overflow = "hidden";
+  };
+
+  const openNoPhotoToolCard = async (tool) => {
+    if (!tool || !addPhotoModalEl) return;
+    addPhotoState.search = "";
+    if (addPhotoSearchInput) {
+      addPhotoSearchInput.value = "";
+    }
+    addPhotoState.filtered = [{ ...tool, __searchLine: buildAddPhotoSearchLine(tool) }];
+    renderAddPhotoList();
+    const toolNumber = String(tool?.["Номер"] ?? "").trim();
+    setAddPhotoSubtitle(
+      toolNumber ? `Выбран инструмент №${toolNumber}` : "Выбран инструмент"
+    );
+    openAddPhotoModal();
   };
 
   const closeAddPhotoModal = () => {
@@ -20576,7 +20602,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       if (!toolId) return;
       const tool = noPhotoState.toolMap.get(toolId);
       if (!tool) return;
-      openToolsInfoModal(tool);
+      openNoPhotoToolCard(tool);
     });
   }
 

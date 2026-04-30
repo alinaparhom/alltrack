@@ -14,7 +14,6 @@ export const energyActions = [
   { id: "objects", title: "Объекты", icon: "🏢" },
   { id: "info", title: "Информация", icon: "ℹ️" },
   { id: "download", title: "Выгрузить данные", icon: "📤" },
-  { id: "add-photo", title: "Добавить фото", icon: "📷" },
   { id: "remove-photo", title: "Удалить фото", icon: "🗑️" },
   { id: "no-photo", title: "Без фото", icon: "🚫" },
   { id: "fines", title: "Штрафы", icon: "💸" },
@@ -2344,44 +2343,6 @@ export function renderRole(user) {
                 </button>
               </div>
             </form>
-          </div>
-        </div>
-        <div class="tools-modal settings-modal is-hidden" data-add-photo-modal>
-          <div class="settings-modal__backdrop" data-add-photo-backdrop></div>
-          <div
-            class="settings-modal__panel tools-modal__panel"
-            role="dialog"
-            aria-modal="true"
-            aria-label="Добавить фото"
-          >
-            <div class="settings-modal__header tools-modal__header">
-              <div class="settings-modal__title">
-                <h2>Добавить фото</h2>
-              </div>
-              <button
-                class="button-icon tools-modal__close"
-                type="button"
-                data-add-photo-close
-                aria-label="Закрыть список инструментов"
-              >
-                <span class="button-icon-emoji" aria-hidden="true">✕</span>
-              </button>
-            </div>
-            <div class="settings-modal__body tools-modal__body">
-              <div class="tools-info-card tools-info-card--add-photo-hint">
-                <div class="tools-info-card__title">ИНФОРМАЦИЯ ОБ ИНСТРУМЕНТЕ</div>
-                <div class="tools-info-card__grid">
-                  <div class="tools-info-card__label">ЧТО ПОКАЗЫВАЕТСЯ</div>
-                  <div class="tools-info-card__value">
-                    Название, стоимость, дата покупки, ответственный и объект.
-                  </div>
-                  <div class="tools-info-card__label">КАК РАБОТАТЬ</div>
-                  <div class="tools-info-card__value">
-                    Найдите инструмент в списке ниже и нажмите «Добавить фото».
-                  </div>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
         <div class="tools-modal settings-modal tools-modal--searching is-hidden" data-no-photo-modal>

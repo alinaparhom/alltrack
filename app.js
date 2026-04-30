@@ -20034,6 +20034,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const row = document.createElement("div");
       row.className = "tools-table__row tools-table__row--no-photo tools-table__row--search";
       row.dataset.noPhotoId = tool.__noPhotoId;
+      row.tabIndex = 0;
+      row.setAttribute("role", "button");
+      row.setAttribute("aria-label", "Открыть карточку инструмента для добавления фото");
 
       const numberCell = document.createElement("div");
       numberCell.className = "tools-table__cell tools-table__cell--number";
@@ -20609,8 +20612,23 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
   if (noPhotoListEl) {
     noPhotoListEl.addEventListener("click", (event) => {
-      const row = event.target.closest("[data-no-photo-id]");
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      const row = target.closest("[data-no-photo-id]");
       if (!row) return;
+      const toolId = row.dataset.noPhotoId;
+      if (!toolId) return;
+      const tool = noPhotoState.toolMap.get(toolId);
+      if (!tool) return;
+      openNoPhotoToolCard(tool);
+    });
+    noPhotoListEl.addEventListener("keydown", (event) => {
+      if (event.key !== "Enter" && event.key !== " ") return;
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      const row = target.closest("[data-no-photo-id]");
+      if (!row) return;
+      event.preventDefault();
       const toolId = row.dataset.noPhotoId;
       if (!toolId) return;
       const tool = noPhotoState.toolMap.get(toolId);

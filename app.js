@@ -5631,9 +5631,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   );
   const addPhotoListEl = contentEl.querySelector("[data-add-photo-list]");
   const addPhotoEmptyEl = contentEl.querySelector("[data-add-photo-empty]");
-  const addPhotoSubtitleEl = contentEl.querySelector(
-    "[data-add-photo-subtitle]"
-  );
   const addPhotoFilterEls = contentEl.querySelectorAll(
     "[data-add-photo-filter]"
   );
@@ -19522,12 +19519,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       photoButton.click();
     });
   }
-  const setAddPhotoSubtitle = (text) => {
-    if (addPhotoSubtitleEl) {
-      addPhotoSubtitleEl.textContent = text;
-    }
-  };
-
   const clearAddPhotoList = () => {
     if (addPhotoListEl) {
       addPhotoListEl.innerHTML = "";
@@ -19594,7 +19585,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (addPhotoEmptyEl) {
       addPhotoEmptyEl.classList.toggle("is-hidden", items.length > 0);
     }
-    setAddPhotoSubtitle("");
   };
 
   const buildAddPhotoFileName = (toolNumber, file) => {

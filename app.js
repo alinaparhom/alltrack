@@ -20078,6 +20078,18 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       meta.append(accountingLine, detailsLine, costLine, statusLine);
       infoCell.append(title, meta);
 
+      const openCard = (event) => {
+        if (event?.type === "pointerup" && event.pointerType === "mouse") return;
+        openNoPhotoToolCard(tool);
+      };
+      row.addEventListener("click", openCard);
+      row.addEventListener("pointerup", openCard);
+      row.addEventListener("keydown", (event) => {
+        if (event.key !== "Enter" && event.key !== " ") return;
+        event.preventDefault();
+        openNoPhotoToolCard(tool);
+      });
+
       row.append(numberCell, infoCell);
       table.appendChild(row);
     });
@@ -20610,36 +20622,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     });
   }
 
-  if (noPhotoListEl) {
-    const handleNoPhotoToolOpen = (event) => {
-      if (event.type === "pointerup" && event.pointerType === "mouse") return;
-      const target = event.target;
-      if (!(target instanceof Element)) return;
-      const row = target.closest("[data-no-photo-id]");
-      if (!row) return;
-      const toolId = row.dataset.noPhotoId;
-      if (!toolId) return;
-      const tool = noPhotoState.toolMap.get(toolId);
-      if (!tool) return;
-      openNoPhotoToolCard(tool);
-    };
 
-    noPhotoListEl.addEventListener("click", handleNoPhotoToolOpen);
-    noPhotoListEl.addEventListener("pointerup", handleNoPhotoToolOpen);
-    noPhotoListEl.addEventListener("keydown", (event) => {
-      if (event.key !== "Enter" && event.key !== " ") return;
-      const target = event.target;
-      if (!(target instanceof Element)) return;
-      const row = target.closest("[data-no-photo-id]");
-      if (!row) return;
-      event.preventDefault();
-      const toolId = row.dataset.noPhotoId;
-      if (!toolId) return;
-      const tool = noPhotoState.toolMap.get(toolId);
-      if (!tool) return;
-      openNoPhotoToolCard(tool);
-    });
-  }
 
   const setRemovePhotoSubtitle = (text) => {
     if (removePhotoSubtitleEl) {

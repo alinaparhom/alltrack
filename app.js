@@ -20611,7 +20611,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   }
 
   if (noPhotoListEl) {
-    noPhotoListEl.addEventListener("click", (event) => {
+    const handleNoPhotoToolOpen = (event) => {
+      if (event.type === "pointerup" && event.pointerType === "mouse") return;
       const target = event.target;
       if (!(target instanceof Element)) return;
       const row = target.closest("[data-no-photo-id]");
@@ -20621,7 +20622,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const tool = noPhotoState.toolMap.get(toolId);
       if (!tool) return;
       openNoPhotoToolCard(tool);
-    });
+    };
+
+    noPhotoListEl.addEventListener("click", handleNoPhotoToolOpen);
+    noPhotoListEl.addEventListener("pointerup", handleNoPhotoToolOpen);
     noPhotoListEl.addEventListener("keydown", (event) => {
       if (event.key !== "Enter" && event.key !== " ") return;
       const target = event.target;

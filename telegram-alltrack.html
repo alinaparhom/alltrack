@@ -6068,6 +6068,8 @@
         justify-content: space-between;
         gap: 12px;
         flex-wrap: nowrap;
+        min-height: 56px;
+        height: 56px;
       }
 
       .tools-modal__header--add-photo .settings-modal__title {
@@ -6087,9 +6089,17 @@
         gap: 12px;
       }
 
-      .tools-modal[data-add-photo-modal] .tools-modal__body,
-      .tools-modal[data-add-photo-modal] .settings-modal__subtitle {
-        display: none !important;
+      .tools-modal[data-add-photo-modal] .tools-modal__panel {
+        width: 420px;
+        max-width: 420px;
+        min-height: auto;
+        max-height: none;
+      }
+
+      .tools-modal[data-add-photo-modal] .settings-modal__title {
+        display: flex;
+        align-items: center;
+        height: 100%;
       }
 
       .tools-add-photo-upload {

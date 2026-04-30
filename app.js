@@ -19879,16 +19879,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (!addPhotoModalEl) return;
     addPhotoModalEl.classList.remove("is-hidden");
     document.body.style.overflow = "hidden";
-    setAddPhotoSubtitle("Загружаем список...");
-    await loadAddPhotoTools();
-    if (
-      addPhotoSearchInput &&
-      (typeof window === "undefined" ||
-        !window.matchMedia ||
-        !window.matchMedia("(max-width: 520px)").matches)
-    ) {
-      addPhotoSearchInput.focus();
-    }
   };
 
   const closeAddPhotoModal = () => {

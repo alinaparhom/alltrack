@@ -20091,7 +20091,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       };
       row.addEventListener("click", openCard);
       row.addEventListener("keydown", openCard);
-      row.addEventListener("touchend", openCard, { passive: false });
 
       row.append(numberCell, infoCell);
       table.appendChild(row);

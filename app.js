@@ -20083,10 +20083,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           if (event.key !== "Enter" && event.key !== " ") return;
           event.preventDefault();
         }
+        if (event?.type === "click") {
+          event.preventDefault();
+        }
+        event?.stopPropagation?.();
         openNoPhotoToolCard(tool);
       };
       row.addEventListener("click", openCard);
-      row.addEventListener("touchend", openCard, { passive: true });
       row.addEventListener("keydown", openCard);
 
       row.append(numberCell, infoCell);

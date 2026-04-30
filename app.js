@@ -7278,6 +7278,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     },
     search: "",
     orgFolder: "",
+    openedFromNoPhoto: false,
   };
   const noPhotoState = {
     tools: [],
@@ -19923,18 +19924,30 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (addPhotoSearchInput) {
       addPhotoSearchInput.value = "";
     }
-    addPhotoState.filtered = [{ ...tool, __searchLine: buildAddPhotoSearchLine(tool) }];
+    const selectedTool = { ...tool, __searchLine: buildAddPhotoSearchLine(tool) };
+    addPhotoState.filtered = [selectedTool];
     renderAddPhotoList();
-    const toolNumber = String(tool?.["Номер"] ?? "").trim();
-    setAddPhotoSubtitle(
-      toolNumber ? `Выбран инструмент №${toolNumber}` : "Выбран инструмент"
-    );
+
+    const toolNumber = String(selectedTool?.["Номер"] ?? "").trim();
+    const toolName = String(selectedTool?.["Наименование"] ?? "").trim();
+    const toolTitleParts = [
+      toolNumber ? `№${toolNumber}` : "без номера",
+      toolName || "без названия",
+    ];
+    setAddPhotoSubtitle(`Карточка инструмента: ${toolTitleParts.join(" · ")}`);
+
+    addPhotoState.openedFromNoPhoto = true;
+    noPhotoModalEl?.classList.add("is-hidden");
     openAddPhotoModal();
   };
 
   const closeAddPhotoModal = () => {
     if (!addPhotoModalEl) return;
     addPhotoModalEl.classList.add("is-hidden");
+    if (addPhotoState.openedFromNoPhoto) {
+      noPhotoModalEl?.classList.remove("is-hidden");
+    }
+    addPhotoState.openedFromNoPhoto = false;
     document.body.style.overflow = "";
   };
 

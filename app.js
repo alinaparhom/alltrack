@@ -20568,6 +20568,41 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     });
   }
 
+  const openAddPhotoFromNoPhotoTool = async (tool) => {
+    if (!tool) return;
+    noPhotoModalEl?.classList.add("is-hidden");
+    await openAddPhotoModal();
+    const query =
+      String(tool?.["Номер"] ?? "").trim() ||
+      String(tool?.["Бух.номер"] ?? "").trim() ||
+      String(tool?.["Наименование"] ?? "").trim();
+    Object.keys(addPhotoState.filters).forEach((key) => {
+      addPhotoState.filters[key] = "";
+    });
+    addPhotoFilterEls.forEach((selectEl) => {
+      const key = selectEl?.dataset?.addPhotoFilter;
+      if (!key) return;
+      selectEl.value = addPhotoState.filters[key] ?? "";
+    });
+    addPhotoState.search = query.toLowerCase();
+    if (addPhotoSearchInput) {
+      addPhotoSearchInput.value = query;
+    }
+    applyAddPhotoFilters();
+  };
+
+  if (noPhotoListEl) {
+    noPhotoListEl.addEventListener("click", (event) => {
+      const row = event.target.closest("[data-no-photo-id]");
+      if (!row) return;
+      const toolId = row.dataset.noPhotoId;
+      if (!toolId) return;
+      const tool = noPhotoState.toolMap.get(toolId);
+      if (!tool) return;
+      void openAddPhotoFromNoPhotoTool(tool);
+    });
+  }
+
   const setRemovePhotoSubtitle = (text) => {
     if (removePhotoSubtitleEl) {
       removePhotoSubtitleEl.textContent = text;
@@ -29038,6 +29073,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
     if (actionId === "move-other") {
       openMoveOtherModal();
+      return true;
+    }
+    if (actionId === "add-photo") {
+      openAddPhotoModal();
       return true;
     }
     if (actionId === "no-photo") {

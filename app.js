@@ -20427,6 +20427,19 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
   });
 
+  if (noPhotoListEl) {
+    noPhotoListEl.addEventListener("click", (event) => {
+      const rowEl = event.target?.closest?.("[data-no-photo-id]");
+      if (!rowEl) return;
+      const toolId = String(rowEl.dataset.noPhotoId ?? "").trim();
+      if (!toolId) return;
+      const tool = noPhotoState.toolMap.get(toolId);
+      if (!tool) return;
+      event.preventDefault();
+      openNoPhotoToolCard(tool);
+    });
+  }
+
   if (noPhotoSearchInput) {
     noPhotoSearchInput.addEventListener("input", (event) => {
       noPhotoState.search = String(event.target.value ?? "").toLowerCase();

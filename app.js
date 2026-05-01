@@ -19971,12 +19971,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     noPhotoToolContentEl.innerHTML = "";
     const table = renderAddPhotoTable([tool]);
     noPhotoToolContentEl.appendChild(table);
-    const number = String(tool?.["Номер"] ?? "").trim();
-    setNoPhotoToolSubtitle(
-      number
-        ? `Добавьте фото для инструмента №${number}.`
-        : "Добавьте фото для выбранного инструмента."
-    );
+    setNoPhotoToolSubtitle("Загрузите фото из галереи или с камеры.");
   };
 
   const closeAddPhotoModal = () => {

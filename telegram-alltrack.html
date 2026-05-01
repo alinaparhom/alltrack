@@ -6100,12 +6100,17 @@
       }
 
       .tools-add-photo-upload {
-        width: 100%;
+        flex: 1 1 0;
+        min-width: 0;
         justify-content: center;
       }
 
       .tools-add-photo-upload-wrap {
-        margin-top: 12px;
+        margin-top: 14px;
+        width: 100%;
+        display: flex;
+        align-items: stretch;
+        gap: 10px;
         padding: 12px;
         border-radius: 16px;
         border: 1px solid rgba(255, 255, 255, 0.55);
@@ -6562,11 +6567,13 @@
       .tools-info-card__grid--add-photo {
         display: grid;
         gap: 14px;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
       }
 
       .tools-info-card__group {
         display: grid;
         gap: 3px;
+        min-width: 0;
       }
 
       .tools-info-card__label {
@@ -6582,6 +6589,12 @@
         font-weight: 700;
         color: #111827;
         word-break: break-word;
+      }
+
+      @media (max-width: 720px) {
+        .tools-info-card__grid--add-photo {
+          grid-template-columns: minmax(0, 1fr);
+        }
       }
 
       @media (max-width: 480px) {

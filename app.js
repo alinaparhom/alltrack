@@ -20630,6 +20630,15 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
   }
 
+  const centerNoPhotoFilterMenu = (menuEl) => {
+    if (!(menuEl instanceof HTMLElement)) return;
+    const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
+    if (!viewportHeight) return;
+    const menuRect = menuEl.getBoundingClientRect();
+    const menuCenterOffset = viewportHeight / 2 - (menuRect.top + menuRect.height / 2);
+    menuEl.style.transform = `translate(-50%, calc(-50% + ${menuCenterOffset}px))`;
+  };
+
   noPhotoFilterDropdownEls.forEach((containerEl) => {
     const key = String(containerEl.dataset.noPhotoFilter ?? "").trim();
     if (!key) return;
@@ -20641,8 +20650,16 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       noPhotoFilterDropdownEls.forEach((dropdownEl) => {
         const nestedMenu = dropdownEl.querySelector("[data-no-photo-filter-menu]");
         nestedMenu?.classList.add("is-hidden");
+        if (nestedMenu instanceof HTMLElement) {
+          nestedMenu.style.removeProperty("transform");
+        }
       });
       menuEl?.classList.toggle("is-hidden", isOpen);
+      if (!isOpen) {
+        requestAnimationFrame(() => centerNoPhotoFilterMenu(menuEl));
+      } else if (menuEl instanceof HTMLElement) {
+        menuEl.style.removeProperty("transform");
+      }
     });
     menuEl?.addEventListener("change", (event) => {
       const target = event.target;

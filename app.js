@@ -19565,6 +19565,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     items.forEach((tool) => {
       const row = document.createElement("div");
       row.className = "tools-table__row tools-table__row--add-photo-card";
+      row.style.display = "flex";
+      row.style.flexDirection = "column";
+      row.style.alignItems = "stretch";
+      row.style.gap = "12px";
 
       const name = String(tool?.["Наименование"] ?? "").trim();
       const number = String(tool?.["Номер"] ?? "").trim();
@@ -19576,6 +19580,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
       const infoCard = document.createElement("div");
       infoCard.className = "tools-info-card";
+      infoCard.style.width = "100%";
       infoCard.innerHTML = `
         <div class="tools-info-card__title tools-info-card__title--add-photo">ИНФОРМАЦИЯ ОБ ИНСТРУМЕНТЕ</div>
         <div class="tools-info-card__grid tools-info-card__grid--add-photo">
@@ -19612,6 +19617,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
       const uploadWrap = document.createElement("div");
       uploadWrap.className = "tools-add-photo-upload-wrap";
+      uploadWrap.style.width = "100%";
 
       const createUploadButton = ({ label, fromCamera = false }) => {
         const uploadButton = document.createElement("label");

@@ -16827,18 +16827,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       return;
     }
 
-    const movesPath = `./${context.orgFolderName}/Перемещения.json`;
-    let moves = [];
-    try {
-      const rawMoves = await loadJson(movesPath);
-      moves = Array.isArray(rawMoves)
-        ? rawMoves
-        : Array.isArray(rawMoves?.moves)
-          ? rawMoves.moves
-          : [];
-    } catch (error) {
-      console.warn("Не удалось загрузить историю перемещений.", error);
-    }
+    const moves = await loadOrgMovesIncludingHistory(
+      context.orgFolderName,
+      "историю перемещений"
+    );
 
     infoMovesHistoryState.allMoves = moves
       .filter((move) => {
@@ -16970,6 +16962,30 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     return [];
   };
 
+  const loadOrgMovesIncludingHistory = async (orgFolder, logContext = "перемещения") => {
+    const movesPath = `./${orgFolder}/Перемещения.json`;
+    const movesHistoryPath = `./${orgFolder}/Перемещения история.json`;
+
+    let activeMovesRaw = [];
+    try {
+      activeMovesRaw = await loadJson(movesPath);
+    } catch (error) {
+      console.warn(`Не удалось загрузить ${logContext}.`, error);
+    }
+
+    let historyMovesRaw = [];
+    try {
+      historyMovesRaw = await loadJson(movesHistoryPath);
+    } catch (error) {
+      historyMovesRaw = [];
+    }
+
+    return [
+      ...parseCollectionItems(activeMovesRaw, "moves"),
+      ...parseCollectionItems(historyMovesRaw, "moves"),
+    ];
+  };
+
   const createInfoByDatesRow = (label, value) => {
     const row = document.createElement("div");
     row.className = "info-moves-history-item__row";
@@ -17089,7 +17105,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
     const orgFolder = context.orgFolderName;
     const toolsPath = `./${orgFolder}/База с инструментами.json`;
-    const movesPath = `./${orgFolder}/Перемещения.json`;
     const writeoffPath = `./${orgFolder}/Списания.json`;
 
     let toolsRaw = [];
@@ -17100,11 +17115,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     } catch (error) {
       console.warn("Не удалось загрузить регистрации по датам.", error);
     }
-    try {
-      movesRaw = await loadJson(movesPath);
-    } catch (error) {
-      console.warn("Не удалось загрузить перемещения по датам.", error);
-    }
+    movesRaw = await loadOrgMovesIncludingHistory(orgFolder, "перемещения по датам");
     try {
       writeoffRaw = await loadJson(writeoffPath);
     } catch (error) {
@@ -27848,17 +27859,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const normalizedStart = Math.min(startTs, endTs);
     const normalizedEnd = Math.max(startTs, endTs);
 
-    let rawMoves = [];
-    try {
-      const raw = await loadJson(`./${orgFolder}/Перемещения.json`);
-      rawMoves = Array.isArray(raw) ? raw : Array.isArray(raw?.moves) ? raw.moves : [];
-    } catch (error) {
-      console.warn("Не удалось загрузить перемещения для выгрузки.", error);
-      if (downloadMessageEl) {
-        downloadMessageEl.textContent = "Не удалось загрузить перемещения. Попробуйте позже.";
-      }
-      return;
-    }
+    const rawMoves = await loadOrgMovesIncludingHistory(
+      orgFolder,
+      "перемещения для выгрузки"
+    );
+
 
     const filteredMoves = rawMoves.filter((move) => {
       const answer = String(move?.["Ответ"] ?? "").trim().toLocaleLowerCase("ru");

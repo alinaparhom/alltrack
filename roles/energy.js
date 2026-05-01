@@ -2384,7 +2384,7 @@ export function renderRole(user) {
             </div>
           </div>
         </div>
-        <div class="tools-modal settings-modal tools-modal--searching is-hidden" data-no-photo-modal>
+        <div class="tools-modal settings-modal is-hidden" data-no-photo-modal>
           <div class="settings-modal__backdrop" data-no-photo-backdrop></div>
           <div
             class="settings-modal__panel tools-modal__panel"

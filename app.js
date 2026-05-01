@@ -19918,29 +19918,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     document.body.style.overflow = "hidden";
   };
 
-  const openNoPhotoToolCard = async (tool) => {
-    if (!tool || !addPhotoModalEl) return;
-    addPhotoState.search = "";
-    if (addPhotoSearchInput) {
-      addPhotoSearchInput.value = "";
-    }
-    const selectedTool = { ...tool, __searchLine: buildAddPhotoSearchLine(tool) };
-    addPhotoState.filtered = [selectedTool];
-    renderAddPhotoList();
-
-    const toolNumber = String(selectedTool?.["Номер"] ?? "").trim();
-    const toolName = String(selectedTool?.["Наименование"] ?? "").trim();
-    const toolTitleParts = [
-      toolNumber ? `№${toolNumber}` : "без номера",
-      toolName || "без названия",
-    ];
-    setAddPhotoSubtitle(`Карточка инструмента: ${toolTitleParts.join(" · ")}`);
-
-    addPhotoState.openedFromNoPhoto = true;
-    noPhotoModalEl?.classList.add("is-hidden");
-    openAddPhotoModal();
-  };
-
   const closeAddPhotoModal = () => {
     if (!addPhotoModalEl) return;
     addPhotoModalEl.classList.add("is-hidden");
@@ -20036,7 +20013,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       row.dataset.noPhotoId = tool.__noPhotoId;
       row.tabIndex = 0;
       row.setAttribute("role", "button");
-      row.setAttribute("aria-label", "Открыть карточку инструмента для добавления фото");
+      row.setAttribute("aria-label", "Открыть карточку инструмента");
 
       const numberCell = document.createElement("div");
       numberCell.className = "tools-table__cell tools-table__cell--number";
@@ -20087,7 +20064,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           event.preventDefault();
         }
         event?.stopPropagation?.();
-        openNoPhotoToolCard(tool);
+        void openToolsInfoModal(tool);
       };
       row.addEventListener("click", openCard);
       row.addEventListener("keydown", openCard);
@@ -20436,7 +20413,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const tool = noPhotoState.toolMap.get(toolId);
       if (!tool) return;
       event.preventDefault();
-      openNoPhotoToolCard(tool);
+      void openToolsInfoModal(tool);
     });
   }
 

@@ -20079,10 +20079,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           if (event.key !== "Enter" && event.key !== " ") return;
           event.preventDefault();
         }
-        if (event?.type === "click") {
-          event.preventDefault();
-        }
-        event?.stopPropagation?.();
         void openToolsInfoModal(tool);
       };
       row.addEventListener("click", openCard);
@@ -20422,19 +20418,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       closeNoPhotoModal();
     }
   });
-
-  if (noPhotoListEl) {
-    noPhotoListEl.addEventListener("click", (event) => {
-      const rowEl = event.target?.closest?.("[data-no-photo-id]");
-      if (!rowEl) return;
-      const toolId = String(rowEl.dataset.noPhotoId ?? "").trim();
-      if (!toolId) return;
-      const tool = noPhotoState.toolMap.get(toolId);
-      if (!tool) return;
-      event.preventDefault();
-      void openToolsInfoModal(tool);
-    });
-  }
 
   if (noPhotoSearchInput) {
     noPhotoSearchInput.addEventListener("input", (event) => {

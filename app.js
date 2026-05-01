@@ -19594,7 +19594,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           </div>
           <div class="tools-info-card__group">
             <div class="tools-info-card__label">НАИМЕНОВАНИЕ</div>
-            <div class="tools-info-card__value">${escapeHtml(name || "Без названия")}</div>
+            <div class="tools-info-card__value">${escapeHtml([manufacturer, model].filter(Boolean).join(" ") || name || "Без названия")}</div>
+          </div>
+          <div class="tools-info-card__group">
+            <div class="tools-info-card__label">СТАТУС</div>
+            <div class="tools-info-card__value">${escapeHtml(status || "—")}</div>
           </div>
           <div class="tools-info-card__group">
             <div class="tools-info-card__label">СТОИМОСТЬ</div>
@@ -19618,6 +19622,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const uploadWrap = document.createElement("div");
       uploadWrap.className = "tools-add-photo-upload-wrap";
       uploadWrap.style.width = "100%";
+      uploadWrap.style.position = "sticky";
+      uploadWrap.style.bottom = "0";
+      uploadWrap.style.left = "0";
+      uploadWrap.style.zIndex = "5";
+      uploadWrap.style.padding = "12px max(12px, env(safe-area-inset-right)) calc(12px + env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left))";
+      uploadWrap.style.background = "linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.9) 30%, rgba(255,255,255,0.98) 100%)";
+      uploadWrap.style.backdropFilter = "blur(8px)";
 
       const createUploadButton = ({ label, fromCamera = false }) => {
         const uploadButton = document.createElement("label");
@@ -19640,10 +19651,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         return uploadButton;
       };
 
-      uploadWrap.append(
-        createUploadButton({ label: "Из галереи" }),
-        createUploadButton({ label: "Сфотографировать", fromCamera: true })
-      );
+      uploadWrap.style.display = "flex";
+      uploadWrap.style.gap = "10px";
+      const galleryButton = createUploadButton({ label: "Из галереи" });
+      const cameraButton = createUploadButton({ label: "Сфотографировать", fromCamera: true });
+      galleryButton.style.flex = "1";
+      cameraButton.style.flex = "1";
+      uploadWrap.append(galleryButton, cameraButton);
       row.append(infoCard, uploadWrap);
       table.appendChild(row);
     });
@@ -19976,6 +19990,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     document.body.style.overflow = "hidden";
     noPhotoToolContentEl.innerHTML = "";
     const table = renderAddPhotoTable([tool]);
+    const captionEl = table.querySelector(".tools-info-card__title");
+    if (captionEl) {
+      captionEl.textContent = "Информация об инструменте";
+      captionEl.style.textAlign = "center";
+      captionEl.style.width = "100%";
+    }
     noPhotoToolContentEl.appendChild(table);
     setNoPhotoToolSubtitle("");
   };

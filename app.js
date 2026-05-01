@@ -19937,6 +19937,27 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     document.body.style.overflow = "hidden";
   };
 
+  const openAddPhotoModalForTool = async (tool) => {
+    if (!tool) return;
+    addPhotoState.openedFromNoPhoto = true;
+    noPhotoModalEl?.classList.add("is-hidden");
+    await openAddPhotoModal();
+    const number = String(tool?.["Номер"] ?? "").trim();
+    const normalized = normalizeToolNumberValue(number);
+    const sourceTool = addPhotoState.tools.find(
+      (entry) =>
+        normalizeToolNumberValue(String(entry?.["Номер"] ?? "").trim()) === normalized
+    );
+    const targetTool = sourceTool ?? { ...tool, __searchLine: buildAddPhotoSearchLine(tool) };
+    addPhotoState.filtered = [targetTool];
+    renderAddPhotoList();
+    setAddPhotoSubtitle(
+      number
+        ? `Добавьте фото для инструмента №${number}.`
+        : "Добавьте фото для выбранного инструмента."
+    );
+  };
+
   const closeAddPhotoModal = () => {
     if (!addPhotoModalEl) return;
     addPhotoModalEl.classList.add("is-hidden");
@@ -20079,7 +20100,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           if (event.key !== "Enter" && event.key !== " ") return;
           event.preventDefault();
         }
-        void openToolsInfoModal(tool);
+        void openAddPhotoModalForTool(tool);
       };
       row.addEventListener("click", openCard);
       row.addEventListener("keydown", openCard);

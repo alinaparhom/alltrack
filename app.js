@@ -5663,6 +5663,19 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const noPhotoFiltersToggleEl = contentEl.querySelector(
     "[data-no-photo-filters-toggle]"
   );
+  const noPhotoToolModalEl = contentEl.querySelector("[data-no-photo-tool-modal]");
+  const noPhotoToolBackdropEl = contentEl.querySelector(
+    "[data-no-photo-tool-backdrop]"
+  );
+  const noPhotoToolCloseButton = contentEl.querySelector(
+    "[data-no-photo-tool-close]"
+  );
+  const noPhotoToolContentEl = contentEl.querySelector(
+    "[data-no-photo-tool-content]"
+  );
+  const noPhotoToolSubtitleEl = contentEl.querySelector(
+    "[data-no-photo-tool-subtitle]"
+  );
   const removePhotoModalEl = contentEl.querySelector("[data-remove-photo-modal]");
   const removePhotoBackdropEl = contentEl.querySelector(
     "[data-remove-photo-backdrop]"
@@ -19937,21 +19950,29 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     document.body.style.overflow = "hidden";
   };
 
-  const openAddPhotoModalForTool = async (tool) => {
-    if (!tool) return;
-    addPhotoState.openedFromNoPhoto = true;
+  const setNoPhotoToolSubtitle = (text) => {
+    if (noPhotoToolSubtitleEl) {
+      noPhotoToolSubtitleEl.textContent = text;
+    }
+  };
+
+  const closeNoPhotoToolModal = () => {
+    if (!noPhotoToolModalEl) return;
+    noPhotoToolModalEl.classList.add("is-hidden");
+    noPhotoModalEl?.classList.remove("is-hidden");
+    document.body.style.overflow = "hidden";
+  };
+
+  const openNoPhotoToolModalForTool = (tool) => {
+    if (!tool || !noPhotoToolModalEl || !noPhotoToolContentEl) return;
     noPhotoModalEl?.classList.add("is-hidden");
-    await openAddPhotoModal();
+    noPhotoToolModalEl.classList.remove("is-hidden");
+    document.body.style.overflow = "hidden";
+    noPhotoToolContentEl.innerHTML = "";
+    const table = renderAddPhotoTable([tool]);
+    noPhotoToolContentEl.appendChild(table);
     const number = String(tool?.["Номер"] ?? "").trim();
-    const normalized = normalizeToolNumberValue(number);
-    const sourceTool = addPhotoState.tools.find(
-      (entry) =>
-        normalizeToolNumberValue(String(entry?.["Номер"] ?? "").trim()) === normalized
-    );
-    const targetTool = sourceTool ?? { ...tool, __searchLine: buildAddPhotoSearchLine(tool) };
-    addPhotoState.filtered = [targetTool];
-    renderAddPhotoList();
-    setAddPhotoSubtitle(
+    setNoPhotoToolSubtitle(
       number
         ? `Добавьте фото для инструмента №${number}.`
         : "Добавьте фото для выбранного инструмента."
@@ -20024,6 +20045,18 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       noPhotoSubtitleEl.textContent = text;
     }
   };
+
+  if (noPhotoToolBackdropEl) {
+    noPhotoToolBackdropEl.addEventListener("click", closeNoPhotoToolModal);
+  }
+  if (noPhotoToolCloseButton) {
+    noPhotoToolCloseButton.addEventListener("click", closeNoPhotoToolModal);
+  }
+  noPhotoToolModalEl?.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      closeNoPhotoToolModal();
+    }
+  });
 
   const clearNoPhotoList = () => {
     if (noPhotoListEl) {
@@ -20100,7 +20133,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           if (event.key !== "Enter" && event.key !== " ") return;
           event.preventDefault();
         }
-        void openAddPhotoModalForTool(tool);
+        openNoPhotoToolModalForTool(tool);
       };
       row.addEventListener("click", openCard);
       row.addEventListener("keydown", openCard);

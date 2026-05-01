@@ -4293,10 +4293,14 @@
       }
 
       .info-pending-responsible-dropdown .tools-filter-dropdown__menu {
-        position: static;
-        width: 100%;
-        margin-top: 8px;
-        max-height: min(42vh, 260px);
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: min(92vw, 360px);
+        margin-top: 0;
+        max-height: min(56vh, 360px);
+        z-index: 120;
       }
 
       .info-pending-responsible-dropdown.is-open .tools-filter-dropdown__menu {

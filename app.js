@@ -19638,7 +19638,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         createUploadButton({ label: "Из галереи" }),
         createUploadButton({ label: "Сфотографировать", fromCamera: true })
       );
-      row.append(infoCard, uploadWrap);
+      row.append(uploadWrap, infoCard);
       table.appendChild(row);
     });
 

@@ -2564,6 +2564,31 @@ export function renderRole(user) {
             </div>
           </div>
         </div>
+        <div class="tools-modal settings-modal is-hidden" data-no-photo-tool-modal>
+          <div class="settings-modal__backdrop" data-no-photo-tool-backdrop></div>
+          <div
+            class="settings-modal__panel tools-modal__panel"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Карточка инструмента без фото"
+          >
+            <div class="settings-modal__header tools-modal__header">
+              <div class="settings-modal__title">
+                <h2>Инструмент без фото</h2>
+                <p data-no-photo-tool-subtitle>Загрузите фото из галереи или с камеры</p>
+              </div>
+              <button
+                class="button-icon tools-modal__close"
+                type="button"
+                data-no-photo-tool-close
+                aria-label="Закрыть карточку инструмента"
+              >
+                <span class="button-icon-emoji" aria-hidden="true">✕</span>
+              </button>
+            </div>
+            <div class="settings-modal__body tools-modal__body" data-no-photo-tool-content></div>
+          </div>
+        </div>
         <div class="tools-modal settings-modal is-hidden" data-remove-photo-modal>
           <div class="settings-modal__backdrop" data-remove-photo-backdrop></div>
           <div

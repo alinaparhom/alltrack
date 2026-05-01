@@ -14532,29 +14532,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     };
   };
 
-  const loadMovesCollection = async (orgFolderName, fileName) => {
-    if (!orgFolderName) return [];
-    const path = `./${orgFolderName}/${fileName}`;
-    try {
-      const raw = await loadJson(path);
-      return parseCollectionItems(raw, "moves");
-    } catch (error) {
-      return [];
-    }
-  };
-
-  const loadCombinedMoves = async (orgFolderName) => {
-    const [activeMoves, historyMoves] = await Promise.all([
-      loadMovesCollection(orgFolderName, "Перемещения.json"),
-      loadMovesCollection(orgFolderName, "Перемещения история.json"),
-    ]);
-    return {
-      activeMoves,
-      historyMoves,
-      allMoves: [...activeMoves, ...historyMoves],
-    };
-  };
-
   const findPendingMoveForTool = (moves, tool) => {
     if (!tool || !moves.length) return null;
     const number = String(tool?.["Номер"] ?? "").trim();
@@ -16850,8 +16827,25 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       return;
     }
 
-    const { historyMoves } = await loadCombinedMoves(context.orgFolderName);
-    infoMovesHistoryState.allMoves = historyMoves
+    const movesPath = `./${context.orgFolderName}/Перемещения.json`;
+    let moves = [];
+    try {
+      const rawMoves = await loadJson(movesPath);
+      moves = Array.isArray(rawMoves)
+        ? rawMoves
+        : Array.isArray(rawMoves?.moves)
+          ? rawMoves.moves
+          : [];
+    } catch (error) {
+      console.warn("Не удалось загрузить историю перемещений.", error);
+    }
+
+    infoMovesHistoryState.allMoves = moves
+      .filter((move) => {
+        const response = String(move?.["Ответ"] ?? "").trim().toLowerCase();
+        const responseDate = String(move?.["Дата ответа"] ?? "").trim();
+        return response !== "отменено" && Boolean(responseDate);
+      })
       .sort((a, b) => {
         const aDate = parseDateValue(a?.["Дата перемещения"]);
         const bDate = parseDateValue(b?.["Дата перемещения"]);
@@ -17106,8 +17100,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     } catch (error) {
       console.warn("Не удалось загрузить регистрации по датам.", error);
     }
-    const combinedMoves = await loadCombinedMoves(orgFolder);
-    movesRaw = combinedMoves.allMoves;
+    try {
+      movesRaw = await loadJson(movesPath);
+    } catch (error) {
+      console.warn("Не удалось загрузить перемещения по датам.", error);
+    }
     try {
       writeoffRaw = await loadJson(writeoffPath);
     } catch (error) {
@@ -17495,7 +17492,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       }
     });
     const movesPath = `./${context.orgFolderName}/Перемещения.json`;
-    const movesHistoryPath = `./${context.orgFolderName}/Перемещения история.json`;
     if (toolsNormalized) {
       toolsPayload = toolsNormalized.wrapper
         ? { ...toolsNormalized.wrapper, [toolsNormalized.key]: toolsNormalized.items }
@@ -17515,27 +17511,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       if (declinePhotoEntries.length) {
         await uploadPhotoEntriesInBatches(declinePhotoEntries);
       }
-      const activeMoves = updatedMoves.filter(
-        (move) => !String(move?.["Дата ответа"] ?? "").trim()
-      );
-      const closedMoves = updatedMoves.filter((move) =>
-        String(move?.["Дата ответа"] ?? "").trim()
-      );
-      const historyRaw = await loadJson(movesHistoryPath).catch(() => []);
-      const historyPayload = normalizeCollectionPayload(historyRaw, "moves");
-      const entries = [
-        { path: movesPath, data: activeMoves, user },
-        {
-          path: movesHistoryPath,
-          data: historyPayload.wrapper
-            ? {
-                ...historyPayload.wrapper,
-                [historyPayload.key]: [...historyPayload.items, ...closedMoves],
-              }
-            : [...historyPayload.items, ...closedMoves],
-          user,
-        },
-      ];
+      const entries = [{ path: movesPath, data: updatedMoves, user }];
       if (toolsPayload) {
         entries.push({
           path: `./${context.orgFolderName}/База с инструментами.json`,

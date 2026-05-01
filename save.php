@@ -2937,31 +2937,56 @@ function saveEntry(array $entry, array $allowedFiles): void {
     $newOrganizations = getNewOrganizations($targetPath, $data);
   }
 
-  $existingData = null;
-  if ($fileName === "Перемещения.json") {
-    $existingData = readJsonDecodedValue($targetPath);
-    $newHasData = hasMeaningfulJsonData($data);
-    $existingHasData = hasMeaningfulJsonData($existingData);
+  withPathLock($targetPath, static function () use ($fileName, $targetPath, $encoded, $data): void {
+    if ($fileName === "Перемещения.json") {
+      $existingData = readJsonDecodedValue($targetPath);
+      $newHasData = hasMeaningfulJsonData($data);
+      $existingHasData = hasMeaningfulJsonData($existingData);
 
-    if (!$newHasData && $existingHasData) {
-      archiveMovesFileForCurrentHour($targetPath);
-      return;
+      if (!$newHasData && $existingHasData) {
+        archiveMovesFileForCurrentHour($targetPath);
+        return;
+      }
     }
-  }
 
-  $written = writeFileAtomically($targetPath, $encoded . PHP_EOL);
-  if ($written === false) {
-    http_response_code(500);
-    echo json_encode(["error" => "Не удалось сохранить файл."]);
-    exit;
-  }
+    $written = writeFileAtomically($targetPath, $encoded . PHP_EOL);
+    if ($written === false) {
+      http_response_code(500);
+      echo json_encode(["error" => "Не удалось сохранить файл."]);
+      exit;
+    }
 
-  if ($fileName === "Перемещения.json") {
-    archiveMovesFileForCurrentHour($targetPath);
-  }
+    if ($fileName === "Перемещения.json") {
+      archiveMovesFileForCurrentHour($targetPath);
+    }
+  });
 
   if (!empty($newOrganizations)) {
     createOrganizationFolders($newOrganizations);
+  }
+}
+
+function withPathLock(string $targetPath, callable $callback): void {
+  $lockPath = $targetPath . '.lock';
+  $lockHandle = @fopen($lockPath, 'c');
+  if ($lockHandle === false) {
+    http_response_code(500);
+    echo json_encode(["error" => "Не удалось открыть блокировку файла."]);
+    exit;
+  }
+
+  if (!@flock($lockHandle, LOCK_EX)) {
+    @fclose($lockHandle);
+    http_response_code(500);
+    echo json_encode(["error" => "Не удалось получить блокировку файла."]);
+    exit;
+  }
+
+  try {
+    $callback();
+  } finally {
+    @flock($lockHandle, LOCK_UN);
+    @fclose($lockHandle);
   }
 }
 

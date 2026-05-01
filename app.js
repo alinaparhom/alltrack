@@ -13262,18 +13262,26 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       return;
     }
     const movesPath = `./${orgFolder}/Перемещения.json`;
+    const movesHistoryPath = `./${orgFolder}/Перемещения история.json`;
     const breakdownsPath = `./${orgFolder}/Поломки.json`;
     const repairsPath = `./${orgFolder}/Ремонты.json`;
-    const [rawMoves, rawBreakdowns, rawRepairs] = await Promise.all([
+    const [rawMoves, rawMovesHistory, rawBreakdowns, rawRepairs] = await Promise.all([
       loadJson(movesPath).catch(() => []),
+      loadJson(movesHistoryPath).catch(() => []),
       loadJson(breakdownsPath).catch(() => []),
       loadJson(repairsPath).catch(() => []),
     ]);
-    const moves = Array.isArray(rawMoves)
+    const activeMoves = Array.isArray(rawMoves)
       ? rawMoves
       : Array.isArray(rawMoves?.moves)
         ? rawMoves.moves
         : [];
+    const historyMoves = Array.isArray(rawMovesHistory)
+      ? rawMovesHistory
+      : Array.isArray(rawMovesHistory?.moves)
+        ? rawMovesHistory.moves
+        : [];
+    const moves = [...activeMoves, ...historyMoves];
     const breakdowns = Array.isArray(rawBreakdowns)
       ? rawBreakdowns
       : Array.isArray(rawBreakdowns?.breakdowns)

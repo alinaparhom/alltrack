@@ -20630,13 +20630,20 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
   }
 
-  const centerNoPhotoFilterMenu = (menuEl) => {
-    if (!(menuEl instanceof HTMLElement)) return;
+  const positionNoPhotoFilterMenu = (menuEl, triggerEl) => {
+    if (!(menuEl instanceof HTMLElement) || !(triggerEl instanceof HTMLElement)) return;
     const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
     if (!viewportHeight) return;
+
+    const triggerRect = triggerEl.getBoundingClientRect();
     const menuRect = menuEl.getBoundingClientRect();
-    const menuCenterOffset = viewportHeight / 2 - (menuRect.top + menuRect.height / 2);
-    menuEl.style.transform = `translate(-50%, calc(-50% + ${menuCenterOffset}px))`;
+    const gap = 8;
+    const maxTop = Math.max(gap, viewportHeight - menuRect.height - gap);
+    const desiredTop = triggerRect.bottom + gap;
+    const nextTop = Math.min(Math.max(desiredTop, gap), maxTop);
+
+    menuEl.style.top = `${Math.round(nextTop)}px`;
+    menuEl.style.transform = "translateX(-50%)";
 
     const optionsEl = menuEl.querySelector("[data-no-photo-filter-options]");
     if (!(optionsEl instanceof HTMLElement)) return;
@@ -20665,9 +20672,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       });
       menuEl?.classList.toggle("is-hidden", isOpen);
       if (!isOpen) {
-        requestAnimationFrame(() => centerNoPhotoFilterMenu(menuEl));
+        requestAnimationFrame(() => positionNoPhotoFilterMenu(menuEl, triggerEl));
       } else if (menuEl instanceof HTMLElement) {
         menuEl.style.removeProperty("transform");
+          menuEl.style.removeProperty("top");
       }
     });
     menuEl?.addEventListener("change", (event) => {

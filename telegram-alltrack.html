@@ -6208,8 +6208,9 @@
 
       .no-photo-tool-content {
         display: grid;
-        gap: 12px;
-        padding: 12px;
+        gap: 0;
+        padding: 0;
+        margin: 0;
       }
 
       .tools-modal[data-no-photo-tool-modal] .no-photo-tool-content .tools-info-card {
@@ -6222,6 +6223,7 @@
 
       .no-photo-tool-actions__hint {
         margin: 0;
+        padding: 0;
         font-size: 13px;
         line-height: 1.4;
         color: rgba(31, 43, 61, 0.72);
@@ -6229,13 +6231,16 @@
 
       .no-photo-tool-actions {
         display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 10px;
+        grid-template-columns: minmax(0, 1fr);
+        gap: 0;
+        margin: 0;
+        padding: 0;
       }
 
       .no-photo-tool-actions__button {
         width: 100%;
         min-height: 46px;
+        margin: 0;
       }
 
       .tools-modal[data-no-photo-tool-modal] .tools-table--add-photo,
@@ -6262,11 +6267,6 @@
         min-width: 0;
       }
 
-      @media (max-width: 560px) {
-        .no-photo-tool-actions {
-          grid-template-columns: minmax(0, 1fr);
-        }
-      }
 
       .tools-controls__row--no-photo-search .tools-actions {
         margin-left: auto;

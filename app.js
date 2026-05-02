@@ -19581,7 +19581,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       row.style.gap = "0";
 
       const name = String(tool?.["Наименование"] ?? "").trim();
-      const manufacturer = String(tool?.["Марка"] ?? "").trim();
+      const manufacturer = String(tool?.["Производитель"] ?? tool?.["Марка"] ?? "").trim();
       const model = String(tool?.["Модель"] ?? "").trim();
       const status = getToolStatusText(tool);
       const number = String(tool?.["Номер"] ?? "").trim();
@@ -20015,14 +20015,14 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     noPhotoToolModalEl.classList.remove("is-hidden");
     document.body.style.overflow = "hidden";
     noPhotoToolContentEl.innerHTML = "";
-    noPhotoToolContentEl.className = "settings-modal__body tools-modal__body no-photo-tool-content";
+    noPhotoToolContentEl.className = "no-photo-tool-content";
 
     const card = document.createElement("section");
     card.className = "tools-info-card";
 
     const number = String(tool?.["Номер"] ?? "").trim() || "—";
     const accountingNumber = String(tool?.["Бух.номер"] ?? "").trim() || "—";
-    const manufacturer = String(tool?.["Марка"] ?? "").trim();
+    const manufacturer = String(tool?.["Производитель"] ?? tool?.["Марка"] ?? "").trim();
     const model = String(tool?.["Модель"] ?? "").trim();
     const name = String(tool?.["Наименование"] ?? "").trim();
     const status = getToolStatusText(tool) || "—";

@@ -20637,6 +20637,15 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const menuRect = menuEl.getBoundingClientRect();
     const menuCenterOffset = viewportHeight / 2 - (menuRect.top + menuRect.height / 2);
     menuEl.style.transform = `translate(-50%, calc(-50% + ${menuCenterOffset}px))`;
+
+    const optionsEl = menuEl.querySelector("[data-no-photo-filter-options]");
+    if (!(optionsEl instanceof HTMLElement)) return;
+    const maxScrollTop = Math.max(0, optionsEl.scrollHeight - optionsEl.clientHeight);
+    if (maxScrollTop <= 0) {
+      optionsEl.scrollTop = 0;
+      return;
+    }
+    optionsEl.scrollTop = Math.round(maxScrollTop / 2);
   };
 
   noPhotoFilterDropdownEls.forEach((containerEl) => {

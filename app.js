@@ -20039,9 +20039,18 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     `;
 
     const actions = document.createElement("div");
+    actions.className = "no-photo-tool-actions";
     actions.style.display = "grid";
     actions.style.gridTemplateColumns = "repeat(2, minmax(0, 1fr))";
     actions.style.gap = "10px";
+
+    const hint = document.createElement("p");
+    hint.className = "no-photo-tool-actions__hint";
+    hint.textContent = "Добавьте фото сейчас: можно сразу снять на камеру или выбрать изображение из галереи.";
+    hint.style.margin = "0";
+    hint.style.fontSize = "13px";
+    hint.style.lineHeight = "1.4";
+    hint.style.color = "rgba(31, 43, 61, 0.72)";
 
     const createUploadButton = ({ label, fromCamera = false }) => {
       const uploadButton = document.createElement("label");
@@ -20065,9 +20074,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
     const cameraButton = createUploadButton({ label: "Сфотографировать", fromCamera: true });
     const galleryButton = createUploadButton({ label: "Загрузить из галереи" });
+    cameraButton.style.width = "100%";
+    galleryButton.style.width = "100%";
     actions.append(cameraButton, galleryButton);
 
-    noPhotoToolContentEl.append(card, actions);
+    noPhotoToolContentEl.append(card, hint, actions);
     setNoPhotoToolSubtitle("Добавьте фото для выбранного инструмента");
   };
 

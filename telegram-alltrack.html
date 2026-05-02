@@ -1889,7 +1889,7 @@
         appearance: none;
         -webkit-appearance: none;
         position: absolute;
-        transform: translate(-50%, -50%);
+        transform: translateX(-50%);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -1926,7 +1926,7 @@
         content: "";
         position: absolute;
         left: 10px;
-        top: 50%;
+        top: 0;
         transform: translateY(-50%);
         width: 10px;
         height: 10px;
@@ -8325,7 +8325,7 @@
 
       .tools-modal[data-no-photo-modal] .tools-filter-dropdown__menu {
         position: fixed;
-        top: 50%;
+        top: 0;
         left: 50%;
         right: auto;
         width: min(calc(100vw - 20px), 420px);
@@ -8333,7 +8333,7 @@
         max-height: min(70vh, 520px);
         margin-left: 0;
         margin-right: 0;
-        transform: translate(-50%, -50%);
+        transform: translateX(-50%);
         z-index: 1300;
       }
 

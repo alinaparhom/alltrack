@@ -20015,7 +20015,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     noPhotoToolModalEl.classList.remove("is-hidden");
     document.body.style.overflow = "hidden";
     noPhotoToolContentEl.innerHTML = "";
-    noPhotoToolContentEl.className = "no-photo-tool-content";
+    noPhotoToolContentEl.classList.add("no-photo-tool-content");
 
     const card = document.createElement("section");
     card.className = "tools-info-card";

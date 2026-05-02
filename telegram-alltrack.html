@@ -8324,17 +8324,16 @@
       }
 
       .tools-modal[data-no-photo-modal] .tools-filter-dropdown__menu {
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        right: auto;
-        width: min(calc(100vw - 20px), 420px);
-        max-width: calc(100vw - 20px);
-        max-height: min(70vh, 520px);
+        position: absolute;
+        top: calc(100% + 6px);
+        left: 0;
+        right: 0;
+        width: auto;
+        max-height: min(56vh, 420px);
         margin-left: 0;
         margin-right: 0;
-        transform: translate(-50%, -50%);
-        z-index: 1300;
+        transform: none;
+        z-index: 90;
       }
 
       .tools-modal[data-no-photo-modal] .tools-filter-dropdown__options {

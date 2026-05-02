@@ -20019,6 +20019,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       return;
     }
 
+    table.style.display = "grid";
+    table.style.gap = "0";
+    table.style.margin = "0";
+    table.style.padding = "0";
+
     const captionEl = table.querySelector(".tools-info-card__title");
     if (captionEl) {
       captionEl.textContent = "Информация об инструменте";
@@ -20046,7 +20051,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       uploadWrapEl.style.backdropFilter = "none";
     }
 
-    noPhotoToolContentEl.appendChild(cardRow);
+    noPhotoToolContentEl.appendChild(table);
     setNoPhotoToolSubtitle("Загрузите фото из галереи или с камеры");
   };
 

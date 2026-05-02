@@ -19568,7 +19568,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       row.style.display = "flex";
       row.style.flexDirection = "column";
       row.style.alignItems = "stretch";
-      row.style.gap = "12px";
+      row.style.gap = "0";
 
       const name = String(tool?.["Наименование"] ?? "").trim();
       const manufacturer = String(tool?.["Марка"] ?? "").trim();
@@ -19629,7 +19629,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       uploadWrap.style.bottom = "0";
       uploadWrap.style.left = "0";
       uploadWrap.style.zIndex = "5";
-      uploadWrap.style.padding = "12px max(12px, env(safe-area-inset-right)) calc(12px + env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left))";
+      uploadWrap.style.padding = "0 max(12px, env(safe-area-inset-right)) calc(env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left))";
       uploadWrap.style.background = "linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.9) 30%, rgba(255,255,255,0.98) 100%)";
       uploadWrap.style.backdropFilter = "blur(8px)";
 
@@ -19655,7 +19655,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       };
 
       uploadWrap.style.display = "flex";
-      uploadWrap.style.gap = "10px";
+      uploadWrap.style.gap = "0";
       const galleryButton = createUploadButton({ label: "Загрузить из галереи" });
       const cameraButton = createUploadButton({ label: "Сфотографировать", fromCamera: true });
       galleryButton.style.flex = "1";
@@ -19992,6 +19992,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     noPhotoToolModalEl.classList.remove("is-hidden");
     document.body.style.overflow = "hidden";
     noPhotoToolContentEl.innerHTML = "";
+    noPhotoToolContentEl.classList.add("is-table");
+    noPhotoToolContentEl.style.display = "block";
     const table = renderAddPhotoTable([tool]);
     const captionEl = table.querySelector(".tools-info-card__title");
     if (captionEl) {

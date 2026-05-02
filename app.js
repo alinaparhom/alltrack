@@ -5670,7 +5670,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const noPhotoToolCloseButton = contentEl.querySelector(
     "[data-no-photo-tool-close]"
   );
-  const noPhotoToolContentEl = contentEl.querySelector(
+  let noPhotoToolContentEl = contentEl.querySelector(
     "[data-no-photo-tool-content]"
   );
   const noPhotoToolSubtitleEl = contentEl.querySelector(
@@ -20001,7 +20001,16 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   };
 
   const openNoPhotoToolModalForTool = (tool) => {
-    if (!tool || !noPhotoToolModalEl || !noPhotoToolContentEl) return;
+    if (!tool || !noPhotoToolModalEl) return;
+    if (!noPhotoToolContentEl) {
+      const modalBodyEl = noPhotoToolModalEl.querySelector(".tools-modal__body");
+      if (modalBodyEl) {
+        noPhotoToolContentEl = document.createElement("div");
+        noPhotoToolContentEl.setAttribute("data-no-photo-tool-content", "");
+        modalBodyEl.appendChild(noPhotoToolContentEl);
+      }
+    }
+    if (!noPhotoToolContentEl) return;
     noPhotoModalEl?.classList.add("is-hidden");
     noPhotoToolModalEl.classList.remove("is-hidden");
     document.body.style.overflow = "hidden";

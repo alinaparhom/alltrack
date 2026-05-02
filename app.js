@@ -20006,53 +20006,69 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     noPhotoToolModalEl.classList.remove("is-hidden");
     document.body.style.overflow = "hidden";
     noPhotoToolContentEl.innerHTML = "";
-    noPhotoToolContentEl.style.display = "flex";
-    noPhotoToolContentEl.style.flexDirection = "column";
-    noPhotoToolContentEl.style.gap = "0";
-    noPhotoToolContentEl.style.padding = "0";
+    noPhotoToolContentEl.style.display = "grid";
+    noPhotoToolContentEl.style.gap = "12px";
+    noPhotoToolContentEl.style.padding = "12px";
     noPhotoToolContentEl.style.margin = "0";
 
-    const table = renderAddPhotoTable([tool]);
-    const cardRow = table.querySelector(".tools-table__row--add-photo-card");
-    if (!cardRow) {
-      setNoPhotoToolSubtitle("Не удалось открыть карточку инструмента.");
-      return;
-    }
+    const card = document.createElement("section");
+    card.className = "tools-info-card";
+    card.style.margin = "0";
+    card.style.borderRadius = "18px";
+    card.style.background = "rgba(255, 255, 255, 0.72)";
+    card.style.border = "1px solid rgba(255, 255, 255, 0.7)";
+    card.style.backdropFilter = "blur(10px)";
 
-    table.style.display = "grid";
-    table.style.gap = "0";
-    table.style.margin = "0";
-    table.style.padding = "0";
+    const number = String(tool?.["Номер"] ?? "").trim() || "—";
+    const accountingNumber = String(tool?.["Бух.номер"] ?? "").trim() || "—";
+    const manufacturer = String(tool?.["Марка"] ?? "").trim();
+    const model = String(tool?.["Модель"] ?? "").trim();
+    const name = String(tool?.["Наименование"] ?? "").trim();
+    const status = getToolStatusText(tool) || "—";
+    const object = String(tool?.["Объект"] ?? "").trim() || "—";
 
-    const captionEl = table.querySelector(".tools-info-card__title");
-    if (captionEl) {
-      captionEl.textContent = "Информация об инструменте";
-      captionEl.style.textAlign = "left";
-      captionEl.style.margin = "0";
-    }
+    card.innerHTML = `
+      <div class="tools-info-card__title tools-info-card__title--add-photo">Информация об инструменте</div>
+      <div class="tools-info-card__grid tools-info-card__grid--add-photo">
+        <div class="tools-info-card__group"><div class="tools-info-card__label">Номер</div><div class="tools-info-card__value">${escapeHtml(number)}</div></div>
+        <div class="tools-info-card__group"><div class="tools-info-card__label">Бух. номер</div><div class="tools-info-card__value">${escapeHtml(accountingNumber)}</div></div>
+        <div class="tools-info-card__group"><div class="tools-info-card__label">Наименование</div><div class="tools-info-card__value">${escapeHtml([manufacturer, model].filter(Boolean).join(" ") || name || "Без названия")}</div></div>
+        <div class="tools-info-card__group"><div class="tools-info-card__label">Статус</div><div class="tools-info-card__value">${escapeHtml(status)}</div></div>
+        <div class="tools-info-card__group"><div class="tools-info-card__label">Объект</div><div class="tools-info-card__value">${escapeHtml(object)}</div></div>
+      </div>
+    `;
 
-    const infoCardEl = table.querySelector(".tools-info-card");
-    const uploadWrapEl = table.querySelector(".tools-add-photo-upload-wrap");
+    const actions = document.createElement("div");
+    actions.style.display = "grid";
+    actions.style.gridTemplateColumns = "repeat(2, minmax(0, 1fr))";
+    actions.style.gap = "10px";
 
-    cardRow.style.gap = "0";
-    cardRow.style.margin = "0";
-    cardRow.style.padding = "0";
-    if (infoCardEl) {
-      infoCardEl.style.margin = "0";
-      infoCardEl.style.borderRadius = "0";
-    }
-    if (uploadWrapEl) {
-      uploadWrapEl.style.position = "static";
-      uploadWrapEl.style.margin = "0";
-      uploadWrapEl.style.padding = "0";
-      uploadWrapEl.style.gap = "0";
-      uploadWrapEl.style.borderRadius = "0";
-      uploadWrapEl.style.background = "transparent";
-      uploadWrapEl.style.backdropFilter = "none";
-    }
+    const createUploadButton = ({ label, fromCamera = false }) => {
+      const uploadButton = document.createElement("label");
+      uploadButton.className = "action-primary tools-add-photo-upload";
+      uploadButton.textContent = label;
+      uploadButton.style.minHeight = "44px";
+      const fileInput = document.createElement("input");
+      fileInput.type = "file";
+      fileInput.accept = "image/*";
+      if (fromCamera) fileInput.setAttribute("capture", "environment");
+      fileInput.className = "tools-table__thumb-input";
+      fileInput.addEventListener("change", async () => {
+        const [file] = fileInput.files ?? [];
+        if (!file) return;
+        fileInput.value = "";
+        await handleAddPhotoUpload(tool, file);
+      });
+      uploadButton.appendChild(fileInput);
+      return uploadButton;
+    };
 
-    noPhotoToolContentEl.appendChild(table);
-    setNoPhotoToolSubtitle("Загрузите фото из галереи или с камеры");
+    const cameraButton = createUploadButton({ label: "Сфотографировать", fromCamera: true });
+    const galleryButton = createUploadButton({ label: "Загрузить из галереи" });
+    actions.append(cameraButton, galleryButton);
+
+    noPhotoToolContentEl.append(card, actions);
+    setNoPhotoToolSubtitle("Добавьте фото для выбранного инструмента");
   };
 
   const closeAddPhotoModal = () => {

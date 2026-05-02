@@ -11746,14 +11746,13 @@
         }
 
         .tools-modal[data-no-photo-modal] .tools-filter-dropdown__menu {
-          left: calc(
-            50% - 50vw + 12px + calc(var(--tools-horizontal-gutter) / 2) +
-              max(0px, env(safe-area-inset-left))
+          left: 50%;
+          right: auto;
+          width: min(
+            calc(100vw - 24px - max(0px, env(safe-area-inset-left)) - max(0px, env(safe-area-inset-right))),
+            420px
           );
-          right: calc(
-            50% - 50vw + 12px + calc(var(--tools-horizontal-gutter) / 2) +
-              max(0px, env(safe-area-inset-right))
-          );
+          transform: translate(-50%, -50%);
         }
 
         .tools-search {

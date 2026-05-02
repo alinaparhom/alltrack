@@ -8324,16 +8324,7 @@
       }
 
       .tools-modal[data-no-photo-modal] .tools-filter-dropdown__menu {
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        right: auto;
-        width: min(calc(100vw - 20px), 420px);
-        max-width: calc(100vw - 20px);
         max-height: min(70vh, 520px);
-        margin-left: 0;
-        margin-right: 0;
-        transform: translate(-50%, -50%);
         z-index: 1300;
       }
 
@@ -11746,13 +11737,8 @@
         }
 
         .tools-modal[data-no-photo-modal] .tools-filter-dropdown__menu {
-          left: 50%;
-          right: auto;
-          width: min(
-            calc(100vw - 24px - max(0px, env(safe-area-inset-left)) - max(0px, env(safe-area-inset-right))),
-            420px
-          );
-          transform: translate(-50%, -50%);
+          width: 100%;
+          max-width: 100%;
         }
 
         .tools-search {

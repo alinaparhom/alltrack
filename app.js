@@ -20006,18 +20006,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     noPhotoToolModalEl.classList.remove("is-hidden");
     document.body.style.overflow = "hidden";
     noPhotoToolContentEl.innerHTML = "";
-    noPhotoToolContentEl.style.display = "grid";
-    noPhotoToolContentEl.style.gap = "12px";
-    noPhotoToolContentEl.style.padding = "12px";
-    noPhotoToolContentEl.style.margin = "0";
+    noPhotoToolContentEl.className = "settings-modal__body tools-modal__body no-photo-tool-content";
 
     const card = document.createElement("section");
     card.className = "tools-info-card";
-    card.style.margin = "0";
-    card.style.borderRadius = "18px";
-    card.style.background = "rgba(255, 255, 255, 0.72)";
-    card.style.border = "1px solid rgba(255, 255, 255, 0.7)";
-    card.style.backdropFilter = "blur(10px)";
 
     const number = String(tool?.["Номер"] ?? "").trim() || "—";
     const accountingNumber = String(tool?.["Бух.номер"] ?? "").trim() || "—";
@@ -20040,17 +20032,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
     const actions = document.createElement("div");
     actions.className = "no-photo-tool-actions";
-    actions.style.display = "grid";
-    actions.style.gridTemplateColumns = "repeat(2, minmax(0, 1fr))";
-    actions.style.gap = "10px";
 
     const hint = document.createElement("p");
     hint.className = "no-photo-tool-actions__hint";
     hint.textContent = "Добавьте фото сейчас: можно сразу снять на камеру или выбрать изображение из галереи.";
-    hint.style.margin = "0";
-    hint.style.fontSize = "13px";
-    hint.style.lineHeight = "1.4";
-    hint.style.color = "rgba(31, 43, 61, 0.72)";
 
     const createUploadButton = ({ label, fromCamera = false }) => {
       const uploadButton = document.createElement("label");
@@ -20074,8 +20059,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
     const cameraButton = createUploadButton({ label: "Сфотографировать", fromCamera: true });
     const galleryButton = createUploadButton({ label: "Загрузить из галереи" });
-    cameraButton.style.width = "100%";
-    galleryButton.style.width = "100%";
+    cameraButton.classList.add("no-photo-tool-actions__button");
+    galleryButton.classList.add("no-photo-tool-actions__button");
     actions.append(cameraButton, galleryButton);
 
     noPhotoToolContentEl.append(card, hint, actions);

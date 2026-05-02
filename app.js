@@ -20006,29 +20006,32 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     noPhotoToolModalEl.classList.remove("is-hidden");
     document.body.style.overflow = "hidden";
     noPhotoToolContentEl.innerHTML = "";
-    noPhotoToolContentEl.classList.add("is-table");
-    noPhotoToolContentEl.style.display = "block";
+    noPhotoToolContentEl.style.display = "flex";
+    noPhotoToolContentEl.style.flexDirection = "column";
     noPhotoToolContentEl.style.gap = "0";
     noPhotoToolContentEl.style.padding = "0";
     noPhotoToolContentEl.style.margin = "0";
 
     const table = renderAddPhotoTable([tool]);
+    const cardRow = table.querySelector(".tools-table__row--add-photo-card");
+    if (!cardRow) {
+      setNoPhotoToolSubtitle("Не удалось открыть карточку инструмента.");
+      return;
+    }
+
     const captionEl = table.querySelector(".tools-info-card__title");
     if (captionEl) {
       captionEl.textContent = "Информация об инструменте";
       captionEl.style.textAlign = "left";
-      captionEl.style.width = "100%";
       captionEl.style.margin = "0";
     }
 
-    const rowEl = table.querySelector(".tools-table__row--add-photo-card");
     const infoCardEl = table.querySelector(".tools-info-card");
     const uploadWrapEl = table.querySelector(".tools-add-photo-upload-wrap");
-    if (rowEl) {
-      rowEl.style.gap = "0";
-      rowEl.style.margin = "0";
-      rowEl.style.padding = "0";
-    }
+
+    cardRow.style.gap = "0";
+    cardRow.style.margin = "0";
+    cardRow.style.padding = "0";
     if (infoCardEl) {
       infoCardEl.style.margin = "0";
       infoCardEl.style.borderRadius = "0";
@@ -20043,8 +20046,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       uploadWrapEl.style.backdropFilter = "none";
     }
 
-    noPhotoToolContentEl.appendChild(table);
-    setNoPhotoToolSubtitle("");
+    noPhotoToolContentEl.appendChild(cardRow);
+    setNoPhotoToolSubtitle("Загрузите фото из галереи или с камеры");
   };
 
   const closeAddPhotoModal = () => {

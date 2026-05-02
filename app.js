@@ -19561,11 +19561,21 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const renderAddPhotoTable = (items) => {
     const table = document.createElement("div");
     table.className = "tools-table tools-table--add-photo";
+    table.style.display = "grid";
+    table.style.gap = "0";
+    table.style.margin = "0";
+    table.style.padding = "0";
 
     items.forEach((tool) => {
       const row = document.createElement("div");
       row.className = "tools-table__row tools-table__row--add-photo-card";
       row.style.display = "flex";
+      row.style.padding = "0";
+      row.style.margin = "0";
+      row.style.border = "0";
+      row.style.borderRadius = "0";
+      row.style.background = "transparent";
+      row.style.boxShadow = "none";
       row.style.flexDirection = "column";
       row.style.alignItems = "stretch";
       row.style.gap = "0";
@@ -19584,6 +19594,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const infoCard = document.createElement("div");
       infoCard.className = "tools-info-card";
       infoCard.style.width = "100%";
+      infoCard.style.margin = "0";
+      infoCard.style.borderRadius = "0";
       infoCard.innerHTML = `
         <div class="tools-info-card__title tools-info-card__title--add-photo">ИНФОРМАЦИЯ ОБ ИНСТРУМЕНТЕ</div>
         <div class="tools-info-card__grid tools-info-card__grid--add-photo">
@@ -19656,6 +19668,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
       uploadWrap.style.display = "flex";
       uploadWrap.style.gap = "0";
+      uploadWrap.style.margin = "0";
+      uploadWrap.style.borderRadius = "0";
       const galleryButton = createUploadButton({ label: "Загрузить из галереи" });
       const cameraButton = createUploadButton({ label: "Сфотографировать", fromCamera: true });
       galleryButton.style.flex = "1";

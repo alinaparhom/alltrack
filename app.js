@@ -19571,6 +19571,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       row.style.gap = "12px";
 
       const name = String(tool?.["Наименование"] ?? "").trim();
+      const manufacturer = String(tool?.["Марка"] ?? "").trim();
+      const model = String(tool?.["Модель"] ?? "").trim();
+      const status = getToolStatusText(tool);
       const number = String(tool?.["Номер"] ?? "").trim();
       const accountingNumber = String(tool?.["Бух.номер"] ?? "").trim();
       const cost = formatToolCostLabel(tool);
@@ -19653,7 +19656,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
       uploadWrap.style.display = "flex";
       uploadWrap.style.gap = "10px";
-      const galleryButton = createUploadButton({ label: "Из галереи" });
+      const galleryButton = createUploadButton({ label: "Загрузить из галереи" });
       const cameraButton = createUploadButton({ label: "Сфотографировать", fromCamera: true });
       galleryButton.style.flex = "1";
       cameraButton.style.flex = "1";

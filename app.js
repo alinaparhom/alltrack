@@ -20041,6 +20041,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
     const actions = document.createElement("div");
     actions.className = "no-photo-tool-actions";
+    actions.style.width = "100%";
+    actions.style.margin = "0";
+    actions.style.padding = "0";
 
     const hint = document.createElement("p");
     hint.className = "no-photo-tool-actions__hint";
@@ -20072,6 +20075,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     galleryButton.classList.add("no-photo-tool-actions__button");
     actions.append(cameraButton, galleryButton);
 
+    card.style.margin = "0";
+    card.style.padding = "0";
+    hint.style.margin = "0";
+    hint.style.padding = "0";
     noPhotoToolContentEl.append(card, hint, actions);
     setNoPhotoToolSubtitle("Добавьте фото для выбранного инструмента");
   };

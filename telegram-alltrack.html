@@ -6197,41 +6197,49 @@
 
 
       .tools-modal[data-no-photo-tool-modal] .tools-modal__body {
+        display: block;
         gap: 0;
         padding: 0;
       }
 
       .tools-modal[data-no-photo-tool-modal] [data-no-photo-tool-content] {
+        display: block;
+        width: 100%;
         margin: 0;
         padding: 0;
       }
 
       .no-photo-tool-content {
-        display: grid;
+        display: block;
+        width: 100%;
         gap: 0;
         padding: 0;
         margin: 0;
       }
 
       .tools-modal[data-no-photo-tool-modal] .no-photo-tool-content .tools-info-card {
+        display: block;
+        width: 100%;
         margin: 0;
-        border-radius: 20px;
-        background: rgba(255, 255, 255, 0.76);
-        border: 1px solid rgba(255, 255, 255, 0.85);
-        backdrop-filter: blur(12px);
+        padding: 0;
+        border-radius: 0;
+        background: #ffffff;
+        border: 1px solid rgba(22, 30, 45, 0.14);
+        backdrop-filter: none;
       }
 
       .no-photo-tool-actions__hint {
+        display: block;
         margin: 0;
         padding: 0;
         font-size: 13px;
         line-height: 1.4;
-        color: rgba(31, 43, 61, 0.72);
+        color: #1f2b3d;
       }
 
       .no-photo-tool-actions {
         display: grid;
-        grid-template-columns: minmax(0, 1fr);
+        grid-template-columns: 1fr;
         gap: 0;
         margin: 0;
         padding: 0;
@@ -6241,6 +6249,7 @@
         width: 100%;
         min-height: 46px;
         margin: 0;
+        border-radius: 0;
       }
 
       .tools-modal[data-no-photo-tool-modal] .tools-table--add-photo,

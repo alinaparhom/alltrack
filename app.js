@@ -6041,6 +6041,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const addToolCameraCanvasEl = contentEl.querySelector(
     "[data-add-tool-camera-canvas]"
   );
+  const addToolCameraPanelEl = addToolCameraModalEl?.querySelector(
+    ".settings-modal__panel"
+  );
+  const addToolCameraTitleEl = addToolCameraModalEl?.querySelector("h2");
+  const addToolCameraHintEl = contentEl.querySelector("[data-add-tool-camera-hint]");
   const addToolInvoicePhotoPicker = contentEl.querySelector(
     "[data-tool-invoice-photo-picker]"
   );
@@ -25453,8 +25458,29 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
   };
 
+  const syncAddToolCameraModalContent = () => {
+    const isNoPhotoMode = addToolCameraMode === "no-photo";
+    if (addToolCameraTitleEl) {
+      addToolCameraTitleEl.textContent = isNoPhotoMode
+        ? "Фото инструмента"
+        : "Фото накладной";
+    }
+    if (addToolCameraHintEl) {
+      addToolCameraHintEl.textContent = isNoPhotoMode
+        ? "Держите инструмент в кадре и нажмите «Сфотографировать»."
+        : "Держите накладную в кадре и нажмите «Сфотографировать».";
+    }
+    if (addToolCameraPanelEl) {
+      addToolCameraPanelEl.setAttribute(
+        "aria-label",
+        isNoPhotoMode ? "Фото инструмента" : "Фото накладной"
+      );
+    }
+  };
+
   const openAddToolCameraModal = async () => {
     if (!addToolCameraModalEl) return false;
+    syncAddToolCameraModalContent();
     addToolCameraModalEl.classList.remove("is-hidden");
     resetAddToolCameraUI();
     try {

@@ -2575,6 +2575,7 @@ export function renderRole(user) {
             <div class="settings-modal__header tools-modal__header">
               <div class="settings-modal__title">
                 <h2>Инструмент без фото</h2>
+                <p data-no-photo-tool-subtitle>Загружаем данные инструмента...</p>
               </div>
               <button
                 class="button-icon tools-modal__close"
@@ -2584,6 +2585,9 @@ export function renderRole(user) {
               >
                 <span class="button-icon-emoji" aria-hidden="true">✕</span>
               </button>
+            </div>
+            <div class="settings-modal__body tools-modal__body">
+              <div data-no-photo-tool-content></div>
             </div>
           </div>
         </div>

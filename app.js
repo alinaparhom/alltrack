@@ -20050,38 +20050,16 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
       const actions = noPhotoToolContentEl.querySelector("[data-no-photo-tool-actions]");
       const createUploadButton = ({ label, fromCamera = false }) => {
-        if (fromCamera) {
-          const cameraButton = document.createElement("button");
-          cameraButton.type = "button";
-          cameraButton.className = "action-primary no-photo-tool-actions__button";
-          cameraButton.textContent = label;
-          cameraButton.addEventListener("click", async () => {
-            if (!navigator.mediaDevices?.getUserMedia) {
-              setAddToolMessage("Камера недоступна. Выберите фото из галереи.", {
-                tone: "warning",
-              });
-              return;
-            }
-            addToolCameraMode = "no-photo";
-            addToolCameraNoPhotoTargetTool = safeTool;
-            const opened = await openAddToolCameraModal();
-            if (!opened) {
-              addToolCameraMode = "invoice";
-              addToolCameraNoPhotoTargetTool = null;
-              setAddToolMessage("Камера недоступна. Выберите фото из галереи.", {
-                tone: "warning",
-              });
-            }
-          });
-          return cameraButton;
-        }
-
         const uploadButton = document.createElement("label");
         uploadButton.className = "action-primary no-photo-tool-actions__button";
         uploadButton.textContent = label;
         const fileInput = document.createElement("input");
         fileInput.type = "file";
         fileInput.accept = "image/*";
+        if (fromCamera) {
+          fileInput.setAttribute("capture", "environment");
+          fileInput.setAttribute("data-source", "camera");
+        }
         fileInput.className = "tools-table__thumb-input";
         fileInput.addEventListener("change", async () => {
           const [file] = fileInput.files ?? [];

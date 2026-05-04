@@ -6045,6 +6045,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     ".settings-modal__panel"
   );
   const addToolCameraTitleEl = addToolCameraModalEl?.querySelector("h2");
+  const addToolCameraSubtitleEl = addToolCameraModalEl?.querySelector("[data-add-tool-camera-subtitle]");
   const addToolCameraHintEl = contentEl.querySelector("[data-add-tool-camera-hint]");
   const addToolInvoicePhotoPicker = contentEl.querySelector(
     "[data-tool-invoice-photo-picker]"
@@ -25512,9 +25513,14 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         ? "Фото инструмента"
         : "Фото накладной";
     }
+    if (addToolCameraSubtitleEl) {
+      addToolCameraSubtitleEl.textContent = isNoPhotoMode
+        ? ""
+        : "Сделайте снимок и подтвердите";
+    }
     if (addToolCameraHintEl) {
       addToolCameraHintEl.textContent = isNoPhotoMode
-        ? "Держите инструмент в кадре и нажмите «Сфотографировать»."
+        ? ""
         : "Держите накладную в кадре и нажмите «Сфотографировать».";
     }
     if (addToolCameraPanelEl) {

@@ -2209,14 +2209,6 @@ export function renderRole(user) {
             <div class="settings-modal__header pending-moves-decline-modal__header">
               <div class="settings-modal__title pending-moves-decline-modal__title-row">
                 <h2>Почему не принимаете?</h2>
-                <button
-                  class="button-icon tools-modal__close pending-moves-decline-modal__close"
-                  type="button"
-                  data-pending-moves-decline-close
-                  aria-label="Закрыть окно причины"
-                >
-                  <span class="button-icon-emoji" aria-hidden="true">✕</span>
-                </button>
               </div>
             </div>
             <form class="settings-modal__body" data-pending-moves-decline-form>

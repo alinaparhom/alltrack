@@ -6199,7 +6199,9 @@
       .tools-modal[data-no-photo-tool-modal] .tools-modal__body {
         display: block;
         gap: 0;
-        padding: 0;
+        padding: 12px;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
       }
 
       .tools-modal[data-no-photo-tool-modal] [data-no-photo-tool-content] {
@@ -6228,7 +6230,16 @@
         backdrop-filter: none;
       }
 
-      .no-photo-tool-actions__hint {
+      
+      .no-photo-tool-actions-block {
+        margin-top: 12px;
+        padding: 14px;
+        border-radius: 16px;
+        border: 1px solid rgba(22, 30, 45, 0.12);
+        background: rgba(255, 255, 255, 0.78);
+        backdrop-filter: blur(10px);
+      }
+.no-photo-tool-actions__hint {
         display: block;
         margin: 0;
         padding: 0;
@@ -6240,8 +6251,8 @@
       .no-photo-tool-actions {
         display: grid;
         grid-template-columns: 1fr;
-        gap: 0;
-        margin: 0;
+        gap: 10px;
+        margin: 10px 0 0;
         padding: 0;
       }
 
@@ -6249,7 +6260,7 @@
         width: 100%;
         min-height: 46px;
         margin: 0;
-        border-radius: 0;
+        border-radius: 12px;
       }
 
       .tools-modal[data-no-photo-tool-modal] .tools-table--add-photo,

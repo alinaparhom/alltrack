@@ -20032,7 +20032,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
               <div class="tools-info-card__group"><div class="tools-info-card__label">Объект</div><div class="tools-info-card__value">${escapeHtml(object || "—")}</div></div>
             </div>
           </div>
-          <div class="no-photo-tool-actions" data-no-photo-tool-actions></div>
+          <div class="no-photo-tool-actions-block">
+            <div class="no-photo-tool-actions__hint">Добавьте фото для выбранного инструмента:</div>
+            <div class="no-photo-tool-actions" data-no-photo-tool-actions></div>
+          </div>
         </div>
       `;
 

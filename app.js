@@ -20050,16 +20050,38 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
       const actions = noPhotoToolContentEl.querySelector("[data-no-photo-tool-actions]");
       const createUploadButton = ({ label, fromCamera = false }) => {
+        if (fromCamera) {
+          const cameraButton = document.createElement("button");
+          cameraButton.type = "button";
+          cameraButton.className = "action-primary no-photo-tool-actions__button";
+          cameraButton.textContent = label;
+          cameraButton.addEventListener("click", async () => {
+            if (!navigator.mediaDevices?.getUserMedia) {
+              setAddToolMessage("Камера недоступна. Выберите фото из галереи.", {
+                tone: "warning",
+              });
+              return;
+            }
+            addToolCameraMode = "no-photo";
+            addToolCameraNoPhotoTargetTool = safeTool;
+            const opened = await openAddToolCameraModal();
+            if (!opened) {
+              addToolCameraMode = "invoice";
+              addToolCameraNoPhotoTargetTool = null;
+              setAddToolMessage("Камера недоступна. Выберите фото из галереи.", {
+                tone: "warning",
+              });
+            }
+          });
+          return cameraButton;
+        }
+
         const uploadButton = document.createElement("label");
         uploadButton.className = "action-primary no-photo-tool-actions__button";
         uploadButton.textContent = label;
         const fileInput = document.createElement("input");
         fileInput.type = "file";
         fileInput.accept = "image/*";
-        if (fromCamera) {
-          fileInput.setAttribute("capture", "environment");
-          fileInput.setAttribute("data-source", "camera");
-        }
         fileInput.className = "tools-table__thumb-input";
         fileInput.addEventListener("change", async () => {
           const [file] = fileInput.files ?? [];
@@ -25340,6 +25362,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
   let addToolCameraStream = null;
   let addToolCameraBlob = null;
+  let addToolCameraMode = "invoice";
+  let addToolCameraNoPhotoTargetTool = null;
   let bypassAddToolCameraPicker = false;
   let addToolKitRowCounter = 0;
 
@@ -25482,12 +25506,22 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     );
   };
 
-  const applyAddToolCameraSnapshot = () => {
-    if (!addToolInvoicePhotoInput || !addToolCameraBlob) return;
+  const applyAddToolCameraSnapshot = async () => {
+    if (!addToolCameraBlob) return;
     const fileName = `invoice_photo_${Date.now()}.jpg`;
     const photoFile = new File([addToolCameraBlob], fileName, {
       type: addToolCameraBlob.type || "image/jpeg",
     });
+
+    if (addToolCameraMode === "no-photo" && addToolCameraNoPhotoTargetTool) {
+      await handleAddPhotoUpload(addToolCameraNoPhotoTargetTool, photoFile);
+      addToolCameraMode = "invoice";
+      addToolCameraNoPhotoTargetTool = null;
+      closeAddToolCameraModal();
+      return;
+    }
+
+    if (!addToolInvoicePhotoInput) return;
     const dataTransfer = new DataTransfer();
     dataTransfer.items.add(photoFile);
     addToolInvoicePhotoInput.files = dataTransfer.files;

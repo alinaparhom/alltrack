@@ -20028,7 +20028,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       noPhotoToolContentEl.innerHTML = `
         <div class="no-photo-tool-content">
           <div class="tools-info-card">
-            <div class="tools-info-card__title">Информация об инструменте</div>
+            <div class="tools-info-card__title tools-info-card__title--add-photo">Информация об инструменте</div>
             <div class="tools-info-card__grid tools-info-card__grid--add-photo">
               <div class="tools-info-card__group"><div class="tools-info-card__label">Номер</div><div class="tools-info-card__value">${escapeHtml(number || "—")}</div></div>
               <div class="tools-info-card__group"><div class="tools-info-card__label">Бухгалтерский номер</div><div class="tools-info-card__value">${escapeHtml(accountingNumber || "—")}</div></div>

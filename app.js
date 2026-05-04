@@ -19583,7 +19583,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const name = String(tool?.["Наименование"] ?? "").trim();
       const manufacturer = String(tool?.["Производитель"] ?? tool?.["Марка"] ?? "").trim();
       const model = String(tool?.["Модель"] ?? "").trim();
-      const status = getToolStatusText(tool);
+      const status = normalizeToolsInfoStatus(tool?.["Статус"], Boolean(tool?.__pendingMove));
       const number = String(tool?.["Номер"] ?? "").trim();
       const accountingNumber = String(tool?.["Бух.номер"] ?? "").trim();
       const cost = formatToolCostLabel(tool);
@@ -20019,7 +20019,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const name = String(safeTool?.["Наименование"] ?? "").trim();
       const manufacturer = String(safeTool?.["Производитель"] ?? safeTool?.["Марка"] ?? "").trim();
       const model = String(safeTool?.["Модель"] ?? "").trim();
-      const status = getToolStatusText(safeTool);
+      const status = normalizeToolsInfoStatus(safeTool?.["Статус"], Boolean(safeTool?.__pendingMove));
       const cost = formatToolCostLabel(safeTool);
       const purchaseDate = String(safeTool?.["Дата покупки"] ?? "").trim();
       const responsible = String(safeTool?.["Ответственный"] ?? "").trim();

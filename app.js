@@ -25567,11 +25567,30 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     );
   };
 
+  const resolveAddToolCameraBlob = () =>
+    new Promise((resolve) => {
+      if (addToolCameraBlob) {
+        resolve(addToolCameraBlob);
+        return;
+      }
+      if (!addToolCameraCanvasEl || addToolCameraCanvasEl.classList.contains("is-hidden")) {
+        resolve(null);
+        return;
+      }
+      addToolCameraCanvasEl.toBlob(
+        (blob) => resolve(blob),
+        "image/jpeg",
+        0.92
+      );
+    });
+
   const applyAddToolCameraSnapshot = async () => {
-    if (!addToolCameraBlob) return;
+    const snapshotBlob = await resolveAddToolCameraBlob();
+    if (!snapshotBlob) return;
+    addToolCameraBlob = snapshotBlob;
     const fileName = `invoice_photo_${Date.now()}.jpg`;
-    const photoFile = new File([addToolCameraBlob], fileName, {
-      type: addToolCameraBlob.type || "image/jpeg",
+    const photoFile = new File([snapshotBlob], fileName, {
+      type: snapshotBlob.type || "image/jpeg",
     });
 
     if (addToolCameraMode === "no-photo" && addToolCameraNoPhotoTargetTool) {

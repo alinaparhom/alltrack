@@ -6041,10 +6041,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const addToolCameraCanvasEl = contentEl.querySelector(
     "[data-add-tool-camera-canvas]"
   );
-  const addToolCameraPanelEl = addToolCameraModalEl?.querySelector(".camera-modal__panel");
-  const addToolCameraTitleEl = addToolCameraModalEl?.querySelector("h2");
-  const addToolCameraSubtitleEl = addToolCameraModalEl?.querySelector(".settings-modal__title p");
-  const addToolCameraHintEl = contentEl.querySelector("[data-add-tool-camera-hint]");
   const addToolInvoicePhotoPicker = contentEl.querySelector(
     "[data-tool-invoice-photo-picker]"
   );
@@ -20099,7 +20095,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
       actions?.append(
         createUploadButton({ label: "Добавить из галереи" }),
-        createUploadButton({ label: "Добавить из галереи", fromCamera: true })
+        createUploadButton({ label: "Сфотографировать", fromCamera: true })
       );
     } catch (error) {
       console.warn("Не удалось отрисовать карточку инструмента без фото.", error);
@@ -25459,26 +25455,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
   const openAddToolCameraModal = async () => {
     if (!addToolCameraModalEl) return false;
-    const isNoPhotoMode = addToolCameraMode === "no-photo";
-    if (addToolCameraPanelEl) {
-      addToolCameraPanelEl.setAttribute(
-        "aria-label",
-        isNoPhotoMode ? "Фото инструмента" : "Фото накладной"
-      );
-    }
-    if (addToolCameraTitleEl) {
-      addToolCameraTitleEl.textContent = isNoPhotoMode
-        ? "Фото инструмента"
-        : "Фото накладной";
-    }
-    if (addToolCameraSubtitleEl) {
-      addToolCameraSubtitleEl.textContent = "Сделайте снимок и подтвердите";
-    }
-    if (addToolCameraHintEl) {
-      addToolCameraHintEl.textContent = isNoPhotoMode
-        ? "Держите инструмент в кадре и нажмите «Сфотографировать»."
-        : "Держите накладную в кадре и нажмите «Сфотографировать».";
-    }
     addToolCameraModalEl.classList.remove("is-hidden");
     resetAddToolCameraUI();
     try {

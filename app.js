@@ -19651,7 +19651,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         uploadButton.textContent = label;
         const fileInput = document.createElement("input");
         fileInput.type = "file";
-        fileInput.accept = fromCamera ? "image/*;capture=camera" : "image/*";
+        fileInput.accept = "image/*";
         if (fromCamera) {
           fileInput.setAttribute("capture", "environment");
           fileInput.setAttribute("data-source", "camera");
@@ -20055,7 +20055,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         uploadButton.textContent = label;
         const fileInput = document.createElement("input");
         fileInput.type = "file";
-        fileInput.accept = fromCamera ? "image/*;capture=camera" : "image/*";
+        fileInput.accept = "image/*";
         if (fromCamera) {
           fileInput.setAttribute("capture", "environment");
           fileInput.setAttribute("data-source", "camera");

@@ -6215,10 +6215,31 @@
         box-shadow: none !important;
       }
 
+      [data-add-tool-camera-modal] [data-add-tool-camera-cancel] {
+        background: rgba(59, 130, 246, 0.16) !important;
+        border-color: rgba(37, 99, 235, 0.38) !important;
+        color: #1d4ed8 !important;
+      }
+
+      [data-add-tool-camera-modal] [data-add-tool-camera-retake] {
+        background: rgba(239, 68, 68, 0.16) !important;
+        border-color: rgba(220, 38, 38, 0.36) !important;
+        color: #b91c1c !important;
+      }
+
+      [data-add-tool-camera-modal] [data-add-tool-camera-save],
+      [data-add-tool-camera-modal] [data-add-tool-camera-capture] {
+        background: rgba(34, 197, 94, 0.18) !important;
+        border-color: rgba(22, 163, 74, 0.36) !important;
+        color: #166534 !important;
+      }
+
       [data-add-tool-camera-modal] [data-add-tool-camera-save] {
-        width: 100%;
         display: flex;
         justify-content: center;
+        width: calc(100% - 12px);
+        margin-left: 0;
+        margin-right: auto;
       }
 
 

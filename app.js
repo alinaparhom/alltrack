@@ -19792,9 +19792,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       setAddPhotoSubtitle("У инструмента нет номера для сохранения фото.");
       return;
     }
-    const orgFolder = addPhotoState.orgFolder ?? "";
+    const orgFolder =
+      addPhotoState.orgFolder ?? noPhotoState.orgFolder ?? context.orgFolderName ?? "";
     if (!orgFolder) {
-      setAddPhotoSubtitle("Не удалось определить организацию.");
+      const orgErrorText = "Не удалось определить организацию.";
+      setAddPhotoSubtitle(orgErrorText);
+      setNoPhotoToolSubtitle(orgErrorText);
       return;
     }
 

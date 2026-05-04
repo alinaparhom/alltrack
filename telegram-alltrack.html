@@ -6185,6 +6185,8 @@
       }
 
       .tools-modal[data-no-photo-tool-modal] .tools-modal__header {
+        position: relative;
+        display: flex;
         align-items: center;
       }
 
@@ -6192,12 +6194,24 @@
         display: flex;
         flex-direction: column;
         justify-content: center;
+        align-items: flex-end;
+        text-align: right;
+        width: 100%;
         min-height: 36px;
       }
 
       .tools-modal[data-no-photo-tool-modal] .tools-modal__close {
+        position: absolute;
+        right: 12px;
+        top: 50%;
+        transform: translateY(-50%);
         align-self: center;
         margin-top: 0;
+      }
+
+      .tools-modal[data-no-photo-tool-modal] .tools-modal__close:hover,
+      .tools-modal[data-no-photo-tool-modal] .tools-modal__close:focus-visible {
+        transform: translateY(-50%);
       }
 
       /* Камера для "Инструмент без фото" */

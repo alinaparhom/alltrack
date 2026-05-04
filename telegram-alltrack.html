@@ -4018,12 +4018,12 @@
 
       .camera-modal__header {
         grid-template-columns: minmax(0, 1fr) auto;
-        align-items: start;
+        align-items: center;
       }
 
       .camera-modal__close {
-        align-self: start;
-        margin-top: 2px;
+        align-self: center;
+        margin-top: 0;
       }
 
       .settings-modal__title h2 {
@@ -6238,6 +6238,7 @@
         display: flex;
         justify-content: center;
         width: 100%;
+        grid-column: 1 / -1;
         margin-left: 0;
         margin-right: 0;
       }

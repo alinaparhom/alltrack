@@ -20004,20 +20004,27 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (!noPhotoToolModalEl) return;
     const safeTool = tool && typeof tool === "object" ? tool : {};
     const number = String(safeTool?.["Номер"] ?? "").trim();
+
     noPhotoModalEl?.classList.add("is-hidden");
     noPhotoToolModalEl.classList.remove("is-hidden");
     document.body.style.overflow = "hidden";
-    const accountingNumber = String(safeTool?.["Бух.номер"] ?? "").trim();
-    const name = String(safeTool?.["Наименование"] ?? "").trim();
-    const manufacturer = String(safeTool?.["Производитель"] ?? safeTool?.["Марка"] ?? "").trim();
-    const model = String(safeTool?.["Модель"] ?? "").trim();
-    const status = getToolStatusText(safeTool);
-    const cost = formatToolCostLabel(safeTool);
-    const purchaseDate = String(safeTool?.["Дата покупки"] ?? "").trim();
-    const responsible = String(safeTool?.["Ответственный"] ?? "").trim();
-    const object = String(safeTool?.["Объект"] ?? "").trim();
 
-    if (noPhotoToolContentEl) {
+    if (!noPhotoToolContentEl) {
+      setNoPhotoToolSubtitle(`Выбран инструмент №${number || "—"}`);
+      return;
+    }
+
+    try {
+      const accountingNumber = String(safeTool?.["Бух.номер"] ?? "").trim();
+      const name = String(safeTool?.["Наименование"] ?? "").trim();
+      const manufacturer = String(safeTool?.["Производитель"] ?? safeTool?.["Марка"] ?? "").trim();
+      const model = String(safeTool?.["Модель"] ?? "").trim();
+      const status = getToolStatusText(safeTool);
+      const cost = formatToolCostLabel(safeTool);
+      const purchaseDate = String(safeTool?.["Дата покупки"] ?? "").trim();
+      const responsible = String(safeTool?.["Ответственный"] ?? "").trim();
+      const object = String(safeTool?.["Объект"] ?? "").trim();
+
       noPhotoToolContentEl.innerHTML = `
         <div class="no-photo-tool-content">
           <div class="tools-info-card">
@@ -20059,11 +20066,20 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         uploadButton.appendChild(fileInput);
         return uploadButton;
       };
+
       actions?.append(
         createUploadButton({ label: "Добавить из галереи" }),
         createUploadButton({ label: "Сфотографировать", fromCamera: true })
       );
+    } catch (error) {
+      console.warn("Не удалось отрисовать карточку инструмента без фото.", error);
+      noPhotoToolContentEl.innerHTML = `
+        <div class="no-photo-tool-content">
+          <div class="tools-empty">Не удалось отобразить данные инструмента. Попробуйте открыть карточку снова.</div>
+        </div>
+      `;
     }
+
     setNoPhotoToolSubtitle(`Выбран инструмент №${number || "—"}`);
   };
 

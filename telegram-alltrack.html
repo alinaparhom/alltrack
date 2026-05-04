@@ -6196,11 +6196,19 @@
       }
 
 
+
+      .tools-modal[data-no-photo-tool-modal] .tools-modal__panel {
+        max-height: 100dvh;
+      }
+
       .tools-modal[data-no-photo-tool-modal] .tools-modal__body {
         display: block;
         gap: 0;
-        padding: 12px;
+        padding: 12px 12px calc(20px + env(safe-area-inset-bottom));
         overflow-y: auto;
+        overflow-x: hidden;
+        min-height: 0;
+        max-height: 100%;
         -webkit-overflow-scrolling: touch;
       }
 
@@ -6212,9 +6220,9 @@
       }
 
       .no-photo-tool-content {
-        display: block;
+        display: grid;
         width: 100%;
-        gap: 0;
+        gap: 12px;
         padding: 0;
         margin: 0;
       }

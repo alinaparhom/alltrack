@@ -20001,20 +20001,21 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   };
 
   const openNoPhotoToolModalForTool = (tool) => {
-    if (!tool || !noPhotoToolModalEl) return;
-    const number = String(tool?.["Номер"] ?? "").trim();
+    if (!noPhotoToolModalEl) return;
+    const safeTool = tool && typeof tool === "object" ? tool : {};
+    const number = String(safeTool?.["Номер"] ?? "").trim();
     noPhotoModalEl?.classList.add("is-hidden");
     noPhotoToolModalEl.classList.remove("is-hidden");
     document.body.style.overflow = "hidden";
-    const accountingNumber = String(tool?.["Бух.номер"] ?? "").trim();
-    const name = String(tool?.["Наименование"] ?? "").trim();
-    const manufacturer = String(tool?.["Производитель"] ?? tool?.["Марка"] ?? "").trim();
-    const model = String(tool?.["Модель"] ?? "").trim();
-    const status = getToolStatusText(tool);
-    const cost = formatToolCostLabel(tool);
-    const purchaseDate = String(tool?.["Дата покупки"] ?? "").trim();
-    const responsible = String(tool?.["Ответственный"] ?? "").trim();
-    const object = String(tool?.["Объект"] ?? "").trim();
+    const accountingNumber = String(safeTool?.["Бух.номер"] ?? "").trim();
+    const name = String(safeTool?.["Наименование"] ?? "").trim();
+    const manufacturer = String(safeTool?.["Производитель"] ?? safeTool?.["Марка"] ?? "").trim();
+    const model = String(safeTool?.["Модель"] ?? "").trim();
+    const status = getToolStatusText(safeTool);
+    const cost = formatToolCostLabel(safeTool);
+    const purchaseDate = String(safeTool?.["Дата покупки"] ?? "").trim();
+    const responsible = String(safeTool?.["Ответственный"] ?? "").trim();
+    const object = String(safeTool?.["Объект"] ?? "").trim();
 
     if (noPhotoToolContentEl) {
       noPhotoToolContentEl.innerHTML = `
@@ -20053,7 +20054,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           const [file] = fileInput.files ?? [];
           if (!file) return;
           fileInput.value = "";
-          await handleAddPhotoUpload(tool, file);
+          await handleAddPhotoUpload(safeTool, file);
         });
         uploadButton.appendChild(fileInput);
         return uploadButton;

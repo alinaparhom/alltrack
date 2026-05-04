@@ -2575,7 +2575,6 @@ export function renderRole(user) {
             <div class="settings-modal__header tools-modal__header">
               <div class="settings-modal__title">
                 <h2>Инструмент без фото</h2>
-                <p data-no-photo-tool-subtitle>Загрузите фото из галереи или с камеры</p>
               </div>
               <button
                 class="button-icon tools-modal__close"
@@ -2586,7 +2585,6 @@ export function renderRole(user) {
                 <span class="button-icon-emoji" aria-hidden="true">✕</span>
               </button>
             </div>
-            <div class="settings-modal__body tools-modal__body" data-no-photo-tool-content></div>
           </div>
         </div>
         <div class="tools-modal settings-modal is-hidden" data-remove-photo-modal>

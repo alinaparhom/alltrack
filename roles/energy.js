@@ -3213,7 +3213,7 @@ export function renderRole(user) {
             <div class="settings-modal__header camera-modal__header">
               <div class="settings-modal__title">
                 <h2>Фото акта ремонта</h2>
-                <p>Сделайте снимок и подтвердите</p>
+                <p data-add-tool-camera-subtitle>Сделайте снимок и подтвердите</p>
               </div>
               <button
                 class="button-icon camera-modal__close"
@@ -3391,7 +3391,7 @@ export function renderRole(user) {
             <div class="settings-modal__header camera-modal__header">
               <div class="settings-modal__title">
                 <h2>Фото поломки</h2>
-                <p>Сделайте снимок и подтвердите</p>
+                <p data-add-tool-camera-subtitle>Сделайте снимок и подтвердите</p>
               </div>
               <button
                 class="button-icon camera-modal__close"
@@ -3717,7 +3717,7 @@ export function renderRole(user) {
             <div class="settings-modal__header camera-modal__header">
               <div class="settings-modal__title">
                 <h2>Фото накладной</h2>
-                <p>Сделайте снимок и подтвердите</p>
+                <p data-add-tool-camera-subtitle>Сделайте снимок и подтвердите</p>
               </div>
               <button
                 class="button-icon camera-modal__close"

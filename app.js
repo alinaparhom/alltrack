@@ -20074,7 +20074,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         }
       };
 
-      const createUploadButton = ({ label, fromCamera = false }) => {
+      const createUploadButton = ({ label }) => {
         const uploadButton = document.createElement("label");
         uploadButton.className = "action-primary no-photo-tool-actions__button";
         uploadButton.textContent = label;
@@ -20082,9 +20082,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         fileInput.type = "file";
         fileInput.accept = "image/*";
         fileInput.className = "tools-table__thumb-input";
-        if (fromCamera) {
-          fileInput.setAttribute("capture", "environment");
-        }
         fileInput.addEventListener("change", () => {
           const files = Array.from(fileInput.files ?? []);
           if (!files.length) return;
@@ -20122,10 +20119,23 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         }
       });
 
-      actions?.append(
-        createUploadButton({ label: "Добавить из галереи" }),
-        createUploadButton({ label: "Сфотографировать", fromCamera: true })
-      );
+      const galleryUploadButton = createUploadButton({ label: "Добавить из галереи" });
+      const cameraCaptureButton = document.createElement("button");
+      cameraCaptureButton.className = "action-primary no-photo-tool-actions__button";
+      cameraCaptureButton.type = "button";
+      cameraCaptureButton.textContent = "Сфотографировать";
+      cameraCaptureButton.addEventListener("click", async () => {
+        addToolCameraMode = "no-photo";
+        addToolCameraNoPhotoTargetTool = safeTool;
+        const opened = await openAddToolCameraModal();
+        if (!opened) {
+          addToolCameraMode = "invoice";
+          addToolCameraNoPhotoTargetTool = null;
+          setNoPhotoToolSubtitle("Камера недоступна. Выберите фото из галереи.");
+        }
+      });
+
+      actions?.append(galleryUploadButton, cameraCaptureButton);
       refreshSelectedPhotos();
     } catch (error) {
       console.warn("Не удалось отрисовать карточку инструмента без фото.", error);

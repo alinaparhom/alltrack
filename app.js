@@ -20047,10 +20047,15 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
             </div>
           </div>
           <div class="no-photo-tool-actions-block">
-            <div class="no-photo-tool-actions__hint">Добавьте фото для выбранного инструмента:</div>
+            <div class="no-photo-tool-actions__head">
+              <div class="no-photo-tool-actions__hint">Добавьте фото для выбранного инструмента:</div>
+              <div class="no-photo-tool-counter"><strong data-no-photo-selected-count>0</strong></div>
+            </div>
             <div class="no-photo-tool-actions" data-no-photo-tool-actions></div>
-            <div class="no-photo-tool-counter">Выбрано фото: <strong data-no-photo-selected-count>0</strong></div>
-            <button class="action-primary no-photo-tool-confirm" type="button" data-no-photo-confirm disabled>Подтвердить добавление</button>
+            <div class="no-photo-tool-buttons">
+              <button class="action-danger no-photo-tool-cancel" type="button" data-no-photo-cancel>Отмена</button>
+              <button class="action-primary no-photo-tool-confirm" type="button" data-no-photo-confirm disabled>Подтвердить</button>
+            </div>
           </div>
         </div>
       `;
@@ -20058,6 +20063,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const actions = noPhotoToolContentEl.querySelector("[data-no-photo-tool-actions]");
       const selectedCountEl = noPhotoToolContentEl.querySelector("[data-no-photo-selected-count]");
       const confirmButtonEl = noPhotoToolContentEl.querySelector("[data-no-photo-confirm]");
+      const cancelButtonEl = noPhotoToolContentEl.querySelector("[data-no-photo-cancel]");
       const selectedFiles = [];
       const refreshSelectedPhotos = () => {
         if (selectedCountEl) {
@@ -20089,6 +20095,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         uploadButton.appendChild(fileInput);
         return uploadButton;
       };
+
+      cancelButtonEl?.addEventListener("click", () => {
+        closeNoPhotoToolModal();
+      });
 
       confirmButtonEl?.addEventListener("click", async () => {
         if (!selectedFiles.length) return;

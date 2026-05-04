@@ -20005,6 +20005,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const closeNoPhotoToolModal = () => {
     if (!noPhotoToolModalEl) return;
     noPhotoToolModalEl.classList.add("is-hidden");
+    addToolCameraNoPhotoOnCapture = null;
     noPhotoModalEl?.classList.remove("is-hidden");
     document.body.style.overflow = "hidden";
   };
@@ -20130,10 +20131,17 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       cameraCaptureButton.addEventListener("click", async () => {
         addToolCameraMode = "no-photo";
         addToolCameraNoPhotoTargetTool = safeTool;
+        addToolCameraNoPhotoOnCapture = (capturedFile) => {
+          if (!capturedFile) return;
+          selectedFiles.push(capturedFile);
+          refreshSelectedPhotos();
+          setNoPhotoToolSubtitle("Фото добавлено в очередь.");
+        };
         const opened = await openAddToolCameraModal();
         if (!opened) {
           addToolCameraMode = "invoice";
           addToolCameraNoPhotoTargetTool = null;
+          addToolCameraNoPhotoOnCapture = null;
           setNoPhotoToolSubtitle("Камера недоступна. Выберите фото из галереи.");
         }
       });
@@ -25407,6 +25415,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   let addToolCameraBlob = null;
   let addToolCameraMode = "invoice";
   let addToolCameraNoPhotoTargetTool = null;
+  let addToolCameraNoPhotoOnCapture = null;
   let bypassAddToolCameraPicker = false;
   let addToolKitRowCounter = 0;
 
@@ -25597,9 +25606,14 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     });
 
     if (addToolCameraMode === "no-photo" && addToolCameraNoPhotoTargetTool) {
-      await handleAddPhotoUpload(addToolCameraNoPhotoTargetTool, photoFile);
+      if (typeof addToolCameraNoPhotoOnCapture === "function") {
+        addToolCameraNoPhotoOnCapture(photoFile);
+      } else {
+        await handleAddPhotoUpload(addToolCameraNoPhotoTargetTool, photoFile);
+      }
       addToolCameraMode = "invoice";
       addToolCameraNoPhotoTargetTool = null;
+      addToolCameraNoPhotoOnCapture = null;
       closeAddToolCameraModal();
       return;
     }

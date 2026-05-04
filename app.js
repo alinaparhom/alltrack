@@ -20010,7 +20010,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     document.body.style.overflow = "hidden";
 
     if (!noPhotoToolContentEl) {
-      setNoPhotoToolSubtitle(`Выбран инструмент №${number || "—"}`);
+      setNoPhotoToolSubtitle("");
       return;
     }
 
@@ -20080,7 +20080,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       `;
     }
 
-    setNoPhotoToolSubtitle(`Выбран инструмент №${number || "—"}`);
+    setNoPhotoToolSubtitle("");
   };
 
   const closeAddPhotoModal = () => {

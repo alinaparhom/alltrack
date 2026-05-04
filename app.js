@@ -25509,12 +25509,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const isNoPhotoMode = addToolCameraMode === "no-photo";
     if (addToolCameraTitleEl) {
       addToolCameraTitleEl.textContent = isNoPhotoMode
-        ? "Фото инструмента"
+        ? ""
         : "Фото накладной";
     }
     if (addToolCameraHintEl) {
       addToolCameraHintEl.textContent = isNoPhotoMode
-        ? "Держите инструмент в кадре и нажмите «Сфотографировать»."
+        ? ""
         : "Держите накладную в кадре и нажмите «Сфотографировать».";
     }
     if (addToolCameraPanelEl) {

@@ -19651,9 +19651,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         uploadButton.textContent = label;
         const fileInput = document.createElement("input");
         fileInput.type = "file";
-        fileInput.accept = "image/*";
+        fileInput.accept = fromCamera ? "image/*;capture=camera" : "image/*";
         if (fromCamera) {
           fileInput.setAttribute("capture", "environment");
+          fileInput.setAttribute("data-source", "camera");
         }
         fileInput.className = "tools-table__thumb-input";
         fileInput.addEventListener("change", async () => {
@@ -20054,8 +20055,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         uploadButton.textContent = label;
         const fileInput = document.createElement("input");
         fileInput.type = "file";
-        fileInput.accept = "image/*";
-        if (fromCamera) fileInput.setAttribute("capture", "environment");
+        fileInput.accept = fromCamera ? "image/*;capture=camera" : "image/*";
+        if (fromCamera) {
+          fileInput.setAttribute("capture", "environment");
+          fileInput.setAttribute("data-source", "camera");
+        }
         fileInput.className = "tools-table__thumb-input";
         fileInput.addEventListener("change", async () => {
           const [file] = fileInput.files ?? [];

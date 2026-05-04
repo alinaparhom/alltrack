@@ -6200,6 +6200,27 @@
         margin-top: 0;
       }
 
+      /* Камера для "Инструмент без фото" */
+      [data-add-tool-camera-modal] [data-add-tool-camera-close] {
+        border: 0 !important;
+        border-color: transparent !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        outline: none;
+      }
+
+      [data-add-tool-camera-modal] [data-add-tool-camera-close]:hover,
+      [data-add-tool-camera-modal] [data-add-tool-camera-close]:focus-visible {
+        transform: none;
+        box-shadow: none !important;
+      }
+
+      [data-add-tool-camera-modal] [data-add-tool-camera-save] {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+      }
+
 
 
       .tools-modal[data-no-photo-tool-modal] .tools-modal__panel {

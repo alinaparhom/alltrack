@@ -20015,72 +20015,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     noPhotoToolModalEl.classList.remove("is-hidden");
     document.body.style.overflow = "hidden";
     noPhotoToolContentEl.innerHTML = "";
-    noPhotoToolContentEl.classList.add("no-photo-tool-content");
-
-    const card = document.createElement("section");
-    card.className = "tools-info-card";
-
-    const number = String(tool?.["Номер"] ?? "").trim() || "—";
-    const accountingNumber = String(tool?.["Бух.номер"] ?? "").trim() || "—";
-    const manufacturer = String(tool?.["Производитель"] ?? tool?.["Марка"] ?? "").trim();
-    const model = String(tool?.["Модель"] ?? "").trim();
-    const name = String(tool?.["Наименование"] ?? "").trim();
-    const status = getToolStatusText(tool) || "—";
-    const object = String(tool?.["Объект"] ?? "").trim() || "—";
-
-    card.innerHTML = `
-      <div class="tools-info-card__title tools-info-card__title--add-photo">Информация об инструменте</div>
-      <div class="tools-info-card__grid tools-info-card__grid--add-photo">
-        <div class="tools-info-card__group"><div class="tools-info-card__label">Номер</div><div class="tools-info-card__value">${escapeHtml(number)}</div></div>
-        <div class="tools-info-card__group"><div class="tools-info-card__label">Бух. номер</div><div class="tools-info-card__value">${escapeHtml(accountingNumber)}</div></div>
-        <div class="tools-info-card__group"><div class="tools-info-card__label">Наименование</div><div class="tools-info-card__value">${escapeHtml([manufacturer, model].filter(Boolean).join(" ") || name || "Без названия")}</div></div>
-        <div class="tools-info-card__group"><div class="tools-info-card__label">Статус</div><div class="tools-info-card__value">${escapeHtml(status)}</div></div>
-        <div class="tools-info-card__group"><div class="tools-info-card__label">Объект</div><div class="tools-info-card__value">${escapeHtml(object)}</div></div>
-      </div>
-    `;
-
-    const actions = document.createElement("div");
-    actions.className = "no-photo-tool-actions";
-    actions.style.width = "100%";
-    actions.style.margin = "0";
-    actions.style.padding = "0";
-
-    const hint = document.createElement("p");
-    hint.className = "no-photo-tool-actions__hint";
-    hint.textContent = "Добавьте фото сейчас: можно сразу снять на камеру или выбрать изображение из галереи.";
-
-    const createUploadButton = ({ label, fromCamera = false }) => {
-      const uploadButton = document.createElement("label");
-      uploadButton.className = "action-primary tools-add-photo-upload";
-      uploadButton.textContent = label;
-      uploadButton.style.minHeight = "44px";
-      const fileInput = document.createElement("input");
-      fileInput.type = "file";
-      fileInput.accept = "image/*";
-      if (fromCamera) fileInput.setAttribute("capture", "environment");
-      fileInput.className = "tools-table__thumb-input";
-      fileInput.addEventListener("change", async () => {
-        const [file] = fileInput.files ?? [];
-        if (!file) return;
-        fileInput.value = "";
-        await handleAddPhotoUpload(tool, file);
-      });
-      uploadButton.appendChild(fileInput);
-      return uploadButton;
-    };
-
-    const cameraButton = createUploadButton({ label: "Сфотографировать", fromCamera: true });
-    const galleryButton = createUploadButton({ label: "Загрузить из галереи" });
-    cameraButton.classList.add("no-photo-tool-actions__button");
-    galleryButton.classList.add("no-photo-tool-actions__button");
-    actions.append(cameraButton, galleryButton);
-
-    card.style.margin = "0";
-    card.style.padding = "0";
-    hint.style.margin = "0";
-    hint.style.padding = "0";
-    noPhotoToolContentEl.append(card, hint, actions);
-    setNoPhotoToolSubtitle("Добавьте фото для выбранного инструмента");
+    setNoPhotoToolSubtitle("");
   };
 
   const closeAddPhotoModal = () => {

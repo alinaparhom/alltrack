@@ -20002,13 +20002,92 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
   const openNoPhotoToolModalForTool = (tool) => {
     if (!tool || !noPhotoToolModalEl) return;
+    const number = String(tool?.["Номер"] ?? "").trim();
     noPhotoModalEl?.classList.add("is-hidden");
     noPhotoToolModalEl.classList.remove("is-hidden");
     document.body.style.overflow = "hidden";
     if (noPhotoToolContentEl) {
       noPhotoToolContentEl.innerHTML = "";
+      const accountingNumber = String(tool?.["Бух.номер"] ?? "").trim();
+      const name = String(tool?.["Наименование"] ?? "").trim();
+      const manufacturer = String(tool?.["Производитель"] ?? tool?.["Марка"] ?? "").trim();
+      const model = String(tool?.["Модель"] ?? "").trim();
+      const status = getToolStatusText(tool);
+      const cost = formatToolCostLabel(tool);
+      const purchaseDate = String(tool?.["Дата покупки"] ?? "").trim();
+      const responsible = String(tool?.["Ответственный"] ?? "").trim();
+      const object = String(tool?.["Объект"] ?? "").trim();
+
+      const card = document.createElement("div");
+      card.className = "no-photo-tool-content";
+      card.innerHTML = `
+        <div class="tools-info-card">
+          <div class="tools-info-card__title">Информация об инструменте</div>
+          <div class="tools-info-card__grid tools-info-card__grid--add-photo">
+            <div class="tools-info-card__group">
+              <div class="tools-info-card__label">Номер</div>
+              <div class="tools-info-card__value">${escapeHtml(number || "—")}</div>
+            </div>
+            <div class="tools-info-card__group">
+              <div class="tools-info-card__label">Бухгалтерский номер</div>
+              <div class="tools-info-card__value">${escapeHtml(accountingNumber || "—")}</div>
+            </div>
+            <div class="tools-info-card__group">
+              <div class="tools-info-card__label">Наименование</div>
+              <div class="tools-info-card__value">${escapeHtml([manufacturer, model].filter(Boolean).join(" ") || name || "Без названия")}</div>
+            </div>
+            <div class="tools-info-card__group">
+              <div class="tools-info-card__label">Статус</div>
+              <div class="tools-info-card__value">${escapeHtml(status || "—")}</div>
+            </div>
+            <div class="tools-info-card__group">
+              <div class="tools-info-card__label">Стоимость</div>
+              <div class="tools-info-card__value">${escapeHtml(cost || "—")}</div>
+            </div>
+            <div class="tools-info-card__group">
+              <div class="tools-info-card__label">Дата покупки</div>
+              <div class="tools-info-card__value">${escapeHtml(purchaseDate || "—")}</div>
+            </div>
+            <div class="tools-info-card__group">
+              <div class="tools-info-card__label">Ответственный</div>
+              <div class="tools-info-card__value">${escapeHtml(responsible || "—")}</div>
+            </div>
+            <div class="tools-info-card__group">
+              <div class="tools-info-card__label">Объект</div>
+              <div class="tools-info-card__value">${escapeHtml(object || "—")}</div>
+            </div>
+          </div>
+        </div>
+      `;
+
+      const actions = document.createElement("div");
+      actions.className = "no-photo-tool-actions";
+      const createUploadButton = ({ label, fromCamera = false }) => {
+        const uploadButton = document.createElement("label");
+        uploadButton.className = "action-primary no-photo-tool-actions__button";
+        uploadButton.textContent = label;
+        const fileInput = document.createElement("input");
+        fileInput.type = "file";
+        fileInput.accept = "image/*";
+        if (fromCamera) fileInput.setAttribute("capture", "environment");
+        fileInput.className = "tools-table__thumb-input";
+        fileInput.addEventListener("change", async () => {
+          const [file] = fileInput.files ?? [];
+          if (!file) return;
+          fileInput.value = "";
+          await handleAddPhotoUpload(tool, file);
+        });
+        uploadButton.appendChild(fileInput);
+        return uploadButton;
+      };
+      actions.append(
+        createUploadButton({ label: "Добавить из галереи" }),
+        createUploadButton({ label: "Сфотографировать", fromCamera: true })
+      );
+
+      noPhotoToolContentEl.append(card, actions);
     }
-    setNoPhotoToolSubtitle("");
+    setNoPhotoToolSubtitle(`Выбран инструмент №${number || "—"}`);
   };
 
   const closeAddPhotoModal = () => {

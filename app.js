@@ -20049,38 +20049,26 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           <div class="no-photo-tool-actions-block">
             <div class="no-photo-tool-actions__hint">Добавьте фото для выбранного инструмента:</div>
             <div class="no-photo-tool-actions" data-no-photo-tool-actions></div>
+            <div class="no-photo-tool-counter">Выбрано фото: <strong data-no-photo-selected-count>0</strong></div>
+            <button class="action-primary no-photo-tool-confirm" type="button" data-no-photo-confirm disabled>Подтвердить добавление</button>
           </div>
         </div>
       `;
 
       const actions = noPhotoToolContentEl.querySelector("[data-no-photo-tool-actions]");
-      const createUploadButton = ({ label, fromCamera = false }) => {
-        if (fromCamera) {
-          const cameraButton = document.createElement("button");
-          cameraButton.type = "button";
-          cameraButton.className = "action-primary no-photo-tool-actions__button";
-          cameraButton.textContent = label;
-          cameraButton.addEventListener("click", async () => {
-            if (!navigator.mediaDevices?.getUserMedia) {
-              setAddToolMessage("Камера недоступна. Выберите фото из галереи.", {
-                tone: "warning",
-              });
-              return;
-            }
-            addToolCameraMode = "no-photo";
-            addToolCameraNoPhotoTargetTool = safeTool;
-            const opened = await openAddToolCameraModal();
-            if (!opened) {
-              addToolCameraMode = "invoice";
-              addToolCameraNoPhotoTargetTool = null;
-              setAddToolMessage("Камера недоступна. Выберите фото из галереи.", {
-                tone: "warning",
-              });
-            }
-          });
-          return cameraButton;
+      const selectedCountEl = noPhotoToolContentEl.querySelector("[data-no-photo-selected-count]");
+      const confirmButtonEl = noPhotoToolContentEl.querySelector("[data-no-photo-confirm]");
+      const selectedFiles = [];
+      const refreshSelectedPhotos = () => {
+        if (selectedCountEl) {
+          selectedCountEl.textContent = String(selectedFiles.length);
         }
+        if (confirmButtonEl) {
+          confirmButtonEl.disabled = selectedFiles.length === 0;
+        }
+      };
 
+      const createUploadButton = ({ label, fromCamera = false }) => {
         const uploadButton = document.createElement("label");
         uploadButton.className = "action-primary no-photo-tool-actions__button";
         uploadButton.textContent = label;
@@ -20088,20 +20076,47 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         fileInput.type = "file";
         fileInput.accept = "image/*";
         fileInput.className = "tools-table__thumb-input";
-        fileInput.addEventListener("change", async () => {
-          const [file] = fileInput.files ?? [];
-          if (!file) return;
+        if (fromCamera) {
+          fileInput.setAttribute("capture", "environment");
+        }
+        fileInput.addEventListener("change", () => {
+          const files = Array.from(fileInput.files ?? []);
+          if (!files.length) return;
           fileInput.value = "";
-          await handleAddPhotoUpload(safeTool, file);
+          selectedFiles.push(...files);
+          refreshSelectedPhotos();
         });
         uploadButton.appendChild(fileInput);
         return uploadButton;
       };
 
+      confirmButtonEl?.addEventListener("click", async () => {
+        if (!selectedFiles.length) return;
+        confirmButtonEl.disabled = true;
+        setNoPhotoToolSubtitle("Сохраняем фото...");
+        try {
+          while (selectedFiles.length) {
+            const nextFile = selectedFiles.shift();
+            if (!nextFile) continue;
+            await handleAddPhotoUpload(safeTool, nextFile);
+          }
+          refreshSelectedPhotos();
+          setNoPhotoToolSubtitle("Фото успешно добавлены.");
+          closeNoPhotoToolModal();
+        } catch (error) {
+          console.error(error);
+          setNoPhotoToolSubtitle("Ошибка загрузки. Попробуйте ещё раз.");
+          refreshSelectedPhotos();
+        } finally {
+          confirmButtonEl.disabled = selectedFiles.length === 0;
+        }
+      });
+
       actions?.append(
         createUploadButton({ label: "Добавить из галереи" }),
         createUploadButton({ label: "Сфотографировать", fromCamera: true })
       );
+      refreshSelectedPhotos();
     } catch (error) {
       console.warn("Не удалось отрисовать карточку инструмента без фото.", error);
       noPhotoToolContentEl.innerHTML = `

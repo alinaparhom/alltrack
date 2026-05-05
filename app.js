@@ -19789,7 +19789,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
   const handleAddPhotoUpload = async (tool, file) => {
     const toolNumber = String(tool?.["Номер"] ?? "").trim();
-    if (!toolNumber) {
+    const toolAccountingNumber = String(tool?.["Бух.номер"] ?? "").trim();
+    const toolIdentifier = toolNumber || toolAccountingNumber;
+    if (!toolIdentifier) {
       const message = "У инструмента нет номера для сохранения фото.";
       setAddPhotoSubtitle(message);
       setNoPhotoToolSubtitle(message);
@@ -19814,11 +19816,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         setNoPhotoToolSubtitle(message);
         return false;
       }
-      const normalized = normalizeToolNumberValue(toolNumber);
-      const toolIndex = tools.findIndex(
-        (entry) =>
-          normalizeToolNumberValue(entry?.["Номер"] ?? "") === normalized
-      );
+      const normalized = normalizeToolNumberValue(toolIdentifier);
+      const toolIndex = tools.findIndex((entry) => {
+        const entryNumber = normalizeToolNumberValue(entry?.["Номер"] ?? "");
+        const entryAccountingNumber = normalizeToolNumberValue(entry?.["Бух.номер"] ?? "");
+        return entryNumber === normalized || entryAccountingNumber === normalized;
+      });
       if (toolIndex < 0) {
         const message = "Инструмент не найден в базе.";
         setAddPhotoSubtitle(message);
@@ -19826,7 +19829,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         return false;
       }
 
-      const safeName = buildAddPhotoFileName(toolNumber, file);
+      const safeName = buildAddPhotoFileName(toolIdentifier, file);
       const content = await readFileAsBase64(file);
       const photoEntry = {
         type: "file",
@@ -19862,9 +19865,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         },
       ]);
 
-      updateAddPhotoAfterSave(toolNumber);
-      syncToolsPhotoCount(toolNumber);
-      const successMessage = `Фото сохранено для №${toolNumber}.`;
+      if (toolNumber) {
+        updateAddPhotoAfterSave(toolNumber);
+        syncToolsPhotoCount(toolNumber);
+      }
+      const successMessage = `Фото сохранено для №${toolIdentifier}.`;
       setAddPhotoSubtitle(successMessage);
       setNoPhotoToolSubtitle(successMessage);
       return true;

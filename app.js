@@ -19817,8 +19817,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       setNoPhotoToolSubtitle(message);
       return false;
     }
-    const orgFolder =
-      context.orgFolderName ?? addPhotoState.orgFolder ?? noPhotoState.orgFolder ?? "";
+    const orgFolder = [
+      context.orgFolderName,
+      addPhotoState.orgFolder,
+      noPhotoState.orgFolder,
+    ]
+      .map((value) => String(value ?? "").trim())
+      .find(Boolean) ?? "";
     if (!orgFolder) {
       const orgErrorText = "Не удалось определить организацию.";
       setAddPhotoSubtitle(orgErrorText);

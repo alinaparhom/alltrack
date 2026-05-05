@@ -19818,7 +19818,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       return false;
     }
     const orgFolder =
-      addPhotoState.orgFolder ?? noPhotoState.orgFolder ?? context.orgFolderName ?? "";
+      noPhotoState.orgFolder ?? context.orgFolderName ?? addPhotoState.orgFolder ?? "";
     if (!orgFolder) {
       const orgErrorText = "Не удалось определить организацию.";
       setAddPhotoSubtitle(orgErrorText);
@@ -20050,8 +20050,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (!noPhotoToolModalEl) return;
     const safeTool = tool && typeof tool === "object" ? tool : {};
     const number = String(safeTool?.["Номер"] ?? "").trim();
-    addPhotoState.orgFolder =
-      noPhotoState.orgFolder ?? context.orgFolderName ?? addPhotoState.orgFolder ?? "";
 
     noPhotoModalEl?.classList.add("is-hidden");
     noPhotoToolModalEl.classList.remove("is-hidden");

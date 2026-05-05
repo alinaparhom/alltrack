@@ -14640,7 +14640,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   };
 
   const registerNoPhotoFineForTool = async (tool, amount) => {
-    const orgFolder = context.orgFolderName ?? "";
+    const orgFolder = context.orgFolderName ?? noPhotoState.orgFolder ?? addPhotoState.orgFolder ?? "";
     const fineAmount = normalizeCostValue(amount);
     if (!orgFolder || !fineAmount) return;
 
@@ -19867,7 +19867,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         tools[toolIndex]?.["Текущий штраф за отсутствие фото"]
       );
       if (currentNoPhotoFine > 0) {
-        await registerNoPhotoFineForTool(tools[toolIndex], currentNoPhotoFine);
+        try {
+          await registerNoPhotoFineForTool(tools[toolIndex], currentNoPhotoFine);
+        } catch (fineError) {
+          console.warn("Не удалось зафиксировать штраф за отсутствие фото.", fineError);
+        }
       }
 
       const updatedTool = {

@@ -20351,20 +20351,20 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const model = String(tool?.["Модель"] ?? "").trim();
       const status = getNoPhotoStatusLabel(tool?.["Статус"]);
       const costLine = document.createElement("div");
-      costLine.textContent = formatToolCostLabel(tool);
+      costLine.textContent = formatToolCostValue(tool);
 
       const accountingLine = document.createElement("div");
-      accountingLine.textContent = `Бух.номер: ${accountingNumber || "—"}`;
+      accountingLine.textContent = accountingNumber || "—";
       const detailsLine = document.createElement("div");
       detailsLine.textContent = [
-        `Производитель: ${manufacturer || "—"}`,
-        `Модель: ${model || "—"}`,
+        manufacturer || "—",
+        model || "—",
       ]
         .filter(Boolean)
         .join(" · ");
       const statusLine = document.createElement("div");
       statusLine.className = "tools-table__status-line";
-      statusLine.textContent = `Статус: ${status || "—"}`;
+      statusLine.textContent = status || "—";
       meta.append(accountingLine, detailsLine, costLine, statusLine);
       infoCell.append(title, meta);
 

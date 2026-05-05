@@ -20027,6 +20027,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (!noPhotoToolModalEl) return;
     const safeTool = tool && typeof tool === "object" ? tool : {};
     const number = String(safeTool?.["Номер"] ?? "").trim();
+    addPhotoState.orgFolder =
+      noPhotoState.orgFolder ?? context.orgFolderName ?? addPhotoState.orgFolder ?? "";
 
     noPhotoModalEl?.classList.add("is-hidden");
     noPhotoToolModalEl.classList.remove("is-hidden");
@@ -20118,28 +20120,30 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         if (!selectedFiles.length) return;
         confirmButtonEl.disabled = true;
         setNoPhotoToolSubtitle("Сохраняем фото...");
-        try {
-          let failedUploads = 0;
-          while (selectedFiles.length) {
-            const nextFile = selectedFiles.shift();
-            if (!nextFile) continue;
+
+        let failedUploads = 0;
+        const filesToUpload = selectedFiles.splice(0, selectedFiles.length);
+
+        for (const nextFile of filesToUpload) {
+          if (!nextFile) continue;
+          try {
             const isSaved = await handleAddPhotoUpload(safeTool, nextFile);
             if (!isSaved) failedUploads += 1;
+          } catch (error) {
+            console.error("Ошибка при загрузке фото инструмента без фото.", error);
+            failedUploads += 1;
           }
-          refreshSelectedPhotos();
-          if (failedUploads > 0) {
-            setNoPhotoToolSubtitle("Часть фото не загрузилась. Повторите попытку.");
-            return;
-          }
-          setNoPhotoToolSubtitle("Фото успешно добавлены.");
-          closeNoPhotoToolModal();
-        } catch (error) {
-          console.error(error);
-          setNoPhotoToolSubtitle("Ошибка загрузки. Попробуйте ещё раз.");
-          refreshSelectedPhotos();
-        } finally {
-          confirmButtonEl.disabled = selectedFiles.length === 0;
         }
+
+        refreshSelectedPhotos();
+        if (failedUploads > 0) {
+          setNoPhotoToolSubtitle("Часть фото не загрузилась. Повторите попытку.");
+          confirmButtonEl.disabled = false;
+          return;
+        }
+
+        setNoPhotoToolSubtitle("Фото успешно добавлены.");
+        closeNoPhotoToolModal();
       });
 
       const galleryUploadButton = createUploadButton({ label: "Добавить из галереи" });

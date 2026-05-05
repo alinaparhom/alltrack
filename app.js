@@ -19807,7 +19807,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
   };
 
-  const handleAddPhotoUpload = async (tool, file) => {
+  const handleAddPhotoUpload = async (tool, file, options = {}) => {
     const toolNumber = String(tool?.["Номер"] ?? "").trim();
     const toolAccountingNumber = String(tool?.["Бух.номер"] ?? "").trim();
     const toolIdentifier = toolNumber || toolAccountingNumber;
@@ -19817,7 +19817,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       setNoPhotoToolSubtitle(message);
       return false;
     }
+    const preferredOrgFolder = String(options?.orgFolder ?? "").trim();
     const orgFolder = [
+      preferredOrgFolder,
       context.orgFolderName,
       addPhotoState.orgFolder,
       noPhotoState.orgFolder,
@@ -20154,7 +20156,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         for (const nextFile of filesToUpload) {
           if (!nextFile) continue;
           try {
-            const isSaved = await handleAddPhotoUpload(safeTool, nextFile);
+            const isSaved = await handleAddPhotoUpload(safeTool, nextFile, {
+              orgFolder: noPhotoState.orgFolder,
+            });
             if (!isSaved) {
               failedUploads += 1;
               failedFiles.push(nextFile);

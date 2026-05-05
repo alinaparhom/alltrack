@@ -19810,8 +19810,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const handleAddPhotoUpload = async (tool, file, options = {}) => {
     const toolNumber = String(tool?.["Номер"] ?? "").trim();
     const toolAccountingNumber = String(tool?.["Бух.номер"] ?? "").trim();
-    const toolIdentifier = toolNumber || toolAccountingNumber;
-    if (!toolIdentifier) {
+    const requestedIdentifier = toolNumber || toolAccountingNumber;
+    if (!requestedIdentifier) {
       const message = "У инструмента нет номера для сохранения фото.";
       setAddPhotoSubtitle(message);
       setNoPhotoToolSubtitle(message);
@@ -19837,12 +19837,16 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
     try {
       const tools = await loadToolsData(orgFolder);
-      const normalized = normalizeToolNumberValue(toolIdentifier);
+      const normalized = normalizeToolNumberValue(requestedIdentifier);
       const toolIndex = tools.findIndex((entry) => {
         const entryNumber = normalizeToolNumberValue(entry?.["Номер"] ?? "");
         const entryAccountingNumber = normalizeToolNumberValue(entry?.["Бух.номер"] ?? "");
         return entryNumber === normalized || entryAccountingNumber === normalized;
       });
+            const matchedTool = toolIndex >= 0 ? tools[toolIndex] : null;
+      const matchedToolNumber = String(matchedTool?.["Номер"] ?? "").trim();
+      const matchedToolAccountingNumber = String(matchedTool?.["Бух.номер"] ?? "").trim();
+      const toolIdentifier = matchedToolNumber || matchedToolAccountingNumber || requestedIdentifier;
       const safeName = buildAddPhotoFileName(toolIdentifier, file);
       const content = await readFileAsBase64(file);
       const photoEntry = {
@@ -19885,7 +19889,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         ]);
       } else {
         console.warn("Инструмент не найден в базе при обновлении счётчика фото.", {
-          toolIdentifier,
+          requestedIdentifier,
           orgFolder,
         });
       }

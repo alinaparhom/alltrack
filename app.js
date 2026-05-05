@@ -19830,25 +19830,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
     try {
       const tools = await loadToolsData(orgFolder);
-      if (!tools.length) {
-        const message = "Не найдена база инструментов.";
-        setAddPhotoSubtitle(message);
-        setNoPhotoToolSubtitle(message);
-        return false;
-      }
       const normalized = normalizeToolNumberValue(toolIdentifier);
       const toolIndex = tools.findIndex((entry) => {
         const entryNumber = normalizeToolNumberValue(entry?.["Номер"] ?? "");
         const entryAccountingNumber = normalizeToolNumberValue(entry?.["Бух.номер"] ?? "");
         return entryNumber === normalized || entryAccountingNumber === normalized;
       });
-      if (toolIndex < 0) {
-        const message = "Инструмент не найден в базе.";
-        setAddPhotoSubtitle(message);
-        setNoPhotoToolSubtitle(message);
-        return false;
-      }
-
       const safeName = buildAddPhotoFileName(toolIdentifier, file);
       const content = await readFileAsBase64(file);
       const photoEntry = {
@@ -19861,33 +19848,40 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       };
       await uploadPhotoEntriesInBatches([photoEntry]);
 
-      const current = Number.parseInt(tools[toolIndex]?.["Количество фото"] ?? 0, 10);
-      const safeCurrent = Number.isFinite(current) ? current : 0;
-      const currentNoPhotoFine = normalizeCostValue(
-        tools[toolIndex]?.["Текущий штраф за отсутствие фото"]
-      );
-      if (currentNoPhotoFine > 0) {
-        try {
-          await registerNoPhotoFineForTool(tools[toolIndex], currentNoPhotoFine);
-        } catch (fineError) {
-          console.warn("Не удалось зафиксировать штраф за отсутствие фото.", fineError);
+      if (toolIndex >= 0) {
+        const current = Number.parseInt(tools[toolIndex]?.["Количество фото"] ?? 0, 10);
+        const safeCurrent = Number.isFinite(current) ? current : 0;
+        const currentNoPhotoFine = normalizeCostValue(
+          tools[toolIndex]?.["Текущий штраф за отсутствие фото"]
+        );
+        if (currentNoPhotoFine > 0) {
+          try {
+            await registerNoPhotoFineForTool(tools[toolIndex], currentNoPhotoFine);
+          } catch (fineError) {
+            console.warn("Не удалось зафиксировать штраф за отсутствие фото.", fineError);
+          }
         }
-      }
 
-      const updatedTool = {
-        ...tools[toolIndex],
-        "Количество фото": safeCurrent + 1,
-        "Текущий штраф за отсутствие фото": 0,
-      };
-      const updatedTools = [...tools];
-      updatedTools[toolIndex] = updatedTool;
-      await saveEntries([
-        {
-          path: `${orgFolder}/База с инструментами.json`,
-          data: updatedTools,
-          ...buildUploadUserMeta({ organizationName: context.orgFullName }),
-        },
-      ]);
+        const updatedTool = {
+          ...tools[toolIndex],
+          "Количество фото": safeCurrent + 1,
+          "Текущий штраф за отсутствие фото": 0,
+        };
+        const updatedTools = [...tools];
+        updatedTools[toolIndex] = updatedTool;
+        await saveEntries([
+          {
+            path: `${orgFolder}/База с инструментами.json`,
+            data: updatedTools,
+            ...buildUploadUserMeta({ organizationName: context.orgFullName }),
+          },
+        ]);
+      } else {
+        console.warn("Инструмент не найден в базе при обновлении счётчика фото.", {
+          toolIdentifier,
+          orgFolder,
+        });
+      }
 
       if (toolNumber) {
         updateAddPhotoAfterSave(toolNumber);

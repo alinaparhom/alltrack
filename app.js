@@ -19790,8 +19790,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const handleAddPhotoUpload = async (tool, file) => {
     const toolNumber = String(tool?.["Номер"] ?? "").trim();
     if (!toolNumber) {
-      setAddPhotoSubtitle("У инструмента нет номера для сохранения фото.");
-      return;
+      const message = "У инструмента нет номера для сохранения фото.";
+      setAddPhotoSubtitle(message);
+      setNoPhotoToolSubtitle(message);
+      return false;
     }
     const orgFolder =
       addPhotoState.orgFolder ?? noPhotoState.orgFolder ?? context.orgFolderName ?? "";
@@ -19799,7 +19801,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const orgErrorText = "Не удалось определить организацию.";
       setAddPhotoSubtitle(orgErrorText);
       setNoPhotoToolSubtitle(orgErrorText);
-      return;
+      return false;
     }
 
     setAddPhotoSubtitle("Загружаем фото...");
@@ -19807,8 +19809,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     try {
       const tools = await loadToolsData(orgFolder);
       if (!tools.length) {
-        setAddPhotoSubtitle("Не найдена база инструментов.");
-        return;
+        const message = "Не найдена база инструментов.";
+        setAddPhotoSubtitle(message);
+        setNoPhotoToolSubtitle(message);
+        return false;
       }
       const normalized = normalizeToolNumberValue(toolNumber);
       const toolIndex = tools.findIndex(
@@ -19816,8 +19820,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           normalizeToolNumberValue(entry?.["Номер"] ?? "") === normalized
       );
       if (toolIndex < 0) {
-        setAddPhotoSubtitle("Инструмент не найден в базе.");
-        return;
+        const message = "Инструмент не найден в базе.";
+        setAddPhotoSubtitle(message);
+        setNoPhotoToolSubtitle(message);
+        return false;
       }
 
       const safeName = buildAddPhotoFileName(toolNumber, file);
@@ -19858,17 +19864,23 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
       updateAddPhotoAfterSave(toolNumber);
       syncToolsPhotoCount(toolNumber);
-      setAddPhotoSubtitle(`Фото сохранено для №${toolNumber}.`);
+      const successMessage = `Фото сохранено для №${toolNumber}.`;
+      setAddPhotoSubtitle(successMessage);
+      setNoPhotoToolSubtitle(successMessage);
+      return true;
     } catch (error) {
       console.error(error);
       const reason =
         error instanceof Error && error.message
           ? `Причина: ${error.message}`
           : "Не удалось определить причину.";
-      setAddPhotoSubtitle(`Не удалось загрузить фото. ${reason}`);
+      const errorMessage = `Не удалось загрузить фото. ${reason}`;
+      setAddPhotoSubtitle(errorMessage);
+      setNoPhotoToolSubtitle(errorMessage);
       setTimeout(() => {
         applyAddPhotoFilters();
       }, 2500);
+      return false;
     }
   };
 
@@ -20107,12 +20119,18 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         confirmButtonEl.disabled = true;
         setNoPhotoToolSubtitle("Сохраняем фото...");
         try {
+          let failedUploads = 0;
           while (selectedFiles.length) {
             const nextFile = selectedFiles.shift();
             if (!nextFile) continue;
-            await handleAddPhotoUpload(safeTool, nextFile);
+            const isSaved = await handleAddPhotoUpload(safeTool, nextFile);
+            if (!isSaved) failedUploads += 1;
           }
           refreshSelectedPhotos();
+          if (failedUploads > 0) {
+            setNoPhotoToolSubtitle("Часть фото не загрузилась. Повторите попытку.");
+            return;
+          }
           setNoPhotoToolSubtitle("Фото успешно добавлены.");
           closeNoPhotoToolModal();
         } catch (error) {

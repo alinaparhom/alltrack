@@ -3427,20 +3427,40 @@ async function saveEntriesViaEndpoint(entries) {
 
 async function uploadPhotoEntriesInBatches(
   entries,
-  { onBatch, batchSize = 2 } = {}
+  { onBatch, batchSize = 2, retryCount = 1, retryDelayMs = 350 } = {}
 ) {
   if (!entries.length) return;
+
+  const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+  const saveWithRetry = async (payload) => {
+    let lastError = null;
+    const attempts = Math.max(0, Number.parseInt(retryCount, 10)) + 1;
+    for (let attempt = 0; attempt < attempts; attempt += 1) {
+      try {
+        await saveEntriesViaEndpoint(payload);
+        return;
+      } catch (error) {
+        lastError = error;
+        if (attempt < attempts - 1) {
+          await wait(retryDelayMs);
+        }
+      }
+    }
+    throw lastError instanceof Error ? lastError : new Error("Не удалось сохранить данные.");
+  };
+
   const totalBatches = Math.ceil(entries.length / batchSize);
   for (let index = 0; index < totalBatches; index += 1) {
     const batch = entries.slice(index * batchSize, (index + 1) * batchSize);
     try {
-      await saveEntriesViaEndpoint(batch);
+      await saveWithRetry(batch);
     } catch (error) {
       if (batch.length === 1) {
         throw error;
       }
       for (const entry of batch) {
-        await saveEntriesViaEndpoint([entry]);
+        await saveWithRetry([entry]);
       }
     }
     if (onBatch) {

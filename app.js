@@ -20077,10 +20077,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
             <div class="tools-info-card__title tools-info-card__title--add-photo">Информация об инструменте</div>
             <div class="tools-info-card__grid tools-info-card__grid--add-photo">
               <div class="tools-info-card__group"><div class="tools-info-card__label">Номер</div><div class="tools-info-card__value">${escapeHtml(number || "—")}</div></div>
-              <div class="tools-info-card__group"><div class="tools-info-card__label">Бухгалтерский номер</div><div class="tools-info-card__value">${escapeHtml(accountingNumber || "—")}</div></div>
+              <div class="tools-info-card__group"><div class="tools-info-card__value">${escapeHtml(accountingNumber || "—")}</div></div>
               <div class="tools-info-card__group"><div class="tools-info-card__label">Наименование</div><div class="tools-info-card__value">${escapeHtml([manufacturer, model].filter(Boolean).join(" ") || name || "Без названия")}</div></div>
-              <div class="tools-info-card__group"><div class="tools-info-card__label">Статус</div><div class="tools-info-card__value">${escapeHtml(status || "—")}</div></div>
-              <div class="tools-info-card__group"><div class="tools-info-card__label">Стоимость</div><div class="tools-info-card__value">${escapeHtml(cost || "—")}</div></div>
+              <div class="tools-info-card__group"><div class="tools-info-card__value">${escapeHtml(status || "—")}</div></div>
+              <div class="tools-info-card__group"><div class="tools-info-card__value">${escapeHtml(cost || "—")}</div></div>
               <div class="tools-info-card__group"><div class="tools-info-card__label">Дата покупки</div><div class="tools-info-card__value">${escapeHtml(purchaseDate || "—")}</div></div>
               <div class="tools-info-card__group"><div class="tools-info-card__label">Ответственный</div><div class="tools-info-card__value">${escapeHtml(responsible || "—")}</div></div>
               <div class="tools-info-card__group"><div class="tools-info-card__label">Объект</div><div class="tools-info-card__value">${escapeHtml(object || "—")}</div></div>

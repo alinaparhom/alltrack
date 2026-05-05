@@ -11080,7 +11080,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const objectName = String(tool?.["Объект"] ?? "").trim();
     const secondaryLine = [
       [manufacturer, model].filter(Boolean).join(" · "),
-      accountingNumber ? `Бух: ${accountingNumber}` : "",
+      accountingNumber || "",
       serialNumber && serialNumber !== "-" ? `S/N: ${serialNumber}` : "",
       objectName,
     ]
@@ -28822,7 +28822,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const accountingNumber = String(tool?.["Бух.номер"] ?? "").trim();
       const titleParts = [
         toolNumber ? `№${toolNumber}` : "",
-        accountingNumber ? `Бух: ${accountingNumber}` : "",
+        accountingNumber || "",
         String(tool?.["Наименование"] ?? "").trim(),
         String(tool?.["Модель"] ?? "").trim(),
       ].filter(Boolean);

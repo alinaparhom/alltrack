@@ -20127,22 +20127,32 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         setNoPhotoToolSubtitle("Сохраняем фото...");
 
         let failedUploads = 0;
+        const failedFiles = [];
         const filesToUpload = selectedFiles.splice(0, selectedFiles.length);
 
         for (const nextFile of filesToUpload) {
           if (!nextFile) continue;
           try {
             const isSaved = await handleAddPhotoUpload(safeTool, nextFile);
-            if (!isSaved) failedUploads += 1;
+            if (!isSaved) {
+              failedUploads += 1;
+              failedFiles.push(nextFile);
+            }
           } catch (error) {
             console.error("Ошибка при загрузке фото инструмента без фото.", error);
             failedUploads += 1;
+            failedFiles.push(nextFile);
           }
         }
 
+        if (failedFiles.length) {
+          selectedFiles.push(...failedFiles);
+        }
         refreshSelectedPhotos();
         if (failedUploads > 0) {
-          setNoPhotoToolSubtitle("Часть фото не загрузилась. Повторите попытку.");
+          setNoPhotoToolSubtitle(
+            `Не удалось загрузить ${failedUploads} фото. Нажмите «Подтвердить» ещё раз.`
+          );
           confirmButtonEl.disabled = false;
           return;
         }

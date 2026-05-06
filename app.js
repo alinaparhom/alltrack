@@ -6788,7 +6788,16 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         <div class="fines-card__fields">
           <label class="fines-field">
             <span>Выставить</span>
-            <input class="form-input" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0" data-fines-issue />
+            <input
+              class="form-input"
+              type="number"
+              inputmode="decimal"
+              min="0"
+              max="${String(Number(item.balance.toFixed(2)))}"
+              step="0.01"
+              placeholder="0"
+              data-fines-issue
+            />
           </label>
           <label class="fines-field">
             <span>Простить</span>
@@ -6837,14 +6846,20 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (!card) return;
     const issueInput = card.querySelector("[data-fines-issue]");
     const forgiveInput = card.querySelector("[data-fines-forgive]");
-    if (changedInput !== issueInput || !forgiveInput) return;
     const balance = normalizeCostValue(card.dataset.balance) || 0;
+    if (issueInput) issueInput.max = String(Number(balance.toFixed(2)));
+    if (changedInput !== issueInput) return;
     const changedValue = normalizeCostValue(changedInput.value);
     if (changedValue === null) {
-      forgiveInput.value = "";
+      if (forgiveInput) forgiveInput.value = "";
       return;
     }
-    const nextValue = Math.max(0, balance - Math.max(0, changedValue));
+    const issueValue = Math.min(Math.max(0, changedValue), balance);
+    if (issueValue !== changedValue) {
+      changedInput.value = issueValue ? String(Number(issueValue.toFixed(2))) : "0";
+    }
+    if (!forgiveInput) return;
+    const nextValue = Math.max(0, balance - issueValue);
     forgiveInput.value = nextValue ? String(Number(nextValue.toFixed(2))) : "0";
   };
   const collectCurrentFinesChanges = () => {

@@ -4020,12 +4020,12 @@
 
       .add-tool-modal__header {
         grid-template-columns: minmax(0, 1fr) auto;
-        align-items: start;
+        align-items: center;
       }
 
       .add-tool-modal__header .button-icon {
-        align-self: start;
-        margin-top: 2px;
+        align-self: center;
+        margin-top: 0;
       }
 
       .camera-modal__header {
@@ -5044,11 +5044,11 @@
       .add-tool-modal .settings-modal__footer {
         align-items: stretch;
         position: static;
-        padding: 12px 0 calc(12px + env(safe-area-inset-bottom));
-        margin-top: 10px;
+        padding: 0 0 calc(12px + env(safe-area-inset-bottom));
+        margin-top: 0;
         justify-content: stretch;
         background: transparent;
-        border-top: 1px solid rgba(226, 232, 240, 0.8);
+        border-top: 0;
         backdrop-filter: none;
         z-index: auto;
         display: block;
@@ -5087,6 +5087,10 @@
         padding: 2px 0;
       }
 
+      .add-tool-modal .form-message--inline:empty {
+        display: none;
+      }
+
       .form-message--inline .form-message__list {
         padding-left: 18px;
       }
@@ -5104,13 +5108,13 @@
 
       .add-tool-modal__cancel {
         border: 1px solid rgba(239, 68, 68, 0.2);
-        background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(254, 242, 242, 0.88));
+        background: rgba(254, 242, 242, 0.92);
         color: #d64545;
       }
 
       .add-tool-modal__save {
         border: 1px solid rgba(47, 158, 103, 0.18);
-        background: linear-gradient(180deg, rgba(240, 253, 244, 0.96), rgba(220, 252, 231, 0.88));
+        background: rgba(220, 252, 231, 0.92);
         color: var(--success);
       }
 

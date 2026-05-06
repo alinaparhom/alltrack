@@ -6746,7 +6746,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
             balance,
           };
         })
-        .filter((item) => item.responsible && item.balance !== 0)
+        .filter((item) => item.responsible && item.balance > 0)
         .sort((a, b) => a.responsible.localeCompare(b.responsible, "ru"));
       result.set(tab.id, items);
     });
@@ -6759,6 +6759,14 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     finesTabButtons.forEach((button) => {
       button.disabled = finesState.isSaving;
     });
+  };
+  const roundFineAmount = (value) => {
+    const amount = normalizeCostValue(value) || 0;
+    return Math.max(0, Number(amount.toFixed(2)));
+  };
+  const formatFineInputValue = (value) => {
+    const amount = roundFineAmount(value);
+    return amount ? String(Number(amount.toFixed(2))) : "0";
   };
   const renderFinesTab = () => {
     if (!finesListEl) return;
@@ -6779,11 +6787,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const card = document.createElement("div");
       card.className = "fines-card";
       card.dataset.responsible = item.responsible;
-      card.dataset.balance = String(item.balance);
+      const balance = roundFineAmount(item.balance);
+      card.dataset.balance = String(balance);
       card.innerHTML = `
         <div class="fines-card__header">
           <div class="fines-card__name"></div>
-          <div class="fines-card__balance">${formatFineMoney(item.balance)} р.</div>
+          <div class="fines-card__balance">Остаток: ${formatFineMoney(balance)} р.</div>
         </div>
         <div class="fines-card__fields">
           <label class="fines-field">
@@ -6793,7 +6802,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
               type="number"
               inputmode="decimal"
               min="0"
-              max="${String(Number(item.balance.toFixed(2)))}"
+              max="${String(Number(balance.toFixed(2)))}"
               step="0.01"
               placeholder="0"
               data-fines-issue
@@ -6801,9 +6810,19 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           </label>
           <label class="fines-field">
             <span>Простить</span>
-            <input class="form-input" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0" data-fines-forgive />
+            <input
+              class="form-input"
+              type="number"
+              inputmode="decimal"
+              min="0"
+              max="${String(Number(balance.toFixed(2)))}"
+              step="0.01"
+              placeholder="0"
+              data-fines-forgive
+            />
           </label>
         </div>
+        <div class="fines-card__hint" data-fines-card-hint>Максимум к выставлению — ${formatFineMoney(balance)} р.</div>
       `;
       const nameEl = card.querySelector(".fines-card__name");
       if (nameEl) nameEl.textContent = item.responsible;
@@ -6846,41 +6865,62 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (!card) return;
     const issueInput = card.querySelector("[data-fines-issue]");
     const forgiveInput = card.querySelector("[data-fines-forgive]");
-    const balance = normalizeCostValue(card.dataset.balance) || 0;
+    const hintEl = card.querySelector("[data-fines-card-hint]");
+    const balance = roundFineAmount(card.dataset.balance);
+    const issueRawValue = normalizeCostValue(issueInput?.value);
+    const issueValue = roundFineAmount(issueRawValue);
+    const forgiveMax = Math.max(0, balance - issueValue);
     if (issueInput) issueInput.max = String(Number(balance.toFixed(2)));
-    if (changedInput !== issueInput) return;
-    const changedValue = normalizeCostValue(changedInput.value);
-    if (changedValue === null) {
-      if (forgiveInput) forgiveInput.value = "";
-      return;
+    if (forgiveInput) forgiveInput.max = String(Number(forgiveMax.toFixed(2)));
+
+    let wasLimited = false;
+    if (changedInput === issueInput) {
+      const changedValue = normalizeCostValue(changedInput.value);
+      if (changedValue === null) {
+        if (forgiveInput) forgiveInput.value = "";
+        hintEl && (hintEl.textContent = `Максимум к выставлению — ${formatFineMoney(balance)} р.`);
+        return;
+      }
+      const nextIssue = Math.min(Math.max(0, changedValue), balance);
+      wasLimited = nextIssue !== changedValue;
+      if (wasLimited) changedInput.value = formatFineInputValue(nextIssue);
+      if (forgiveInput) {
+        const nextForgive = Math.max(0, balance - nextIssue);
+        forgiveInput.max = String(Number(nextForgive.toFixed(2)));
+        forgiveInput.value = formatFineInputValue(nextForgive);
+      }
+    } else if (changedInput === forgiveInput) {
+      const changedValue = normalizeCostValue(changedInput.value);
+      if (changedValue === null) {
+        hintEl && (hintEl.textContent = `Можно простить до ${formatFineMoney(forgiveMax)} р. без пересчёта выставления.`);
+        return;
+      }
+      const nextForgive = Math.min(Math.max(0, changedValue), forgiveMax);
+      wasLimited = nextForgive !== changedValue;
+      if (wasLimited) changedInput.value = formatFineInputValue(nextForgive);
     }
-    const issueValue = Math.min(Math.max(0, changedValue), balance);
-    if (issueValue !== changedValue) {
-      changedInput.value = issueValue ? String(Number(issueValue.toFixed(2))) : "0";
+
+    if (hintEl) {
+      hintEl.textContent = wasLimited
+        ? `Сумма ограничена остатком: максимум ${formatFineMoney(balance)} р.`
+        : `Максимум к выставлению — ${formatFineMoney(balance)} р.`;
     }
-    if (!forgiveInput) return;
-    const nextValue = Math.max(0, balance - issueValue);
-    forgiveInput.value = nextValue ? String(Number(nextValue.toFixed(2))) : "0";
   };
   const collectCurrentFinesChanges = () => {
     const changes = [];
     finesListEl?.querySelectorAll(".fines-card").forEach((card) => {
       const responsible = String(card.dataset.responsible ?? "").trim();
-      const balance = normalizeCostValue(card.dataset.balance) || 0;
-      const issue = Math.max(
-        0,
-        normalizeCostValue(card.querySelector("[data-fines-issue]")?.value) || 0
-      );
-      const forgive = Math.max(
-        0,
-        normalizeCostValue(card.querySelector("[data-fines-forgive]")?.value) || 0
-      );
-      if (!responsible || (!issue && !forgive)) return;
+      const balance = roundFineAmount(card.dataset.balance);
+      const issue = roundFineAmount(card.querySelector("[data-fines-issue]")?.value);
+      const limitedIssue = Math.min(issue, balance);
+      const forgive = roundFineAmount(card.querySelector("[data-fines-forgive]")?.value);
+      const limitedForgive = Math.min(forgive, Math.max(0, balance - limitedIssue));
+      if (!responsible || balance <= 0 || (!limitedIssue && !limitedForgive)) return;
       changes.push({
         responsible,
         balance,
-        issue: Math.min(issue, balance),
-        forgive: Math.min(forgive, Math.max(0, balance - Math.min(issue, balance))),
+        issue: limitedIssue,
+        forgive: limitedForgive,
       });
     });
     return changes;
@@ -6949,9 +6989,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
             ? { ...summaryByUser[change.responsible] }
             : createMoveFineSummaryByType();
         const fineSummary = normalizeFineSummaryForIssue(userSummary[tabTitle]);
-        const currentBalance = getFineSummaryValue(fineSummary, "Остаток");
-        const issue = Math.min(change.issue, currentBalance);
-        const forgive = Math.min(change.forgive, Math.max(0, currentBalance - issue));
+        const currentBalance = roundFineAmount(getFineSummaryValue(fineSummary, "Остаток"));
+        const issue = Math.min(roundFineAmount(change.issue), currentBalance);
+        const forgive = Math.min(roundFineAmount(change.forgive), Math.max(0, currentBalance - issue));
         if (issue || forgive) {
           appliedChanges.push({
             responsible: change.responsible,

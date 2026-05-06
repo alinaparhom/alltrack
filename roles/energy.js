@@ -3458,10 +3458,9 @@ export function renderRole(user) {
             <div class="settings-modal__header add-tool-modal__header">
               <div class="settings-modal__title">
                 <h2>Новая МТЦ</h2>
-                <p data-add-tool-subtitle>Заполните карточку инструмента</p>
               </div>
               <button
-                class="button-icon add-tool-modal__close"
+                class="button-icon tools-modal__close add-tool-modal__close"
                 type="button"
                 data-add-tool-close
                 aria-label="Закрыть форму добавления"
@@ -3683,13 +3682,13 @@ export function renderRole(user) {
                   ></div>
                   <div class="settings-modal__actions add-tool-modal__actions">
                     <button
-                      class="action-secondary"
+                      class="action-danger add-tool-modal__cancel"
                       type="button"
                       data-add-tool-cancel
                     >
                       Отмена
                     </button>
-                    <button class="action-primary" type="submit">Сохранить</button>
+                    <button class="action-primary add-tool-modal__save" type="submit">Сохранить</button>
                   </div>
                 </div>
               </div>

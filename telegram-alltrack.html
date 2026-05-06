@@ -384,6 +384,18 @@
         border-top-color: rgba(148, 170, 210, 0.3);
       }
 
+      body[data-theme="dark"] .add-tool-modal__cancel {
+        border-color: rgba(255, 123, 123, 0.28);
+        background: rgba(127, 29, 29, 0.28);
+        color: #fca5a5;
+      }
+
+      body[data-theme="dark"] .add-tool-modal__save {
+        border-color: rgba(87, 224, 155, 0.3);
+        background: rgba(20, 83, 45, 0.32);
+        color: #86efac;
+      }
+
       body[data-theme="dark"] .add-tool-success-modal__panel {
         background: linear-gradient(160deg, rgba(16, 24, 40, 0.98), rgba(20, 30, 52, 0.92));
         border-color: rgba(148, 170, 210, 0.35);
@@ -5030,11 +5042,11 @@
       }
 
       .add-tool-modal .settings-modal__footer {
-        align-items: center;
+        align-items: stretch;
         position: static;
         padding: 12px 0 calc(12px + env(safe-area-inset-bottom));
         margin-top: 10px;
-        justify-content: flex-end;
+        justify-content: stretch;
         background: transparent;
         border-top: 1px solid rgba(226, 232, 240, 0.8);
         backdrop-filter: none;
@@ -5058,24 +5070,21 @@
       }
 
       .add-tool-modal__footer-row {
-        display: flex;
-        flex-wrap: wrap;
+        display: grid;
         gap: 10px;
-        align-items: center;
-        justify-content: space-between;
         width: 100%;
       }
 
       .add-tool-modal__actions {
-        display: flex;
-        gap: 6px;
-        flex: 0 0 auto;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+        width: 100%;
       }
 
       .form-message--inline {
-        flex: 1 1 220px;
-        min-width: 160px;
-        padding: 6px 0;
+        min-width: 0;
+        padding: 2px 0;
       }
 
       .form-message--inline .form-message__list {
@@ -5083,8 +5092,31 @@
       }
 
       .add-tool-modal .settings-modal__footer .action-primary,
-      .add-tool-modal .settings-modal__footer .action-secondary {
-        flex: 0 0 auto;
+      .add-tool-modal .settings-modal__footer .action-danger {
+        width: 100%;
+        min-height: 54px;
+        padding: 0 14px;
+        border-radius: 22px;
+        font-weight: 700;
+        font-size: 15px;
+        box-shadow: none;
+      }
+
+      .add-tool-modal__cancel {
+        border: 1px solid rgba(239, 68, 68, 0.2);
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(254, 242, 242, 0.88));
+        color: #d64545;
+      }
+
+      .add-tool-modal__save {
+        border: 1px solid rgba(47, 158, 103, 0.18);
+        background: linear-gradient(180deg, rgba(240, 253, 244, 0.96), rgba(220, 252, 231, 0.88));
+        color: var(--success);
+      }
+
+      .add-tool-modal__cancel:hover,
+      .add-tool-modal__save:hover {
+        transform: translateY(-1px);
       }
 
       .add-tool-modal .settings-modal__form {
@@ -5100,16 +5132,18 @@
       .add-tool-kit {
         display: grid;
         gap: 10px;
-        padding: 10px;
-        border-radius: 16px;
-        border: 1px solid rgba(148, 163, 184, 0.28);
-        background: rgba(255, 255, 255, 0.72);
-        backdrop-filter: blur(10px);
+        padding: 0;
+        border: 0;
+        background: transparent;
+        backdrop-filter: none;
       }
 
       .add-tool-kit__toggle {
         width: 100%;
+        min-height: 52px;
         justify-content: center;
+        border-color: rgba(59, 125, 255, 0.18);
+        background: rgba(255, 255, 255, 0.68);
       }
 
       .add-tool-kit__panel {

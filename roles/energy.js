@@ -3617,7 +3617,7 @@ export function renderRole(user) {
                     ></div>
                   </label>
                   <label class="form-field form-field--required">
-                    <span class="form-label">Граппа инструментов</span>
+                    <span class="form-label">Группа инструментов</span>
                     <input
                       class="form-input"
                       id="tool-group-input"

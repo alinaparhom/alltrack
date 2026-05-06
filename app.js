@@ -11576,7 +11576,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const createResponsibleStatusLine = () => {
       const line = document.createElement("div");
       line.className = "tools-card__responsible-status";
-      if (!isSearchMode) {
+      if (!isSearchMode && toolsState.mode !== "add-photo") {
         const responsibleLabel = document.createElement("span");
         responsibleLabel.textContent = "Ответственный: ";
         line.appendChild(responsibleLabel);
@@ -12032,7 +12032,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           responsibleValue,
           String(tool?.["Ответственный"] ?? "").trim() || "не указан"
         );
-        if (!isSearchMode) {
+        if (!isSearchMode && toolsState.mode !== "add-photo") {
           const responsibleLabel = document.createElement("span");
           responsibleLabel.textContent = "Ответственный: ";
           responsibleLine.append(responsibleLabel, responsibleValue);
@@ -21046,7 +21046,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const numberConfig = await resolveToolsNumberConfig();
     updateToolsNumberConfig(numberConfig);
     await loadBaseTools();
-    setToolsSubtitle("Выберите инструмент, чтобы добавить или заменить фото.");
+    setToolsSubtitle("");
     syncToolsViewButtons();
     if (
       toolsSearchInput &&

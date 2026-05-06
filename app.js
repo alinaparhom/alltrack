@@ -1275,6 +1275,29 @@ function formatToolCostValue(tool) {
   return formatNotificationCost(tool?.["Стоимость"]);
 }
 
+function formatCostValueWithCurrency(value, fallback = "—") {
+  const text = formatNotificationCost(value);
+  if (!text || text === "—") return fallback;
+  return /(?:₽|р\.|руб(?:\.|л(?:ей|я)?)?)/i.test(text) ? text : `${text} р.`;
+}
+
+function appendPersonNameWithBoldSurname(container, value, fallback = "—") {
+  if (!container) return;
+  const normalized = String(value ?? "").trim() || fallback;
+  const [surname, ...rest] = normalized.split(/\s+/).filter(Boolean);
+  if (!surname) {
+    container.textContent = fallback;
+    return;
+  }
+  const surnameEl = document.createElement("span");
+  surnameEl.style.fontWeight = "700";
+  surnameEl.textContent = surname;
+  container.appendChild(surnameEl);
+  if (rest.length > 0) {
+    container.append(` ${rest.join(" ")}`);
+  }
+}
+
 function escapeTelegramHtml(value) {
   return String(value ?? "")
     .replace(/&/g, "&amp;")
@@ -20461,11 +20484,15 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const manufacturer = String(tool?.["Производитель"] ?? "").trim();
       const model = String(tool?.["Модель"] ?? "").trim();
       const status = getNoPhotoStatusLabel(tool?.["Статус"]);
-      const costLine = document.createElement("div");
-      costLine.textContent = formatToolCostValue(tool);
+      const costText = formatCostValueWithCurrency(tool?.["Стоимость"]);
 
-      const accountingLine = document.createElement("div");
-      accountingLine.textContent = accountingNumber || "—";
+      const accountingCostLine = document.createElement("div");
+      accountingCostLine.className = "tools-table__accounting-cost-line";
+      const accountingValue = document.createElement("span");
+      accountingValue.textContent = accountingNumber || "—";
+      const costValue = document.createElement("span");
+      costValue.textContent = costText;
+      accountingCostLine.append(accountingValue, costValue);
       const detailsLine = document.createElement("div");
       detailsLine.textContent = [
         manufacturer || "—",
@@ -20473,10 +20500,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       ]
         .filter(Boolean)
         .join(" · ");
+      const responsibleLine = document.createElement("div");
+      responsibleLine.className = "tools-table__responsible-line";
+      appendPersonNameWithBoldSurname(responsibleLine, tool?.["Ответственный"]);
       const statusLine = document.createElement("div");
       statusLine.className = "tools-table__status-line";
       statusLine.textContent = status || "—";
-      meta.append(accountingLine, detailsLine, costLine, statusLine);
+      meta.append(accountingCostLine, detailsLine, responsibleLine, statusLine);
       infoCell.append(title, meta);
 
       const openCard = (event) => {

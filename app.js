@@ -27055,9 +27055,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         "Нет групп"
       );
 
-      if (addToolSubtitleEl) {
-        addToolSubtitleEl.textContent = "Заполните карточку инструмента";
-      }
       setAddToolMessage("", { tone: "info" });
     } catch (error) {
       console.error(error);

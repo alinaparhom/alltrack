@@ -27073,7 +27073,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     updateAddToolKeyboardOffset();
     resetAddToolForm();
     await loadAddToolReferences();
-    addToolNameInput?.focus();
   };
 
   const closeAddToolModal = () => {

@@ -19774,7 +19774,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     applyAddPhotoFilters();
   };
 
-  const syncToolsPhotoCount = (toolNumber) => {
+  const syncToolsPhotoCount = (toolNumber, delta = 1) => {
     const normalized = normalizeToolNumberValue(toolNumber);
     const updateTool = (tool) => {
       if (normalizeToolNumberValue(tool?.["Номер"] ?? "") !== normalized) {
@@ -19782,7 +19782,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       }
       const current = Number.parseInt(tool?.["Количество фото"] ?? 0, 10);
       const safeCurrent = Number.isFinite(current) ? current : 0;
-      return { ...tool, "Количество фото": safeCurrent + 1 };
+      return { ...tool, "Количество фото": safeCurrent + delta };
     };
     if (toolsState.tools.length) {
       toolsState.tools = toolsState.tools.map(updateTool);
@@ -19801,10 +19801,123 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         10
       );
       const safeCurrent = Number.isFinite(current) ? current : 0;
-      const nextCount = safeCurrent + 1;
+      const nextCount = safeCurrent + delta;
       toolsEditState.tool = { ...toolsEditState.tool, "Количество фото": nextCount };
       updateToolsEditPhotoCount(nextCount);
     }
+  };
+
+  const saveNoPhotoToolPhotos = async (tool, files, options = {}) => {
+    const safeFiles = Array.isArray(files) ? files.filter(Boolean) : [];
+    if (!tool || !safeFiles.length) return null;
+
+    const orgFolder = [
+      options?.orgFolder,
+      context.orgFolderName,
+      noPhotoState.orgFolder,
+      addPhotoState.orgFolder,
+    ]
+      .map((value) => String(value ?? "").trim())
+      .find(Boolean) ?? "";
+    if (!orgFolder) {
+      throw new Error("Не удалось определить организацию.");
+    }
+
+    const requestedToolNumber = String(tool?.["Номер"] ?? "").trim();
+    if (!requestedToolNumber) {
+      throw new Error("У инструмента нет номера для фото.");
+    }
+
+    const toolsPath = `./${orgFolder}/База с инструментами.json`;
+    const rawToolsPayload = await loadJson(toolsPath);
+    const normalizedTools = normalizeCollectionPayload(rawToolsPayload, "tools");
+    const requestedNumberNormalized = normalizeToolNumberValue(requestedToolNumber);
+    const toolIndex = normalizedTools.items.findIndex(
+      (entry) =>
+        normalizeToolNumberValue(entry?.["Номер"] ?? "") ===
+        requestedNumberNormalized
+    );
+
+    if (toolIndex < 0) {
+      throw new Error("Инструмент не найден в базе.");
+    }
+
+    const matchedTool = normalizedTools.items[toolIndex];
+    const matchedToolNumber = String(matchedTool?.["Номер"] ?? "").trim();
+    if (!matchedToolNumber) {
+      throw new Error("У инструмента нет номера для названия фото.");
+    }
+
+    const photoEntries = [];
+    for (const file of safeFiles) {
+      const safeName = buildAddPhotoFileName(matchedToolNumber, file);
+      const content = await readFileAsBase64(file);
+      photoEntries.push({
+        type: "file",
+        path: `${orgFolder}/Фото инструментов/${safeName}`,
+        content,
+        encoding: "base64",
+        mime: file.type || "image/*",
+        ...buildUploadUserMeta({ organizationName: context.orgFullName }),
+      });
+    }
+
+    await uploadPhotoEntriesInBatches(photoEntries);
+
+    const currentCount = Number.parseInt(
+      matchedTool?.["Количество фото"] ?? 0,
+      10
+    );
+    const safeCurrentCount = Number.isFinite(currentCount) ? currentCount : 0;
+    const nextCount = safeCurrentCount + safeFiles.length;
+    const currentNoPhotoFine = normalizeCostValue(
+      matchedTool?.["Текущий штраф за отсутствие фото"]
+    );
+
+    if (currentNoPhotoFine > 0) {
+      try {
+        await registerNoPhotoFineForTool(matchedTool, currentNoPhotoFine);
+      } catch (fineError) {
+        console.warn("Не удалось зафиксировать штраф за отсутствие фото.", fineError);
+      }
+    }
+
+    const updatedTools = [...normalizedTools.items];
+    updatedTools[toolIndex] = {
+      ...matchedTool,
+      "Количество фото": nextCount,
+      "Текущий штраф за отсутствие фото": 0,
+    };
+    const updatedToolsPayload = normalizedTools.wrapper
+      ? { ...normalizedTools.wrapper, [normalizedTools.key]: updatedTools }
+      : updatedTools;
+
+    await saveEntries([
+      {
+        path: toolsPath,
+        data: updatedToolsPayload,
+        ...buildUploadUserMeta({ organizationName: context.orgFullName }),
+      },
+    ]);
+
+    const updatedTool = updatedTools[toolIndex];
+    const isDifferentTool = (entry) =>
+      normalizeToolNumberValue(entry?.["Номер"] ?? "") !== requestedNumberNormalized;
+    noPhotoState.tools = noPhotoState.tools.filter(isDifferentTool);
+    noPhotoState.filtered = noPhotoState.filtered.filter(isDifferentTool);
+    noPhotoState.toolMap.forEach((entry, key) => {
+      if (!isDifferentTool(entry)) {
+        noPhotoState.toolMap.delete(key);
+      }
+    });
+    syncToolsPhotoCount(matchedToolNumber, safeFiles.length);
+
+    return {
+      tool: updatedTool,
+      toolNumber: matchedToolNumber,
+      savedCount: safeFiles.length,
+      photoCount: nextCount,
+    };
   };
 
   const handleAddPhotoUpload = async (tool, file, options = {}) => {
@@ -20153,41 +20266,31 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         confirmButtonEl.disabled = true;
         setNoPhotoToolSubtitle("Сохраняем фото...");
 
-        let failedUploads = 0;
-        const failedFiles = [];
         const filesToUpload = selectedFiles.splice(0, selectedFiles.length);
-
-        for (const nextFile of filesToUpload) {
-          if (!nextFile) continue;
-          try {
-            const isSaved = await handleAddPhotoUpload(safeTool, nextFile, {
-              orgFolder: noPhotoState.orgFolder,
-            });
-            if (!isSaved) {
-              failedUploads += 1;
-              failedFiles.push(nextFile);
-            }
-          } catch (error) {
-            console.error("Ошибка при загрузке фото инструмента без фото.", error);
-            failedUploads += 1;
-            failedFiles.push(nextFile);
-          }
-        }
-
-        if (failedFiles.length) {
-          selectedFiles.push(...failedFiles);
-        }
-        refreshSelectedPhotos();
-        if (failedUploads > 0) {
+        try {
+          const result = await saveNoPhotoToolPhotos(safeTool, filesToUpload, {
+            orgFolder: noPhotoState.orgFolder,
+          });
+          refreshSelectedPhotos();
+          const savedCount = result?.savedCount ?? filesToUpload.length;
           setNoPhotoToolSubtitle(
-            `Не удалось загрузить ${failedUploads} фото. Нажмите «Подтвердить» ещё раз.`
+            `Фото успешно добавлены: ${savedCount}.`
+          );
+          applyNoPhotoFilters();
+          closeNoPhotoToolModal();
+        } catch (error) {
+          console.error("Ошибка при загрузке фото инструмента без фото.", error);
+          selectedFiles.push(...filesToUpload);
+          refreshSelectedPhotos();
+          const reason =
+            error instanceof Error && error.message
+              ? ` Причина: ${error.message}`
+              : "";
+          setNoPhotoToolSubtitle(
+            `Не удалось загрузить ${filesToUpload.length} фото.${reason}`
           );
           confirmButtonEl.disabled = false;
-          return;
         }
-
-        setNoPhotoToolSubtitle("Фото успешно добавлены.");
-        closeNoPhotoToolModal();
       });
 
       const galleryUploadButton = createUploadButton({ label: "Добавить из галереи" });

@@ -6108,6 +6108,10 @@
         height: 100%;
       }
 
+      .tools-modal[data-add-photo-modal] .settings-modal__title p:empty {
+        display: none;
+      }
+
       .tools-add-photo-upload {
         width: 100%;
         justify-content: center;
@@ -6202,9 +6206,11 @@
 
       .tools-modal[data-add-photo-modal] .tools-add-photo-upload {
         min-height: 48px;
-        padding-inline: 10px;
+        padding-inline: 8px;
+        font-size: clamp(11px, 2.9vw, 13px);
+        line-height: 1.15;
         text-align: center;
-        white-space: normal;
+        white-space: nowrap;
       }
 
       .tools-modal[data-add-photo-modal] .tools-add-photo-upload--replace {
@@ -6951,7 +6957,8 @@
 
       .tools-info-card__title--add-photo {
         margin-bottom: 12px;
-        font-size: 22px;
+        font-size: var(--tools-info-muted-size, 22px);
+        line-height: 1.2;
         letter-spacing: 0.08em;
         font-weight: 800;
         color: #6b7280;
@@ -6971,7 +6978,7 @@
       }
 
       .tools-info-card__label {
-        font-size: 22px;
+        font-size: var(--tools-info-muted-size, 22px);
         letter-spacing: 0.08em;
         font-weight: 800;
         color: #6b7280;
@@ -6997,14 +7004,13 @@
           padding: 18px 16px;
         }
 
-         .tools-info-card__title--add-photo {
-          font-size: 14px;
-          margin-bottom: 10px;
-          text-align: center;
+        .tools-info-card {
+          --tools-info-muted-size: 14px;
         }
 
-        .tools-info-card__label {
-          font-size: 14px;
+         .tools-info-card__title--add-photo {
+          margin-bottom: 10px;
+          text-align: center;
         }
 
         .tools-info-card__value {

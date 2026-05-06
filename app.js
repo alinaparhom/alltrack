@@ -20490,7 +20490,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (addPhotoDetailTitleEl) {
       addPhotoDetailTitleEl.textContent = "Управление фото";
     }
-    setAddPhotoDetailMessage("Добавьте новое фото или замените нужный снимок.");
+    setAddPhotoDetailMessage("");
     if (addPhotoDetailBodyEl) {
       addPhotoDetailBodyEl.innerHTML = `<div class="tools-info-card"><div class="tools-info-card__value">Загружаем карточку...</div></div>`;
     }

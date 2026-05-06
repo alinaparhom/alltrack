@@ -2344,12 +2344,11 @@ export function renderRole(user) {
             class="settings-modal__panel tools-modal__panel"
             role="dialog"
             aria-modal="true"
-            aria-label="Добавить фото"
+            aria-label="Управление фото"
           >
             <div class="settings-modal__header tools-modal__header">
-              <div class="settings-modal__title">
-                <h2 data-add-photo-detail-title>Добавить фото</h2>
-                <p data-add-photo-detail-subtitle></p>
+              <div class="settings-modal__title settings-modal__title--single-line">
+                <h2 data-add-photo-detail-title>Управление фото</h2>
               </div>
               <button
                 class="button-icon tools-modal__close"

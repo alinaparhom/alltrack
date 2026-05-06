@@ -14850,13 +14850,34 @@
         opacity: 0.62;
       }
 
+      .fines-modal {
+        box-sizing: border-box;
+        place-items: end center;
+        padding: 0 5px 5px;
+      }
+
       .fines-modal__panel {
+        width: min(760px, 100%);
+        height: calc(100svh - 5px);
         max-width: 760px;
+        max-height: calc(100svh - 5px);
+        overflow: hidden;
+        border-radius: 24px 24px 18px 18px;
+        grid-template-rows: auto minmax(0, 1fr) auto;
+      }
+
+      @supports (height: 100dvh) {
+        .fines-modal__panel {
+          height: calc(100dvh - 5px);
+          max-height: calc(100dvh - 5px);
+        }
       }
 
       .fines-modal__header {
         grid-template-columns: minmax(0, 1fr) auto;
         align-items: center;
+        padding-right: 5px;
+        padding-left: 5px;
       }
 
       .fines-modal__header .settings-modal__title {
@@ -14867,8 +14888,12 @@
 
       .fines-modal__close,
       .fines-modal__close:hover,
-      .fines-modal__close:focus-visible {
-        border-color: transparent;
+      .fines-modal__close:focus-visible,
+      body[data-theme="dark"] .fines-modal__close,
+      body[data-theme="dark"] .fines-modal__close:hover,
+      body[data-theme="dark"] .fines-modal__close:focus-visible {
+        border: none;
+        outline: none;
         background: transparent;
         box-shadow: none;
       }
@@ -14879,7 +14904,9 @@
 
       .fines-modal__body {
         display: grid;
-        gap: 14px;
+        align-content: start;
+        gap: 0;
+        padding: 5px;
       }
 
       .fines-tabs {
@@ -14921,9 +14948,14 @@
 
       .fines-status {
         min-height: 20px;
+        margin-top: 5px;
         color: var(--muted);
         font-size: 13px;
         line-height: 1.4;
+      }
+
+      .fines-status.is-hidden {
+        display: none;
       }
 
       .fines-status.is-error {
@@ -14936,13 +14968,13 @@
 
       .fines-list {
         display: grid;
-        gap: 12px;
+        gap: 5px;
       }
 
       .fines-card {
         display: grid;
-        gap: 12px;
-        padding: 14px;
+        gap: 10px;
+        padding: 12px;
         border: 1px solid rgba(226, 232, 240, 0.92);
         border-radius: 20px;
         background: linear-gradient(145deg, rgba(255, 255, 255, 0.92), rgba(248, 250, 252, 0.72));
@@ -14999,7 +15031,8 @@
       .fines-modal__footer {
         display: grid;
         grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-        gap: 10px;
+        gap: 5px;
+        padding: 0 5px calc(5px + env(safe-area-inset-bottom));
       }
 
       .fines-reset-button {

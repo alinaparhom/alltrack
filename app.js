@@ -20007,6 +20007,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const matchedToolAccountingNumber = String(matchedTool?.["Бух.номер"] ?? "").trim();
       const toolIdentifier = matchedToolNumber || matchedToolAccountingNumber || requestedIdentifier;
       const shouldReplaceExisting = Boolean(options?.replaceExisting);
+      const replacePhotoName = String(options?.replacePhotoName ?? "").trim();
+      let replacedSinglePhoto = false;
 
       if (shouldReplaceExisting && matchedTool) {
         const primaryPhotoNumber = resolveToolPhotoNumber(matchedTool);
@@ -20016,9 +20018,16 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           matchedToolNumber,
           matchedToolAccountingNumber
         );
-        if (files.length) {
+        const filesToDelete = replacePhotoName
+          ? files.filter((photo) => photo.name === replacePhotoName)
+          : files;
+        replacedSinglePhoto = Boolean(replacePhotoName && filesToDelete.length === 1);
+        if (replacePhotoName && !filesToDelete.length) {
+          throw new Error("Выбранное фото не найдено. Обновите карточку и попробуйте снова.");
+        }
+        if (filesToDelete.length) {
           await saveEntriesViaEndpoint(
-            files.map((photo) => ({
+            filesToDelete.map((photo) => ({
               type: "delete-file",
               path: `${orgFolder}/Фото инструментов/${photo.name}`,
               ...buildUploadUserMeta({ organizationName: context.orgFullName }),
@@ -20053,9 +20062,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           }
         }
 
+        const nextPhotoCount = shouldReplaceExisting
+          ? (replacedSinglePhoto ? Math.max(safeCurrent, 1) : 1)
+          : safeCurrent + 1;
         const updatedTool = {
           ...tools[toolIndex],
-          "Количество фото": shouldReplaceExisting ? 1 : safeCurrent + 1,
+          "Количество фото": nextPhotoCount,
           "Текущий штраф за отсутствие фото": 0,
         };
         const updatedTools = [...tools];
@@ -20077,7 +20089,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       if (toolNumber) {
         updateAddPhotoAfterSave(toolNumber);
         if (options?.replaceExisting) {
-          syncToolsPhotoCountAfterDelete(toolNumber, 1);
+          syncToolsPhotoCountAfterDelete(
+            toolNumber,
+            replacedSinglePhoto
+              ? Math.max(Number.parseInt(matchedTool?.["Количество фото"] ?? 0, 10) || 0, 1)
+              : 1
+          );
         } else {
           syncToolsPhotoCount(toolNumber);
         }
@@ -20228,10 +20245,28 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     addPhotoDetailSubtitleEl.classList.toggle("is-success", tone === "success");
   };
 
-  const createAddPhotoUploadButton = ({ tool, label, replace = false, fromCamera = false }) => {
+  const uploadAddPhotoFileFromDetail = async (tool, file, options = {}) => {
+    if (!file) return false;
+    const replace = Boolean(options?.replaceExisting);
+    setAddPhotoDetailMessage(replace ? "Заменяем фото..." : "Добавляем фото...");
+    const saved = await handleAddPhotoUpload(tool, file, options);
+    if (saved) {
+      const number = resolveToolNumberValue(tool) || String(tool?.["Бух.номер"] ?? "").trim();
+      setAddPhotoDetailMessage(
+        replace ? `Фото заменено для №${number || "—"}.` : `Фото добавлено для №${number || "—"}.`,
+        "success"
+      );
+      await refreshAddPhotoDetailPreview(tool);
+    } else {
+      setAddPhotoDetailMessage("Не удалось сохранить фото. Попробуйте ещё раз.", "error");
+    }
+    return saved;
+  };
+
+  const createAddPhotoUploadButton = ({ tool, label, replace = false, fromCamera = false, replacePhotoName = "" }) => {
     const uploadButton = document.createElement("label");
     uploadButton.className = replace
-      ? "action-secondary tools-add-photo-upload"
+      ? "action-secondary tools-add-photo-upload tools-add-photo-upload--replace"
       : "action-primary tools-add-photo-upload";
     uploadButton.textContent = label;
 
@@ -20246,23 +20281,78 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     fileInput.addEventListener("change", async () => {
       const [file] = fileInput.files ?? [];
       fileInput.value = "";
-      if (!file) return;
-      setAddPhotoDetailMessage(replace ? "Заменяем фото..." : "Добавляем фото...");
-      const saved = await handleAddPhotoUpload(tool, file, { replaceExisting: replace });
-      if (saved) {
-        const number = resolveToolNumberValue(tool) || String(tool?.["Бух.номер"] ?? "").trim();
-        setAddPhotoDetailMessage(
-          replace ? `Фото заменено для №${number || "—"}.` : `Фото добавлено для №${number || "—"}.`,
-          "success"
-        );
-        await refreshAddPhotoDetailPreview(tool);
-      } else {
-        setAddPhotoDetailMessage("Не удалось сохранить фото. Попробуйте ещё раз.", "error");
-      }
+      await uploadAddPhotoFileFromDetail(tool, file, {
+        replaceExisting: replace,
+        replacePhotoName,
+      });
     });
 
     uploadButton.appendChild(fileInput);
     return uploadButton;
+  };
+
+  const createAddPhotoCameraButton = (tool) => {
+    const cameraButton = document.createElement("button");
+    cameraButton.className = "action-primary tools-add-photo-upload";
+    cameraButton.type = "button";
+    cameraButton.textContent = "Сфотографировать";
+    cameraButton.addEventListener("click", async () => {
+      addToolCameraMode = "no-photo";
+      addToolCameraNoPhotoTargetTool = tool;
+      addToolCameraNoPhotoOnCapture = async (capturedFile) => {
+        await uploadAddPhotoFileFromDetail(tool, capturedFile);
+      };
+      const opened = await openAddToolCameraModal();
+      if (!opened) {
+        addToolCameraMode = "invoice";
+        addToolCameraNoPhotoTargetTool = null;
+        addToolCameraNoPhotoOnCapture = null;
+        setAddPhotoDetailMessage("Камера недоступна. Выберите фото из галереи.", "error");
+      }
+    });
+    return cameraButton;
+  };
+
+
+  const showAddPhotoReplaceChooser = (tool, photos) => {
+    const previewEl = addPhotoDetailBodyEl?.querySelector("[data-add-photo-preview]");
+    if (!previewEl) return;
+    previewEl.innerHTML = "";
+    const hint = document.createElement("div");
+    hint.className = "add-photo-replace-hint";
+    hint.textContent = "Выберите фото, которое нужно заменить";
+    previewEl.appendChild(hint);
+
+    photos.forEach((photo) => {
+      const card = document.createElement("label");
+      card.className = "add-photo-replace-card";
+
+      const img = document.createElement("img");
+      img.className = "add-photo-preview__image";
+      img.src = `${photo.url}${photo.url.includes("?") ? "&" : "?"}v=${Date.now()}`;
+      img.alt = "Фото для замены";
+      img.loading = "lazy";
+
+      const caption = document.createElement("span");
+      caption.className = "add-photo-replace-card__caption";
+      caption.textContent = "Заменить это фото";
+
+      const fileInput = document.createElement("input");
+      fileInput.type = "file";
+      fileInput.accept = "image/*";
+      fileInput.className = "tools-table__thumb-input";
+      fileInput.addEventListener("change", async () => {
+        const [file] = fileInput.files ?? [];
+        fileInput.value = "";
+        await uploadAddPhotoFileFromDetail(tool, file, {
+          replaceExisting: true,
+          replacePhotoName: photo.name,
+        });
+      });
+
+      card.append(img, caption, fileInput);
+      previewEl.appendChild(card);
+    });
   };
 
   const renderAddPhotoDetail = (tool, photos = []) => {
@@ -20347,11 +20437,27 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
     const actionsEl = addPhotoDetailBodyEl.querySelector("[data-add-photo-actions]");
     if (actionsEl) {
-      actionsEl.append(
-        createAddPhotoUploadButton({ tool, label: "Добавить из галереи" }),
-        createAddPhotoUploadButton({ tool, label: "Сфотографировать", fromCamera: true }),
-        createAddPhotoUploadButton({ tool, label: "Заменить фото", replace: true })
-      );
+      const galleryAction = createAddPhotoUploadButton({ tool, label: "Добавить из галереи" });
+      const cameraAction = createAddPhotoCameraButton(tool);
+      let replaceAction;
+      if (photos.length > 1) {
+        replaceAction = document.createElement("button");
+        replaceAction.className = "action-secondary tools-add-photo-upload tools-add-photo-upload--replace";
+        replaceAction.type = "button";
+        replaceAction.textContent = "Заменить фото";
+        replaceAction.addEventListener("click", () => {
+          setAddPhotoDetailMessage("Выберите фото, которое хотите заменить.");
+          showAddPhotoReplaceChooser(tool, photos);
+        });
+      } else {
+        replaceAction = createAddPhotoUploadButton({
+          tool,
+          label: "Заменить фото",
+          replace: true,
+          replacePhotoName: photos[0]?.name ?? "",
+        });
+      }
+      actionsEl.append(galleryAction, cameraAction, replaceAction);
     }
   };
 
@@ -20381,12 +20487,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const openAddPhotoToolModalForTool = async (tool) => {
     if (!addPhotoModalEl || !tool) return;
     toolsState.addPhotoSelectedTool = tool;
-    const number = resolveToolNumberValue(tool) || String(tool?.["Бух.номер"] ?? "").trim();
-    const name = String(tool?.["Наименование"] ?? "").trim() || "Инструмент";
     if (addPhotoDetailTitleEl) {
-      addPhotoDetailTitleEl.textContent = name;
+      addPhotoDetailTitleEl.textContent = "Управление фото";
     }
-    setAddPhotoDetailMessage(`№${number || "—"} · можно добавить или заменить фото`);
+    setAddPhotoDetailMessage("Добавьте новое фото или замените нужный снимок.");
     if (addPhotoDetailBodyEl) {
       addPhotoDetailBodyEl.innerHTML = `<div class="tools-info-card"><div class="tools-info-card__value">Загружаем карточку...</div></div>`;
     }
@@ -26072,7 +26176,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
     if (addToolCameraMode === "no-photo" && addToolCameraNoPhotoTargetTool) {
       if (typeof addToolCameraNoPhotoOnCapture === "function") {
-        addToolCameraNoPhotoOnCapture(photoFile);
+        await addToolCameraNoPhotoOnCapture(photoFile);
       } else {
         await handleAddPhotoUpload(addToolCameraNoPhotoTargetTool, photoFile);
       }

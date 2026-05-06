@@ -6190,11 +6190,65 @@
         bottom: 0;
         z-index: 2;
         display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 8px;
         padding: 10px max(10px, env(safe-area-inset-right)) calc(10px + env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left));
         border-radius: 24px;
-        background: rgba(255, 255, 255, 0.82);
+        background: #ffffff;
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
         box-shadow: 0 -10px 30px rgba(148, 163, 184, 0.14);
+      }
+
+      .tools-modal[data-add-photo-modal] .tools-add-photo-upload {
+        min-height: 48px;
+        padding-inline: 10px;
+        text-align: center;
+        white-space: normal;
+      }
+
+      .tools-modal[data-add-photo-modal] .tools-add-photo-upload--replace {
+        grid-column: 1 / -1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+      }
+
+      .add-photo-replace-hint {
+        grid-column: 1 / -1;
+        padding: 12px 14px;
+        border-radius: 18px;
+        background: #eff6ff;
+        color: #2563eb;
+        font-size: 14px;
+        font-weight: 800;
+        text-align: center;
+      }
+
+      .add-photo-replace-card {
+        position: relative;
+        display: grid;
+        gap: 8px;
+        padding: 8px;
+        border: 1px solid rgba(37, 99, 235, 0.18);
+        border-radius: 22px;
+        background: #ffffff;
+        box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
+        cursor: pointer;
+      }
+
+      .add-photo-replace-card__caption {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 38px;
+        border-radius: 16px;
+        background: #2563eb;
+        color: #ffffff;
+        font-size: 13px;
+        font-weight: 800;
+        text-align: center;
       }
 
       @media (max-width: 520px) {
@@ -6898,7 +6952,7 @@
       .tools-info-card__title--add-photo {
         margin-bottom: 12px;
         font-size: 22px;
-        letter-spacing: 0.11em;
+        letter-spacing: 0.08em;
         font-weight: 800;
         color: #6b7280;
         text-align: center;

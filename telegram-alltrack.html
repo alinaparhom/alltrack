@@ -6211,9 +6211,21 @@
         white-space: nowrap;
       }
 
+      .tools-modal[data-add-photo-modal] .tools-add-photo-upload--blue-outline {
+        border: 1px solid rgba(59, 125, 255, 0.42);
+        background: rgba(255, 255, 255, 0.72);
+        color: var(--accent);
+        box-shadow: 0 8px 20px rgba(59, 125, 255, 0.08);
+      }
+
+      .tools-modal[data-add-photo-modal] .tools-add-photo-upload--blue-outline:hover,
+      .tools-modal[data-add-photo-modal] .tools-add-photo-upload--blue-outline:focus-visible {
+        box-shadow: 0 14px 30px rgba(59, 125, 255, 0.16);
+      }
+
       .tools-modal[data-add-photo-modal] .tools-add-photo-upload-row {
         display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
+        grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 8px;
       }
 
@@ -6272,10 +6284,16 @@
         font-weight: 800;
       }
 
-      @media (max-width: 520px) {
-        .tools-modal[data-add-photo-modal] .tools-add-photo-upload-row {
-          grid-template-columns: minmax(0, 1fr);
-        }
+      .add-photo-pending__confirm:not(:disabled) {
+        border: 1px solid rgba(16, 185, 129, 0.3);
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: #ffffff;
+        box-shadow: 0 14px 30px rgba(16, 185, 129, 0.24);
+      }
+
+      .add-photo-pending__confirm:not(:disabled):hover,
+      .add-photo-pending__confirm:not(:disabled):focus-visible {
+        box-shadow: 0 18px 36px rgba(16, 185, 129, 0.3);
       }
 
       .tools-modal[data-add-photo-modal] .tools-add-photo-upload--replace {

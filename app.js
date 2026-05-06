@@ -20494,17 +20494,17 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         pendingEl?.classList.toggle("is-hidden", selectedFiles.length === 0);
       };
 
-      const addSelectedFiles = (files, sourceLabel = "Фото") => {
+      const addSelectedFiles = (files) => {
         const safeFiles = Array.isArray(files) ? files.filter(Boolean) : [];
         if (!safeFiles.length) return;
         selectedFiles.push(...safeFiles);
         refreshSelectedPhotos();
-        setAddPhotoDetailMessage(`${sourceLabel} добавлено в очередь. Нажмите «Подтвердить».`);
+        setAddPhotoDetailMessage("");
       };
 
       const createQueuedGalleryButton = () => {
         const uploadButton = document.createElement("label");
-        uploadButton.className = "action-primary tools-add-photo-upload";
+        uploadButton.className = "action-secondary tools-add-photo-upload tools-add-photo-upload--blue-outline";
         uploadButton.textContent = "Добавить из галереи";
         const fileInput = document.createElement("input");
         fileInput.type = "file";
@@ -20514,7 +20514,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         fileInput.addEventListener("change", () => {
           const files = Array.from(fileInput.files ?? []);
           fileInput.value = "";
-          addSelectedFiles(files, "Фото из галереи");
+          addSelectedFiles(files);
         });
         uploadButton.appendChild(fileInput);
         return uploadButton;
@@ -20522,14 +20522,14 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
       const createQueuedCameraButton = () => {
         const cameraButton = document.createElement("button");
-        cameraButton.className = "action-primary tools-add-photo-upload";
+        cameraButton.className = "action-secondary tools-add-photo-upload tools-add-photo-upload--blue-outline";
         cameraButton.type = "button";
         cameraButton.textContent = "Сфотографировать";
         cameraButton.addEventListener("click", async () => {
           addToolCameraMode = "no-photo";
           addToolCameraNoPhotoTargetTool = tool;
           addToolCameraNoPhotoOnCapture = (capturedFile) => {
-            addSelectedFiles([capturedFile], "Фото с камеры");
+            addSelectedFiles([capturedFile]);
           };
           const opened = await openAddToolCameraModal();
           if (!opened) {
@@ -20545,7 +20545,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       cancelSelectedButton?.addEventListener("click", () => {
         selectedFiles.splice(0, selectedFiles.length);
         refreshSelectedPhotos();
-        setAddPhotoDetailMessage("Добавление фото отменено.");
+        setAddPhotoDetailMessage("");
       });
 
       confirmSelectedButton?.addEventListener("click", async () => {

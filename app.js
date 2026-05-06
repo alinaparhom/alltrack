@@ -20263,6 +20263,33 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     return saved;
   };
 
+  const uploadAddPhotoFilesFromDetail = async (tool, files) => {
+    const safeFiles = Array.isArray(files) ? files.filter(Boolean) : [];
+    if (!safeFiles.length) return false;
+    const number = resolveToolNumberValue(tool) || String(tool?.["Бух.номер"] ?? "").trim();
+    setAddPhotoDetailMessage(`Сохраняем фото: ${safeFiles.length}...`);
+    try {
+      const result = await saveNoPhotoToolPhotos(tool, safeFiles, {
+        orgFolder: addPhotoState.orgFolder || toolsState.orgFolder || context.orgFolderName,
+      });
+      const savedCount = result?.savedCount ?? safeFiles.length;
+      if (number) {
+        updateAddPhotoAfterSave(number);
+      }
+      setAddPhotoDetailMessage(`Фото добавлены для №${number || "—"}: ${savedCount}.`, "success");
+      await refreshAddPhotoDetailPreview(result?.tool ?? tool);
+      return true;
+    } catch (error) {
+      console.error("Не удалось сохранить выбранные фото.", error);
+      const reason =
+        error instanceof Error && error.message
+          ? ` Причина: ${error.message}`
+          : "";
+      setAddPhotoDetailMessage(`Не удалось сохранить фото.${reason}`, "error");
+      return false;
+    }
+  };
+
   const createAddPhotoUploadButton = ({ tool, label, replace = false, fromCamera = false, replacePhotoName = "" }) => {
     const uploadButton = document.createElement("label");
     uploadButton.className = replace
@@ -20373,7 +20400,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
     addPhotoDetailBodyEl.innerHTML = `
       <div class="tools-info-card tools-info-card--add-photo-detail">
-        <div class="tools-info-card__title tools-info-card__title--add-photo">Информация об инструменте</div>
+        <div class="tools-info-card__title tools-info-card__title--add-photo">ИНФОРМАЦИЯ ОБ ИНСТРУМЕНТЕ</div>
         <div class="tools-info-card__grid tools-info-card__grid--add-photo">
           <div class="tools-info-card__group">
             <div class="tools-info-card__label">НОМЕР</div>
@@ -20437,8 +20464,103 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
     const actionsEl = addPhotoDetailBodyEl.querySelector("[data-add-photo-actions]");
     if (actionsEl) {
-      const galleryAction = createAddPhotoUploadButton({ tool, label: "Добавить из галереи" });
-      const cameraAction = createAddPhotoCameraButton(tool);
+      actionsEl.innerHTML = `
+        <div class="tools-add-photo-upload-row" data-add-photo-upload-row></div>
+        <div class="add-photo-pending is-hidden" data-add-photo-pending>
+          <div class="add-photo-pending__head">
+            <div class="add-photo-pending__hint">Выбрано фото для добавления:</div>
+            <div class="add-photo-pending__counter"><strong data-add-photo-selected-count>0</strong></div>
+          </div>
+          <div class="add-photo-pending__buttons">
+            <button class="action-danger add-photo-pending__cancel" type="button" data-add-photo-selection-cancel>Отмена</button>
+            <button class="action-primary add-photo-pending__confirm" type="button" data-add-photo-selection-confirm disabled>Подтвердить</button>
+          </div>
+        </div>
+      `;
+      const uploadRowEl = actionsEl.querySelector("[data-add-photo-upload-row]");
+      const pendingEl = actionsEl.querySelector("[data-add-photo-pending]");
+      const selectedCountEl = actionsEl.querySelector("[data-add-photo-selected-count]");
+      const confirmSelectedButton = actionsEl.querySelector("[data-add-photo-selection-confirm]");
+      const cancelSelectedButton = actionsEl.querySelector("[data-add-photo-selection-cancel]");
+      const selectedFiles = [];
+
+      const refreshSelectedPhotos = () => {
+        if (selectedCountEl) {
+          selectedCountEl.textContent = String(selectedFiles.length);
+        }
+        if (confirmSelectedButton) {
+          confirmSelectedButton.disabled = selectedFiles.length === 0;
+        }
+        pendingEl?.classList.toggle("is-hidden", selectedFiles.length === 0);
+      };
+
+      const addSelectedFiles = (files, sourceLabel = "Фото") => {
+        const safeFiles = Array.isArray(files) ? files.filter(Boolean) : [];
+        if (!safeFiles.length) return;
+        selectedFiles.push(...safeFiles);
+        refreshSelectedPhotos();
+        setAddPhotoDetailMessage(`${sourceLabel} добавлено в очередь. Нажмите «Подтвердить».`);
+      };
+
+      const createQueuedGalleryButton = () => {
+        const uploadButton = document.createElement("label");
+        uploadButton.className = "action-primary tools-add-photo-upload";
+        uploadButton.textContent = "Добавить из галереи";
+        const fileInput = document.createElement("input");
+        fileInput.type = "file";
+        fileInput.accept = "image/*";
+        fileInput.multiple = true;
+        fileInput.className = "tools-table__thumb-input";
+        fileInput.addEventListener("change", () => {
+          const files = Array.from(fileInput.files ?? []);
+          fileInput.value = "";
+          addSelectedFiles(files, "Фото из галереи");
+        });
+        uploadButton.appendChild(fileInput);
+        return uploadButton;
+      };
+
+      const createQueuedCameraButton = () => {
+        const cameraButton = document.createElement("button");
+        cameraButton.className = "action-primary tools-add-photo-upload";
+        cameraButton.type = "button";
+        cameraButton.textContent = "Сфотографировать";
+        cameraButton.addEventListener("click", async () => {
+          addToolCameraMode = "no-photo";
+          addToolCameraNoPhotoTargetTool = tool;
+          addToolCameraNoPhotoOnCapture = (capturedFile) => {
+            addSelectedFiles([capturedFile], "Фото с камеры");
+          };
+          const opened = await openAddToolCameraModal();
+          if (!opened) {
+            addToolCameraMode = "invoice";
+            addToolCameraNoPhotoTargetTool = null;
+            addToolCameraNoPhotoOnCapture = null;
+            setAddPhotoDetailMessage("Камера недоступна. Выберите фото из галереи.", "error");
+          }
+        });
+        return cameraButton;
+      };
+
+      cancelSelectedButton?.addEventListener("click", () => {
+        selectedFiles.splice(0, selectedFiles.length);
+        refreshSelectedPhotos();
+        setAddPhotoDetailMessage("Добавление фото отменено.");
+      });
+
+      confirmSelectedButton?.addEventListener("click", async () => {
+        if (!selectedFiles.length) return;
+        confirmSelectedButton.disabled = true;
+        const filesToUpload = selectedFiles.splice(0, selectedFiles.length);
+        const saved = await uploadAddPhotoFilesFromDetail(tool, filesToUpload);
+        if (!saved) {
+          selectedFiles.push(...filesToUpload);
+        }
+        refreshSelectedPhotos();
+      });
+
+      const galleryAction = createQueuedGalleryButton();
+      const cameraAction = createQueuedCameraButton();
       let replaceAction;
       if (photos.length > 1) {
         replaceAction = document.createElement("button");
@@ -20457,7 +20579,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           replacePhotoName: photos[0]?.name ?? "",
         });
       }
-      actionsEl.append(galleryAction, cameraAction, replaceAction);
+      uploadRowEl?.append(galleryAction, cameraAction, replaceAction);
+      refreshSelectedPhotos();
     }
   };
 
@@ -20581,7 +20704,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       noPhotoToolContentEl.innerHTML = `
         <div class="no-photo-tool-content">
           <div class="tools-info-card">
-            <div class="tools-info-card__title tools-info-card__title--add-photo">Информация об инструменте</div>
+            <div class="tools-info-card__title tools-info-card__title--add-photo">ИНФОРМАЦИЯ ОБ ИНСТРУМЕНТЕ</div>
             <div class="tools-info-card__grid tools-info-card__grid--add-photo">
               <div class="tools-info-card__group"><div class="tools-info-card__label">Номер</div><div class="tools-info-card__value">${escapeHtml(number || "—")}</div></div>
               <div class="tools-info-card__group"><div class="tools-info-card__value">${escapeHtml(accountingNumber || "—")}</div></div>

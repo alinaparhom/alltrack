@@ -4627,9 +4627,8 @@ export function renderRole(user) {
             <div class="settings-modal__header fines-modal__header">
               <div class="settings-modal__title">
                 <h2>Штрафы</h2>
-                <p data-fines-subtitle>Выберите вкладку и заполните суммы по ответственным.</p>
               </div>
-              <button class="button-icon" type="button" data-fines-close aria-label="Закрыть штрафы">
+              <button class="button-icon fines-modal__close" type="button" data-fines-close aria-label="Закрыть штрафы">
                 <span class="button-icon-emoji" aria-hidden="true">✕</span>
               </button>
             </div>

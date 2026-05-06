@@ -6685,7 +6685,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const finesModalEl = contentEl.querySelector("[data-fines-modal]");
   const finesBackdropEl = contentEl.querySelector("[data-fines-backdrop]");
   const finesCloseButton = contentEl.querySelector("[data-fines-close]");
-  const finesSubtitleEl = contentEl.querySelector("[data-fines-subtitle]");
   const finesStatusEl = contentEl.querySelector("[data-fines-status]");
   const finesListEl = contentEl.querySelector("[data-fines-list]");
   const finesEmptyEl = contentEl.querySelector("[data-fines-empty]");
@@ -6761,23 +6760,19 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   };
   const renderFinesTab = () => {
     if (!finesListEl) return;
-    const activeTitle = finesTabTitleById.get(finesState.activeTab) ?? "Штрафы";
     const items = finesState.itemsByTab.get(finesState.activeTab) ?? [];
     finesTabButtons.forEach((button) => {
       const isActive = button.dataset.finesTab === finesState.activeTab;
       button.classList.toggle("is-active", isActive);
       button.setAttribute("aria-selected", String(isActive));
     });
-    if (finesSubtitleEl) {
-      finesSubtitleEl.textContent = `${activeTitle}: заполните суммы для текущей вкладки.`;
-    }
     finesListEl.innerHTML = "";
     finesEmptyEl?.classList.toggle("is-hidden", items.length > 0);
     if (!items.length) {
       setFinesStatus("Остатков для выставления нет.");
       return;
     }
-    setFinesStatus(`Ответственных с остатком: ${items.length}.`);
+    setFinesStatus("");
     items.forEach((item) => {
       const card = document.createElement("div");
       card.className = "fines-card";

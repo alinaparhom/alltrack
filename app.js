@@ -6056,7 +6056,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const addToolAccountingNumberInput = contentEl.querySelector(
     "#tool-accounting-number-input"
   );
-  const addToolCostInput = contentEl.querySelector('[name="tool-cost"]');
+  const addToolAccountingNameInput = contentEl.querySelector(
+    "#tool-accounting-name-input"
+  );
+  const addToolCostInput = contentEl.querySelector("#tool-cost-input");
+  const addToolSerialNumberInput = contentEl.querySelector(
+    "#tool-serial-number-input"
+  );
   const addToolResponsibleInput = contentEl.querySelector(
     "#tool-responsible-input"
   );
@@ -6106,6 +6112,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     addToolInvoicePhotoPicker?.querySelectorAll(
       '[name="tool-invoice-photo"]'
     ) ?? [];
+  const addToolAccountingNumberSuggestionsEl = contentEl.querySelector(
+    "[data-tool-accounting-number-suggestions]"
+  );
   const addToolNameSuggestionsEl = contentEl.querySelector(
     "[data-tool-name-suggestions]"
   );
@@ -6114,6 +6123,15 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   );
   const addToolModelSuggestionsEl = contentEl.querySelector(
     "[data-tool-model-suggestions]"
+  );
+  const addToolAccountingNameSuggestionsEl = contentEl.querySelector(
+    "[data-tool-accounting-name-suggestions]"
+  );
+  const addToolCostSuggestionsEl = contentEl.querySelector(
+    "[data-tool-cost-suggestions]"
+  );
+  const addToolSerialNumberSuggestionsEl = contentEl.querySelector(
+    "[data-tool-serial-number-suggestions]"
   );
   const addToolResponsibleSuggestionsEl = contentEl.querySelector(
     "[data-tool-responsible-suggestions]"
@@ -26065,13 +26083,16 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     {
       nameFilter = "",
       manufacturerFilter = "",
+      modelFilter = "",
       nameMatchMode = "startsWith",
       manufacturerMatchMode = "startsWith",
+      modelMatchMode = "startsWith",
     } = {}
   ) => {
     const normalizedName = normalizeSuggestionValue(nameFilter).toLowerCase();
     const normalizedManufacturer =
       normalizeSuggestionValue(manufacturerFilter).toLowerCase();
+    const normalizedModel = normalizeSuggestionValue(modelFilter).toLowerCase();
     const matchesFilter = (value, filter, mode = "startsWith") => {
       if (!filter) return true;
       const normalizedValue = normalizeSuggestionValue(value).toLowerCase();
@@ -26091,7 +26112,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
             tool?.["Производитель"] ?? "",
             normalizedManufacturer,
             manufacturerMatchMode
-          )
+          ) ||
+          !matchesFilter(tool?.["Модель"] ?? "", normalizedModel, modelMatchMode)
         ) {
           return false;
         }
@@ -26099,6 +26121,33 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       })
       .map((tool) => normalizeSuggestionValue(tool?.[key] ?? ""))
       .filter(Boolean);
+  };
+
+  const getToolContextFilters = () => ({
+    nameFilter: addToolNameInput?.value ?? "",
+    manufacturerFilter: addToolManufacturerInput?.value ?? "",
+    modelFilter: addToolModelInput?.value ?? "",
+  });
+
+  const getToolContextSuggestions = (key, query) => {
+    const values = getToolValues(key, getToolContextFilters());
+    if (!normalizeSuggestionValue(query)) {
+      return buildCommonSuggestions(values, 6);
+    }
+    return filterSuggestions(values, query, 6);
+  };
+
+  const getToolKitSuggestions = (key, query) => {
+    const values = addToolState.tools.flatMap((tool) => {
+      const kitItems = Array.isArray(tool?.["Комплектация"])
+        ? tool["Комплектация"]
+        : [];
+      return kitItems.map((item) => normalizeSuggestionValue(item?.[key] ?? ""));
+    });
+    if (!normalizeSuggestionValue(query)) {
+      return buildCommonSuggestions(values, 6);
+    }
+    return filterSuggestions(values, query, 6);
   };
 
   const getToolNameSuggestions = (query) => {
@@ -26151,6 +26200,19 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const getSelectableSuggestions = (options, query) =>
     filterSelectableOptions(options, query, 8);
 
+  const attachStrictOptionValue = (inputEl, getOptions) => {
+    if (!inputEl) return;
+    inputEl.addEventListener("blur", () => {
+      window.setTimeout(() => {
+        const rawValue = normalizeSuggestionValue(inputEl.value);
+        if (!rawValue) return;
+        const matchedValue = findOptionMatch(rawValue, getOptions());
+        inputEl.value = matchedValue || "";
+        inputEl.dispatchEvent(new Event("change", { bubbles: true }));
+      }, 140);
+    });
+  };
+
   const getRepairOrganizationSuggestions = (query) => {
     const values = repairFormState.organizations ?? [];
     if (!normalizeSuggestionValue(query)) {
@@ -26163,6 +26225,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     inputEl: addToolNameInput,
     containerEl: addToolNameSuggestionsEl,
     getItems: getToolNameSuggestions,
+  });
+
+  attachDynamicSuggestions({
+    inputEl: addToolAccountingNumberInput,
+    containerEl: addToolAccountingNumberSuggestionsEl,
+    getItems: (query) => getToolContextSuggestions("Бух.номер", query),
   });
 
   attachDynamicSuggestions({
@@ -26215,6 +26283,27 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   });
 
   attachDynamicSuggestions({
+    inputEl: addToolAccountingNameInput,
+    containerEl: addToolAccountingNameSuggestionsEl,
+    getItems: (query) =>
+      getToolContextSuggestions("Наименование по бухгалтерии", query),
+    showOnFocus: true,
+  });
+
+  attachDynamicSuggestions({
+    inputEl: addToolCostInput,
+    containerEl: addToolCostSuggestionsEl,
+    getItems: (query) => getToolContextSuggestions("Стоимость", query),
+    showOnFocus: true,
+  });
+
+  attachDynamicSuggestions({
+    inputEl: addToolSerialNumberInput,
+    containerEl: addToolSerialNumberSuggestionsEl,
+    getItems: (query) => getToolContextSuggestions("Серийный номер", query),
+  });
+
+  attachDynamicSuggestions({
     inputEl: repairOrganizationInput,
     containerEl: repairOrganizationSuggestionsEl,
     getItems: getRepairOrganizationSuggestions,
@@ -26236,6 +26325,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       getSelectableSuggestions(addToolState.objectOptions, query),
     showOnFocus: true,
   });
+
+  attachStrictOptionValue(
+    addToolResponsibleInput,
+    () => addToolState.responsibleOptions
+  );
+  attachStrictOptionValue(addToolObjectInput, () => addToolState.objectOptions);
 
   attachDynamicSuggestions({
     inputEl: addToolGroupInput,
@@ -26523,20 +26618,42 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       <label class="form-field form-field--required add-tool-kit__field add-tool-kit__field--name">
         <span class="form-label">Позиция комплекта</span>
         <input class="form-input" type="text" name="tool-kit-name-${rowId}" placeholder="Например, кейс" autocomplete="off" />
+        <div class="suggestions is-hidden" data-tool-kit-name-suggestions></div>
       </label>
       <label class="form-field add-tool-kit__field add-tool-kit__field--count">
         <span class="form-label">Количество</span>
         <input class="form-input" type="text" inputmode="numeric" name="tool-kit-count-${rowId}" placeholder="Необязательно" autocomplete="off" />
+        <div class="suggestions is-hidden" data-tool-kit-count-suggestions></div>
       </label>
       <label class="form-field add-tool-kit__field add-tool-kit__field--accounting">
         <span class="form-label">Бух.номер</span>
         <input class="form-input" type="text" inputmode="numeric" name="tool-kit-accounting-${rowId}" placeholder="Необязательно" autocomplete="off" />
+        <div class="suggestions is-hidden" data-tool-kit-accounting-suggestions></div>
       </label>
       <button class="button-icon add-tool-kit__remove" type="button" data-add-tool-kit-remove aria-label="Удалить позицию">
         <span class="button-icon-emoji" aria-hidden="true">✕</span>
       </button>
     `;
     addToolKitListEl.append(rowEl);
+
+    attachDynamicSuggestions({
+      inputEl: rowEl.querySelector('input[name^="tool-kit-name-"]'),
+      containerEl: rowEl.querySelector("[data-tool-kit-name-suggestions]"),
+      getItems: (query) => getToolKitSuggestions("Наименование", query),
+      showOnFocus: true,
+    });
+    attachDynamicSuggestions({
+      inputEl: rowEl.querySelector('input[name^="tool-kit-count-"]'),
+      containerEl: rowEl.querySelector("[data-tool-kit-count-suggestions]"),
+      getItems: (query) => getToolKitSuggestions("Количество", query),
+      showOnFocus: true,
+    });
+    attachDynamicSuggestions({
+      inputEl: rowEl.querySelector('input[name^="tool-kit-accounting-"]'),
+      containerEl: rowEl.querySelector("[data-tool-kit-accounting-suggestions]"),
+      getItems: (query) => getToolKitSuggestions("Бух.номер", query),
+      showOnFocus: true,
+    });
   };
 
   const clearAddToolKitRows = () => {

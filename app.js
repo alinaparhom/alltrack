@@ -6682,11 +6682,338 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     "[data-writeoff-confirm-message]"
   );
   const writeOffActsInput = contentEl.querySelector("[data-writeoff-acts]");
+  const finesModalEl = contentEl.querySelector("[data-fines-modal]");
+  const finesBackdropEl = contentEl.querySelector("[data-fines-backdrop]");
+  const finesCloseButton = contentEl.querySelector("[data-fines-close]");
+  const finesSubtitleEl = contentEl.querySelector("[data-fines-subtitle]");
+  const finesStatusEl = contentEl.querySelector("[data-fines-status]");
+  const finesListEl = contentEl.querySelector("[data-fines-list]");
+  const finesEmptyEl = contentEl.querySelector("[data-fines-empty]");
+  const finesTabButtons = Array.from(contentEl.querySelectorAll("[data-fines-tab]"));
+  const finesResetButton = contentEl.querySelector("[data-fines-reset]");
+  const finesSubmitButton = contentEl.querySelector("[data-fines-submit]");
 
   const context = contextOverride || (await resolveUserSettingsContext(user));
   const isChiefEngineerDashboard = user?.role === chiefEngineerRole;
   const settingsData = context.settingsData;
   const organizationSettings = getEnergyOrganizationSettings(settingsData);
+  const finesTabsConfig = [
+    { id: "lateReply", title: "Поздний ответ" },
+    { id: "movedByEnergy", title: "Перемещения энергетиком" },
+    { id: "noPhoto", title: "Нет фото" },
+  ];
+  const finesTabTitleById = new Map(
+    finesTabsConfig.map((item) => [item.id, item.title])
+  );
+  const finesState = {
+    activeTab: "lateReply",
+    rawFines: {},
+    itemsByTab: new Map(),
+    isSaving: false,
+  };
+  const formatFineMoney = (value) => {
+    const amount = normalizeCostValue(value) || 0;
+    return new Intl.NumberFormat("ru-RU", {
+      maximumFractionDigits: 2,
+    }).format(amount);
+  };
+  const setFinesStatus = (message = "", type = "") => {
+    if (!finesStatusEl) return;
+    finesStatusEl.textContent = message;
+    finesStatusEl.classList.toggle("is-error", type === "error");
+    finesStatusEl.classList.toggle("is-success", type === "success");
+  };
+  const getFineSummaryValue = (summary, key) => normalizeCostValue(summary?.[key]) || 0;
+  const normalizeFineSummaryForIssue = (summary) => ({
+    ...createMoveFineSummary(),
+    ...(summary && typeof summary === "object" ? summary : {}),
+  });
+  const buildFineItemsByTab = (rawFines) => {
+    const source =
+      rawFines?.["Штрафы по пользователям"] &&
+      typeof rawFines["Штрафы по пользователям"] === "object"
+        ? rawFines["Штрафы по пользователям"]
+        : {};
+    const result = new Map();
+    finesTabsConfig.forEach((tab) => {
+      const items = Object.entries(source)
+        .map(([responsible, userSummary]) => {
+          const summary = normalizeFineSummaryForIssue(userSummary?.[tab.title]);
+          const balance = getFineSummaryValue(summary, "Остаток");
+          return {
+            responsible: String(responsible ?? "").trim(),
+            balance,
+          };
+        })
+        .filter((item) => item.responsible && item.balance !== 0)
+        .sort((a, b) => a.responsible.localeCompare(b.responsible, "ru"));
+      result.set(tab.id, items);
+    });
+    return result;
+  };
+  const setFinesSavingState = (isSaving) => {
+    finesState.isSaving = Boolean(isSaving);
+    finesSubmitButton && (finesSubmitButton.disabled = finesState.isSaving);
+    finesResetButton && (finesResetButton.disabled = finesState.isSaving);
+    finesTabButtons.forEach((button) => {
+      button.disabled = finesState.isSaving;
+    });
+  };
+  const renderFinesTab = () => {
+    if (!finesListEl) return;
+    const activeTitle = finesTabTitleById.get(finesState.activeTab) ?? "Штрафы";
+    const items = finesState.itemsByTab.get(finesState.activeTab) ?? [];
+    finesTabButtons.forEach((button) => {
+      const isActive = button.dataset.finesTab === finesState.activeTab;
+      button.classList.toggle("is-active", isActive);
+      button.setAttribute("aria-selected", String(isActive));
+    });
+    if (finesSubtitleEl) {
+      finesSubtitleEl.textContent = `${activeTitle}: заполните суммы для текущей вкладки.`;
+    }
+    finesListEl.innerHTML = "";
+    finesEmptyEl?.classList.toggle("is-hidden", items.length > 0);
+    if (!items.length) {
+      setFinesStatus("Остатков для выставления нет.");
+      return;
+    }
+    setFinesStatus(`Ответственных с остатком: ${items.length}.`);
+    items.forEach((item) => {
+      const card = document.createElement("div");
+      card.className = "fines-card";
+      card.dataset.responsible = item.responsible;
+      card.dataset.balance = String(item.balance);
+      card.innerHTML = `
+        <div class="fines-card__header">
+          <div class="fines-card__name"></div>
+          <div class="fines-card__balance">Остаток: ${formatFineMoney(item.balance)} р.</div>
+        </div>
+        <div class="fines-card__fields">
+          <label class="fines-field">
+            <span>Выставить</span>
+            <input class="form-input" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0" data-fines-issue />
+          </label>
+          <label class="fines-field">
+            <span>Простить</span>
+            <input class="form-input" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0" data-fines-forgive />
+          </label>
+        </div>
+      `;
+      const nameEl = card.querySelector(".fines-card__name");
+      if (nameEl) nameEl.textContent = item.responsible;
+      finesListEl.appendChild(card);
+    });
+  };
+  const resetCurrentFinesTab = () => {
+    finesListEl
+      ?.querySelectorAll("[data-fines-issue], [data-fines-forgive]")
+      .forEach((input) => {
+        input.value = "";
+      });
+    setFinesStatus("Поля на текущей вкладке сброшены.");
+  };
+  const closeFinesModal = () => {
+    if (!finesModalEl) return;
+    finesModalEl.classList.add("is-hidden");
+    document.body.style.overflow = "";
+    setFinesStatus("");
+  };
+  const openFinesModal = async () => {
+    if (!finesModalEl) return;
+    finesModalEl.classList.remove("is-hidden");
+    document.body.style.overflow = "hidden";
+    setFinesStatus("Загружаем штрафы…");
+    finesListEl && (finesListEl.innerHTML = "");
+    finesEmptyEl?.classList.add("is-hidden");
+    try {
+      const finesPath = `./${context.orgFolderName}/Штрафы.json`;
+      finesState.rawFines = await loadJson(finesPath).catch(() => ({}));
+      finesState.itemsByTab = buildFineItemsByTab(finesState.rawFines);
+      renderFinesTab();
+    } catch (error) {
+      console.error(error);
+      setFinesStatus("Не удалось загрузить Штрафы.json.", "error");
+    }
+  };
+  const syncFineInputPair = (changedInput) => {
+    const card = changedInput.closest(".fines-card");
+    if (!card) return;
+    const balance = normalizeCostValue(card.dataset.balance) || 0;
+    const issueInput = card.querySelector("[data-fines-issue]");
+    const forgiveInput = card.querySelector("[data-fines-forgive]");
+    const pairedInput = changedInput === issueInput ? forgiveInput : issueInput;
+    if (!pairedInput) return;
+    const changedValue = normalizeCostValue(changedInput.value);
+    if (changedValue === null) {
+      pairedInput.value = "";
+      return;
+    }
+    const nextValue = Math.max(0, balance - Math.max(0, changedValue));
+    pairedInput.value = nextValue ? String(Number(nextValue.toFixed(2))) : "0";
+  };
+  const collectCurrentFinesChanges = () => {
+    const changes = [];
+    finesListEl?.querySelectorAll(".fines-card").forEach((card) => {
+      const responsible = String(card.dataset.responsible ?? "").trim();
+      const balance = normalizeCostValue(card.dataset.balance) || 0;
+      const issue = Math.max(
+        0,
+        normalizeCostValue(card.querySelector("[data-fines-issue]")?.value) || 0
+      );
+      const forgive = Math.max(
+        0,
+        normalizeCostValue(card.querySelector("[data-fines-forgive]")?.value) || 0
+      );
+      if (!responsible || (!issue && !forgive)) return;
+      changes.push({
+        responsible,
+        balance,
+        issue: Math.min(issue, balance),
+        forgive: Math.min(forgive, Math.max(0, balance - Math.min(issue, balance))),
+      });
+    });
+    return changes;
+  };
+  const buildFinesIssuedMessage = (tabTitle, changes) => {
+    const issued = changes.filter((item) => item.issue > 0);
+    if (!issued.length) return "";
+    const organizationName = context.orgFullName || context.orgFolderName || "Организация";
+    const lines = [
+      "💸 <b>Выставлены штрафы</b>",
+      `Организация: ${escapeTelegramHtml(organizationName)}`,
+      `Раздел: ${escapeTelegramHtml(tabTitle)}`,
+      "",
+      ...issued.map(
+        (item) =>
+          `• ${escapeTelegramHtml(formatFullName(item.responsible, 4))}: ${escapeTelegramHtml(formatFineMoney(item.issue))} р.`
+      ),
+    ];
+    return lines.join("\n");
+  };
+  const notifyFinesIssued = async (tabTitle, changes) => {
+    const freshSettings = await loadJson(context.settingsPath).catch(() => settingsData);
+    if (!isNotificationEnabled(freshSettings, "finesIssued")) {
+      return { sent: 0, total: 0 };
+    }
+    const message = buildFinesIssuedMessage(tabTitle, changes);
+    if (!message) return { sent: 0, total: 0 };
+    const groupIds = extractNotificationGroups(freshSettings, "finesIssued");
+    if (!groupIds.length) return { sent: 0, total: 0 };
+    const results = await Promise.all(
+      groupIds.map((chatId) => sendTelegramMessage(chatId, message))
+    );
+    return {
+      sent: results.filter((result) => result.ok).length,
+      total: results.length,
+    };
+  };
+  const submitCurrentFinesTab = async () => {
+    if (finesState.isSaving) return;
+    const tabTitle = finesTabTitleById.get(finesState.activeTab) ?? "Штрафы";
+    const changes = collectCurrentFinesChanges();
+    if (!changes.length) {
+      setFinesStatus("Заполните хотя бы одно поле на текущей вкладке.", "error");
+      return;
+    }
+    setFinesSavingState(true);
+    setFinesStatus("Сохраняем штрафы…");
+    try {
+      const finesPath = `./${context.orgFolderName}/Штрафы.json`;
+      const rawFines = await loadJson(finesPath).catch(() => finesState.rawFines || {});
+      const nextFines = rawFines && typeof rawFines === "object" && !Array.isArray(rawFines)
+        ? { ...rawFines }
+        : {};
+      const summaryByUser =
+        nextFines["Штрафы по пользователям"] &&
+        typeof nextFines["Штрафы по пользователям"] === "object"
+          ? { ...nextFines["Штрафы по пользователям"] }
+          : {};
+      const today = new Date().toISOString().slice(0, 10);
+      const history = Array.isArray(nextFines.fines) ? [...nextFines.fines] : [];
+      const appliedChanges = [];
+      changes.forEach((change) => {
+        const userSummary =
+          summaryByUser[change.responsible] &&
+          typeof summaryByUser[change.responsible] === "object"
+            ? { ...summaryByUser[change.responsible] }
+            : createMoveFineSummaryByType();
+        const fineSummary = normalizeFineSummaryForIssue(userSummary[tabTitle]);
+        const currentBalance = getFineSummaryValue(fineSummary, "Остаток");
+        const issue = Math.min(change.issue, currentBalance);
+        const forgive = Math.min(change.forgive, Math.max(0, currentBalance - issue));
+        if (issue || forgive) {
+          appliedChanges.push({
+            responsible: change.responsible,
+            balance: currentBalance,
+            issue,
+            forgive,
+          });
+        }
+        fineSummary["Выставленные штрафы"] =
+          getFineSummaryValue(fineSummary, "Выставленные штрафы") + issue;
+        fineSummary["Простили"] = getFineSummaryValue(fineSummary, "Простили") + forgive;
+        fineSummary["Остаток"] = Math.max(0, currentBalance - issue - forgive);
+        userSummary[tabTitle] = fineSummary;
+        summaryByUser[change.responsible] = userSummary;
+        if (issue > 0) {
+          history.push({
+            Дата: today,
+            Ответственный: change.responsible,
+            Сумма: issue,
+            Причина: `Выставлен штраф: ${tabTitle}`,
+            "Тип штрафа": tabTitle,
+            Действие: "Выставили",
+          });
+        }
+        if (forgive > 0) {
+          history.push({
+            Дата: today,
+            Ответственный: change.responsible,
+            Сумма: forgive,
+            Причина: `Прощён штраф: ${tabTitle}`,
+            "Тип штрафа": tabTitle,
+            Действие: "Простили",
+          });
+        }
+      });
+      nextFines["Штрафы по пользователям"] = summaryByUser;
+      nextFines.fines = history;
+      await saveJson(finesPath, nextFines, { user });
+      finesState.rawFines = nextFines;
+      finesState.itemsByTab = buildFineItemsByTab(nextFines);
+      renderFinesTab();
+      const notificationResult = await notifyFinesIssued(tabTitle, appliedChanges).catch((error) => {
+        console.warn("Не удалось отправить уведомление о штрафах.", error);
+        return { sent: 0, total: 0, failed: true };
+      });
+      const notifyText = notificationResult.total
+        ? ` Уведомления: ${notificationResult.sent}/${notificationResult.total}.`
+        : "";
+      setFinesStatus(`Штрафы по вкладке «${tabTitle}» сохранены.${notifyText}`, "success");
+    } catch (error) {
+      console.error(error);
+      setFinesStatus("Не удалось сохранить штрафы. Проверьте сервер.", "error");
+    } finally {
+      setFinesSavingState(false);
+    }
+  };
+  finesBackdropEl?.addEventListener("click", closeFinesModal);
+  finesCloseButton?.addEventListener("click", closeFinesModal);
+  finesResetButton?.addEventListener("click", resetCurrentFinesTab);
+  finesSubmitButton?.addEventListener("click", submitCurrentFinesTab);
+  finesTabButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      const tabId = button.dataset.finesTab;
+      if (!tabId || tabId === finesState.activeTab || finesState.isSaving) return;
+      finesState.activeTab = tabId;
+      renderFinesTab();
+    });
+  });
+  finesListEl?.addEventListener("input", (event) => {
+    const target = event.target.closest("[data-fines-issue], [data-fines-forgive]");
+    if (!target) return;
+    syncFineInputPair(target);
+  });
   const resolveVacationReplacements = async () => {
     try {
       const usersData = await loadJson(usersFilePath);
@@ -30109,6 +30436,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
     if (actionId === "no-photo") {
       openNoPhotoModal();
+      return true;
+    }
+    if (actionId === "fines") {
+      openFinesModal();
       return true;
     }
     if (actionId === "remove-photo") {

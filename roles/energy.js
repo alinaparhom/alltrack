@@ -4616,6 +4616,45 @@ export function renderRole(user) {
             </div>
           </div>
         </div>
+        <div class="settings-modal fines-modal is-hidden" data-fines-modal>
+          <div class="settings-modal__backdrop" data-fines-backdrop></div>
+          <div
+            class="settings-modal__panel fines-modal__panel"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Выставление штрафов"
+          >
+            <div class="settings-modal__header fines-modal__header">
+              <div class="settings-modal__title">
+                <h2>Штрафы</h2>
+                <p data-fines-subtitle>Выберите вкладку и заполните суммы по ответственным.</p>
+              </div>
+              <button class="button-icon" type="button" data-fines-close aria-label="Закрыть штрафы">
+                <span class="button-icon-emoji" aria-hidden="true">✕</span>
+              </button>
+            </div>
+            <div class="settings-modal__body fines-modal__body">
+              <div class="fines-tabs" role="tablist" aria-label="Разделы штрафов">
+                <button class="fines-tab is-active" type="button" data-fines-tab="lateReply">Поздний ответ</button>
+                <button class="fines-tab" type="button" data-fines-tab="movedByEnergy">Перемещения энергетиком</button>
+                <button class="fines-tab" type="button" data-fines-tab="noPhoto">Нет фото</button>
+              </div>
+              <div class="fines-status" data-fines-status>Загружаем штрафы…</div>
+              <div class="fines-list" data-fines-list></div>
+              <div class="tools-empty fines-empty is-hidden" data-fines-empty>
+                По этой вкладке нет ответственных с остатком штрафа.
+              </div>
+            </div>
+            <div class="settings-modal__footer fines-modal__footer">
+              <button class="button-secondary fines-reset-button" type="button" data-fines-reset>
+                Сбросить
+              </button>
+              <button class="action-primary fines-submit-button" type="button" data-fines-submit>
+                Выставить
+              </button>
+            </div>
+          </div>
+        </div>
         <div class="quick-access" data-quick-access>
           <div class="quick-access-list" data-quick-access-list></div>
         </div>

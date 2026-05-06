@@ -10584,6 +10584,23 @@
         gap: 4px;
       }
 
+      .tools-table__accounting-cost-line {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 4px 10px;
+      }
+
+      .tools-table__accounting-cost-line span + span::before {
+        content: "/";
+        margin-right: 10px;
+        color: rgba(71, 85, 105, 0.72);
+      }
+
+      .tools-table__responsible-line {
+        line-height: 1.25;
+      }
+
       .tools-table__status-line {
         font-weight: 700;
         text-decoration: underline;

@@ -3482,6 +3482,10 @@ export function renderRole(user) {
                       placeholder="Можно оставить пустым"
                       autocomplete="off"
                     />
+                    <div
+                      class="suggestions is-hidden"
+                      data-tool-accounting-number-suggestions
+                    ></div>
                   </label>
                   <label class="form-field form-field--required">
                     <span class="form-label">Наименование</span>
@@ -3535,16 +3539,22 @@ export function renderRole(user) {
                     <span class="form-label">Наименование по бухгалтерии</span>
                     <input
                       class="form-input"
+                      id="tool-accounting-name-input"
                       type="text"
                       name="tool-accounting-name"
                       placeholder="Можно оставить пустым"
                       autocomplete="off"
                     />
+                    <div
+                      class="suggestions is-hidden"
+                      data-tool-accounting-name-suggestions
+                    ></div>
                   </label>
                   <label class="form-field form-field--required">
                     <span class="form-label">Стоимость</span>
                     <input
                       class="form-input"
+                      id="tool-cost-input"
                       type="text"
                       inputmode="decimal"
                       name="tool-cost"
@@ -3552,6 +3562,10 @@ export function renderRole(user) {
                       autocomplete="off"
                       required
                     />
+                    <div
+                      class="suggestions is-hidden"
+                      data-tool-cost-suggestions
+                    ></div>
                   </label>
                   <label class="form-field form-field--required">
                     <span class="form-label">Ответственный</span>
@@ -3591,11 +3605,16 @@ export function renderRole(user) {
                     <span class="form-label">Серийный номер</span>
                     <input
                       class="form-input"
+                      id="tool-serial-number-input"
                       type="text"
                       name="tool-serial-number"
                       placeholder="Можно оставить пустым"
                       autocomplete="off"
                     />
+                    <div
+                      class="suggestions is-hidden"
+                      data-tool-serial-number-suggestions
+                    ></div>
                   </label>
                   <label class="form-field form-field--required">
                     <span class="form-label">Граппа инструментов</span>

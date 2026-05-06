@@ -14850,6 +14850,166 @@
         opacity: 0.62;
       }
 
+      .fines-modal__panel {
+        max-width: 760px;
+      }
+
+      .fines-modal__body {
+        display: grid;
+        gap: 14px;
+      }
+
+      .fines-tabs {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
+        padding: 6px;
+        border: 1px solid rgba(226, 232, 240, 0.9);
+        border-radius: 18px;
+        background: rgba(248, 250, 252, 0.72);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75);
+      }
+
+      .fines-tab {
+        min-height: 42px;
+        border: 0;
+        border-radius: 14px;
+        padding: 9px 10px;
+        background: transparent;
+        color: var(--muted);
+        font: inherit;
+        font-size: 12px;
+        font-weight: 800;
+        cursor: pointer;
+        transition: transform 0.18s ease, background 0.18s ease, color 0.18s ease,
+          box-shadow 0.18s ease;
+      }
+
+      .fines-tab.is-active {
+        background: rgba(255, 255, 255, 0.92);
+        color: var(--accent);
+        box-shadow: 0 12px 26px rgba(59, 125, 255, 0.13);
+      }
+
+      .fines-tab:active {
+        transform: scale(0.98);
+      }
+
+      .fines-status {
+        min-height: 20px;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.4;
+      }
+
+      .fines-status.is-error {
+        color: #dc2626;
+      }
+
+      .fines-status.is-success {
+        color: #059669;
+      }
+
+      .fines-list {
+        display: grid;
+        gap: 12px;
+      }
+
+      .fines-card {
+        display: grid;
+        gap: 12px;
+        padding: 14px;
+        border: 1px solid rgba(226, 232, 240, 0.92);
+        border-radius: 20px;
+        background: linear-gradient(145deg, rgba(255, 255, 255, 0.92), rgba(248, 250, 252, 0.72));
+        box-shadow: 0 16px 36px rgba(15, 23, 42, 0.08);
+      }
+
+      .fines-card__header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .fines-card__name {
+        color: var(--text);
+        font-size: 15px;
+        font-weight: 800;
+        line-height: 1.25;
+      }
+
+      .fines-card__balance {
+        flex: 0 0 auto;
+        padding: 6px 10px;
+        border-radius: 999px;
+        background: rgba(59, 125, 255, 0.1);
+        color: var(--accent);
+        font-size: 12px;
+        font-weight: 800;
+        white-space: nowrap;
+      }
+
+      .fines-card__fields {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+      }
+
+      .fines-field {
+        display: grid;
+        gap: 6px;
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+
+      .fines-field .form-input {
+        min-height: 46px;
+        font-size: 16px;
+        font-weight: 700;
+      }
+
+      .fines-modal__footer {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        gap: 10px;
+      }
+
+      .fines-reset-button {
+        border-color: rgba(239, 68, 68, 0.25);
+        background: rgba(254, 242, 242, 0.92);
+        color: #dc2626;
+      }
+
+      .fines-submit-button {
+        background: linear-gradient(135deg, #16a34a, #22c55e);
+        box-shadow: 0 16px 34px rgba(34, 197, 94, 0.24);
+      }
+
+      @media (max-width: 620px) {
+        .fines-tabs {
+          grid-template-columns: 1fr;
+        }
+
+        .fines-card__header {
+          display: grid;
+        }
+
+        .fines-card__balance {
+          justify-self: start;
+        }
+      }
+
+      @media (max-width: 420px) {
+        .fines-card__fields,
+        .fines-modal__footer {
+          grid-template-columns: 1fr;
+        }
+      }
+
       @media (max-width: 520px) {
         .settings-modal__panel {
           border-radius: 0;

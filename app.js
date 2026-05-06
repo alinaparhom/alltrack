@@ -6783,7 +6783,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       card.innerHTML = `
         <div class="fines-card__header">
           <div class="fines-card__name"></div>
-          <div class="fines-card__balance">Остаток: ${formatFineMoney(item.balance)} р.</div>
+          <div class="fines-card__balance">${formatFineMoney(item.balance)} р.</div>
         </div>
         <div class="fines-card__fields">
           <label class="fines-field">

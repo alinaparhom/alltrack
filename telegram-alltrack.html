@@ -14988,16 +14988,21 @@
 
       .fines-card__header {
         display: flex;
-        align-items: flex-start;
+        align-items: center;
         justify-content: space-between;
-        gap: 12px;
+        gap: 10px;
+        min-width: 0;
       }
 
       .fines-card__name {
+        min-width: 0;
+        overflow: hidden;
         color: var(--text);
         font-size: 15px;
         font-weight: 800;
         line-height: 1.25;
+        text-overflow: ellipsis;
+        white-space: nowrap;
       }
 
       .fines-card__balance {
@@ -15080,17 +15085,24 @@
         }
 
         .fines-card__header {
-          display: grid;
+          gap: 8px;
         }
 
         .fines-card__balance {
-          justify-self: start;
+          padding-inline: 9px;
+          font-size: 11px;
         }
       }
 
       @media (max-width: 420px) {
         .fines-card__fields {
-          grid-template-columns: 1fr;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 8px;
+        }
+
+        .fines-field .form-input {
+          min-height: 44px;
+          padding-inline: 10px;
         }
 
         .fines-modal__footer {
@@ -15187,6 +15199,20 @@
 
       .button-icon-emoji {
         font-size: 18px;
+      }
+
+
+      .button-icon.fines-modal__close,
+      .button-icon.fines-modal__close:hover,
+      .button-icon.fines-modal__close:focus-visible,
+      body[data-theme="dark"] .button-icon.fines-modal__close,
+      body[data-theme="dark"] .button-icon.fines-modal__close:hover,
+      body[data-theme="dark"] .button-icon.fines-modal__close:focus-visible {
+        border: 0;
+        outline: 0;
+        background: transparent;
+        box-shadow: none;
+        color: #dc2626;
       }
 
       .settings-header {

@@ -26078,71 +26078,121 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
   };
 
-  const getToolValues = (
-    key,
-    {
-      nameFilter = "",
-      manufacturerFilter = "",
-      modelFilter = "",
-      nameMatchMode = "startsWith",
-      manufacturerMatchMode = "startsWith",
-      modelMatchMode = "startsWith",
-    } = {}
-  ) => {
-    const normalizedName = normalizeSuggestionValue(nameFilter).toLowerCase();
-    const normalizedManufacturer =
-      normalizeSuggestionValue(manufacturerFilter).toLowerCase();
-    const normalizedModel = normalizeSuggestionValue(modelFilter).toLowerCase();
-    const matchesFilter = (value, filter, mode = "startsWith") => {
-      if (!filter) return true;
-      const normalizedValue = normalizeSuggestionValue(value).toLowerCase();
-      if (mode === "equals") return normalizedValue === filter;
-      if (mode === "includes") return normalizedValue.includes(filter);
-      return normalizedValue.startsWith(filter);
+  const getAddToolFieldInput = (key) => {
+    const inputMap = {
+      "Бух.номер": addToolAccountingNumberInput,
+      "Наименование": addToolNameInput,
+      "Производитель": addToolManufacturerInput,
+      "Модель": addToolModelInput,
+      "Наименование по бухгалтерии": addToolAccountingNameInput,
+      "Стоимость": addToolCostInput,
+      "Ответственный": addToolResponsibleInput,
+      "Объект": addToolObjectInput,
+      "Серийный номер": addToolSerialNumberInput,
+      "Граппа инструментов": addToolGroupInput,
     };
-    return addToolState.tools
-      .filter((tool) => {
-        if (
-          !matchesFilter(
-            tool?.["Наименование"] ?? "",
-            normalizedName,
-            nameMatchMode
-          ) ||
-          !matchesFilter(
-            tool?.["Производитель"] ?? "",
-            normalizedManufacturer,
-            manufacturerMatchMode
-          ) ||
-          !matchesFilter(tool?.["Модель"] ?? "", normalizedModel, modelMatchMode)
-        ) {
-          return false;
-        }
-        return true;
-      })
-      .map((tool) => normalizeSuggestionValue(tool?.[key] ?? ""))
-      .filter(Boolean);
+    return inputMap[key] ?? null;
   };
 
-  const getToolContextFilters = () => ({
-    nameFilter: addToolNameInput?.value ?? "",
-    manufacturerFilter: addToolManufacturerInput?.value ?? "",
-    modelFilter: addToolModelInput?.value ?? "",
-  });
+  const getAddToolContextFilters = (excludeKey = "") => {
+    const keys = [
+      "Бух.номер",
+      "Наименование",
+      "Производитель",
+      "Модель",
+      "Наименование по бухгалтерии",
+      "Стоимость",
+      "Ответственный",
+      "Объект",
+      "Серийный номер",
+      "Граппа инструментов",
+    ];
+    return keys
+      .filter((key) => key !== excludeKey)
+      .map((key) => ({
+        key,
+        value: normalizeSuggestionValue(getAddToolFieldInput(key)?.value ?? ""),
+      }))
+      .filter((item) => item.value);
+  };
 
-  const getToolContextSuggestions = (key, query) => {
-    const values = getToolValues(key, getToolContextFilters());
+  const isSuggestionContextMatch = (sourceValue, filterValue) => {
+    const normalizedSource = normalizeSuggestionValue(sourceValue).toLowerCase();
+    const normalizedFilter = normalizeSuggestionValue(filterValue).toLowerCase();
+    if (!normalizedFilter) return true;
+    return normalizedSource.includes(normalizedFilter);
+  };
+
+  const getToolsForAddToolSuggestions = (excludeKey = "") => {
+    const filters = getAddToolContextFilters(excludeKey);
+    if (!filters.length) return addToolState.tools;
+    return addToolState.tools.filter((tool) =>
+      filters.every(({ key, value }) =>
+        isSuggestionContextMatch(tool?.[key] ?? "", value)
+      )
+    );
+  };
+
+  const getToolValues = (key, { excludeKey = key } = {}) =>
+    getToolsForAddToolSuggestions(excludeKey)
+      .map((tool) => normalizeSuggestionValue(tool?.[key] ?? ""))
+      .filter(Boolean);
+
+  const mergeSuggestionValues = (...groups) => {
+    const seen = new Set();
+    return groups
+      .flat()
+      .map((item) => normalizeSuggestionValue(item))
+      .filter((item) => {
+        if (!item) return false;
+        const key = item.toLowerCase();
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+  };
+
+  const getToolContextSuggestions = (key, query, { options = [] } = {}) => {
+    const historicalValues = getToolValues(key, { excludeKey: key });
+    const commonValues = buildCommonSuggestions(historicalValues, 12);
+    const values = mergeSuggestionValues(commonValues, options);
     if (!normalizeSuggestionValue(query)) {
-      return buildCommonSuggestions(values, 6);
+      return values.slice(0, 6);
     }
     return filterSuggestions(values, query, 6);
   };
 
-  const getToolKitSuggestions = (key, query) => {
-    const values = addToolState.tools.flatMap((tool) => {
+  const getKitRowInput = (rowEl, key) => {
+    const selectorMap = {
+      "Наименование": 'input[name^="tool-kit-name-"]',
+      "Количество": 'input[name^="tool-kit-count-"]',
+      "Бух.номер": 'input[name^="tool-kit-accounting-"]',
+    };
+    return rowEl?.querySelector(selectorMap[key] ?? "") ?? null;
+  };
+
+  const getKitRowContextFilters = (rowEl, excludeKey = "") =>
+    ["Наименование", "Количество", "Бух.номер"]
+      .filter((key) => key !== excludeKey)
+      .map((key) => ({
+        key,
+        value: normalizeSuggestionValue(getKitRowInput(rowEl, key)?.value ?? ""),
+      }))
+      .filter((item) => item.value);
+
+  const getToolKitSuggestions = (key, query, rowEl = null) => {
+    const rowFilters = getKitRowContextFilters(rowEl, key);
+    const values = getToolsForAddToolSuggestions("").flatMap((tool) => {
       const kitItems = Array.isArray(tool?.["Комплектация"])
         ? tool["Комплектация"]
         : [];
-      return kitItems.map((item) => normalizeSuggestionValue(item?.[key] ?? ""));
+      return kitItems
+        .filter((item) =>
+          rowFilters.every(({ key: filterKey, value }) =>
+            isSuggestionContextMatch(item?.[filterKey] ?? "", value)
+          )
+        )
+        .map((item) => normalizeSuggestionValue(item?.[key] ?? ""));
     });
     if (!normalizeSuggestionValue(query)) {
       return buildCommonSuggestions(values, 6);
@@ -26150,40 +26200,14 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     return filterSuggestions(values, query, 6);
   };
 
-  const getToolNameSuggestions = (query) => {
-    if (!normalizeSuggestionValue(query)) return [];
-    return filterSuggestions(getToolValues("Наименование"), query, 6);
-  };
+  const getToolNameSuggestions = (query) =>
+    getToolContextSuggestions("Наименование", query);
 
-  const getToolManufacturerSuggestions = (query) => {
-    const rawName = addToolNameInput?.value ?? "";
-    const normalizedName = normalizeSuggestionValue(rawName).toLowerCase();
-    const hasExactNameMatch = normalizedName
-      ? addToolState.tools.some((tool) => {
-          const name = normalizeSuggestionValue(tool?.["Наименование"] ?? "");
-          return name.toLowerCase() === normalizedName;
-        })
-      : false;
-    const values = getToolValues("Производитель", {
-      nameFilter: rawName,
-      nameMatchMode: hasExactNameMatch ? "equals" : "startsWith",
-    });
-    if (!normalizeSuggestionValue(query)) {
-      return buildCommonSuggestions(values, 6);
-    }
-    return filterSuggestions(values, query, 6);
-  };
+  const getToolManufacturerSuggestions = (query) =>
+    getToolContextSuggestions("Производитель", query);
 
-  const getToolModelSuggestions = (query) => {
-    const values = getToolValues("Модель", {
-      nameFilter: addToolNameInput?.value ?? "",
-      manufacturerFilter: addToolManufacturerInput?.value ?? "",
-    });
-    if (!normalizeSuggestionValue(query)) {
-      return buildCommonSuggestions(values, 6);
-    }
-    return filterSuggestions(values, query, 6);
-  };
+  const getToolModelSuggestions = (query) =>
+    getToolContextSuggestions("Модель", query);
 
   const getDemandToolSuggestions = (query) => {
     const values = [
@@ -26225,12 +26249,14 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     inputEl: addToolNameInput,
     containerEl: addToolNameSuggestionsEl,
     getItems: getToolNameSuggestions,
+    showOnFocus: true,
   });
 
   attachDynamicSuggestions({
     inputEl: addToolAccountingNumberInput,
     containerEl: addToolAccountingNumberSuggestionsEl,
     getItems: (query) => getToolContextSuggestions("Бух.номер", query),
+    showOnFocus: true,
   });
 
   attachDynamicSuggestions({
@@ -26301,6 +26327,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     inputEl: addToolSerialNumberInput,
     containerEl: addToolSerialNumberSuggestionsEl,
     getItems: (query) => getToolContextSuggestions("Серийный номер", query),
+    showOnFocus: true,
   });
 
   attachDynamicSuggestions({
@@ -26314,7 +26341,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     inputEl: addToolResponsibleInput,
     containerEl: addToolResponsibleSuggestionsEl,
     getItems: (query) =>
-      getSelectableSuggestions(addToolState.responsibleOptions, query),
+      getToolContextSuggestions("Ответственный", query, {
+        options: addToolState.responsibleOptions,
+      }),
     showOnFocus: true,
   });
 
@@ -26322,7 +26351,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     inputEl: addToolObjectInput,
     containerEl: addToolObjectSuggestionsEl,
     getItems: (query) =>
-      getSelectableSuggestions(addToolState.objectOptions, query),
+      getToolContextSuggestions("Объект", query, {
+        options: addToolState.objectOptions,
+      }),
     showOnFocus: true,
   });
 
@@ -26336,7 +26367,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     inputEl: addToolGroupInput,
     containerEl: addToolGroupSuggestionsEl,
     getItems: (query) =>
-      getSelectableSuggestions(addToolState.groupOptions, query),
+      getToolContextSuggestions("Граппа инструментов", query, {
+        options: addToolState.groupOptions,
+      }),
     showOnFocus: true,
   });
 
@@ -26639,19 +26672,19 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     attachDynamicSuggestions({
       inputEl: rowEl.querySelector('input[name^="tool-kit-name-"]'),
       containerEl: rowEl.querySelector("[data-tool-kit-name-suggestions]"),
-      getItems: (query) => getToolKitSuggestions("Наименование", query),
+      getItems: (query) => getToolKitSuggestions("Наименование", query, rowEl),
       showOnFocus: true,
     });
     attachDynamicSuggestions({
       inputEl: rowEl.querySelector('input[name^="tool-kit-count-"]'),
       containerEl: rowEl.querySelector("[data-tool-kit-count-suggestions]"),
-      getItems: (query) => getToolKitSuggestions("Количество", query),
+      getItems: (query) => getToolKitSuggestions("Количество", query, rowEl),
       showOnFocus: true,
     });
     attachDynamicSuggestions({
       inputEl: rowEl.querySelector('input[name^="tool-kit-accounting-"]'),
       containerEl: rowEl.querySelector("[data-tool-kit-accounting-suggestions]"),
-      getItems: (query) => getToolKitSuggestions("Бух.номер", query),
+      getItems: (query) => getToolKitSuggestions("Бух.номер", query, rowEl),
       showOnFocus: true,
     });
   };

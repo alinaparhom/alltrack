@@ -6718,7 +6718,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   };
   const setFinesStatus = (message = "", type = "") => {
     if (!finesStatusEl) return;
-    finesStatusEl.textContent = message;
+    const normalizedMessage = String(message ?? "").trim();
+    finesStatusEl.textContent = normalizedMessage;
+    finesStatusEl.classList.toggle("is-hidden", !normalizedMessage);
     finesStatusEl.classList.toggle("is-error", type === "error");
     finesStatusEl.classList.toggle("is-success", type === "success");
   };
@@ -6769,7 +6771,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     finesListEl.innerHTML = "";
     finesEmptyEl?.classList.toggle("is-hidden", items.length > 0);
     if (!items.length) {
-      setFinesStatus("Остатков для выставления нет.");
+      setFinesStatus("");
       return;
     }
     setFinesStatus("");

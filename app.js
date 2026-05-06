@@ -6822,7 +6822,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
             />
           </label>
         </div>
-        <div class="fines-card__hint" data-fines-card-hint>Максимум к выставлению — ${formatFineMoney(balance)} р.</div>
+        <div class="fines-card__hint" data-fines-card-hint hidden></div>
       `;
       const nameEl = card.querySelector(".fines-card__name");
       if (nameEl) nameEl.textContent = item.responsible;
@@ -6835,6 +6835,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       .forEach((input) => {
         input.value = "";
       });
+    finesListEl?.querySelectorAll("[data-fines-card-hint]").forEach((hintEl) => {
+      hintEl.textContent = "";
+      hintEl.hidden = true;
+    });
     setFinesStatus("Поля на текущей вкладке сброшены.");
   };
   const closeFinesModal = () => {
@@ -6873,17 +6877,22 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (issueInput) issueInput.max = String(Number(balance.toFixed(2)));
     if (forgiveInput) forgiveInput.max = String(Number(forgiveMax.toFixed(2)));
 
-    let wasLimited = false;
+    let limitedAmount = null;
     if (changedInput === issueInput) {
       const changedValue = normalizeCostValue(changedInput.value);
       if (changedValue === null) {
         if (forgiveInput) forgiveInput.value = "";
-        hintEl && (hintEl.textContent = `Максимум к выставлению — ${formatFineMoney(balance)} р.`);
+        if (hintEl) {
+          hintEl.textContent = "";
+          hintEl.hidden = true;
+        }
         return;
       }
       const nextIssue = Math.min(Math.max(0, changedValue), balance);
-      wasLimited = nextIssue !== changedValue;
-      if (wasLimited) changedInput.value = formatFineInputValue(nextIssue);
+      if (nextIssue !== changedValue) {
+        limitedAmount = balance;
+        changedInput.value = formatFineInputValue(nextIssue);
+      }
       if (forgiveInput) {
         const nextForgive = Math.max(0, balance - nextIssue);
         forgiveInput.max = String(Number(nextForgive.toFixed(2)));
@@ -6892,18 +6901,27 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     } else if (changedInput === forgiveInput) {
       const changedValue = normalizeCostValue(changedInput.value);
       if (changedValue === null) {
-        hintEl && (hintEl.textContent = `Можно простить до ${formatFineMoney(forgiveMax)} р. без пересчёта выставления.`);
+        if (hintEl) {
+          hintEl.textContent = "";
+          hintEl.hidden = true;
+        }
         return;
       }
       const nextForgive = Math.min(Math.max(0, changedValue), forgiveMax);
-      wasLimited = nextForgive !== changedValue;
-      if (wasLimited) changedInput.value = formatFineInputValue(nextForgive);
+      if (nextForgive !== changedValue) {
+        limitedAmount = forgiveMax;
+        changedInput.value = formatFineInputValue(nextForgive);
+      }
     }
 
     if (hintEl) {
-      hintEl.textContent = wasLimited
-        ? `Сумма ограничена остатком: максимум ${formatFineMoney(balance)} р.`
-        : `Максимум к выставлению — ${formatFineMoney(balance)} р.`;
+      if (limitedAmount !== null) {
+        hintEl.textContent = `Сумма ограничена остатком: максимум ${formatFineMoney(limitedAmount)} р.`;
+        hintEl.hidden = false;
+      } else {
+        hintEl.textContent = "";
+        hintEl.hidden = true;
+      }
     }
   };
   const collectCurrentFinesChanges = () => {

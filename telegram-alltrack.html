@@ -14901,13 +14901,24 @@
         align-self: center;
       }
 
+      .fines-modal__close .button-icon-emoji {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 22px;
+        font-weight: 950;
+        line-height: 1;
+        text-shadow: 0 0 0 currentColor, 0.5px 0 currentColor, -0.5px 0 currentColor;
+        transform: scale(1.08);
+      }
+
       .fines-modal__body {
         display: grid;
         grid-template-rows: auto auto minmax(0, 1fr) auto;
         align-content: stretch;
         gap: 8px;
         overflow: hidden;
-        padding: 10px 12px;
+        padding: 10px 12px 0;
       }
 
       .fines-tabs {
@@ -15042,7 +15053,7 @@
         display: grid;
         grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
         gap: 8px;
-        padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
+        padding: 8px 12px calc(10px + env(safe-area-inset-bottom));
         border-top: 1px solid rgba(226, 232, 240, 0.72);
         background: rgba(255, 255, 255, 0.78);
         backdrop-filter: blur(18px);

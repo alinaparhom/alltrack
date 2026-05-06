@@ -6835,18 +6835,17 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const syncFineInputPair = (changedInput) => {
     const card = changedInput.closest(".fines-card");
     if (!card) return;
-    const balance = normalizeCostValue(card.dataset.balance) || 0;
     const issueInput = card.querySelector("[data-fines-issue]");
     const forgiveInput = card.querySelector("[data-fines-forgive]");
-    const pairedInput = changedInput === issueInput ? forgiveInput : issueInput;
-    if (!pairedInput) return;
+    if (changedInput !== issueInput || !forgiveInput) return;
+    const balance = normalizeCostValue(card.dataset.balance) || 0;
     const changedValue = normalizeCostValue(changedInput.value);
     if (changedValue === null) {
-      pairedInput.value = "";
+      forgiveInput.value = "";
       return;
     }
     const nextValue = Math.max(0, balance - Math.max(0, changedValue));
-    pairedInput.value = nextValue ? String(Number(nextValue.toFixed(2))) : "0";
+    forgiveInput.value = nextValue ? String(Number(nextValue.toFixed(2))) : "0";
   };
   const collectCurrentFinesChanges = () => {
     const changes = [];

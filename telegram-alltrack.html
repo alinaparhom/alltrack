@@ -6132,6 +6132,85 @@
         display: flex;
         flex-direction: column;
       }
+
+      .tools-modal[data-add-photo-modal] .tools-modal__panel {
+        width: min(94vw, 560px);
+        max-width: 560px;
+        max-height: min(92vh, 760px);
+      }
+
+      .tools-modal[data-add-photo-modal] .tools-modal__body {
+        display: grid;
+        gap: 12px;
+        padding: 12px;
+        overflow-y: auto;
+      }
+
+      .tools-info-card--add-photo-detail,
+      .tools-info-card--add-photo-preview {
+        background: rgba(255, 255, 255, 0.78);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+      }
+
+      .add-photo-preview {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+      }
+
+      .add-photo-preview__image,
+      .add-photo-preview__empty {
+        width: 100%;
+        min-height: 132px;
+        border-radius: 20px;
+        border: 1px solid rgba(148, 163, 184, 0.28);
+        background: rgba(248, 250, 252, 0.86);
+      }
+
+      .add-photo-preview__image {
+        display: block;
+        aspect-ratio: 1 / 1;
+        object-fit: cover;
+        box-shadow: 0 12px 28px rgba(15, 23, 42, 0.1);
+      }
+
+      .add-photo-preview__empty {
+        grid-column: 1 / -1;
+        display: grid;
+        place-items: center;
+        padding: 18px;
+        color: var(--muted);
+        font-weight: 700;
+        text-align: center;
+      }
+
+      .tools-modal[data-add-photo-modal] .tools-add-photo-upload-wrap {
+        position: sticky;
+        bottom: 0;
+        z-index: 2;
+        display: grid;
+        gap: 8px;
+        padding: 10px max(10px, env(safe-area-inset-right)) calc(10px + env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left));
+        border-radius: 24px;
+        background: rgba(255, 255, 255, 0.82);
+        box-shadow: 0 -10px 30px rgba(148, 163, 184, 0.14);
+      }
+
+      @media (max-width: 520px) {
+        .tools-modal[data-add-photo-modal] .tools-modal__panel {
+          width: 100vw;
+          max-width: 100vw;
+          height: 100dvh;
+          max-height: 100dvh;
+          border-radius: 0;
+        }
+
+        .add-photo-preview {
+          grid-template-columns: minmax(0, 1fr);
+        }
+      }
+
       .tools-modal__header-actions {
         display: inline-flex;
         align-items: center;

@@ -5669,6 +5669,15 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     "[data-add-photo-backdrop]"
   );
   const addPhotoCloseButton = contentEl.querySelector("[data-add-photo-close]");
+  const addPhotoDetailTitleEl = contentEl.querySelector(
+    "[data-add-photo-detail-title]"
+  );
+  const addPhotoDetailSubtitleEl = contentEl.querySelector(
+    "[data-add-photo-detail-subtitle]"
+  );
+  const addPhotoDetailBodyEl = contentEl.querySelector(
+    "[data-add-photo-detail-body]"
+  );
   const addPhotoSearchInput = contentEl.querySelector(
     "[data-add-photo-search]"
   );
@@ -7127,6 +7136,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     view: savedToolsView,
     previousView: savedToolsView,
     mode: "user",
+    addPhotoSelectedTool: null,
     filters: {
       group: [],
       object: [],
@@ -9526,6 +9536,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const shouldShow =
       toolsState.mode === "base" ||
       toolsState.mode === "search" ||
+      toolsState.mode === "add-photo" ||
       toolsState.mode === "user" ||
       toolsState.mode === "move-other" ||
       isRepairLikeMode();
@@ -9587,6 +9598,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const isSearchLikeMode =
       toolsState.mode === "base" ||
       toolsState.mode === "search" ||
+      toolsState.mode === "add-photo" ||
       toolsState.mode === "user" ||
       toolsState.mode === "move-other" ||
       isRepairLikeMode();
@@ -11476,6 +11488,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const isSearchLikeMode =
       toolsState.mode === "base" ||
       toolsState.mode === "search" ||
+      toolsState.mode === "add-photo" ||
       toolsState.mode === "user" ||
       toolsState.mode === "move-other" ||
       toolsState.mode === "repair" ||
@@ -12512,6 +12525,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     updateToolsReplacementPendingLinkVisibility();
     toolsModalEl.classList.remove("tools-modal--searching");
     toolsModalEl.classList.remove("tools-modal--my-tools");
+    if (toolsState.mode === "add-photo") {
+      closeAddPhotoDetailModal({ keepBodyLocked: false });
+    }
     document.body.style.overflow = "";
     resetToolsSelection();
     closeToolsMoveModal();
@@ -19539,6 +19555,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         }
         return;
       }
+      if (toolsState.mode === "add-photo") {
+        const tool = toolsState.toolMap.get(item.dataset.toolId);
+        if (tool) {
+          openAddPhotoToolModalForTool(tool);
+        }
+        return;
+      }
       if (toolsState.mode === "repair") {
         const tool = toolsState.toolMap.get(item.dataset.toolId);
         if (tool) {
@@ -19979,10 +20002,31 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         const entryAccountingNumber = normalizeToolNumberValue(entry?.["Бух.номер"] ?? "");
         return entryNumber === normalized || entryAccountingNumber === normalized;
       });
-            const matchedTool = toolIndex >= 0 ? tools[toolIndex] : null;
+      const matchedTool = toolIndex >= 0 ? tools[toolIndex] : null;
       const matchedToolNumber = String(matchedTool?.["Номер"] ?? "").trim();
       const matchedToolAccountingNumber = String(matchedTool?.["Бух.номер"] ?? "").trim();
       const toolIdentifier = matchedToolNumber || matchedToolAccountingNumber || requestedIdentifier;
+      const shouldReplaceExisting = Boolean(options?.replaceExisting);
+
+      if (shouldReplaceExisting && matchedTool) {
+        const primaryPhotoNumber = resolveToolPhotoNumber(matchedTool);
+        const { files } = await loadToolPhotoFiles(
+          orgFolder,
+          primaryPhotoNumber,
+          matchedToolNumber,
+          matchedToolAccountingNumber
+        );
+        if (files.length) {
+          await saveEntriesViaEndpoint(
+            files.map((photo) => ({
+              type: "delete-file",
+              path: `${orgFolder}/Фото инструментов/${photo.name}`,
+              ...buildUploadUserMeta({ organizationName: context.orgFullName }),
+            }))
+          );
+        }
+      }
+
       const safeName = buildAddPhotoFileName(toolIdentifier, file);
       const content = await readFileAsBase64(file);
       const photoEntry = {
@@ -20011,7 +20055,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
         const updatedTool = {
           ...tools[toolIndex],
-          "Количество фото": safeCurrent + 1,
+          "Количество фото": shouldReplaceExisting ? 1 : safeCurrent + 1,
           "Текущий штраф за отсутствие фото": 0,
         };
         const updatedTools = [...tools];
@@ -20032,7 +20076,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
       if (toolNumber) {
         updateAddPhotoAfterSave(toolNumber);
-        syncToolsPhotoCount(toolNumber);
+        if (options?.replaceExisting) {
+          syncToolsPhotoCountAfterDelete(toolNumber, 1);
+        } else {
+          syncToolsPhotoCount(toolNumber);
+        }
       }
       const successMessage = `Фото сохранено для №${toolIdentifier}.`;
       setAddPhotoSubtitle(successMessage);
@@ -20173,10 +20221,218 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     applyAddPhotoFilters();
   };
 
-  const openAddPhotoModal = async () => {
-    if (!addPhotoModalEl) return;
+  const setAddPhotoDetailMessage = (text, tone = "") => {
+    if (!addPhotoDetailSubtitleEl) return;
+    addPhotoDetailSubtitleEl.textContent = text;
+    addPhotoDetailSubtitleEl.classList.toggle("is-error", tone === "error");
+    addPhotoDetailSubtitleEl.classList.toggle("is-success", tone === "success");
+  };
+
+  const createAddPhotoUploadButton = ({ tool, label, replace = false, fromCamera = false }) => {
+    const uploadButton = document.createElement("label");
+    uploadButton.className = replace
+      ? "action-secondary tools-add-photo-upload"
+      : "action-primary tools-add-photo-upload";
+    uploadButton.textContent = label;
+
+    const fileInput = document.createElement("input");
+    fileInput.type = "file";
+    fileInput.accept = "image/*";
+    if (fromCamera) {
+      fileInput.setAttribute("capture", "environment");
+      fileInput.setAttribute("data-source", "camera");
+    }
+    fileInput.className = "tools-table__thumb-input";
+    fileInput.addEventListener("change", async () => {
+      const [file] = fileInput.files ?? [];
+      fileInput.value = "";
+      if (!file) return;
+      setAddPhotoDetailMessage(replace ? "Заменяем фото..." : "Добавляем фото...");
+      const saved = await handleAddPhotoUpload(tool, file, { replaceExisting: replace });
+      if (saved) {
+        const number = resolveToolNumberValue(tool) || String(tool?.["Бух.номер"] ?? "").trim();
+        setAddPhotoDetailMessage(
+          replace ? `Фото заменено для №${number || "—"}.` : `Фото добавлено для №${number || "—"}.`,
+          "success"
+        );
+        await refreshAddPhotoDetailPreview(tool);
+      } else {
+        setAddPhotoDetailMessage("Не удалось сохранить фото. Попробуйте ещё раз.", "error");
+      }
+    });
+
+    uploadButton.appendChild(fileInput);
+    return uploadButton;
+  };
+
+  const renderAddPhotoDetail = (tool, photos = []) => {
+    if (!addPhotoDetailBodyEl) return;
+    const name = String(tool?.["Наименование"] ?? "").trim();
+    const manufacturer = String(tool?.["Производитель"] ?? tool?.["Марка"] ?? "").trim();
+    const model = String(tool?.["Модель"] ?? "").trim();
+    const status = normalizeToolsInfoStatus(tool?.["Статус"], Boolean(tool?.__pendingMove));
+    const number = String(tool?.["Номер"] ?? "").trim();
+    const accountingNumber = String(tool?.["Бух.номер"] ?? "").trim();
+    const cost = formatToolCostLabel(tool);
+    const purchaseDate = String(tool?.["Дата покупки"] ?? "").trim();
+    const responsible = String(tool?.["Ответственный"] ?? "").trim();
+    const object = String(tool?.["Объект"] ?? "").trim();
+    const photoCount = Number.parseInt(tool?.["Количество фото"] ?? photos.length, 10);
+    const safePhotoCount = Number.isFinite(photoCount) ? photoCount : photos.length;
+    const title = [manufacturer, model].filter(Boolean).join(" ") || name || "Инструмент";
+
+    addPhotoDetailBodyEl.innerHTML = `
+      <div class="tools-info-card tools-info-card--add-photo-detail">
+        <div class="tools-info-card__title tools-info-card__title--add-photo">Информация об инструменте</div>
+        <div class="tools-info-card__grid tools-info-card__grid--add-photo">
+          <div class="tools-info-card__group">
+            <div class="tools-info-card__label">НОМЕР</div>
+            <div class="tools-info-card__value">${escapeHtml(number || "—")}</div>
+          </div>
+          <div class="tools-info-card__group">
+            <div class="tools-info-card__label">БУХ. НОМЕР</div>
+            <div class="tools-info-card__value">${escapeHtml(accountingNumber || "—")}</div>
+          </div>
+          <div class="tools-info-card__group">
+            <div class="tools-info-card__label">НАИМЕНОВАНИЕ</div>
+            <div class="tools-info-card__value">${escapeHtml(title)}</div>
+          </div>
+          <div class="tools-info-card__group">
+            <div class="tools-info-card__label">СТАТУС</div>
+            <div class="tools-info-card__value">${escapeHtml(status || "—")}</div>
+          </div>
+          <div class="tools-info-card__group">
+            <div class="tools-info-card__label">СТОИМОСТЬ</div>
+            <div class="tools-info-card__value">${escapeHtml(cost || "—")}</div>
+          </div>
+          <div class="tools-info-card__group">
+            <div class="tools-info-card__label">ДАТА ПОКУПКИ</div>
+            <div class="tools-info-card__value">${escapeHtml(purchaseDate || "—")}</div>
+          </div>
+          <div class="tools-info-card__group">
+            <div class="tools-info-card__label">ОТВЕТСТВЕННЫЙ</div>
+            <div class="tools-info-card__value">${escapeHtml(responsible || "—")}</div>
+          </div>
+          <div class="tools-info-card__group">
+            <div class="tools-info-card__label">ОБЪЕКТ</div>
+            <div class="tools-info-card__value">${escapeHtml(object || "—")}</div>
+          </div>
+        </div>
+      </div>
+      <div class="tools-info-card tools-info-card--add-photo-preview">
+        <div class="tools-info-card__title tools-info-card__title--add-photo">Фото</div>
+        <div class="add-photo-preview" data-add-photo-preview></div>
+      </div>
+      <div class="tools-add-photo-upload-wrap" data-add-photo-actions></div>
+    `;
+
+    const previewEl = addPhotoDetailBodyEl.querySelector("[data-add-photo-preview]");
+    if (previewEl) {
+      if (photos.length) {
+        photos.slice(0, 4).forEach((photo) => {
+          const img = document.createElement("img");
+          img.className = "add-photo-preview__image";
+          img.src = `${photo.url}${photo.url.includes("?") ? "&" : "?"}v=${Date.now()}`;
+          img.alt = "Фото инструмента";
+          img.loading = "lazy";
+          previewEl.appendChild(img);
+        });
+      } else {
+        const empty = document.createElement("div");
+        empty.className = "add-photo-preview__empty";
+        empty.textContent = safePhotoCount > 0 ? "Фото есть в базе, но предпросмотр недоступен." : "Фото пока нет.";
+        previewEl.appendChild(empty);
+      }
+    }
+
+    const actionsEl = addPhotoDetailBodyEl.querySelector("[data-add-photo-actions]");
+    if (actionsEl) {
+      actionsEl.append(
+        createAddPhotoUploadButton({ tool, label: "Добавить из галереи" }),
+        createAddPhotoUploadButton({ tool, label: "Сфотографировать", fromCamera: true }),
+        createAddPhotoUploadButton({ tool, label: "Заменить фото", replace: true })
+      );
+    }
+  };
+
+  const refreshAddPhotoDetailPreview = async (tool) => {
+    if (!tool) return;
+    const orgFolder = context.orgFolderName || addPhotoState.orgFolder || toolsState.orgFolder;
+    const primaryPhotoNumber = resolveToolPhotoNumber(tool);
+    const numberValue = String(tool?.["Номер"] ?? "").trim();
+    const accountingNumber = String(tool?.["Бух.номер"] ?? "").trim();
+    let photos = [];
+    if (orgFolder && (primaryPhotoNumber || numberValue || accountingNumber)) {
+      try {
+        const result = await loadToolPhotoFiles(
+          orgFolder,
+          primaryPhotoNumber,
+          numberValue,
+          accountingNumber
+        );
+        photos = result.files ?? [];
+      } catch (error) {
+        console.warn("Не удалось загрузить фото инструмента.", error);
+      }
+    }
+    renderAddPhotoDetail(tool, photos);
+  };
+
+  const openAddPhotoToolModalForTool = async (tool) => {
+    if (!addPhotoModalEl || !tool) return;
+    toolsState.addPhotoSelectedTool = tool;
+    const number = resolveToolNumberValue(tool) || String(tool?.["Бух.номер"] ?? "").trim();
+    const name = String(tool?.["Наименование"] ?? "").trim() || "Инструмент";
+    if (addPhotoDetailTitleEl) {
+      addPhotoDetailTitleEl.textContent = name;
+    }
+    setAddPhotoDetailMessage(`№${number || "—"} · можно добавить или заменить фото`);
+    if (addPhotoDetailBodyEl) {
+      addPhotoDetailBodyEl.innerHTML = `<div class="tools-info-card"><div class="tools-info-card__value">Загружаем карточку...</div></div>`;
+    }
     addPhotoModalEl.classList.remove("is-hidden");
     document.body.style.overflow = "hidden";
+    await refreshAddPhotoDetailPreview(tool);
+  };
+
+  const closeAddPhotoDetailModal = ({ keepBodyLocked = false } = {}) => {
+    if (!addPhotoModalEl) return;
+    addPhotoModalEl.classList.add("is-hidden");
+    toolsState.addPhotoSelectedTool = null;
+    if (!keepBodyLocked) {
+      document.body.style.overflow = "";
+    }
+  };
+
+  const openAddPhotoModal = async () => {
+    if (!toolsModalEl) return;
+    resetToolsTopZoneStability();
+    toolsState.mode = "add-photo";
+    toolsState.view = "table";
+    toolsState.searchSortDirection = "desc";
+    toolsState.activeReplacementResponsible = "";
+    setToolsStatusStandaloneVisibility(false);
+    setToolsTitle("Добавить фото");
+    setToolsResponsibleFilterVisibility(true);
+    syncToolsModalModeClass();
+    updateToolsReplacementPendingLinkVisibility();
+    syncToolsMapViewButtonVisibility();
+    toolsModalEl.classList.remove("is-hidden");
+    document.body.style.overflow = "hidden";
+    setToolsSubtitle("Загружаем все инструменты...");
+    const numberConfig = await resolveToolsNumberConfig();
+    updateToolsNumberConfig(numberConfig);
+    await loadBaseTools();
+    setToolsSubtitle("Выберите инструмент, чтобы добавить или заменить фото.");
+    syncToolsViewButtons();
+    if (
+      toolsSearchInput &&
+      (typeof window === "undefined" ||
+        !window.matchMedia ||
+        !window.matchMedia("(max-width: 520px)").matches)
+    ) {
+      toolsSearchInput.focus();
+    }
   };
 
   const setNoPhotoToolSubtitle = (text) => {
@@ -20355,12 +20611,16 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
   const closeAddPhotoModal = () => {
     if (!addPhotoModalEl) return;
-    addPhotoModalEl.classList.add("is-hidden");
+    const keepToolsListLocked =
+      toolsModalEl &&
+      !toolsModalEl.classList.contains("is-hidden") &&
+      toolsState.mode === "add-photo";
+    closeAddPhotoDetailModal({ keepBodyLocked: keepToolsListLocked });
     if (addPhotoState.openedFromNoPhoto) {
       noPhotoModalEl?.classList.remove("is-hidden");
+      document.body.style.overflow = "hidden";
     }
     addPhotoState.openedFromNoPhoto = false;
-    document.body.style.overflow = "";
   };
 
   if (addPhotoBackdropEl) {

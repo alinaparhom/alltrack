@@ -2348,28 +2348,25 @@ export function renderRole(user) {
           >
             <div class="settings-modal__header tools-modal__header">
               <div class="settings-modal__title">
-                <h2>Добавить фото</h2>
+                <h2 data-add-photo-detail-title>Добавить фото</h2>
+                <p data-add-photo-detail-subtitle>Выберите действие для инструмента</p>
               </div>
               <button
                 class="button-icon tools-modal__close"
                 type="button"
                 data-add-photo-close
-                aria-label="Закрыть список инструментов"
+                aria-label="Закрыть карточку инструмента"
               >
                 <span class="button-icon-emoji" aria-hidden="true">✕</span>
               </button>
             </div>
-            <div class="settings-modal__body tools-modal__body">
+            <div class="settings-modal__body tools-modal__body" data-add-photo-detail-body>
               <div class="tools-info-card tools-info-card--add-photo-hint">
-                <div class="tools-info-card__title">ИНФОРМАЦИЯ ОБ ИНСТРУМЕНТЕ</div>
+                <div class="tools-info-card__title">Выберите инструмент</div>
                 <div class="tools-info-card__grid">
-                  <div class="tools-info-card__label">ЧТО ПОКАЗЫВАЕТСЯ</div>
-                  <div class="tools-info-card__value">
-                    Название, стоимость, дата покупки, ответственный и объект.
-                  </div>
                   <div class="tools-info-card__label">КАК РАБОТАТЬ</div>
                   <div class="tools-info-card__value">
-                    Найдите инструмент в списке ниже и нажмите «Добавить фото».
+                    Откройте «Добавить фото», выберите инструмент из общего списка и загрузите новое фото.
                   </div>
                 </div>
               </div>

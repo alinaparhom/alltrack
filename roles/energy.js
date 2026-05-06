@@ -2349,7 +2349,7 @@ export function renderRole(user) {
             <div class="settings-modal__header tools-modal__header">
               <div class="settings-modal__title">
                 <h2 data-add-photo-detail-title>Добавить фото</h2>
-                <p data-add-photo-detail-subtitle>Выберите действие для инструмента</p>
+                <p data-add-photo-detail-subtitle></p>
               </div>
               <button
                 class="button-icon tools-modal__close"

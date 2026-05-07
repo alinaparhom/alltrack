@@ -26237,8 +26237,15 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     return filterSuggestions(values, query, 6);
   };
 
-  const getSelectableSuggestions = (options, query) =>
-    filterSelectableOptions(options, query, 8);
+  const getSelectableSuggestions = (options, query, limit = 8) =>
+    filterSelectableOptions(options, query, limit);
+
+  const getAddToolResponsibleSuggestions = (query) =>
+    getSelectableSuggestions(
+      addToolState.responsibleOptions,
+      query,
+      addToolState.responsibleOptions.length || 8
+    );
 
   const attachStrictOptionValue = (inputEl, getOptions) => {
     if (!inputEl) return;
@@ -26356,8 +26363,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   attachDynamicSuggestions({
     inputEl: addToolResponsibleInput,
     containerEl: addToolResponsibleSuggestionsEl,
-    getItems: (query) =>
-      getSelectableSuggestions(addToolState.responsibleOptions, query),
+    getItems: getAddToolResponsibleSuggestions,
     showOnFocus: true,
   });
 
@@ -27191,10 +27197,15 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         .map((name) => String(name ?? "").trim())
         .filter(Boolean);
       const responsibleOptions = usersList
-        .filter((entry) =>
-          normalizedOrgNames.includes(String(entry?.organization ?? "").trim()) &&
-          !isHiddenListUser(entry)
-        )
+        .filter((entry) => {
+          const entryOrganization = String(entry?.organization ?? "").trim();
+          const entryRole = String(entry?.role ?? "").trim();
+          return (
+            normalizedOrgNames.includes(entryOrganization) &&
+            entryRole === responsibleRole &&
+            !isHiddenListUser(entry)
+          );
+        })
         .map((entry) => String(entry?.full_name ?? "").trim())
         .filter(Boolean);
       addToolState.responsibleOptions = Array.from(

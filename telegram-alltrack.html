@@ -3523,6 +3523,17 @@
         cursor: text;
       }
 
+      .form-select--selectable {
+        appearance: none;
+        cursor: pointer;
+        color: var(--text);
+        background-color: rgba(255, 255, 255, 0.9);
+      }
+
+      .form-select--selectable:invalid {
+        color: var(--muted);
+      }
+
       .form-input:focus {
         outline: none;
         border-color: rgba(59, 125, 255, 0.6);

@@ -3574,7 +3574,7 @@ export function renderRole(user) {
                       id="tool-responsible-input"
                       type="text"
                       name="tool-responsible"
-                      data-placeholder="Выберите из списка"
+                      data-placeholder="Выберите пользователя"
                       placeholder="Начните вводить ФИО"
                       autocomplete="off"
                       aria-describedby="tool-responsible-hint"
@@ -3585,7 +3585,7 @@ export function renderRole(user) {
                       data-tool-responsible-suggestions
                     ></div>
                     <span class="form-hint" id="tool-responsible-hint">
-                      Нажмите на сотрудника из списка ответственных вашей организации в users.json.
+                      Начните вводить ФИО и выберите пользователя вашей организации из users.json.
                     </span>
                   </label>
                   <label class="form-field form-field--required form-field--selectable">

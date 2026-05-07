@@ -3575,14 +3575,18 @@ export function renderRole(user) {
                       type="text"
                       name="tool-responsible"
                       data-placeholder="Выберите из списка"
-                      placeholder="Выберите из списка"
+                      placeholder="Начните вводить ФИО"
                       autocomplete="off"
+                      aria-describedby="tool-responsible-hint"
                       required
                     />
                     <div
                       class="suggestions is-hidden"
                       data-tool-responsible-suggestions
                     ></div>
+                    <span class="form-hint" id="tool-responsible-hint">
+                      Выберите сотрудника с ролью «Ответственный» из users.json.
+                    </span>
                   </label>
                   <label class="form-field form-field--required form-field--selectable">
                     <span class="form-label">Объект</span>

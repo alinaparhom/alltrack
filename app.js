@@ -173,7 +173,11 @@ const energyResponsibleAccessRoles = new Set([
 ]);
 const responsibleLikeRoles = new Set([responsibleRole, chiefEngineerRole]);
 const isControlRole = (role) => String(role ?? "").trim() === controlRole;
+const isResponsibleRole = (role) =>
+  String(role ?? "").trim() === responsibleRole;
 const isHiddenListUser = (entry) => isControlRole(entry?.role);
+const isResponsibleListUser = (entry) =>
+  isResponsibleRole(entry?.role) && !isHiddenListUser(entry);
 const isEnergyLikeRole = (role) => {
   const normalized = String(role ?? "").trim();
   return normalized === energyRole || normalized === controlRole;
@@ -27193,7 +27197,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const responsibleOptions = usersList
         .filter((entry) =>
           normalizedOrgNames.includes(String(entry?.organization ?? "").trim()) &&
-          !isHiddenListUser(entry)
+          isResponsibleListUser(entry)
         )
         .map((entry) => String(entry?.full_name ?? "").trim())
         .filter(Boolean);

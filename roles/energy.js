@@ -3583,6 +3583,9 @@ export function renderRole(user) {
                       class="suggestions is-hidden"
                       data-tool-responsible-suggestions
                     ></div>
+                    <span class="form-hint">
+                      Начните вводить ФИО и выберите ответственного из users.json.
+                    </span>
                   </label>
                   <label class="form-field form-field--required form-field--selectable">
                     <span class="form-label">Объект</span>

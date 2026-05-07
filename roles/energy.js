@@ -3569,15 +3569,22 @@ export function renderRole(user) {
                   </label>
                   <label class="form-field form-field--required form-field--selectable">
                     <span class="form-label">Ответственный</span>
-                    <select
-                      class="form-input form-input--selectable form-select--selectable"
+                    <input
+                      class="form-input form-input--selectable"
                       id="tool-responsible-input"
+                      type="text"
                       name="tool-responsible"
                       data-placeholder="Выберите пользователя"
+                      placeholder="Выберите пользователя"
+                      autocomplete="off"
+                      inputmode="none"
+                      readonly
                       required
-                    >
-                      <option value="">Выберите пользователя</option>
-                    </select>
+                    />
+                    <div
+                      class="suggestions is-hidden"
+                      data-tool-responsible-suggestions
+                    ></div>
                   </label>
                   <label class="form-field form-field--required form-field--selectable">
                     <span class="form-label">Объект</span>

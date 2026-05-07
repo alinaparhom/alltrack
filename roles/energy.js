@@ -3585,7 +3585,7 @@ export function renderRole(user) {
                       data-tool-responsible-suggestions
                     ></div>
                     <span class="form-hint" id="tool-responsible-hint">
-                      Выберите сотрудника с ролью «Ответственный» из users.json.
+                      Нажмите на сотрудника из списка ответственных вашей организации в users.json.
                     </span>
                   </label>
                   <label class="form-field form-field--required form-field--selectable">

@@ -7534,6 +7534,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const addToolState = {
     tools: [],
     responsibleOptions: [],
+    selectedResponsible: "",
     objectOptions: [],
     groupOptions: [],
     organizationName: "",
@@ -25841,7 +25842,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       .slice(0, 6);
   };
 
-  const renderSuggestions = (containerEl, items, inputEl) => {
+  const renderSuggestions = (containerEl, items, inputEl, onSelect = null) => {
     if (!containerEl) return;
     containerEl.setAttribute("role", "listbox");
     containerEl.innerHTML = "";
@@ -25860,6 +25861,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         event.preventDefault();
         if (inputEl) {
           inputEl.value = item;
+          onSelect?.(item, inputEl);
           inputEl.dispatchEvent(new Event("input", { bubbles: true }));
           inputEl.dispatchEvent(new Event("change", { bubbles: true }));
         }
@@ -25903,6 +25905,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     containerEl,
     getItems,
     showOnFocus = false,
+    onSelect = null,
   }) => {
     if (!inputEl || !containerEl) return;
     const suggestionId =
@@ -25915,7 +25918,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     inputEl.setAttribute("aria-expanded", "false");
     const update = () => {
       const items = getItems(inputEl.value);
-      renderSuggestions(containerEl, items, inputEl);
+      renderSuggestions(containerEl, items, inputEl, onSelect);
     };
     const hide = () => {
       containerEl.classList.add("is-hidden");
@@ -25998,10 +26001,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
   const filterSelectableOptions = (options, query, limit = 8) => {
     const safeQuery = normalizeSuggestionValue(query).toLowerCase();
-    if (!safeQuery) return options.slice(0, limit);
+    const safeLimit = Number.isFinite(limit) ? limit : options.length;
+    if (!safeQuery) return options.slice(0, safeLimit);
     return options
       .filter((item) => item.toLowerCase().includes(safeQuery))
-      .slice(0, limit);
+      .slice(0, safeLimit);
   };
 
   attachSuggestions(
@@ -26241,8 +26245,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     return filterSuggestions(values, query, 6);
   };
 
-  const getSelectableSuggestions = (options, query) =>
-    filterSelectableOptions(options, query, 8);
+  const getSelectableSuggestions = (options, query, limit = 8) =>
+    filterSelectableOptions(options, query, limit);
 
   const attachStrictOptionValue = (inputEl, getOptions) => {
     if (!inputEl) return;
@@ -26361,8 +26365,22 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     inputEl: addToolResponsibleInput,
     containerEl: addToolResponsibleSuggestionsEl,
     getItems: (query) =>
-      getSelectableSuggestions(addToolState.responsibleOptions, query),
+      getSelectableSuggestions(
+        addToolState.responsibleOptions,
+        query,
+        addToolState.responsibleOptions.length
+      ),
     showOnFocus: true,
+    onSelect: (value) => {
+      addToolState.selectedResponsible = value;
+    },
+  });
+
+  addToolResponsibleInput?.addEventListener("input", () => {
+    const currentValue = normalizeSuggestionValue(addToolResponsibleInput.value);
+    if (currentValue !== addToolState.selectedResponsible) {
+      addToolState.selectedResponsible = "";
+    }
   });
 
   attachDynamicSuggestions({
@@ -26373,10 +26391,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     showOnFocus: true,
   });
 
-  attachStrictOptionValue(
-    addToolResponsibleInput,
-    () => addToolState.responsibleOptions
-  );
   attachStrictOptionValue(addToolObjectInput, () => addToolState.objectOptions);
 
   attachDynamicSuggestions({
@@ -26893,6 +26907,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     addToolResponsibleSuggestionsEl?.classList.add("is-hidden");
     addToolObjectSuggestionsEl?.classList.add("is-hidden");
     addToolGroupSuggestionsEl?.classList.add("is-hidden");
+    addToolState.selectedResponsible = "";
     clearAddToolKitRows();
     setAddToolKitExpanded(false);
     updateAddToolFilledStates();
@@ -27192,19 +27207,28 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       updateAddToolAccountingRequirement();
       const orgNames = orgRecord ? getOrgNames(orgRecord) : [organizationName];
       const normalizedOrgNames = orgNames
+        .concat(organizationName)
         .map((name) => String(name ?? "").trim())
         .filter(Boolean);
+      const normalizedOrgNameSet = new Set(
+        normalizedOrgNames.map((name) => normalizeOrganizationName(name))
+      );
       const responsibleOptions = usersList
-        .filter((entry) =>
-          normalizedOrgNames.includes(String(entry?.organization ?? "").trim()) &&
-          isResponsibleListUser(entry)
-        )
+        .filter((entry) => {
+          const entryOrganization = String(entry?.organization ?? "").trim();
+          return (
+            normalizedOrgNameSet.has(
+              normalizeOrganizationName(entryOrganization)
+            ) && isResponsibleListUser(entry)
+          );
+        })
         .map((entry) => String(entry?.full_name ?? "").trim())
         .filter(Boolean);
       addToolState.responsibleOptions = Array.from(
         new Set(responsibleOptions)
       ).sort((a, b) => a.localeCompare(b, "ru"));
 
+      addToolState.selectedResponsible = "";
       updateAddToolSelectState(
         addToolResponsibleInput,
         addToolState.responsibleOptions,
@@ -27503,9 +27527,16 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           responsibleRaw,
           addToolState.responsibleOptions
         );
-        if (addToolState.responsibleOptions.length && !responsible) {
+        const selectedResponsible = findOptionMatch(
+          addToolState.selectedResponsible,
+          addToolState.responsibleOptions
+        );
+        if (
+          addToolState.responsibleOptions.length &&
+          (!responsible || responsible !== selectedResponsible)
+        ) {
           pushError(
-            "Выберите ответственного из списка.",
+            "Выберите ответственного нажатием на сотрудника из списка.",
             addToolResponsibleInput
           );
         }

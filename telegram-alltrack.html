@@ -347,8 +347,9 @@
       }
 
       body[data-theme="dark"] .form-field--selectable::after {
-        background: rgba(123, 178, 255, 0.16);
-        color: #9fc3ff;
+        background: transparent;
+        border-color: #9fc3ff;
+        color: transparent;
       }
 
       body[data-theme="dark"] .suggestions {
@@ -380,13 +381,19 @@
         border-bottom-color: rgba(148, 170, 210, 0.25);
       }
 
+      body[data-theme="dark"] .add-tool-modal .settings-modal__header {
+        background: rgba(12, 18, 32, 0.82);
+        box-shadow: 0 14px 34px rgba(0, 0, 0, 0.28);
+      }
+
       body[data-theme="dark"] .settings-modal__backdrop {
         background: rgba(10, 14, 26, 0.6);
       }
 
       body[data-theme="dark"] .add-tool-modal .settings-modal__footer {
-        background: linear-gradient(180deg, rgba(12, 18, 32, 0), rgba(12, 18, 32, 0.92) 45%);
-        border-top-color: rgba(148, 170, 210, 0.3);
+        background: rgba(12, 18, 32, 0.82);
+        border-top-color: rgba(148, 170, 210, 0.28);
+        box-shadow: 0 -18px 42px rgba(0, 0, 0, 0.38);
       }
 
       body[data-theme="dark"] .add-tool-modal__cancel {
@@ -3497,25 +3504,26 @@
 
 
       .form-field--selectable::after {
-        content: "⌄";
+        content: "";
         position: absolute;
-        right: 14px;
-        bottom: 13px;
-        width: 24px;
-        height: 24px;
-        display: grid;
-        place-items: center;
-        border-radius: 999px;
-        background: rgba(59, 125, 255, 0.12);
-        color: #2d5eea;
-        font-weight: 800;
+        right: 20px;
+        bottom: 20px;
+        width: 10px;
+        height: 10px;
+        border-right: 2.5px solid #2d5eea;
+        border-bottom: 2.5px solid #2d5eea;
+        background: transparent;
+        color: transparent;
         pointer-events: none;
-        transition: transform 0.2s ease, background 0.2s ease;
+        transform: rotate(45deg);
+        transform-origin: 50% 50%;
+        transition: transform 0.2s ease, border-color 0.2s ease;
       }
 
       .form-field--selectable:focus-within::after {
-        transform: rotate(180deg);
-        background: rgba(59, 125, 255, 0.2);
+        transform: rotate(225deg);
+        border-color: #2d5eea;
+        background: transparent;
       }
 
       .form-input--selectable {
@@ -3949,12 +3957,18 @@
         display: grid;
       }
 
+      .add-tool-modal {
+        --keyboard-offset: 0px;
+      }
+
       .add-tool-modal__panel {
-        height: 100vh;
-        height: 100lvh;
-        max-height: 100vh;
-        max-height: 100lvh;
-        transition: transform 0.25s ease;
+        height: calc(100vh - var(--keyboard-offset, 0px));
+        height: calc(100dvh - var(--keyboard-offset, 0px));
+        max-height: calc(100vh - var(--keyboard-offset, 0px));
+        max-height: calc(100dvh - var(--keyboard-offset, 0px));
+        overflow: hidden;
+        grid-template-rows: auto minmax(0, 1fr);
+        transition: height 0.2s ease, max-height 0.2s ease;
       }
 
       .camera-modal__panel {
@@ -4044,18 +4058,17 @@
       }
 
       .add-tool-modal.is-input-focus .settings-modal__form {
-        grid-template-rows: auto;
+        grid-template-rows: minmax(0, 1fr) auto;
         gap: 6px;
       }
 
       .add-tool-modal.is-input-focus .settings-modal__footer {
-        position: static;
+        position: relative;
         left: auto;
         right: auto;
         bottom: auto;
         transform: none;
         margin: 0;
-        padding: 12px 0 calc(12px + env(safe-area-inset-bottom));
         opacity: 1;
         pointer-events: auto;
       }
@@ -4066,6 +4079,14 @@
         gap: 4px;
         padding: calc(16px + env(safe-area-inset-top) + var(--telegram-top-spacing, 0px)) 18px 6px;
         border-bottom: 1px solid rgba(226, 232, 240, 0.7);
+      }
+
+      .add-tool-modal .settings-modal__header {
+        z-index: 3;
+        background: rgba(255, 255, 255, 0.82);
+        backdrop-filter: blur(18px);
+        -webkit-backdrop-filter: blur(18px);
+        box-shadow: 0 14px 34px rgba(15, 23, 42, 0.06);
       }
 
       .add-tool-modal__header {
@@ -5093,14 +5114,16 @@
 
       .add-tool-modal .settings-modal__footer {
         align-items: stretch;
-        position: static;
-        padding: 0 0 calc(12px + env(safe-area-inset-bottom));
-        margin-top: 5px;
+        position: relative;
+        padding: 10px 0 calc(12px + env(safe-area-inset-bottom));
+        margin-top: 0;
         justify-content: stretch;
-        background: transparent;
-        border-top: 0;
-        backdrop-filter: none;
-        z-index: auto;
+        background: rgba(255, 255, 255, 0.84);
+        border-top: 1px solid rgba(226, 232, 240, 0.78);
+        backdrop-filter: blur(18px);
+        -webkit-backdrop-filter: blur(18px);
+        box-shadow: 0 -18px 42px rgba(15, 23, 42, 0.08);
+        z-index: 3;
         display: block;
       }
 
@@ -5174,13 +5197,20 @@
       }
 
       .add-tool-modal .settings-modal__form {
-        display: block;
-        padding: 6px 14px calc(12px + env(safe-area-inset-bottom));
+        display: grid;
+        grid-template-rows: minmax(0, 1fr) auto;
+        min-height: 0;
+        overflow: hidden;
+        padding: 6px 14px 0;
       }
 
       .add-tool-modal .settings-modal__body {
-        overflow: visible;
-        padding-right: 0;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        -webkit-overflow-scrolling: touch;
+        padding-right: 2px;
+        padding-bottom: 12px;
+        min-height: 0;
       }
 
       .add-tool-kit {

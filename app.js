@@ -25840,13 +25840,26 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       .slice(0, 6);
   };
 
+  const setSuggestionOpenState = (containerEl, inputEl, isOpen) => {
+    const fieldEl =
+      inputEl?.closest(".form-field--selectable") ??
+      containerEl?.closest(".form-field--selectable");
+    fieldEl?.classList.toggle("is-suggestions-open", Boolean(isOpen));
+  };
+
+  const hideSuggestions = (containerEl, inputEl) => {
+    if (!containerEl) return;
+    containerEl.classList.add("is-hidden");
+    inputEl?.setAttribute("aria-expanded", "false");
+    setSuggestionOpenState(containerEl, inputEl, false);
+  };
+
   const renderSuggestions = (containerEl, items, inputEl, onSelect = null) => {
     if (!containerEl) return;
     containerEl.setAttribute("role", "listbox");
     containerEl.innerHTML = "";
     if (!items.length) {
-      containerEl.classList.add("is-hidden");
-      inputEl?.setAttribute("aria-expanded", "false");
+      hideSuggestions(containerEl, inputEl);
       return;
     }
     items.forEach((item) => {
@@ -25863,13 +25876,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           inputEl.dispatchEvent(new Event("input", { bubbles: true }));
           inputEl.dispatchEvent(new Event("change", { bubbles: true }));
         }
-        containerEl.classList.add("is-hidden");
-        inputEl?.setAttribute("aria-expanded", "false");
+        hideSuggestions(containerEl, inputEl);
       });
       containerEl.appendChild(button);
     });
     containerEl.classList.remove("is-hidden");
     inputEl?.setAttribute("aria-expanded", "true");
+    setSuggestionOpenState(containerEl, inputEl, true);
   };
 
   const attachSuggestions = (inputEl, containerEl, sourceKey) => {
@@ -25880,8 +25893,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       renderSuggestions(containerEl, items, inputEl);
     };
     const hide = () => {
-      containerEl.classList.add("is-hidden");
-      inputEl.setAttribute("aria-expanded", "false");
+      hideSuggestions(containerEl, inputEl);
     };
     inputEl.addEventListener("input", () => {
       if (!inputEl.value.trim()) {
@@ -25919,8 +25931,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       renderSuggestions(containerEl, items, inputEl, onSelect);
     };
     const hide = () => {
-      containerEl.classList.add("is-hidden");
-      inputEl.setAttribute("aria-expanded", "false");
+      hideSuggestions(containerEl, inputEl);
     };
     inputEl.addEventListener("input", () => {
       if (!inputEl.value.trim() && !showOnFocus) {

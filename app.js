@@ -26359,27 +26359,35 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     showOnFocus: true,
   });
 
-  attachDynamicSuggestions({
-    inputEl: addToolResponsibleInput,
-    containerEl: addToolResponsibleSuggestionsEl,
-    getItems: (query) =>
-      getSelectableSuggestions(
-        addToolState.responsibleOptions,
-        query,
-        addToolState.responsibleOptions.length
-      ),
-    showOnFocus: true,
-    onSelect: (value) => {
-      addToolState.selectedResponsible = value;
-    },
-  });
+  if (addToolResponsibleInput instanceof HTMLSelectElement) {
+    addToolResponsibleInput.addEventListener("change", () => {
+      addToolState.selectedResponsible = normalizeSuggestionValue(
+        addToolResponsibleInput.value
+      );
+    });
+  } else {
+    attachDynamicSuggestions({
+      inputEl: addToolResponsibleInput,
+      containerEl: addToolResponsibleSuggestionsEl,
+      getItems: (query) =>
+        getSelectableSuggestions(
+          addToolState.responsibleOptions,
+          query,
+          addToolState.responsibleOptions.length
+        ),
+      showOnFocus: true,
+      onSelect: (value) => {
+        addToolState.selectedResponsible = value;
+      },
+    });
 
-  addToolResponsibleInput?.addEventListener("input", () => {
-    const currentValue = normalizeSuggestionValue(addToolResponsibleInput.value);
-    if (currentValue !== addToolState.selectedResponsible) {
-      addToolState.selectedResponsible = "";
-    }
-  });
+    addToolResponsibleInput?.addEventListener("input", () => {
+      const currentValue = normalizeSuggestionValue(addToolResponsibleInput.value);
+      if (currentValue !== addToolState.selectedResponsible) {
+        addToolState.selectedResponsible = "";
+      }
+    });
+  }
 
   attachDynamicSuggestions({
     inputEl: addToolObjectInput,
@@ -26446,6 +26454,29 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     inputEl.disabled = true;
     inputEl.placeholder = emptyPlaceholder;
     inputEl.value = "";
+  };
+
+  const updateAddToolResponsibleOptions = () => {
+    if (!(addToolResponsibleInput instanceof HTMLSelectElement)) return;
+    const placeholder =
+      addToolResponsibleInput.dataset.placeholder ?? "Выберите пользователя";
+    addToolResponsibleInput.innerHTML = "";
+    const placeholderOption = document.createElement("option");
+    placeholderOption.value = "";
+    placeholderOption.textContent = addToolState.responsibleOptions.length
+      ? placeholder
+      : "Нет пользователей";
+    placeholderOption.disabled = Boolean(addToolState.responsibleOptions.length);
+    placeholderOption.selected = true;
+    addToolResponsibleInput.appendChild(placeholderOption);
+    addToolState.responsibleOptions.forEach((name) => {
+      const option = document.createElement("option");
+      option.value = name;
+      option.textContent = name;
+      addToolResponsibleInput.appendChild(option);
+    });
+    addToolResponsibleInput.disabled = !addToolState.responsibleOptions.length;
+    addToolResponsibleInput.value = "";
   };
 
   const updateToolsMoveSelectState = (inputEl, options, emptyPlaceholder) => {
@@ -26906,6 +26937,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     addToolObjectSuggestionsEl?.classList.add("is-hidden");
     addToolGroupSuggestionsEl?.classList.add("is-hidden");
     addToolState.selectedResponsible = "";
+    if (addToolResponsibleInput instanceof HTMLSelectElement) {
+      addToolResponsibleInput.value = "";
+    }
     clearAddToolKitRows();
     setAddToolKitExpanded(false);
     updateAddToolFilledStates();
@@ -27227,6 +27261,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       ).sort((a, b) => a.localeCompare(b, "ru"));
 
       addToolState.selectedResponsible = "";
+      updateAddToolResponsibleOptions();
       updateAddToolSelectState(
         addToolResponsibleInput,
         addToolState.responsibleOptions,
@@ -27525,16 +27560,21 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           responsibleRaw,
           addToolState.responsibleOptions
         );
-        const selectedResponsible = findOptionMatch(
-          addToolState.selectedResponsible,
-          addToolState.responsibleOptions
-        );
+        const selectedResponsible =
+          addToolResponsibleInput instanceof HTMLSelectElement
+            ? responsible
+            : findOptionMatch(
+                addToolState.selectedResponsible,
+                addToolState.responsibleOptions
+              );
         if (
           addToolState.responsibleOptions.length &&
           (!responsible || responsible !== selectedResponsible)
         ) {
           pushError(
-            "Выберите ответственного нажатием на сотрудника из списка.",
+            addToolResponsibleInput instanceof HTMLSelectElement
+              ? "Выберите ответственного из списка."
+              : "Выберите ответственного нажатием на сотрудника из списка.",
             addToolResponsibleInput
           );
         }

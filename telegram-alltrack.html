@@ -347,9 +347,7 @@
       }
 
       body[data-theme="dark"] .form-field--selectable::after {
-        background: transparent;
-        border-color: #9fc3ff;
-        color: transparent;
+        background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 20 20'><path d='M5 7l5 6 5-6' fill='none' stroke='%239fc3ff' stroke-width='2.3' stroke-linecap='round' stroke-linejoin='round'/></svg>");
       }
 
       body[data-theme="dark"] .suggestions {
@@ -3506,24 +3504,27 @@
       .form-field--selectable::after {
         content: "";
         position: absolute;
-        right: 20px;
-        bottom: 20px;
-        width: 10px;
-        height: 10px;
-        border-right: 2.5px solid #2d5eea;
-        border-bottom: 2.5px solid #2d5eea;
-        background: transparent;
-        color: transparent;
+        right: 16px;
+        bottom: 14px;
+        width: 18px;
+        height: 18px;
+        background-repeat: no-repeat;
+        background-position: center;
+        background-size: 18px 18px;
+        background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 20 20'><path d='M5 7l5 6 5-6' fill='none' stroke='%232d5eea' stroke-width='2.3' stroke-linecap='round' stroke-linejoin='round'/></svg>");
         pointer-events: none;
-        transform: rotate(45deg);
+        transform: rotate(0deg);
         transform-origin: 50% 50%;
-        transition: transform 0.2s ease, border-color 0.2s ease;
+        transition: transform 0.2s ease, filter 0.2s ease;
+        will-change: transform;
       }
 
       .form-field--selectable:focus-within::after {
-        transform: rotate(225deg);
-        border-color: #2d5eea;
-        background: transparent;
+        filter: drop-shadow(0 3px 7px rgba(45, 94, 234, 0.18));
+      }
+
+      .form-field--selectable.is-suggestions-open::after {
+        transform: rotate(180deg);
       }
 
       .form-input--selectable {

@@ -27050,32 +27050,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       issues.push("Не удалось загрузить users.json.");
     }
 
-    const usersList = Array.isArray(usersData?.users) ? usersData.users : [];
-    let matchedUser = null;
-    if (telegramId && fullName) {
-      matchedUser = usersList.find(
-        (item) =>
-          normalizeTelegramId(item?.telegram_id ?? null) === telegramId &&
-          String(item?.full_name ?? "").trim() === fullName
-      );
-    }
-    if (!matchedUser && telegramId) {
-      matchedUser = usersList.find(
-        (item) => normalizeTelegramId(item?.telegram_id ?? null) === telegramId
-      );
-    }
-    if (!matchedUser && fullName) {
-      matchedUser = usersList.find(
-        (item) => String(item?.full_name ?? "").trim() === fullName
-      );
-    }
-
-    if (!matchedUser) {
-      issues.push("Пользователь не найден в users.json.");
-    }
-
-    const organizationName = String(matchedUser?.organization ?? "").trim();
-    if (!organizationName) {
+    const organizationName = String(
+      findUserOrganizationName(user, usersData ?? { users: [] })
+    ).trim();
+    if (!organizationName || organizationName === "Организация") {
       issues.push("В users.json у пользователя не указана организация.");
     }
 
@@ -27093,28 +27071,26 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       { organizations: orgsList },
       organizationName
     );
-    if (organizationName && !orgRecord) {
-      issues.push(
-        `Организация "${organizationName}" не найдена в organizations.json.`
-      );
-    }
+    const orgShortName = String(
+      orgRecord?.short_name ?? context?.orgShortName ?? organizationName
+    ).trim();
+    const contextOrgFolder = sanitizeOrganizationFolderName(
+      context?.orgFolderName ?? ""
+    );
+    const orgFolder =
+      (contextOrgFolder && contextOrgFolder !== "Организация"
+        ? contextOrgFolder
+        : "") || sanitizeOrganizationFolderName(orgShortName);
 
-    const orgShortName = String(orgRecord?.short_name ?? "").trim();
-    if (organizationName && !orgShortName) {
-      issues.push(
-        `В organizations.json нет short_name для "${organizationName}".`
-      );
-    }
-
-    const orgFolder = sanitizeOrganizationFolderName(orgShortName);
-    if (orgShortName && !orgFolder) {
-      issues.push("Не удалось определить папку организации по short_name.");
+    if (!orgFolder) {
+      issues.push("Не удалось определить папку организации.");
     }
 
     return {
       organizationName,
       orgShortName,
       orgFolder,
+      orgRecord,
       numberType: String(orgRecord?.number_type ?? "Номер приложения").trim(),
       issues,
     };
@@ -27232,26 +27208,38 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         )
       ).sort((a, b) => a.localeCompare(b, "ru"));
 
-      const orgRecord = findOrganizationRecord(orgsSafe, organizationName);
+      const orgRecord =
+        findOrganizationRecord(orgsSafe, organizationName) ?? resolution.orgRecord;
       addToolState.numberType = String(
-        orgRecord?.number_type ?? "Номер приложения"
+        orgRecord?.number_type ?? resolution.numberType ?? "Номер приложения"
       ).trim();
       updateAddToolAccountingRequirement();
-      const orgNames = orgRecord ? getOrgNames(orgRecord) : [organizationName];
-      const normalizedOrgNames = orgNames
-        .concat(organizationName)
+      const orgNames = [
+        ...(orgRecord ? getOrgNames(orgRecord) : []),
+        organizationName,
+        resolution.orgShortName,
+        context?.orgFullName,
+        context?.orgShortName,
+        context?.orgFolderName,
+        orgFolder,
+      ]
         .map((name) => String(name ?? "").trim())
         .filter(Boolean);
       const normalizedOrgNameSet = new Set(
-        normalizedOrgNames.map((name) => normalizeOrganizationName(name))
+        orgNames.map((name) => normalizeOrganizationName(name))
+      );
+      const normalizedOrgFolderSet = new Set(
+        orgNames.map((name) => normalizeOrganizationFolder(name))
       );
       const responsibleOptions = usersList
         .filter((entry) => {
           const entryOrganization = String(entry?.organization ?? "").trim();
+          if (!entryOrganization || !isOrganizationUserForResponsibleSelect(entry)) {
+            return false;
+          }
           return (
-            normalizedOrgNameSet.has(
-              normalizeOrganizationName(entryOrganization)
-            ) && isOrganizationUserForResponsibleSelect(entry)
+            normalizedOrgNameSet.has(normalizeOrganizationName(entryOrganization)) ||
+            normalizedOrgFolderSet.has(normalizeOrganizationFolder(entryOrganization))
           );
         })
         .map((entry) => String(entry?.full_name ?? "").trim())

@@ -26246,17 +26246,50 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const getSelectableSuggestions = (options, query, limit = 8) =>
     filterSelectableOptions(options, query, limit);
 
-  const attachStrictOptionValue = (inputEl, getOptions) => {
+  const attachStrictOptionValue = (inputEl, getOptions, onResolve = null) => {
     if (!inputEl) return;
     inputEl.addEventListener("blur", () => {
       window.setTimeout(() => {
         const rawValue = normalizeSuggestionValue(inputEl.value);
-        if (!rawValue) return;
+        if (!rawValue) {
+          onResolve?.("");
+          return;
+        }
         const matchedValue = findOptionMatch(rawValue, getOptions());
         inputEl.value = matchedValue || "";
+        onResolve?.(matchedValue || "");
         inputEl.dispatchEvent(new Event("change", { bubbles: true }));
       }, 140);
     });
+  };
+
+  const attachStrictSearchSelect = ({
+    inputEl,
+    containerEl,
+    getOptions,
+    onResolve = null,
+  }) => {
+    if (!inputEl || !containerEl) return;
+
+    attachDynamicSuggestions({
+      inputEl,
+      containerEl,
+      getItems: (query) => {
+        const options = getOptions();
+        return getSelectableSuggestions(options, query, options.length);
+      },
+      showOnFocus: true,
+      onSelect: (value) => {
+        onResolve?.(value);
+      },
+    });
+
+    inputEl.addEventListener("input", () => {
+      const matchedValue = findOptionMatch(inputEl.value, getOptions());
+      onResolve?.(matchedValue || "");
+    });
+
+    attachStrictOptionValue(inputEl, getOptions, onResolve);
   };
 
   const getRepairOrganizationSuggestions = (query) => {
@@ -26366,48 +26399,27 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       );
     });
   } else {
-    attachDynamicSuggestions({
+    attachStrictSearchSelect({
       inputEl: addToolResponsibleInput,
       containerEl: addToolResponsibleSuggestionsEl,
-      getItems: (query) =>
-        getSelectableSuggestions(
-          addToolState.responsibleOptions,
-          query,
-          addToolState.responsibleOptions.length
-        ),
-      showOnFocus: true,
-      onSelect: (value) => {
+      getOptions: () => addToolState.responsibleOptions,
+      onResolve: (value) => {
         addToolState.selectedResponsible = value;
       },
     });
-
-    addToolResponsibleInput?.addEventListener("input", () => {
-      const currentValue = normalizeSuggestionValue(addToolResponsibleInput.value);
-      if (currentValue !== addToolState.selectedResponsible) {
-        addToolState.selectedResponsible = "";
-      }
-    });
   }
 
-  attachDynamicSuggestions({
+  attachStrictSearchSelect({
     inputEl: addToolObjectInput,
     containerEl: addToolObjectSuggestionsEl,
-    getItems: (query) =>
-      getSelectableSuggestions(addToolState.objectOptions, query),
-    showOnFocus: true,
+    getOptions: () => addToolState.objectOptions,
   });
 
-  attachStrictOptionValue(addToolObjectInput, () => addToolState.objectOptions);
-
-  attachDynamicSuggestions({
+  attachStrictSearchSelect({
     inputEl: addToolGroupInput,
     containerEl: addToolGroupSuggestionsEl,
-    getItems: (query) =>
-      getSelectableSuggestions(addToolState.groupOptions, query),
-    showOnFocus: true,
+    getOptions: () => addToolState.groupOptions,
   });
-
-  attachStrictOptionValue(addToolGroupInput, () => addToolState.groupOptions);
 
   if (!(toolsEditGroupInput instanceof HTMLSelectElement)) {
     attachDynamicSuggestions({
@@ -27548,23 +27560,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           responsibleRaw,
           addToolState.responsibleOptions
         );
-        const selectedResponsible =
-          addToolResponsibleInput instanceof HTMLSelectElement
-            ? responsible
-            : findOptionMatch(
-                addToolState.selectedResponsible,
-                addToolState.responsibleOptions
-              );
-        if (
-          addToolState.responsibleOptions.length &&
-          (!responsible || responsible !== selectedResponsible)
-        ) {
-          pushError(
-            addToolResponsibleInput instanceof HTMLSelectElement
-              ? "Выберите ответственного из списка."
-              : "Выберите ответственного нажатием на сотрудника из списка.",
-            addToolResponsibleInput
-          );
+        if (addToolState.responsibleOptions.length && !responsible) {
+          pushError("Выберите ответственного из списка.", addToolResponsibleInput);
         }
 
         if (!addToolState.objectOptions.length) {

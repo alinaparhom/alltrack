@@ -3577,12 +3577,11 @@ export function renderRole(user) {
                       data-placeholder="Выберите пользователя"
                       placeholder="Выберите пользователя"
                       autocomplete="off"
-                      inputmode="none"
-                      readonly
+                      inputmode="search"
                       required
                     />
                     <div
-                      class="suggestions is-hidden"
+                      class="suggestions suggestions--strict is-hidden"
                       data-tool-responsible-suggestions
                     ></div>
                   </label>
@@ -3596,10 +3595,11 @@ export function renderRole(user) {
                       data-placeholder="Выберите объект"
                       placeholder="Выберите объект"
                       autocomplete="off"
+                      inputmode="search"
                       required
                     />
                     <div
-                      class="suggestions is-hidden"
+                      class="suggestions suggestions--strict is-hidden"
                       data-tool-object-suggestions
                     ></div>
                   </label>
@@ -3628,10 +3628,11 @@ export function renderRole(user) {
                       data-placeholder="Выберите группу"
                       placeholder="Выберите группу"
                       autocomplete="off"
+                      inputmode="search"
                       required
                     />
                     <div
-                      class="suggestions is-hidden"
+                      class="suggestions suggestions--strict is-hidden"
                       data-tool-group-suggestions
                     ></div>
                   </label>

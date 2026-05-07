@@ -25839,27 +25839,33 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
   const renderSuggestions = (containerEl, items, inputEl) => {
     if (!containerEl) return;
+    containerEl.setAttribute("role", "listbox");
     containerEl.innerHTML = "";
     if (!items.length) {
       containerEl.classList.add("is-hidden");
+      inputEl?.setAttribute("aria-expanded", "false");
       return;
     }
     items.forEach((item) => {
       const button = document.createElement("button");
       button.type = "button";
       button.className = "suggestions__item";
+      button.setAttribute("role", "option");
       button.textContent = item;
       button.addEventListener("mousedown", (event) => {
         event.preventDefault();
         if (inputEl) {
           inputEl.value = item;
           inputEl.dispatchEvent(new Event("input", { bubbles: true }));
+          inputEl.dispatchEvent(new Event("change", { bubbles: true }));
         }
         containerEl.classList.add("is-hidden");
+        inputEl?.setAttribute("aria-expanded", "false");
       });
       containerEl.appendChild(button);
     });
     containerEl.classList.remove("is-hidden");
+    inputEl?.setAttribute("aria-expanded", "true");
   };
 
   const attachSuggestions = (inputEl, containerEl, sourceKey) => {
@@ -25871,6 +25877,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     };
     const hide = () => {
       containerEl.classList.add("is-hidden");
+      inputEl.setAttribute("aria-expanded", "false");
     };
     inputEl.addEventListener("input", () => {
       if (!inputEl.value.trim()) {
@@ -25894,12 +25901,21 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     showOnFocus = false,
   }) => {
     if (!inputEl || !containerEl) return;
+    const suggestionId =
+      containerEl.id || `${inputEl.id || inputEl.name || "suggestions"}-listbox`;
+    containerEl.id = suggestionId;
+    containerEl.setAttribute("role", "listbox");
+    inputEl.setAttribute("role", "combobox");
+    inputEl.setAttribute("aria-autocomplete", "list");
+    inputEl.setAttribute("aria-controls", suggestionId);
+    inputEl.setAttribute("aria-expanded", "false");
     const update = () => {
       const items = getItems(inputEl.value);
       renderSuggestions(containerEl, items, inputEl);
     };
     const hide = () => {
       containerEl.classList.add("is-hidden");
+      inputEl.setAttribute("aria-expanded", "false");
     };
     inputEl.addEventListener("input", () => {
       if (!inputEl.value.trim() && !showOnFocus) {
@@ -26341,9 +26357,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     inputEl: addToolResponsibleInput,
     containerEl: addToolResponsibleSuggestionsEl,
     getItems: (query) =>
-      getToolContextSuggestions("Ответственный", query, {
-        options: addToolState.responsibleOptions,
-      }),
+      getSelectableSuggestions(addToolState.responsibleOptions, query),
     showOnFocus: true,
   });
 
@@ -26351,9 +26365,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     inputEl: addToolObjectInput,
     containerEl: addToolObjectSuggestionsEl,
     getItems: (query) =>
-      getToolContextSuggestions("Объект", query, {
-        options: addToolState.objectOptions,
-      }),
+      getSelectableSuggestions(addToolState.objectOptions, query),
     showOnFocus: true,
   });
 
@@ -26367,11 +26379,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     inputEl: addToolGroupInput,
     containerEl: addToolGroupSuggestionsEl,
     getItems: (query) =>
-      getToolContextSuggestions("Граппа инструментов", query, {
-        options: addToolState.groupOptions,
-      }),
+      getSelectableSuggestions(addToolState.groupOptions, query),
     showOnFocus: true,
   });
+
+  attachStrictOptionValue(addToolGroupInput, () => addToolState.groupOptions);
 
   if (!(toolsEditGroupInput instanceof HTMLSelectElement)) {
     attachDynamicSuggestions({

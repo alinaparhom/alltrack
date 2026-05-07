@@ -3567,10 +3567,10 @@ export function renderRole(user) {
                       data-tool-cost-suggestions
                     ></div>
                   </label>
-                  <label class="form-field form-field--required">
+                  <label class="form-field form-field--required form-field--selectable">
                     <span class="form-label">Ответственный</span>
                     <input
-                      class="form-input"
+                      class="form-input form-input--selectable"
                       id="tool-responsible-input"
                       type="text"
                       name="tool-responsible"
@@ -3584,10 +3584,10 @@ export function renderRole(user) {
                       data-tool-responsible-suggestions
                     ></div>
                   </label>
-                  <label class="form-field form-field--required">
+                  <label class="form-field form-field--required form-field--selectable">
                     <span class="form-label">Объект</span>
                     <input
-                      class="form-input"
+                      class="form-input form-input--selectable"
                       id="tool-object-input"
                       type="text"
                       name="tool-object"
@@ -3616,10 +3616,10 @@ export function renderRole(user) {
                       data-tool-serial-number-suggestions
                     ></div>
                   </label>
-                  <label class="form-field form-field--required">
+                  <label class="form-field form-field--required form-field--selectable">
                     <span class="form-label">Группа инструментов</span>
                     <input
-                      class="form-input"
+                      class="form-input form-input--selectable"
                       id="tool-group-input"
                       type="text"
                       name="tool-group"

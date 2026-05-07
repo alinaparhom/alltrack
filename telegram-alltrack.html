@@ -346,6 +346,11 @@
         box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
       }
 
+      body[data-theme="dark"] .form-field--selectable::after {
+        background: rgba(123, 178, 255, 0.16);
+        color: #9fc3ff;
+      }
+
       body[data-theme="dark"] .suggestions {
         background: rgba(12, 18, 32, 0.96);
         border-color: rgba(123, 178, 255, 0.4);
@@ -3488,6 +3493,34 @@
 
       .form-file-menu__text {
         pointer-events: none;
+      }
+
+
+      .form-field--selectable::after {
+        content: "⌄";
+        position: absolute;
+        right: 14px;
+        bottom: 13px;
+        width: 24px;
+        height: 24px;
+        display: grid;
+        place-items: center;
+        border-radius: 999px;
+        background: rgba(59, 125, 255, 0.12);
+        color: #2d5eea;
+        font-weight: 800;
+        pointer-events: none;
+        transition: transform 0.2s ease, background 0.2s ease;
+      }
+
+      .form-field--selectable:focus-within::after {
+        transform: rotate(180deg);
+        background: rgba(59, 125, 255, 0.2);
+      }
+
+      .form-input--selectable {
+        padding-right: 48px;
+        cursor: text;
       }
 
       .form-input:focus {

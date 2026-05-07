@@ -173,11 +173,9 @@ const energyResponsibleAccessRoles = new Set([
 ]);
 const responsibleLikeRoles = new Set([responsibleRole, chiefEngineerRole]);
 const isControlRole = (role) => String(role ?? "").trim() === controlRole;
-const isResponsibleRole = (role) =>
-  String(role ?? "").trim() === responsibleRole;
 const isHiddenListUser = (entry) => isControlRole(entry?.role);
-const isResponsibleListUser = (entry) =>
-  isResponsibleRole(entry?.role) && !isHiddenListUser(entry);
+const isOrganizationUserForResponsibleSelect = (entry) =>
+  Boolean(String(entry?.full_name ?? "").trim());
 const isEnergyLikeRole = (role) => {
   const normalized = String(role ?? "").trim();
   return normalized === energyRole || normalized === controlRole;
@@ -27219,7 +27217,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           return (
             normalizedOrgNameSet.has(
               normalizeOrganizationName(entryOrganization)
-            ) && isResponsibleListUser(entry)
+            ) && isOrganizationUserForResponsibleSelect(entry)
           );
         })
         .map((entry) => String(entry?.full_name ?? "").trim())
@@ -27232,7 +27230,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       updateAddToolSelectState(
         addToolResponsibleInput,
         addToolState.responsibleOptions,
-        "Нет ответственных"
+        "Нет пользователей"
       );
       updateAddToolSelectState(
         addToolObjectInput,
@@ -27521,7 +27519,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         }
 
         if (!addToolState.responsibleOptions.length) {
-          pushError("В организации нет ответственных.", addToolResponsibleInput);
+          pushError("В организации нет пользователей.", addToolResponsibleInput);
         }
         const responsible = findOptionMatch(
           responsibleRaw,

@@ -25847,6 +25847,53 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     fieldEl?.classList.toggle("is-suggestions-open", Boolean(isOpen));
   };
 
+  const isSuggestionTogglePointer = (event, fieldEl) => {
+    if (!event || !fieldEl) return false;
+    const rect = fieldEl.getBoundingClientRect();
+    const toggleZoneWidth = 56;
+    return (
+      event.clientX >= rect.right - toggleZoneWidth &&
+      event.clientX <= rect.right &&
+      event.clientY >= rect.top &&
+      event.clientY <= rect.bottom
+    );
+  };
+
+  const attachSuggestionToggle = ({ inputEl, containerEl, show }) => {
+    const fieldEl =
+      inputEl?.closest(".form-field--selectable") ??
+      containerEl?.closest(".form-field--selectable");
+    if (!fieldEl || !inputEl || !containerEl || typeof show !== "function") return;
+    if (fieldEl.dataset.suggestionToggleAttached === "true") return;
+
+    fieldEl.dataset.suggestionToggleAttached = "true";
+    fieldEl.setAttribute(
+      "title",
+      "Нажмите на галочку, чтобы открыть или скрыть список"
+    );
+
+    const toggle = (event) => {
+      if (!isSuggestionTogglePointer(event, fieldEl)) return false;
+      if (event.type === "pointerdown" && event.button !== 0) return false;
+
+      event.preventDefault();
+      event.stopPropagation();
+
+      const isOpen = !containerEl.classList.contains("is-hidden");
+      if (isOpen) {
+        hideSuggestions(containerEl, inputEl);
+        return true;
+      }
+
+      inputEl.focus({ preventScroll: true });
+      show();
+      return true;
+    };
+
+    fieldEl.addEventListener("pointerdown", toggle);
+    fieldEl.addEventListener("click", toggle);
+  };
+
   const hideSuggestions = (containerEl, inputEl) => {
     if (!containerEl) return;
     containerEl.classList.add("is-hidden");
@@ -25933,6 +25980,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const hide = () => {
       hideSuggestions(containerEl, inputEl);
     };
+    attachSuggestionToggle({ inputEl, containerEl, show: update });
     inputEl.addEventListener("input", () => {
       if (!inputEl.value.trim() && !showOnFocus) {
         hide();

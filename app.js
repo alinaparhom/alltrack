@@ -25869,15 +25869,27 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     fieldEl.dataset.suggestionToggleAttached = "true";
     fieldEl.setAttribute(
       "title",
-      "Нажмите на галочку, чтобы открыть или скрыть список"
+      "Нажмите на галочку, чтобы открыть список, а на обратную галочку — скрыть"
     );
 
+    let ignoreNextClick = false;
+
     const toggle = (event) => {
+      if (event.type === "click" && ignoreNextClick) {
+        ignoreNextClick = false;
+        event.preventDefault();
+        event.stopPropagation();
+        return true;
+      }
       if (!isSuggestionTogglePointer(event, fieldEl)) return false;
       if (event.type === "pointerdown" && event.button !== 0) return false;
 
       event.preventDefault();
       event.stopPropagation();
+
+      if (event.type === "pointerdown") {
+        ignoreNextClick = true;
+      }
 
       const isOpen = !containerEl.classList.contains("is-hidden");
       if (isOpen) {

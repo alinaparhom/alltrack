@@ -3501,6 +3501,10 @@
       }
 
 
+      .form-field--selectable {
+        --selectable-toggle-size: 56px;
+      }
+
       .form-field--selectable::after {
         content: "";
         position: absolute;
@@ -3519,8 +3523,21 @@
         will-change: transform;
       }
 
-      .form-field--selectable:focus-within::after {
+      .form-field--selectable:focus-within::after,
+      .form-field--selectable:hover::after {
         filter: drop-shadow(0 3px 7px rgba(45, 94, 234, 0.18));
+      }
+
+      .form-field--selectable[data-suggestion-toggle-attached="true"]::before {
+        content: "";
+        position: absolute;
+        right: 0;
+        bottom: 0;
+        width: var(--selectable-toggle-size);
+        height: 48px;
+        border-radius: 16px;
+        cursor: pointer;
+        z-index: 2;
       }
 
       .form-field--selectable.is-suggestions-open::after {
@@ -3528,7 +3545,7 @@
       }
 
       .form-input--selectable {
-        padding-right: 48px;
+        padding-right: 56px;
         cursor: text;
       }
 

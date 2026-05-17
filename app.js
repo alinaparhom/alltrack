@@ -1524,6 +1524,7 @@ function buildMoveToolResponsibleMessage(
     moveReason,
     vacationNote,
     previousResponsible,
+    objectTrackingEnabled = true,
   } = {}
 ) {
   const titleParts = [
@@ -1548,24 +1549,26 @@ function buildMoveToolResponsibleMessage(
       formatNotificationValue(tool?.["Бух.номер"])
     )}`,
     `3. ${escapeTelegramHtml(titleLine)}`,
-    `4. Старый объект: ${escapeTelegramHtml(
-      formatNotificationValue(oldObject)
-    )}`,
+    ...(objectTrackingEnabled
+      ? [
+          `4. Старый объект: ${escapeTelegramHtml(
+            formatNotificationValue(oldObject)
+          )}`,
+          `5. Новый объект: ${escapeTelegramHtml(
+            formatNotificationValue(targetObject)
+          )}`,
+        ]
+      : []),
   ];
-  lines.push(
-    `5. Новый объект: ${escapeTelegramHtml(
-      formatNotificationValue(targetObject)
-    )}`
-  );
   if (previousResponsible) {
     lines.push(
-      `6. ${previousResponsibleLabel}: ${escapeTelegramHtml(
+      `${objectTrackingEnabled ? 6 : 4}. ${previousResponsibleLabel}: ${escapeTelegramHtml(
         formatNotificationValue(previousResponsible)
       )}`
     );
   }
   if (moveReason) {
-    const reasonLineNumber = previousResponsible ? 7 : 6;
+    const reasonLineNumber = (objectTrackingEnabled ? 6 : 4) + (previousResponsible ? 1 : 0);
     lines.push(
       `${reasonLineNumber}. Причина перемещения: ${escapeTelegramHtml(
         formatNotificationValue(moveReason)
@@ -1598,6 +1601,7 @@ function buildMoveDecisionNotificationMessage(
     reason,
     moveReason,
     isForMover = false,
+    objectTrackingEnabled = true,
   } = {}
 ) {
   const titleParts = [
@@ -1625,18 +1629,20 @@ function buildMoveDecisionNotificationMessage(
       formatNotificationValue(tool?.["Бух.номер"])
     )}`,
     `3. ${escapeTelegramHtml(titleLine)}`,
-    `4. Старый объект: ${escapeTelegramHtml(
-      formatNotificationValue(oldObject)
-    )}`,
+    ...(objectTrackingEnabled
+      ? [
+          `4. Старый объект: ${escapeTelegramHtml(
+            formatNotificationValue(oldObject)
+          )}`,
+          `5. Новый объект: ${escapeTelegramHtml(
+            formatNotificationValue(targetObject)
+          )}`,
+        ]
+      : []),
   ];
-  lines.push(
-    `5. Новый объект: ${escapeTelegramHtml(
-      formatNotificationValue(targetObject)
-    )}`
-  );
   if (moveReason) {
     lines.push(
-      `6. Причина перемещения: ${escapeTelegramHtml(
+      `${objectTrackingEnabled ? 6 : 4}. Причина перемещения: ${escapeTelegramHtml(
         formatNotificationValue(moveReason)
       )}`
     );
@@ -1655,7 +1661,7 @@ function buildMoveDecisionNotificationMessage(
 
 function buildWriteOffNotificationMessage(
   tool,
-  { writeOffDate, wroteOffBy } = {}
+  { writeOffDate, wroteOffBy, objectTrackingEnabled = true } = {}
 ) {
   const titleParts = [
     formatNotificationValue(tool?.["Наименование"], ""),
@@ -1680,13 +1686,17 @@ function buildWriteOffNotificationMessage(
     `5. Ответственный: ${escapeTelegramHtml(
       formatNotificationValue(tool?.["Ответственный"])
     )}`,
-    `6. Объект: ${escapeTelegramHtml(
-      formatNotificationValue(tool?.["Объект"])
-    )}`,
-    `7. Дата списания: ${escapeTelegramHtml(
+    ...(objectTrackingEnabled
+      ? [
+          `6. Объект: ${escapeTelegramHtml(
+            formatNotificationValue(tool?.["Объект"])
+          )}`,
+        ]
+      : []),
+    `${objectTrackingEnabled ? 7 : 6}. Дата списания: ${escapeTelegramHtml(
       formatNotificationValue(writeOffDate)
     )}`,
-    `8. Списал: ${escapeTelegramHtml(
+    `${objectTrackingEnabled ? 8 : 7}. Списал: ${escapeTelegramHtml(
       formatNotificationValue(wroteOffBy)
     )}`,
   ];
@@ -1695,7 +1705,7 @@ function buildWriteOffNotificationMessage(
 
 function buildBreakdownNotificationMessage(
   tool,
-  { breakdownDate, description, markedBy } = {}
+  { breakdownDate, description, markedBy, objectTrackingEnabled = true } = {}
 ) {
   const titleParts = [
     formatNotificationValue(tool?.["Наименование"], ""),
@@ -1717,16 +1727,20 @@ function buildBreakdownNotificationMessage(
     `4. Ответственный: ${escapeTelegramHtml(
       formatNotificationValue(tool?.["Ответственный"])
     )}`,
-    `5. Объект: ${escapeTelegramHtml(
-      formatNotificationValue(tool?.["Объект"])
-    )}`,
-    `6. Описание: ${escapeTelegramHtml(
+    ...(objectTrackingEnabled
+      ? [
+          `5. Объект: ${escapeTelegramHtml(
+            formatNotificationValue(tool?.["Объект"])
+          )}`,
+        ]
+      : []),
+    `${objectTrackingEnabled ? 6 : 5}. Описание: ${escapeTelegramHtml(
       formatNotificationValue(description)
     )}`,
-    `7. Дата поломки: ${escapeTelegramHtml(
+    `${objectTrackingEnabled ? 7 : 6}. Дата поломки: ${escapeTelegramHtml(
       formatNotificationValue(breakdownDate)
     )}`,
-    `8. Отметил: ${escapeTelegramHtml(
+    `${objectTrackingEnabled ? 8 : 7}. Отметил: ${escapeTelegramHtml(
       formatNotificationValue(markedBy)
     )}`,
   ];
@@ -1735,7 +1749,7 @@ function buildBreakdownNotificationMessage(
 
 function buildFixBreakdownNotificationMessage(
   tool,
-  { fixDate, markedBy } = {}
+  { fixDate, markedBy, objectTrackingEnabled = true } = {}
 ) {
   const titleParts = [
     formatNotificationValue(tool?.["Наименование"], ""),
@@ -1757,13 +1771,17 @@ function buildFixBreakdownNotificationMessage(
     `4. Ответственный: ${escapeTelegramHtml(
       formatNotificationValue(tool?.["Ответственный"])
     )}`,
-    `5. Объект: ${escapeTelegramHtml(
-      formatNotificationValue(tool?.["Объект"])
-    )}`,
-    `6. Дата ремонта: ${escapeTelegramHtml(
+    ...(objectTrackingEnabled
+      ? [
+          `5. Объект: ${escapeTelegramHtml(
+            formatNotificationValue(tool?.["Объект"])
+          )}`,
+        ]
+      : []),
+    `${objectTrackingEnabled ? 6 : 5}. Дата ремонта: ${escapeTelegramHtml(
       formatNotificationValue(fixDate)
     )}`,
-    `7. Отметил: ${escapeTelegramHtml(
+    `${objectTrackingEnabled ? 7 : 6}. Отметил: ${escapeTelegramHtml(
       formatNotificationValue(markedBy)
     )}`,
   ];
@@ -1866,7 +1884,7 @@ function buildRepairedNotificationMessage(
 
 function buildMoveCancelResponsibleMessage(
   tool,
-  { movedBy, canceledBy, targetObject, oldObject, moveReason } = {}
+  { movedBy, canceledBy, targetObject, oldObject, moveReason, objectTrackingEnabled = true } = {}
 ) {
   const titleParts = [
     formatNotificationValue(tool?.["Наименование"], ""),
@@ -1885,16 +1903,20 @@ function buildMoveCancelResponsibleMessage(
       formatNotificationValue(tool?.["Бух.номер"])
     )}`,
     `3. ${escapeTelegramHtml(titleLine)}`,
-    `4. Старый объект: ${escapeTelegramHtml(
-      formatNotificationValue(oldObject)
-    )}`,
-    `5. Новый объект: ${escapeTelegramHtml(
-      formatNotificationValue(targetObject)
-    )}`,
+    ...(objectTrackingEnabled
+      ? [
+          `4. Старый объект: ${escapeTelegramHtml(
+            formatNotificationValue(oldObject)
+          )}`,
+          `5. Новый объект: ${escapeTelegramHtml(
+            formatNotificationValue(targetObject)
+          )}`,
+        ]
+      : []),
   ];
   if (moveReason) {
     lines.push(
-      `6. Причина перемещения: ${escapeTelegramHtml(
+      `${objectTrackingEnabled ? 6 : 4}. Причина перемещения: ${escapeTelegramHtml(
         formatNotificationValue(moveReason)
       )}`
     );
@@ -2196,6 +2218,7 @@ async function notifyWriteOffTool({
       writeOffDate,
       wroteOffBy,
       organizationName,
+      objectTrackingEnabled: isObjectTrackingEnabled(settingsData),
     });
     let groupSent = false;
     const groupErrors = [];
@@ -2303,6 +2326,7 @@ async function notifyToolBreakdown({
       breakdownDate,
       description,
       markedBy,
+      objectTrackingEnabled: isObjectTrackingEnabled(settingsData),
     });
     const photoUrls = [];
     if (breakdownPhotos.length) {
@@ -2384,6 +2408,7 @@ async function notifyFixBreakdown({
     const message = buildFixBreakdownNotificationMessage(tool, {
       fixDate,
       markedBy,
+      objectTrackingEnabled: isObjectTrackingEnabled(settingsData),
     });
     const shouldAttach = isNotificationPhotoEnabled(
       settingsData,
@@ -2758,6 +2783,7 @@ async function notifyMoveTool({
         moveReason,
         vacationNote,
         previousResponsible: oldResponsible,
+        objectTrackingEnabled: isObjectTrackingEnabled(settingsData),
       });
       const responsibleResult = await sendTelegramMessage(
         resolvedResponsibleId,
@@ -2812,6 +2838,7 @@ async function notifyMoveDecision({
       reason,
       moveReason: String(move?.["Причина перемещения"] ?? "").trim(),
       isForMover: false,
+      objectTrackingEnabled: isObjectTrackingEnabled(settingsData),
     });
     if (groupsEnabled && groupIds.length) {
       const shouldAttach = isNotificationPhotoEnabled(
@@ -2858,6 +2885,7 @@ async function notifyMoveDecision({
         reason,
         moveReason: String(move?.["Причина перемещения"] ?? "").trim(),
         isForMover: true,
+        objectTrackingEnabled: isObjectTrackingEnabled(settingsData),
       });
       const shouldAttach = isNotificationPhotoEnabled(
         settingsData,
@@ -2913,6 +2941,7 @@ async function notifyMoveCancel({
       targetObject: String(move?.["Новый объект"] ?? "").trim(),
       oldObject: String(move?.["Старый объект"] ?? "").trim(),
       moveReason: String(move?.["Причина перемещения"] ?? "").trim(),
+      objectTrackingEnabled: isObjectTrackingEnabled(settingsData),
     });
     const shouldAttach = isNotificationPhotoEnabled(
       settingsData,
@@ -4683,6 +4712,10 @@ function isObjectTrackingEnabled(settingsData) {
   const source = settingsData?.organization ? settingsData.organization : settingsData;
   const value = source?.dataUsage?.object;
   return value !== false;
+}
+
+function isObjectRelatedLabel(label) {
+  return String(label ?? "").toLocaleLowerCase("ru").includes("объект");
 }
 
 
@@ -7674,8 +7707,17 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     toolsState.view = "table";
     toolsState.previousView = "table";
     contentEl
-      .querySelectorAll('[data-tools-filter="object"], [data-add-photo-filter="object"], [data-no-photo-filter="object"], [data-breakdowns-filter="object"]')
-      .forEach((element) => element.classList.add("is-hidden"));
+      .querySelectorAll('[data-tools-filter="object"], [data-add-photo-filter="object"], [data-no-photo-filter="object"], [data-breakdowns-filter="object"], [data-tools-grouping-option="object"], [data-no-photo-grouping-option="object"], [data-breakdowns-grouping-option="object"], [data-demand-filter-object]')
+      .forEach((element) => {
+        const formField = element.closest(".form-field, .demand-filter");
+        (formField || element).classList.add("is-hidden");
+      });
+    demandObjectInput?.removeAttribute("required");
+    demandMapToggleEl?.classList.add("is-hidden");
+    demandMapEl?.classList.add("is-hidden");
+    if (demandSearchInput) demandSearchInput.placeholder = "Поиск по названию, автору...";
+    if (demandObjectInput) demandObjectInput.value = defaultObjectName;
+    if (toolsState.grouping === "object") toolsState.grouping = "none";
   }
 
 
@@ -7937,6 +7979,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     isSaving: false,
     isStatusSaving: false,
   };
+  if (!objectTrackingEnabled) {
+    if (noPhotoState.grouping === "object") noPhotoState.grouping = "none";
+    if (breakdownsState.grouping === "object") breakdownsState.grouping = "none";
+  }
   const repairState = {
     tools: [],
     filtered: [],
@@ -9001,7 +9047,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     demandState.filtered = demandState.items.filter((item) => {
       if (item.status !== "open") return false;
       if (statusFilter !== "all" && item.status !== statusFilter) return false;
-      if (objectFilter && item.object !== objectFilter) return false;
+      if (objectTrackingEnabled && objectFilter && item.object !== objectFilter) return false;
       if (userFilter && item.requestedBy !== userFilter) return false;
       if (viewFilter === "mine" && item.requestedById !== currentUserKey) {
         return false;
@@ -9009,7 +9055,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       if (!query) return true;
       const haystack = [
         item.item,
-        item.object,
+        objectTrackingEnabled ? item.object : "",
         item.requestedBy,
         item.note,
         item.needDate,
@@ -9064,6 +9110,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   };
 
   const setDemandContentView = (view = "list") => {
+    if (!objectTrackingEnabled) view = "list";
     demandState.mapView = view === "map" ? "map" : "list";
     const isMap = demandState.mapView === "map";
     demandListEl?.classList.toggle("is-hidden", isMap);
@@ -9564,12 +9611,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const needDateText = needDateLabel || "не указано";
       const createdLabel = formatDemandCreatedLabel(item.createdAt);
       const metaItems = [
-        { label: "Объект", value: item.object || "—" },
+        objectTrackingEnabled ? { label: "Объект", value: item.object || "—" } : null,
         { label: "Ответственный", value: item.requestedBy || "Без автора" },
         { label: "Нужно", value: needDateText },
         { label: "Создано", value: createdLabel },
       ];
-      metaItems.forEach(({ label, value }) => {
+      metaItems.filter(Boolean).forEach(({ label, value }) => {
         const line = document.createElement("div");
         line.className = "demand-card__meta-line";
         line.textContent = `${label}: ${value}`;
@@ -9836,7 +9883,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (!demandFormEl) return;
     const title = sanitizeDemandLabel(demandItemInput?.value ?? "");
     const objectRaw = sanitizeDemandLabel(demandObjectInput?.value ?? "");
-    const object = findOptionMatch(objectRaw, demandState.objects);
+    const object = objectTrackingEnabled
+      ? findOptionMatch(objectRaw, demandState.objects)
+      : defaultObjectName;
     const quantity = normalizeNumber(demandQuantityInput?.value ?? 0, 0);
     const unit = sanitizeDemandLabel(demandUnitInput?.value ?? "шт") || "шт";
     const note = sanitizeDemandLabel(demandNoteInput?.value ?? "");
@@ -9850,7 +9899,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       setDemandMessage("Укажите дату, когда нужно.");
       return;
     }
-    if (!object) {
+    if (objectTrackingEnabled && !object) {
       setDemandMessage(
         demandState.objects.length
           ? "Выберите объект из списка."
@@ -9936,6 +9985,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   });
 
   demandMapToggleEl?.addEventListener("click", () => {
+    if (!objectTrackingEnabled) return;
     const nextView = demandState.mapView === "map" ? "list" : "map";
     setDemandContentView(nextView);
     if (nextView === "map") {
@@ -10203,7 +10253,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const responsible = String(tool?.["Ответственный"] ?? "").trim();
     return [
       accounting ? `Бух.номер: ${accounting}` : "",
-      object ? `Объект: ${object}` : "",
+      objectTrackingEnabled && object ? `Объект: ${object}` : "",
       responsible ? `Ответственный: ${responsible}` : "",
     ]
       .filter(Boolean)
@@ -10222,7 +10272,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       ["Объект", tool?.["Объект"]],
     ];
     toolsWriteOffPendingConfirmDetailsEl.innerHTML = "";
-    details.forEach(([label, value]) => {
+    details
+      .filter(([label]) => objectTrackingEnabled || !isObjectRelatedLabel(label))
+      .forEach(([label, value]) => {
       const row = document.createElement("div");
       row.className = "tools-writeoff-pending-confirm-card__detail";
       const labelEl = document.createElement("div");
@@ -10329,9 +10381,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       grid.className = "tools-info-item__grid";
       if (tab === "moves") {
         grid.append(
-          buildToolsInfoRow("Откуда", entry?.["Старый объект"]),
-          buildToolsInfoRow("Куда", entry?.["Новый объект"]),
-          buildToolsInfoRow("Переместил", entry?.["Переместил"])
+          ...[
+            objectTrackingEnabled ? buildToolsInfoRow("Откуда", entry?.["Старый объект"]) : null,
+            objectTrackingEnabled ? buildToolsInfoRow("Куда", entry?.["Новый объект"]) : null,
+            buildToolsInfoRow("Переместил", entry?.["Переместил"]),
+          ].filter(Boolean)
         );
       } else if (tab === "breakdowns") {
         grid.append(
@@ -10558,9 +10612,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       `Номер: ${number}`,
       `Бух.номер: ${accountingNumber}`,
       `Новый ответственный: ${responsible}`,
-      `Новый объект: ${targetObject}`,
+      objectTrackingEnabled ? `Новый объект: ${targetObject}` : "",
       `Дата перемещения: ${moveDate}`,
-    ].join("\n");
+    ].filter(Boolean).join("\n");
   };
 
   const isToolSelectableForMove = (tool) => {
@@ -12081,11 +12135,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       numberValueEl.className = "tools-table__number-value";
       numberValueEl.textContent = number || "—";
       numberCell.appendChild(numberValueEl);
-      const objectValueEl = document.createElement("div");
-      objectValueEl.className = "tools-table__number-object";
-      objectValueEl.textContent = objectName || "—";
-      objectValueEl.title = objectName || "Объект не указан";
-      numberCell.appendChild(objectValueEl);
+      if (objectTrackingEnabled) {
+        const objectValueEl = document.createElement("div");
+        objectValueEl.className = "tools-table__number-object";
+        objectValueEl.textContent = objectName || "—";
+        objectValueEl.title = objectName || "Объект не указан";
+        numberCell.appendChild(objectValueEl);
+      }
       const infoCell = document.createElement("div");
       infoCell.className = "tools-table__cell";
       const title = document.createElement("div");
@@ -12315,7 +12371,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     ) {
       return false;
     }
-    if (hasSelected("object") && !includesSelected("object", tool?.["Объект"])) {
+    if (objectTrackingEnabled && hasSelected("object") && !includesSelected("object", tool?.["Объект"])) {
       return false;
     }
     const toolStatus = String(tool?.["Статус"] ?? "").trim();
@@ -13419,7 +13475,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       { label: "Статус", value: tool?.["Статус"] },
     ];
     info
-      .filter(({ label }) => objectTrackingEnabled || !String(label ?? "").toLowerCase().includes("объект"))
+      .filter(({ label }) => objectTrackingEnabled || !isObjectRelatedLabel(label))
       .forEach(({ label, value, hideLabelInSearch }) => {
       const row = document.createElement("div");
       row.className = "tools-info-row";
@@ -13481,9 +13537,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       `• Номер: ${number}`,
       `• Бухгалтерский номер: ${accounting}`,
       `• Ответственный: ${responsible}`,
-      `• Объект: ${objectName}`,
+      objectTrackingEnabled ? `• Объект: ${objectName}` : "",
       `• Статус: ${status}`,
-    ].join("\n");
+    ].filter(Boolean).join("\n");
   };
 
   const getToolsInfoSharePhotos = () => {
@@ -13664,13 +13720,15 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         : "";
       const movedByEnergy = String(move?.["Переместил энергетик"] ?? "").trim();
       grid.append(
-        buildToolsInfoRow("Номер инструмента", move?.["Номер"]),
-        buildToolsInfoRow("Бухгалтерский номер", move?.["Бух.номер"]),
-        buildToolsInfoRow("Переместил", move?.["Переместил"]),
-        buildToolsInfoRow("Старый объект", move?.["Старый объект"]),
-        buildToolsInfoRow("Принял", move?.["Принял"]),
-        buildToolsInfoRow("Новый объект", move?.["Новый объект"]),
-        buildToolsInfoRow("Дата ответа", move?.["Дата ответа"])
+        ...[
+          buildToolsInfoRow("Номер инструмента", move?.["Номер"]),
+          buildToolsInfoRow("Бухгалтерский номер", move?.["Бух.номер"]),
+          buildToolsInfoRow("Переместил", move?.["Переместил"]),
+          objectTrackingEnabled ? buildToolsInfoRow("Старый объект", move?.["Старый объект"]) : null,
+          buildToolsInfoRow("Принял", move?.["Принял"]),
+          objectTrackingEnabled ? buildToolsInfoRow("Новый объект", move?.["Новый объект"]) : null,
+          buildToolsInfoRow("Дата ответа", move?.["Дата ответа"]),
+        ].filter(Boolean)
       );
       if (previousResponsible) {
         grid.append(
@@ -15721,7 +15779,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const sourceObject = String(move?.["Старый объект"] ?? "").trim();
       const targetObject = String(move?.["Новый объект"] ?? "").trim();
       const moveRoute =
-        sourceObject || targetObject
+        objectTrackingEnabled && (sourceObject || targetObject)
           ? `${sourceObject || "—"} ➜ ${targetObject || "—"}`
           : "";
       const metaLines = [
@@ -16073,7 +16131,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const targetObject = String(move?.["Новый объект"] ?? "").trim();
       const senderMeta = resolveAwaitingReplySenderMeta(move);
       const moveRoute =
-        sourceObject || targetObject
+        objectTrackingEnabled && (sourceObject || targetObject)
           ? `${sourceObject || "—"} ➜ ${targetObject || "—"}`
           : "";
       const toolCost = normalizeCostValue(tool?.["Стоимость"]);
@@ -16702,11 +16760,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const targetObject = String(move?.["Новый объект"] ?? "").trim();
       const toolAmount = formatToolCostLabel(tool);
       const moveRoute =
-        sourceObject && targetObject
+        objectTrackingEnabled && sourceObject && targetObject
           ? `${sourceObject} → ${targetObject}`
-          : sourceObject
+          : objectTrackingEnabled && sourceObject
             ? `${sourceObject} → —`
-            : targetObject
+            : objectTrackingEnabled && targetObject
               ? `— → ${targetObject}`
               : "";
       const appendMetaLine = (text, className = "pending-move-meta") => {
@@ -17414,14 +17472,16 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const grid = document.createElement("div");
       grid.className = "info-moves-history-item__grid";
       grid.append(
-        buildInfoMovesHistoryRow("Номер инструмента", move?.["Номер"]),
-        buildInfoMovesHistoryRow("Бух.номер", move?.["Бух.номер"]),
-        buildInfoMovesHistoryRow("Переместил", move?.["Переместил"]),
-        buildInfoMovesHistoryRow("Принял", move?.["Принял"]),
-        buildInfoMovesHistoryRow("Старый объект", move?.["Старый объект"]),
-        buildInfoMovesHistoryRow("Новый объект", move?.["Новый объект"]),
-        buildInfoMovesHistoryRow("Дата ответа", move?.["Дата ответа"]),
-        buildInfoMovesHistoryRow("Ответ", move?.["Ответ"])
+        ...[
+          buildInfoMovesHistoryRow("Номер инструмента", move?.["Номер"]),
+          buildInfoMovesHistoryRow("Бух.номер", move?.["Бух.номер"]),
+          buildInfoMovesHistoryRow("Переместил", move?.["Переместил"]),
+          buildInfoMovesHistoryRow("Принял", move?.["Принял"]),
+          objectTrackingEnabled ? buildInfoMovesHistoryRow("Старый объект", move?.["Старый объект"]) : null,
+          objectTrackingEnabled ? buildInfoMovesHistoryRow("Новый объект", move?.["Новый объект"]) : null,
+          buildInfoMovesHistoryRow("Дата ответа", move?.["Дата ответа"]),
+          buildInfoMovesHistoryRow("Ответ", move?.["Ответ"]),
+        ].filter(Boolean)
       );
 
       item.append(title, grid);
@@ -19225,6 +19285,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   toolsGroupingOptionEls.forEach((optionEl) => {
     optionEl.addEventListener("click", () => {
       const grouping = String(optionEl.dataset.toolsGroupingOption ?? "").trim();
+      if (!objectTrackingEnabled && grouping === "object") {
+        setToolsGroupingMenuOpen(false);
+        return;
+      }
       if (!grouping || toolsState.grouping === grouping) {
         setToolsGroupingMenuOpen(false);
         return;
@@ -20668,6 +20732,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         return false;
       }
       if (
+        objectTrackingEnabled &&
         addPhotoState.filters.object &&
         String(tool?.["Объект"] ?? "").trim() !== addPhotoState.filters.object
       ) {
@@ -21485,10 +21550,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       numberCell.className = "tools-table__cell tools-table__cell--number";
       const number = String(tool?.["Номер"] ?? "").trim();
       numberCell.textContent = number || "—";
-      const objectLine = document.createElement("div");
-      objectLine.className = "tools-table__number-object";
-      objectLine.textContent = String(tool?.["Объект"] ?? "").trim() || "Объект не указан";
-      numberCell.appendChild(objectLine);
+      if (objectTrackingEnabled) {
+        const objectLine = document.createElement("div");
+        objectLine.className = "tools-table__number-object";
+        objectLine.textContent = String(tool?.["Объект"] ?? "").trim() || "Объект не указан";
+        numberCell.appendChild(objectLine);
+      }
 
       const infoCell = document.createElement("div");
       infoCell.className = "tools-table__cell";
@@ -21579,7 +21646,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       if (hasSelected("status") && !includesSelected("status", tool?.["Статус"])) {
         return false;
       }
-      if (hasSelected("object") && !includesSelected("object", tool?.["Объект"])) {
+      if (objectTrackingEnabled && hasSelected("object") && !includesSelected("object", tool?.["Объект"])) {
         return false;
       }
       if (hasSelected("manufacturer") && !includesSelected("manufacturer", tool?.["Производитель"])) {
@@ -21633,7 +21700,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
   const getNoPhotoGroupingCaption = () => {
     if (noPhotoState.grouping === "group") return "Группа";
-    if (noPhotoState.grouping === "object") return "Объект";
+    if (noPhotoState.grouping === "object") return objectTrackingEnabled ? "Объект" : "";
     if (noPhotoState.grouping === "status") return "Статус";
     if (noPhotoState.grouping === "manufacturer") return "Производитель";
     return "";
@@ -21649,7 +21716,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       return String(tool?.["Граппа инструментов"] ?? "").trim() || "Без группы";
     }
     if (noPhotoState.grouping === "object") {
-      return String(tool?.["Объект"] ?? "").trim() || "Без объекта";
+      return objectTrackingEnabled
+        ? String(tool?.["Объект"] ?? "").trim() || "Без объекта"
+        : "";
     }
     if (noPhotoState.grouping === "status") {
       return getNoPhotoStatusLabel(tool?.["Статус"]) || "Без статуса";
@@ -21966,7 +22035,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     groupingDropdownEl.querySelectorAll("[data-no-photo-grouping-option]").forEach((optionEl) => {
       optionEl.addEventListener("click", () => {
         const value = String(optionEl.dataset.noPhotoGroupingOption ?? "").trim();
-        if (!value) return;
+        if (!value || (!objectTrackingEnabled && value === "object")) return;
         noPhotoState.grouping = value;
         groupingDropdownEl
           .querySelector(".tools-grouping-dropdown__menu")
@@ -22175,7 +22244,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       numberCell.className = "tools-table__cell tools-table__cell--number";
       const number = resolveToolNumberValue(tool);
       numberCell.textContent = number || "—";
-      const objectCell = buildToolObjectCell(tool);
+      const objectCell = objectTrackingEnabled ? buildToolObjectCell(tool) : null;
 
       const infoCell = document.createElement("div");
       infoCell.className = "tools-table__cell";
@@ -22209,7 +22278,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       });
       photoCell.appendChild(thumb);
 
-      row.append(numberCell, objectCell, infoCell, photoCell);
+      row.append(...[numberCell, objectCell, infoCell, photoCell].filter(Boolean));
       table.appendChild(row);
     });
 
@@ -23134,7 +23203,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
   const renderBreakdownToolInfoFields = (toolMetaElement, tool, options = {}) => {
     if (!toolMetaElement) return;
-    const fields = buildBreakdownToolInfoFields(tool, options);
+    const fields = buildBreakdownToolInfoFields(tool, options)
+      .filter((field) => objectTrackingEnabled || !isObjectRelatedLabel(field.label));
     toolMetaElement.innerHTML = fields
       .map(
         (field) =>
@@ -23245,11 +23315,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       numberValueEl.className = "tools-table__number-value";
       numberValueEl.textContent = number || "—";
       numberCell.appendChild(numberValueEl);
-      const objectValueEl = document.createElement("div");
-      objectValueEl.className = "tools-table__number-object";
-      objectValueEl.textContent = objectName || "—";
-      objectValueEl.title = objectName || "Объект не указан";
-      numberCell.appendChild(objectValueEl);
+      if (objectTrackingEnabled) {
+        const objectValueEl = document.createElement("div");
+        objectValueEl.className = "tools-table__number-object";
+        objectValueEl.textContent = objectName || "—";
+        objectValueEl.title = objectName || "Объект не указан";
+        numberCell.appendChild(objectValueEl);
+      }
 
       const infoCell = document.createElement("div");
       infoCell.className = "tools-table__cell";
@@ -23534,7 +23606,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       return formatFullName(String(tool?.["Ответственный"] ?? "").trim()) || "Не назначен";
     }
     if (grouping === "object") {
-      return String(tool?.["Объект"] ?? "").trim() || "Без объекта";
+      return objectTrackingEnabled
+        ? String(tool?.["Объект"] ?? "").trim() || "Без объекта"
+        : "";
     }
     if (grouping === "status") {
       return normalizeGroupingStatusLabel(tool?.["Статус"], Boolean(tool?.__pendingMove));
@@ -23640,7 +23714,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         if (hasSelected("group") && !includesSelected("group", tool?.["Граппа инструментов"])) {
           return false;
         }
-        if (hasSelected("object") && !includesSelected("object", tool?.["Объект"])) {
+        if (objectTrackingEnabled && hasSelected("object") && !includesSelected("object", tool?.["Объект"])) {
           return false;
         }
         if (hasSelected("status") && !includesSelected("status", tool?.["Статус"])) {
@@ -23762,11 +23836,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       numberValueEl.className = "tools-table__number-value";
       numberValueEl.textContent = number || "—";
       numberCell.appendChild(numberValueEl);
-      const objectValueEl = document.createElement("div");
-      objectValueEl.className = "tools-table__number-object";
-      objectValueEl.textContent = objectName || "—";
-      objectValueEl.title = objectName || "Объект не указан";
-      numberCell.appendChild(objectValueEl);
+      if (objectTrackingEnabled) {
+        const objectValueEl = document.createElement("div");
+        objectValueEl.className = "tools-table__number-object";
+        objectValueEl.textContent = objectName || "—";
+        objectValueEl.title = objectName || "Объект не указан";
+        numberCell.appendChild(objectValueEl);
+      }
 
       const infoCell = document.createElement("div");
       infoCell.className = "tools-table__cell";
@@ -25048,6 +25124,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   breakdownsGroupingOptions.forEach((option) => {
     option.addEventListener("click", () => {
       const grouping = String(option.dataset.breakdownsGroupingOption ?? "").trim();
+      if (!objectTrackingEnabled && grouping === "object") {
+        setBreakdownsGroupingMenuOpen(false);
+        return;
+      }
       if (!grouping || grouping === breakdownsState.grouping) {
         setBreakdownsGroupingMenuOpen(false);
         return;

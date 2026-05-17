@@ -68,6 +68,7 @@ const pendingAcceptanceMailingDefault = {
   time: "18:00",
 };
 const quickAccessDefaults = ["breakdowns", "info", "search", "tools", "move"];
+const defaultObjectName = "-";
 const energyExtraAccessOptions = [{ id: "awaiting-reply", title: "Отправлено", icon: "📤" }];
 const energyAccessOptions = [...energyActions, ...energyExtraAccessOptions];
 const quickAccessLimit = 5;
@@ -4464,6 +4465,9 @@ function buildEnergyOrganizationDefaults() {
     mailings,
     notifications,
     dataUsage,
+    features: {
+      objects: true,
+    },
   };
 }
 
@@ -4650,6 +4654,14 @@ function normalizeEnergyOrganizationSettings(raw) {
     dataUsage[option.id] =
       typeof data === "boolean" ? data : defaults.dataUsage[option.id];
   });
+  const features = {
+    objects:
+      typeof source.features?.objects === "boolean"
+        ? source.features.objects
+        : typeof source.objectsEnabled === "boolean"
+          ? source.objectsEnabled
+          : defaults.features.objects,
+  };
   return {
     access,
     stcGroups,
@@ -4658,7 +4670,22 @@ function normalizeEnergyOrganizationSettings(raw) {
     mailings,
     notifications,
     dataUsage,
+    features,
   };
+}
+
+function isObjectControlEnabled(settings) {
+  return settings?.features?.objects !== false;
+}
+
+function getStoredObjectName(value = "") {
+  const normalized = sanitizeObjectName(value);
+  return normalized || defaultObjectName;
+}
+
+function getVisibleObjectName(value = "") {
+  const normalized = sanitizeObjectName(value);
+  return normalized && normalized !== defaultObjectName ? normalized : "—";
 }
 
 function getEnergyOrganizationSettings(settingsData) {
@@ -4959,7 +4986,33 @@ function buildEnergySettingsMarkup(settings) {
     })
     .join("");
 
+  const objectsEnabled = isObjectControlEnabled(settings);
+
   return `
+    <div class="settings-accordion" data-settings-accordion>
+      <button
+        class="settings-accordion__header"
+        type="button"
+        data-settings-accordion-toggle
+        aria-expanded="false"
+      >
+        <span class="settings-accordion__title">Объекты</span>
+        <span class="settings-accordion__icon" aria-hidden="true">⌄</span>
+      </button>
+      <div class="settings-accordion__content">
+        <div class="settings-accordion__hint">
+          Если выключить контроль объектов, объект при регистрации и перемещениях станет необязательным, в базу будет записываться «-», а карты и поля объектов будут скрыты.
+        </div>
+        <label class="settings-inline">
+          <input
+            type="checkbox"
+            name="feature-objects"
+            ${objectsEnabled ? "checked" : ""}
+          />
+          <span>Контролировать объекты</span>
+        </label>
+      </div>
+    </div>
     <div class="settings-accordion" data-settings-accordion>
       <button
         class="settings-accordion__header"
@@ -6716,6 +6769,31 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const isChiefEngineerDashboard = user?.role === chiefEngineerRole;
   const settingsData = context.settingsData;
   const organizationSettings = getEnergyOrganizationSettings(settingsData);
+  const objectControlEnabled = isObjectControlEnabled(organizationSettings);
+  contentEl?.classList.toggle("is-object-control-disabled", !objectControlEnabled);
+  const syncObjectControlUi = () => {
+    if (!objectControlEnabled) {
+      toolsMapEl?.classList.add("is-hidden");
+      toolsSearchMapEl?.classList.add("is-hidden");
+      demandMapEl?.classList.add("is-hidden");
+    }
+    [addToolObjectInput, toolsMoveObjectInput, demandObjectInput, demandFilterObjectEl].forEach((inputEl) => {
+      if (!inputEl) return;
+      inputEl.required = objectControlEnabled;
+      const fieldEl = inputEl.closest?.(".form-field, .tools-filter-dropdown, label");
+      fieldEl?.classList.toggle("is-hidden", !objectControlEnabled);
+    });
+    [toolsMoveObjectChangeNoteEl, toolsMapCollapsedTriggerEl].forEach((element) => {
+      element?.classList.toggle("is-hidden", !objectControlEnabled);
+    });
+    contentEl.querySelectorAll('[data-tools-view="map"], [data-energy-objects-modal], [data-demand-map-toggle]').forEach((element) => {
+      element.classList.toggle("is-hidden", !objectControlEnabled);
+    });
+    contentEl.querySelectorAll('[data-tools-filter="object"], [data-no-photo-filter="object"], [data-breakdowns-filter="object"]').forEach((element) => {
+      element.classList.toggle("is-hidden", !objectControlEnabled);
+    });
+  };
+  syncObjectControlUi();
   const finesTabsConfig = [
     { id: "lateReply", title: "Поздний ответ" },
     { id: "movedByEnergy", title: "Перемещения энергетиком" },
@@ -7148,6 +7226,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   let availableActions = hasAccessConfig
     ? energyActions.filter((action) => accessList.includes(action.id))
     : energyActions;
+  if (!objectControlEnabled) {
+    availableActions = availableActions.filter((action) => action.id !== "objects");
+  }
   const hasAwaitingReplyAccess =
     !hasAccessConfig || accessList.includes("awaiting-reply");
   if (vacationReplacements.length > 0 && availableActions.some((action) => action.id === "tools")) {
@@ -7540,7 +7621,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     numberType: "",
     isSaving: false,
   };
-  const toolsViewOptions = new Set(["large", "table", "map"]);
+  const toolsViewOptions = new Set(objectControlEnabled ? ["large", "table", "map"] : ["large", "table"]);
   const normalizeToolsView = (value) =>
     toolsViewOptions.has(value) ? value : "table";
   const savedToolsView = normalizeToolsView(
@@ -8962,7 +9043,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   };
 
   const setDemandContentView = (view = "list") => {
-    demandState.mapView = view === "map" ? "map" : "list";
+    demandState.mapView = objectControlEnabled && view === "map" ? "map" : "list";
     const isMap = demandState.mapView === "map";
     demandListEl?.classList.toggle("is-hidden", isMap);
     demandMapEl?.classList.toggle("is-hidden", !isMap);
@@ -9734,7 +9815,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (!demandFormEl) return;
     const title = sanitizeDemandLabel(demandItemInput?.value ?? "");
     const objectRaw = sanitizeDemandLabel(demandObjectInput?.value ?? "");
-    const object = findOptionMatch(objectRaw, demandState.objects);
+    const object = objectControlEnabled
+      ? findOptionMatch(objectRaw, demandState.objects)
+      : defaultObjectName;
     const quantity = normalizeNumber(demandQuantityInput?.value ?? 0, 0);
     const unit = sanitizeDemandLabel(demandUnitInput?.value ?? "шт") || "шт";
     const note = sanitizeDemandLabel(demandNoteInput?.value ?? "");
@@ -9748,7 +9831,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       setDemandMessage("Укажите дату, когда нужно.");
       return;
     }
-    if (!object) {
+    if (objectControlEnabled && !object) {
       setDemandMessage(
         demandState.objects.length
           ? "Выберите объект из списка."
@@ -10101,7 +10184,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const responsible = String(tool?.["Ответственный"] ?? "").trim();
     return [
       accounting ? `Бух.номер: ${accounting}` : "",
-      object ? `Объект: ${object}` : "",
+      objectControlEnabled && object ? `Объект: ${getVisibleObjectName(object)}` : "",
       responsible ? `Ответственный: ${responsible}` : "",
     ]
       .filter(Boolean)
@@ -10117,7 +10200,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       ["Стоимость", tool?.["Стоимость"]],
       ["Дата покупки", tool?.["Дата покупки"]],
       ["Ответственный", tool?.["Ответственный"]],
-      ["Объект", tool?.["Объект"]],
+      ...(objectControlEnabled ? [["Объект", tool?.["Объект"]]] : []),
     ];
     toolsWriteOffPendingConfirmDetailsEl.innerHTML = "";
     details.forEach(([label, value]) => {
@@ -11534,7 +11617,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       [manufacturer, model].filter(Boolean).join(" · "),
       accountingNumber || "",
       serialNumber && serialNumber !== "-" ? `S/N: ${serialNumber}` : "",
-      objectName,
+      objectControlEnabled ? getVisibleObjectName(objectName) : "",
     ]
       .filter(Boolean)
       .join(" · ");
@@ -11979,9 +12062,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       numberCell.appendChild(numberValueEl);
       const objectValueEl = document.createElement("div");
       objectValueEl.className = "tools-table__number-object";
-      objectValueEl.textContent = objectName || "—";
+      objectValueEl.textContent = getVisibleObjectName(objectName);
       objectValueEl.title = objectName || "Объект не указан";
-      numberCell.appendChild(objectValueEl);
+      if (objectControlEnabled) {
+        numberCell.appendChild(objectValueEl);
+      }
       const infoCell = document.createElement("div");
       infoCell.className = "tools-table__cell";
       const title = document.createElement("div");
@@ -12211,7 +12296,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     ) {
       return false;
     }
-    if (hasSelected("object") && !includesSelected("object", tool?.["Объект"])) {
+    if (objectControlEnabled && hasSelected("object") && !includesSelected("object", tool?.["Объект"])) {
       return false;
     }
     const toolStatus = String(tool?.["Статус"] ?? "").trim();
@@ -13290,7 +13375,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           { label: "Стоимость", value: tool?.["Стоимость"] },
           { label: "Дата покупки", value: tool?.["Дата покупки"] },
           { label: "Ответственный", value: tool?.["Ответственный"] },
-          { label: "Объект", value: tool?.["Объект"] },
+          ...(objectControlEnabled ? [{ label: "Объект", value: tool?.["Объект"] }] : []),
         ]
       : [
       { label: "Номер", value: toolNumber },
@@ -13307,11 +13392,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       },
       { label: "Дата покупки", value: tool?.["Дата покупки"] },
       { label: "Ответственный", value: tool?.["Ответственный"] },
-      {
-        label: "Объект",
-        value: tool?.["Объект"],
-        hideLabelInSearch: true,
-      },
+      ...(objectControlEnabled
+        ? [{
+            label: "Объект",
+            value: tool?.["Объект"],
+            hideLabelInSearch: true,
+          }]
+        : []),
       { label: "Статус", value: tool?.["Статус"] },
     ];
     info.forEach(({ label, value, hideLabelInSearch }) => {
@@ -17570,8 +17657,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           createInfoByDatesRow("Бух.номер", item?.["Бух.номер"]),
           createInfoByDatesRow("Передал", item?.["Переместил"]),
           createInfoByDatesRow("Принял", item?.["Принял"]),
-          createInfoByDatesRow("Старый объект", item?.["Старый объект"]),
-          createInfoByDatesRow("Новый объект", item?.["Новый объект"])
+          ...(objectControlEnabled
+            ? [
+                createInfoByDatesRow("Старый объект", item?.["Старый объект"]),
+                createInfoByDatesRow("Новый объект", item?.["Новый объект"]),
+              ]
+            : [])
         );
       } else if (tab === "writeoff") {
         grid.append(
@@ -17580,7 +17671,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           createInfoByDatesRow("Наименование", item?.["Наименование"]),
           createInfoByDatesRow("Списал", item?.["Списал"]),
           createInfoByDatesRow("Ответственный", item?.["Ответственный"]),
-          createInfoByDatesRow("Объект", item?.["Объект"])
+          ...(objectControlEnabled ? [createInfoByDatesRow("Объект", item?.["Объект"])] : [])
         );
       } else {
         grid.append(
@@ -17588,7 +17679,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           createInfoByDatesRow("Бух.номер", item?.["Бух.номер"]),
           createInfoByDatesRow("Наименование", item?.["Наименование"]),
           createInfoByDatesRow("Ответственный", item?.["Ответственный"]),
-          createInfoByDatesRow("Объект", item?.["Объект"]),
+          ...(objectControlEnabled ? [createInfoByDatesRow("Объект", item?.["Объект"])] : []),
           createInfoByDatesRow("Статус", item?.["Статус"])
         );
       }
@@ -19403,9 +19494,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       console.warn("Не удалось загрузить объекты для перемещения.", error);
     }
 
-    toolsMoveState.objectOptions = objectOptions.sort((a, b) =>
-      a.localeCompare(b, "ru")
-    );
+    toolsMoveState.objectOptions = objectControlEnabled
+      ? objectOptions.sort((a, b) => a.localeCompare(b, "ru"))
+      : [defaultObjectName];
     if (toolsMoveObjectInput) {
       toolsMoveObjectInput.value = "";
       updateToolsMoveSelectState(
@@ -19474,16 +19565,18 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         responsibleRaw,
         toolsMoveState.responsibleOptions
       );
-      const targetObject = resolveMoveOptionMatch(
-        targetObjectRaw,
-        toolsMoveState.objectOptions
-      );
-      if (!responsible || !targetObject) {
-        setToolsMoveMessage("Выберите ответственного и объект.", "error");
+      const targetObject = objectControlEnabled
+        ? resolveMoveOptionMatch(
+            targetObjectRaw,
+            toolsMoveState.objectOptions
+          )
+        : defaultObjectName;
+      if (!responsible || (objectControlEnabled && !targetObject)) {
+        setToolsMoveMessage(objectControlEnabled ? "Выберите ответственного и объект." : "Выберите ответственного.", "error");
         return;
       }
       const blockedObjects = getToolsMoveBlockedObjects(responsible);
-      if (blockedObjects.has(normalizeMoveOption(targetObject))) {
+      if (objectControlEnabled && blockedObjects.has(normalizeMoveOption(targetObject))) {
         setToolsMoveMessage(
           "Нельзя выбрать текущий объект при смене объекта.",
           "error"
@@ -19562,8 +19655,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           "Дата ответа": isObjectChangeMove ? formatDateValue(now) : "",
           Переместил: movedByName,
           Принял: responsible,
-          "Старый объект": String(tool?.["Объект"] ?? "").trim(),
-          "Новый объект": targetObject,
+          "Старый объект": objectControlEnabled ? getStoredObjectName(tool?.["Объект"] ?? "") : defaultObjectName,
+          "Новый объект": objectControlEnabled ? targetObject : defaultObjectName,
           Статус: String(tool?.["Статус"] ?? "").trim(),
         };
         if (isObjectChangeMove) {
@@ -21130,7 +21223,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
               <div class="tools-info-card__group"><div class="tools-info-card__value">${escapeHtml(cost || "—")}</div></div>
               <div class="tools-info-card__group"><div class="tools-info-card__label">Дата покупки</div><div class="tools-info-card__value">${escapeHtml(purchaseDate || "—")}</div></div>
               <div class="tools-info-card__group"><div class="tools-info-card__label">Ответственный</div><div class="tools-info-card__value">${escapeHtml(responsible || "—")}</div></div>
-              <div class="tools-info-card__group"><div class="tools-info-card__label">Объект</div><div class="tools-info-card__value">${escapeHtml(object || "—")}</div></div>
+              ${objectControlEnabled ? `<div class="tools-info-card__group"><div class="tools-info-card__label">Объект</div><div class="tools-info-card__value">${escapeHtml(getVisibleObjectName(object))}</div></div>` : ""}
             </div>
           </div>
           <div class="no-photo-tool-actions-block">
@@ -21464,7 +21557,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       if (hasSelected("status") && !includesSelected("status", tool?.["Статус"])) {
         return false;
       }
-      if (hasSelected("object") && !includesSelected("object", tool?.["Объект"])) {
+      if (objectControlEnabled && hasSelected("object") && !includesSelected("object", tool?.["Объект"])) {
         return false;
       }
       if (hasSelected("manufacturer") && !includesSelected("manufacturer", tool?.["Производитель"])) {
@@ -23132,9 +23225,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       numberCell.appendChild(numberValueEl);
       const objectValueEl = document.createElement("div");
       objectValueEl.className = "tools-table__number-object";
-      objectValueEl.textContent = objectName || "—";
+      objectValueEl.textContent = getVisibleObjectName(objectName);
       objectValueEl.title = objectName || "Объект не указан";
-      numberCell.appendChild(objectValueEl);
+      if (objectControlEnabled) {
+        numberCell.appendChild(objectValueEl);
+      }
 
       const infoCell = document.createElement("div");
       infoCell.className = "tools-table__cell";
@@ -23525,7 +23620,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         if (hasSelected("group") && !includesSelected("group", tool?.["Граппа инструментов"])) {
           return false;
         }
-        if (hasSelected("object") && !includesSelected("object", tool?.["Объект"])) {
+        if (objectControlEnabled && hasSelected("object") && !includesSelected("object", tool?.["Объект"])) {
           return false;
         }
         if (hasSelected("status") && !includesSelected("status", tool?.["Статус"])) {
@@ -23649,9 +23744,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       numberCell.appendChild(numberValueEl);
       const objectValueEl = document.createElement("div");
       objectValueEl.className = "tools-table__number-object";
-      objectValueEl.textContent = objectName || "—";
+      objectValueEl.textContent = getVisibleObjectName(objectName);
       objectValueEl.title = objectName || "Объект не указан";
-      numberCell.appendChild(objectValueEl);
+      if (objectControlEnabled) {
+        numberCell.appendChild(objectValueEl);
+      }
 
       const infoCell = document.createElement("div");
       infoCell.className = "tools-table__cell";
@@ -27271,9 +27368,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
       addToolState.tools = Array.isArray(tools) ? tools : [];
 
-      const objectOptions = (Array.isArray(objects) ? objects : [])
-        .map((item) => sanitizeObjectName(item?.name ?? item))
-        .filter(Boolean);
+      const objectOptions = objectControlEnabled
+        ? (Array.isArray(objects) ? objects : [])
+            .map((item) => sanitizeObjectName(item?.name ?? item))
+            .filter(Boolean)
+        : [defaultObjectName];
       addToolState.objectOptions = Array.from(new Set(objectOptions)).sort(
         (a, b) => a.localeCompare(b, "ru")
       );
@@ -27635,15 +27734,18 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           pushError("Выберите ответственного из списка.", addToolResponsibleInput);
         }
 
-        if (!addToolState.objectOptions.length) {
-          pushError("В организации нет объектов.", addToolObjectInput);
-        }
-        const objectName = findOptionMatch(
-          objectRaw,
-          addToolState.objectOptions
-        );
-        if (addToolState.objectOptions.length && !objectName) {
-          pushError("Выберите объект из списка.", addToolObjectInput);
+        let objectName = defaultObjectName;
+        if (objectControlEnabled) {
+          if (!addToolState.objectOptions.length) {
+            pushError("В организации нет объектов.", addToolObjectInput);
+          }
+          objectName = findOptionMatch(
+            objectRaw,
+            addToolState.objectOptions
+          );
+          if (addToolState.objectOptions.length && !objectName) {
+            pushError("Выберите объект из списка.", addToolObjectInput);
+          }
         }
 
         if (!addToolState.groupOptions.length) {
@@ -30712,6 +30814,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       mailings: nextMailings,
       notifications: nextNotifications,
       dataUsage: nextDataUsage,
+      features: {
+        objects: formData.get("feature-objects") !== null,
+      },
     });
     try {
       await saveJson(context.settingsPath, settingsData, { user });

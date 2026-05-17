@@ -70,7 +70,7 @@ const pendingAcceptanceMailingDefault = {
 const quickAccessDefaults = ["breakdowns", "info", "search", "tools", "move"];
 const energyExtraAccessOptions = [{ id: "awaiting-reply", title: "Отправлено", icon: "📤" }];
 const energyAccessOptions = [...energyActions, ...energyExtraAccessOptions];
-const strictAccessDashboardRoles = new Set([accountingRole]);
+const strictAccessDashboardRoles = new Set();
 const quickAccessLimit = 5;
 const isIosMobile =
   /iP(ad|hone|od)/.test(navigator.userAgent) ||

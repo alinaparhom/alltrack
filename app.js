@@ -136,7 +136,9 @@ const energyNotificationOptions = [
   { id: "writeOff", title: "Списание" },
   { id: "finesIssued", title: "Выставленные штрафы" },
 ];
+const defaultObjectName = "-";
 const energyDataUsageOptions = [
+  { id: "object", title: "Объект" },
   { id: "serialNumber", title: "Серийный номер" },
   { id: "cost", title: "Стоимость" },
   { id: "serviceLife", title: "Срок службы" },
@@ -1345,7 +1347,7 @@ function getWeekDayShortName(date = new Date()) {
 
 function buildNewToolNotificationMessage(
   tool,
-  { organizationName, createdBy, numberType } = {}
+  { organizationName, createdBy, numberType, objectTrackingEnabled = true } = {}
 ) {
   const normalizedNumberType = String(numberType ?? "").trim().toLowerCase();
   const shouldUseAccountingNumber =
@@ -1378,16 +1380,18 @@ function buildNewToolNotificationMessage(
     `4. Ответственный: ${escapeTelegramHtml(
       formatNotificationValue(tool?.["Ответственный"])
     )}`,
-    `5. Объект: ${escapeTelegramHtml(
-      formatNotificationValue(tool?.["Объект"])
-    )}`,
-    `6. Дата покупки: ${escapeTelegramHtml(
+    objectTrackingEnabled
+      ? `5. Объект: ${escapeTelegramHtml(
+          formatNotificationValue(tool?.["Объект"])
+        )}`
+      : "",
+    `${objectTrackingEnabled ? 6 : 5}. Дата покупки: ${escapeTelegramHtml(
       formatNotificationValue(tool?.["Дата покупки"])
     )}`,
     "",
     creatorLine,
   ];
-  return lines.join("\n");
+  return lines.filter((line) => line !== "").join("\n");
 }
 
 function buildMoveToolNotificationMessage(
@@ -1400,6 +1404,7 @@ function buildMoveToolNotificationMessage(
     moveReason,
     vacationNote,
     moveKind,
+    objectTrackingEnabled = true,
   } = {}
 ) {
   const titleParts = [
@@ -1421,21 +1426,25 @@ function buildMoveToolNotificationMessage(
       formatNotificationValue(tool?.["Бух.номер"])
     )}`,
     `3. ${escapeTelegramHtml(titleLine)}`,
-    `4. Старый объект: ${escapeTelegramHtml(
-      formatNotificationValue(oldObject)
-    )}`,
-    `5. Новый объект: ${escapeTelegramHtml(
-      formatNotificationValue(targetObject)
-    )}`,
+    ...(objectTrackingEnabled
+      ? [
+          `4. Старый объект: ${escapeTelegramHtml(
+            formatNotificationValue(oldObject)
+          )}`,
+          `5. Новый объект: ${escapeTelegramHtml(
+            formatNotificationValue(targetObject)
+          )}`,
+        ]
+      : []),
   ];
   lines.push(
-    `6. Ответственный: ${escapeTelegramHtml(
+    `${objectTrackingEnabled ? 6 : 4}. Ответственный: ${escapeTelegramHtml(
       formatNotificationValue(responsible)
     )}`
   );
   if (moveReason) {
     lines.push(
-      `7. Причина перемещения: ${escapeTelegramHtml(
+      `${objectTrackingEnabled ? 7 : 5}. Причина перемещения: ${escapeTelegramHtml(
         formatNotificationValue(moveReason)
       )}`
     );
@@ -1464,6 +1473,7 @@ function buildMoveByEnergyNotificationMessage(
     oldResponsible,
     newResponsible,
     fineNote,
+    objectTrackingEnabled = true,
   } = {}
 ) {
   const titleParts = [
@@ -1481,14 +1491,18 @@ function buildMoveByEnergyNotificationMessage(
       formatNotificationValue(tool?.["Бух.номер"])
     )}`,
     `3. ${escapeTelegramHtml(titleLine)}`,
-    `4. Старый объект: ${escapeTelegramHtml(formatNotificationValue(oldObject))}`,
-    `5. Новый объект: ${escapeTelegramHtml(
-      formatNotificationValue(targetObject)
-    )}`,
-    `6. Прошлый ответственный: ${escapeTelegramHtml(
+    ...(objectTrackingEnabled
+      ? [
+          `4. Старый объект: ${escapeTelegramHtml(formatNotificationValue(oldObject))}`,
+          `5. Новый объект: ${escapeTelegramHtml(
+            formatNotificationValue(targetObject)
+          )}`,
+        ]
+      : []),
+    `${objectTrackingEnabled ? 6 : 4}. Прошлый ответственный: ${escapeTelegramHtml(
       formatNotificationValue(oldResponsible)
     )}`,
-    `7. Новый ответственный: ${escapeTelegramHtml(
+    `${objectTrackingEnabled ? 7 : 5}. Новый ответственный: ${escapeTelegramHtml(
       formatNotificationValue(newResponsible)
     )}`,
     `Переместил: ${escapeTelegramHtml(formatNotificationValue(movedBy))}`,
@@ -2142,6 +2156,7 @@ async function notifyNewToolRegistration({
       organizationName,
       createdBy,
       numberType,
+      objectTrackingEnabled: isObjectTrackingEnabled(settingsData),
     });
     await Promise.all(
       groupIds.map((chatId) => sendTelegramMessage(chatId, message))
@@ -2637,6 +2652,7 @@ async function notifyMoveTool({
             oldResponsible,
             newResponsible: responsibleName,
             fineNote,
+            objectTrackingEnabled: isObjectTrackingEnabled(settingsData),
           })
         : buildMoveToolNotificationMessage(tool, {
             movedBy,
@@ -2646,6 +2662,7 @@ async function notifyMoveTool({
             moveReason,
             vacationNote,
             moveKind,
+            objectTrackingEnabled: isObjectTrackingEnabled(settingsData),
           });
     let groupSent = false;
     const groupErrors = [];
@@ -4659,6 +4676,76 @@ function normalizeEnergyOrganizationSettings(raw) {
     notifications,
     dataUsage,
   };
+}
+
+
+function isObjectTrackingEnabled(settingsData) {
+  const source = settingsData?.organization ? settingsData.organization : settingsData;
+  const value = source?.dataUsage?.object;
+  return value !== false;
+}
+
+
+async function applyDefaultObjectValues(orgFolderName, user) {
+  const orgFolder = String(orgFolderName ?? "").trim();
+  if (!orgFolder) return;
+  const entries = [];
+  const toolsPath = `./${orgFolder}/База с инструментами.json`;
+  const movesPath = `./${orgFolder}/Перемещения.json`;
+
+  try {
+    const rawTools = await loadJson(toolsPath);
+    const normalized = normalizeCollectionPayload(rawTools, "tools");
+    let hasChanges = false;
+    const tools = normalized.items.map((tool) => {
+      if (String(tool?.["Объект"] ?? "").trim() === defaultObjectName) return tool;
+      hasChanges = true;
+      return { ...tool, "Объект": defaultObjectName };
+    });
+    if (hasChanges) {
+      entries.push({
+        path: toolsPath,
+        data: normalized.wrapper
+          ? { ...normalized.wrapper, [normalized.key]: tools }
+          : tools,
+        user,
+      });
+    }
+  } catch (error) {
+    console.warn("Не удалось проставить объект по умолчанию в базе инструментов.", error);
+  }
+
+  try {
+    const rawMoves = await loadJson(movesPath);
+    const normalized = normalizeCollectionPayload(rawMoves, "moves");
+    let hasChanges = false;
+    const moves = normalized.items.map((move) => {
+      const oldObject = String(move?.["Старый объект"] ?? "").trim();
+      const newObject = String(move?.["Новый объект"] ?? "").trim();
+      if (oldObject === defaultObjectName && newObject === defaultObjectName) return move;
+      hasChanges = true;
+      return {
+        ...move,
+        "Старый объект": defaultObjectName,
+        "Новый объект": defaultObjectName,
+      };
+    });
+    if (hasChanges) {
+      entries.push({
+        path: movesPath,
+        data: normalized.wrapper
+          ? { ...normalized.wrapper, [normalized.key]: moves }
+          : moves,
+        user,
+      });
+    }
+  } catch (error) {
+    console.warn("Не удалось проставить объект по умолчанию в перемещениях.", error);
+  }
+
+  if (entries.length) {
+    await saveJsonBatch(entries);
+  }
 }
 
 function getEnergyOrganizationSettings(settingsData) {
@@ -6716,6 +6803,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const isChiefEngineerDashboard = user?.role === chiefEngineerRole;
   const settingsData = context.settingsData;
   const organizationSettings = getEnergyOrganizationSettings(settingsData);
+  const objectTrackingEnabled = isObjectTrackingEnabled(organizationSettings);
   const finesTabsConfig = [
     { id: "lateReply", title: "Поздний ответ" },
     { id: "movedByEnergy", title: "Перемещения энергетиком" },
@@ -7148,6 +7236,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   let availableActions = hasAccessConfig
     ? energyActions.filter((action) => accessList.includes(action.id))
     : energyActions;
+  if (!objectTrackingEnabled) {
+    availableActions = availableActions.filter((action) => action.id !== "objects");
+  }
   const hasAwaitingReplyAccess =
     !hasAccessConfig || accessList.includes("awaiting-reply");
   if (vacationReplacements.length > 0 && availableActions.some((action) => action.id === "tools")) {
@@ -7578,6 +7669,15 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     repairBrokenOnly: false,
     repairInRepairOnly: false,
   };
+  if (!objectTrackingEnabled) {
+    toolsMapEl?.classList.add("is-hidden");
+    toolsState.view = "table";
+    toolsState.previousView = "table";
+    contentEl
+      .querySelectorAll('[data-tools-filter="object"], [data-add-photo-filter="object"], [data-no-photo-filter="object"], [data-breakdowns-filter="object"]')
+      .forEach((element) => element.classList.add("is-hidden"));
+  }
+
 
   let toolsTopZoneLock = null;
   let toolsControlsWrapRafId = 0;
@@ -8379,7 +8479,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   setToolsMapCollapsedState(loadToolsMapCollapsedState());
 
   const updateToolsMap = async () => {
-    if (!toolsMapEl || !toolsMapCanvasEl) return;
+    if (!objectTrackingEnabled || !toolsMapEl || !toolsMapCanvasEl) return;
     try {
       const [toolsRaw, objectsRaw] = await Promise.all([
         loadJson(toolsDatabasePath).catch(() => []),
@@ -8408,7 +8508,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
   };
 
-  updateToolsMap();
+  if (objectTrackingEnabled) {
+    updateToolsMap();
+  }
 
   const setObjectsMessage = (message = "") => {
     if (objectsMessageEl) {
@@ -10872,7 +10974,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   };
 
   const canUseToolsMapView = () =>
-    toolsState.mode === "search" || toolsState.mode === "user";
+    objectTrackingEnabled && (toolsState.mode === "search" || toolsState.mode === "user");
 
   const sortToolsByNumber = (tools) => {
     const direction = toolsState.searchSortDirection === "asc" ? 1 : -1;
@@ -10897,7 +10999,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       return formatFullName(String(tool?.["Ответственный"] ?? "").trim()) || "Не назначен";
     }
     if (toolsState.grouping === "object") {
-      return String(tool?.["Объект"] ?? "").trim() || "Без объекта";
+      return objectTrackingEnabled
+        ? String(tool?.["Объект"] ?? "").trim() || "Без объекта"
+        : "";
     }
     if (toolsState.grouping === "status") {
       return normalizeGroupingStatusLabel(tool?.["Статус"], Boolean(tool?.__pendingMove));
@@ -13314,7 +13418,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       },
       { label: "Статус", value: tool?.["Статус"] },
     ];
-    info.forEach(({ label, value, hideLabelInSearch }) => {
+    info
+      .filter(({ label }) => objectTrackingEnabled || !String(label ?? "").toLowerCase().includes("объект"))
+      .forEach(({ label, value, hideLabelInSearch }) => {
       const row = document.createElement("div");
       row.className = "tools-info-row";
       if (label === "Статус") {
@@ -17566,30 +17672,36 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       grid.className = "info-moves-history-item__grid";
       if (tab === "moves") {
         grid.append(
-          createInfoByDatesRow("Номер", item?.["Номер"]),
-          createInfoByDatesRow("Бух.номер", item?.["Бух.номер"]),
-          createInfoByDatesRow("Передал", item?.["Переместил"]),
-          createInfoByDatesRow("Принял", item?.["Принял"]),
-          createInfoByDatesRow("Старый объект", item?.["Старый объект"]),
-          createInfoByDatesRow("Новый объект", item?.["Новый объект"])
+          ...[
+            createInfoByDatesRow("Номер", item?.["Номер"]),
+            createInfoByDatesRow("Бух.номер", item?.["Бух.номер"]),
+            createInfoByDatesRow("Передал", item?.["Переместил"]),
+            createInfoByDatesRow("Принял", item?.["Принял"]),
+            objectTrackingEnabled ? createInfoByDatesRow("Старый объект", item?.["Старый объект"]) : null,
+            objectTrackingEnabled ? createInfoByDatesRow("Новый объект", item?.["Новый объект"]) : null,
+          ].filter(Boolean)
         );
       } else if (tab === "writeoff") {
         grid.append(
-          createInfoByDatesRow("Номер", item?.["Номер"]),
-          createInfoByDatesRow("Бух.номер", item?.["Бух.номер"]),
-          createInfoByDatesRow("Наименование", item?.["Наименование"]),
-          createInfoByDatesRow("Списал", item?.["Списал"]),
-          createInfoByDatesRow("Ответственный", item?.["Ответственный"]),
-          createInfoByDatesRow("Объект", item?.["Объект"])
+          ...[
+            createInfoByDatesRow("Номер", item?.["Номер"]),
+            createInfoByDatesRow("Бух.номер", item?.["Бух.номер"]),
+            createInfoByDatesRow("Наименование", item?.["Наименование"]),
+            createInfoByDatesRow("Списал", item?.["Списал"]),
+            createInfoByDatesRow("Ответственный", item?.["Ответственный"]),
+            objectTrackingEnabled ? createInfoByDatesRow("Объект", item?.["Объект"]) : null,
+          ].filter(Boolean)
         );
       } else {
         grid.append(
-          createInfoByDatesRow("Номер", item?.["Номер"]),
-          createInfoByDatesRow("Бух.номер", item?.["Бух.номер"]),
-          createInfoByDatesRow("Наименование", item?.["Наименование"]),
-          createInfoByDatesRow("Ответственный", item?.["Ответственный"]),
-          createInfoByDatesRow("Объект", item?.["Объект"]),
-          createInfoByDatesRow("Статус", item?.["Статус"])
+          ...[
+            createInfoByDatesRow("Номер", item?.["Номер"]),
+            createInfoByDatesRow("Бух.номер", item?.["Бух.номер"]),
+            createInfoByDatesRow("Наименование", item?.["Наименование"]),
+            createInfoByDatesRow("Ответственный", item?.["Ответственный"]),
+            objectTrackingEnabled ? createInfoByDatesRow("Объект", item?.["Объект"]) : null,
+            createInfoByDatesRow("Статус", item?.["Статус"]),
+          ].filter(Boolean)
         );
       }
 
@@ -19393,21 +19505,23 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       toolsMoveReasonInput.value = "";
     }
 
-    let objectOptions = [];
-    try {
-      const rawObjects = await loadJson(objectsPath);
-      objectOptions = normalizeObjectsData(rawObjects)
-        .map((item) => String(item?.name ?? "").trim())
-        .filter(Boolean);
-    } catch (error) {
-      console.warn("Не удалось загрузить объекты для перемещения.", error);
+    let objectOptions = objectTrackingEnabled ? [] : [defaultObjectName];
+    if (objectTrackingEnabled) {
+      try {
+        const rawObjects = await loadJson(objectsPath);
+        objectOptions = normalizeObjectsData(rawObjects)
+          .map((item) => String(item?.name ?? "").trim())
+          .filter(Boolean);
+      } catch (error) {
+        console.warn("Не удалось загрузить объекты для перемещения.", error);
+      }
     }
 
     toolsMoveState.objectOptions = objectOptions.sort((a, b) =>
       a.localeCompare(b, "ru")
     );
     if (toolsMoveObjectInput) {
-      toolsMoveObjectInput.value = "";
+      toolsMoveObjectInput.value = objectTrackingEnabled ? "" : defaultObjectName;
       updateToolsMoveSelectState(
         toolsMoveObjectInput,
         toolsMoveState.objectOptions,
@@ -19474,16 +19588,15 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         responsibleRaw,
         toolsMoveState.responsibleOptions
       );
-      const targetObject = resolveMoveOptionMatch(
-        targetObjectRaw,
-        toolsMoveState.objectOptions
-      );
-      if (!responsible || !targetObject) {
-        setToolsMoveMessage("Выберите ответственного и объект.", "error");
+      const targetObject = objectTrackingEnabled
+        ? resolveMoveOptionMatch(targetObjectRaw, toolsMoveState.objectOptions)
+        : defaultObjectName;
+      if (!responsible || (objectTrackingEnabled && !targetObject)) {
+        setToolsMoveMessage(objectTrackingEnabled ? "Выберите ответственного и объект." : "Выберите ответственного.", "error");
         return;
       }
-      const blockedObjects = getToolsMoveBlockedObjects(responsible);
-      if (blockedObjects.has(normalizeMoveOption(targetObject))) {
+      const blockedObjects = objectTrackingEnabled ? getToolsMoveBlockedObjects(responsible) : new Set();
+      if (objectTrackingEnabled && blockedObjects.has(normalizeMoveOption(targetObject))) {
         setToolsMoveMessage(
           "Нельзя выбрать текущий объект при смене объекта.",
           "error"
@@ -19496,7 +19609,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           normalizePersonName(responsible)
         ) ?? null;
       const moveReason = String(toolsMoveReasonInput?.value ?? "").trim();
-      const hasObjectChangeMove = isToolsMoveObjectChange(responsible, targetObject);
+      const hasObjectChangeMove = objectTrackingEnabled && isToolsMoveObjectChange(responsible, targetObject);
       if (isEnergyResponsible(responsible) && !hasObjectChangeMove && !moveReason) {
         setToolsMoveMessage("Укажите причину перемещения.", "error");
         toolsMoveReasonInput?.focus();
@@ -19539,7 +19652,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         const oldResponsible = String(tool?.["Ответственный"] ?? "").trim();
         const movedByName = String(user?.full_name ?? "").trim();
         const isObjectChangeMove =
-          normalizePersonName(oldResponsible) === normalizePersonName(responsible);
+          objectTrackingEnabled && normalizePersonName(oldResponsible) === normalizePersonName(responsible);
         const isMovedByEnergy =
           allowMoveWithoutPhoto &&
           !isObjectChangeMove &&
@@ -19562,8 +19675,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           "Дата ответа": isObjectChangeMove ? formatDateValue(now) : "",
           Переместил: movedByName,
           Принял: responsible,
-          "Старый объект": String(tool?.["Объект"] ?? "").trim(),
-          "Новый объект": targetObject,
+          "Старый объект": objectTrackingEnabled ? String(tool?.["Объект"] ?? "").trim() : defaultObjectName,
+          "Новый объект": objectTrackingEnabled ? targetObject : defaultObjectName,
           Статус: String(tool?.["Статус"] ?? "").trim(),
         };
         if (isObjectChangeMove) {
@@ -20116,10 +20229,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
             <div class="tools-info-card__label">ОТВЕТСТВЕННЫЙ</div>
             <div class="tools-info-card__value">${escapeHtml(responsible || "—")}</div>
           </div>
+          ${objectTrackingEnabled ? `
           <div class="tools-info-card__group">
             <div class="tools-info-card__label">ОБЪЕКТ</div>
             <div class="tools-info-card__value">${escapeHtml(object || "—")}</div>
-          </div>
+          </div>` : ""}
         </div>
       `;
 
@@ -20847,10 +20961,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
             <div class="tools-info-card__label">ОТВЕТСТВЕННЫЙ</div>
             <div class="tools-info-card__value">${escapeHtml(responsible || "—")}</div>
           </div>
+          ${objectTrackingEnabled ? `
           <div class="tools-info-card__group">
             <div class="tools-info-card__label">ОБЪЕКТ</div>
             <div class="tools-info-card__value">${escapeHtml(object || "—")}</div>
-          </div>
+          </div>` : ""}
         </div>
       </div>
       <div class="tools-info-card tools-info-card--add-photo-preview">
@@ -21130,7 +21245,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
               <div class="tools-info-card__group"><div class="tools-info-card__value">${escapeHtml(cost || "—")}</div></div>
               <div class="tools-info-card__group"><div class="tools-info-card__label">Дата покупки</div><div class="tools-info-card__value">${escapeHtml(purchaseDate || "—")}</div></div>
               <div class="tools-info-card__group"><div class="tools-info-card__label">Ответственный</div><div class="tools-info-card__value">${escapeHtml(responsible || "—")}</div></div>
-              <div class="tools-info-card__group"><div class="tools-info-card__label">Объект</div><div class="tools-info-card__value">${escapeHtml(object || "—")}</div></div>
+              ${objectTrackingEnabled ? `<div class="tools-info-card__group"><div class="tools-info-card__label">Объект</div><div class="tools-info-card__value">${escapeHtml(object || "—")}</div></div>` : ""}
             </div>
           </div>
           <div class="no-photo-tool-actions-block">
@@ -26171,6 +26286,25 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
   };
 
+  const syncObjectTrackingFields = () => {
+    const objectFields = [
+      addToolObjectInput?.closest?.(".form-field"),
+      toolsMoveObjectInput?.closest?.(".form-field"),
+    ].filter(Boolean);
+    objectFields.forEach((field) => {
+      field.classList.toggle("is-hidden", !objectTrackingEnabled);
+    });
+    [addToolObjectInput, toolsMoveObjectInput].forEach((input) => {
+      if (!input) return;
+      input.required = objectTrackingEnabled;
+      if (!objectTrackingEnabled) input.value = defaultObjectName;
+    });
+    if (toolsMoveSubtitleEl && !objectTrackingEnabled) {
+      toolsMoveSubtitleEl.textContent = "Выберите ответственного";
+    }
+  };
+  syncObjectTrackingFields();
+
   const getAddToolFieldInput = (key) => {
     const inputMap = {
       "Бух.номер": addToolAccountingNumberInput,
@@ -27271,9 +27405,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
       addToolState.tools = Array.isArray(tools) ? tools : [];
 
-      const objectOptions = (Array.isArray(objects) ? objects : [])
-        .map((item) => sanitizeObjectName(item?.name ?? item))
-        .filter(Boolean);
+      const objectOptions = objectTrackingEnabled
+        ? (Array.isArray(objects) ? objects : [])
+            .map((item) => sanitizeObjectName(item?.name ?? item))
+            .filter(Boolean)
+        : [defaultObjectName];
       addToolState.objectOptions = Array.from(new Set(objectOptions)).sort(
         (a, b) => a.localeCompare(b, "ru")
       );
@@ -27635,14 +27771,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           pushError("Выберите ответственного из списка.", addToolResponsibleInput);
         }
 
-        if (!addToolState.objectOptions.length) {
+        if (objectTrackingEnabled && !addToolState.objectOptions.length) {
           pushError("В организации нет объектов.", addToolObjectInput);
         }
-        const objectName = findOptionMatch(
-          objectRaw,
-          addToolState.objectOptions
-        );
-        if (addToolState.objectOptions.length && !objectName) {
+        const objectName = objectTrackingEnabled
+          ? findOptionMatch(objectRaw, addToolState.objectOptions)
+          : defaultObjectName;
+        if (objectTrackingEnabled && addToolState.objectOptions.length && !objectName) {
           pushError("Выберите объект из списка.", addToolObjectInput);
         }
 
@@ -29883,7 +30018,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           "Модель",
           "Стоимость",
           "Дата покупки",
-          "Объект",
+          ...(objectTrackingEnabled ? ["Объект"] : []),
           "Серийный номер",
           "Граппа инструментов",
           "Ответственный",
@@ -29897,7 +30032,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           "Стоимость",
           "Дата покупки",
           ...(includeResponsibleColumn ? ["Ответственный"] : []),
-          "Объект",
+          ...(objectTrackingEnabled ? ["Объект"] : []),
           "Серийный номер",
           "Граппа инструментов",
           "Статус",
@@ -29912,7 +30047,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
             String(tool?.["Модель"] ?? "").trim(),
             String(tool?.["Стоимость"] ?? "").trim(),
             String(tool?.["Дата покупки"] ?? "").trim(),
-            String(tool?.["Объект"] ?? "").trim(),
+            ...(objectTrackingEnabled ? [String(tool?.["Объект"] ?? "").trim()] : []),
             String(tool?.["Серийный номер"] ?? "").trim(),
             String(tool?.["Граппа инструментов"] ?? "").trim(),
             String(tool?.["Ответственный"] ?? "").trim(),
@@ -29928,7 +30063,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
             ...(includeResponsibleColumn
               ? [String(tool?.["Ответственный"] ?? "").trim()]
               : []),
-            String(tool?.["Объект"] ?? "").trim(),
+            ...(objectTrackingEnabled ? [String(tool?.["Объект"] ?? "").trim()] : []),
             String(tool?.["Серийный номер"] ?? "").trim(),
             String(tool?.["Граппа инструментов"] ?? "").trim(),
             String(tool?.["Статус"] ?? "").trim(),
@@ -30715,6 +30850,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     });
     try {
       await saveJson(context.settingsPath, settingsData, { user });
+      if (!nextDataUsage.object) {
+        await applyDefaultObjectValues(context.orgFolderName, user);
+      }
       if (settingsMessageEl) {
         settingsMessageEl.textContent = "Настройки сохранены для организации.";
       }
@@ -30758,6 +30896,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       return true;
     }
     if (actionId === "objects") {
+      if (!objectTrackingEnabled) return false;
       openObjectsModal();
       return true;
     }

@@ -169,10 +169,7 @@ const energyDashboardRoles = new Set([
   leaderRole,
   accountingRole,
 ]);
-const energyResponsibleAccessRoles = new Set([
-  leaderRole,
-  accountingRole,
-]);
+const energyResponsibleAccessRoles = new Set([leaderRole]);
 const responsibleLikeRoles = new Set([responsibleRole, chiefEngineerRole]);
 const isControlRole = (role) => String(role ?? "").trim() === controlRole;
 const isHiddenListUser = (entry) => isControlRole(entry?.role);

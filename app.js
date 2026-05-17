@@ -5298,6 +5298,21 @@ function resolveEnergyAccessRole(role) {
   return role;
 }
 
+function resolveEnergyDashboardActionsForRole(settingsData, role) {
+  const organizationSettings = getEnergyOrganizationSettings(settingsData);
+  const objectTrackingEnabled = isObjectTrackingEnabled(organizationSettings);
+  const accessRole = resolveEnergyAccessRole(role);
+  const accessList = organizationSettings.access?.[accessRole];
+  const hasAccessConfig = Array.isArray(accessList);
+  let actions = hasAccessConfig
+    ? energyActions.filter((action) => accessList.includes(action.id))
+    : [...energyActions];
+  if (!objectTrackingEnabled) {
+    actions = actions.filter((action) => action.id !== "objects");
+  }
+  return actions;
+}
+
 async function setupEnergyDashboard(user, preferences, contextOverride) {
   const gridEl = contentEl.querySelector("[data-energy-grid]");
   if (!gridEl) return;
@@ -7263,12 +7278,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const accessRole = resolveEnergyAccessRole(user.role);
   const accessList = organizationSettings.access?.[accessRole];
   const hasAccessConfig = Array.isArray(accessList);
-  let availableActions = hasAccessConfig
-    ? energyActions.filter((action) => accessList.includes(action.id))
-    : energyActions;
-  if (!objectTrackingEnabled) {
-    availableActions = availableActions.filter((action) => action.id !== "objects");
-  }
+  let availableActions = resolveEnergyDashboardActionsForRole(settingsData, user.role);
   const hasAwaitingReplyAccess =
     !hasAccessConfig || accessList.includes("awaiting-reply");
   if (vacationReplacements.length > 0 && availableActions.some((action) => action.id === "tools")) {
@@ -30960,6 +30970,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
   const handleEnergyAction = (actionId) => {
     if (!actionId) return false;
+    const isBuiltInAction =
+      actionId !== "pending" &&
+      actionId !== "awaiting-reply" &&
+      !isToolsReplacementActionId(actionId);
+    if (isBuiltInAction && !actionsMap.has(actionId)) return false;
     if (actionId === "pending") {
       openPendingMovesModal();
       return true;
@@ -34889,7 +34904,17 @@ async function renderUserRoleView() {
     currentUserLabel = `Вы вошли как <strong>${userName}</strong>`;
   }
 
-  contentEl.innerHTML = renderRole(currentUserLabel);
+  const renderOptions =
+    isEnergyDashboardRole && currentSettingsContext
+      ? {
+          actions: resolveEnergyDashboardActionsForRole(
+            currentSettingsContext.settingsData,
+            currentUser.role
+          ),
+        }
+      : {};
+
+  contentEl.innerHTML = renderRole(currentUserLabel, renderOptions);
   if (userNameEl) userNameEl.textContent = userName;
   if (appTitleTextEl) {
     appTitleTextEl.textContent = formatHeaderUserName(currentUser.full_name ?? "");

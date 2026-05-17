@@ -48,8 +48,9 @@ function renderGroupToggleCard() {
   `;
 }
 
-export function renderRole(user) {
-  const actionsMarkup = energyActions.map(renderActionCard).join("");
+export function renderRole(user, options = {}) {
+  const actions = Array.isArray(options.actions) ? options.actions : energyActions;
+  const actionsMarkup = actions.map(renderActionCard).join("");
   const groupToggleMarkup = renderGroupToggleCard();
   return `
     <section class="role-card">

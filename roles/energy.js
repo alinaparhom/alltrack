@@ -50,8 +50,9 @@ function renderGroupToggleCard() {
 
 export function renderRole(user, options = {}) {
   const actions = Array.isArray(options.actions) ? options.actions : energyActions;
+  const showGroupToggle = options.showGroupToggle !== false;
   const actionsMarkup = actions.map(renderActionCard).join("");
-  const groupToggleMarkup = renderGroupToggleCard();
+  const groupToggleMarkup = showGroupToggle ? renderGroupToggleCard() : "";
   return `
     <section class="role-card">
       <div class="dashboard energy-dashboard">

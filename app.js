@@ -70,6 +70,7 @@ const pendingAcceptanceMailingDefault = {
 const quickAccessDefaults = ["breakdowns", "info", "search", "tools", "move"];
 const energyExtraAccessOptions = [{ id: "awaiting-reply", title: "Отправлено", icon: "📤" }];
 const energyAccessOptions = [...energyActions, ...energyExtraAccessOptions];
+const strictAccessDashboardRoles = new Set([accountingRole]);
 const quickAccessLimit = 5;
 const isIosMobile =
   /iP(ad|hone|od)/.test(navigator.userAgent) ||
@@ -3621,7 +3622,12 @@ function isDefaultEnergyLayout(layout, actions) {
 }
 
 function normalizeEnergyLayout(layout, actions, options = {}) {
-  const { forceToggleLast = false } = options;
+  const {
+    forceToggleLast = false,
+    includePending = true,
+    includeAwaitingReply = true,
+    includeToggle = true,
+  } = options;
   const actionIds = new Set(actions.map((action) => action.id));
   const normalized = [];
   const usedIds = new Set();
@@ -3641,6 +3647,7 @@ function normalizeEnergyLayout(layout, actions, options = {}) {
         return;
       }
       if (item.type === "pending") {
+        if (!includePending) return;
         if (!hasPending) {
           normalized.push({ type: "pending" });
           hasPending = true;
@@ -3648,6 +3655,7 @@ function normalizeEnergyLayout(layout, actions, options = {}) {
         return;
       }
       if (item.type === "awaiting-reply") {
+        if (!includeAwaitingReply) return;
         if (!hasAwaitingReply) {
           normalized.push({ type: "awaiting-reply" });
           hasAwaitingReply = true;
@@ -3655,6 +3663,7 @@ function normalizeEnergyLayout(layout, actions, options = {}) {
         return;
       }
       if (item.type === "toggle") {
+        if (!includeToggle) return;
         if (!hasToggle) {
           normalized.push({ type: "toggle" });
           hasToggle = true;
@@ -3685,16 +3694,16 @@ function normalizeEnergyLayout(layout, actions, options = {}) {
     }
   });
 
-  if (!hasPending) {
+  if (includePending && !hasPending) {
     normalized.unshift({ type: "pending" });
     hasPending = true;
   }
 
-  if (!hasAwaitingReply) {
+  if (includeAwaitingReply && !hasAwaitingReply) {
     normalized.splice(hasPending ? 1 : 0, 0, { type: "awaiting-reply" });
   }
 
-  if (!hasToggle) {
+  if (includeToggle && !hasToggle) {
     normalized.push({ type: "toggle" });
   }
 
@@ -3799,18 +3808,20 @@ function updateEnergyAwaitingReplyStat({ count = 0 } = {}) {
   });
 }
 
-function applyGroupingPreference(layout, actions, preference) {
+function applyGroupingPreference(layout, actions, preference, options = {}) {
+  const { includeSystemCards = true } = options;
+  const systemItems = includeSystemCards
+    ? [{ type: "pending" }, { type: "awaiting-reply" }]
+    : [];
   if (preference === "none") {
     return [
-      { type: "pending" },
-      { type: "awaiting-reply" },
+      ...systemItems,
       ...actions.map((action) => ({ type: "action", id: action.id })),
     ];
   }
   if (preference === "all-group") {
     return [
-      { type: "pending" },
-      { type: "awaiting-reply" },
+      ...systemItems,
       {
         type: "group",
         id: "group-all",
@@ -6846,6 +6857,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
   const context = contextOverride || (await resolveUserSettingsContext(user));
   const isChiefEngineerDashboard = user?.role === chiefEngineerRole;
+  const isStrictAccessDashboard = strictAccessDashboardRoles.has(user?.role);
   const settingsData = context.settingsData;
   const organizationSettings = getEnergyOrganizationSettings(settingsData);
   const objectTrackingEnabled = isObjectTrackingEnabled(organizationSettings);
@@ -7302,7 +7314,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     icon: "📤",
   };
   const actionsMap = new Map(availableActions.map((action) => [action.id, action]));
-  const quickAccessOptions = isChiefEngineerDashboard
+  const quickAccessOptions = isStrictAccessDashboard
+    ? [
+        ...availableActions,
+        ...(hasAwaitingReplyAccess ? [awaitingReplyQuickAccessOption] : []),
+      ]
+    : isChiefEngineerDashboard
     ? [
         ...availableActions,
         ...(hasAwaitingReplyAccess ? [awaitingReplyQuickAccessOption] : []),
@@ -7325,11 +7342,15 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const normalizedLayout = normalizeEnergyLayout(savedLayout, availableActions, {
     forceToggleLast:
       !layoutCustomized && isDefaultEnergyLayout(savedLayout, availableActions),
+    includePending: !isStrictAccessDashboard,
+    includeAwaitingReply: !isStrictAccessDashboard || hasAwaitingReplyAccess,
+    includeToggle: !isStrictAccessDashboard,
   });
   const layoutToRenderRaw = applyGroupingPreference(
     normalizedLayout,
     availableActions,
-    groupingPreference
+    groupingPreference,
+    { includeSystemCards: !isStrictAccessDashboard }
   );
   const layoutToRender = (isChiefEngineerDashboard
     ? layoutToRenderRaw
@@ -7620,7 +7641,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   }
 
   const groupToggle = contentEl.querySelector("[data-energy-group-toggle]");
-  const allowGrouping = !isChiefEngineerDashboard && groupingPreference === "free";
+  const allowGrouping =
+    !isStrictAccessDashboard && !isChiefEngineerDashboard && groupingPreference === "free";
   let isGrouping = false;
   let blockClick = false;
   const selectedIds = new Set();
@@ -34904,13 +34926,15 @@ async function renderUserRoleView() {
     currentUserLabel = `Вы вошли как <strong>${userName}</strong>`;
   }
 
+  const isStrictAccessDashboard = strictAccessDashboardRoles.has(resolvedRoleId);
   const renderOptions =
     isEnergyDashboardRole && currentSettingsContext
       ? {
           actions: resolveEnergyDashboardActionsForRole(
             currentSettingsContext.settingsData,
-            currentUser.role
+            resolvedRoleId
           ),
+          showGroupToggle: !isStrictAccessDashboard,
         }
       : {};
 
@@ -34936,7 +34960,10 @@ async function renderUserRoleView() {
     superAdminStatEl.classList.toggle("is-hidden", resolvedRoleId !== superAdminRole);
   }
   if (energyPendingStatEl) {
-    energyPendingStatEl.classList.toggle("is-hidden", !isEnergyDashboardRole);
+    energyPendingStatEl.classList.toggle(
+      "is-hidden",
+      !isEnergyDashboardRole || isStrictAccessDashboard
+    );
   }
   if (appTitleMetaEl) {
     appTitleMetaEl.classList.toggle("is-hidden", !isEnergyDashboardRole);

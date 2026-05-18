@@ -71,6 +71,8 @@ const quickAccessDefaults = ["breakdowns", "info", "search", "tools", "move"];
 const energyExtraAccessOptions = [{ id: "awaiting-reply", title: "Отправлено", icon: "📤" }];
 const energyAccessOptions = [...energyActions, ...energyExtraAccessOptions];
 const strictAccessDashboardRoles = new Set();
+const strictSettingsAccessRoles = new Set([accountingRole]);
+const energyManagerRoles = new Set([energyRole, controlRole, accountingRole]);
 const quickAccessLimit = 5;
 const isIosMobile =
   /iP(ad|hone|od)/.test(navigator.userAgent) ||
@@ -178,7 +180,7 @@ const isOrganizationUserForResponsibleSelect = (entry) =>
   Boolean(String(entry?.full_name ?? "").trim());
 const isEnergyLikeRole = (role) => {
   const normalized = String(role ?? "").trim();
-  return normalized === energyRole || normalized === controlRole;
+  return energyManagerRoles.has(normalized);
 };
 function normalizeRoleValue(role) {
   return String(role ?? "").trim();
@@ -4640,6 +4642,8 @@ function normalizeEnergyOrganizationSettings(raw) {
     const fallbackAccessFromSettings = source.access?.[fallbackRole];
     const allowed = hasRoleAccessInSettings
       ? roleAccessFromSettings
+      : strictSettingsAccessRoles.has(role)
+      ? []
       : Array.isArray(fallbackAccessFromSettings)
       ? fallbackAccessFromSettings
       : defaults.access[fallbackRole] ?? defaults.access[role];

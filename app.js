@@ -69,6 +69,10 @@ const pendingAcceptanceMailingDefault = {
 };
 const quickAccessDefaults = ["breakdowns", "info", "search", "tools", "move"];
 const energyExtraAccessOptions = [{ id: "awaiting-reply", title: "Отправлено", icon: "📤" }];
+const accountingFixedDashboardActions = [
+  { id: "workers", title: "Рабочие", icon: "👷" },
+  { id: "accept-other", title: "Принять за других", icon: "✅" },
+];
 const energyAccessOptions = [...energyActions, ...energyExtraAccessOptions];
 const strictAccessDashboardRoles = new Set([accountingRole]);
 const strictSettingsAccessRoles = new Set([accountingRole]);
@@ -5329,6 +5333,15 @@ function resolveEnergyDashboardActionsForRole(settingsData, role) {
   if (!objectTrackingEnabled) {
     actions = actions.filter((action) => action.id !== "objects");
   }
+  if (accessRole === accountingRole) {
+    const existingActionIds = new Set(actions.map((action) => action.id));
+    actions = [
+      ...actions,
+      ...accountingFixedDashboardActions.filter(
+        (action) => !existingActionIds.has(action.id)
+      ),
+    ];
+  }
   return actions;
 }
 
@@ -7774,6 +7787,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     fineConfig: {},
     targetFullName: "",
     replacementMode: false,
+    allReceiversMode: false,
     vacationStartAt: "",
     isSaving: false,
     bulkConfirmAction: null,
@@ -15825,7 +15839,17 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         objectTrackingEnabled && (sourceObject || targetObject)
           ? `${sourceObject || "—"} ➜ ${targetObject || "—"}`
           : "";
+      const receiver = String(move?.["Принял"] ?? "").trim();
+      const receiverShortName = formatFullName(receiver, 2);
       const metaLines = [
+        {
+          text: pendingMovesState.allReceiversMode && receiverShortName
+            ? `Принимает: ${receiverShortName}`
+            : "",
+          className: "pending-move-responsible",
+          label: "Принимает",
+          value: receiverShortName,
+        },
         {
           text: [manufacturer, model].filter(Boolean).join(" · "),
           className: "pending-move-meta",
@@ -15983,10 +16007,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const userName = normalizePersonName(pendingUserName);
     const fineConfig = settingsData?.organization?.fines?.lateReply ?? {};
     const replacementMode = Boolean(options?.replacementMode);
+    const allReceiversMode = Boolean(options?.allReceiversMode);
     const vacationStartAt = String(options?.vacationStartAt ?? "").trim();
     pendingMovesState.fineConfig = fineConfig;
     pendingMovesState.targetFullName = targetFullName;
     pendingMovesState.replacementMode = replacementMode;
+    pendingMovesState.allReceiversMode = allReceiversMode;
     pendingMovesState.vacationStartAt = vacationStartAt;
     const pendingItems = moves
       .map((move, index) => ({ move, moveIndex: index }))
@@ -15994,8 +16020,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         const responseDate = String(move?.["Дата ответа"] ?? "").trim();
         if (responseDate) return false;
         const acceptedBy = normalizePersonName(move?.["Принял"] ?? "");
-        if (!acceptedBy || acceptedBy !== userName) return false;
-        return true;
+        if (!acceptedBy) return false;
+        if (allReceiversMode) return true;
+        return acceptedBy === userName;
       })
       .map((entry) => {
         const number = String(entry.move?.["Номер"] ?? "").trim();
@@ -16032,7 +16059,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         (sum, item) => sum + Number(item?.fineAmount ?? 0),
         0
       );
-      const subtitlePrefix = targetFullName
+      const subtitlePrefix = allReceiversMode
+        ? "Принять за других"
+        : targetFullName
         ? `На принятии за ${formatFullName(targetFullName)}`
         : "На принятии";
       const totalPendingToolsCost = pendingItems.reduce((sum, item) => {
@@ -18286,6 +18315,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       await loadPendingMovesList({
         targetFullName: pendingMovesState.targetFullName,
         replacementMode: pendingMovesState.replacementMode,
+        allReceiversMode: pendingMovesState.allReceiversMode,
         vacationStartAt: pendingMovesState.vacationStartAt,
       });
       await refreshPendingMovesIndicator();
@@ -31051,6 +31081,14 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
     if (actionId === "move-other") {
       openMoveOtherModal();
+      return true;
+    }
+    if (actionId === "workers") {
+      openUsersDetailsModal();
+      return true;
+    }
+    if (actionId === "accept-other") {
+      openPendingMovesModal({ allReceiversMode: true });
       return true;
     }
     if (actionId === "add-photo") {

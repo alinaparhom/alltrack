@@ -13550,6 +13550,58 @@
         align-content: start;
       }
 
+
+      .workers-hero {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 12px;
+        align-items: center;
+        padding: 14px;
+        margin-bottom: 12px;
+        border: 1px solid rgba(59, 125, 255, 0.16);
+        border-radius: 22px;
+        background: linear-gradient(135deg, rgba(255,255,255,0.86), rgba(226,236,255,0.68));
+        box-shadow: 0 16px 40px rgba(41, 64, 116, 0.09);
+      }
+
+      .workers-hero__icon {
+        width: 48px;
+        height: 48px;
+        display: grid;
+        place-items: center;
+        border-radius: 18px;
+        background: rgba(59, 125, 255, 0.12);
+        font-size: 26px;
+      }
+
+      .workers-hero h3 {
+        margin: 0;
+        font-size: 16px;
+        line-height: 1.2;
+      }
+
+      .workers-hero p,
+      .workers-add__note {
+        margin: 5px 0 0;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.45;
+      }
+
+      .workers-page__add {
+        background: linear-gradient(135deg, rgba(59, 125, 255, 0.12), rgba(255, 255, 255, 0.82));
+      }
+
+      .users-details__tag--worker {
+        background: rgba(255, 179, 64, 0.16);
+        color: #9a5a00;
+      }
+
+      .form-label__optional {
+        color: var(--muted);
+        font-weight: 600;
+      }
+
       .users-details__add {
         display: flex;
         align-items: center;

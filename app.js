@@ -180,7 +180,13 @@ const energyDashboardRoles = new Set([
 const energyResponsibleAccessRoles = new Set([leaderRole]);
 const responsibleLikeRoles = new Set([responsibleRole, chiefEngineerRole]);
 const isControlRole = (role) => String(role ?? "").trim() === controlRole;
+const workerRole = "Рабочий";
+const workerTelegramIdMarker = "не нужен";
+const isWorkerRole = (role) => String(role ?? "").trim() === workerRole;
+const isWorkerUser = (entry) => isWorkerRole(entry?.role);
 const isHiddenListUser = (entry) => isControlRole(entry?.role);
+const isVisibleUsersDirectoryUser = (entry) =>
+  !isHiddenListUser(entry) && !isWorkerUser(entry);
 const isOrganizationUserForResponsibleSelect = (entry) =>
   Boolean(String(entry?.full_name ?? "").trim());
 const isEnergyLikeRole = (role) => {
@@ -2578,7 +2584,7 @@ async function notifyRepaired({
   }
 }
 
-function findUserTelegramId(usersData, { fullName, organization }) {
+function findUserEntry(usersData, { fullName, organization }) {
   const normalizedName = normalizePersonName(fullName ?? "");
   const normalizedOrg = String(organization ?? "").trim().toLowerCase();
   const users = usersData?.users ?? [];
@@ -2594,7 +2600,26 @@ function findUserTelegramId(usersData, { fullName, organization }) {
         normalizePersonName(entry?.full_name ?? "") === normalizedName
     );
   }
-  return normalizeTelegramId(match?.telegram_id);
+  return match ?? null;
+}
+
+function findUserTelegramId(usersData, { fullName, organization }) {
+  return normalizeTelegramId(
+    findUserEntry(usersData, { fullName, organization })?.telegram_id
+  );
+}
+
+function findAccountingTelegramIds(usersData, organization) {
+  const normalizedOrg = String(organization ?? "").trim().toLowerCase();
+  const ids = (usersData?.users ?? [])
+    .filter((entry) => {
+      if (String(entry?.role ?? "").trim() !== accountingRole) return false;
+      if (!normalizedOrg) return true;
+      return String(entry?.organization ?? "").trim().toLowerCase() === normalizedOrg;
+    })
+    .map((entry) => normalizeTelegramId(entry?.telegram_id))
+    .filter(Boolean);
+  return Array.from(new Set(ids));
 }
 
 function buildLateReplyFineNote(settingsData) {
@@ -2694,10 +2719,47 @@ async function notifyMoveTool({
             moveKind,
             objectTrackingEnabled: isObjectTrackingEnabled(settingsData),
           });
+    const usersData = await loadJson(usersFilePath).catch(() => ({ users: [] }));
+    const responsibleEntry = findUserEntry(usersData, {
+      fullName: responsibleName,
+      organization: organizationName,
+    });
+    const isWorkerResponsible = isWorkerUser(responsibleEntry);
+    const accountingTelegramIds = isWorkerResponsible
+      ? findAccountingTelegramIds(usersData, organizationName)
+      : [];
+    const notifyAccountingAboutWorkerMove = async () => {
+      if (!isWorkerResponsible) return false;
+      if (!accountingTelegramIds.length) {
+        result.reasons.push("у бухгалтерии не указан Telegram ID");
+        return false;
+      }
+      const accountingMessage = `${moveMessage}\n\nПолучатель — рабочий без Telegram ID. Уведомление отправлено бухгалтерии организации.`;
+      const sendResults = await Promise.all(
+        accountingTelegramIds.map((chatId) =>
+          sendTelegramMessage(chatId, accountingMessage)
+        )
+      );
+      const sent = sendResults.some((entry) => entry?.ok);
+      if (!sent) {
+        const errors = sendResults
+          .map((entry) => formatTelegramSendError(entry))
+          .filter(Boolean);
+        result.reasons.push(
+          errors.length
+            ? `не удалось отправить бухгалтерии (${Array.from(new Set(errors)).join("; ")})`
+            : "не удалось отправить бухгалтерии"
+        );
+      }
+      return sent;
+    };
+    let accountingSent = false;
     let groupSent = false;
     const groupErrors = [];
     if (!groupsEnabled) {
       result.suppressedBySettings = true;
+      accountingSent = await notifyAccountingAboutWorkerMove();
+      result.sent = accountingSent;
       return result;
     } else if (!groupIds.length) {
       result.reasons.push("не выбраны группы для уведомлений");
@@ -2765,13 +2827,11 @@ async function notifyMoveTool({
       }
     }
 
-    const usersData = await loadJson(usersFilePath).catch(() => ({ users: [] }));
-    const resolvedResponsibleId =
-      normalizeTelegramId(responsibleTelegramId) ||
-      findUserTelegramId(usersData, {
-        fullName: responsibleName,
-        organization: organizationName,
-      });
+    accountingSent = await notifyAccountingAboutWorkerMove();
+    const resolvedResponsibleId = isWorkerResponsible
+      ? ""
+      : normalizeTelegramId(responsibleTelegramId) ||
+        normalizeTelegramId(responsibleEntry?.telegram_id);
     let responsibleSent = false;
     if (resolvedResponsibleId) {
       const lateReplyFineNote = buildLateReplyFineNote(settingsData);
@@ -2802,10 +2862,10 @@ async function notifyMoveTool({
           )})`
         );
       }
-    } else {
+    } else if (!isWorkerResponsible) {
       result.reasons.push("у ответственного не указан Telegram ID");
     }
-    result.sent = groupSent || responsibleSent;
+    result.sent = groupSent || responsibleSent || accountingSent;
   } catch (error) {
     console.warn("Не удалось отправить уведомление о перемещении.", error);
     const message = error?.message ? `: ${error.message}` : "";
@@ -6439,6 +6499,21 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const usersAddInviteOpenButton = contentEl.querySelector(
     "[data-users-add-invite-open]"
   );
+  const workersModalEl = contentEl.querySelector("[data-workers-modal]");
+  const workersBackdropEl = contentEl.querySelector("[data-workers-backdrop]");
+  const workersCloseButton = contentEl.querySelector("[data-workers-close]");
+  const workersOrgNameEl = contentEl.querySelector("[data-workers-org-name]");
+  const workersCountEl = contentEl.querySelector("[data-workers-count]");
+  const workersListEl = contentEl.querySelector("[data-workers-list]");
+  const workersEmptyEl = contentEl.querySelector("[data-workers-empty]");
+  const workersAddButton = contentEl.querySelector("[data-workers-add]");
+  const workersAddModalEl = contentEl.querySelector("[data-workers-add-modal]");
+  const workersAddBackdropEl = contentEl.querySelector("[data-workers-add-backdrop]");
+  const workersAddCloseButton = contentEl.querySelector("[data-workers-add-close]");
+  const workersAddCancelButton = contentEl.querySelector("[data-workers-add-cancel]");
+  const workersAddFormEl = contentEl.querySelector("[data-workers-add-form]");
+  const workersAddOrgNameEl = contentEl.querySelector("[data-workers-add-org-name]");
+  const workersAddMessageEl = contentEl.querySelector("[data-workers-add-message]");
   const pendingMovesModalEl = contentEl.querySelector(
     "[data-pending-moves-modal]"
   );
@@ -28215,12 +28290,139 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const { normalizedNames, normalizedFolders } = buildOrgNameSets(names);
     return users.filter((entry) => {
       const orgName = String(entry?.organization ?? "").trim();
-      if (!orgName || isHiddenListUser(entry)) return false;
+      if (!orgName || !isVisibleUsersDirectoryUser(entry)) return false;
       return (
         normalizedNames.has(normalizeOrganizationName(orgName)) ||
         normalizedFolders.has(normalizeOrganizationFolder(orgName))
       );
     });
+  };
+
+
+  const filterOrgWorkers = (users, names) =>
+    filterOrgUsersForRole(users, names, workerRole);
+
+  const filterOrgUsersForRole = (users, names, role) => {
+    if (!names.length) return [];
+    const { normalizedNames, normalizedFolders } = buildOrgNameSets(names);
+    return users.filter((entry) => {
+      const orgName = String(entry?.organization ?? "").trim();
+      if (!orgName || String(entry?.role ?? "").trim() !== role) return false;
+      return (
+        normalizedNames.has(normalizeOrganizationName(orgName)) ||
+        normalizedFolders.has(normalizeOrganizationFolder(orgName))
+      );
+    });
+  };
+
+  const renderWorkersList = (workers) => {
+    if (!workersListEl) return;
+    workersListEl.innerHTML = "";
+    if (workersEmptyEl) {
+      workersEmptyEl.classList.toggle("is-hidden", workers.length > 0);
+    }
+    [...workers]
+      .sort((a, b) =>
+        formatFullName(String(a?.full_name ?? "").trim()).localeCompare(
+          formatFullName(String(b?.full_name ?? "").trim()),
+          "ru"
+        )
+      )
+      .forEach((entry) => {
+        const card = document.createElement("div");
+        card.className = "users-details__card workers-page__card";
+
+        const initials = document.createElement("div");
+        initials.className = "users-details__initials";
+        initials.textContent = getInitials(String(entry?.full_name ?? "").trim());
+
+        const info = document.createElement("div");
+        info.className = "users-details__info";
+
+        const name = document.createElement("div");
+        name.className = "users-details__name";
+        name.textContent = formatFullName(String(entry?.full_name ?? "").trim());
+
+        const meta = document.createElement("div");
+        meta.className = "users-details__meta";
+
+        const roleTag = document.createElement("span");
+        roleTag.className = "users-details__tag users-details__tag--worker";
+        roleTag.textContent = workerRole;
+        meta.appendChild(roleTag);
+
+        const position = String(entry?.position ?? "").trim();
+        if (position) {
+          const positionTag = document.createElement("span");
+          positionTag.className = "users-details__status";
+          positionTag.textContent = position;
+          meta.appendChild(positionTag);
+        }
+
+        const telegramTag = document.createElement("span");
+        telegramTag.className = "users-details__status is-linked";
+        telegramTag.textContent = "Telegram ID не нужен";
+        meta.appendChild(telegramTag);
+
+        info.append(name, meta);
+        card.append(initials, info);
+        workersListEl.appendChild(card);
+      });
+  };
+
+  const updateWorkersView = () => {
+    if (!selectedUsersOrgName) return;
+    const workers = filterOrgWorkers(usersState.users, selectedUsersOrgNames);
+    if (workersCountEl) {
+      workersCountEl.textContent = formatUserCount(workers.length);
+    }
+    renderWorkersList(workers);
+  };
+
+  const openWorkersModal = async () => {
+    if (!workersModalEl) return;
+    const { organizationName, orgDisplayName, orgNames, users } =
+      await loadUsersContext();
+    selectedUsersOrgName = organizationName;
+    selectedUsersOrgDisplayName = orgDisplayName || organizationName;
+    selectedUsersOrgNames = orgNames;
+    if (workersOrgNameEl) {
+      workersOrgNameEl.textContent = selectedUsersOrgDisplayName;
+    }
+    const workers = filterOrgWorkers(users, orgNames);
+    if (workersCountEl) {
+      workersCountEl.textContent = formatUserCount(workers.length);
+    }
+    renderWorkersList(workers);
+    workersModalEl.classList.remove("is-hidden");
+    document.body.style.overflow = "hidden";
+  };
+
+  const closeWorkersAddModal = () => {
+    if (!workersAddModalEl) return;
+    workersAddModalEl.classList.add("is-hidden");
+    workersAddFormEl?.reset();
+    if (workersAddMessageEl) workersAddMessageEl.textContent = "";
+  };
+
+  const closeWorkersModal = () => {
+    if (!workersModalEl) return;
+    workersModalEl.classList.add("is-hidden");
+    closeWorkersAddModal();
+    document.body.style.overflow = "";
+  };
+
+  const openWorkersAddModal = async () => {
+    if (!workersAddModalEl || !selectedUsersOrgName) return;
+    const usersData = await loadJson(usersFilePath).catch(() => ({ users: [] }));
+    usersState.users = Array.isArray(usersData?.users) ? usersData.users : [];
+    if (workersAddOrgNameEl) {
+      workersAddOrgNameEl.textContent = selectedUsersOrgDisplayName || selectedUsersOrgName;
+    }
+    workersAddFormEl?.reset();
+    if (workersAddMessageEl) workersAddMessageEl.textContent = "";
+    workersAddModalEl.classList.remove("is-hidden");
+    document.body.style.overflow = "hidden";
   };
 
   const getFineBalanceByTitle = (rawFines, userName, fineTitle) => {
@@ -28802,6 +29004,63 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       usersInviteBox.classList.remove("is-hidden");
     }
   };
+
+  workersBackdropEl?.addEventListener("click", closeWorkersModal);
+  workersCloseButton?.addEventListener("click", closeWorkersModal);
+  workersAddButton?.addEventListener("click", openWorkersAddModal);
+  workersAddBackdropEl?.addEventListener("click", closeWorkersAddModal);
+  workersAddCloseButton?.addEventListener("click", closeWorkersAddModal);
+  workersAddCancelButton?.addEventListener("click", closeWorkersAddModal);
+  workersAddFormEl?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    if (!selectedUsersOrgName) {
+      if (workersAddMessageEl) workersAddMessageEl.textContent = "Организация не найдена.";
+      return;
+    }
+    const formData = new FormData(workersAddFormEl);
+    const lastName = String(formData.get("workers-add-last-name") ?? "").trim();
+    const firstName = String(formData.get("workers-add-first-name") ?? "").trim();
+    const middleName = String(formData.get("workers-add-middle-name") ?? "").trim();
+    const position = String(formData.get("workers-add-position") ?? "").trim();
+    if (!lastName || !firstName || !middleName) {
+      if (workersAddMessageEl) workersAddMessageEl.textContent = "Заполните Фамилию, Имя и Отчество.";
+      return;
+    }
+    const fullName = [lastName, firstName, middleName].join(" ").replace(/\s+/g, " ").trim();
+    try {
+      if (workersAddMessageEl) workersAddMessageEl.textContent = "Сохраняем рабочего...";
+      const usersData = await loadJson(usersFilePath).catch(() => ({ users: [] }));
+      const nextUsers = Array.isArray(usersData?.users) ? [...usersData.users] : [];
+      const normalizedFullName = normalizePersonName(fullName);
+      const normalizedOrg = normalizeOrganizationName(selectedUsersOrgName);
+      const duplicate = nextUsers.some((entry) =>
+        normalizePersonName(entry?.full_name ?? "") === normalizedFullName &&
+        normalizeOrganizationName(entry?.organization ?? "") === normalizedOrg &&
+        isWorkerUser(entry)
+      );
+      if (duplicate) {
+        if (workersAddMessageEl) workersAddMessageEl.textContent = "Такой рабочий уже есть.";
+        return;
+      }
+      nextUsers.push({
+        telegram_id: workerTelegramIdMarker,
+        full_name: fullName,
+        organization: selectedUsersOrgName,
+        role: workerRole,
+        position,
+      });
+      await saveJson(usersFilePath, { users: nextUsers }, { user });
+      usersState.users = nextUsers;
+      updateWorkersView();
+      if (workersAddMessageEl) workersAddMessageEl.textContent = "Рабочий сохранён.";
+      setTimeout(closeWorkersAddModal, 450);
+    } catch (error) {
+      console.error(error);
+      if (workersAddMessageEl) {
+        workersAddMessageEl.textContent = "Не удалось сохранить рабочего. Проверьте сервер.";
+      }
+    }
+  });
 
   usersDetailsBackdropEl?.addEventListener("click", closeUsersDetailsModal);
   usersDetailsCloseButton?.addEventListener("click", closeUsersDetailsModal);
@@ -31084,7 +31343,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       return true;
     }
     if (actionId === "workers") {
-      openUsersDetailsModal();
+      openWorkersModal();
       return true;
     }
     if (actionId === "accept-other") {
@@ -33340,7 +33599,7 @@ function setupSuperAdmin() {
     const orgNames = getOrgNames(org);
     const orgUsers = orgsState.users.filter((user) => {
       const name = String(user?.organization ?? "").trim();
-      return (orgNames.includes(name) || name === orgName) && !isHiddenListUser(user);
+      return (orgNames.includes(name) || name === orgName) && isVisibleUsersDirectoryUser(user);
     });
     if (orgsDetailUsersEl) {
       orgsDetailUsersEl.textContent = formatUserCount(orgUsers.length);
@@ -34164,7 +34423,7 @@ function setupSuperAdmin() {
     const orgNames = org ? getOrgNames(org) : [orgName];
     const orgUsers = orgsState.users.filter((user) => {
       const name = String(user?.organization ?? "").trim();
-      return (orgNames.includes(name) || name === orgName) && !isHiddenListUser(user);
+      return (orgNames.includes(name) || name === orgName) && isVisibleUsersDirectoryUser(user);
     });
 
     if (usersDetailsCountEl) {
@@ -34193,7 +34452,7 @@ function setupSuperAdmin() {
     const orgNames = org ? getOrgNames(org) : [selectedUsersOrgName];
     const orgUsers = orgsState.users.filter((user) => {
       const name = String(user?.organization ?? "").trim();
-      return (orgNames.includes(name) || name === selectedUsersOrgName) && !isHiddenListUser(user);
+      return (orgNames.includes(name) || name === selectedUsersOrgName) && isVisibleUsersDirectoryUser(user);
     });
 
     if (usersDetailsCountEl) {

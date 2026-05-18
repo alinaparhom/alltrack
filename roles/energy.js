@@ -51,8 +51,16 @@ function renderGroupToggleCard() {
 export function renderRole(user, options = {}) {
   const actions = Array.isArray(options.actions) ? options.actions : energyActions;
   const showGroupToggle = options.showGroupToggle !== false;
+  const showQuickAccess = options.showQuickAccess !== false;
   const actionsMarkup = actions.map(renderActionCard).join("");
   const groupToggleMarkup = showGroupToggle ? renderGroupToggleCard() : "";
+  const quickAccessMarkup = showQuickAccess
+    ? `
+        <div class="quick-access" data-quick-access>
+          <div class="quick-access-list" data-quick-access-list></div>
+        </div>
+      `
+    : "";
   return `
     <section class="role-card">
       <div class="dashboard energy-dashboard">
@@ -4677,9 +4685,7 @@ export function renderRole(user, options = {}) {
             </div>
           </div>
         </div>
-        <div class="quick-access" data-quick-access>
-          <div class="quick-access-list" data-quick-access-list></div>
-        </div>
+        ${quickAccessMarkup}
       </div>
     </section>
   `;

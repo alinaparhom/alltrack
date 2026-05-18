@@ -7374,6 +7374,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   );
 
   const resolveQuickAccessIds = () => {
+    if (isStrictAccessDashboard) return [];
     const saved = settingsData.users?.[context.userKey]?.energy?.quickAccess;
     const baseList =
       Array.isArray(saved) && saved.length > 0 ? saved : quickAccessDefaults;
@@ -7390,6 +7391,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   };
 
   let quickAccessIds = resolveQuickAccessIds();
+  if (isStrictAccessDashboard) {
+    quickAccessEl?.classList.add("is-hidden");
+  }
   let quickAccessDraft = [...quickAccessIds];
   let myToolsCount =
     context?.orgFolderName && user
@@ -34939,6 +34943,7 @@ async function renderUserRoleView() {
             resolvedRoleId
           ),
           showGroupToggle: !isStrictAccessDashboard,
+          showQuickAccess: !isStrictAccessDashboard,
         }
       : {};
 

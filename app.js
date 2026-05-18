@@ -15860,8 +15860,22 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const table = document.createElement("div");
     table.className = "tools-table pending-moves-tools-table";
 
+    let currentReceiverGroup = "";
     items.forEach((item) => {
       const { move, tool, moveIndex, fineAmount } = item;
+      const receiver = String(move?.["Принял"] ?? "").trim() || "Не указан принимающий";
+      if (pendingMovesState.allReceiversMode && receiver !== currentReceiverGroup) {
+        currentReceiverGroup = receiver;
+        const groupRow = document.createElement("div");
+        groupRow.className = "tools-table__row awaiting-reply-group-row";
+        const groupCell = document.createElement("div");
+        groupCell.className = "tools-table__cell awaiting-reply-group-cell";
+        groupCell.setAttribute("role", "heading");
+        groupCell.setAttribute("aria-level", "3");
+        groupCell.textContent = `Принимающий: ${receiver}`;
+        groupRow.appendChild(groupCell);
+        table.appendChild(groupRow);
+      }
       const row = document.createElement("div");
       row.className = "tools-table__row";
       row.dataset.moveIndex = String(moveIndex);
@@ -15914,7 +15928,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         objectTrackingEnabled && (sourceObject || targetObject)
           ? `${sourceObject || "—"} ➜ ${targetObject || "—"}`
           : "";
-      const receiver = String(move?.["Принял"] ?? "").trim();
       const receiverShortName = formatFullName(receiver, 2);
       const metaLines = [
         {
@@ -16113,6 +16126,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         };
       })
       .sort((a, b) => {
+        if (allReceiversMode) {
+          const receiverA = normalizePersonName(a.move?.["Принял"] ?? "");
+          const receiverB = normalizePersonName(b.move?.["Принял"] ?? "");
+          const receiverCompare = receiverA.localeCompare(receiverB, "ru");
+          if (receiverCompare !== 0) return receiverCompare;
+        }
         const senderA = normalizePersonName(a.move?.["Переместил"] ?? "");
         const senderB = normalizePersonName(b.move?.["Переместил"] ?? "");
         const senderCompare = senderA.localeCompare(senderB, "ru");

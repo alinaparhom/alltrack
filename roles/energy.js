@@ -4229,6 +4229,106 @@ export function renderRole(user, options = {}) {
             </div>
           </div>
         </div>
+        <div class="settings-modal workers-modal is-hidden" data-workers-modal>
+          <div class="settings-modal__backdrop" data-workers-backdrop></div>
+          <div
+            class="settings-modal__panel users-details-modal__panel workers-modal__panel"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Рабочие организации"
+          >
+            <div class="settings-modal__header users-details-modal__header workers-modal__header">
+              <div class="settings-modal__title users-details-modal__title">
+                <h2>Рабочие</h2>
+                <p><span data-workers-org-name>Организация</span> · <span data-workers-count>—</span></p>
+              </div>
+              <button
+                class="button-icon users-details-modal__close"
+                type="button"
+                data-workers-close
+                aria-label="Закрыть список рабочих"
+              >
+                <span class="button-icon-emoji" aria-hidden="true">✕</span>
+              </button>
+            </div>
+            <div class="settings-modal__body users-details-modal__body workers-modal__body">
+              <div class="users-details workers-page">
+                <div class="workers-hero">
+                  <div class="workers-hero__icon" aria-hidden="true">👷</div>
+                  <div>
+                    <h3>Рабочие без Telegram ID</h3>
+                    <p>Их можно выбрать ответственными при перемещении инструмента. Уведомления придут бухгалтерии.</p>
+                  </div>
+                </div>
+                <button class="users-details__add workers-page__add" type="button" data-workers-add>
+                  <span class="users-details__add-icon" aria-hidden="true">➕</span>
+                  <span class="users-details__add-text">Добавить рабочего</span>
+                </button>
+                <div class="users-details__list workers-page__list" data-workers-list></div>
+                <div class="users-details__empty workers-page__empty is-hidden" data-workers-empty>
+                  Рабочих пока нет. Добавьте первого рабочего для перемещений.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="settings-modal workers-add-modal is-hidden" data-workers-add-modal>
+          <div class="settings-modal__backdrop" data-workers-add-backdrop></div>
+          <div
+            class="settings-modal__panel users-add-modal__panel workers-add-modal__panel"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Добавить рабочего"
+          >
+            <div class="settings-modal__header users-add-modal__header">
+              <div class="settings-modal__title">
+                <h2>Новый рабочий</h2>
+                <div class="users-add__meta">
+                  <span>Организация:</span>
+                  <span class="users-add__org" data-workers-add-org-name>—</span>
+                </div>
+              </div>
+              <button
+                class="button-icon users-add-modal__close"
+                type="button"
+                data-workers-add-close
+                aria-label="Закрыть окно добавления рабочего"
+              >
+                <span class="button-icon-emoji" aria-hidden="true">✕</span>
+              </button>
+            </div>
+            <div class="settings-modal__body users-add-modal__body">
+              <div class="form-card users-add__form workers-add__form">
+                <form class="form-grid" data-workers-add-form>
+                  <div class="form-field">
+                    <label class="form-label" for="workers-add-last-name">Фамилия</label>
+                    <input class="form-input" type="text" id="workers-add-last-name" name="workers-add-last-name" autocomplete="family-name" placeholder="Иванов" required />
+                  </div>
+                  <div class="form-field">
+                    <label class="form-label" for="workers-add-first-name">Имя</label>
+                    <input class="form-input" type="text" id="workers-add-first-name" name="workers-add-first-name" autocomplete="given-name" placeholder="Иван" required />
+                  </div>
+                  <div class="form-field">
+                    <label class="form-label" for="workers-add-middle-name">Отчество</label>
+                    <input class="form-input" type="text" id="workers-add-middle-name" name="workers-add-middle-name" autocomplete="additional-name" placeholder="Иванович" required />
+                  </div>
+                  <div class="form-field">
+                    <label class="form-label" for="workers-add-position">Должность <span class="form-label__optional">необязательно</span></label>
+                    <input class="form-input" type="text" id="workers-add-position" name="workers-add-position" autocomplete="organization-title" placeholder="Например: монтажник" />
+                  </div>
+                  <p class="users-add__note workers-add__note">
+                    Telegram ID не нужен: в users.json будет сохранена пометка «не нужен», роль — «Рабочий».
+                  </p>
+                  <div class="form-actions">
+                    <button class="action-primary" type="submit">Сохранить рабочего</button>
+                    <button class="button-secondary" type="button" data-workers-add-cancel>Отменить</button>
+                  </div>
+                  <div class="form-message" role="status" data-workers-add-message></div>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
         <div class="settings-modal info-hub-modal is-hidden" data-energy-info-modal>
           <div class="settings-modal__backdrop" data-energy-info-backdrop></div>
           <div

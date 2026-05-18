@@ -72,6 +72,7 @@ const energyExtraAccessOptions = [{ id: "awaiting-reply", title: "Отправл
 const energyAccessOptions = [...energyActions, ...energyExtraAccessOptions];
 const strictAccessDashboardRoles = new Set([accountingRole]);
 const strictSettingsAccessRoles = new Set([accountingRole]);
+const explicitAccessDashboardRoles = new Set([accountingRole]);
 const energyManagerRoles = new Set([energyRole, controlRole, accountingRole]);
 const quickAccessLimit = 5;
 const isIosMobile =
@@ -5319,8 +5320,11 @@ function resolveEnergyDashboardActionsForRole(settingsData, role) {
   const accessRole = resolveEnergyAccessRole(role);
   const accessList = organizationSettings.access?.[accessRole];
   const hasAccessConfig = Array.isArray(accessList);
+  const requiresExplicitAccess = explicitAccessDashboardRoles.has(accessRole);
   let actions = hasAccessConfig
     ? energyActions.filter((action) => accessList.includes(action.id))
+    : requiresExplicitAccess
+    ? []
     : [...energyActions];
   if (!objectTrackingEnabled) {
     actions = actions.filter((action) => action.id !== "objects");
@@ -7295,8 +7299,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const accessList = organizationSettings.access?.[accessRole];
   const hasAccessConfig = Array.isArray(accessList);
   let availableActions = resolveEnergyDashboardActionsForRole(settingsData, user.role);
-  const hasAwaitingReplyAccess =
-    !hasAccessConfig || accessList.includes("awaiting-reply");
+  const requiresExplicitAccess = explicitAccessDashboardRoles.has(accessRole);
+  const hasAwaitingReplyAccess = hasAccessConfig
+    ? accessList.includes("awaiting-reply")
+    : !requiresExplicitAccess;
   if (vacationReplacements.length > 0 && availableActions.some((action) => action.id === "tools")) {
     const replacementActions = vacationReplacements.map((replacement) => ({
       id: `${toolsReplacementActionPrefix}${replacement.fullName}`,

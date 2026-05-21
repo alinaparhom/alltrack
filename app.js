@@ -13390,7 +13390,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         <input
           class="form-input"
           type="text"
-          inputmode="numeric"
+          inputmode="text"
           name="tools-edit-kit-accounting-${rowId}"
           value="${escapeHtml(normalized["Бух.номер"])}"
           placeholder="Необязательно"
@@ -27183,7 +27183,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       </label>
       <label class="form-field add-tool-kit__field add-tool-kit__field--accounting">
         <span class="form-label">Бух.номер</span>
-        <input class="form-input" type="text" inputmode="numeric" name="tool-kit-accounting-${rowId}" placeholder="Необязательно" autocomplete="off" />
+        <input class="form-input" type="text" inputmode="text" name="tool-kit-accounting-${rowId}" placeholder="Необязательно" autocomplete="off" />
         <div class="suggestions is-hidden" data-tool-kit-accounting-suggestions></div>
       </label>
       <button class="button-icon add-tool-kit__remove" type="button" data-add-tool-kit-remove aria-label="Удалить позицию">

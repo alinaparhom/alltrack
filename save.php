@@ -729,6 +729,45 @@ function resolveNoAccountingNumberMailingConfig(array $settings): ?array {
   return resolveOrganizationMailingConfig($settings, "noAccountingNumber");
 }
 
+function normalizeTelegramScheduleForMailing($schedule, array $organizationTelegramGroups = []): array {
+  $normalized = [];
+
+  if (is_array($schedule) && array_is_list($schedule)) {
+    foreach ($schedule as $entry) {
+      if (!is_array($entry)) {
+        continue;
+      }
+      $chatId = normalizeTelegramId((string) ($entry["telegramId"] ?? $entry["telegram_id"] ?? $entry["groupId"] ?? $entry["chatId"] ?? ""));
+      if (!$chatId) {
+        continue;
+      }
+      $normalized[$chatId] = [
+        "days" => is_array($entry["days"] ?? null) ? $entry["days"] : [],
+        "time" => normalizeScheduleTimeLabel((string) ($entry["time"] ?? "")),
+      ];
+    }
+    return $normalized;
+  }
+
+  if (is_array($schedule)) {
+    foreach ($schedule as $groupIdRaw => $entry) {
+      if (!is_array($entry)) {
+        continue;
+      }
+      $chatId = normalizeTelegramId((string) $groupIdRaw);
+      if (!$chatId) {
+        continue;
+      }
+      $normalized[$chatId] = [
+        "days" => is_array($entry["days"] ?? null) ? $entry["days"] : [],
+        "time" => normalizeScheduleTimeLabel((string) ($entry["time"] ?? "")),
+      ];
+    }
+  }
+
+  return $normalized;
+}
+
 function resolveOrganizationMailingConfig(array $settings, string $mailingKey): ?array {
   if ($mailingKey === "") {
     return null;
@@ -757,9 +796,14 @@ function resolveOrganizationMailingConfig(array $settings, string $mailingKey): 
     return null;
   }
 
-  if (!isset($resolved["telegramSchedule"]) || !is_array($resolved["telegramSchedule"])) {
-    $resolved["telegramSchedule"] = [];
-  }
+  $organizationTelegramGroups = is_array($settings["organization"]["telegramGroups"] ?? null)
+    ? $settings["organization"]["telegramGroups"]
+    : [];
+
+  $resolved["telegramSchedule"] = normalizeTelegramScheduleForMailing(
+    $resolved["telegramSchedule"] ?? [],
+    $organizationTelegramGroups
+  );
 
   return $resolved;
 }

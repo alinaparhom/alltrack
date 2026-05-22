@@ -1325,12 +1325,29 @@ function extractNotificationGroups(settingsData, notificationId) {
     settingsData?.notifications?.[notificationId]?.groups ??
     settingsData?.organization?.notifications?.[notificationId]?.groups ??
     [];
+  const telegramGroups = normalizeTelegramGroupsList(
+    settingsData?.organization?.telegramGroups ?? []
+  );
+  const groupsByKey = new Map();
+  telegramGroups.forEach((group) => {
+    const idKey = String(group.telegramId ?? "").trim();
+    const nameKey = String(group.name ?? "").trim();
+    if (idKey) groupsByKey.set(idKey, group);
+    if (nameKey) groupsByKey.set(nameKey, group);
+  });
   const raw = Array.isArray(source) ? source : [source];
   const unique = new Set();
   raw.forEach((value) => {
-    const normalized = normalizeTelegramId(value);
-    if (normalized) {
-      unique.add(normalized);
+    const rawValue = String(value ?? "").trim();
+    const directId = normalizeTelegramId(rawValue);
+    if (directId) {
+      unique.add(directId);
+      return;
+    }
+    const mappedGroup = groupsByKey.get(rawValue);
+    const mappedId = normalizeTelegramId(mappedGroup?.telegramId ?? null);
+    if (mappedId) {
+      unique.add(mappedId);
     }
   });
   return Array.from(unique);

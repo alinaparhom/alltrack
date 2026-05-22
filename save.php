@@ -735,18 +735,33 @@ function resolveOrganizationMailingConfig(array $settings, string $mailingKey): 
   }
 
   $candidates = [
-    $settings["mailings"][$mailingKey] ?? null,
     $settings["organization"]["mailings"][$mailingKey] ?? null,
+    $settings["mailings"][$mailingKey] ?? null,
   ];
 
+  $resolved = null;
   foreach ($candidates as $candidate) {
-    if (!is_array($candidate)) {
+    if (!is_array($candidate) || empty($candidate)) {
       continue;
     }
-    return $candidate;
+
+    if ($resolved === null) {
+      $resolved = $candidate;
+      continue;
+    }
+
+    $resolved = array_replace($resolved, $candidate);
   }
 
-  return null;
+  if ($resolved === null) {
+    return null;
+  }
+
+  if (!isset($resolved["telegramSchedule"]) || !is_array($resolved["telegramSchedule"])) {
+    $resolved["telegramSchedule"] = [];
+  }
+
+  return $resolved;
 }
 
 function normalizeMailingGroupName(string $value): string {

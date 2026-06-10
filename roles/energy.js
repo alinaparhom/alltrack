@@ -4404,42 +4404,58 @@ export function renderRole(user, options = {}) {
             </div>
             <div class="settings-modal__body tools-modal__body info-pending-list-modal__body">
               <div class="info-pending-toolbar">
-                <label class="form-field info-pending-search-field">
-                  <span>Быстрый поиск</span>
+                <label class="tools-search info-pending-search-field">
                   <input
                     type="search"
-                    class="form-input info-pending-search"
-                    placeholder="Номер, бух.номер, инструмент, объект, ФИО"
+                    class="form-input tools-search__input info-pending-search"
+                    placeholder="Поиск по номеру, названию, модели..."
                     autocomplete="off"
                     data-info-pending-search
                   />
                 </label>
               </div>
-              <div class="info-pending-controls">
-                <label class="form-field">
-                  <span>Сортировка</span>
-                  <div class="tools-filter-dropdown info-pending-sort-dropdown" data-info-pending-sort-dropdown>
-                    <button
-                      type="button"
-                      class="form-input tools-filter-dropdown__trigger"
-                      data-info-pending-sort-trigger
-                      aria-expanded="false"
-                    >Сначала старые</button>
-                    <div class="tools-filter-dropdown__menu is-hidden" data-info-pending-sort-menu>
-                      <div class="tools-filter-dropdown__options" data-info-pending-sort-options></div>
-                    </div>
-                    <input type="hidden" data-info-pending-sort value="old" />
+              <div class="info-pending-controls" role="group" aria-label="Группировка, сортировка и фильтры">
+                <button
+                  type="button"
+                  class="info-pending-mode-toggle"
+                  data-info-pending-sort-mode="receiver"
+                  aria-pressed="false"
+                >По принимающему</button>
+                <button
+                  type="button"
+                  class="info-pending-mode-toggle"
+                  data-info-pending-sort-mode="sender"
+                  aria-pressed="false"
+                >По передающему</button>
+                <div class="tools-filter-dropdown info-pending-sort-dropdown" data-info-pending-sort-dropdown>
+                  <button
+                    type="button"
+                    class="tools-filters-toggle tools-sort-toggle info-pending-sort-trigger"
+                    data-info-pending-sort-trigger
+                    aria-expanded="false"
+                    aria-label="Сортировка"
+                    title="Сортировка"
+                  >
+                    <span class="tools-sort-toggle__icon is-desc" aria-hidden="true">
+                      <svg class="tools-sort-toggle__chevron" viewBox="0 0 24 24" focusable="false">
+                        <path d="M7 10l5 5 5-5" />
+                      </svg>
+                    </span>
+                  </button>
+                  <div class="tools-filter-dropdown__menu is-hidden" data-info-pending-sort-menu>
+                    <div class="tools-filter-dropdown__options" data-info-pending-sort-options></div>
                   </div>
-                </label>
+                  <input type="hidden" data-info-pending-sort value="old" />
+                </div>
                 <div class="info-pending-filters">
                   <button
                     type="button"
-                    class="button-icon info-pending-filters__toggle"
+                    class="tools-filters-toggle info-pending-filters__toggle"
                     data-info-pending-filters-toggle
                     aria-label="Открыть фильтры"
                     aria-expanded="false"
                   >
-                    <span class="button-icon-emoji" aria-hidden="true">
+                    <span class="tools-filters-toggle__icon" aria-hidden="true">
                       <svg viewBox="0 0 24 24" focusable="false" fill="none">
                         <line x1="4" y1="7" x2="20" y2="7" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
                         <circle cx="15" cy="7" r="2.5" fill="currentColor" />

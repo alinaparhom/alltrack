@@ -16953,6 +16953,37 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const table = document.createElement("div");
     table.className = "tools-table pending-moves-tools-table info-pending-tools-table";
     const groupMode = String(infoPendingState.filters.sort ?? "old");
+    const formatInfoPendingMovesCount = (count) => {
+      const value = Math.abs(Number(count) || 0);
+      const mod10 = value % 10;
+      const mod100 = value % 100;
+      if (mod10 === 1 && mod100 !== 11) return `${count} перемещение`;
+      if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) {
+        return `${count} перемещения`;
+      }
+      return `${count} перемещений`;
+    };
+    const groupedStats = items.reduce((acc, item) => {
+      if (groupMode !== "receiver" && groupMode !== "sender") return acc;
+      const { move, tool } = item;
+      const groupValue =
+        groupMode === "receiver"
+          ? String(move?.["Принял"] ?? "").trim()
+          : String(resolveInfoPendingSender(move) ?? "").trim();
+      const groupTitle = groupValue || "Не указан";
+      if (!acc[groupTitle]) {
+        acc[groupTitle] = { count: 0, amount: 0 };
+      }
+      acc[groupTitle].count += 1;
+      const toolCost = normalizeCostValue(tool?.["Стоимость"]);
+      const moveCost = normalizeCostValue(move?.["Стоимость"]);
+      acc[groupTitle].amount += Number.isFinite(toolCost)
+        ? toolCost
+        : Number.isFinite(moveCost)
+          ? moveCost
+          : 0;
+      return acc;
+    }, {});
     let currentGroupTitle = "";
 
     items.forEach((item) => {
@@ -16971,7 +17002,14 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           groupCell.className = "tools-table__cell awaiting-reply-group-cell info-pending-group-cell";
           groupCell.setAttribute("role", "heading");
           groupCell.setAttribute("aria-level", "3");
-          groupCell.textContent = `${groupMode === "receiver" ? "Принял" : "Переместил"}: ${groupTitle}`;
+          const stats = groupedStats[groupTitle] ?? { count: 0, amount: 0 };
+          const groupTitleLine = document.createElement("div");
+          groupTitleLine.className = "info-pending-group-cell__title";
+          groupTitleLine.textContent = groupTitle;
+          const groupSummaryLine = document.createElement("div");
+          groupSummaryLine.className = "info-pending-group-cell__summary";
+          groupSummaryLine.textContent = `${formatInfoPendingMovesCount(stats.count)} · на сумму ${formatNotificationCostWithoutCurrency(stats.amount)} р.`;
+          groupCell.append(groupTitleLine, groupSummaryLine);
           groupRow.appendChild(groupCell);
           table.appendChild(groupRow);
         }
@@ -17024,7 +17062,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         if (!normalizedLabel || !value) return;
         const lineEl = document.createElement("div");
         lineEl.className = "pending-move-meta pending-move-responsible";
-        lineEl.textContent = `${label}: `;
+        const visibleLabel =
+          label === "Переместил энергетик" ? "Энергетик" : "";
+        if (visibleLabel) {
+          lineEl.textContent = `${visibleLabel}: `;
+        }
         const [surname, ...rest] = value.split(/\s+/);
         if (surname) {
           const surnameEl = document.createElement("strong");

@@ -6661,6 +6661,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const infoPendingListEl = contentEl.querySelector("[data-info-pending-list]");
   const infoPendingEmptyEl = contentEl.querySelector("[data-info-pending-empty]");
   const infoPendingSortEl = contentEl.querySelector("[data-info-pending-sort]");
+  const infoPendingSearchEl = contentEl.querySelector("[data-info-pending-search]");
   const infoPendingSortDropdownEl = contentEl.querySelector("[data-info-pending-sort-dropdown]");
   const infoPendingSortTriggerEl = contentEl.querySelector("[data-info-pending-sort-trigger]");
   const infoPendingSortMenuEl = contentEl.querySelector("[data-info-pending-sort-menu]");
@@ -7901,8 +7902,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const infoPendingSortModes = [
     { value: "old", label: "Сначала старые" },
     { value: "new", label: "Сначала новые" },
-    { value: "receiver", label: "По принимающему" },
-    { value: "sender", label: "По передающему" },
+    { value: "receiver", label: "По Принял" },
+    { value: "sender", label: "По Переместил" },
   ];
   const infoPendingState = {
     allItems: [],
@@ -7914,6 +7915,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     pendingDateKeys: new Set(),
     filters: {
       sort: "old",
+      search: "",
       receiver: "",
       sender: "",
       dateFrom: "",
@@ -16704,10 +16706,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   };
 
   const resolveInfoPendingSender = (move) => {
+    const movedBy = String(move?.["Переместил"] ?? "").trim();
+    if (movedBy) return movedBy;
     const movedByEnergy = String(move?.["Переместил энергетик"] ?? "").trim();
     const previousResponsible = String(move?.["Ответственный до перемещения"] ?? "").trim();
-    const movedBy = String(move?.["Переместил"] ?? "").trim();
-    return movedByEnergy ? previousResponsible : movedBy;
+    return movedByEnergy ? previousResponsible : "";
   };
 
   const buildInfoPendingResponsibleOptions = () => {
@@ -16834,18 +16837,19 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     renderInfoPendingPersonDropdown(
       "receiver",
       infoPendingState.receiverOptions,
-      "Все принимающие",
+      "Все принявшие",
       receiverValue
     );
     renderInfoPendingPersonDropdown(
       "sender",
       infoPendingState.senderOptions,
-      "Все передающие",
+      "Все переместившие",
       senderValue
     );
   };
 
   const applyInfoPendingFiltersAndSort = () => {
+    const searchFilter = String(infoPendingState.filters.search ?? "").trim().toLocaleLowerCase("ru");
     const receiverFilter = normalizePersonName(infoPendingState.filters.receiver);
     const senderFilter = normalizePersonName(infoPendingState.filters.sender);
     const dateFrom = parseIsoDateValue(infoPendingState.filters.dateFrom);
@@ -16860,6 +16864,25 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const filtered = infoPendingState.allItems.filter((item) => {
       const receiver = normalizePersonName(item.move?.["Принял"] ?? "");
       const sender = normalizePersonName(resolveInfoPendingSender(item.move));
+      if (searchFilter) {
+        const searchableText = [
+          item.move?.["Номер"],
+          item.move?.["Бух.номер"],
+          item.move?.["Дата перемещения"],
+          item.move?.["Переместил"],
+          item.move?.["Принял"],
+          item.move?.["Старый объект"],
+          item.move?.["Новый объект"],
+          item.move?.["Причина перемещения"],
+          item.tool?.["Наименование"],
+          item.tool?.["Марка"],
+          item.tool?.["Модель"],
+          item.tool?.["Серийный номер"],
+        ]
+          .map((value) => String(value ?? "").toLocaleLowerCase("ru"))
+          .join(" ");
+        if (!searchableText.includes(searchFilter)) return false;
+      }
       if (receiverFilter && !receiver.includes(receiverFilter)) return false;
       if (senderFilter && !sender.includes(senderFilter)) return false;
       const moveDate = parseDateValue(item.move?.["Дата перемещения"]);
@@ -16905,6 +16928,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (!infoPendingListEl) return;
     infoPendingListEl.innerHTML = "";
     const items = infoPendingState.filteredItems;
+    if (infoPendingSubtitleEl) {
+      const total = infoPendingState.allItems.length;
+      infoPendingSubtitleEl.textContent =
+        items.length === total
+          ? `Перемещений без ответа: ${items.length}`
+          : `Показано: ${items.length} из ${total}`;
+    }
     if (!items.length) {
       infoPendingEmptyEl?.classList.remove("is-hidden");
       return;
@@ -16936,6 +16966,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const meta = document.createElement("div");
       meta.className = "tools-table__meta tools-table__meta--stack";
       const receiver = String(move?.["Принял"] ?? "").trim();
+      const sender = String(resolveInfoPendingSender(move) ?? "").trim();
       const senderEnergy = String(move?.["Переместил энергетик"] ?? "").trim();
       const moveDate = String(move?.["Дата перемещения"] ?? "").trim();
       const moveComment = String(move?.["Причина перемещения"] ?? "").trim();
@@ -16987,7 +17018,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       if (receiver) {
         appendResponsibleMetaLine("Принял", receiver);
       }
-      if (senderEnergy) {
+      if (sender) {
+        appendResponsibleMetaLine("Переместил", sender);
+      }
+      if (senderEnergy && senderEnergy !== sender) {
         appendResponsibleMetaLine("Переместил энергетик", senderEnergy);
       }
       if (moveRoute) {
@@ -17063,9 +17097,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     });
 
     infoPendingListEl.appendChild(table);
-    if (infoPendingSubtitleEl) {
-      infoPendingSubtitleEl.textContent = `Перемещений без ответа: ${items.length}`;
-    }
   };
 
   const loadInfoPendingList = async () => {
@@ -17101,18 +17132,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     infoPendingState.toolMap = await buildPendingToolsMap(orgFolder);
     infoPendingState.allItems = moves
       .map((move, index) => ({ move, moveIndex: index }))
-      .filter(({ move }) => !String(move?.["Дата ответа"] ?? "").trim())
-      .filter(({ move }) => {
-        const movedByEnergy = normalizePersonName(move?.["Переместил энергетик"] ?? "");
-        if (movedByEnergy) {
-          const responsibleBeforeMove = normalizePersonName(
-            move?.["Ответственный до перемещения"] ?? ""
-          );
-          return Boolean(responsibleBeforeMove && responsibleBeforeMove === context.userKey);
-        }
-        const movedBy = normalizePersonName(move?.["Переместил"] ?? "");
-        return Boolean(movedBy && movedBy === context.userKey);
-      })
+      .filter(({ move }) => !String(move?.["Ответ"] ?? "").trim())
       .map((entry) => {
         const number = String(entry.move?.["Номер"] ?? "").trim();
         const accounting = String(entry.move?.["Бух.номер"] ?? "").trim();
@@ -17152,6 +17172,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     setInfoPendingSortDropdownOpen(false);
     setInfoPendingFiltersOpen(false);
     setInfoPendingDatePickerOpen(false);
+    if (infoPendingSearchEl instanceof HTMLInputElement) {
+      infoPendingSearchEl.value = infoPendingState.filters.search ?? "";
+    }
     await loadInfoPendingList();
   };
 
@@ -18151,6 +18174,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   };
 
   const handleInfoPendingFiltersChanged = () => {
+    infoPendingState.filters.search = String(infoPendingSearchEl?.value ?? "").trim();
     const requestedSort = String(infoPendingSortEl?.value ?? "old");
     infoPendingState.filters.sort =
       infoPendingSortModes.some((option) => option.value === requestedSort)
@@ -19089,6 +19113,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       closeInfoPendingModal();
     }
   });
+  infoPendingSearchEl?.addEventListener("input", handleInfoPendingFiltersChanged);
   infoPendingSortEl?.addEventListener("change", handleInfoPendingFiltersChanged);
   infoPendingSortTriggerEl?.addEventListener("click", (event) => {
     event.stopPropagation();

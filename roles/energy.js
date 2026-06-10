@@ -4403,6 +4403,18 @@ export function renderRole(user, options = {}) {
               </button>
             </div>
             <div class="settings-modal__body tools-modal__body info-pending-list-modal__body">
+              <div class="info-pending-toolbar">
+                <label class="form-field info-pending-search-field">
+                  <span>Быстрый поиск</span>
+                  <input
+                    type="search"
+                    class="form-input info-pending-search"
+                    placeholder="Номер, бух.номер, инструмент, объект, ФИО"
+                    autocomplete="off"
+                    data-info-pending-search
+                  />
+                </label>
+              </div>
               <div class="info-pending-controls">
                 <label class="form-field">
                   <span>Сортировка</span>
@@ -4438,7 +4450,7 @@ export function renderRole(user, options = {}) {
                   </button>
                   <div class="info-pending-filters__panel is-hidden" data-info-pending-filters-panel>
                     <label class="form-field">
-                      <span>Принимающий</span>
+                      <span>Принял</span>
                       <div
                         class="tools-filter-dropdown info-pending-responsible-dropdown"
                         data-info-pending-person-dropdown="receiver"
@@ -4447,10 +4459,10 @@ export function renderRole(user, options = {}) {
                           type="button"
                           class="form-input tools-filter-dropdown__trigger"
                           data-info-pending-person-trigger
-                        >Все принимающие</button>
+                        >Все принявшие</button>
                         <div class="tools-filter-dropdown__menu is-hidden" data-info-pending-person-menu>
                           <button type="button" class="tools-filter-dropdown__clear" data-info-pending-person-clear>
-                            Все принимающие
+                            Все принявшие
                           </button>
                           <div class="tools-filter-dropdown__options" data-info-pending-person-options></div>
                         </div>
@@ -4458,7 +4470,7 @@ export function renderRole(user, options = {}) {
                       </div>
                     </label>
                     <label class="form-field">
-                      <span>Передающий</span>
+                      <span>Переместил</span>
                       <div
                         class="tools-filter-dropdown info-pending-responsible-dropdown"
                         data-info-pending-person-dropdown="sender"
@@ -4467,10 +4479,10 @@ export function renderRole(user, options = {}) {
                           type="button"
                           class="form-input tools-filter-dropdown__trigger"
                           data-info-pending-person-trigger
-                        >Все передающие</button>
+                        >Все переместившие</button>
                         <div class="tools-filter-dropdown__menu is-hidden" data-info-pending-person-menu>
                           <button type="button" class="tools-filter-dropdown__clear" data-info-pending-person-clear>
-                            Все передающие
+                            Все переместившие
                           </button>
                           <div class="tools-filter-dropdown__options" data-info-pending-person-options></div>
                         </div>

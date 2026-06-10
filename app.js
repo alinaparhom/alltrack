@@ -6666,6 +6666,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const infoPendingSortTriggerEl = contentEl.querySelector("[data-info-pending-sort-trigger]");
   const infoPendingSortMenuEl = contentEl.querySelector("[data-info-pending-sort-menu]");
   const infoPendingSortOptionsEl = contentEl.querySelector("[data-info-pending-sort-options]");
+  const infoPendingSortModeButtonEls = contentEl.querySelectorAll("[data-info-pending-sort-mode]");
   const infoPendingControlsContainerEl = contentEl.querySelector(".info-pending-controls");
   const infoPendingFilterReceiverEl = contentEl.querySelector(
     "[data-info-pending-filter-receiver]"
@@ -7902,8 +7903,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const infoPendingSortModes = [
     { value: "old", label: "Сначала старые" },
     { value: "new", label: "Сначала новые" },
-    { value: "receiver", label: "По Принял" },
-    { value: "sender", label: "По Переместил" },
+    { value: "receiver", label: "По принимающему" },
+    { value: "sender", label: "По передающему" },
   ];
   const infoPendingState = {
     allItems: [],
@@ -16760,12 +16761,20 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       infoPendingSortEl.value = currentOption.value;
     }
     if (infoPendingSortTriggerEl instanceof HTMLElement) {
-      infoPendingSortTriggerEl.textContent = currentOption.label;
+      const sortLabel = `Сортировка: ${currentOption.label}`;
+      infoPendingSortTriggerEl.setAttribute("aria-label", sortLabel);
+      infoPendingSortTriggerEl.title = sortLabel;
       infoPendingSortTriggerEl.classList.toggle(
         "is-active",
         currentOption.value !== "old"
       );
     }
+    infoPendingSortModeButtonEls.forEach((buttonEl) => {
+      const mode = String(buttonEl.dataset.infoPendingSortMode ?? "").trim();
+      const isActive = mode === currentOption.value;
+      buttonEl.classList.toggle("is-active", isActive);
+      buttonEl.setAttribute("aria-pressed", String(isActive));
+    });
 
     infoPendingSortOptionsEl.innerHTML = "";
     infoPendingSortModes.forEach((option, index) => {
@@ -16943,9 +16952,30 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
     const table = document.createElement("div");
     table.className = "tools-table pending-moves-tools-table info-pending-tools-table";
+    const groupMode = String(infoPendingState.filters.sort ?? "old");
+    let currentGroupTitle = "";
 
     items.forEach((item) => {
       const { move, tool, fineAmount } = item;
+      if (groupMode === "receiver" || groupMode === "sender") {
+        const groupValue =
+          groupMode === "receiver"
+            ? String(move?.["Принял"] ?? "").trim()
+            : String(resolveInfoPendingSender(move) ?? "").trim();
+        const groupTitle = groupValue || "Не указан";
+        if (groupTitle !== currentGroupTitle) {
+          currentGroupTitle = groupTitle;
+          const groupRow = document.createElement("div");
+          groupRow.className = "tools-table__row awaiting-reply-group-row info-pending-group-row";
+          const groupCell = document.createElement("div");
+          groupCell.className = "tools-table__cell awaiting-reply-group-cell info-pending-group-cell";
+          groupCell.setAttribute("role", "heading");
+          groupCell.setAttribute("aria-level", "3");
+          groupCell.textContent = `${groupMode === "receiver" ? "Принял" : "Переместил"}: ${groupTitle}`;
+          groupRow.appendChild(groupCell);
+          table.appendChild(groupRow);
+        }
+      }
       const row = document.createElement("div");
       row.className = "tools-table__row";
 
@@ -19132,6 +19162,17 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
     setInfoPendingSortDropdownOpen(false);
     handleInfoPendingFiltersChanged();
+  });
+  infoPendingSortModeButtonEls.forEach((buttonEl) => {
+    buttonEl.addEventListener("click", () => {
+      const mode = String(buttonEl.dataset.infoPendingSortMode ?? "").trim();
+      if (!infoPendingSortModes.some((option) => option.value === mode)) return;
+      if (infoPendingSortEl instanceof HTMLInputElement) {
+        infoPendingSortEl.value = mode;
+      }
+      setInfoPendingSortDropdownOpen(false);
+      handleInfoPendingFiltersChanged();
+    });
   });
   infoPendingFilterReceiverEl?.addEventListener("change", handleInfoPendingFiltersChanged);
   infoPendingFilterSenderEl?.addEventListener("change", handleInfoPendingFiltersChanged);

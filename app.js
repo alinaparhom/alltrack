@@ -16972,9 +16972,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           : String(resolveInfoPendingSender(move) ?? "").trim();
       const groupTitle = groupValue || "Не указан";
       if (!acc[groupTitle]) {
-        acc[groupTitle] = { count: 0, amount: 0 };
+        acc[groupTitle] = { count: 0, amount: 0, fine: 0 };
       }
       acc[groupTitle].count += 1;
+      const itemFine = Number(item.fineAmount);
+      if (Number.isFinite(itemFine) && itemFine > 0) {
+        acc[groupTitle].fine += itemFine;
+      }
       const toolCost = normalizeCostValue(tool?.["Стоимость"]);
       const moveCost = normalizeCostValue(move?.["Стоимость"]);
       acc[groupTitle].amount += Number.isFinite(toolCost)
@@ -17002,13 +17006,18 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           groupCell.className = "tools-table__cell awaiting-reply-group-cell info-pending-group-cell";
           groupCell.setAttribute("role", "heading");
           groupCell.setAttribute("aria-level", "3");
-          const stats = groupedStats[groupTitle] ?? { count: 0, amount: 0 };
+          const stats = groupedStats[groupTitle] ?? { count: 0, amount: 0, fine: 0 };
           const groupTitleLine = document.createElement("div");
           groupTitleLine.className = "info-pending-group-cell__title";
           groupTitleLine.textContent = groupTitle;
           const groupSummaryLine = document.createElement("div");
           groupSummaryLine.className = "info-pending-group-cell__summary";
-          groupSummaryLine.textContent = `${formatInfoPendingMovesCount(stats.count)} · на сумму ${formatNotificationCostWithoutCurrency(stats.amount)} р.`;
+          const groupSummaryParts = [
+            formatInfoPendingMovesCount(stats.count),
+            `стоимость ${formatNotificationCostWithoutCurrency(stats.amount)} р.`,
+            `штраф ${formatNotificationCostWithoutCurrency(stats.fine)} р.`,
+          ];
+          groupSummaryLine.textContent = groupSummaryParts.join(" · ");
           groupCell.append(groupTitleLine, groupSummaryLine);
           groupRow.appendChild(groupCell);
           table.appendChild(groupRow);
@@ -17078,24 +17087,19 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         } else {
           lineEl.appendChild(document.createTextNode(value));
         }
-        if (toolAmount) {
-          const amountEl = document.createElement("span");
-          amountEl.className = "pending-move-responsible__amount";
-          amountEl.textContent = ` · На сумму: ${toolAmount.replace("Стоимость: ", "")}`;
-          lineEl.appendChild(amountEl);
-        }
         meta.appendChild(lineEl);
       };
 
-      if (receiver) {
+      if (receiver && groupMode !== "receiver") {
         appendResponsibleMetaLine("Принял", receiver);
       }
-      if (sender) {
+      if (sender && groupMode !== "sender") {
         appendResponsibleMetaLine("Переместил", sender);
       }
-      if (senderEnergy && senderEnergy !== sender) {
+      if (senderEnergy && senderEnergy !== sender && groupMode !== "sender") {
         appendResponsibleMetaLine("Переместил энергетик", senderEnergy);
       }
+      appendMetaLine(toolAmount, "pending-move-meta pending-move-cost");
       if (moveRoute) {
         const routeEl = document.createElement("div");
         routeEl.className = "pending-move-meta pending-move-route";
@@ -17127,10 +17131,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         )}`;
         moveDateLine.appendChild(fineEl);
       }
-      appendMetaLine(moveComment ? `Комментарий: ${moveComment}` : "", "pending-move-comment");
-      appendMetaLine(
-        `Текущий штраф: ${formatNotificationCostWithoutCurrency(fineAmount)} р.`
-      );
+      appendMetaLine(moveComment ? `Причина: ${moveComment}` : "", "pending-move-comment");
       meta.appendChild(moveDateLine);
       infoCell.append(title, meta);
 

@@ -16963,6 +16963,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       }
       return `${count} перемещений`;
     };
+    const normalizeInfoPendingGroupTitle = (value) =>
+      String(value ?? "")
+        .trim()
+        .replace(/^(принял|переместил)\s*:?\s*/iu, "")
+        .trim();
     const groupedStats = items.reduce((acc, item) => {
       if (groupMode !== "receiver" && groupMode !== "sender") return acc;
       const { move, tool } = item;
@@ -16970,7 +16975,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         groupMode === "receiver"
           ? String(move?.["Принял"] ?? "").trim()
           : String(resolveInfoPendingSender(move) ?? "").trim();
-      const groupTitle = groupValue || "Не указан";
+      const groupTitle = normalizeInfoPendingGroupTitle(groupValue) || "Не указан";
       if (!acc[groupTitle]) {
         acc[groupTitle] = { count: 0, amount: 0, fine: 0 };
       }
@@ -16997,7 +17002,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           groupMode === "receiver"
             ? String(move?.["Принял"] ?? "").trim()
             : String(resolveInfoPendingSender(move) ?? "").trim();
-        const groupTitle = groupValue || "Не указан";
+        const groupTitle = normalizeInfoPendingGroupTitle(groupValue) || "Не указан";
         if (groupTitle !== currentGroupTitle) {
           currentGroupTitle = groupTitle;
           const groupRow = document.createElement("div");
@@ -17012,12 +17017,19 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           groupTitleLine.textContent = groupTitle;
           const groupSummaryLine = document.createElement("div");
           groupSummaryLine.className = "info-pending-group-cell__summary";
-          const groupSummaryParts = [
-            formatInfoPendingMovesCount(stats.count),
-            `стоимость ${formatNotificationCostWithoutCurrency(stats.amount)} р.`,
-            `штраф ${formatNotificationCostWithoutCurrency(stats.fine)} р.`,
-          ];
-          groupSummaryLine.textContent = groupSummaryParts.join(" · ");
+          const groupFineText = `штраф ${formatNotificationCostWithoutCurrency(stats.fine)} р.`;
+          groupSummaryLine.append(
+            document.createTextNode(formatInfoPendingMovesCount(stats.count)),
+            document.createTextNode(" · "),
+            document.createTextNode(
+              `стоимость ${formatNotificationCostWithoutCurrency(stats.amount)} р.`
+            ),
+            document.createTextNode(" · ")
+          );
+          const groupFineEl = document.createElement("span");
+          groupFineEl.className = "info-pending-group-cell__fine";
+          groupFineEl.textContent = groupFineText;
+          groupSummaryLine.appendChild(groupFineEl);
           groupCell.append(groupTitleLine, groupSummaryLine);
           groupRow.appendChild(groupCell);
           table.appendChild(groupRow);

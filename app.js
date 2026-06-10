@@ -7915,7 +7915,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     senderOptions: [],
     pendingDateKeys: new Set(),
     filters: {
-      sort: "old",
+      sort: "receiver",
       search: "",
       receiver: "",
       sender: "",
@@ -17202,9 +17202,14 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     setInfoPendingSortDropdownOpen(false);
     setInfoPendingFiltersOpen(false);
     setInfoPendingDatePickerOpen(false);
+    infoPendingState.filters.sort = "receiver";
+    if (infoPendingSortEl instanceof HTMLInputElement) {
+      infoPendingSortEl.value = "receiver";
+    }
     if (infoPendingSearchEl instanceof HTMLInputElement) {
       infoPendingSearchEl.value = infoPendingState.filters.search ?? "";
     }
+    renderInfoPendingSortDropdown();
     await loadInfoPendingList();
   };
 

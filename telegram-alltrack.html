@@ -4360,7 +4360,21 @@
       }
 
       .info-pending-list-modal__body {
+        --tools-control-height: 31px;
+        --tools-control-radius: 14px;
         gap: 12px;
+      }
+
+      .info-pending-list-modal [data-info-pending-close],
+      .info-pending-list-modal [data-info-pending-close]:hover,
+      .info-pending-list-modal [data-info-pending-close]:focus-visible,
+      body[data-theme="dark"] .info-pending-list-modal [data-info-pending-close],
+      body[data-theme="dark"] .info-pending-list-modal [data-info-pending-close]:hover,
+      body[data-theme="dark"] .info-pending-list-modal [data-info-pending-close]:focus-visible {
+        border: 0;
+        outline: 0;
+        background: transparent;
+        box-shadow: none;
       }
 
       .info-pending-toolbar {
@@ -15702,8 +15716,20 @@
         }
 
         .info-pending-mode-toggle {
+          height: var(--tools-control-height);
+          min-height: var(--tools-control-height);
           padding: 5px 7px;
           font-size: 10.5px;
+        }
+
+        .info-pending-sort-trigger,
+        .info-pending-filters__toggle {
+          width: var(--tools-control-height);
+          min-width: var(--tools-control-height);
+          height: var(--tools-control-height);
+          min-height: var(--tools-control-height);
+          padding: 0;
+          border-radius: var(--tools-control-radius);
         }
 
         .info-pending-filters__panel {

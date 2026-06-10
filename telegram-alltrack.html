@@ -125,6 +125,8 @@
       body[data-theme="dark"] .tools-info-kit-item,
       body[data-theme="dark"] .tools-info-photo-tile,
       body[data-theme="dark"] .info-moves-history-modal__panel,
+      body[data-theme="dark"] .info-pending-toolbar,
+      body[data-theme="dark"] .info-pending-filters__panel,
       body[data-theme="dark"] .info-moves-history-filters,
       body[data-theme="dark"] .info-moves-history-item,
       body[data-theme="dark"] .info-by-dates-tab,
@@ -4348,6 +4350,27 @@
 
       .info-pending-list-modal__body {
         gap: 12px;
+      }
+
+      .info-pending-toolbar {
+        display: grid;
+        gap: 8px;
+        padding: 10px;
+        border: 1px solid rgba(148, 163, 184, 0.24);
+        border-radius: 18px;
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.88), rgba(239, 246, 255, 0.66));
+        box-shadow: 0 12px 34px rgba(15, 23, 42, 0.08);
+        backdrop-filter: blur(16px);
+      }
+
+      .info-pending-search-field {
+        margin: 0;
+      }
+
+      .info-pending-search {
+        min-height: 46px;
+        border-radius: 14px;
+        background: rgba(255, 255, 255, 0.78);
       }
 
       .info-pending-controls {
@@ -15626,6 +15649,11 @@
           left: 8px;
           right: 8px;
           top: calc(env(safe-area-inset-top, 0px) + 108px);
+        }
+
+        .info-pending-toolbar {
+          padding: 8px;
+          border-radius: 16px;
         }
 
         .info-pending-controls {

@@ -15952,8 +15952,12 @@
         --my-tools-panel-offset-left: max(0px, env(safe-area-inset-left));
         --my-tools-panel-offset-right: max(0px, env(safe-area-inset-right));
         --my-tools-top-zone-seam: 0px;
-        --my-tools-header-height: calc(94px + env(safe-area-inset-top) + var(--telegram-top-spacing, 0px));
-        --my-tools-header-title-height: 60px;
+        --my-tools-header-padding-top: calc(14px + env(safe-area-inset-top) + var(--telegram-top-spacing, 0px));
+        --my-tools-header-title-height: 52px;
+        --my-tools-title-search-gap: 6px;
+        --my-tools-header-height: calc(
+          var(--my-tools-header-padding-top) + var(--my-tools-header-title-height) + var(--my-tools-title-search-gap)
+        );
         --tools-my-tools-header-offset: var(--my-tools-header-height);
         --my-tools-controls-height: 142px;
         --my-tools-top-zone-gap: 0px !important;
@@ -15996,11 +16000,11 @@
         z-index: 30 !important;
         min-height: var(--tools-my-tools-header-offset) !important;
         height: var(--tools-my-tools-header-offset) !important;
-        padding-top: calc(16px + env(safe-area-inset-top) + var(--telegram-top-spacing, 0px)) !important;
-        padding-bottom: 0 !important;
+        padding-top: var(--my-tools-header-padding-top) !important;
+        padding-bottom: var(--my-tools-title-search-gap) !important;
         padding-left: calc(14px + var(--my-tools-panel-offset-left)) !important;
         padding-right: calc(14px + var(--my-tools-panel-offset-right)) !important;
-        align-items: center !important;
+        align-items: start !important;
         grid-template-columns: minmax(0, 1fr) auto !important;
         background: rgba(255, 255, 255, 0.96) !important;
         backdrop-filter: blur(8px) saturate(120%);
@@ -16019,21 +16023,21 @@
         min-height: var(--my-tools-header-title-height) !important;
         height: var(--my-tools-header-title-height) !important;
         display: grid !important;
-        grid-template-rows: 34px 20px !important;
-        align-content: center !important;
+        grid-template-rows: 30px 18px !important;
+        align-content: start !important;
       }
 
       .tools-modal--my-tools .tools-modal__header .settings-modal__title h2 {
         margin: 0 !important;
         line-height: 1.12 !important;
-        align-self: end !important;
+        align-self: start !important;
       }
 
       .tools-modal--my-tools .tools-modal__header .settings-modal__title p {
         margin: 0 !important;
-        min-height: 20px !important;
-        max-height: 20px !important;
-        line-height: 1.25 !important;
+        min-height: 18px !important;
+        max-height: 18px !important;
+        line-height: 1.2 !important;
         align-self: start !important;
       }
 

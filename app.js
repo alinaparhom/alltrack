@@ -11267,23 +11267,25 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const lockToolsTopZoneHeights = ({ forceRefresh = false } = {}) => {
     if (!toolsHeaderEl) return;
     if (toolsTopZoneLock && !forceRefresh) return;
-    const modalStyles = toolsModalEl ? window.getComputedStyle(toolsModalEl) : null;
-    const cssHeaderHeight = Number.parseFloat(
-      modalStyles?.getPropertyValue("--my-tools-header-height") ?? ""
-    );
-    const measuredHeaderHeight = Number.parseFloat(
-      String(toolsHeaderEl.getBoundingClientRect().height ?? "")
-    );
-    // Сначала берём реальную высоту шапки, чтобы строка поиска не смещалась
-    // при применении фильтров и разных состояниях списка.
-    // Если измерение недоступно, откатываемся к CSS-эталону.
-    const stableHeaderHeight = Number.isFinite(measuredHeaderHeight) && measuredHeaderHeight > 0
-      ? measuredHeaderHeight
-      : Number.isFinite(cssHeaderHeight) && cssHeaderHeight > 0
-        ? cssHeaderHeight
-        : 0;
+    const headerStyles = window.getComputedStyle(toolsHeaderEl);
+    const titleEl = toolsHeaderEl.querySelector(".settings-modal__title");
+    const titleStyles = titleEl ? window.getComputedStyle(titleEl) : null;
+    const parseCssPixels = (value) => {
+      const parsed = Number.parseFloat(value ?? "");
+      return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+    };
+    const headerPaddingTop = parseCssPixels(headerStyles.paddingTop);
+    const headerPaddingBottom = parseCssPixels(headerStyles.paddingBottom);
+    const titleHeight = parseCssPixels(titleStyles?.height) ||
+      parseCssPixels(titleStyles?.minHeight) ||
+      parseCssPixels(headerStyles.getPropertyValue("--my-tools-header-title-height"));
+    // Не используем getBoundingClientRect().height у всей шапки: в Telegram WebView
+    // она может растянуться из-за малого количества карточек и сдвинуть поиск вниз.
+    // Фиксируем только минимальную CSS-высоту заголовка, поэтому расстояние до
+    // блока поиска не зависит от числа инструментов в списке.
+    const stableHeaderHeight = headerPaddingTop + titleHeight + headerPaddingBottom;
     toolsTopZoneLock = {
-      header: stableHeaderHeight,
+      header: stableHeaderHeight > 0 ? stableHeaderHeight : 0,
     };
   };
 

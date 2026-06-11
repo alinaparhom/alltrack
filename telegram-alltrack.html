@@ -15948,9 +15948,7 @@
       /* Жёсткая фиксация верхней зоны страницы "Мои инструменты" */
       .tools-modal--my-tools {
         --tools-horizontal-gutter: 14px;
-        --my-tools-panel-width: min(96vw, 980px);
-        --my-tools-panel-offset-left: max(0px, env(safe-area-inset-left));
-        --my-tools-panel-offset-right: max(0px, env(safe-area-inset-right));
+        --my-tools-fixed-horizontal-gutter: 14px;
         --my-tools-top-zone-seam: 0px;
         --my-tools-header-padding-top: calc(14px + env(safe-area-inset-top) + var(--telegram-top-spacing, 0px));
         --my-tools-header-title-height: 52px;
@@ -15987,14 +15985,8 @@
       .tools-modal--my-tools .tools-modal__header {
         position: fixed !important;
         top: 0 !important;
-        left: max(
-          calc(50% - (var(--my-tools-panel-width) / 2)),
-          var(--my-tools-panel-offset-left)
-        ) !important;
-        right: max(
-          calc(50% - (var(--my-tools-panel-width) / 2)),
-          var(--my-tools-panel-offset-right)
-        ) !important;
+        left: 0 !important;
+        right: 0 !important;
         width: auto !important;
         transform: none !important;
         z-index: 30 !important;
@@ -16002,8 +15994,8 @@
         height: var(--tools-my-tools-header-offset) !important;
         padding-top: var(--my-tools-header-padding-top) !important;
         padding-bottom: var(--my-tools-title-search-gap) !important;
-        padding-left: calc(14px + var(--my-tools-panel-offset-left)) !important;
-        padding-right: calc(14px + var(--my-tools-panel-offset-right)) !important;
+        padding-left: var(--my-tools-fixed-horizontal-gutter) !important;
+        padding-right: var(--my-tools-fixed-horizontal-gutter) !important;
         align-items: start !important;
         grid-template-columns: minmax(0, 1fr) auto !important;
         background: rgba(255, 255, 255, 0.96) !important;
@@ -16044,14 +16036,8 @@
       .tools-modal--my-tools .tools-controls {
         position: fixed !important;
         top: calc(var(--tools-my-tools-header-offset) + var(--my-tools-top-zone-gap)) !important;
-        left: max(
-          calc(50% - (var(--my-tools-panel-width) / 2) + 14px + var(--my-tools-panel-offset-left)),
-          calc(14px + var(--my-tools-panel-offset-left))
-        ) !important;
-        right: max(
-          calc(50% - (var(--my-tools-panel-width) / 2) + 14px + var(--my-tools-panel-offset-right)),
-          calc(14px + var(--my-tools-panel-offset-right))
-        ) !important;
+        left: var(--my-tools-fixed-horizontal-gutter) !important;
+        right: var(--my-tools-fixed-horizontal-gutter) !important;
         width: auto !important;
         transform: none !important;
         z-index: 29 !important;
@@ -16173,7 +16159,7 @@
         overflow: visible !important;
         row-gap: 6px !important;
         column-gap: 6px !important;
-        padding-right: max(0px, env(safe-area-inset-right)) !important;
+        padding-right: 0 !important;
         box-sizing: border-box !important;
       }
 

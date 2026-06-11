@@ -44,6 +44,42 @@ function appendMailingLog(string $level, string $message, array $context = []): 
   file_put_contents($logPath, $encoded . PHP_EOL, LOCK_EX);
 }
 
+
+function acquireMailingLock(string $lockName) {
+  $safeName = preg_replace('/[^a-z0-9_-]+/i', '-', trim($lockName));
+  if (!is_string($safeName) || $safeName === "") {
+    $safeName = "mailing";
+  }
+
+  $lockPath = rtrim(sys_get_temp_dir(), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . "alltrack-" . md5(__DIR__) . "-telegram-" . $safeName . ".lock";
+  $handle = @fopen($lockPath, "c");
+  if ($handle === false) {
+    appendMailingLog("warning", "Не удалось открыть lock-файл рассылки.", [
+      "lockName" => $lockName,
+      "lockPath" => $lockPath,
+    ]);
+    return null;
+  }
+
+  if (!@flock($handle, LOCK_EX | LOCK_NB)) {
+    @fclose($handle);
+    return null;
+  }
+
+  @ftruncate($handle, 0);
+  @fwrite($handle, json_encode([
+    "pid" => getmypid(),
+    "lockedAt" => (new DateTimeImmutable("now", new DateTimeZone("Europe/Moscow")))->format(DateTimeInterface::ATOM),
+  ], JSON_UNESCAPED_UNICODE) . PHP_EOL);
+
+  return $handle;
+}
+
+function markMailingSkippedByLock(array &$summary): void {
+  $summary["skipped"] = true;
+  $summary["skipReason"] = "mailing_already_running";
+}
+
 function schedulerPidIsRunning(int $pid): bool {
   if ($pid <= 0) {
     return false;
@@ -1157,6 +1193,12 @@ function runNoPhotoMailing(array $options = []): array {
     "organizations" => [],
   ];
 
+  $lockHandle = $dryRun ? true : acquireMailingLock("no-photo-mailing");
+  if ($lockHandle === null) {
+    markMailingSkippedByLock($summary);
+    return $summary;
+  }
+
   $entries = @scandir(__DIR__);
   if (!is_array($entries)) {
     return ["success" => false, "mode" => "no-photo-mailing-cli", "error" => "Не удалось прочитать папки организаций."];
@@ -1357,6 +1399,12 @@ function runNoAccountingNumberMailing(array $options = []): array {
     "organizations" => [],
   ];
 
+  $lockHandle = $dryRun ? true : acquireMailingLock("no-accounting-number-mailing");
+  if ($lockHandle === null) {
+    markMailingSkippedByLock($summary);
+    return $summary;
+  }
+
   $entries = @scandir(__DIR__);
   if (!is_array($entries)) {
     return ["success" => false, "mode" => "no-accounting-number-mailing-cli", "error" => "Не удалось прочитать папки организаций."];
@@ -1527,6 +1575,12 @@ function runRepairsMailing(array $options = []): array {
     "messagesSent" => 0,
     "organizations" => [],
   ];
+
+  $lockHandle = $dryRun ? true : acquireMailingLock("repairs-mailing");
+  if ($lockHandle === null) {
+    markMailingSkippedByLock($summary);
+    return $summary;
+  }
 
   $entries = @scandir(__DIR__);
   if (!is_array($entries)) {
@@ -2116,6 +2170,12 @@ function runMoveRepliesMailing(array $options = []): array {
     "organizations" => [],
   ];
 
+  $lockHandle = $dryRun ? true : acquireMailingLock("move-replies-mailing");
+  if ($lockHandle === null) {
+    markMailingSkippedByLock($summary);
+    return $summary;
+  }
+
   $entries = @scandir(__DIR__);
   if (!is_array($entries)) {
     return ["success" => false, "mode" => "move-replies-mailing-cli", "error" => "Не удалось прочитать папки организаций."];
@@ -2281,6 +2341,12 @@ function runPendingAcceptanceMailing(array $options = []): array {
     "messagesSent" => 0,
     "organizations" => [],
   ];
+
+  $lockHandle = $dryRun ? true : acquireMailingLock("pending-acceptance-mailing");
+  if ($lockHandle === null) {
+    markMailingSkippedByLock($summary);
+    return $summary;
+  }
 
   $entries = @scandir(__DIR__);
   $usersIndexByTelegram = buildUsersIndexByTelegram();

@@ -15952,18 +15952,21 @@
         --my-tools-top-zone-seam: 0px;
         --my-tools-header-padding-top: calc(14px + env(safe-area-inset-top) + var(--telegram-top-spacing, 0px));
         --my-tools-header-title-height: 52px;
-        --my-tools-title-search-gap: 6px;
+        --my-tools-title-search-gap: 10px;
+        --my-tools-block-gap: 10px;
         --my-tools-header-height: calc(
           var(--my-tools-header-padding-top) + var(--my-tools-header-title-height) + var(--my-tools-title-search-gap)
         );
         --tools-my-tools-header-offset: var(--my-tools-header-height);
         --my-tools-controls-height: 142px;
-        --my-tools-top-zone-gap: 0px !important;
+        --my-tools-top-zone-gap: var(--my-tools-block-gap) !important;
+        --my-tools-content-gap: var(--my-tools-block-gap);
         --my-tools-top-zone-height: calc(
-          var(--tools-my-tools-header-offset) + var(--my-tools-controls-height) + var(--my-tools-top-zone-gap)
+          var(--tools-my-tools-header-offset) + var(--my-tools-controls-height) +
+            var(--my-tools-top-zone-gap) + var(--my-tools-content-gap)
         );
-        --my-tools-view-toggle-width: clamp(132px, 34vw, 182px);
-        --my-tools-filter-toggle-width: clamp(102px, 24vw, 118px);
+        --my-tools-view-toggle-width: 156px;
+        --my-tools-filter-toggle-width: 112px;
       }
 
       .tools-modal--my-tools.tools-modal--selecting {
@@ -15978,7 +15981,7 @@
 
       .tools-modal--my-tools .tools-modal__body {
         padding-top: var(--my-tools-top-zone-height) !important;
-        row-gap: 0 !important;
+        row-gap: var(--my-tools-block-gap) !important;
         scrollbar-gutter: stable both-edges !important;
       }
 
@@ -16044,9 +16047,9 @@
         margin-top: 0 !important;
         min-height: var(--my-tools-controls-height) !important;
         height: var(--my-tools-controls-height) !important;
-        padding: 8px !important;
+        padding: var(--my-tools-block-gap) !important;
         border-radius: 16px !important;
-        gap: 8px !important;
+        gap: var(--my-tools-block-gap) !important;
         background: rgba(255, 255, 255, 0.92) !important;
         border: 1px solid rgba(226, 232, 240, 0.9) !important;
         display: grid !important;
@@ -16062,8 +16065,8 @@
           "search view filters"
           "actions actions actions" !important;
         align-items: center !important;
-        column-gap: 10px !important;
-        row-gap: 8px !important;
+        column-gap: var(--my-tools-block-gap) !important;
+        row-gap: var(--my-tools-block-gap) !important;
         min-height: var(--tools-control-height) !important;
       }
 
@@ -16088,7 +16091,7 @@
         margin-left: 0 !important;
         justify-content: flex-start !important;
         flex-wrap: wrap !important;
-        row-gap: 6px !important;
+        row-gap: var(--my-tools-block-gap) !important;
       }
 
       .tools-modal--my-tools .tools-controls.tools-controls--wrapped .tools-filter-actions,
@@ -16120,7 +16123,7 @@
       .tools-modal--my-tools.tools-modal--selecting .tools-controls__row {
         flex-wrap: wrap !important;
         align-items: flex-start !important;
-        row-gap: 6px !important;
+        row-gap: var(--my-tools-block-gap) !important;
       }
 
       .tools-modal--my-tools.tools-modal--selecting .tools-search {
@@ -16133,7 +16136,7 @@
         margin-left: 0 !important;
         justify-content: flex-start !important;
         flex-wrap: wrap !important;
-        row-gap: 6px !important;
+        row-gap: var(--my-tools-block-gap) !important;
       }
 
       .tools-modal--my-tools.tools-modal--selecting .tools-filter-actions {
@@ -16157,8 +16160,8 @@
         max-width: 100% !important;
         min-width: 0 !important;
         overflow: visible !important;
-        row-gap: 6px !important;
-        column-gap: 6px !important;
+        row-gap: var(--my-tools-block-gap) !important;
+        column-gap: var(--my-tools-block-gap) !important;
         padding-right: 0 !important;
         box-sizing: border-box !important;
       }
@@ -16173,28 +16176,9 @@
         flex: 0 1 auto !important;
       }
 
-      @media (max-width: 420px) {
-        .tools-modal--my-tools.tools-modal--selecting .tools-actions {
-          display: grid !important;
-          grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-          align-items: center !important;
-        }
-
-        .tools-modal--my-tools.tools-modal--selecting .tools-move-button,
-        .tools-modal--my-tools.tools-modal--selecting .tools-cancel-button,
-        .tools-modal--my-tools.tools-modal--selecting .tools-selection-count {
-          width: 100% !important;
-          justify-content: center !important;
-        }
-
-        .tools-modal--my-tools.tools-modal--selecting .tools-select-all-button {
-          justify-self: end !important;
-        }
-
-        .tools-modal--my-tools.tools-modal--selecting .tools-filter-actions {
-          grid-column: 1 / -1 !important;
-          justify-content: flex-end !important;
-        }
+      .tools-modal--my-tools.tools-modal--selecting .tools-actions {
+        display: flex !important;
+        align-items: center !important;
       }
 
       .tools-modal--my-tools .tools-filters {
@@ -16260,6 +16244,9 @@
       .tools-modal--my-tools .tools-search-map {
         padding-top: 0 !important;
         margin-top: 0 !important;
+        padding-left: var(--my-tools-fixed-horizontal-gutter) !important;
+        padding-right: var(--my-tools-fixed-horizontal-gutter) !important;
+        gap: var(--my-tools-block-gap) !important;
       }
 
     </style>

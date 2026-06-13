@@ -6329,6 +6329,7 @@
       .tools-modal .settings-modal__form {
         padding-left: var(--tools-horizontal-gutter);
         padding-right: var(--tools-horizontal-gutter);
+        padding-top: 0;
       }
 
       .tools-modal__panel {
@@ -6342,8 +6343,15 @@
         align-items: center;
         grid-template-columns: minmax(0, 1fr) auto;
         padding-bottom: 0;
+        margin-bottom: 0;
         padding-left: calc(var(--tools-horizontal-gutter) + max(0px, env(safe-area-inset-left)));
         padding-right: calc(var(--tools-horizontal-gutter) + max(0px, env(safe-area-inset-right)));
+      }
+
+      .tools-modal__header + .settings-modal__form,
+      .tools-modal__body > .tools-controls:first-child {
+        margin-top: 0;
+        padding-top: 0;
       }
 
 
@@ -16081,6 +16089,7 @@
         --my-tools-header-title-height: 52px;
         --my-tools-title-search-gap: 0px;
         --my-tools-block-gap: 10px;
+        --my-tools-controls-inner-padding-top: 0px;
         --my-tools-header-height: calc(
           var(--my-tools-header-padding-top) + var(--my-tools-header-title-height) + var(--my-tools-title-search-gap)
         );
@@ -16123,7 +16132,8 @@
         min-height: var(--tools-my-tools-header-offset) !important;
         height: var(--tools-my-tools-header-offset) !important;
         padding-top: var(--my-tools-header-padding-top) !important;
-        padding-bottom: var(--my-tools-title-search-gap) !important;
+        padding-bottom: 0 !important;
+        margin-bottom: 0 !important;
         padding-left: var(--my-tools-fixed-horizontal-gutter) !important;
         padding-right: var(--my-tools-fixed-horizontal-gutter) !important;
         align-items: start !important;
@@ -16174,8 +16184,8 @@
         margin-top: 0 !important;
         min-height: var(--my-tools-controls-height) !important;
         height: var(--my-tools-controls-height) !important;
-        padding: var(--my-tools-block-gap) !important;
-        border-radius: 16px !important;
+        padding: var(--my-tools-controls-inner-padding-top) var(--my-tools-block-gap) var(--my-tools-block-gap) !important;
+        border-radius: 0 0 16px 16px !important;
         gap: var(--my-tools-block-gap) !important;
         background: rgba(255, 255, 255, 0.92) !important;
         border: 1px solid rgba(226, 232, 240, 0.9) !important;

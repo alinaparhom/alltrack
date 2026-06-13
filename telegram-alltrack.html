@@ -11417,16 +11417,21 @@
 
       .pending-moves-tools-table .tools-table__cell--actions {
         grid-column: 1 / -1;
-        flex-wrap: nowrap;
+        flex-wrap: wrap;
         align-items: center;
         justify-content: center;
         width: 100%;
-        gap: 12px;
+        gap: 8px;
       }
 
       .pending-moves-tools-table .pending-move-action {
-        flex: 0 0 clamp(88px, 31vw, 112px);
-        width: clamp(88px, 31vw, 112px);
+        flex: 1 1 clamp(88px, 29vw, 112px);
+        width: clamp(88px, 29vw, 112px);
+      }
+
+      .pending-moves-tools-table .pending-move-action--kit {
+        flex-basis: clamp(124px, 42vw, 156px);
+        width: clamp(124px, 42vw, 156px);
       }
 
       .pending-moves-tools-table .pending-move-action--decline {
@@ -11611,6 +11616,12 @@
         border-color: rgba(248, 113, 113, 0.4);
         color: var(--danger);
         background: rgba(248, 113, 113, 0.1);
+      }
+
+      .pending-move-action--kit {
+        border-color: rgba(59, 130, 246, 0.35);
+        color: #1d4ed8;
+        background: rgba(59, 130, 246, 0.1);
       }
 
       .pending-move-action--cancel {
@@ -12913,17 +12924,22 @@
         .pending-moves-tools-table .tools-table__cell--actions {
           display: flex;
           align-items: center;
-          justify-content: space-between;
+          justify-content: center;
           width: 100%;
           gap: 8px;
         }
 
         .pending-moves-tools-table .pending-move-action {
-          flex: 0 0 96px;
-          width: 96px;
-          min-height: 30px;
+          flex: 1 1 calc(33.333% - 8px);
+          width: auto;
+          min-width: 0;
+          min-height: 32px;
           padding: 6px 8px;
           font-size: 11px;
+        }
+
+        .pending-moves-tools-table .pending-move-action--kit {
+          flex-basis: 100%;
         }
 
         .awaiting-reply-tools-table .pending-move-action--cancel {

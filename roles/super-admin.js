@@ -285,6 +285,7 @@ export function renderRole(user) {
                 <span class="super-stats-card__icon">🧰</span>
                 <span class="super-stats-card__label">МТЦ в базе</span>
                 <strong data-super-stats-tools>—</strong>
+                <span class="super-stats-card__subvalue" data-super-stats-tools-amount>на сумму —</span>
               </div>
               <div class="super-stats-card">
                 <span class="super-stats-card__icon">🔁</span>

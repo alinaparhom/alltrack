@@ -5501,12 +5501,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   };
   const updateQuickAccessOffset = () => {
     if (!quickAccessEl) return;
-    const rect = quickAccessEl.getBoundingClientRect();
-    const offset = Math.max(0, Math.ceil(rect.height) + 6);
-    document.documentElement.style.setProperty(
-      "--quick-access-offset",
-      `${offset}px`
-    );
+    document.documentElement.style.setProperty("--quick-access-offset", "96px");
   };
 
   if (energyPendingStatEl) {

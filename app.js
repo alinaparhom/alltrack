@@ -15943,9 +15943,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         ? "Ответственный"
         : "Ответственный до перемещения";
       const previousResponsibleShortName = formatFullName(previousResponsible, 2);
-      const moveComment = String(
-        move?.["Причина отправки"] ?? move?.["Причина перемещения"] ?? ""
-      ).trim();
+      const moveReason = String(move?.["Причина перемещения"] ?? "").trim();
+      const sendReason = String(move?.["Причина отправки"] ?? "").trim();
+      const moveComment = moveReason || sendReason;
+      const moveCommentLabel = moveReason ? "Причина перемещения" : "Причина отправки";
       const sourceObject = String(move?.["Старый объект"] ?? "").trim();
       const targetObject = String(move?.["Новый объект"] ?? "").trim();
       const moveRoute =
@@ -15993,7 +15994,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           value: previousResponsibleShortName,
         },
         {
-          text: moveComment ? `Причина отправки: ${moveComment}` : "",
+          text: moveComment ? `${moveCommentLabel}: ${moveComment}` : "",
           className: "pending-move-comment",
         },
         {
@@ -16031,7 +16032,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           lineEl.textContent = line.value;
         } else if (line.className === "pending-move-comment" && moveComment) {
           const labelEl = document.createElement("span");
-          labelEl.textContent = "Причина отправки: ";
+          labelEl.textContent = `${moveCommentLabel}: `;
           const valueEl = document.createElement("strong");
           const underlinedValueEl = document.createElement("u");
           underlinedValueEl.textContent = moveComment;

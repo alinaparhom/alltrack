@@ -1335,6 +1335,7 @@ export function renderRole(user, options = {}) {
                       data-tools-edit-accounting
                     />
                   </label>
+                  <div class="tools-edit-quick-info is-hidden" data-tools-edit-quick-info></div>
                   <label class="form-field">
                     <span class="form-label">Наименование</span>
                     <input

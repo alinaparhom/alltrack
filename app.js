@@ -69,6 +69,7 @@ const pendingAcceptanceMailingDefault = {
 };
 const quickAccessDefaults = ["breakdowns", "info", "search", "tools", "move"];
 const energyExtraAccessOptions = [{ id: "awaiting-reply", title: "Отправлено", icon: "📤" }];
+const noAccountingNumberAction = { id: "no-accounting-number", title: "Без бух. номера", icon: "🏷️" };
 const accountingFixedDashboardActions = [
   { id: "workers", title: "Рабочие", icon: "👷" },
   { id: "accept-other", title: "Принять за других", icon: "✅" },
@@ -5395,6 +5396,19 @@ function resolveEnergyAccessRole(role) {
   return role;
 }
 
+async function resolveOrganizationNumberType(organizationName) {
+  const normalizedName = String(organizationName ?? "").trim();
+  if (!normalizedName) return "";
+  try {
+    const orgData = await loadJson(orgFilePath);
+    const orgRecord = findOrganizationRecord(orgData, normalizedName);
+    return String(orgRecord?.number_type ?? "").trim();
+  } catch (error) {
+    console.warn("Не удалось определить тип номера организации.", error);
+    return "";
+  }
+}
+
 function resolveEnergyDashboardActionsForRole(settingsData, role) {
   const organizationSettings = getEnergyOrganizationSettings(settingsData);
   const objectTrackingEnabled = isObjectTrackingEnabled(organizationSettings);
@@ -7406,6 +7420,17 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const accessList = organizationSettings.access?.[accessRole];
   const hasAccessConfig = Array.isArray(accessList);
   let availableActions = resolveEnergyDashboardActionsForRole(settingsData, user.role);
+  const organizationNumberType = await resolveOrganizationNumberType(
+    context.orgFullName || context.orgShortName || user?.organization
+  );
+  const shouldShowNoAccountingNumberAction =
+    organizationNumberType.toLocaleLowerCase("ru") === "номер приложения";
+  if (shouldShowNoAccountingNumberAction) {
+    const existingActionIds = new Set(availableActions.map((action) => action.id));
+    if (!existingActionIds.has(noAccountingNumberAction.id)) {
+      availableActions = [...availableActions, noAccountingNumberAction];
+    }
+  }
   const requiresExplicitAccess = explicitAccessDashboardRoles.has(accessRole);
   const hasAwaitingReplyAccess = hasAccessConfig
     ? accessList.includes("awaiting-reply")
@@ -10257,6 +10282,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const shouldShow =
       toolsState.mode === "base" ||
       toolsState.mode === "search" ||
+      toolsState.mode === "no-accounting-number" ||
       toolsState.mode === "add-photo" ||
       toolsState.mode === "user" ||
       toolsState.mode === "move-other" ||
@@ -10319,6 +10345,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const isSearchLikeMode =
       toolsState.mode === "base" ||
       toolsState.mode === "search" ||
+      toolsState.mode === "no-accounting-number" ||
       toolsState.mode === "add-photo" ||
       toolsState.mode === "user" ||
       toolsState.mode === "move-other" ||
@@ -10773,6 +10800,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (
       toolsState.mode === "base" ||
       toolsState.mode === "search" ||
+      toolsState.mode === "no-accounting-number" ||
       toolsState.mode === "write-off-pending" ||
       toolsState.mode === "repair"
     )
@@ -10789,6 +10817,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (
       toolsState.mode === "base" ||
       toolsState.mode === "search" ||
+      toolsState.mode === "no-accounting-number" ||
       toolsState.mode === "write-off-pending" ||
       toolsState.mode === "repair"
     ) return;
@@ -10814,6 +10843,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (
       toolsState.mode === "base" ||
       toolsState.mode === "search" ||
+      toolsState.mode === "no-accounting-number" ||
       isRepairLikeMode()
     ) {
       toolsState.isSelecting = false;
@@ -11180,7 +11210,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   };
 
   const canUseToolsMapView = () =>
-    objectTrackingEnabled && (toolsState.mode === "search" || toolsState.mode === "user");
+    objectTrackingEnabled &&
+    (toolsState.mode === "search" ||
+      toolsState.mode === "no-accounting-number" ||
+      toolsState.mode === "user");
 
   const sortToolsByNumber = (tools) => {
     const direction = toolsState.searchSortDirection === "asc" ? 1 : -1;
@@ -11856,6 +11889,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const isSearchMode =
       toolsState.mode === "base" ||
       toolsState.mode === "search" ||
+      toolsState.mode === "no-accounting-number" ||
       toolsState.mode === "move-other" ||
       toolsState.mode === "repair" ||
       toolsState.mode === "write-off-pending";
@@ -12217,6 +12251,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const isSearchLikeMode =
       toolsState.mode === "base" ||
       toolsState.mode === "search" ||
+      toolsState.mode === "no-accounting-number" ||
       toolsState.mode === "add-photo" ||
       toolsState.mode === "user" ||
       toolsState.mode === "move-other" ||
@@ -12231,6 +12266,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const isSearchMode =
       toolsState.mode === "base" ||
       toolsState.mode === "search" ||
+      toolsState.mode === "no-accounting-number" ||
       toolsState.mode === "move-other" ||
       toolsState.mode === "repair" ||
       toolsState.mode === "write-off-pending";
@@ -12582,6 +12618,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const search = toolsState.search.trim();
     const tokens = search ? search.split(/\s+/).filter(Boolean) : [];
     const filtered = toolsState.tools.filter((tool) => {
+      if (toolsState.mode === "no-accounting-number") {
+        const accountingNumber = String(tool?.["Бух.номер"] ?? "").trim();
+        if (accountingNumber) return false;
+      }
       if (isRepairLikeMode() && toolsState.repairBrokenOnly) {
         const normalizedStatus = String(tool?.["Статус"] ?? "")
           .trim()
@@ -13201,6 +13241,35 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     toolsState.searchSortDirection = "desc";
     setToolsStatusStandaloneVisibility(false);
     setToolsTitle("Поиск");
+    setToolsResponsibleFilterVisibility(true);
+    syncToolsModalModeClass();
+    updateToolsReplacementPendingLinkVisibility();
+    syncToolsMapViewButtonVisibility();
+    toolsModalEl.classList.remove("is-hidden");
+    document.body.style.overflow = "hidden";
+    setToolsSubtitle("Загружаем список...");
+    const numberConfig = await resolveToolsNumberConfig();
+    updateToolsNumberConfig(numberConfig);
+    await loadBaseTools();
+    syncToolsViewButtons();
+    if (
+      toolsSearchInput &&
+      (typeof window === "undefined" ||
+        !window.matchMedia ||
+        !window.matchMedia("(max-width: 520px)").matches)
+    ) {
+      toolsSearchInput.focus();
+    }
+  };
+
+  const openNoAccountingNumberModal = async () => {
+    if (!toolsModalEl) return;
+    resetToolsTopZoneStability();
+    toolsState.mode = "no-accounting-number";
+    toolsState.view = "table";
+    toolsState.searchSortDirection = "desc";
+    setToolsStatusStandaloneVisibility(false);
+    setToolsTitle("Без бух. номера");
     setToolsResponsibleFilterVisibility(true);
     syncToolsModalModeClass();
     updateToolsReplacementPendingLinkVisibility();
@@ -14217,7 +14286,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     ]);
   };
 
-  const openToolsEditModal = async (tool) => {
+  const openToolsEditModal = async (tool, options = {}) => {
     if (!toolsEditModalEl || !tool) return;
     toolsEditState.tool = tool;
     toolsEditState.matchNumber = normalizeToolNumberValue(tool?.["Номер"] ?? "");
@@ -14226,8 +14295,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     toolsEditState.isSaving = false;
     const toolNumber = resolveToolNumberValue(tool) || "—";
     const toolName = String(tool?.["Наименование"] ?? "").trim() || "Инструмент";
+    const titleOverride = String(options.title ?? "").trim();
     if (toolsEditTitleEl) {
-      toolsEditTitleEl.textContent = toolName;
+      toolsEditTitleEl.textContent = titleOverride || toolName;
     }
     if (toolsEditSubtitleEl) {
       toolsEditSubtitleEl.textContent = `№${toolNumber}`;
@@ -14266,7 +14336,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     setToolsEditMessage("");
     toolsEditModalEl.classList.remove("is-hidden");
     document.body.style.overflow = "hidden";
-    if (toolsEditNameInput) {
+    if (options.focusAccounting && toolsEditAccountingInput) {
+      toolsEditAccountingInput.focus();
+      toolsEditAccountingInput.select?.();
+    } else if (toolsEditNameInput) {
       toolsEditNameInput.focus();
     }
   };
@@ -20496,6 +20569,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         const tool = toolsState.toolMap.get(item.dataset.toolId);
         if (tool) {
           openToolsInfoModal(tool);
+        }
+        return;
+      }
+      if (toolsState.mode === "no-accounting-number") {
+        const tool = toolsState.toolMap.get(item.dataset.toolId);
+        if (tool) {
+          openToolsEditModal(tool, { focusAccounting: true, title: "Добавить бух.номер" });
         }
         return;
       }
@@ -31538,6 +31618,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
     if (actionId === "search") {
       openSearchModal();
+      return true;
+    }
+    if (actionId === "no-accounting-number") {
+      openNoAccountingNumberModal();
       return true;
     }
     if (actionId === "move-other") {

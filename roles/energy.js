@@ -3848,11 +3848,18 @@ export function renderRole(user, options = {}) {
             </div>
             <div class="settings-modal__footer add-tool-success-modal__footer">
               <button
-                class="action-primary"
+                class="action-secondary add-tool-success-modal__photo"
+                type="button"
+                data-add-tool-success-add-photo
+              >
+                Добавить фото
+              </button>
+              <button
+                class="action-primary add-tool-success-modal__continue"
                 type="button"
                 data-add-tool-success-confirm
               >
-                Понятно
+                Продолжить
               </button>
             </div>
           </div>

@@ -6289,6 +6289,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const addToolSuccessConfirmButton = contentEl.querySelector(
     "[data-add-tool-success-confirm]"
   );
+  const addToolSuccessAddPhotoButton = contentEl.querySelector(
+    "[data-add-tool-success-add-photo]"
+  );
   const addToolSuccessNumberEl = contentEl.querySelector(
     "[data-add-tool-success-number]"
   );
@@ -26824,11 +26827,31 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   };
   const isAddToolAccountingNumber = () =>
     resolveAddToolNumberLabelCapitalized() === "Бух.номер";
+  let addToolSuccessTool = null;
+
   const closeAddToolSuccessModal = () => {
     if (!addToolSuccessModalEl) return;
     addToolSuccessModalEl.classList.add("is-hidden");
   };
-  const openAddToolSuccessModal = ({ toolNumber, accountingNumber } = {}) => {
+
+  const continueAfterAddToolSuccess = () => {
+    closeAddToolSuccessModal();
+    closeAddToolModal();
+    addToolSuccessTool = null;
+  };
+
+  const openCreatedToolPhotoModal = async () => {
+    const tool = addToolSuccessTool;
+    if (!tool) {
+      continueAfterAddToolSuccess();
+      return;
+    }
+    closeAddToolSuccessModal();
+    closeAddToolModal();
+    await openAddPhotoToolModalForTool(tool);
+  };
+  const openAddToolSuccessModal = ({ toolNumber, accountingNumber, tool } = {}) => {
+    addToolSuccessTool = tool ?? null;
     if (!addToolSuccessModalEl) return;
     const numberLabel = resolveAddToolNumberLabelCapitalized();
     const isAccounting = numberLabel === "Бух.номер";
@@ -28174,8 +28197,15 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   if (addToolSuccessConfirmButton) {
     addToolSuccessConfirmButton.addEventListener(
       "click",
-      closeAddToolSuccessModal
+      continueAfterAddToolSuccess
     );
+  }
+  if (addToolSuccessAddPhotoButton) {
+    addToolSuccessAddPhotoButton.addEventListener("click", () => {
+      openCreatedToolPhotoModal().catch((error) => {
+        console.error("Не удалось открыть добавление фото для новой МТЦ.", error);
+      });
+    });
   }
   if (addToolKitToggleButton) {
     addToolKitToggleButton.addEventListener("click", () => {
@@ -28494,6 +28524,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           openAddToolSuccessModal({
             toolNumber,
             accountingNumber: displayNumber,
+            tool: nextTool,
           });
           const createdByRaw = String(
             currentUser?.full_name ?? currentUser?.fullName ?? ""

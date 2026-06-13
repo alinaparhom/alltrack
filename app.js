@@ -5821,6 +5821,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const toolsEditMessageEl = contentEl.querySelector("[data-tools-edit-message]");
   const toolsEditTitleEl = contentEl.querySelector("[data-tools-edit-title]");
   const toolsEditSubtitleEl = contentEl.querySelector("[data-tools-edit-subtitle]");
+  const toolsEditQuickInfoEl = contentEl.querySelector("[data-tools-edit-quick-info]");
   const toolsInfoModalEl = contentEl.querySelector("[data-tools-info-modal]");
   const toolsInfoModalPanelEl = contentEl.querySelector(".tools-info-modal__panel");
   const toolsInfoBackdropEl = contentEl.querySelector("[data-tools-info-backdrop]");
@@ -8052,6 +8053,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     orgFolder: "",
     groupOptions: [],
     isSaving: false,
+    accountingOnly: false,
   };
   let toolsEditKitRowCounter = 0;
   const toolsInfoState = {
@@ -13338,6 +13340,55 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     resetToolsTopZoneStability();
   };
 
+
+  const setToolsEditAccountingOnlyMode = (enabled, tool = null) => {
+    toolsEditState.accountingOnly = Boolean(enabled);
+    toolsEditModalEl?.classList.toggle("tools-edit-modal--accounting-only", Boolean(enabled));
+    const fieldsToToggle = [
+      toolsEditNameInput,
+      toolsEditManufacturerInput,
+      toolsEditModelInput,
+      toolsEditAccountingNameInput,
+      toolsEditSerialInput,
+      toolsEditGroupInput,
+    ];
+    fieldsToToggle.forEach((input) => {
+      input?.closest(".form-field")?.classList.toggle("is-hidden", Boolean(enabled));
+    });
+    toolsEditKitBlockEl?.classList.toggle("is-hidden", Boolean(enabled));
+    toolsEditPhotoInput?.closest(".tools-edit-photo-card")?.classList.toggle("is-hidden", Boolean(enabled));
+    toolsEditDeleteButton?.closest(".tools-edit-actions--danger")?.classList.toggle("is-hidden", Boolean(enabled));
+    if (!toolsEditQuickInfoEl) return;
+    toolsEditQuickInfoEl.classList.toggle("is-hidden", !enabled);
+    if (!enabled) {
+      toolsEditQuickInfoEl.innerHTML = "";
+      return;
+    }
+    const infoRows = [
+      ["Наименование", tool?.["Наименование"]],
+      ["Производитель", tool?.["Производитель"]],
+      ["Модель", tool?.["Модель"]],
+      ["Серийный номер", tool?.["Серийный номер"]],
+      ["Группа", tool?.["Граппа инструментов"]],
+      ["Ответственный", tool?.["Ответственный"]],
+      ["Объект", tool?.["Объект"]],
+      ["Статус", tool?.["Статус"]],
+    ].filter(([, value]) => String(value ?? "").trim());
+    toolsEditQuickInfoEl.innerHTML = `
+      <div class="tools-edit-quick-info__title">Информация об инструменте</div>
+      <div class="tools-edit-quick-info__grid">
+        ${infoRows
+          .map(([label, value]) => `
+            <div class="tools-edit-quick-info__item">
+              <span>${escapeHtml(label)}</span>
+              <b>${escapeHtml(String(value ?? "").trim())}</b>
+            </div>
+          `)
+          .join("")}
+      </div>
+    `;
+  };
+
   const closeToolsEditModal = () => {
     if (!toolsEditModalEl) return;
     toolsEditModalEl.classList.add("is-hidden");
@@ -13347,6 +13398,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     toolsEditState.matchAccounting = "";
     toolsEditState.groupOptions = [];
     toolsEditState.isSaving = false;
+    setToolsEditAccountingOnlyMode(false);
     setToolsEditMessage("");
     if (toolsEditPhotoInput) {
       toolsEditPhotoInput.value = "";
@@ -14331,6 +14383,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       toolsEditGroupInput.value = hasOption ? groupValue : "";
     }
     fillToolsEditKitRows(tool);
+    setToolsEditAccountingOnlyMode(Boolean(options.accountingOnly), tool);
     const count = Number.parseInt(tool?.["Количество фото"] ?? 0, 10);
     updateToolsEditPhotoCount(Number.isFinite(count) ? count : 0);
     setToolsEditMessage("");
@@ -14369,6 +14422,56 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       toolsEditState.tool = updatedTool;
     }
     applyToolsFilters();
+  };
+
+  const saveToolsEditFields = async (updatedFields) => {
+    const orgFolder = toolsEditState.orgFolder;
+    const matcher = buildToolsEditMatcher({
+      "Номер": toolsEditState.matchNumber,
+      "Бух.номер": toolsEditState.matchAccounting,
+    });
+    const toolsPath = `./${orgFolder}/База с инструментами.json`;
+    let toolsPayloadRaw = [];
+    try {
+      toolsPayloadRaw = await loadJson(toolsPath);
+    } catch (error) {
+      toolsPayloadRaw = [];
+    }
+    const toolsNormalized = normalizeCollectionPayload(toolsPayloadRaw, "tools");
+    const toolIndex = toolsNormalized.items.findIndex(matcher);
+    if (toolIndex < 0) {
+      setToolsEditMessage("Инструмент не найден в базе.", "error");
+      toolsEditState.isSaving = false;
+      return;
+    }
+    const nextTool = {
+      ...toolsNormalized.items[toolIndex],
+      ...updatedFields,
+    };
+    const updatedTools = [...toolsNormalized.items];
+    updatedTools[toolIndex] = nextTool;
+    const updatedToolsPayload = toolsNormalized.wrapper
+      ? { ...toolsNormalized.wrapper, [toolsNormalized.key]: updatedTools }
+      : updatedTools;
+    try {
+      await saveEntries([
+        {
+          path: toolsPath,
+          data: updatedToolsPayload,
+          ...buildUploadUserMeta({ organizationName: context.orgFullName }),
+        },
+      ]);
+      applyToolsEditUpdateToState(updatedFields);
+      if (Object.prototype.hasOwnProperty.call(updatedFields, "Бух.номер")) {
+        toolsEditState.matchAccounting = updatedFields["Бух.номер"];
+      }
+      setToolsEditMessage("Изменения сохранены.", "success");
+    } catch (error) {
+      console.error(error);
+      setToolsEditMessage("Не удалось сохранить изменения.", "error");
+    } finally {
+      toolsEditState.isSaving = false;
+    }
   };
 
   const markToolsPendingMoveInStates = (toolsForPending = []) => {
@@ -14435,6 +14538,18 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     toolsEditState.isSaving = true;
     setToolsEditMessage("Сохраняем изменения...", "info");
 
+    if (toolsEditState.accountingOnly) {
+      const accountingNumber = String(toolsEditAccountingInput?.value ?? "").trim();
+      if (!accountingNumber) {
+        setToolsEditMessage("Введите бух.номер.", "error");
+        toolsEditAccountingInput?.focus();
+        toolsEditState.isSaving = false;
+        return;
+      }
+      await saveToolsEditFields({ "Бух.номер": accountingNumber });
+      return;
+    }
+
     const kitItems = collectToolsEditKitItems();
     const invalidKitItem = kitItems.find(({ item }) => !item["Наименование"]);
     if (invalidKitItem?.nameInput) {
@@ -14476,50 +14591,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       return;
     }
     updatedFields["Граппа инструментов"] = groupName;
-    const matcher = buildToolsEditMatcher({
-      "Номер": toolsEditState.matchNumber,
-      "Бух.номер": toolsEditState.matchAccounting,
-    });
-    const toolsPath = `./${orgFolder}/База с инструментами.json`;
-    let toolsPayloadRaw = [];
-    try {
-      toolsPayloadRaw = await loadJson(toolsPath);
-    } catch (error) {
-      toolsPayloadRaw = [];
-    }
-    const toolsNormalized = normalizeCollectionPayload(toolsPayloadRaw, "tools");
-    const toolIndex = toolsNormalized.items.findIndex(matcher);
-    if (toolIndex < 0) {
-      setToolsEditMessage("Инструмент не найден в базе.", "error");
-      toolsEditState.isSaving = false;
-      return;
-    }
-    const nextTool = {
-      ...toolsNormalized.items[toolIndex],
-      ...updatedFields,
-    };
-    const updatedTools = [...toolsNormalized.items];
-    updatedTools[toolIndex] = nextTool;
-    const updatedToolsPayload = toolsNormalized.wrapper
-      ? { ...toolsNormalized.wrapper, [toolsNormalized.key]: updatedTools }
-      : updatedTools;
-    try {
-      await saveEntries([
-        {
-          path: toolsPath,
-          data: updatedToolsPayload,
-          ...buildUploadUserMeta({ organizationName: context.orgFullName }),
-        },
-      ]);
-      applyToolsEditUpdateToState(updatedFields);
-      toolsEditState.matchAccounting = updatedFields["Бух.номер"];
-      setToolsEditMessage("Изменения сохранены.", "success");
-    } catch (error) {
-      console.error(error);
-      setToolsEditMessage("Не удалось сохранить изменения.", "error");
-    } finally {
-      toolsEditState.isSaving = false;
-    }
+    await saveToolsEditFields(updatedFields);
   };
 
   const handleToolsEditDelete = async () => {
@@ -20575,7 +20647,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       if (toolsState.mode === "no-accounting-number") {
         const tool = toolsState.toolMap.get(item.dataset.toolId);
         if (tool) {
-          openToolsEditModal(tool, { focusAccounting: true, title: "Добавить бух.номер" });
+          openToolsEditModal(tool, {
+            focusAccounting: true,
+            title: "Добавить бух.номер",
+            accountingOnly: true,
+          });
         }
         return;
       }

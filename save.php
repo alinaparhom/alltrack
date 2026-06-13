@@ -3715,11 +3715,45 @@ function sendFeedbackStatusNotification(array $entry): void {
   sendTelegramTextMessage($botToken, $telegramId, $message);
 }
 
-$isCli = PHP_SAPI === "cli";
-if ($isCli) {
-  $argvList = isset($argv) && is_array($argv) ? $argv : [];
-  if (in_array("--run-scheduled-mailings", $argvList, true)) {
-    $dryRun = in_array("--dry-run", $argvList, true);
+function runScheduledMailingsWithLock(bool $dryRun, bool $useIfNeeded): array {
+  $lockPath = __DIR__ . DIRECTORY_SEPARATOR . "telegram-scheduled-mailings.lock";
+  $lockHandle = @fopen($lockPath, "c+");
+  if (!is_resource($lockHandle)) {
+    appendMailingLog("warning", "Не удалось открыть lock-файл планировщика рассылок.", [
+      "lockPath" => $lockPath,
+    ]);
+  } elseif (!@flock($lockHandle, LOCK_EX | LOCK_NB)) {
+    $timezone = new DateTimeZone("Europe/Moscow");
+    return [
+      "success" => true,
+      "mode" => $useIfNeeded ? "scheduled-mailings-http" : "scheduled-mailings-cli",
+      "dryRun" => $dryRun,
+      "skipped" => true,
+      "reason" => "scheduled-mailings-already-running",
+      "serverTime" => (new DateTimeImmutable("now", $timezone))->format(DateTimeInterface::ATOM),
+    ];
+  }
+
+  try {
+    if ($useIfNeeded) {
+      runNoPhotoFineRecalculationIfNeeded();
+      runMoveRepliesMailingIfNeeded();
+      runRepairsMailingIfNeeded();
+      runNoPhotoMailingIfNeeded();
+      runNoAccountingNumberMailingIfNeeded();
+      runPendingAcceptanceMailingIfNeeded();
+      runHourlyMoveArchivesIfNeeded();
+
+      $timezone = new DateTimeZone("Europe/Moscow");
+      return [
+        "success" => true,
+        "mode" => "scheduled-mailings-http",
+        "dryRun" => $dryRun,
+        "skipped" => false,
+        "serverTime" => (new DateTimeImmutable("now", $timezone))->format(DateTimeInterface::ATOM),
+      ];
+    }
+
     $moveRepliesResult = runMoveRepliesMailing([
       "dryRun" => $dryRun,
     ]);
@@ -3740,10 +3774,11 @@ if ($isCli) {
       "dryRun" => $dryRun,
     ]);
 
-    $result = [
+    return [
       "success" => !empty($moveRepliesResult["success"]) && !empty($repairsResult["success"]) && !empty($noPhotoMailingResult["success"]) && !empty($noAccountingNumberMailingResult["success"]) && !empty($pendingAcceptanceMailingResult["success"]) && !empty($noPhotoResult["success"]),
       "mode" => "scheduled-mailings-cli",
       "dryRun" => $dryRun,
+      "skipped" => false,
       "moveReplies" => $moveRepliesResult,
       "repairs" => $repairsResult,
       "noPhotoMailing" => $noPhotoMailingResult,
@@ -3751,6 +3786,21 @@ if ($isCli) {
       "pendingAcceptanceMailing" => $pendingAcceptanceMailingResult,
       "noPhotoFines" => $noPhotoResult,
     ];
+  } finally {
+    if (is_resource($lockHandle)) {
+      @flock($lockHandle, LOCK_UN);
+      @fclose($lockHandle);
+      alltrack_fix_file_permissions($lockPath);
+    }
+  }
+}
+
+$isCli = PHP_SAPI === "cli";
+if ($isCli) {
+  $argvList = isset($argv) && is_array($argv) ? $argv : [];
+  if (in_array("--run-scheduled-mailings", $argvList, true)) {
+    $dryRun = in_array("--dry-run", $argvList, true);
+    $result = runScheduledMailingsWithLock($dryRun, false);
     echo json_encode($result, JSON_UNESCAPED_UNICODE) . PHP_EOL;
     exit;
   }
@@ -3800,18 +3850,9 @@ if ($isCli) {
 
 $requestedAction = trim((string) ($_GET["action"] ?? $payload["action"] ?? ""));
 if ($requestedAction === "run-scheduled-mailings") {
-  runNoPhotoFineRecalculationIfNeeded();
-  runMoveRepliesMailingIfNeeded();
-  runRepairsMailingIfNeeded();
-  runNoPhotoMailingIfNeeded();
-  runNoAccountingNumberMailingIfNeeded();
-  runPendingAcceptanceMailingIfNeeded();
-  runHourlyMoveArchivesIfNeeded();
-  echo json_encode([
-    "success" => true,
-    "action" => "run-scheduled-mailings",
-    "serverTime" => (new DateTimeImmutable("now", new DateTimeZone("Europe/Moscow")))->format(DateTimeInterface::ATOM),
-  ], JSON_UNESCAPED_UNICODE);
+  $result = runScheduledMailingsWithLock(false, true);
+  $result["action"] = "run-scheduled-mailings";
+  echo json_encode($result, JSON_UNESCAPED_UNICODE);
   exit;
 }
 

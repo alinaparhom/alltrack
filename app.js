@@ -32546,6 +32546,7 @@ function setupSuperAdmin() {
   const superStatsDateToInput = contentEl.querySelector("[data-super-stats-date-to]");
   const superStatsUsersEl = contentEl.querySelector("[data-super-stats-users]");
   const superStatsToolsEl = contentEl.querySelector("[data-super-stats-tools]");
+  const superStatsToolsAmountEl = contentEl.querySelector("[data-super-stats-tools-amount]");
   const superStatsMovesEl = contentEl.querySelector("[data-super-stats-moves]");
   const superStatsAmountEl = contentEl.querySelector("[data-super-stats-amount]");
   const superStatsChartEl = contentEl.querySelector("[data-super-stats-chart]");
@@ -32871,11 +32872,21 @@ function setupSuperAdmin() {
           const accounting = String(move?.["Бух.номер"] ?? "").trim();
           return sum + (costs.get(number) ?? costs.get(accounting) ?? 0);
         }, 0);
-        return { name: String(org?.short_name ?? org?.full_name ?? "Организация").trim(), tools: tools.length, moves: periodMoves.length, amount };
+        const toolsAmount = tools.reduce((sum, tool) => sum + getToolPrice(tool), 0);
+        return { name: String(org?.short_name ?? org?.full_name ?? "Организация").trim(), tools: tools.length, toolsAmount, moves: periodMoves.length, amount };
       }));
-      const totals = rows.reduce((acc, row) => ({ tools: acc.tools + row.tools, moves: acc.moves + row.moves, amount: acc.amount + row.amount }), { tools: 0, moves: 0, amount: 0 });
+      const totals = rows.reduce(
+        (acc, row) => ({
+          tools: acc.tools + row.tools,
+          toolsAmount: acc.toolsAmount + row.toolsAmount,
+          moves: acc.moves + row.moves,
+          amount: acc.amount + row.amount,
+        }),
+        { tools: 0, toolsAmount: 0, moves: 0, amount: 0 }
+      );
       if (superStatsUsersEl) superStatsUsersEl.textContent = formatStatsNumber(filteredUsers.length);
       if (superStatsToolsEl) superStatsToolsEl.textContent = formatStatsNumber(totals.tools);
+      if (superStatsToolsAmountEl) superStatsToolsAmountEl.textContent = `на сумму ${formatStatsMoney(totals.toolsAmount)}`;
       if (superStatsMovesEl) superStatsMovesEl.textContent = formatStatsNumber(totals.moves);
       if (superStatsAmountEl) superStatsAmountEl.textContent = formatStatsMoney(totals.amount);
       if (superStatsSummaryEl) superStatsSummaryEl.textContent = `${selectedOrg === "all" ? "Все организации" : rows[0]?.name || "Организация"} · ${range.label}`;

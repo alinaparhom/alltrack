@@ -63,6 +63,10 @@ export function renderRole(user) {
             <span class="action-icon">📤</span>
             <div class="action-title">Выгрузить данные</div>
           </button>
+          <button class="action-card action-card--accent" type="button" data-open-super-stats>
+            <span class="action-icon">📊</span>
+            <div class="action-title">Статистика</div>
+          </button>
         </div>
         <button class="action-primary" type="button" data-open-add-org>
           <span class="action-icon">➕</span>
@@ -220,6 +224,82 @@ export function renderRole(user) {
               </div>
             </div>
           </form>
+        </div>
+      </div>
+
+      <div class="settings-modal super-stats-modal is-hidden" data-super-stats-modal>
+        <div class="settings-modal__backdrop" data-super-stats-backdrop></div>
+        <div
+          class="settings-modal__panel super-stats-modal__panel"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Статистика приложения"
+        >
+          <div class="settings-modal__header super-stats-modal__header">
+            <div class="settings-modal__title">
+              <h2>Статистика</h2>
+              <p data-super-stats-summary>Выберите период и организацию</p>
+            </div>
+            <button
+              class="button-icon super-stats-modal__close"
+              type="button"
+              data-super-stats-close
+              aria-label="Закрыть статистику"
+            >
+              <span class="button-icon-emoji" aria-hidden="true">✕</span>
+            </button>
+          </div>
+          <div class="settings-modal__body super-stats-modal__body">
+            <div class="super-stats-filters">
+              <label class="super-stats-field">
+                <span>Организация</span>
+                <select class="form-input" data-super-stats-org>
+                  <option value="all">Все организации</option>
+                </select>
+              </label>
+              <label class="super-stats-field">
+                <span>Период</span>
+                <select class="form-input" data-super-stats-period>
+                  <option value="day">Сегодня</option>
+                  <option value="month">Этот месяц</option>
+                  <option value="year">Этот год</option>
+                  <option value="custom">Календарь</option>
+                </select>
+              </label>
+              <label class="super-stats-field super-stats-custom is-hidden" data-super-stats-custom-field>
+                <span>С даты</span>
+                <input class="form-input" type="date" data-super-stats-date-from />
+              </label>
+              <label class="super-stats-field super-stats-custom is-hidden" data-super-stats-custom-field>
+                <span>По дату</span>
+                <input class="form-input" type="date" data-super-stats-date-to />
+              </label>
+            </div>
+            <div class="super-stats-cards">
+              <div class="super-stats-card">
+                <span class="super-stats-card__icon">👥</span>
+                <span class="super-stats-card__label">Пользователей</span>
+                <strong data-super-stats-users>—</strong>
+              </div>
+              <div class="super-stats-card">
+                <span class="super-stats-card__icon">🧰</span>
+                <span class="super-stats-card__label">МТЦ в базе</span>
+                <strong data-super-stats-tools>—</strong>
+              </div>
+              <div class="super-stats-card">
+                <span class="super-stats-card__icon">🔁</span>
+                <span class="super-stats-card__label">Перемещений</span>
+                <strong data-super-stats-moves>—</strong>
+              </div>
+              <div class="super-stats-card super-stats-card--money">
+                <span class="super-stats-card__icon">₽</span>
+                <span class="super-stats-card__label">Сумма перемещений</span>
+                <strong data-super-stats-amount>—</strong>
+              </div>
+            </div>
+            <div class="super-stats-chart" aria-label="Статистика по организациям" data-super-stats-chart></div>
+            <div class="form-message" data-super-stats-status></div>
+          </div>
         </div>
       </div>
       <div class="settings-modal feedback-modal is-hidden" data-feedback-modal>

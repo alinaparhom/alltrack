@@ -32534,6 +32534,22 @@ function setupSuperAdmin() {
     "[data-feedback-photo-close]"
   );
   const feedbackActionButtons = contentEl.querySelectorAll("[data-feedback-action]");
+  const openSuperStatsButtons = contentEl.querySelectorAll("[data-open-super-stats]");
+  const superStatsModalEl = contentEl.querySelector("[data-super-stats-modal]");
+  const superStatsBackdropEl = contentEl.querySelector("[data-super-stats-backdrop]");
+  const superStatsCloseButton = contentEl.querySelector("[data-super-stats-close]");
+  const superStatsSummaryEl = contentEl.querySelector("[data-super-stats-summary]");
+  const superStatsOrgSelect = contentEl.querySelector("[data-super-stats-org]");
+  const superStatsPeriodSelect = contentEl.querySelector("[data-super-stats-period]");
+  const superStatsCustomFields = contentEl.querySelectorAll("[data-super-stats-custom-field]");
+  const superStatsDateFromInput = contentEl.querySelector("[data-super-stats-date-from]");
+  const superStatsDateToInput = contentEl.querySelector("[data-super-stats-date-to]");
+  const superStatsUsersEl = contentEl.querySelector("[data-super-stats-users]");
+  const superStatsToolsEl = contentEl.querySelector("[data-super-stats-tools]");
+  const superStatsMovesEl = contentEl.querySelector("[data-super-stats-moves]");
+  const superStatsAmountEl = contentEl.querySelector("[data-super-stats-amount]");
+  const superStatsChartEl = contentEl.querySelector("[data-super-stats-chart]");
+  const superStatsStatusEl = contentEl.querySelector("[data-super-stats-status]");
   const orgsModalEl = contentEl.querySelector("[data-orgs-modal]");
   const orgsBackdropEl = contentEl.querySelector("[data-orgs-backdrop]");
   const orgsCloseButton = contentEl.querySelector("[data-orgs-close]");
@@ -32740,6 +32756,149 @@ function setupSuperAdmin() {
     if (!data || typeof data !== "object") return 0;
     const collection = data[fallbackKey];
     return Array.isArray(collection) ? collection.length : 0;
+  };
+
+
+  const formatStatsNumber = (value) => new Intl.NumberFormat("ru-RU").format(Number(value) || 0);
+  const formatStatsMoney = (value) =>
+    new Intl.NumberFormat("ru-RU", {
+      style: "currency",
+      currency: "RUB",
+      maximumFractionDigits: 0,
+    }).format(Number(value) || 0);
+  const toIsoDate = (date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+  const parseRuDate = (value) => {
+    const match = String(value ?? "").match(/(\d{1,2})[.\-/](\d{1,2})[.\-/](\d{2,4})/);
+    if (!match) return null;
+    const year = Number(match[3].length === 2 ? `20${match[3]}` : match[3]);
+    const date = new Date(year, Number(match[2]) - 1, Number(match[1]));
+    return Number.isNaN(date.getTime()) ? null : date;
+  };
+  const getStatsRange = () => {
+    const now = new Date();
+    const period = superStatsPeriodSelect?.value || "day";
+    if (period === "custom") {
+      const from = superStatsDateFromInput?.value ? new Date(`${superStatsDateFromInput.value}T00:00:00`) : null;
+      const to = superStatsDateToInput?.value ? new Date(`${superStatsDateToInput.value}T23:59:59`) : null;
+      return { from, to, label: "выбранный период" };
+    }
+    if (period === "year") {
+      return { from: new Date(now.getFullYear(), 0, 1), to: new Date(now.getFullYear(), 11, 31, 23, 59, 59), label: "этот год" };
+    }
+    if (period === "month") {
+      return { from: new Date(now.getFullYear(), now.getMonth(), 1), to: new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59), label: "этот месяц" };
+    }
+    return { from: new Date(now.getFullYear(), now.getMonth(), now.getDate()), to: new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59), label: "сегодня" };
+  };
+  const isDateInRange = (date, range) => {
+    if (!date) return false;
+    if (range.from && date < range.from) return false;
+    if (range.to && date > range.to) return false;
+    return true;
+  };
+  const buildStatsOrgFolder = (org) =>
+    sanitizeOrganizationFolderName(String(org?.short_name ?? org?.shortName ?? org?.full_name ?? org?.fullName ?? "").trim());
+  const getToolPrice = (tool) => Number(String(tool?.["Стоимость"] ?? 0).replace(/\s/g, "").replace(",", ".")) || 0;
+  const buildToolCostMap = (tools) => {
+    const map = new Map();
+    tools.forEach((tool) => {
+      [tool?.["Номер"], tool?.["Бух.номер"]].forEach((key) => {
+        const normalized = String(key ?? "").trim();
+        if (normalized) map.set(normalized, getToolPrice(tool));
+      });
+    });
+    return map;
+  };
+  const updateSuperStatsCustomVisibility = () => {
+    const isCustom = superStatsPeriodSelect?.value === "custom";
+    superStatsCustomFields.forEach((field) => field.classList.toggle("is-hidden", !isCustom));
+  };
+  const renderSuperStatsChart = (items) => {
+    if (!superStatsChartEl) return;
+    superStatsChartEl.innerHTML = "";
+    const maxMoves = Math.max(1, ...items.map((item) => item.moves));
+    items.forEach((item) => {
+      const row = document.createElement("div");
+      row.className = "super-stats-chart__row";
+      const top = document.createElement("div");
+      top.className = "super-stats-chart__top";
+      const name = document.createElement("span");
+      name.textContent = item.name;
+      const value = document.createElement("strong");
+      value.textContent = `${formatStatsNumber(item.moves)} · ${formatStatsMoney(item.amount)}`;
+      const bar = document.createElement("div");
+      bar.className = "super-stats-chart__bar";
+      const fill = document.createElement("span");
+      fill.style.width = `${Math.max(6, Math.round((item.moves / maxMoves) * 100))}%`;
+      top.append(name, value);
+      bar.append(fill);
+      row.append(top, bar);
+      superStatsChartEl.appendChild(row);
+    });
+    if (!items.length) {
+      superStatsChartEl.innerHTML = '<div class="super-stats-empty">Нет данных за выбранный период.</div>';
+    }
+  };
+  const refreshSuperStats = async () => {
+    if (!superStatsModalEl) return;
+    if (superStatsStatusEl) superStatsStatusEl.textContent = "Считаем статистику...";
+    try {
+      const [orgData, usersData] = await Promise.all([loadJson(orgFilePath), loadJson(usersFilePath)]);
+      const organizations = Array.isArray(orgData?.organizations) ? orgData.organizations : [];
+      const users = Array.isArray(usersData?.users) ? usersData.users.filter((entry) => !isHiddenListUser(entry)) : [];
+      const selectedOrg = superStatsOrgSelect?.value || "all";
+      const selectedOrgs = selectedOrg === "all" ? organizations : organizations.filter((org) => buildStatsOrgFolder(org) === selectedOrg);
+      const range = getStatsRange();
+      const selectedOrgNames = new Set(selectedOrgs.flatMap((org) => getOrgNames(org)));
+      const filteredUsers = selectedOrg === "all" ? users : users.filter((user) => selectedOrgNames.has(String(user?.organization ?? "").trim()));
+      const rows = await Promise.all(selectedOrgs.map(async (org) => {
+        const folder = buildStatsOrgFolder(org);
+        const [rawTools, rawMoves] = await Promise.all([
+          loadJson(`./${folder}/База с инструментами.json`).catch(() => []),
+          loadJson(`./${folder}/Перемещения.json`).catch(() => []),
+        ]);
+        const tools = Array.isArray(rawTools) ? rawTools : Array.isArray(rawTools?.tools) ? rawTools.tools : [];
+        const moves = Array.isArray(rawMoves) ? rawMoves : Array.isArray(rawMoves?.moves) ? rawMoves.moves : [];
+        const costs = buildToolCostMap(tools);
+        const periodMoves = moves.filter((move) => isDateInRange(parseRuDate(move?.["Дата перемещения"]), range));
+        const amount = periodMoves.reduce((sum, move) => {
+          const number = String(move?.["Номер"] ?? "").trim();
+          const accounting = String(move?.["Бух.номер"] ?? "").trim();
+          return sum + (costs.get(number) ?? costs.get(accounting) ?? 0);
+        }, 0);
+        return { name: String(org?.short_name ?? org?.full_name ?? "Организация").trim(), tools: tools.length, moves: periodMoves.length, amount };
+      }));
+      const totals = rows.reduce((acc, row) => ({ tools: acc.tools + row.tools, moves: acc.moves + row.moves, amount: acc.amount + row.amount }), { tools: 0, moves: 0, amount: 0 });
+      if (superStatsUsersEl) superStatsUsersEl.textContent = formatStatsNumber(filteredUsers.length);
+      if (superStatsToolsEl) superStatsToolsEl.textContent = formatStatsNumber(totals.tools);
+      if (superStatsMovesEl) superStatsMovesEl.textContent = formatStatsNumber(totals.moves);
+      if (superStatsAmountEl) superStatsAmountEl.textContent = formatStatsMoney(totals.amount);
+      if (superStatsSummaryEl) superStatsSummaryEl.textContent = `${selectedOrg === "all" ? "Все организации" : rows[0]?.name || "Организация"} · ${range.label}`;
+      renderSuperStatsChart(rows.sort((a, b) => b.moves - a.moves));
+      if (superStatsStatusEl) superStatsStatusEl.textContent = "";
+    } catch (error) {
+      console.error(error);
+      if (superStatsStatusEl) superStatsStatusEl.textContent = "Не удалось загрузить статистику.";
+    }
+  };
+  const fillSuperStatsOrganizations = async () => {
+    if (!superStatsOrgSelect) return;
+    const currentValue = superStatsOrgSelect.value || "all";
+    const orgData = await loadJson(orgFilePath).catch(() => ({ organizations: [] }));
+    const organizations = Array.isArray(orgData?.organizations) ? orgData.organizations : [];
+    superStatsOrgSelect.innerHTML = '<option value="all">Все организации</option>';
+    organizations.forEach((org) => {
+      const option = document.createElement("option");
+      option.value = buildStatsOrgFolder(org);
+      option.textContent = String(org?.short_name ?? org?.full_name ?? "Организация").trim();
+      superStatsOrgSelect.appendChild(option);
+    });
+    superStatsOrgSelect.value = [...superStatsOrgSelect.options].some((option) => option.value === currentValue) ? currentValue : "all";
   };
 
   const updateStats = async () => {
@@ -34957,6 +35116,32 @@ function setupSuperAdmin() {
     }
   };
 
+  const openSuperStatsModal = async () => {
+    if (!superStatsModalEl) return;
+    const today = toIsoDate(new Date());
+    if (superStatsDateFromInput && !superStatsDateFromInput.value) superStatsDateFromInput.value = today;
+    if (superStatsDateToInput && !superStatsDateToInput.value) superStatsDateToInput.value = today;
+    updateSuperStatsCustomVisibility();
+    superStatsModalEl.classList.remove("is-hidden");
+    document.body.style.overflow = "hidden";
+    await fillSuperStatsOrganizations();
+    await refreshSuperStats();
+  };
+
+  const closeSuperStatsModal = () => {
+    if (!superStatsModalEl) return;
+    superStatsModalEl.classList.add("is-hidden");
+    if (
+      (orgsModalEl && !orgsModalEl.classList.contains("is-hidden")) ||
+      (usersModalEl && !usersModalEl.classList.contains("is-hidden")) ||
+      (feedbackModalEl && !feedbackModalEl.classList.contains("is-hidden"))
+    ) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+  };
+
   const openFeedbackModal = async () => {
     if (!feedbackModalEl) return;
     setFeedbackStatusMessage("");
@@ -34986,6 +35171,18 @@ function setupSuperAdmin() {
     }
   };
 
+  openSuperStatsButtons.forEach((button) => {
+    button.addEventListener("click", openSuperStatsModal);
+  });
+  superStatsCloseButton?.addEventListener("click", closeSuperStatsModal);
+  superStatsBackdropEl?.addEventListener("click", closeSuperStatsModal);
+  superStatsOrgSelect?.addEventListener("change", refreshSuperStats);
+  superStatsPeriodSelect?.addEventListener("change", () => {
+    updateSuperStatsCustomVisibility();
+    refreshSuperStats();
+  });
+  superStatsDateFromInput?.addEventListener("change", refreshSuperStats);
+  superStatsDateToInput?.addEventListener("change", refreshSuperStats);
   openAddOrgButton?.addEventListener("click", showForm);
   backButton?.addEventListener("click", showDashboard);
   openOrgsButtons.forEach((button) => {

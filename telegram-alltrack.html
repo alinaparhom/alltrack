@@ -16065,17 +16065,22 @@
         }
 
         .role-card {
-          justify-content: space-between;
+          justify-content: flex-start;
         }
 
         .role-card > .action-grid,
         .role-card > * > .action-grid,
         .role-card .quick-access {
-          margin-top: auto;
+          margin-top: 0;
+        }
+
+        .tools-map-card + .action-grid,
+        .tools-map-card + * .action-grid {
+          margin-top: var(--grid-gap);
         }
 
         .energy-actions-scroll {
-          margin-top: auto;
+          margin-top: var(--grid-gap);
         }
       }
 

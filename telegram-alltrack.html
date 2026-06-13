@@ -6967,7 +6967,12 @@
       }
 
       .tools-edit-modal--accounting-only {
-        padding: 10px;
+        padding:
+          max(10px, env(safe-area-inset-top))
+          max(10px, env(safe-area-inset-right))
+          max(10px, env(safe-area-inset-bottom))
+          max(10px, env(safe-area-inset-left));
+        place-items: center;
       }
 
       .tools-edit-modal--accounting-only .tools-edit-modal__panel {
@@ -7058,8 +7063,12 @@
 
       @media (max-width: 520px) {
         .tools-edit-modal--accounting-only {
-          align-items: start;
-          padding: max(8px, env(safe-area-inset-top)) 8px 8px;
+          padding:
+            max(8px, env(safe-area-inset-top))
+            max(8px, env(safe-area-inset-right))
+            max(8px, env(safe-area-inset-bottom))
+            max(8px, env(safe-area-inset-left));
+          place-items: center;
         }
 
         .tools-edit-modal--accounting-only .tools-edit-modal__panel {

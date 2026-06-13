@@ -13369,10 +13369,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       ["Производитель", tool?.["Производитель"]],
       ["Модель", tool?.["Модель"]],
       ["Серийный номер", tool?.["Серийный номер"]],
-      ["Группа", tool?.["Граппа инструментов"]],
       ["Ответственный", tool?.["Ответственный"]],
       ["Объект", tool?.["Объект"]],
-      ["Статус", tool?.["Статус"]],
     ].filter(([, value]) => String(value ?? "").trim());
     toolsEditQuickInfoEl.innerHTML = `
       <div class="tools-edit-quick-info__title">Информация об инструменте</div>

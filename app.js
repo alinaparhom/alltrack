@@ -16076,10 +16076,32 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
       const actionsCell = document.createElement("div");
       actionsCell.className = "tools-table__cell tools-table__cell--actions";
-      actionsCell.innerHTML = `
-        <button class=\"pending-move-action pending-move-action--decline\" type=\"button\" data-pending-move-action=\"decline\" data-move-index=\"${moveIndex}\" aria-label=\"Не принять\">Не принять</button>
-        <button class=\"pending-move-action pending-move-action--accept\" type=\"button\" data-pending-move-action=\"accept\" data-move-index=\"${moveIndex}\" aria-label=\"Принять\">Принять</button>
-      `;
+      const kitItems = getToolKitItems(tool);
+      if (kitItems.length) {
+        const kitButton = document.createElement("button");
+        kitButton.className = "pending-move-action pending-move-action--kit";
+        kitButton.type = "button";
+        kitButton.dataset.pendingKitOpen = "true";
+        kitButton.dataset.moveIndex = String(moveIndex);
+        kitButton.textContent = "Комплектация";
+        kitButton.setAttribute("aria-label", "Открыть комплектацию инструмента");
+        actionsCell.appendChild(kitButton);
+      }
+      const declineButton = document.createElement("button");
+      declineButton.className = "pending-move-action pending-move-action--decline";
+      declineButton.type = "button";
+      declineButton.dataset.pendingMoveAction = "decline";
+      declineButton.dataset.moveIndex = String(moveIndex);
+      declineButton.textContent = "Не принять";
+      declineButton.setAttribute("aria-label", "Не принять");
+      const acceptButton = document.createElement("button");
+      acceptButton.className = "pending-move-action pending-move-action--accept";
+      acceptButton.type = "button";
+      acceptButton.dataset.pendingMoveAction = "accept";
+      acceptButton.dataset.moveIndex = String(moveIndex);
+      acceptButton.textContent = "Принять";
+      acceptButton.setAttribute("aria-label", "Принять");
+      actionsCell.append(declineButton, acceptButton);
       row.append(numberCell, infoCell, photoCell, actionsCell);
       table.appendChild(row);
     });
@@ -19021,6 +19043,19 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
               fallbackNumber: moveNumber,
               title: toolTitle,
             });
+          }
+        }
+        return;
+      }
+      const kitButton = event.target.closest("[data-pending-kit-open]");
+      if (kitButton) {
+        const moveIndex = Number.parseInt(kitButton.dataset.moveIndex ?? "", 10);
+        if (Number.isFinite(moveIndex)) {
+          const item = pendingMovesState.pendingItems.find(
+            (entry) => entry.moveIndex === moveIndex
+          );
+          if (item?.tool) {
+            openToolsKitPreviewModal(item.tool);
           }
         }
         return;

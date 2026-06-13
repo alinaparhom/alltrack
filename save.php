@@ -13,6 +13,67 @@ if (!is_array($payload)) {
 
 $allowedFiles = ["organizations.json", "users.json", "pending-registrations.json", "telegram-mailing-errors.json", "feedback-requests.json"];
 
+function alltrack_fix_file_permissions(string $path): void {
+  if ($path === '' || !is_file($path)) {
+    return;
+  }
+
+  @chown($path, 'www-root');
+  @chgrp($path, 'www-root');
+  @chmod($path, 0664);
+}
+
+function alltrack_fix_dir_permissions(string $dir): void {
+  if ($dir === '' || !is_dir($dir)) {
+    return;
+  }
+
+  @chown($dir, 'www-root');
+  @chgrp($dir, 'www-root');
+  @chmod($dir, 02775);
+}
+
+function alltrack_ensure_dir(string $dir): bool {
+  if ($dir === '') {
+    return false;
+  }
+
+  if (!is_dir($dir)) {
+    @mkdir($dir, 02775, true);
+  }
+
+  if (is_dir($dir)) {
+    alltrack_fix_dir_permissions($dir);
+    return true;
+  }
+
+  return false;
+}
+
+function alltrack_is_php_fpm_binary(string $path): bool {
+  return stripos(basename($path), "php-fpm") !== false;
+}
+
+function alltrack_php_cli_binary(): string {
+  $candidates = [
+    "/usr/bin/php",
+    "/usr/local/bin/php",
+    "php",
+  ];
+
+  foreach ($candidates as $candidate) {
+    if ($candidate === "php") {
+      return $candidate;
+    }
+
+    if (is_file($candidate) && is_executable($candidate) && !alltrack_is_php_fpm_binary($candidate)) {
+      return $candidate;
+    }
+  }
+
+  return "php";
+}
+
 function appendMailingLog(string $level, string $message, array $context = []): void {
   $logPath = __DIR__ . DIRECTORY_SEPARATOR . "telegram-mailing-errors.json";
   $existing = readJsonFile($logPath, ["logs" => []]);
@@ -41,43 +102,9 @@ function appendMailingLog(string $level, string $message, array $context = []): 
   if ($encoded === false) {
     return;
   }
-  file_put_contents($logPath, $encoded . PHP_EOL, LOCK_EX);
-}
-
-
-function acquireMailingLock(string $lockName) {
-  $safeName = preg_replace('/[^a-z0-9_-]+/i', '-', trim($lockName));
-  if (!is_string($safeName) || $safeName === "") {
-    $safeName = "mailing";
+  if (file_put_contents($logPath, $encoded . PHP_EOL, LOCK_EX) !== false) {
+    alltrack_fix_file_permissions($logPath);
   }
-
-  $lockPath = rtrim(sys_get_temp_dir(), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . "alltrack-" . md5(__DIR__) . "-telegram-" . $safeName . ".lock";
-  $handle = @fopen($lockPath, "c");
-  if ($handle === false) {
-    appendMailingLog("warning", "Не удалось открыть lock-файл рассылки.", [
-      "lockName" => $lockName,
-      "lockPath" => $lockPath,
-    ]);
-    return null;
-  }
-
-  if (!@flock($handle, LOCK_EX | LOCK_NB)) {
-    @fclose($handle);
-    return null;
-  }
-
-  @ftruncate($handle, 0);
-  @fwrite($handle, json_encode([
-    "pid" => getmypid(),
-    "lockedAt" => (new DateTimeImmutable("now", new DateTimeZone("Europe/Moscow")))->format(DateTimeInterface::ATOM),
-  ], JSON_UNESCAPED_UNICODE) . PHP_EOL);
-
-  return $handle;
-}
-
-function markMailingSkippedByLock(array &$summary): void {
-  $summary["skipped"] = true;
-  $summary["skipReason"] = "mailing_already_running";
 }
 
 function schedulerPidIsRunning(int $pid): bool {
@@ -132,10 +159,12 @@ function ensureMailingSchedulerDaemon(): void {
   ];
   $encoded = json_encode($nextState, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
   if ($encoded !== false) {
-    @file_put_contents($bootstrapStatePath, $encoded . PHP_EOL, LOCK_EX);
+    if (@file_put_contents($bootstrapStatePath, $encoded . PHP_EOL, LOCK_EX) !== false) {
+      alltrack_fix_file_permissions($bootstrapStatePath);
+    }
   }
 
-  $phpBinary = defined("PHP_BINARY") && PHP_BINARY ? PHP_BINARY : "php";
+  $phpBinary = alltrack_php_cli_binary();
   $command = escapeshellarg($phpBinary)
     . " " . escapeshellarg($schedulerPath)
     . " --start-daemon";
@@ -527,7 +556,9 @@ function runNoPhotoFineRecalculation(array $options = []): array {
       if (!$dryRun) {
         $encoded = json_encode($tools, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
         if ($encoded !== false) {
-          file_put_contents($toolsPath, $encoded . PHP_EOL, LOCK_EX);
+          if (file_put_contents($toolsPath, $encoded . PHP_EOL, LOCK_EX) !== false) {
+            alltrack_fix_file_permissions($toolsPath);
+          }
         }
       }
     }
@@ -578,6 +609,8 @@ function runNoPhotoFineRecalculationIfNeeded(): void {
       appendMailingLog("warning", "Не удалось записать состояние ежедневного пересчёта штрафов за отсутствие фото.", [
         "statePath" => $statePath,
       ]);
+    } else {
+      alltrack_fix_file_permissions($statePath);
     }
   }
 }
@@ -1166,6 +1199,7 @@ function buildNoPhotoChartImage(string $organization, string $chartTitle, array 
   if (@file_put_contents($targetPath, $imageBinary, LOCK_EX) === false) {
     return null;
   }
+  alltrack_fix_file_permissions($targetPath);
 
   return $targetPath;
 }
@@ -1192,12 +1226,6 @@ function runNoPhotoMailing(array $options = []): array {
     "messagesSent" => 0,
     "organizations" => [],
   ];
-
-  $lockHandle = $dryRun ? true : acquireMailingLock("no-photo-mailing");
-  if ($lockHandle === null) {
-    markMailingSkippedByLock($summary);
-    return $summary;
-  }
 
   $entries = @scandir(__DIR__);
   if (!is_array($entries)) {
@@ -1333,7 +1361,9 @@ function runNoPhotoMailing(array $options = []): array {
 
   $encodedState = json_encode(["sent" => $sentState], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
   if ($encodedState !== false && !$dryRun) {
-    file_put_contents($statePath, $encodedState . PHP_EOL, LOCK_EX);
+    if (file_put_contents($statePath, $encodedState . PHP_EOL, LOCK_EX) !== false) {
+      alltrack_fix_file_permissions($statePath);
+    }
   }
 
   return $summary;
@@ -1372,6 +1402,8 @@ function runNoPhotoMailingIfNeeded(): void {
       appendMailingLog("warning", "Не удалось записать состояние автозапуска рассылки 'Без фото'.", [
         "statePath" => $statePath,
       ]);
+    } else {
+      alltrack_fix_file_permissions($statePath);
     }
   }
 }
@@ -1398,12 +1430,6 @@ function runNoAccountingNumberMailing(array $options = []): array {
     "messagesSent" => 0,
     "organizations" => [],
   ];
-
-  $lockHandle = $dryRun ? true : acquireMailingLock("no-accounting-number-mailing");
-  if ($lockHandle === null) {
-    markMailingSkippedByLock($summary);
-    return $summary;
-  }
 
   $entries = @scandir(__DIR__);
   if (!is_array($entries)) {
@@ -1509,7 +1535,9 @@ function runNoAccountingNumberMailing(array $options = []): array {
 
   $encodedState = json_encode(["sent" => $sentState], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
   if ($encodedState !== false && !$dryRun) {
-    file_put_contents($statePath, $encodedState . PHP_EOL, LOCK_EX);
+    if (file_put_contents($statePath, $encodedState . PHP_EOL, LOCK_EX) !== false) {
+      alltrack_fix_file_permissions($statePath);
+    }
   }
 
   return $summary;
@@ -1548,6 +1576,8 @@ function runNoAccountingNumberMailingIfNeeded(): void {
       appendMailingLog("warning", "Не удалось записать состояние автозапуска рассылки 'Без бух.номера'.", [
         "statePath" => $statePath,
       ]);
+    } else {
+      alltrack_fix_file_permissions($statePath);
     }
   }
 }
@@ -1575,12 +1605,6 @@ function runRepairsMailing(array $options = []): array {
     "messagesSent" => 0,
     "organizations" => [],
   ];
-
-  $lockHandle = $dryRun ? true : acquireMailingLock("repairs-mailing");
-  if ($lockHandle === null) {
-    markMailingSkippedByLock($summary);
-    return $summary;
-  }
 
   $entries = @scandir(__DIR__);
   if (!is_array($entries)) {
@@ -1686,7 +1710,9 @@ function runRepairsMailing(array $options = []): array {
 
   $encodedState = json_encode(["sent" => $sentState], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
   if ($encodedState !== false && !$dryRun) {
-    file_put_contents($statePath, $encodedState . PHP_EOL, LOCK_EX);
+    if (file_put_contents($statePath, $encodedState . PHP_EOL, LOCK_EX) !== false) {
+      alltrack_fix_file_permissions($statePath);
+    }
   }
 
   return $summary;
@@ -1725,6 +1751,8 @@ function runRepairsMailingIfNeeded(): void {
       appendMailingLog("warning", "Не удалось записать состояние автозапуска рассылки 'Ремонты'.", [
         "statePath" => $statePath,
       ]);
+    } else {
+      alltrack_fix_file_permissions($statePath);
     }
   }
 }
@@ -2170,12 +2198,6 @@ function runMoveRepliesMailing(array $options = []): array {
     "organizations" => [],
   ];
 
-  $lockHandle = $dryRun ? true : acquireMailingLock("move-replies-mailing");
-  if ($lockHandle === null) {
-    markMailingSkippedByLock($summary);
-    return $summary;
-  }
-
   $entries = @scandir(__DIR__);
   if (!is_array($entries)) {
     return ["success" => false, "mode" => "move-replies-mailing-cli", "error" => "Не удалось прочитать папки организаций."];
@@ -2275,7 +2297,9 @@ function runMoveRepliesMailing(array $options = []): array {
 
   $encodedState = json_encode(["sent" => $sentState], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
   if ($encodedState !== false && !$dryRun) {
-    file_put_contents($statePath, $encodedState . PHP_EOL, LOCK_EX);
+    if (file_put_contents($statePath, $encodedState . PHP_EOL, LOCK_EX) !== false) {
+      alltrack_fix_file_permissions($statePath);
+    }
   }
 
   return $summary;
@@ -2314,6 +2338,8 @@ function runMoveRepliesMailingIfNeeded(): void {
       appendMailingLog("warning", "Не удалось записать состояние автозапуска рассылки 'Ответы на перемещения'.", [
         "statePath" => $statePath,
       ]);
+    } else {
+      alltrack_fix_file_permissions($statePath);
     }
   }
 }
@@ -2341,12 +2367,6 @@ function runPendingAcceptanceMailing(array $options = []): array {
     "messagesSent" => 0,
     "organizations" => [],
   ];
-
-  $lockHandle = $dryRun ? true : acquireMailingLock("pending-acceptance-mailing");
-  if ($lockHandle === null) {
-    markMailingSkippedByLock($summary);
-    return $summary;
-  }
 
   $entries = @scandir(__DIR__);
   $usersIndexByTelegram = buildUsersIndexByTelegram();
@@ -2476,7 +2496,9 @@ function runPendingAcceptanceMailing(array $options = []): array {
 
   $encodedState = json_encode(["sent" => $sentState], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
   if ($encodedState !== false && !$dryRun) {
-    file_put_contents($statePath, $encodedState . PHP_EOL, LOCK_EX);
+    if (file_put_contents($statePath, $encodedState . PHP_EOL, LOCK_EX) !== false) {
+      alltrack_fix_file_permissions($statePath);
+    }
   }
 
   return $summary;
@@ -2515,6 +2537,8 @@ function runPendingAcceptanceMailingIfNeeded(): void {
       appendMailingLog("warning", "Не удалось записать состояние автозапуска персональной рассылки по инструментам на принятии.", [
         "statePath" => $statePath,
       ]);
+    } else {
+      alltrack_fix_file_permissions($statePath);
     }
   }
 }
@@ -2628,10 +2652,7 @@ function resolveOrganizationFolderName(string $name): ?string {
 }
 
 function ensureDirectory(string $path): bool {
-  if (is_dir($path)) {
-    return true;
-  }
-  return mkdir($path, 0775, true);
+  return alltrack_ensure_dir($path);
 }
 
 function writeJsonIfMissing(string $path, $data): bool {
@@ -2642,7 +2663,12 @@ function writeJsonIfMissing(string $path, $data): bool {
   if ($encoded === false) {
     return false;
   }
-  return file_put_contents($path, $encoded . PHP_EOL, LOCK_EX) !== false;
+  $written = file_put_contents($path, $encoded . PHP_EOL, LOCK_EX);
+  if ($written !== false) {
+    alltrack_fix_file_permissions($path);
+    return true;
+  }
+  return false;
 }
 
 function getNewOrganizations(string $targetPath, $data): array {
@@ -2965,14 +2991,16 @@ function saveFileEntry(array $entry): void {
     exit;
   }
   $targetPath = resolveFileTargetPath($entry);
+  $targetDir = dirname($targetPath);
+  alltrack_ensure_dir($targetDir);
   $written = file_put_contents($targetPath, $decoded, LOCK_EX);
   if ($written === false) {
     http_response_code(500);
     echo json_encode(["error" => "Не удалось сохранить файл."]);
     exit;
   }
+  alltrack_fix_file_permissions($targetPath);
 
-  $targetDir = dirname($targetPath);
   if (basename($targetDir) === "Выгрузки") {
     cleanupOldExportFiles($targetDir, 20);
   }
@@ -3009,6 +3037,7 @@ function moveFileEntry(array $entry): void {
       exit;
     }
   }
+  alltrack_fix_file_permissions($targetPath);
 }
 
 function deleteFileEntry(array $entry): void {
@@ -3093,12 +3122,14 @@ function saveEntry(array $entry, array $allowedFiles): void {
 
 function withPathLock(string $targetPath, callable $callback): void {
   $lockPath = $targetPath . '.lock';
+  alltrack_ensure_dir(dirname($lockPath));
   $lockHandle = @fopen($lockPath, 'c');
   if ($lockHandle === false) {
     http_response_code(500);
     echo json_encode(["error" => "Не удалось открыть блокировку файла."]);
     exit;
   }
+  alltrack_fix_file_permissions($lockPath);
 
   if (!@flock($lockHandle, LOCK_EX)) {
     @fclose($lockHandle);
@@ -3142,7 +3173,7 @@ function readJsonDecodedValue(string $path) {
 
 function writeFileAtomically(string $path, string $content): bool {
   $directory = dirname($path);
-  if (!ensureDirectory($directory)) {
+  if (!alltrack_ensure_dir($directory)) {
     return false;
   }
 
@@ -3150,18 +3181,24 @@ function writeFileAtomically(string $path, string $content): bool {
   if ($tempPath === false) {
     return false;
   }
+  alltrack_fix_file_permissions($tempPath);
 
   $bytes = @file_put_contents($tempPath, $content, LOCK_EX);
   if ($bytes === false) {
     @unlink($tempPath);
     return false;
   }
+  alltrack_fix_file_permissions($tempPath);
 
   if (!@rename($tempPath, $path)) {
+    if (!@copy($tempPath, $path)) {
+      @unlink($tempPath);
+      return false;
+    }
     @unlink($tempPath);
-    return false;
   }
 
+  alltrack_fix_file_permissions($path);
   return true;
 }
 
@@ -3538,6 +3575,7 @@ function saveFeedbackRequest(array $entry): void {
     $photoName = $newId . '_' . ($index + 1) . '.' . $extension;
     $targetPath = $feedbackPhotosDir . DIRECTORY_SEPARATOR . $photoName;
     if (file_put_contents($targetPath, $decoded, LOCK_EX) !== false) {
+      alltrack_fix_file_permissions($targetPath);
       $savedPhotoNames[] = $photoName;
     }
   }
@@ -3571,6 +3609,7 @@ function saveFeedbackRequest(array $entry): void {
     echo json_encode(["error" => "Не удалось сохранить обращение."]);
     exit;
   }
+  alltrack_fix_file_permissions($feedbackFile);
 
   $usersData = readJsonFile(__DIR__ . DIRECTORY_SEPARATOR . "users.json", ["users" => []]);
   $botToken = getenv("ALLTRACK_BOT_TOKEN") ?: "";

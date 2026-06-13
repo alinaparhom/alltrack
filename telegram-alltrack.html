@@ -16386,6 +16386,44 @@
         gap: var(--my-tools-block-gap) !important;
       }
 
+      /* Единый бесшовный стык заголовка страницы и блока поиска/фильтров. */
+      .settings-modal__header {
+        margin-bottom: 0 !important;
+        padding-bottom: 0 !important;
+      }
+
+      .settings-modal__header + .settings-modal__form,
+      .settings-modal__form:has(> .settings-modal__body > :is(.tools-controls, .demand-search, .objects-toolbar, .download-responsible__search):first-child) {
+        padding-top: 0 !important;
+        margin-top: 0 !important;
+        gap: 0 !important;
+      }
+
+      .settings-modal__body {
+        padding-top: 0 !important;
+        margin-top: 0 !important;
+      }
+
+      .settings-modal__body > :is(.tools-controls, .demand-search, .objects-toolbar, .download-responsible__search):first-child,
+      .tools-controls__row:first-child,
+      .tools-search:first-child {
+        margin-top: 0 !important;
+        padding-top: 0 !important;
+      }
+
+      .tools-modal--my-tools {
+        --my-tools-title-search-gap: 0px !important;
+        --my-tools-top-zone-gap: 0px !important;
+        --my-tools-controls-inner-padding-top: 0px !important;
+      }
+
+      .tools-modal--my-tools .tools-controls {
+        top: var(--tools-my-tools-header-offset) !important;
+        border-top-left-radius: 0 !important;
+        border-top-right-radius: 0 !important;
+        border-top-width: 0 !important;
+      }
+
     </style>
   </head>
   <body>

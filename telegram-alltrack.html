@@ -6628,13 +6628,19 @@
         width: min(94vw, 560px);
         max-width: 560px;
         max-height: min(92vh, 760px);
+        overflow: hidden;
+        grid-template-rows: auto minmax(0, 1fr);
       }
 
       .tools-modal[data-add-photo-modal] .tools-modal__body {
         display: grid;
         gap: 12px;
-        padding: 12px;
+        min-height: 0;
+        padding: 12px 12px calc(12px + env(safe-area-inset-bottom));
         overflow-y: auto;
+        overflow-x: hidden;
+        overscroll-behavior: contain;
+        -webkit-overflow-scrolling: touch;
       }
 
       .tools-info-card--add-photo-detail,
@@ -6835,9 +6841,14 @@
         .tools-modal[data-add-photo-modal] .tools-modal__panel {
           width: 100vw;
           max-width: 100vw;
+          height: 100vh;
+          height: 100svh;
           height: 100dvh;
+          max-height: 100vh;
+          max-height: 100svh;
           max-height: 100dvh;
           border-radius: 0;
+          overflow: hidden;
         }
 
         .add-photo-preview {

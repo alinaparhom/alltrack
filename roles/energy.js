@@ -3841,9 +3841,6 @@ export function renderRole(user, options = {}) {
                 <div class="success-card__number" data-add-tool-success-number>
                   —
                 </div>
-                <div class="success-card__note">
-                  Данные сохранены и доступны в списке МТЦ.
-                </div>
               </div>
             </div>
             <div class="settings-modal__footer add-tool-success-modal__footer">

@@ -29031,14 +29031,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       usersDetailsEmptyEl.classList.toggle("is-hidden", orgUsers.length > 0);
     }
     const sortedUsers = [...orgUsers].sort((a, b) => {
-      const aRole = String(a?.role ?? "").trim();
-      const bRole = String(b?.role ?? "").trim();
-      if (aRole !== responsibleRole || bRole !== responsibleRole) {
-        return 0;
-      }
       const aName = formatFullName(String(a?.full_name ?? "").trim());
       const bName = formatFullName(String(b?.full_name ?? "").trim());
-      return aName.localeCompare(bName, "ru");
+      return aName.localeCompare(bName, "ru", {
+        numeric: true,
+        sensitivity: "base",
+      });
     });
 
     sortedUsers.forEach((entry) => {
@@ -34896,14 +34894,12 @@ function setupSuperAdmin() {
       usersDetailsEmptyEl.classList.toggle("is-hidden", orgUsers.length > 0);
     }
     const sortedUsers = [...orgUsers].sort((a, b) => {
-      const aRole = String(a?.role ?? "").trim();
-      const bRole = String(b?.role ?? "").trim();
-      if (aRole !== responsibleRole || bRole !== responsibleRole) {
-        return 0;
-      }
       const aName = formatFullName(String(a?.full_name ?? "").trim());
       const bName = formatFullName(String(b?.full_name ?? "").trim());
-      return aName.localeCompare(bName, "ru");
+      return aName.localeCompare(bName, "ru", {
+        numeric: true,
+        sensitivity: "base",
+      });
     });
 
     sortedUsers.forEach((user) => {

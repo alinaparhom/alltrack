@@ -16715,6 +16715,52 @@
         margin-top: 0 !important;
       }
 
+      /* Восстановление отдельной вертикальной прокрутки списков инструментов.
+         Модалка занимает экран, верхняя зона остается на месте, а скроллится
+         только список карточек/таблица — удобно для Android, iOS и Telegram Web. */
+      .tools-modal .tools-modal__panel {
+        height: 100dvh !important;
+        max-height: 100dvh !important;
+        overflow: hidden !important;
+      }
+
+      .tools-modal .tools-modal__body {
+        display: grid !important;
+        grid-template-rows: auto minmax(0, 1fr) !important;
+        min-height: 0 !important;
+        height: 100% !important;
+        overflow: hidden !important;
+      }
+
+      .tools-modal .tools-list,
+      .tools-modal .tools-search-map {
+        min-height: 0 !important;
+        height: 100% !important;
+        max-height: 100% !important;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+        overscroll-behavior-y: contain !important;
+        -webkit-overflow-scrolling: touch !important;
+        touch-action: pan-y !important;
+        padding-bottom: calc(18px + env(safe-area-inset-bottom)) !important;
+      }
+
+      .tools-modal--my-tools .tools-modal__header,
+      .tools-modal--my-tools .tools-controls {
+        position: sticky !important;
+        left: auto !important;
+        right: auto !important;
+        width: auto !important;
+      }
+
+      .tools-modal--my-tools .tools-modal__header {
+        top: 0 !important;
+      }
+
+      .tools-modal--my-tools .tools-controls {
+        top: 0 !important;
+      }
+
     </style>
   </head>
   <body>

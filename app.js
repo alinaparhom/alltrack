@@ -32682,6 +32682,13 @@ function setupSuperAdmin() {
     "[data-users-invite-open]"
   );
   const usersAddButton = contentEl.querySelector("[data-users-add]");
+  const usersEditModalEl = contentEl.querySelector("[data-users-edit-modal]");
+  const usersEditBackdropEl = contentEl.querySelector("[data-users-edit-backdrop]");
+  const usersEditCloseButton = contentEl.querySelector("[data-users-edit-close]");
+  const usersEditCancelButton = contentEl.querySelector("[data-users-edit-cancel]");
+  const usersEditFormEl = contentEl.querySelector("[data-users-edit-form]");
+  const usersEditMessageEl = contentEl.querySelector("[data-users-edit-message]");
+  const usersEditOrgNameEl = contentEl.querySelector("[data-users-edit-org-name]");
   const usersAddModalEl = contentEl.querySelector("[data-users-add-modal]");
   const usersAddBackdropEl = contentEl.querySelector("[data-users-add-backdrop]");
   const usersAddCloseButton = contentEl.querySelector("[data-users-add-close]");
@@ -34938,27 +34945,56 @@ function setupSuperAdmin() {
 
       info.append(name, meta);
       card.append(initials, info);
-      if (canInvite) {
-        card.classList.add("is-actionable");
-        card.setAttribute("role", "button");
-        card.setAttribute("tabindex", "0");
-        card.setAttribute(
-          "aria-label",
-          `Сгенерировать ссылку для ${name.textContent}`
-        );
-        const handleInvite = () => {
-          createResponsibleInvite(user);
-        };
-        card.addEventListener("click", handleInvite);
-        card.addEventListener("keydown", (event) => {
-          if (event.key === "Enter" || event.key === " ") {
-            event.preventDefault();
-            handleInvite();
-          }
-        });
-      }
+      card.classList.add("is-actionable");
+      card.setAttribute("role", "button");
+      card.setAttribute("tabindex", "0");
+      card.setAttribute(
+        "aria-label",
+        `Редактировать данные пользователя: ${name.textContent}`
+      );
+      const handleEdit = () => {
+        openUsersEditModal(user);
+      };
+      card.addEventListener("click", handleEdit);
+      card.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          handleEdit();
+        }
+      });
       usersDetailsListEl.appendChild(card);
     });
+  };
+
+  const closeUsersEditModal = () => {
+    if (!usersEditModalEl) return;
+    usersEditModalEl.classList.add("is-hidden");
+    usersEditFormEl?.reset();
+    if (usersEditMessageEl) usersEditMessageEl.textContent = "";
+    if (usersDetailsModalEl && !usersDetailsModalEl.classList.contains("is-hidden")) {
+      document.body.style.overflow = "hidden";
+    } else if (usersModalEl && !usersModalEl.classList.contains("is-hidden")) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+  };
+
+  const openUsersEditModal = (editableUser) => {
+    if (!usersEditModalEl || !usersEditFormEl || !editableUser) return;
+    const userIndex = orgsState.users.indexOf(editableUser);
+    if (userIndex < 0) return;
+    usersEditFormEl.elements["users-edit-index"].value = String(userIndex);
+    usersEditFormEl.elements["users-edit-full-name"].value = String(editableUser?.full_name ?? "").trim();
+    usersEditFormEl.elements["users-edit-role"].value = String(editableUser?.role ?? "").trim();
+    usersEditFormEl.elements["users-edit-position"].value = String(editableUser?.position ?? "").trim();
+    usersEditFormEl.elements["users-edit-telegram-id"].value = String(editableUser?.telegram_id ?? "").trim();
+    if (usersEditOrgNameEl) {
+      usersEditOrgNameEl.textContent = String(editableUser?.organization ?? selectedUsersOrgName ?? "—").trim() || "—";
+    }
+    if (usersEditMessageEl) usersEditMessageEl.textContent = "";
+    usersEditModalEl.classList.remove("is-hidden");
+    document.body.style.overflow = "hidden";
   };
 
   const selectUsersOrganization = (orgName) => {
@@ -35049,6 +35085,9 @@ function setupSuperAdmin() {
     }
     if (usersAddModalEl) {
       usersAddModalEl.classList.add("is-hidden");
+    }
+    if (usersEditModalEl) {
+      usersEditModalEl.classList.add("is-hidden");
     }
     resetUsersInvite();
     document.body.style.overflow = "hidden";
@@ -35317,6 +35356,9 @@ function setupSuperAdmin() {
   usersAddBackdropEl?.addEventListener("click", closeUsersAddModal);
   usersAddCloseButton?.addEventListener("click", closeUsersAddModal);
   usersAddCancelButton?.addEventListener("click", closeUsersAddModal);
+  usersEditBackdropEl?.addEventListener("click", closeUsersEditModal);
+  usersEditCloseButton?.addEventListener("click", closeUsersEditModal);
+  usersEditCancelButton?.addEventListener("click", closeUsersEditModal);
   feedbackBackdropEl?.addEventListener("click", closeFeedbackModal);
   feedbackCloseButton?.addEventListener("click", closeFeedbackModal);
   feedbackDetailsBackdropEl?.addEventListener("click", closeFeedbackDetails);
@@ -35511,6 +35553,44 @@ function setupSuperAdmin() {
       if (usersAddInviteNoteEl) {
         usersAddInviteNoteEl.textContent = "Ссылка выделена для копирования.";
       }
+    }
+  });
+
+  usersEditFormEl?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    if (!usersEditFormEl) return;
+    if (usersEditMessageEl) usersEditMessageEl.textContent = "Сохраняем изменения...";
+    const formData = new FormData(usersEditFormEl);
+    const userIndex = Number(formData.get("users-edit-index"));
+    const fullName = String(formData.get("users-edit-full-name") ?? "").trim();
+    const roleName = String(formData.get("users-edit-role") ?? "").trim();
+    const positionName = String(formData.get("users-edit-position") ?? "").trim();
+    const telegramId = String(formData.get("users-edit-telegram-id") ?? "").trim();
+    if (!fullName || !roleName || !Number.isInteger(userIndex) || userIndex < 0) {
+      if (usersEditMessageEl) usersEditMessageEl.textContent = "Заполните ФИО и роль.";
+      return;
+    }
+    try {
+      const usersData = await loadJson(usersFilePath).catch(() => ({ users: [] }));
+      const nextUsers = Array.isArray(usersData?.users) ? [...usersData.users] : [];
+      if (!nextUsers[userIndex]) throw new Error("Пользователь не найден");
+      nextUsers[userIndex] = {
+        ...nextUsers[userIndex],
+        full_name: fullName,
+        role: roleName,
+        position: positionName,
+        telegram_id: telegramId,
+      };
+      await saveJson(usersFilePath, { ...usersData, users: nextUsers }, { user: currentUser });
+      orgsState.users = nextUsers;
+      updateUsersNameSuggestions(nextUsers);
+      updateUsersDetailsView();
+      await renderUsersOrganizationsList();
+      if (usersEditMessageEl) usersEditMessageEl.textContent = "Данные пользователя сохранены.";
+      setTimeout(closeUsersEditModal, 450);
+    } catch (error) {
+      console.error(error);
+      if (usersEditMessageEl) usersEditMessageEl.textContent = "Не удалось сохранить пользователя. Попробуйте позже.";
     }
   });
 

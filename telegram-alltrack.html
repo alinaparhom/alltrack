@@ -1082,6 +1082,7 @@
       html,
       body {
         height: 100%;
+        overflow-x: hidden;
       }
 
       body {
@@ -1096,7 +1097,7 @@
         justify-content: stretch;
         padding: 0;
         overflow: hidden;
-        overscroll-behavior-y: contain;
+        overscroll-behavior-y: none;
         -webkit-overflow-scrolling: touch;
       }
 
@@ -1124,11 +1125,13 @@
         flex: 1 1 auto;
         min-height: 0;
         overflow-y: auto;
+        overflow-x: hidden;
         padding-bottom: calc(
           var(--quick-access-offset, 0px) + env(safe-area-inset-bottom)
         );
-        overscroll-behavior-y: contain;
+        overscroll-behavior-y: auto;
         -webkit-overflow-scrolling: touch;
+        touch-action: pan-y;
       }
 
       body.is-telegram {
@@ -2520,8 +2523,12 @@
       }
 
       body.is-energy-role .app-scroll {
-        overflow: hidden;
-        padding-bottom: 0;
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding-bottom: calc(
+          var(--quick-access-offset, 0px) + env(safe-area-inset-bottom)
+        );
+        touch-action: pan-y;
       }
 
       body.is-energy-role.is-user-settings .app-scroll {
@@ -2532,8 +2539,8 @@
       }
 
       body.is-energy-role .app-scroll > [data-content] {
-        height: 100%;
-        min-height: 0;
+        height: auto;
+        min-height: 100%;
         display: flex;
         flex-direction: column;
       }

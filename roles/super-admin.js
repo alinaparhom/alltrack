@@ -740,7 +740,7 @@ export function renderRole(user) {
               <p data-users-details-count>—</p>
             </div>
             <button
-              class="button-icon users-details-modal__close"
+              class="button-icon tools-modal__close users-details-modal__close"
               type="button"
               data-users-details-close
               aria-label="Закрыть окно пользователей организации"
@@ -750,14 +750,14 @@ export function renderRole(user) {
           </div>
           <div class="settings-modal__body users-details-modal__body">
             <div class="users-details">
-              <button class="users-details__add" type="button" data-users-add>
-                <span class="users-details__add-icon" aria-hidden="true">➕</span>
-                <span class="users-details__add-text">Добавить пользователя</span>
-              </button>
               <div class="users-details__list" data-users-details-list></div>
               <div class="users-details__empty is-hidden" data-users-details-empty>
                 В этой организации ещё нет пользователей.
               </div>
+              <button class="users-details__add" type="button" data-users-add>
+                <span class="users-details__add-icon" aria-hidden="true">➕</span>
+                <span class="users-details__add-text">Добавить пользователя</span>
+              </button>
               <div
                 class="registration-box users-details__invite is-hidden"
                 data-users-invite-box

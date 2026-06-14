@@ -483,8 +483,9 @@
       }
 
       body[data-theme="dark"] .users-details__add {
-        background: linear-gradient(135deg, rgba(123, 178, 255, 0.18), rgba(18, 26, 46, 0.92));
-        border-color: rgba(123, 178, 255, 0.35);
+        background: linear-gradient(135deg, rgba(47, 158, 103, 0.95), rgba(57, 190, 126, 0.78));
+        border-color: rgba(74, 222, 128, 0.38);
+        color: #ffffff;
       }
 
       body[data-theme="dark"] .users-details__meta {
@@ -14065,7 +14066,7 @@
       .users-details {
         display: grid;
         gap: 6px;
-        min-height: 0;
+        min-height: 100%;
         align-content: start;
       }
 
@@ -14124,14 +14125,18 @@
       .users-details__add {
         display: flex;
         align-items: center;
+        justify-content: center;
         gap: 10px;
-        padding: 20px 14px;
-        min-height: 78px;
-        border-radius: 12px;
-        border: 1px solid rgba(59, 125, 255, 0.28);
-        background: linear-gradient(135deg, rgba(59, 125, 255, 0.18), rgba(255, 255, 255, 0.92));
-        color: var(--accent);
-        font-weight: 600;
+        width: 100%;
+        margin-top: auto;
+        padding: 18px 14px;
+        min-height: 66px;
+        border-radius: 16px;
+        border: 1px solid rgba(47, 158, 103, 0.32);
+        background: linear-gradient(135deg, rgba(47, 158, 103, 0.95), rgba(57, 190, 126, 0.82));
+        color: #ffffff;
+        box-shadow: 0 16px 34px rgba(47, 158, 103, 0.22);
+        font-weight: 700;
         font-size: 14px;
         line-height: 1.35;
         cursor: pointer;
@@ -14279,12 +14284,22 @@
         font-size: 22px;
       }
 
+      .workers-page__add {
+        justify-content: flex-start;
+        min-height: 78px;
+        border-color: rgba(59, 125, 255, 0.28);
+        background: linear-gradient(135deg, rgba(59, 125, 255, 0.12), rgba(255, 255, 255, 0.82));
+        color: var(--accent);
+        box-shadow: none;
+        font-weight: 600;
+      }
+
       .users-details__list {
         display: grid;
         gap: 5px;
         grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
         overflow-y: auto;
-        max-height: calc(100vh - 170px);
+        max-height: calc(100vh - 250px);
         padding-right: 3px;
       }
 
@@ -14920,7 +14935,7 @@
 
         .users-details__list {
           grid-template-columns: 1fr;
-          max-height: calc(100vh - 190px);
+          max-height: calc(100vh - 270px);
         }
       }
 

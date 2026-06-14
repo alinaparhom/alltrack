@@ -14067,7 +14067,8 @@
       }
 
       .users-details {
-        --users-details-bottom-gap: max(10px, env(safe-area-inset-bottom));
+        --users-details-edge-gap: 10px;
+        --users-details-bottom-gap: calc(var(--users-details-edge-gap) + env(safe-area-inset-bottom));
         display: grid;
         grid-template-rows: auto auto auto;
         gap: 0;
@@ -14975,7 +14976,8 @@
         }
 
         .users-details-modal__body .users-details__add {
-          --users-details-bottom-gap: max(10px, env(safe-area-inset-bottom));
+          --users-details-edge-gap: 10px;
+          --users-details-bottom-gap: calc(var(--users-details-edge-gap) + env(safe-area-inset-bottom));
           min-height: 64px;
         }
       }

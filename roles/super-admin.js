@@ -831,7 +831,7 @@ export function renderRole(user) {
                 <span class="users-add__org" data-users-edit-org-name>—</span>
               </div>
             </div>
-            <button class="button-icon users-add-modal__close" type="button" data-users-edit-close aria-label="Закрыть окно редактирования пользователя">
+            <button class="button-icon users-add-modal__close users-edit-modal__close" type="button" data-users-edit-close aria-label="Закрыть окно редактирования пользователя">
               <span class="button-icon-emoji" aria-hidden="true">✕</span>
             </button>
           </div>
@@ -864,8 +864,8 @@ export function renderRole(user) {
                   <input class="form-input" type="text" id="users-edit-telegram-id" name="users-edit-telegram-id" inputmode="numeric" placeholder="Можно оставить пустым" />
                 </div>
                 <div class="form-actions form-actions--compact">
-                  <button class="button-secondary" type="button" data-users-edit-cancel>Отмена</button>
-                  <button class="action-primary" type="submit">Сохранить</button>
+                  <button class="button-secondary users-edit-modal__cancel" type="button" data-users-edit-cancel>Отмена</button>
+                  <button class="action-primary users-edit-modal__save" type="submit">Сохранить</button>
                 </div>
                 <div class="form-message" role="status" data-users-edit-message></div>
               </form>

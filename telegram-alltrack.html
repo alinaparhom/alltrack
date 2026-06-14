@@ -14067,11 +14067,12 @@
       }
 
       .users-details {
+        --users-details-bottom-gap: max(14px, env(safe-area-inset-bottom));
         display: grid;
-        grid-template-rows: minmax(0, 1fr) auto auto;
-        gap: 6px;
+        grid-template-rows: auto auto auto;
+        gap: 0;
         min-height: 100%;
-        align-content: stretch;
+        align-content: start;
       }
 
       .users-details-modal__body {
@@ -14143,11 +14144,10 @@
         gap: 10px;
         width: 100%;
         margin: 0;
-        padding: 18px 14px calc(18px + env(safe-area-inset-bottom));
-        min-height: calc(66px + env(safe-area-inset-bottom));
-        border-radius: 22px 22px 0 0;
+        padding: 18px 14px;
+        min-height: 66px;
+        border-radius: 22px;
         border: 1px solid rgba(47, 158, 103, 0.32);
-        border-bottom: 0;
         background:
           linear-gradient(135deg, rgba(255, 255, 255, 0.8), rgba(222, 247, 234, 0.68)),
           radial-gradient(circle at 18% 0%, rgba(47, 158, 103, 0.32), transparent 48%);
@@ -14164,7 +14164,7 @@
 
       .users-details-modal__body .users-details__add {
         position: sticky;
-        bottom: 0;
+        bottom: var(--users-details-bottom-gap);
         z-index: 5;
       }
 
@@ -14975,8 +14975,8 @@
         }
 
         .users-details-modal__body .users-details__add {
-          bottom: 0;
-          min-height: calc(64px + env(safe-area-inset-bottom));
+          --users-details-bottom-gap: max(12px, env(safe-area-inset-bottom));
+          min-height: 64px;
         }
       }
 

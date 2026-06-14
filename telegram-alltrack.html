@@ -13983,6 +13983,76 @@
         border-radius: 10px;
       }
 
+      .users-edit-modal__close,
+      .users-edit-modal__close:hover,
+      .users-edit-modal__close:focus-visible {
+        border: 0 !important;
+        border-color: transparent !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        outline: none;
+        color: #dc2626;
+        transform: none;
+      }
+
+      .users-edit-modal__close .button-icon-emoji {
+        font-weight: 800;
+        color: currentColor;
+      }
+
+      .users-edit-modal .form-actions {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        gap: 10px;
+      }
+
+      .users-edit-modal__cancel,
+      .users-edit-modal__save {
+        min-height: 48px;
+        padding: 14px 12px;
+        border-width: 1px;
+        border-style: solid;
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+      }
+
+      .users-edit-modal__cancel {
+        border-color: rgba(239, 68, 68, 0.26);
+        background: linear-gradient(135deg, rgba(254, 242, 242, 0.92), rgba(248, 113, 113, 0.16));
+        color: #dc2626;
+        box-shadow: 0 12px 28px rgba(239, 68, 68, 0.12);
+      }
+
+      .users-edit-modal__cancel:hover,
+      .users-edit-modal__cancel:focus-visible {
+        box-shadow: 0 16px 34px rgba(239, 68, 68, 0.18);
+      }
+
+      .users-edit-modal__save {
+        border-color: rgba(34, 197, 94, 0.28);
+        background: linear-gradient(135deg, rgba(240, 253, 244, 0.92), rgba(34, 197, 94, 0.18));
+        color: #15803d;
+        box-shadow: 0 12px 28px rgba(34, 197, 94, 0.14);
+      }
+
+      .users-edit-modal__save:hover,
+      .users-edit-modal__save:focus-visible {
+        box-shadow: 0 16px 34px rgba(34, 197, 94, 0.2);
+      }
+
+      @media (max-width: 360px) {
+        .users-edit-modal .form-actions {
+          gap: 8px;
+        }
+
+        .users-edit-modal__cancel,
+        .users-edit-modal__save {
+          min-height: 46px;
+          padding-inline: 8px;
+          font-size: 14px;
+        }
+      }
+
       .users-modal__body,
       .users-details-modal__body,
       .users-add-modal__body {

@@ -6627,15 +6627,23 @@
       .tools-modal[data-add-photo-modal] .tools-modal__panel {
         width: min(94vw, 560px);
         max-width: 560px;
+        height: min(92vh, 760px);
+        height: min(92svh, 760px);
+        height: min(92dvh, 760px);
         max-height: min(92vh, 760px);
+        max-height: min(92svh, 760px);
+        max-height: min(92dvh, 760px);
+        min-height: 0;
         overflow: hidden;
         grid-template-rows: auto minmax(0, 1fr);
       }
 
       .tools-modal[data-add-photo-modal] .tools-modal__body {
         display: grid;
+        align-content: start;
         gap: 12px;
         min-height: 0;
+        max-height: 100%;
         padding: 12px 12px calc(12px + env(safe-area-inset-bottom));
         overflow-y: auto;
         overflow-x: hidden;

@@ -34934,17 +34934,19 @@ function setupSuperAdmin() {
       const telegramStatus = document.createElement("span");
       telegramStatus.className = "users-details__status";
       const hasTelegramId = Boolean(normalizeTelegramId(user?.telegram_id));
-      const canInvite = !hasTelegramId;
       telegramStatus.textContent = hasTelegramId
-        ? "ID привязан"
-        : canInvite
-          ? "ID не привязан · нажмите, чтобы сгенерировать ссылку"
-          : "ID не привязан";
+        ? "ID привязан · нажмите, чтобы редактировать"
+        : "ID не привязан · нажмите, чтобы редактировать";
       telegramStatus.classList.toggle("is-linked", hasTelegramId);
       meta.append(roleTag, telegramStatus);
 
+      const editHint = document.createElement("span");
+      editHint.className = "users-details__edit-hint";
+      editHint.setAttribute("aria-hidden", "true");
+      editHint.textContent = "✎";
+
       info.append(name, meta);
-      card.append(initials, info);
+      card.append(initials, info, editHint);
       card.classList.add("is-actionable");
       card.setAttribute("role", "button");
       card.setAttribute("tabindex", "0");
@@ -34953,6 +34955,7 @@ function setupSuperAdmin() {
         `Редактировать данные пользователя: ${name.textContent}`
       );
       const handleEdit = () => {
+        resetUsersInvite();
         openUsersEditModal(user);
       };
       card.addEventListener("click", handleEdit);

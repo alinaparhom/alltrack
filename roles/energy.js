@@ -3825,7 +3825,7 @@ export function renderRole(user, options = {}) {
                 <p data-add-tool-success-message>Новая позиция добавлена в базу</p>
               </div>
               <button
-                class="button-icon add-tool-success-modal__close"
+                class="button-icon tools-modal__close add-tool-success-modal__close"
                 type="button"
                 data-add-tool-success-close
                 aria-label="Закрыть окно"

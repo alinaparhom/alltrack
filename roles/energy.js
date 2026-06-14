@@ -4062,6 +4062,69 @@ export function renderRole(user, options = {}) {
             </div>
           </div>
         </div>
+        <div class="settings-modal users-edit-modal is-hidden" data-users-edit-modal>
+          <div class="settings-modal__backdrop" data-users-edit-backdrop></div>
+          <div
+            class="settings-modal__panel users-add-modal__panel"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Редактировать пользователя"
+          >
+            <div class="settings-modal__header users-add-modal__header">
+              <div class="settings-modal__title">
+                <h2>Редактировать пользователя</h2>
+                <div class="users-add__meta">
+                  <span>Организация:</span>
+                  <span class="users-add__org" data-users-edit-org-name>—</span>
+                </div>
+              </div>
+              <button
+                class="button-icon users-add-modal__close"
+                type="button"
+                data-users-edit-close
+                aria-label="Закрыть окно редактирования пользователя"
+              >
+                <span class="button-icon-emoji" aria-hidden="true">✕</span>
+              </button>
+            </div>
+            <div class="settings-modal__body users-add-modal__body">
+              <div class="form-card users-add__form">
+                <form class="form-grid" data-users-edit-form>
+                  <input type="hidden" name="users-edit-index" data-users-edit-index />
+                  <div class="form-field form-field--wide">
+                    <label class="form-label" for="users-edit-full-name">ФИО</label>
+                    <input class="form-input" type="text" id="users-edit-full-name" name="users-edit-full-name" autocomplete="name" required />
+                  </div>
+                  <div class="form-field">
+                    <label class="form-label" for="users-edit-role">Роль пользователя</label>
+                    <select class="form-input" id="users-edit-role" name="users-edit-role" required>
+                      <option value="Бухгалтерия">Бухгалтерия</option>
+                      <option value="Главный инженер">Главный инженер</option>
+                      <option value="Энергетик">Энергетик</option>
+                      <option value="Контроль">Контроль</option>
+                      <option value="Руководитель">Руководитель</option>
+                      <option value="Ответственный">Ответственный</option>
+                    </select>
+                  </div>
+                  <div class="form-field">
+                    <label class="form-label" for="users-edit-position">Должность</label>
+                    <input class="form-input" type="text" id="users-edit-position" name="users-edit-position" autocomplete="organization-title" />
+                  </div>
+                  <div class="form-field form-field--wide">
+                    <label class="form-label" for="users-edit-telegram-id">Telegram ID</label>
+                    <input class="form-input" type="text" id="users-edit-telegram-id" name="users-edit-telegram-id" inputmode="numeric" placeholder="Можно оставить пустым" />
+                  </div>
+                  <div class="form-actions form-actions--compact">
+                    <button class="button-secondary" type="button" data-users-edit-cancel>Отмена</button>
+                    <button class="action-primary" type="submit">Сохранить</button>
+                  </div>
+                  <div class="form-message" role="status" data-users-edit-message></div>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div class="settings-modal users-add-modal is-hidden" data-users-add-modal>
           <div class="settings-modal__backdrop" data-users-add-backdrop></div>
           <div

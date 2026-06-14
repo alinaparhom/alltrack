@@ -6489,6 +6489,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     "[data-users-invite-open]"
   );
   const usersAddButton = contentEl.querySelector("[data-users-add]");
+  const usersEditModalEl = contentEl.querySelector("[data-users-edit-modal]");
+  const usersEditBackdropEl = contentEl.querySelector("[data-users-edit-backdrop]");
+  const usersEditCloseButton = contentEl.querySelector("[data-users-edit-close]");
+  const usersEditCancelButton = contentEl.querySelector("[data-users-edit-cancel]");
+  const usersEditFormEl = contentEl.querySelector("[data-users-edit-form]");
+  const usersEditMessageEl = contentEl.querySelector("[data-users-edit-message]");
+  const usersEditOrgNameEl = contentEl.querySelector("[data-users-edit-org-name]");
   const usersAddModalEl = contentEl.querySelector("[data-users-add-modal]");
   const usersAddBackdropEl = contentEl.querySelector("[data-users-add-backdrop]");
   const usersAddCloseButton = contentEl.querySelector("[data-users-add-close]");
@@ -29041,7 +29048,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
     sortedUsers.forEach((entry) => {
       const card = document.createElement("div");
-      card.className = "users-details__card";
+      card.className = "users-details__card is-actionable";
+      card.setAttribute("role", "button");
+      card.setAttribute("tabindex", "0");
 
       const initials = document.createElement("div");
       initials.className = "users-details__initials";
@@ -29064,15 +29073,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const telegramStatus = document.createElement("span");
       telegramStatus.className = "users-details__status";
       const hasTelegramId = Boolean(normalizeTelegramId(entry?.telegram_id));
-      const canInvite = !hasTelegramId;
-      const isResponsible = roleName === responsibleRole;
       const isVacation = Boolean(entry?.on_vacation);
       const vacationReplacer = String(entry?.vacation_replacer ?? "").trim();
       telegramStatus.textContent = hasTelegramId
-        ? "ID привязан"
-        : canInvite
-          ? "ID не привязан · нажмите, чтобы сгенерировать ссылку"
-          : "ID не привязан";
+        ? "ID привязан · нажмите, чтобы редактировать"
+        : "ID не привязан · нажмите, чтобы редактировать";
       telegramStatus.classList.toggle("is-linked", hasTelegramId);
       meta.append(roleTag, telegramStatus);
 
@@ -29086,50 +29091,59 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         meta.appendChild(vacationTag);
       }
 
+      const editHint = document.createElement("span");
+      editHint.className = "users-details__edit-hint";
+      editHint.setAttribute("aria-hidden", "true");
+      editHint.textContent = "✎";
+
       info.append(name, meta);
-      card.append(initials, info);
-      const isCurrentUserCard =
-        normalizePersonName(entry?.full_name ?? "") ===
-        normalizePersonName(currentUser?.full_name ?? currentUser?.fullName ?? "");
-      if (canInvite) {
-        card.classList.add("is-actionable");
-        card.setAttribute("role", "button");
-        card.setAttribute("tabindex", "0");
-        card.setAttribute(
-          "aria-label",
-          `Сгенерировать ссылку для ${name.textContent}`
-        );
-        const handleInvite = () => {
-          createResponsibleInvite(entry);
-        };
-        card.addEventListener("click", handleInvite);
-        card.addEventListener("keydown", (event) => {
-          if (event.key === "Enter" || event.key === " ") {
-            event.preventDefault();
-            handleInvite();
-          }
-        });
-      } else if (isResponsible || isCurrentUserCard) {
-        card.classList.add("is-actionable");
-        card.setAttribute("role", "button");
-        card.setAttribute("tabindex", "0");
-        card.setAttribute(
-          "aria-label",
-          `Открыть карточку пользователя: ${name.textContent}`
-        );
-        const handleOpenVacation = () => {
-          openUsersVacationModal(entry);
-        };
-        card.addEventListener("click", handleOpenVacation);
-        card.addEventListener("keydown", (event) => {
-          if (event.key === "Enter" || event.key === " ") {
-            event.preventDefault();
-            handleOpenVacation();
-          }
-        });
-      }
+      card.append(initials, info, editHint);
+      card.setAttribute(
+        "aria-label",
+        `Редактировать данные пользователя: ${name.textContent}`
+      );
+      const handleEdit = () => {
+        resetUsersInvite();
+        openUsersEditModal(entry);
+      };
+      card.addEventListener("click", handleEdit);
+      card.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          handleEdit();
+        }
+      });
       usersDetailsListEl.appendChild(card);
     });
+  };
+
+  const closeUsersEditModal = () => {
+    if (!usersEditModalEl) return;
+    usersEditModalEl.classList.add("is-hidden");
+    usersEditFormEl?.reset();
+    if (usersEditMessageEl) usersEditMessageEl.textContent = "";
+    if (usersDetailsModalEl && !usersDetailsModalEl.classList.contains("is-hidden")) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+  };
+
+  const openUsersEditModal = (editableUser) => {
+    if (!usersEditModalEl || !usersEditFormEl || !editableUser) return;
+    const userIndex = usersState.users.indexOf(editableUser);
+    if (userIndex < 0) return;
+    usersEditFormEl.elements["users-edit-index"].value = String(userIndex);
+    usersEditFormEl.elements["users-edit-full-name"].value = String(editableUser?.full_name ?? "").trim();
+    usersEditFormEl.elements["users-edit-role"].value = String(editableUser?.role ?? "").trim();
+    usersEditFormEl.elements["users-edit-position"].value = String(editableUser?.position ?? "").trim();
+    usersEditFormEl.elements["users-edit-telegram-id"].value = String(editableUser?.telegram_id ?? "").trim();
+    if (usersEditOrgNameEl) {
+      usersEditOrgNameEl.textContent = String(editableUser?.organization ?? selectedUsersOrgDisplayName ?? selectedUsersOrgName ?? "—").trim() || "—";
+    }
+    if (usersEditMessageEl) usersEditMessageEl.textContent = "";
+    usersEditModalEl.classList.remove("is-hidden");
+    document.body.style.overflow = "hidden";
   };
 
   const updateUsersDetailsView = () => {
@@ -29194,6 +29208,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       usersAddModalEl.classList.add("is-hidden");
     }
     closeUsersVacationModal();
+    closeUsersEditModal();
     resetUsersInvite();
     document.body.style.overflow = "";
   };
@@ -29484,6 +29499,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   });
   usersVacationConfirmButton?.addEventListener("click", applyResponsibleVacation);
   usersAddButton?.addEventListener("click", openUsersAddModal);
+  usersEditBackdropEl?.addEventListener("click", closeUsersEditModal);
+  usersEditCloseButton?.addEventListener("click", closeUsersEditModal);
+  usersEditCancelButton?.addEventListener("click", closeUsersEditModal);
   usersAddBackdropEl?.addEventListener("click", closeUsersAddModal);
   usersAddCloseButton?.addEventListener("click", closeUsersAddModal);
   usersAddCancelButton?.addEventListener("click", closeUsersAddModal);
@@ -29572,6 +29590,43 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       if (usersAddInviteNoteEl) {
         usersAddInviteNoteEl.textContent = "Ссылка выделена для копирования.";
       }
+    }
+  });
+
+  usersEditFormEl?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    if (!usersEditFormEl) return;
+    if (usersEditMessageEl) usersEditMessageEl.textContent = "Сохраняем изменения...";
+    const formData = new FormData(usersEditFormEl);
+    const userIndex = Number(formData.get("users-edit-index"));
+    const fullName = String(formData.get("users-edit-full-name") ?? "").trim();
+    const roleName = String(formData.get("users-edit-role") ?? "").trim();
+    const positionName = String(formData.get("users-edit-position") ?? "").trim();
+    const telegramId = String(formData.get("users-edit-telegram-id") ?? "").trim();
+    if (!fullName || !roleName || !Number.isInteger(userIndex) || userIndex < 0) {
+      if (usersEditMessageEl) usersEditMessageEl.textContent = "Заполните ФИО и роль.";
+      return;
+    }
+    try {
+      const usersData = await loadJson(usersFilePath).catch(() => ({ users: [] }));
+      const nextUsers = Array.isArray(usersData?.users) ? [...usersData.users] : [];
+      if (!nextUsers[userIndex]) throw new Error("Пользователь не найден");
+      nextUsers[userIndex] = {
+        ...nextUsers[userIndex],
+        full_name: fullName,
+        role: roleName,
+        position: positionName,
+        telegram_id: telegramId,
+      };
+      await saveJson(usersFilePath, { ...usersData, users: nextUsers }, { user });
+      usersState.users = nextUsers;
+      updateUsersNameSuggestions(nextUsers);
+      updateUsersDetailsView();
+      if (usersEditMessageEl) usersEditMessageEl.textContent = "Данные пользователя сохранены.";
+      setTimeout(closeUsersEditModal, 450);
+    } catch (error) {
+      console.error(error);
+      if (usersEditMessageEl) usersEditMessageEl.textContent = "Не удалось сохранить пользователя. Попробуйте позже.";
     }
   });
 

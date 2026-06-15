@@ -9930,18 +9930,19 @@
       }
 
       .writeoff-modal__panel {
-        width: calc(100vw - 10px);
-        height: calc(100vh - 10px);
-        height: calc(100svh - 10px);
-        height: calc(100dvh - 10px);
-        max-height: calc(100vh - 10px);
-        max-height: calc(100svh - 10px);
-        max-height: calc(100dvh - 10px);
-        margin-left: 5px;
-        margin-right: 5px;
+        --writeoff-edge-gap: 5px;
+        width: 100vw;
+        min-width: 100vw;
+        height: 100vh;
+        height: 100svh;
+        height: 100dvh;
+        max-height: 100vh;
+        max-height: 100svh;
+        max-height: 100dvh;
+        margin: 0;
         display: grid;
         grid-template-rows: auto minmax(0, 1fr) auto;
-        border-radius: 20px;
+        border-radius: 0;
         overflow: hidden;
       }
 
@@ -9950,8 +9951,8 @@
         grid-template-columns: minmax(0, 1fr) auto;
         align-items: center;
         padding-top: calc(14px + env(safe-area-inset-top) + var(--telegram-top-spacing, 0px));
-        padding-left: calc(var(--tools-horizontal-gutter) + max(0px, env(safe-area-inset-left)));
-        padding-right: calc(var(--tools-horizontal-gutter) + max(0px, env(safe-area-inset-right)));
+        padding-left: calc(var(--writeoff-edge-gap, 5px) + max(0px, env(safe-area-inset-left)));
+        padding-right: calc(var(--writeoff-edge-gap, 5px) + max(0px, env(safe-area-inset-right)));
       }
 
       .writeoff-modal__body {
@@ -9960,9 +9961,9 @@
         align-content: start;
         gap: 6px;
         overflow: hidden;
-        padding-left: calc(var(--tools-horizontal-gutter) + max(0px, env(safe-area-inset-left)));
-        padding-right: calc(var(--tools-horizontal-gutter) + max(0px, env(safe-area-inset-right)));
-        padding-bottom: calc(10px + env(safe-area-inset-bottom));
+        padding-left: calc(var(--writeoff-edge-gap, 5px) + max(0px, env(safe-area-inset-left)));
+        padding-right: calc(var(--writeoff-edge-gap, 5px) + max(0px, env(safe-area-inset-right)));
+        padding-bottom: calc(var(--writeoff-edge-gap, 5px) + env(safe-area-inset-bottom));
       }
 
       .writeoff-modal__body [data-writeoff-message] {
@@ -10272,7 +10273,7 @@
         flex-direction: column;
         gap: 12px;
         overflow: auto;
-        padding: 0 2px 6px;
+        padding: 0 0 6px;
       }
 
       .writeoff-item {
@@ -10341,7 +10342,7 @@
         align-items: center;
         align-content: center;
         min-height: 0;
-        padding: 0 12px calc(10px + env(safe-area-inset-bottom, 0px));
+        padding: 0 calc(var(--writeoff-edge-gap, 5px) + max(0px, env(safe-area-inset-right))) calc(var(--writeoff-edge-gap, 5px) + env(safe-area-inset-bottom, 0px)) calc(var(--writeoff-edge-gap, 5px) + max(0px, env(safe-area-inset-left)));
         gap: 8px;
         box-sizing: border-box;
       }

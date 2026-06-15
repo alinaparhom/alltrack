@@ -29820,19 +29820,30 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     return { moves, tools };
   };
 
+  const getUserDeleteItemCost = (item) => normalizeCostValue(item?.["Стоимость"]);
+  const formatUserDeleteItemCost = (item) => {
+    const cost = getUserDeleteItemCost(item);
+    return Number.isFinite(cost) ? `${formatNotificationCostWithoutCurrency(cost)} р.` : "стоимость не указана";
+  };
+  const getUserDeleteItemsTotalCost = (items = []) =>
+    items.reduce((sum, item) => {
+      const cost = getUserDeleteItemCost(item);
+      return sum + (Number.isFinite(cost) ? cost : 0);
+    }, 0);
+
   const formatUserDeleteBlockers = ({ moves, tools }) => {
     const lines = ["Удалить из базы пользователя невозможно, так как на нём ещё есть данные:"];
     if (moves.length) {
-      lines.push("", "Перемещения на принятии:");
+      lines.push("", `Перемещения на принятии · сумма: ${formatNotificationCostWithoutCurrency(getUserDeleteItemsTotalCost(moves))} р.:`);
       moves.slice(0, 12).forEach((move) => {
-        lines.push(`• №${move?.["Номер"] ?? "—"} · бух. №${move?.["Бух.номер"] ?? "—"} · ${move?.["Наименование"] ?? move?.["Новый объект"] ?? "без описания"}`);
+        lines.push(`• №${move?.["Номер"] ?? "—"} · бух. №${move?.["Бух.номер"] ?? "—"} · ${move?.["Наименование"] ?? move?.["Новый объект"] ?? "без описания"} · ${formatUserDeleteItemCost(move)}`);
       });
       if (moves.length > 12) lines.push(`• ещё ${moves.length - 12}`);
     }
     if (tools.length) {
-      lines.push("", "Инструменты в базе:");
+      lines.push("", `Инструменты в базе · сумма: ${formatNotificationCostWithoutCurrency(getUserDeleteItemsTotalCost(tools))} р.:`);
       tools.slice(0, 12).forEach((tool) => {
-        lines.push(`• №${tool?.["Номер"] ?? "—"} · бух. №${tool?.["Бух.номер"] ?? "—"} · ${tool?.["Наименование"] ?? "без названия"}`);
+        lines.push(`• №${tool?.["Номер"] ?? "—"} · бух. №${tool?.["Бух.номер"] ?? "—"} · ${tool?.["Наименование"] ?? "без названия"} · ${formatUserDeleteItemCost(tool)}`);
       });
       if (tools.length > 12) lines.push(`• ещё ${tools.length - 12}`);
     }
@@ -29875,19 +29886,25 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         const sectionEl = document.createElement("section");
         sectionEl.className = "users-delete-blocked-modal__section";
         const hiddenCount = Math.max(section.count - 4, 0);
+        const sectionTotalCost = getUserDeleteItemsTotalCost(section.items);
         sectionEl.innerHTML = `
           <div class="users-delete-blocked-modal__section-head">
             <span class="users-delete-blocked-modal__section-icon" aria-hidden="true">${section.icon}</span>
             <strong>${section.title}</strong>
             <span>${section.count}</span>
           </div>
+          <div class="users-delete-blocked-modal__section-total">Общая стоимость: <b>${formatNotificationCostWithoutCurrency(sectionTotalCost)} р.</b></div>
           <ul class="users-delete-blocked-modal__list"></ul>`;
         const listEl = sectionEl.querySelector(".users-delete-blocked-modal__list");
         const renderItems = (isExpanded = false) => {
           listEl.innerHTML = "";
           section.items.slice(0, isExpanded ? section.items.length : 4).forEach((item) => {
             const itemEl = document.createElement("li");
-            itemEl.textContent = section.getText(item);
+            const textEl = document.createElement("span");
+            textEl.textContent = section.getText(item);
+            const costEl = document.createElement("b");
+            costEl.textContent = formatUserDeleteItemCost(item);
+            itemEl.append(textEl, costEl);
             listEl.appendChild(itemEl);
           });
           if (hiddenCount && !isExpanded) {
@@ -36133,19 +36150,30 @@ function setupSuperAdmin() {
     return { moves, tools };
   };
 
+  const getUserDeleteItemCost = (item) => normalizeCostValue(item?.["Стоимость"]);
+  const formatUserDeleteItemCost = (item) => {
+    const cost = getUserDeleteItemCost(item);
+    return Number.isFinite(cost) ? `${formatNotificationCostWithoutCurrency(cost)} р.` : "стоимость не указана";
+  };
+  const getUserDeleteItemsTotalCost = (items = []) =>
+    items.reduce((sum, item) => {
+      const cost = getUserDeleteItemCost(item);
+      return sum + (Number.isFinite(cost) ? cost : 0);
+    }, 0);
+
   const formatUserDeleteBlockers = ({ moves, tools }) => {
     const lines = ["Удалить из базы пользователя невозможно, так как на нём ещё есть данные:"];
     if (moves.length) {
-      lines.push("", "Перемещения на принятии:");
+      lines.push("", `Перемещения на принятии · сумма: ${formatNotificationCostWithoutCurrency(getUserDeleteItemsTotalCost(moves))} р.:`);
       moves.slice(0, 12).forEach((move) => {
-        lines.push(`• №${move?.["Номер"] ?? "—"} · бух. №${move?.["Бух.номер"] ?? "—"} · ${move?.["Наименование"] ?? move?.["Новый объект"] ?? "без описания"}`);
+        lines.push(`• №${move?.["Номер"] ?? "—"} · бух. №${move?.["Бух.номер"] ?? "—"} · ${move?.["Наименование"] ?? move?.["Новый объект"] ?? "без описания"} · ${formatUserDeleteItemCost(move)}`);
       });
       if (moves.length > 12) lines.push(`• ещё ${moves.length - 12}`);
     }
     if (tools.length) {
-      lines.push("", "Инструменты в базе:");
+      lines.push("", `Инструменты в базе · сумма: ${formatNotificationCostWithoutCurrency(getUserDeleteItemsTotalCost(tools))} р.:`);
       tools.slice(0, 12).forEach((tool) => {
-        lines.push(`• №${tool?.["Номер"] ?? "—"} · бух. №${tool?.["Бух.номер"] ?? "—"} · ${tool?.["Наименование"] ?? "без названия"}`);
+        lines.push(`• №${tool?.["Номер"] ?? "—"} · бух. №${tool?.["Бух.номер"] ?? "—"} · ${tool?.["Наименование"] ?? "без названия"} · ${formatUserDeleteItemCost(tool)}`);
       });
       if (tools.length > 12) lines.push(`• ещё ${tools.length - 12}`);
     }
@@ -36188,19 +36216,25 @@ function setupSuperAdmin() {
         const sectionEl = document.createElement("section");
         sectionEl.className = "users-delete-blocked-modal__section";
         const hiddenCount = Math.max(section.count - 4, 0);
+        const sectionTotalCost = getUserDeleteItemsTotalCost(section.items);
         sectionEl.innerHTML = `
           <div class="users-delete-blocked-modal__section-head">
             <span class="users-delete-blocked-modal__section-icon" aria-hidden="true">${section.icon}</span>
             <strong>${section.title}</strong>
             <span>${section.count}</span>
           </div>
+          <div class="users-delete-blocked-modal__section-total">Общая стоимость: <b>${formatNotificationCostWithoutCurrency(sectionTotalCost)} р.</b></div>
           <ul class="users-delete-blocked-modal__list"></ul>`;
         const listEl = sectionEl.querySelector(".users-delete-blocked-modal__list");
         const renderItems = (isExpanded = false) => {
           listEl.innerHTML = "";
           section.items.slice(0, isExpanded ? section.items.length : 4).forEach((item) => {
             const itemEl = document.createElement("li");
-            itemEl.textContent = section.getText(item);
+            const textEl = document.createElement("span");
+            textEl.textContent = section.getText(item);
+            const costEl = document.createElement("b");
+            costEl.textContent = formatUserDeleteItemCost(item);
+            itemEl.append(textEl, costEl);
             listEl.appendChild(itemEl);
           });
           if (hiddenCount && !isExpanded) {

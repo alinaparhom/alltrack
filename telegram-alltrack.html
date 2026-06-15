@@ -14124,7 +14124,7 @@
         height: auto;
         max-height: min(86vh, 680px);
         padding: 18px;
-        border-radius: 28px;
+        border-radius: 34px;
         grid-template-rows: auto 1fr auto;
         gap: 14px;
         overflow: hidden;
@@ -14183,7 +14183,7 @@
 
       .users-delete-blocked-modal__section {
         padding: 12px;
-        border-radius: 18px;
+        border-radius: 22px;
         background: rgba(255, 255, 255, 0.7);
         border: 1px solid rgba(251, 146, 60, 0.16);
       }
@@ -14215,6 +14215,21 @@
         background: rgba(255, 237, 213, 0.9);
       }
 
+      .users-delete-blocked-modal__section-total {
+        margin-top: 10px;
+        padding: 9px 11px;
+        border-radius: 14px;
+        color: #9a3412;
+        font-size: 13px;
+        background: linear-gradient(135deg, rgba(255, 247, 237, 0.92), rgba(255, 255, 255, 0.72));
+        border: 1px solid rgba(251, 146, 60, 0.14);
+      }
+
+      .users-delete-blocked-modal__section-total b {
+        color: #7c2d12;
+        font-weight: 900;
+      }
+
       .users-delete-blocked-modal__list {
         margin: 10px 0 0;
         padding: 0;
@@ -14227,12 +14242,26 @@
       }
 
       .users-delete-blocked-modal__list li {
-        padding: 8px 10px;
-        border-radius: 12px;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 8px;
+        padding: 9px 10px;
+        border-radius: 14px;
         background: rgba(248, 250, 252, 0.82);
       }
 
+      .users-delete-blocked-modal__list li b {
+        padding: 5px 8px;
+        border-radius: 999px;
+        color: #15803d;
+        font-size: 12px;
+        white-space: nowrap;
+        background: rgba(220, 252, 231, 0.86);
+      }
+
       .users-delete-blocked-modal__list .users-delete-blocked-modal__more-item {
+        display: block;
         padding: 0;
         background: transparent;
       }
@@ -14271,6 +14300,23 @@
         border-color: var(--accent);
         background: rgba(59, 125, 255, 0.08);
         box-shadow: 0 16px 34px rgba(59, 125, 255, 0.18);
+      }
+
+      @media (max-width: 420px) {
+        .users-delete-blocked-modal__panel {
+          border-radius: 28px;
+          padding: 14px;
+        }
+
+        .users-delete-blocked-modal__list li {
+          grid-template-columns: 1fr;
+          align-items: start;
+        }
+
+        .users-delete-blocked-modal__list li b {
+          width: fit-content;
+          white-space: normal;
+        }
       }
 
       @media (max-width: 360px) {

@@ -361,7 +361,7 @@ export function renderRole(user, options = {}) {
                     data-energy-objects-create
                     aria-label="Создать новый объект"
                   >
-                    +
+                    Добавить объект
                   </button>
                 </div>
                 <div class="form-message" data-energy-objects-message></div>

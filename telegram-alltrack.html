@@ -16089,6 +16089,70 @@
         accent-color: var(--accent);
       }
 
+
+      .settings-group-chip--person {
+        max-width: 100%;
+      }
+
+      .settings-group-chip--person span {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .settings-moves-table {
+        display: grid;
+        gap: 14px;
+      }
+
+      .settings-moves-section {
+        display: grid;
+        gap: 8px;
+        padding: 10px;
+        border-radius: 16px;
+        border: 1px solid rgba(226, 232, 240, 0.9);
+        background: rgba(255, 255, 255, 0.68);
+      }
+
+      .settings-moves-title {
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--muted);
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+
+      .settings-moves-mode,
+      .settings-moves-grid,
+      .settings-moves-columns {
+        display: grid;
+        gap: 8px;
+      }
+
+      .settings-moves-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .settings-moves-column {
+        display: grid;
+        gap: 6px;
+        padding: 10px;
+        border-radius: 14px;
+        border: 1px solid rgba(226, 232, 240, 0.9);
+        background: rgba(255, 255, 255, 0.78);
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+
+      @media (max-width: 560px) {
+        .settings-moves-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
       .settings-telegram-groups {
         display: grid;
         gap: 10px;

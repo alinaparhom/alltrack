@@ -3119,6 +3119,93 @@ function formatFullName(fullName = "", maxParts = 3) {
   return parts.slice(0, maxParts).join(" ");
 }
 
+
+function splitPersonNameParts(fullName = "") {
+  const parts = String(fullName ?? "").trim().split(/\s+/).filter(Boolean);
+  return {
+    lastName: parts[0] ?? "",
+    firstName: parts[1] ?? "",
+    middleName: parts.slice(2).join(" "),
+  };
+}
+
+function buildPersonFullName(lastName = "", firstName = "", middleName = "") {
+  return [lastName, firstName, middleName]
+    .map((part) => String(part ?? "").trim())
+    .filter(Boolean)
+    .join(" ");
+}
+
+function replacePersonNameInJsonValue(value, oldFullName, newFullName) {
+  const oldName = String(oldFullName ?? "").trim();
+  const newName = String(newFullName ?? "").trim();
+  if (!oldName || !newName || normalizePersonName(oldName) === normalizePersonName(newName)) {
+    return { value, changed: false };
+  }
+  const oldNameKey = normalizePersonName(oldName);
+  if (typeof value === "string") {
+    return normalizePersonName(value) === oldNameKey
+      ? { value: newName, changed: true }
+      : { value, changed: false };
+  }
+  if (Array.isArray(value)) {
+    let changed = false;
+    const next = value.map((item) => {
+      const result = replacePersonNameInJsonValue(item, oldName, newName);
+      changed = changed || result.changed;
+      return result.value;
+    });
+    return { value: changed ? next : value, changed };
+  }
+  if (value && typeof value === "object") {
+    let changed = false;
+    const next = {};
+    Object.entries(value).forEach(([key, item]) => {
+      const result = replacePersonNameInJsonValue(item, oldName, newName);
+      changed = changed || result.changed;
+      next[key] = result.value;
+    });
+    return { value: changed ? next : value, changed };
+  }
+  return { value, changed: false };
+}
+
+const organizationUserNameJsonFiles = [
+  "Настройки.json",
+  "Объекты.json",
+  "База с инструментами.json",
+  "Перемещения.json",
+  "Перемещения история.json",
+  "Заявки.json",
+  "Штрафы.json",
+  "Ремонты.json",
+  "Списания.json",
+  "Поломки.json",
+];
+
+async function buildOrganizationNameReplacementEntries(orgFolderName, oldFullName, newFullName, meta = {}) {
+  const orgFolder = String(orgFolderName ?? "").trim();
+  if (!orgFolder || normalizePersonName(oldFullName) === normalizePersonName(newFullName)) {
+    return [];
+  }
+  const entries = [];
+  await Promise.all(
+    organizationUserNameJsonFiles.map(async (fileName) => {
+      const path = `./${orgFolder}/${fileName}`;
+      try {
+        const data = await loadJson(path);
+        const result = replacePersonNameInJsonValue(data, oldFullName, newFullName);
+        if (result.changed) {
+          entries.push({ path, data: result.value, ...meta });
+        }
+      } catch (error) {
+        // Файл может отсутствовать у организации — это нормально.
+      }
+    })
+  );
+  return entries;
+}
+
 function getInitials(fullName = "") {
   const parts = fullName.trim().split(/\s+/).filter(Boolean);
   if (parts.length === 0) return "??";
@@ -29134,7 +29221,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const userIndex = usersState.users.indexOf(editableUser);
     if (userIndex < 0) return;
     usersEditFormEl.elements["users-edit-index"].value = String(userIndex);
-    usersEditFormEl.elements["users-edit-full-name"].value = String(editableUser?.full_name ?? "").trim();
+    const nameParts = splitPersonNameParts(editableUser?.full_name ?? "");
+    usersEditFormEl.elements["users-edit-last-name"].value = nameParts.lastName;
+    usersEditFormEl.elements["users-edit-first-name"].value = nameParts.firstName;
+    usersEditFormEl.elements["users-edit-middle-name"].value = nameParts.middleName;
     usersEditFormEl.elements["users-edit-role"].value = String(editableUser?.role ?? "").trim();
     usersEditFormEl.elements["users-edit-position"].value = String(editableUser?.position ?? "").trim();
     usersEditFormEl.elements["users-edit-telegram-id"].value = String(editableUser?.telegram_id ?? "").trim();
@@ -29599,18 +29689,23 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (usersEditMessageEl) usersEditMessageEl.textContent = "Сохраняем изменения...";
     const formData = new FormData(usersEditFormEl);
     const userIndex = Number(formData.get("users-edit-index"));
-    const fullName = String(formData.get("users-edit-full-name") ?? "").trim();
+    const fullName = buildPersonFullName(
+      formData.get("users-edit-last-name"),
+      formData.get("users-edit-first-name"),
+      formData.get("users-edit-middle-name")
+    );
     const roleName = String(formData.get("users-edit-role") ?? "").trim();
     const positionName = String(formData.get("users-edit-position") ?? "").trim();
     const telegramId = String(formData.get("users-edit-telegram-id") ?? "").trim();
     if (!fullName || !roleName || !Number.isInteger(userIndex) || userIndex < 0) {
-      if (usersEditMessageEl) usersEditMessageEl.textContent = "Заполните ФИО и роль.";
+      if (usersEditMessageEl) usersEditMessageEl.textContent = "Заполните фамилию, имя и роль.";
       return;
     }
     try {
       const usersData = await loadJson(usersFilePath).catch(() => ({ users: [] }));
       const nextUsers = Array.isArray(usersData?.users) ? [...usersData.users] : [];
       if (!nextUsers[userIndex]) throw new Error("Пользователь не найден");
+      const previousFullName = String(nextUsers[userIndex]?.full_name ?? "").trim();
       nextUsers[userIndex] = {
         ...nextUsers[userIndex],
         full_name: fullName,
@@ -29618,7 +29713,16 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         position: positionName,
         telegram_id: telegramId,
       };
-      await saveJson(usersFilePath, { ...usersData, users: nextUsers }, { user });
+      const nameReplacementEntries = await buildOrganizationNameReplacementEntries(
+        context.orgFolderName,
+        previousFullName,
+        fullName,
+        { user }
+      );
+      await saveJsonBatch([
+        { path: usersFilePath, data: { ...usersData, users: nextUsers }, user },
+        ...nameReplacementEntries,
+      ]);
       usersState.users = nextUsers;
       updateUsersNameSuggestions(nextUsers);
       updateUsersDetailsView();
@@ -35043,7 +35147,10 @@ function setupSuperAdmin() {
     const userIndex = orgsState.users.indexOf(editableUser);
     if (userIndex < 0) return;
     usersEditFormEl.elements["users-edit-index"].value = String(userIndex);
-    usersEditFormEl.elements["users-edit-full-name"].value = String(editableUser?.full_name ?? "").trim();
+    const nameParts = splitPersonNameParts(editableUser?.full_name ?? "");
+    usersEditFormEl.elements["users-edit-last-name"].value = nameParts.lastName;
+    usersEditFormEl.elements["users-edit-first-name"].value = nameParts.firstName;
+    usersEditFormEl.elements["users-edit-middle-name"].value = nameParts.middleName;
     usersEditFormEl.elements["users-edit-role"].value = String(editableUser?.role ?? "").trim();
     usersEditFormEl.elements["users-edit-position"].value = String(editableUser?.position ?? "").trim();
     usersEditFormEl.elements["users-edit-telegram-id"].value = String(editableUser?.telegram_id ?? "").trim();
@@ -35620,18 +35727,23 @@ function setupSuperAdmin() {
     if (usersEditMessageEl) usersEditMessageEl.textContent = "Сохраняем изменения...";
     const formData = new FormData(usersEditFormEl);
     const userIndex = Number(formData.get("users-edit-index"));
-    const fullName = String(formData.get("users-edit-full-name") ?? "").trim();
+    const fullName = buildPersonFullName(
+      formData.get("users-edit-last-name"),
+      formData.get("users-edit-first-name"),
+      formData.get("users-edit-middle-name")
+    );
     const roleName = String(formData.get("users-edit-role") ?? "").trim();
     const positionName = String(formData.get("users-edit-position") ?? "").trim();
     const telegramId = String(formData.get("users-edit-telegram-id") ?? "").trim();
     if (!fullName || !roleName || !Number.isInteger(userIndex) || userIndex < 0) {
-      if (usersEditMessageEl) usersEditMessageEl.textContent = "Заполните ФИО и роль.";
+      if (usersEditMessageEl) usersEditMessageEl.textContent = "Заполните фамилию, имя и роль.";
       return;
     }
     try {
       const usersData = await loadJson(usersFilePath).catch(() => ({ users: [] }));
       const nextUsers = Array.isArray(usersData?.users) ? [...usersData.users] : [];
       if (!nextUsers[userIndex]) throw new Error("Пользователь не найден");
+      const previousFullName = String(nextUsers[userIndex]?.full_name ?? "").trim();
       nextUsers[userIndex] = {
         ...nextUsers[userIndex],
         full_name: fullName,
@@ -35639,7 +35751,23 @@ function setupSuperAdmin() {
         position: positionName,
         telegram_id: telegramId,
       };
-      await saveJson(usersFilePath, { ...usersData, users: nextUsers }, { user: currentUser });
+      const orgData = await loadJson(orgFilePath).catch(() => ({ organizations: [] }));
+      const orgFolderName = sanitizeOrganizationFolderName(
+        pickOrganizationShortName(
+          orgData,
+          String(selectedUsersOrgName || nextUsers[userIndex]?.organization || "").trim()
+        )
+      );
+      const nameReplacementEntries = await buildOrganizationNameReplacementEntries(
+        orgFolderName,
+        previousFullName,
+        fullName,
+        { user: currentUser }
+      );
+      await saveJsonBatch([
+        { path: usersFilePath, data: { ...usersData, users: nextUsers }, user: currentUser },
+        ...nameReplacementEntries,
+      ]);
       orgsState.users = nextUsers;
       updateUsersNameSuggestions(nextUsers);
       updateUsersDetailsView();

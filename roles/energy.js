@@ -4091,9 +4091,17 @@ export function renderRole(user, options = {}) {
               <div class="form-card users-add__form">
                 <form class="form-grid" data-users-edit-form>
                   <input type="hidden" name="users-edit-index" data-users-edit-index />
-                  <div class="form-field form-field--wide">
-                    <label class="form-label" for="users-edit-full-name">ФИО</label>
-                    <input class="form-input" type="text" id="users-edit-full-name" name="users-edit-full-name" autocomplete="name" required />
+                  <div class="form-field">
+                    <label class="form-label" for="users-edit-last-name">Фамилия</label>
+                    <input class="form-input" type="text" id="users-edit-last-name" name="users-edit-last-name" autocomplete="family-name" placeholder="Иванов" required />
+                  </div>
+                  <div class="form-field">
+                    <label class="form-label" for="users-edit-first-name">Имя</label>
+                    <input class="form-input" type="text" id="users-edit-first-name" name="users-edit-first-name" autocomplete="given-name" placeholder="Иван" required />
+                  </div>
+                  <div class="form-field">
+                    <label class="form-label" for="users-edit-middle-name">Отчество</label>
+                    <input class="form-input" type="text" id="users-edit-middle-name" name="users-edit-middle-name" autocomplete="additional-name" placeholder="Иванович" />
                   </div>
                   <div class="form-field">
                     <label class="form-label" for="users-edit-role">Роль пользователя</label>

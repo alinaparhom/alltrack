@@ -9182,7 +9182,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
     setObjectsEditMessage("");
     objectsEditModalEl.classList.remove("is-hidden");
-    objectsEditNameInput?.focus();
   };
 
   const closeObjectsModal = () => {

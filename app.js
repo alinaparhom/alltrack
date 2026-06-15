@@ -29820,19 +29820,31 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     return { moves, tools };
   };
 
+  const getUserDeleteItemCost = (item) => normalizeCostValue(item?.["Стоимость"]) || 0;
+
+  const formatUserDeleteItemCost = (item) => {
+    const cost = getUserDeleteItemCost(item);
+    return cost > 0 ? formatCostValueWithCurrency(cost) : "стоимость не указана";
+  };
+
+  const formatUserDeleteSectionTotal = (items) => {
+    const total = items.reduce((sum, item) => sum + getUserDeleteItemCost(item), 0);
+    return formatCostValueWithCurrency(total, "0 р.");
+  };
+
   const formatUserDeleteBlockers = ({ moves, tools }) => {
     const lines = ["Удалить из базы пользователя невозможно, так как на нём ещё есть данные:"];
     if (moves.length) {
-      lines.push("", "Перемещения на принятии:");
+      lines.push("", `Перемещения на принятии · сумма: ${formatUserDeleteSectionTotal(moves)}`);
       moves.slice(0, 12).forEach((move) => {
-        lines.push(`• №${move?.["Номер"] ?? "—"} · бух. №${move?.["Бух.номер"] ?? "—"} · ${move?.["Наименование"] ?? move?.["Новый объект"] ?? "без описания"}`);
+        lines.push(`• №${move?.["Номер"] ?? "—"} · бух. №${move?.["Бух.номер"] ?? "—"} · ${move?.["Наименование"] ?? move?.["Новый объект"] ?? "без описания"} · ${formatUserDeleteItemCost(move)}`);
       });
       if (moves.length > 12) lines.push(`• ещё ${moves.length - 12}`);
     }
     if (tools.length) {
-      lines.push("", "Инструменты в базе:");
+      lines.push("", `Инструменты в базе · сумма: ${formatUserDeleteSectionTotal(tools)}`);
       tools.slice(0, 12).forEach((tool) => {
-        lines.push(`• №${tool?.["Номер"] ?? "—"} · бух. №${tool?.["Бух.номер"] ?? "—"} · ${tool?.["Наименование"] ?? "без названия"}`);
+        lines.push(`• №${tool?.["Номер"] ?? "—"} · бух. №${tool?.["Бух.номер"] ?? "—"} · ${tool?.["Наименование"] ?? "без названия"} · ${formatUserDeleteItemCost(tool)}`);
       });
       if (tools.length > 12) lines.push(`• ещё ${tools.length - 12}`);
     }
@@ -29869,8 +29881,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (summaryEl) {
       summaryEl.innerHTML = "";
       [
-        { title: "Перемещения на принятии", count: moves.length, items: moves, icon: "↔", getText: (move) => `№${move?.["Номер"] ?? "—"} · бух. №${move?.["Бух.номер"] ?? "—"} · ${move?.["Наименование"] ?? move?.["Новый объект"] ?? "без описания"}` },
-        { title: "Инструменты в базе", count: tools.length, items: tools, icon: "🧰", getText: (tool) => `№${tool?.["Номер"] ?? "—"} · бух. №${tool?.["Бух.номер"] ?? "—"} · ${tool?.["Наименование"] ?? "без названия"}` },
+        { title: "Перемещения на принятии", count: moves.length, items: moves, icon: "↔", getText: (move) => `№${move?.["Номер"] ?? "—"} · бух. №${move?.["Бух.номер"] ?? "—"} · ${move?.["Наименование"] ?? move?.["Новый объект"] ?? "без описания"} · ${formatUserDeleteItemCost(move)}` },
+        { title: "Инструменты в базе", count: tools.length, items: tools, icon: "🧰", getText: (tool) => `№${tool?.["Номер"] ?? "—"} · бух. №${tool?.["Бух.номер"] ?? "—"} · ${tool?.["Наименование"] ?? "без названия"} · ${formatUserDeleteItemCost(tool)}` },
       ].filter((section) => section.count).forEach((section) => {
         const sectionEl = document.createElement("section");
         sectionEl.className = "users-delete-blocked-modal__section";
@@ -29881,6 +29893,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
             <strong>${section.title}</strong>
             <span>${section.count}</span>
           </div>
+          <div class="users-delete-blocked-modal__total">Общая стоимость: <strong>${formatUserDeleteSectionTotal(section.items)}</strong></div>
           <ul class="users-delete-blocked-modal__list"></ul>`;
         const listEl = sectionEl.querySelector(".users-delete-blocked-modal__list");
         const renderItems = (isExpanded = false) => {
@@ -36133,19 +36146,31 @@ function setupSuperAdmin() {
     return { moves, tools };
   };
 
+  const getUserDeleteItemCost = (item) => normalizeCostValue(item?.["Стоимость"]) || 0;
+
+  const formatUserDeleteItemCost = (item) => {
+    const cost = getUserDeleteItemCost(item);
+    return cost > 0 ? formatCostValueWithCurrency(cost) : "стоимость не указана";
+  };
+
+  const formatUserDeleteSectionTotal = (items) => {
+    const total = items.reduce((sum, item) => sum + getUserDeleteItemCost(item), 0);
+    return formatCostValueWithCurrency(total, "0 р.");
+  };
+
   const formatUserDeleteBlockers = ({ moves, tools }) => {
     const lines = ["Удалить из базы пользователя невозможно, так как на нём ещё есть данные:"];
     if (moves.length) {
-      lines.push("", "Перемещения на принятии:");
+      lines.push("", `Перемещения на принятии · сумма: ${formatUserDeleteSectionTotal(moves)}`);
       moves.slice(0, 12).forEach((move) => {
-        lines.push(`• №${move?.["Номер"] ?? "—"} · бух. №${move?.["Бух.номер"] ?? "—"} · ${move?.["Наименование"] ?? move?.["Новый объект"] ?? "без описания"}`);
+        lines.push(`• №${move?.["Номер"] ?? "—"} · бух. №${move?.["Бух.номер"] ?? "—"} · ${move?.["Наименование"] ?? move?.["Новый объект"] ?? "без описания"} · ${formatUserDeleteItemCost(move)}`);
       });
       if (moves.length > 12) lines.push(`• ещё ${moves.length - 12}`);
     }
     if (tools.length) {
-      lines.push("", "Инструменты в базе:");
+      lines.push("", `Инструменты в базе · сумма: ${formatUserDeleteSectionTotal(tools)}`);
       tools.slice(0, 12).forEach((tool) => {
-        lines.push(`• №${tool?.["Номер"] ?? "—"} · бух. №${tool?.["Бух.номер"] ?? "—"} · ${tool?.["Наименование"] ?? "без названия"}`);
+        lines.push(`• №${tool?.["Номер"] ?? "—"} · бух. №${tool?.["Бух.номер"] ?? "—"} · ${tool?.["Наименование"] ?? "без названия"} · ${formatUserDeleteItemCost(tool)}`);
       });
       if (tools.length > 12) lines.push(`• ещё ${tools.length - 12}`);
     }
@@ -36182,8 +36207,8 @@ function setupSuperAdmin() {
     if (summaryEl) {
       summaryEl.innerHTML = "";
       [
-        { title: "Перемещения на принятии", count: moves.length, items: moves, icon: "↔", getText: (move) => `№${move?.["Номер"] ?? "—"} · бух. №${move?.["Бух.номер"] ?? "—"} · ${move?.["Наименование"] ?? move?.["Новый объект"] ?? "без описания"}` },
-        { title: "Инструменты в базе", count: tools.length, items: tools, icon: "🧰", getText: (tool) => `№${tool?.["Номер"] ?? "—"} · бух. №${tool?.["Бух.номер"] ?? "—"} · ${tool?.["Наименование"] ?? "без названия"}` },
+        { title: "Перемещения на принятии", count: moves.length, items: moves, icon: "↔", getText: (move) => `№${move?.["Номер"] ?? "—"} · бух. №${move?.["Бух.номер"] ?? "—"} · ${move?.["Наименование"] ?? move?.["Новый объект"] ?? "без описания"} · ${formatUserDeleteItemCost(move)}` },
+        { title: "Инструменты в базе", count: tools.length, items: tools, icon: "🧰", getText: (tool) => `№${tool?.["Номер"] ?? "—"} · бух. №${tool?.["Бух.номер"] ?? "—"} · ${tool?.["Наименование"] ?? "без названия"} · ${formatUserDeleteItemCost(tool)}` },
       ].filter((section) => section.count).forEach((section) => {
         const sectionEl = document.createElement("section");
         sectionEl.className = "users-delete-blocked-modal__section";
@@ -36194,6 +36219,7 @@ function setupSuperAdmin() {
             <strong>${section.title}</strong>
             <span>${section.count}</span>
           </div>
+          <div class="users-delete-blocked-modal__total">Общая стоимость: <strong>${formatUserDeleteSectionTotal(section.items)}</strong></div>
           <ul class="users-delete-blocked-modal__list"></ul>`;
         const listEl = sectionEl.querySelector(".users-delete-blocked-modal__list");
         const renderItems = (isExpanded = false) => {

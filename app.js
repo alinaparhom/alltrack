@@ -5539,12 +5539,18 @@ function buildEnergySettingsMarkup(settings) {
           </div>
           <div class="settings-moves-section">
             <span class="settings-moves-title">Когда отправлять</span>
-            <div class="settings-moves-mode">
-              <label class="settings-group-chip"><input type="radio" name="moves-table-schedule-type" value="monthDays" ${movesTable.scheduleType === "monthDays" ? "checked" : ""} /><span>По числам месяца</span></label>
-              <label class="settings-group-chip"><input type="radio" name="moves-table-schedule-type" value="weekDays" ${movesTable.scheduleType === "weekDays" ? "checked" : ""} /><span>По дням недели</span></label>
+            <div class="settings-moves-mode" data-moves-table-schedule-mode>
+              <label class="settings-group-chip settings-group-chip--large"><input type="radio" name="moves-table-schedule-type" value="monthDays" ${movesTable.scheduleType === "weekDays" ? "" : "checked"} /><span>По числам месяца</span></label>
+              <label class="settings-group-chip settings-group-chip--large"><input type="radio" name="moves-table-schedule-type" value="weekDays" ${movesTable.scheduleType === "weekDays" ? "checked" : ""} /><span>По дням недели</span></label>
             </div>
-            <div class="settings-day-grid">${monthDayMarkup}</div>
-            <div class="settings-day-grid">${weekDayMarkup}</div>
+            <div class="settings-schedule-days" data-moves-table-month-days ${movesTable.scheduleType === "weekDays" ? "hidden" : ""}>
+              <div class="settings-schedule-days__hint">Выберите числа месяца для автоматической отправки.</div>
+              <div class="settings-day-grid">${monthDayMarkup}</div>
+            </div>
+            <div class="settings-schedule-days" data-moves-table-week-days ${movesTable.scheduleType === "weekDays" ? "" : "hidden"}>
+              <div class="settings-schedule-days__hint">Выберите дни недели для автоматической отправки.</div>
+              <div class="settings-day-grid">${weekDayMarkup}</div>
+            </div>
           </div>
           <div class="settings-moves-grid">
             <label class="settings-fine-field"><span>Время</span><input class="form-input" type="time" name="moves-table-time" value="${escapeHtml(movesTable.time)}" /></label>
@@ -30691,6 +30697,20 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     settingsBodyEl
       .querySelectorAll('input[type="checkbox"]')
       .forEach((input) => syncCardState(input));
+
+    const syncMovesTableScheduleDays = () => {
+      const scheduleType = settingsBodyEl.querySelector('input[name="moves-table-schedule-type"]:checked')?.value === "weekDays"
+        ? "weekDays"
+        : "monthDays";
+      const monthDaysBox = settingsBodyEl.querySelector("[data-moves-table-month-days]");
+      const weekDaysBox = settingsBodyEl.querySelector("[data-moves-table-week-days]");
+      if (monthDaysBox) monthDaysBox.hidden = scheduleType !== "monthDays";
+      if (weekDaysBox) weekDaysBox.hidden = scheduleType !== "weekDays";
+    };
+    settingsBodyEl
+      .querySelectorAll('input[name="moves-table-schedule-type"]')
+      .forEach((input) => input.addEventListener("change", syncMovesTableScheduleDays));
+    syncMovesTableScheduleDays();
 
     const selectAllMovesTableRecipients = settingsBodyEl.querySelector("[data-moves-table-select-all]");
     selectAllMovesTableRecipients?.addEventListener("click", () => {

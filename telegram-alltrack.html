@@ -631,7 +631,6 @@
         border-bottom-color: rgba(148, 170, 210, 0.2);
       }
 
-      body[data-theme="dark"] .objects-form,
       body[data-theme="dark"] .objects-item,
       body[data-theme="dark"] .objects-list__items,
       body[data-theme="dark"] .objects-empty,
@@ -642,9 +641,10 @@
       }
 
       body[data-theme="dark"] .objects-form__input .form-input {
-        background: rgba(18, 25, 42, 0.92);
+        background: linear-gradient(135deg, rgba(18, 25, 42, 0.94), rgba(30, 41, 59, 0.76));
         border-color: rgba(148, 170, 210, 0.25);
         color: var(--text);
+        box-shadow: 0 14px 30px rgba(0, 0, 0, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.08);
       }
 
       body[data-theme="dark"] .objects-item__name {
@@ -676,9 +676,10 @@
       }
 
       body[data-theme="dark"] .objects-form__submit {
-        background: rgba(18, 25, 42, 0.92);
-        border-color: rgba(148, 170, 210, 0.25);
-        color: var(--text);
+        background: linear-gradient(135deg, rgba(34, 197, 94, 0.86), rgba(21, 128, 61, 0.82));
+        border-color: rgba(187, 247, 208, 0.32);
+        color: #fff;
+        box-shadow: 0 18px 34px rgba(22, 163, 74, 0.24), inset 0 1px 0 rgba(255, 255, 255, 0.16);
       }
 
       body[data-theme="dark"] .demand-modal__panel {
@@ -15391,30 +15392,33 @@
 
       .objects-form {
         display: grid;
-        gap: 6px;
-        padding: 6px;
-        border-radius: 12px;
-        background: rgba(255, 255, 255, 0.7);
-        border: 1px solid rgba(226, 232, 240, 0.9);
-        box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06);
+        gap: 8px;
+        padding: 0;
+        border-radius: 0;
+        background: transparent;
+        border: 0;
+        box-shadow: none;
       }
 
       .objects-form__input {
         display: flex;
         align-items: center;
         gap: 6px;
-        height: 36px;
+        height: 52px;
       }
 
       .objects-form__input .form-input {
         flex: 1;
         height: 100%;
-        padding: 6px 10px;
-        border-radius: 10px;
-        font-size: 13px;
-        border: 1px solid rgba(226, 232, 240, 0.9);
-        background: rgba(255, 255, 255, 0.92);
-        box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.05);
+        padding: 0 16px;
+        border-radius: 18px;
+        font-size: 15px;
+        font-weight: 600;
+        border: 1px solid rgba(226, 232, 240, 0.92);
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0.66));
+        box-shadow: 0 14px 30px rgba(15, 23, 42, 0.07), inset 0 1px 0 rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(18px);
+        -webkit-backdrop-filter: blur(18px);
       }
 
       .objects-form__submit {
@@ -15423,19 +15427,22 @@
         right: 12px;
         bottom: calc(12px + env(safe-area-inset-bottom));
         z-index: 20;
-        border: 1px solid rgba(47, 158, 103, 0.35);
-        background: linear-gradient(135deg, rgba(47, 158, 103, 0.95), rgba(34, 197, 94, 0.9));
+        border: 1px solid rgba(255, 255, 255, 0.52);
+        background: linear-gradient(135deg, rgba(34, 197, 94, 0.88), rgba(21, 128, 61, 0.84));
         color: #fff;
         width: auto;
         height: 52px;
         padding: 0 18px;
         border-radius: 18px;
         font-size: 15px;
-        font-weight: 700;
+        font-weight: 800;
+        letter-spacing: -0.01em;
         display: grid;
         place-items: center;
         cursor: pointer;
-        box-shadow: 0 18px 34px rgba(47, 158, 103, 0.28);
+        box-shadow: 0 18px 34px rgba(22, 163, 74, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.34);
+        backdrop-filter: blur(18px);
+        -webkit-backdrop-filter: blur(18px);
         transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
       }
 
@@ -15447,7 +15454,7 @@
 
       .objects-form__submit:hover {
         transform: translateY(-1px);
-        box-shadow: 0 12px 22px rgba(26, 31, 46, 0.08);
+        box-shadow: 0 22px 38px rgba(22, 163, 74, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.4);
       }
 
       .objects-form__submit:active {
@@ -15511,12 +15518,13 @@
       }
 
       .objects-item {
-        padding: 6px 10px;
-        border-radius: 12px;
+        min-height: 52px;
+        padding: 8px 12px;
+        border-radius: 18px;
         border: 1px solid rgba(226, 232, 240, 0.9);
         background: rgba(255, 255, 255, 0.9);
         display: flex;
-        align-items: flex-start;
+        align-items: center;
         justify-content: space-between;
         gap: 8px;
         box-shadow: 0 8px 18px rgba(15, 23, 42, 0.05);

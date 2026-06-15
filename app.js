@@ -29839,6 +29839,68 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     return lines.join("\n");
   };
 
+  const openUsersDeleteBlockedModal = ({ moves = [], tools = [] } = {}) => {
+    let modalEl = contentEl.querySelector("[data-users-delete-blocked-modal]");
+    if (!modalEl) {
+      modalEl = document.createElement("div");
+      modalEl.className = "settings-modal users-delete-blocked-modal is-hidden";
+      modalEl.dataset.usersDeleteBlockedModal = "";
+      modalEl.innerHTML = `
+        <div class="settings-modal__backdrop users-delete-blocked-modal__backdrop" data-users-delete-blocked-close></div>
+        <div class="settings-modal__panel users-delete-blocked-modal__panel" role="alertdialog" aria-modal="true" aria-labelledby="users-delete-blocked-title">
+          <div class="users-delete-blocked-modal__icon" aria-hidden="true">!</div>
+          <div class="users-delete-blocked-modal__content">
+            <p class="users-delete-blocked-modal__eyebrow">Удаление недоступно</p>
+            <h2 class="users-delete-blocked-modal__title" id="users-delete-blocked-title">У пользователя ещё есть данные</h2>
+            <p class="users-delete-blocked-modal__text">Перед удалением завершите перемещения на принятии и переназначьте инструменты.</p>
+            <div class="users-delete-blocked-modal__summary" data-users-delete-blocked-summary></div>
+          </div>
+          <button class="action-primary users-delete-blocked-modal__button" type="button" data-users-delete-blocked-close>Понятно</button>
+        </div>`;
+      contentEl.appendChild(modalEl);
+      modalEl.querySelectorAll("[data-users-delete-blocked-close]").forEach((button) => {
+        button.addEventListener("click", () => modalEl.classList.add("is-hidden"));
+      });
+      modalEl.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") modalEl.classList.add("is-hidden");
+      });
+    }
+    const summaryEl = modalEl.querySelector("[data-users-delete-blocked-summary]");
+    if (summaryEl) {
+      summaryEl.innerHTML = "";
+      [
+        { title: "Перемещения на принятии", count: moves.length, items: moves, icon: "↔", getText: (move) => `№${move?.["Номер"] ?? "—"} · бух. №${move?.["Бух.номер"] ?? "—"} · ${move?.["Наименование"] ?? move?.["Новый объект"] ?? "без описания"}` },
+        { title: "Инструменты в базе", count: tools.length, items: tools, icon: "🧰", getText: (tool) => `№${tool?.["Номер"] ?? "—"} · бух. №${tool?.["Бух.номер"] ?? "—"} · ${tool?.["Наименование"] ?? "без названия"}` },
+      ].filter((section) => section.count).forEach((section) => {
+        const sectionEl = document.createElement("section");
+        sectionEl.className = "users-delete-blocked-modal__section";
+        const hiddenCount = Math.max(section.count - 4, 0);
+        sectionEl.innerHTML = `
+          <div class="users-delete-blocked-modal__section-head">
+            <span class="users-delete-blocked-modal__section-icon" aria-hidden="true">${section.icon}</span>
+            <strong>${section.title}</strong>
+            <span>${section.count}</span>
+          </div>
+          <ul class="users-delete-blocked-modal__list"></ul>`;
+        const listEl = sectionEl.querySelector(".users-delete-blocked-modal__list");
+        section.items.slice(0, 4).forEach((item) => {
+          const itemEl = document.createElement("li");
+          itemEl.textContent = section.getText(item);
+          listEl.appendChild(itemEl);
+        });
+        if (hiddenCount) {
+          const moreEl = document.createElement("li");
+          moreEl.className = "users-delete-blocked-modal__more";
+          moreEl.textContent = `И ещё ${hiddenCount}`;
+          listEl.appendChild(moreEl);
+        }
+        summaryEl.appendChild(sectionEl);
+      });
+    }
+    modalEl.classList.remove("is-hidden");
+    modalEl.querySelector("[data-users-delete-blocked-close]:last-child")?.focus();
+  };
+
   const deleteUsersEditUser = async () => {
     if (!usersEditFormEl) return;
     const formData = new FormData(usersEditFormEl);
@@ -29857,7 +29919,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const blockers = await buildUserDeleteBlockers(context.orgFolderName, fullName);
       if (blockers.moves.length || blockers.tools.length) {
         const warning = formatUserDeleteBlockers(blockers);
-        window.alert(warning);
+        openUsersDeleteBlockedModal(blockers);
         if (usersEditMessageEl) usersEditMessageEl.textContent = warning;
         return;
       }
@@ -36080,6 +36142,68 @@ function setupSuperAdmin() {
     return lines.join("\n");
   };
 
+  const openUsersDeleteBlockedModal = ({ moves = [], tools = [] } = {}) => {
+    let modalEl = contentEl.querySelector("[data-users-delete-blocked-modal]");
+    if (!modalEl) {
+      modalEl = document.createElement("div");
+      modalEl.className = "settings-modal users-delete-blocked-modal is-hidden";
+      modalEl.dataset.usersDeleteBlockedModal = "";
+      modalEl.innerHTML = `
+        <div class="settings-modal__backdrop users-delete-blocked-modal__backdrop" data-users-delete-blocked-close></div>
+        <div class="settings-modal__panel users-delete-blocked-modal__panel" role="alertdialog" aria-modal="true" aria-labelledby="users-delete-blocked-title">
+          <div class="users-delete-blocked-modal__icon" aria-hidden="true">!</div>
+          <div class="users-delete-blocked-modal__content">
+            <p class="users-delete-blocked-modal__eyebrow">Удаление недоступно</p>
+            <h2 class="users-delete-blocked-modal__title" id="users-delete-blocked-title">У пользователя ещё есть данные</h2>
+            <p class="users-delete-blocked-modal__text">Перед удалением завершите перемещения на принятии и переназначьте инструменты.</p>
+            <div class="users-delete-blocked-modal__summary" data-users-delete-blocked-summary></div>
+          </div>
+          <button class="action-primary users-delete-blocked-modal__button" type="button" data-users-delete-blocked-close>Понятно</button>
+        </div>`;
+      contentEl.appendChild(modalEl);
+      modalEl.querySelectorAll("[data-users-delete-blocked-close]").forEach((button) => {
+        button.addEventListener("click", () => modalEl.classList.add("is-hidden"));
+      });
+      modalEl.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") modalEl.classList.add("is-hidden");
+      });
+    }
+    const summaryEl = modalEl.querySelector("[data-users-delete-blocked-summary]");
+    if (summaryEl) {
+      summaryEl.innerHTML = "";
+      [
+        { title: "Перемещения на принятии", count: moves.length, items: moves, icon: "↔", getText: (move) => `№${move?.["Номер"] ?? "—"} · бух. №${move?.["Бух.номер"] ?? "—"} · ${move?.["Наименование"] ?? move?.["Новый объект"] ?? "без описания"}` },
+        { title: "Инструменты в базе", count: tools.length, items: tools, icon: "🧰", getText: (tool) => `№${tool?.["Номер"] ?? "—"} · бух. №${tool?.["Бух.номер"] ?? "—"} · ${tool?.["Наименование"] ?? "без названия"}` },
+      ].filter((section) => section.count).forEach((section) => {
+        const sectionEl = document.createElement("section");
+        sectionEl.className = "users-delete-blocked-modal__section";
+        const hiddenCount = Math.max(section.count - 4, 0);
+        sectionEl.innerHTML = `
+          <div class="users-delete-blocked-modal__section-head">
+            <span class="users-delete-blocked-modal__section-icon" aria-hidden="true">${section.icon}</span>
+            <strong>${section.title}</strong>
+            <span>${section.count}</span>
+          </div>
+          <ul class="users-delete-blocked-modal__list"></ul>`;
+        const listEl = sectionEl.querySelector(".users-delete-blocked-modal__list");
+        section.items.slice(0, 4).forEach((item) => {
+          const itemEl = document.createElement("li");
+          itemEl.textContent = section.getText(item);
+          listEl.appendChild(itemEl);
+        });
+        if (hiddenCount) {
+          const moreEl = document.createElement("li");
+          moreEl.className = "users-delete-blocked-modal__more";
+          moreEl.textContent = `И ещё ${hiddenCount}`;
+          listEl.appendChild(moreEl);
+        }
+        summaryEl.appendChild(sectionEl);
+      });
+    }
+    modalEl.classList.remove("is-hidden");
+    modalEl.querySelector("[data-users-delete-blocked-close]:last-child")?.focus();
+  };
+
   const deleteUsersEditUser = async () => {
     if (!usersEditFormEl) return;
     const formData = new FormData(usersEditFormEl);
@@ -36105,7 +36229,7 @@ function setupSuperAdmin() {
       const blockers = await buildUserDeleteBlockers(orgFolderName, fullName);
       if (blockers.moves.length || blockers.tools.length) {
         const warning = formatUserDeleteBlockers(blockers);
-        window.alert(warning);
+        openUsersDeleteBlockedModal(blockers);
         if (usersEditMessageEl) usersEditMessageEl.textContent = warning;
         return;
       }

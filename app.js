@@ -14915,6 +14915,17 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     applyWriteOffFilters();
   };
 
+  const getWriteOffToolsTotalCost = (tools = []) =>
+    tools.reduce((sum, tool) => {
+      const value = normalizeCostValue(tool?.["Стоимость"]);
+      return sum + (Number.isFinite(value) ? value : 0);
+    }, 0);
+
+  const formatWriteOffToolsSummary = (tools = []) => {
+    const totalCost = getWriteOffToolsTotalCost(tools);
+    return `Инструментов: ${tools.length} · На сумму ${formatNotificationCostWithoutCurrency(totalCost)} р.`;
+  };
+
   const setWriteOffFiltersOpen = (isOpen) => {
     if (!writeOffFiltersPanelEl) return;
     writeOffFiltersPanelEl.classList.toggle("is-open", isOpen);
@@ -15133,9 +15144,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     setWriteOffMessage("");
     resetWriteOffState();
     await loadWriteOffTools();
-    setWriteOffSubtitle(
-      `Инструментов: ${writeOffState.tools.length}`
-    );
+    setWriteOffSubtitle(formatWriteOffToolsSummary(writeOffState.tools));
     if (
       writeOffSearchInput &&
       (typeof window === "undefined" ||

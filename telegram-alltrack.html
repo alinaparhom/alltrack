@@ -9930,15 +9930,19 @@
       }
 
       .writeoff-modal__panel {
-        width: 100vw;
-        height: 100vh;
-        height: 100svh;
-        height: 100dvh;
-        max-height: 100vh;
-        max-height: 100svh;
-        max-height: 100dvh;
+        width: calc(100vw - 10px);
+        height: calc(100vh - 10px);
+        height: calc(100svh - 10px);
+        height: calc(100dvh - 10px);
+        max-height: calc(100vh - 10px);
+        max-height: calc(100svh - 10px);
+        max-height: calc(100dvh - 10px);
+        margin-left: 5px;
+        margin-right: 5px;
         display: grid;
         grid-template-rows: auto minmax(0, 1fr) auto;
+        border-radius: 20px;
+        overflow: hidden;
       }
 
       .writeoff-modal__header,

@@ -4413,25 +4413,25 @@
       .energy-settings-modal .settings-modal__form {
         grid-template-rows: minmax(0, 1fr) auto auto;
         gap: 10px;
-        padding: 12px 14px calc(12px + env(safe-area-inset-bottom));
+        padding: 5px 14px calc(5px + env(safe-area-inset-bottom));
         overflow: hidden;
       }
 
       .energy-settings-modal .settings-modal__body {
         align-content: start;
         gap: 10px;
-        padding: 2px 2px 8px;
+        padding: 0 2px 8px;
         scrollbar-width: thin;
       }
 
       .energy-settings-modal .settings-modal__footer {
         position: sticky;
-        bottom: 0;
+        bottom: 5px;
         display: grid;
         grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
         gap: 10px;
         align-items: stretch;
-        padding: 4px 0 calc(8px + env(safe-area-inset-bottom));
+        padding: 4px 0 calc(5px + env(safe-area-inset-bottom));
         border-top: none;
         background: transparent;
         backdrop-filter: none;
@@ -5495,8 +5495,43 @@
       }
 
       .settings-row--columns {
-        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        grid-template-columns: minmax(0, 1fr) auto;
         align-items: center;
+      }
+
+      .settings-add-icon-button {
+        width: 46px;
+        min-width: 46px;
+        height: 46px;
+        display: inline-grid;
+        place-items: center;
+        border: 1px solid rgba(34, 197, 94, 0.34);
+        border-radius: 16px;
+        background:
+          linear-gradient(135deg, rgba(220, 252, 231, 0.9), rgba(74, 222, 128, 0.42)),
+          rgba(255, 255, 255, 0.58);
+        color: #15803d;
+        font-size: 28px;
+        font-weight: 900;
+        line-height: 1;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72), 0 12px 28px rgba(21, 128, 61, 0.14);
+        cursor: pointer;
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+        touch-action: manipulation;
+        transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+      }
+
+      .settings-add-icon-button:hover,
+      .settings-add-icon-button:focus-visible {
+        border-color: rgba(34, 197, 94, 0.52);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8), 0 16px 34px rgba(21, 128, 61, 0.2);
+        transform: translateY(-1px);
+        outline: none;
+      }
+
+      .settings-add-icon-button:active {
+        transform: translateY(0) scale(0.98);
       }
 
       .settings-list {

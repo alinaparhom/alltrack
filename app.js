@@ -5463,8 +5463,14 @@ function buildEnergySettingsMarkup(settings) {
             placeholder="Например, Склад, Цех, Вахта"
             data-energy-group-input
           />
-          <button class="action-secondary" type="button" data-energy-group-add>
-            Добавить
+          <button
+            class="settings-add-icon-button"
+            type="button"
+            data-energy-group-add
+            aria-label="Добавить группу МТЦ"
+            title="Добавить группу"
+          >
+            <span aria-hidden="true">+</span>
           </button>
         </div>
         <div class="settings-inline" data-energy-group-list>

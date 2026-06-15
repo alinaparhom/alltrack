@@ -8362,9 +8362,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   let selectedVacationUser = null;
 
   if (objectsSubtitleEl) {
-    const orgLabel =
-      context.orgFullName ?? context.orgShortName ?? context.orgFolderName ?? "";
-    objectsSubtitleEl.textContent = orgLabel;
+    objectsSubtitleEl.textContent = "Быстро находите, добавляйте и редактируйте объекты";
   }
 
   const buildToolsMapBounds = (points) => {

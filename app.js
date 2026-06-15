@@ -5534,7 +5534,10 @@ function buildEnergySettingsMarkup(settings) {
           <div class="settings-accordion__hint">Настройте, кому и когда автоматически отправлять таблицу принятых перемещений.</div>
           <div class="settings-moves-section">
             <span class="settings-moves-title">Кому отправлять</span>
-            <button class="action-secondary settings-moves-select-all" type="button" data-moves-table-select-all>Выбрать всех</button>
+            <div class="settings-moves-actions">
+              <button class="action-secondary settings-moves-select-all" type="button" data-moves-table-select-all>Выбрать всех</button>
+              <button class="action-secondary settings-moves-clear-all" type="button" data-moves-table-clear-all>Снять всё</button>
+            </div>
             <div class="settings-group-chip-list">${recipientMarkup}</div>
           </div>
           <div class="settings-moves-section">
@@ -30712,13 +30715,22 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       .forEach((input) => input.addEventListener("change", syncMovesTableScheduleDays));
     syncMovesTableScheduleDays();
 
-    const selectAllMovesTableRecipients = settingsBodyEl.querySelector("[data-moves-table-select-all]");
-    selectAllMovesTableRecipients?.addEventListener("click", () => {
+    const setMovesTableRecipientsChecked = (checked) => {
       settingsBodyEl
         .querySelectorAll('input[name="moves-table-recipients"]')
         .forEach((input) => {
-          input.checked = true;
+          input.checked = checked;
         });
+    };
+
+    const selectAllMovesTableRecipients = settingsBodyEl.querySelector("[data-moves-table-select-all]");
+    selectAllMovesTableRecipients?.addEventListener("click", () => {
+      setMovesTableRecipientsChecked(true);
+    });
+
+    const clearAllMovesTableRecipients = settingsBodyEl.querySelector("[data-moves-table-clear-all]");
+    clearAllMovesTableRecipients?.addEventListener("click", () => {
+      setMovesTableRecipientsChecked(false);
     });
 
     const appendMovesTableColumnIfNeeded = () => {

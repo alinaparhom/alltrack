@@ -676,7 +676,9 @@
       }
 
       body[data-theme="dark"] .objects-form__submit {
-        background: linear-gradient(135deg, rgba(34, 197, 94, 0.86), rgba(21, 128, 61, 0.82));
+        background:
+          linear-gradient(135deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.05)),
+          linear-gradient(135deg, rgba(34, 197, 94, 0.86), rgba(21, 128, 61, 0.82));
         border-color: rgba(187, 247, 208, 0.32);
         color: #fff;
         box-shadow: 0 18px 34px rgba(22, 163, 74, 0.24), inset 0 1px 0 rgba(255, 255, 255, 0.16);
@@ -15401,24 +15403,23 @@
       }
 
       .objects-form__input {
+        --tools-control-height: 31px;
+        --tools-control-radius: 14px;
         display: flex;
         align-items: center;
-        gap: 6px;
-        height: 52px;
+        gap: 10px;
+        min-height: var(--tools-control-height);
       }
 
       .objects-form__input .form-input {
-        flex: 1;
-        height: 100%;
-        padding: 0 16px;
-        border-radius: 18px;
-        font-size: 15px;
-        font-weight: 600;
-        border: 1px solid rgba(226, 232, 240, 0.92);
-        background: linear-gradient(135deg, rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0.66));
-        box-shadow: 0 14px 30px rgba(15, 23, 42, 0.07), inset 0 1px 0 rgba(255, 255, 255, 0.85);
-        backdrop-filter: blur(18px);
-        -webkit-backdrop-filter: blur(18px);
+        flex: 1 1 260px;
+        height: var(--tools-control-height);
+        min-height: var(--tools-control-height);
+        max-height: var(--tools-control-height);
+        padding: 6px 14px;
+        border-radius: var(--tools-control-radius);
+        font-size: var(--text-md);
+        line-height: 1.2;
       }
 
       .objects-form__submit {
@@ -15427,23 +15428,30 @@
         right: 12px;
         bottom: calc(12px + env(safe-area-inset-bottom));
         z-index: 20;
-        border: 1px solid rgba(255, 255, 255, 0.52);
-        background: linear-gradient(135deg, rgba(34, 197, 94, 0.88), rgba(21, 128, 61, 0.84));
-        color: #fff;
         width: auto;
-        height: 52px;
+        min-height: 52px;
         padding: 0 18px;
+        border: 1px solid rgba(187, 247, 208, 0.58);
         border-radius: 18px;
+        background:
+          linear-gradient(135deg, rgba(255, 255, 255, 0.24), rgba(255, 255, 255, 0.08)),
+          linear-gradient(135deg, rgba(34, 197, 94, 0.9), rgba(21, 128, 61, 0.88));
+        color: #fff;
         font-size: 15px;
         font-weight: 800;
         letter-spacing: -0.01em;
-        display: grid;
-        place-items: center;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
         cursor: pointer;
-        box-shadow: 0 18px 34px rgba(22, 163, 74, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.34);
-        backdrop-filter: blur(18px);
-        -webkit-backdrop-filter: blur(18px);
-        transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+        box-shadow:
+          0 18px 34px rgba(22, 163, 74, 0.28),
+          0 8px 18px rgba(15, 23, 42, 0.08),
+          inset 0 1px 0 rgba(255, 255, 255, 0.42);
+        backdrop-filter: blur(18px) saturate(1.25);
+        -webkit-backdrop-filter: blur(18px) saturate(1.25);
+        transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease, filter 0.2s ease;
       }
 
       .objects-form__submit[data-mode="edit"] {
@@ -15453,8 +15461,12 @@
       }
 
       .objects-form__submit:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 22px 38px rgba(22, 163, 74, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+        transform: translateY(-2px);
+        filter: saturate(1.06);
+        box-shadow:
+          0 22px 38px rgba(22, 163, 74, 0.32),
+          0 10px 22px rgba(15, 23, 42, 0.1),
+          inset 0 1px 0 rgba(255, 255, 255, 0.48);
       }
 
       .objects-form__submit:active {

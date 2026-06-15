@@ -4118,9 +4118,14 @@ export function renderRole(user, options = {}) {
                     <label class="form-label" for="users-edit-position">Должность</label>
                     <input class="form-input" type="text" id="users-edit-position" name="users-edit-position" autocomplete="organization-title" />
                   </div>
-                  <div class="form-field form-field--wide">
+                  <div class="form-field form-field--wide users-edit-telegram-field">
                     <label class="form-label" for="users-edit-telegram-id">Telegram ID</label>
                     <input class="form-input" type="text" id="users-edit-telegram-id" name="users-edit-telegram-id" inputmode="numeric" placeholder="Можно оставить пустым" />
+                    <span class="users-edit-telegram-field__hint">Оставьте поле пустым, чтобы отвязать Telegram от пользователя.</span>
+                    <div class="users-edit-telegram-field__actions">
+                      <button class="button-secondary users-edit-telegram-field__clear" type="button" data-users-edit-clear-telegram>Отвязать ID</button>
+                      <button class="action-secondary users-edit-telegram-field__invite" type="button" data-users-edit-create-invite>Новая ссылка</button>
+                    </div>
                   </div>
                   <div class="form-actions form-actions--compact">
                     <button class="button-secondary users-edit-modal__cancel" type="button" data-users-edit-cancel>Отмена</button>

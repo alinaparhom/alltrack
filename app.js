@@ -6583,6 +6583,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const usersEditFormEl = contentEl.querySelector("[data-users-edit-form]");
   const usersEditMessageEl = contentEl.querySelector("[data-users-edit-message]");
   const usersEditOrgNameEl = contentEl.querySelector("[data-users-edit-org-name]");
+  const usersEditClearTelegramButton = contentEl.querySelector("[data-users-edit-clear-telegram]");
+  const usersEditCreateInviteButton = contentEl.querySelector("[data-users-edit-create-invite]");
   const usersAddModalEl = contentEl.querySelector("[data-users-add-modal]");
   const usersAddBackdropEl = contentEl.querySelector("[data-users-add-backdrop]");
   const usersAddCloseButton = contentEl.querySelector("[data-users-add-close]");
@@ -29683,6 +29685,113 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
   });
 
+  const readUsersEditDraft = () => {
+    if (!usersEditFormEl) return null;
+    const formData = new FormData(usersEditFormEl);
+    const fullName = buildPersonFullName(
+      formData.get("users-edit-last-name"),
+      formData.get("users-edit-first-name"),
+      formData.get("users-edit-middle-name")
+    );
+    const roleName = String(formData.get("users-edit-role") ?? "").trim();
+    const positionName = String(formData.get("users-edit-position") ?? "").trim();
+    const userIndex = Number(formData.get("users-edit-index"));
+    const sourceUser = Number.isInteger(userIndex) ? usersState.users[userIndex] : null;
+    const organizationName = String(
+      sourceUser?.organization ?? selectedUsersOrgDisplayName ?? selectedUsersOrgName ?? ""
+    ).trim();
+    return { fullName, roleName, positionName, organizationName, sourceUser };
+  };
+
+  const createInviteFromUsersEdit = async () => {
+    if (!usersEditFormEl) return;
+    const draft = readUsersEditDraft();
+    if (!draft?.fullName || !draft.roleName || !draft.organizationName) {
+      if (usersEditMessageEl) {
+        usersEditMessageEl.textContent = "Заполните ФИО, роль и организацию для новой ссылки.";
+      }
+      return;
+    }
+    try {
+      if (usersEditMessageEl) {
+        usersEditMessageEl.textContent = "Создаём новую ссылку для перепривязки...";
+      }
+      const registrationsData = await loadRegistrations();
+      const registrations = registrationsData.registrations ?? [];
+      const registrationToken = createRegistrationToken();
+      const registrationsWithoutUser = registrations.filter(
+        (item) =>
+          !(item.user?.full_name === draft.fullName &&
+            item.user?.organization === draft.organizationName &&
+            item.user?.role === draft.roleName)
+      );
+      await saveJson(pendingRegistrationsFilePath, {
+        registrations: [
+          ...registrationsWithoutUser,
+          {
+            token: registrationToken,
+            created_at: new Date().toISOString(),
+            user: {
+              full_name: draft.fullName,
+              organization: draft.organizationName,
+              role: draft.roleName,
+              position: draft.positionName,
+            },
+          },
+        ],
+      }, { user });
+
+      const registrationLink = new URL(`${window.location.origin}${window.location.pathname}`);
+      registrationLink.searchParams.set("registration", registrationToken);
+      const botUsername = await resolveBotUsername();
+      const telegramLinks = buildTelegramRegistrationLinks(botUsername, registrationToken);
+      const fallbackLink = telegramLinks?.webLink ?? registrationLink.href;
+      if (usersInviteHintEl) usersInviteHintEl.textContent = "Новая ссылка для перепривязки готова.";
+      if (usersInviteLinkEl) usersInviteLinkEl.value = fallbackLink;
+      if (usersInviteNoteEl) {
+        usersInviteNoteEl.textContent = telegramLinks?.webLink
+          ? "Отправьте ссылку пользователю: при открытии в Telegram ID перепривяжется автоматически."
+          : "Бот ещё не указан. Скопируйте ссылку и отправьте её вручную.";
+      }
+      if (usersInviteBox) {
+        usersInviteBox.dataset.shareText = `Контакт пользователя: ${draft.fullName}. Роль: ${draft.roleName}. Организация: ${draft.organizationName}.`;
+        usersInviteBox.dataset.telegramLink = fallbackLink;
+        if (telegramLinks?.appLink) {
+          usersInviteBox.dataset.telegramAppLink = telegramLinks.appLink;
+        } else {
+          delete usersInviteBox.dataset.telegramAppLink;
+        }
+        usersInviteBox.classList.remove("is-hidden");
+      }
+      if (usersInviteShareButton) usersInviteShareButton.disabled = !usersInviteLinkEl?.value;
+      if (usersInviteCopyButton) usersInviteCopyButton.disabled = !usersInviteLinkEl?.value;
+      if (usersInviteOpenButton) {
+        usersInviteOpenButton.disabled = !usersInviteLinkEl?.value;
+        usersInviteOpenButton.textContent = telegramLinks?.webLink ? "Открыть в Telegram" : "Открыть ссылку";
+      }
+      if (usersEditMessageEl) {
+        usersEditMessageEl.textContent = "Ссылка готова. При необходимости сохраните пустой Telegram ID, чтобы отвязать старый.";
+      }
+    } catch (error) {
+      console.error(error);
+      if (usersEditMessageEl) {
+        usersEditMessageEl.textContent = "Не удалось создать ссылку. Попробуйте позже.";
+      }
+    }
+  };
+
+  usersEditClearTelegramButton?.addEventListener("click", () => {
+    const telegramInput = usersEditFormEl?.elements?.["users-edit-telegram-id"];
+    if (telegramInput) {
+      telegramInput.value = "";
+      telegramInput.focus();
+    }
+    if (usersEditMessageEl) {
+      usersEditMessageEl.textContent = "Telegram ID очищен. Нажмите «Сохранить», чтобы отвязать пользователя.";
+    }
+  });
+  usersEditCreateInviteButton?.addEventListener("click", createInviteFromUsersEdit);
+
   usersEditFormEl?.addEventListener("submit", async (event) => {
     event.preventDefault();
     if (!usersEditFormEl) return;
@@ -32848,6 +32957,8 @@ function setupSuperAdmin() {
   const usersEditFormEl = contentEl.querySelector("[data-users-edit-form]");
   const usersEditMessageEl = contentEl.querySelector("[data-users-edit-message]");
   const usersEditOrgNameEl = contentEl.querySelector("[data-users-edit-org-name]");
+  const usersEditClearTelegramButton = contentEl.querySelector("[data-users-edit-clear-telegram]");
+  const usersEditCreateInviteButton = contentEl.querySelector("[data-users-edit-create-invite]");
   const usersAddModalEl = contentEl.querySelector("[data-users-add-modal]");
   const usersAddBackdropEl = contentEl.querySelector("[data-users-add-backdrop]");
   const usersAddCloseButton = contentEl.querySelector("[data-users-add-close]");
@@ -35720,6 +35831,113 @@ function setupSuperAdmin() {
       }
     }
   });
+
+  const readUsersEditDraft = () => {
+    if (!usersEditFormEl) return null;
+    const formData = new FormData(usersEditFormEl);
+    const fullName = buildPersonFullName(
+      formData.get("users-edit-last-name"),
+      formData.get("users-edit-first-name"),
+      formData.get("users-edit-middle-name")
+    );
+    const roleName = String(formData.get("users-edit-role") ?? "").trim();
+    const positionName = String(formData.get("users-edit-position") ?? "").trim();
+    const userIndex = Number(formData.get("users-edit-index"));
+    const sourceUser = Number.isInteger(userIndex) ? orgsState.users[userIndex] : null;
+    const organizationName = String(
+      sourceUser?.organization ?? selectedUsersOrgDisplayName ?? selectedUsersOrgName ?? ""
+    ).trim();
+    return { fullName, roleName, positionName, organizationName, sourceUser };
+  };
+
+  const createInviteFromUsersEdit = async () => {
+    if (!usersEditFormEl) return;
+    const draft = readUsersEditDraft();
+    if (!draft?.fullName || !draft.roleName || !draft.organizationName) {
+      if (usersEditMessageEl) {
+        usersEditMessageEl.textContent = "Заполните ФИО, роль и организацию для новой ссылки.";
+      }
+      return;
+    }
+    try {
+      if (usersEditMessageEl) {
+        usersEditMessageEl.textContent = "Создаём новую ссылку для перепривязки...";
+      }
+      const registrationsData = await loadRegistrations();
+      const registrations = registrationsData.registrations ?? [];
+      const registrationToken = createRegistrationToken();
+      const registrationsWithoutUser = registrations.filter(
+        (item) =>
+          !(item.user?.full_name === draft.fullName &&
+            item.user?.organization === draft.organizationName &&
+            item.user?.role === draft.roleName)
+      );
+      await saveJson(pendingRegistrationsFilePath, {
+        registrations: [
+          ...registrationsWithoutUser,
+          {
+            token: registrationToken,
+            created_at: new Date().toISOString(),
+            user: {
+              full_name: draft.fullName,
+              organization: draft.organizationName,
+              role: draft.roleName,
+              position: draft.positionName,
+            },
+          },
+        ],
+      }, { user: currentUser });
+
+      const registrationLink = new URL(`${window.location.origin}${window.location.pathname}`);
+      registrationLink.searchParams.set("registration", registrationToken);
+      const botUsername = await resolveBotUsername();
+      const telegramLinks = buildTelegramRegistrationLinks(botUsername, registrationToken);
+      const fallbackLink = telegramLinks?.webLink ?? registrationLink.href;
+      if (usersInviteHintEl) usersInviteHintEl.textContent = "Новая ссылка для перепривязки готова.";
+      if (usersInviteLinkEl) usersInviteLinkEl.value = fallbackLink;
+      if (usersInviteNoteEl) {
+        usersInviteNoteEl.textContent = telegramLinks?.webLink
+          ? "Отправьте ссылку пользователю: при открытии в Telegram ID перепривяжется автоматически."
+          : "Бот ещё не указан. Скопируйте ссылку и отправьте её вручную.";
+      }
+      if (usersInviteBox) {
+        usersInviteBox.dataset.shareText = `Контакт пользователя: ${draft.fullName}. Роль: ${draft.roleName}. Организация: ${draft.organizationName}.`;
+        usersInviteBox.dataset.telegramLink = fallbackLink;
+        if (telegramLinks?.appLink) {
+          usersInviteBox.dataset.telegramAppLink = telegramLinks.appLink;
+        } else {
+          delete usersInviteBox.dataset.telegramAppLink;
+        }
+        usersInviteBox.classList.remove("is-hidden");
+      }
+      if (usersInviteShareButton) usersInviteShareButton.disabled = !usersInviteLinkEl?.value;
+      if (usersInviteCopyButton) usersInviteCopyButton.disabled = !usersInviteLinkEl?.value;
+      if (usersInviteOpenButton) {
+        usersInviteOpenButton.disabled = !usersInviteLinkEl?.value;
+        usersInviteOpenButton.textContent = telegramLinks?.webLink ? "Открыть в Telegram" : "Открыть ссылку";
+      }
+      if (usersEditMessageEl) {
+        usersEditMessageEl.textContent = "Ссылка готова. При необходимости сохраните пустой Telegram ID, чтобы отвязать старый.";
+      }
+    } catch (error) {
+      console.error(error);
+      if (usersEditMessageEl) {
+        usersEditMessageEl.textContent = "Не удалось создать ссылку. Попробуйте позже.";
+      }
+    }
+  };
+
+  usersEditClearTelegramButton?.addEventListener("click", () => {
+    const telegramInput = usersEditFormEl?.elements?.["users-edit-telegram-id"];
+    if (telegramInput) {
+      telegramInput.value = "";
+      telegramInput.focus();
+    }
+    if (usersEditMessageEl) {
+      usersEditMessageEl.textContent = "Telegram ID очищен. Нажмите «Сохранить», чтобы отвязать пользователя.";
+    }
+  });
+  usersEditCreateInviteButton?.addEventListener("click", createInviteFromUsersEdit);
 
   usersEditFormEl?.addEventListener("submit", async (event) => {
     event.preventDefault();

@@ -5234,7 +5234,16 @@ function buildEnergySettingsMarkup(settings) {
                     </div>
                     <div class="settings-telegram-group__fields">
                       <div class="settings-telegram-field">
-                        <span>Дни недели</span>
+                        <div class="settings-choice-toolbar" data-settings-choice-toolbar>
+                          <span class="settings-choice-toolbar__hint">Дни недели</span>
+                          <button
+                            class="settings-choice-toolbar__button"
+                            type="button"
+                            data-settings-select-all
+                            data-settings-select-label="Все дни"
+                            data-settings-clear-label="Снять дни"
+                          >Все дни</button>
+                        </div>
                         <div class="settings-day-grid">
                           ${dayOptions}
                         </div>
@@ -5269,6 +5278,16 @@ function buildEnergySettingsMarkup(settings) {
           <div class="settings-mailing-card__fields">
             <div class="settings-mailing-field settings-mailing-field--full">
               <span>Группы инструментов</span>
+              <div class="settings-choice-toolbar" data-settings-choice-toolbar>
+                <span class="settings-choice-toolbar__hint">Быстрый выбор групп</span>
+                <button
+                  class="settings-choice-toolbar__button"
+                  type="button"
+                  data-settings-select-all
+                  data-settings-select-label="Выбрать все"
+                  data-settings-clear-label="Снять все"
+                >Выбрать все</button>
+              </div>
               <div
                 class="settings-group-chip-list"
                 data-mailing-tool-groups
@@ -30499,10 +30518,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const accordionItems = settingsBodyEl.querySelectorAll(
       "[data-settings-accordion]"
     );
-    accordionItems.forEach((accordion, index) => {
+    accordionItems.forEach((accordion) => {
       const toggle = accordion.querySelector("[data-settings-accordion-toggle]");
       if (!toggle) return;
-      const isInitiallyOpen = index === 0;
+      const isInitiallyOpen = false;
       accordion.classList.toggle("is-open", isInitiallyOpen);
       toggle.setAttribute("aria-expanded", String(isInitiallyOpen));
       toggle.addEventListener("click", () => {
@@ -30511,6 +30530,41 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         toggle.setAttribute("aria-expanded", String(nextState));
       });
     });
+
+    const updateSelectAllButtons = () => {
+      const toolbarButtons = settingsBodyEl.querySelectorAll("[data-settings-select-all]");
+      toolbarButtons.forEach((button) => {
+        const toolbar = button.closest("[data-settings-choice-toolbar]");
+        const list = toolbar?.nextElementSibling;
+        const inputs = Array.from(list?.querySelectorAll('input[type="checkbox"]') ?? []);
+        const hasInputs = inputs.length > 0;
+        const allChecked = hasInputs && inputs.every((input) => input.checked);
+        button.textContent = allChecked
+          ? button.dataset.settingsClearLabel || "Снять все"
+          : button.dataset.settingsSelectLabel || "Выбрать все";
+        button.classList.toggle("is-clear", allChecked);
+        button.disabled = !hasInputs;
+      });
+    };
+    settingsBodyEl.querySelectorAll("[data-settings-select-all]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const toolbar = button.closest("[data-settings-choice-toolbar]");
+        const list = toolbar?.nextElementSibling;
+        const inputs = Array.from(list?.querySelectorAll('input[type="checkbox"]') ?? []);
+        const shouldCheck = inputs.some((input) => !input.checked);
+        inputs.forEach((input) => {
+          input.checked = shouldCheck;
+          input.dispatchEvent(new Event("change", { bubbles: true }));
+        });
+        updateSelectAllButtons();
+      });
+    });
+    settingsBodyEl.addEventListener("change", (event) => {
+      if (event.target?.matches?.('input[type="checkbox"]')) {
+        updateSelectAllButtons();
+      }
+    });
+    updateSelectAllButtons();
     const accessRoles = settingsBodyEl.querySelectorAll("[data-access-role]");
     accessRoles.forEach((role) => {
       const toggle = role.querySelector("[data-access-role-toggle]");

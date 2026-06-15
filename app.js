@@ -9150,7 +9150,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     objectsModalEl.classList.remove("is-hidden");
     resetObjectsForm();
     await loadObjects();
-    objectsFilterInput?.focus();
   };
 
   const closeObjectsCreateModal = () => {

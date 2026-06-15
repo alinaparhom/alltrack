@@ -421,10 +421,8 @@ async function loadUserAwaitingReplyMoves(orgFolderName, user) {
   return [];
 }
 
-async function loadUserToolsCount(orgFolderName, user) {
-  if (!orgFolderName || !user) return 0;
-  const userName = normalizePersonName(user.full_name ?? user.fullName ?? "");
-  if (!userName) return 0;
+async function loadOrganizationUserToolsCounts(orgFolderName) {
+  if (!orgFolderName) return new Map();
   const toolsPath = `./${orgFolderName}/База с инструментами.json`;
   try {
     const rawTools = await loadJson(toolsPath);
@@ -433,14 +431,28 @@ async function loadUserToolsCount(orgFolderName, user) {
       : Array.isArray(rawTools?.tools)
         ? rawTools.tools
         : [];
-    return tools.filter((tool) => {
+    return tools.reduce((counts, tool) => {
       const responsible = normalizePersonName(tool?.["Ответственный"] ?? "");
-      return responsible && responsible === userName;
-    }).length;
+      if (!responsible) return counts;
+      counts.set(responsible, (counts.get(responsible) ?? 0) + 1);
+      return counts;
+    }, new Map());
   } catch (error) {
     console.warn("Не удалось загрузить инструменты для счётчика.", error);
   }
-  return 0;
+  return new Map();
+}
+
+async function loadUserToolsCount(orgFolderName, user) {
+  const userName = normalizePersonName(user?.full_name ?? user?.fullName ?? "");
+  if (!userName) return 0;
+  const counts = await loadOrganizationUserToolsCounts(orgFolderName);
+  return counts.get(userName) ?? 0;
+}
+
+function formatUserToolsBadgeText(count) {
+  const safeCount = Number.isFinite(Number(count)) ? Math.max(0, Number(count)) : 0;
+  return `${safeCount} ед.`;
 }
 
 function getToolNumberVariants(value) {
@@ -29121,7 +29133,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     usersVacationModalEl.classList.remove("is-hidden");
   };
 
-  const renderUsersDetails = (orgUsers) => {
+  const renderUsersDetails = (orgUsers, toolsCounts = new Map()) => {
     if (!usersDetailsListEl) return;
     usersDetailsListEl.innerHTML = "";
     if (usersDetailsEmptyEl) {
@@ -29160,6 +29172,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const roleName = String(entry?.role ?? "роль").trim();
       roleTag.textContent = roleName;
 
+      const toolsTag = document.createElement("span");
+      toolsTag.className = "users-details__tools-count";
+      const toolsCount = toolsCounts.get(normalizePersonName(entry?.full_name ?? "")) ?? 0;
+      toolsTag.textContent = formatUserToolsBadgeText(toolsCount);
+      toolsTag.title = `Единиц на пользователе: ${toolsCount}`;
+
       const telegramStatus = document.createElement("span");
       telegramStatus.className = "users-details__status";
       const hasTelegramId = Boolean(normalizeTelegramId(entry?.telegram_id));
@@ -29169,7 +29187,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         ? "ID привязан · нажмите, чтобы редактировать"
         : "ID не привязан · нажмите, чтобы редактировать";
       telegramStatus.classList.toggle("is-linked", hasTelegramId);
-      meta.append(roleTag, telegramStatus);
+      meta.append(roleTag, toolsTag, telegramStatus);
 
       if (isVacation) {
         card.classList.add("is-vacation");
@@ -29239,13 +29257,14 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     document.body.style.overflow = "hidden";
   };
 
-  const updateUsersDetailsView = () => {
+  const updateUsersDetailsView = async () => {
     if (!selectedUsersOrgName) return;
     const orgUsers = filterOrgUsers(usersState.users, selectedUsersOrgNames);
     if (usersDetailsCountEl) {
       usersDetailsCountEl.textContent = formatUserCount(orgUsers.length);
     }
-    renderUsersDetails(orgUsers);
+    const toolsCounts = await loadOrganizationUserToolsCounts(context.orgFolderName);
+    renderUsersDetails(orgUsers, toolsCounts);
   };
 
   const openUsersAddModal = async () => {
@@ -29288,7 +29307,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (usersDetailsCountEl) {
       usersDetailsCountEl.textContent = formatUserCount(orgUsers.length);
     }
-    renderUsersDetails(orgUsers);
+    const toolsCounts = await loadOrganizationUserToolsCounts(context.orgFolderName);
+    renderUsersDetails(orgUsers, toolsCounts);
     resetUsersInvite();
     usersDetailsModalEl.classList.remove("is-hidden");
     document.body.style.overflow = "hidden";
@@ -35245,7 +35265,7 @@ function setupSuperAdmin() {
     }
   };
 
-  const renderUsersDetails = (orgUsers) => {
+  const renderUsersDetails = (orgUsers, toolsCounts = new Map()) => {
     if (!usersDetailsListEl) return;
     usersDetailsListEl.innerHTML = "";
     if (usersDetailsEmptyEl) {
@@ -35282,6 +35302,12 @@ function setupSuperAdmin() {
       const roleName = String(user?.role ?? "роль").trim();
       roleTag.textContent = roleName;
 
+      const toolsTag = document.createElement("span");
+      toolsTag.className = "users-details__tools-count";
+      const toolsCount = toolsCounts.get(normalizePersonName(user?.full_name ?? "")) ?? 0;
+      toolsTag.textContent = formatUserToolsBadgeText(toolsCount);
+      toolsTag.title = `Единиц на пользователе: ${toolsCount}`;
+
       const telegramStatus = document.createElement("span");
       telegramStatus.className = "users-details__status";
       const hasTelegramId = Boolean(normalizeTelegramId(user?.telegram_id));
@@ -35289,7 +35315,7 @@ function setupSuperAdmin() {
         ? "ID привязан · нажмите, чтобы редактировать"
         : "ID не привязан · нажмите, чтобы редактировать";
       telegramStatus.classList.toggle("is-linked", hasTelegramId);
-      meta.append(roleTag, telegramStatus);
+      meta.append(roleTag, toolsTag, telegramStatus);
 
       const editHint = document.createElement("span");
       editHint.className = "users-details__edit-hint";
@@ -35354,7 +35380,7 @@ function setupSuperAdmin() {
     document.body.style.overflow = "hidden";
   };
 
-  const selectUsersOrganization = (orgName) => {
+  const selectUsersOrganization = async (orgName) => {
     if (!orgName) return;
     resetUsersInvite();
     selectedUsersOrgName = orgName;
@@ -35375,7 +35401,11 @@ function setupSuperAdmin() {
       usersDetailsCountEl.textContent = formatUserCount(orgUsers.length);
     }
 
-    renderUsersDetails(orgUsers);
+    const orgFolder = org
+      ? sanitizeOrganizationFolderName(String(org.short_name ?? org.shortName ?? org.full_name ?? org.fullName ?? "").trim())
+      : sanitizeOrganizationFolderName(orgName);
+    const toolsCounts = await loadOrganizationUserToolsCounts(orgFolder);
+    renderUsersDetails(orgUsers, toolsCounts);
 
     if (usersOrgsListEl) {
       usersOrgsListEl.querySelectorAll(".users-orgs__row").forEach((row) => {
@@ -35389,7 +35419,7 @@ function setupSuperAdmin() {
     }
   };
 
-  const updateUsersDetailsView = () => {
+  const updateUsersDetailsView = async () => {
     if (!selectedUsersOrgName) return;
     const org = orgsState.organizations.find(
       (item) => getOrgDisplayName(item) === selectedUsersOrgName
@@ -35404,7 +35434,11 @@ function setupSuperAdmin() {
       usersDetailsCountEl.textContent = formatUserCount(orgUsers.length);
     }
 
-    renderUsersDetails(orgUsers);
+    const orgFolder = org
+      ? sanitizeOrganizationFolderName(String(org.short_name ?? org.shortName ?? org.full_name ?? org.fullName ?? "").trim())
+      : sanitizeOrganizationFolderName(selectedUsersOrgName);
+    const toolsCounts = await loadOrganizationUserToolsCounts(orgFolder);
+    renderUsersDetails(orgUsers, toolsCounts);
   };
 
   const openUsersAddModal = async () => {

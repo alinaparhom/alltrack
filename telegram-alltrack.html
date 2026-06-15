@@ -15603,6 +15603,45 @@
         max-width: 420px;
       }
 
+      .objects-edit-modal {
+        place-items: stretch;
+      }
+
+      .objects-edit-modal__panel {
+        max-width: none;
+        overflow: hidden;
+        grid-template-rows: auto minmax(0, 1fr);
+      }
+
+      .objects-edit-modal__header {
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
+      }
+
+      .objects-edit-modal .objects-modal__close {
+        width: 36px;
+        height: 36px;
+        border: 0;
+        background: transparent;
+        color: var(--title);
+        box-shadow: none;
+      }
+
+      .objects-edit-modal .objects-modal__close:hover,
+      .objects-edit-modal .objects-modal__close:focus-visible {
+        box-shadow: none;
+        transform: none;
+      }
+
+      body[data-theme="dark"] .objects-edit-modal .objects-modal__close,
+      body[data-theme="dark"] .objects-edit-modal .objects-modal__close:hover,
+      body[data-theme="dark"] .objects-edit-modal .objects-modal__close:focus-visible {
+        border: 0;
+        background: transparent;
+        color: var(--text);
+        box-shadow: none;
+      }
+
       .objects-create-form,
       .objects-edit-form {
         display: grid;
@@ -15610,10 +15649,35 @@
         padding: 16px;
       }
 
+      .objects-edit-form {
+        min-height: 0;
+        grid-template-rows: auto auto minmax(0, 1fr) auto auto;
+        align-content: start;
+        padding-top: 0;
+        overflow-y: auto;
+      }
+
       .objects-create-actions {
         display: grid;
         gap: 10px;
         grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      }
+
+      .objects-edit-actions {
+        position: sticky;
+        bottom: 0;
+        margin: auto -16px -16px;
+        padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+        background: rgba(255, 255, 255, 0.92);
+        backdrop-filter: blur(18px);
+        -webkit-backdrop-filter: blur(18px);
+        border-top: 1px solid rgba(226, 232, 240, 0.75);
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      }
+
+      body[data-theme="dark"] .objects-edit-actions {
+        background: rgba(15, 23, 42, 0.92);
+        border-top-color: rgba(148, 170, 210, 0.25);
       }
 
       .settings-tag-grid {

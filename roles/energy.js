@@ -472,10 +472,9 @@ export function renderRole(user, options = {}) {
             aria-modal="true"
             aria-label="Редактирование объекта"
           >
-            <div class="settings-modal__header objects-create-modal__header">
+            <div class="settings-modal__header objects-create-modal__header objects-edit-modal__header">
               <div class="settings-modal__title">
                 <h2>Редактирование объекта</h2>
-                <p>Исправьте название или координаты</p>
               </div>
               <button
                 class="button-icon objects-modal__close"
@@ -519,7 +518,7 @@ export function renderRole(user, options = {}) {
                   Оставьте пустым, если координаты неизвестны.
                 </span>
               </div>
-              <div class="objects-create-actions">
+              <div class="objects-create-actions objects-edit-actions">
                 <button
                   class="action-secondary"
                   type="button"

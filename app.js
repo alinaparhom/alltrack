@@ -152,6 +152,21 @@ const energyDataUsageOptions = [
   { id: "cost", title: "Стоимость" },
   { id: "serviceLife", title: "Срок службы" },
 ];
+const energyMovesTableColumnOptions = [
+  { id: "appNumber", title: "Номер" },
+  { id: "accountingNumber", title: "Бух.номер" },
+  { id: "moveDate", title: "Дата перемещения" },
+  { id: "acceptDate", title: "Дата принятия" },
+  { id: "movedBy", title: "Переместил" },
+  { id: "oldObject", title: "Старый объект" },
+  { id: "newObject", title: "Новый объект" },
+  { id: "name", title: "Наименование" },
+  { id: "manufacturer", title: "Производитель" },
+  { id: "model", title: "Модель" },
+  { id: "moverId", title: "ID перемещающего" },
+  { id: "receiverId", title: "ID принимающего" },
+];
+const energyMovesTableMonthDays = ["first", "last", "every7", "15", "16", "everyDay"];
 const energyWeekDays = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
 const weekDayOptions = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
 let currentUser = null;
@@ -4702,6 +4717,16 @@ function buildEnergyOrganizationDefaults() {
     mailings,
     notifications,
     dataUsage,
+    movesTable: {
+      recipients: [],
+      scheduleType: "monthDays",
+      monthDays: ["first"],
+      weekDays: ["Пн"],
+      time: "09:00",
+      periodDays: 7,
+      includeSendDay: false,
+      columns: ["moveDate", "name", "movedBy", "oldObject", "newObject"],
+    },
   };
 }
 
@@ -4812,6 +4837,64 @@ function normalizeTime(value, fallback) {
   return fallback;
 }
 
+
+function normalizeMovesTableSettings(value, { users = [], objectTrackingEnabled = true } = {}) {
+  const defaults = buildEnergyOrganizationDefaults().movesTable;
+  const source = value && typeof value === "object" && !Array.isArray(value) ? value : {};
+  const allowedRecipients = new Set(
+    users.map((item) => String(item.telegram_id ?? item.id ?? item.full_name ?? "").trim()).filter(Boolean)
+  );
+  const rawRecipients = Array.isArray(source.recipients) ? source.recipients : defaults.recipients;
+  const recipients = rawRecipients
+    .map((item) => String(item ?? "").trim())
+    .filter((item) => item && (!allowedRecipients.size || allowedRecipients.has(item)));
+  const scheduleType = source.scheduleType === "weekDays" ? "weekDays" : "monthDays";
+  const monthDays = Array.isArray(source.monthDays)
+    ? source.monthDays.map((item) => String(item ?? "").trim()).filter((item) => energyMovesTableMonthDays.includes(item))
+    : defaults.monthDays;
+  const weekDays = normalizeDays(source.weekDays, defaults.weekDays);
+  const allowedColumns = energyMovesTableColumnOptions
+    .filter((option) => objectTrackingEnabled || !["oldObject", "newObject"].includes(option.id))
+    .map((option) => option.id);
+  const columns = (Array.isArray(source.columns) ? source.columns : defaults.columns)
+    .map((item) => String(item ?? "").trim())
+    .filter((item) => allowedColumns.includes(item));
+  return {
+    recipients: Array.from(new Set(recipients)),
+    scheduleType,
+    monthDays: Array.from(new Set(monthDays.length ? monthDays : defaults.monthDays)),
+    weekDays,
+    time: normalizeTime(source.time, defaults.time),
+    periodDays: Math.max(1, normalizeNumber(source.periodDays, defaults.periodDays)),
+    includeSendDay: Boolean(source.includeSendDay ?? defaults.includeSendDay),
+    columns: columns.length ? columns : defaults.columns.filter((item) => allowedColumns.includes(item)),
+  };
+}
+
+function getMovesTableUserKey(user = {}) {
+  return String(user.telegram_id ?? user.id ?? user.full_name ?? "").trim();
+}
+
+function getMovesTableRecipientUsers(users = [], organizationName = "") {
+  const org = normalizeOrganizationName(organizationName);
+  return users
+    .filter((entry) => {
+      if (isHiddenListUser(entry)) return false;
+      const role = String(entry?.role ?? "").trim();
+      const isAllowedRole = role === energyRole || role === accountingRole;
+      if (!isAllowedRole) return false;
+      const entryOrg = normalizeOrganizationName(entry?.organization ?? "");
+      return !org || !entryOrg || entryOrg === org;
+    })
+    .map((entry) => ({
+      key: getMovesTableUserKey(entry),
+      name: String(entry?.full_name ?? entry?.fullName ?? "Пользователь").trim(),
+      role: String(entry?.role ?? "").trim(),
+      telegramId: String(entry?.telegram_id ?? "").trim(),
+    }))
+    .filter((entry) => entry.key);
+}
+
 function normalizeEnergyOrganizationSettings(raw) {
   const defaults = buildEnergyOrganizationDefaults();
   const source = raw && typeof raw === "object" && !Array.isArray(raw) ? raw : {};
@@ -4890,6 +4973,9 @@ function normalizeEnergyOrganizationSettings(raw) {
     dataUsage[option.id] =
       typeof data === "boolean" ? data : defaults.dataUsage[option.id];
   });
+  const movesTable = normalizeMovesTableSettings(source.movesTable, {
+    objectTrackingEnabled: dataUsage.object !== false,
+  });
   return {
     access,
     stcGroups,
@@ -4898,6 +4984,7 @@ function normalizeEnergyOrganizationSettings(raw) {
     mailings,
     notifications,
     dataUsage,
+    movesTable,
   };
 }
 
@@ -5273,6 +5360,53 @@ function buildEnergySettingsMarkup(settings) {
     })
     .join("");
 
+  const movesTable = normalizeMovesTableSettings(settings.movesTable, {
+    users: settings.movesTableUsers ?? [],
+    objectTrackingEnabled: settings.dataUsage?.object !== false,
+  });
+  const movesRecipients = settings.movesTableUsers ?? [];
+  const selectedRecipients = new Set(movesTable.recipients);
+  const recipientMarkup = movesRecipients.length
+    ? movesRecipients
+        .map((item) => `
+          <label class="settings-group-chip settings-group-chip--person">
+            <input type="checkbox" name="moves-table-recipients" value="${escapeHtml(item.key)}" ${selectedRecipients.has(item.key) ? "checked" : ""} />
+            <span>${escapeHtml(item.name)} · ${escapeHtml(item.role)}</span>
+          </label>
+        `)
+        .join("")
+    : `<span class="settings-chip is-muted">Нет пользователей с ролями Энергетик или Бухгалтерия</span>`;
+  const monthDayLabels = new Map([
+    ["first", "Первый день"],
+    ["last", "Последний день"],
+    ["every7", "Каждый 7-й день"],
+    ["15", "15 число"],
+    ["16", "16 число"],
+    ["everyDay", "Каждый день"],
+  ]);
+  const monthDayMarkup = energyMovesTableMonthDays.map((day) => `
+    <label class="settings-day-chip">
+      <input type="checkbox" name="moves-table-month-days" value="${day}" ${movesTable.monthDays.includes(day) ? "checked" : ""} />
+      <span>${monthDayLabels.get(day)}</span>
+    </label>
+  `).join("");
+  const weekDayMarkup = energyWeekDays.map((day) => `
+    <label class="settings-day-chip">
+      <input type="checkbox" name="moves-table-week-days" value="${day}" ${movesTable.weekDays.includes(day) ? "checked" : ""} />
+      <span>${day}</span>
+    </label>
+  `).join("");
+  const columnOptions = energyMovesTableColumnOptions.filter((option) => settings.dataUsage?.object !== false || !["oldObject", "newObject"].includes(option.id));
+  const columnSelects = [...movesTable.columns, ""].slice(0, columnOptions.length).map((value, index) => `
+    <label class="settings-moves-column">
+      <span>Столбец ${String.fromCharCode(65 + index)}</span>
+      <select class="form-input" name="moves-table-columns" data-moves-table-column>
+        <option value="">Не заполнять</option>
+        ${columnOptions.map((option) => `<option value="${option.id}" ${option.id === value ? "selected" : ""}>${escapeHtml(option.title)}</option>`).join("")}
+      </select>
+    </label>
+  `).join("");
+
   return `
     <div class="settings-accordion" data-settings-accordion>
       <button
@@ -5362,6 +5496,40 @@ function buildEnergySettingsMarkup(settings) {
       <div class="settings-accordion__content">
         <div class="settings-notifications">
           ${notificationsMarkup}
+        </div>
+      </div>
+    </div>
+    <div class="settings-accordion" data-settings-accordion>
+      <button class="settings-accordion__header" type="button" data-settings-accordion-toggle aria-expanded="false">
+        <span class="settings-accordion__title">Таблица перемещений</span>
+        <span class="settings-accordion__icon" aria-hidden="true">⌄</span>
+      </button>
+      <div class="settings-accordion__content">
+        <div class="settings-moves-table">
+          <div class="settings-accordion__hint">Настройте, кому и когда автоматически отправлять таблицу принятых перемещений.</div>
+          <div class="settings-moves-section">
+            <span class="settings-moves-title">Кому отправлять</span>
+            <button class="action-secondary settings-moves-select-all" type="button" data-moves-table-select-all>Выбрать всех</button>
+            <div class="settings-group-chip-list">${recipientMarkup}</div>
+          </div>
+          <div class="settings-moves-section">
+            <span class="settings-moves-title">Когда отправлять</span>
+            <div class="settings-moves-mode">
+              <label class="settings-group-chip"><input type="radio" name="moves-table-schedule-type" value="monthDays" ${movesTable.scheduleType === "monthDays" ? "checked" : ""} /><span>По числам месяца</span></label>
+              <label class="settings-group-chip"><input type="radio" name="moves-table-schedule-type" value="weekDays" ${movesTable.scheduleType === "weekDays" ? "checked" : ""} /><span>По дням недели</span></label>
+            </div>
+            <div class="settings-day-grid">${monthDayMarkup}</div>
+            <div class="settings-day-grid">${weekDayMarkup}</div>
+          </div>
+          <div class="settings-moves-grid">
+            <label class="settings-fine-field"><span>Время</span><input class="form-input" type="time" name="moves-table-time" value="${escapeHtml(movesTable.time)}" /></label>
+            <label class="settings-fine-field"><span>Период, дней</span><input class="form-input" type="number" min="1" inputmode="numeric" name="moves-table-period-days" value="${escapeHtml(movesTable.periodDays)}" list="moves-table-period-presets" /><datalist id="moves-table-period-presets"><option value="1"><option value="3"><option value="7"><option value="14"><option value="15"></datalist></label>
+          </div>
+          <label class="settings-inline"><input type="checkbox" name="moves-table-include-send-day" ${movesTable.includeSendDay ? "checked" : ""} /><span>Включать перемещения за день отправки</span></label>
+          <div class="settings-moves-section">
+            <span class="settings-moves-title">Столбцы таблицы</span>
+            <div class="settings-moves-columns" data-moves-table-columns>${columnSelects}</div>
+          </div>
         </div>
       </div>
     </div>
@@ -30320,11 +30488,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   }
 
   let settingsGroups = [...(organizationSettings.stcGroups ?? [])];
+  let settingsMovesTableUsers = [];
   const renderSettingsBody = () => {
     if (!settingsBodyEl) return;
     settingsBodyEl.innerHTML = buildEnergySettingsMarkup({
       ...organizationSettings,
       stcGroups: settingsGroups,
+      movesTableUsers: settingsMovesTableUsers,
     });
     const accordionItems = settingsBodyEl.querySelectorAll(
       "[data-settings-accordion]"
@@ -30461,17 +30631,53 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       .querySelectorAll('input[type="checkbox"]')
       .forEach((input) => syncCardState(input));
 
+    const selectAllMovesTableRecipients = settingsBodyEl.querySelector("[data-moves-table-select-all]");
+    selectAllMovesTableRecipients?.addEventListener("click", () => {
+      settingsBodyEl
+        .querySelectorAll('input[name="moves-table-recipients"]')
+        .forEach((input) => {
+          input.checked = true;
+        });
+    });
+
+    const appendMovesTableColumnIfNeeded = () => {
+      const columnsBox = settingsBodyEl.querySelector("[data-moves-table-columns]");
+      if (!columnsBox) return;
+      const selects = Array.from(columnsBox.querySelectorAll("[data-moves-table-column]"));
+      const lastSelect = selects.at(-1);
+      if (!lastSelect?.value || selects.length >= energyMovesTableColumnOptions.length) return;
+      const wrapper = document.createElement("label");
+      wrapper.className = "settings-moves-column";
+      wrapper.innerHTML = `
+        <span>Столбец ${String.fromCharCode(65 + selects.length)}</span>
+        <select class="form-input" name="moves-table-columns" data-moves-table-column>
+          <option value="">Не заполнять</option>
+          ${energyMovesTableColumnOptions
+            .filter((option) => organizationSettings.dataUsage?.object !== false || !["oldObject", "newObject"].includes(option.id))
+            .map((option) => `<option value="${option.id}">${escapeHtml(option.title)}</option>`)
+            .join("")}
+        </select>
+      `;
+      columnsBox.append(wrapper);
+    };
+
     settingsBodyEl.addEventListener("change", (event) => {
       syncCardState(event.target);
+      if (event.target?.matches("[data-moves-table-column]")) {
+        appendMovesTableColumnIfNeeded();
+      }
     });
   };
 
-  const openSettingsModal = () => {
+  const openSettingsModal = async () => {
     if (!settingsModalEl) return;
     settingsGroups = [...(organizationSettings.stcGroups ?? [])];
-    renderSettingsBody();
+    settingsMovesTableUsers = [];
     settingsModalEl.classList.remove("is-hidden");
     document.body.style.overflow = "hidden";
+    const usersData = await loadJson(usersFilePath).catch(() => ({ users: [] }));
+    settingsMovesTableUsers = getMovesTableRecipientUsers(usersData.users ?? [], context.orgFullName || user?.organization || "");
+    renderSettingsBody();
   };
 
   const closeSettingsModal = () => {
@@ -32091,6 +32297,19 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       nextDataUsage[option.id] =
         formData.get(`data-usage-${option.id}`) !== null;
     });
+    const nextMovesTable = normalizeMovesTableSettings({
+      recipients: formData.getAll("moves-table-recipients"),
+      scheduleType: formData.get("moves-table-schedule-type"),
+      monthDays: formData.getAll("moves-table-month-days"),
+      weekDays: formData.getAll("moves-table-week-days"),
+      time: formData.get("moves-table-time"),
+      periodDays: formData.get("moves-table-period-days"),
+      includeSendDay: formData.get("moves-table-include-send-day") !== null,
+      columns: formData.getAll("moves-table-columns"),
+    }, {
+      users: settingsMovesTableUsers,
+      objectTrackingEnabled: nextDataUsage.object !== false,
+    });
     settingsData.organization = normalizeEnergyOrganizationSettings({
       access: nextAccess,
       stcGroups: settingsGroups,
@@ -32101,6 +32320,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       mailings: nextMailings,
       notifications: nextNotifications,
       dataUsage: nextDataUsage,
+      movesTable: nextMovesTable,
     });
     try {
       await saveJson(context.settingsPath, settingsData, { user });
@@ -32151,7 +32371,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       return true;
     }
     if (actionId === "settings") {
-      openSettingsModal();
+      void openSettingsModal();
       return true;
     }
     if (actionId === "objects") {

@@ -15747,9 +15747,9 @@
 
       .objects-edit-actions {
         position: sticky;
-        bottom: env(safe-area-inset-bottom);
+        bottom: calc(5px + env(safe-area-inset-bottom));
         margin: auto -16px 0;
-        padding: 12px 16px calc(5px + env(safe-area-inset-bottom));
+        padding: 12px 16px max(12px, env(safe-area-inset-bottom));
         background: rgba(255, 255, 255, 0.92);
         backdrop-filter: blur(18px);
         -webkit-backdrop-filter: blur(18px);

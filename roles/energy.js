@@ -148,10 +148,9 @@ export function renderRole(user, options = {}) {
             <div class="settings-modal__header energy-settings-modal__header">
               <div class="settings-modal__title">
                 <h2>Настройки организации</h2>
-                <p>Управляйте доступами, рассылками и данными компании в одном месте</p>
               </div>
               <button
-                class="button-icon energy-settings-modal__close"
+                class="button-icon tools-modal__close energy-settings-modal__close"
                 type="button"
                 data-energy-settings-close
                 aria-label="Закрыть настройки организации"
@@ -163,13 +162,13 @@ export function renderRole(user, options = {}) {
               <div class="settings-modal__body" data-energy-settings-body></div>
               <div class="settings-modal__footer">
                 <button
-                  class="action-secondary"
+                  class="action-secondary energy-settings-modal__cancel"
                   type="button"
                   data-energy-settings-cancel
                 >
                   Отмена
                 </button>
-                <button class="action-primary" type="submit">Сохранить</button>
+                <button class="action-primary energy-settings-modal__save" type="submit">Сохранить</button>
               </div>
               <div class="form-message" data-energy-settings-message></div>
             </form>

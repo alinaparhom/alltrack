@@ -4427,18 +4427,50 @@
       .energy-settings-modal .settings-modal__footer {
         position: sticky;
         bottom: 0;
-        padding-top: 10px;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        gap: 10px;
+        align-items: stretch;
+        padding: 12px 0 calc(12px + env(safe-area-inset-bottom));
         border-top: 1px solid rgba(226, 232, 240, 0.72);
         background: rgba(248, 251, 255, 0.82);
         backdrop-filter: blur(18px);
         -webkit-backdrop-filter: blur(18px);
+        box-shadow: 0 -16px 36px rgba(15, 23, 42, 0.08);
         justify-content: stretch;
       }
 
       .energy-settings-modal .settings-modal__footer .action-secondary,
       .energy-settings-modal .settings-modal__footer .action-primary {
-        flex: 1 1 150px;
-        min-height: 48px;
+        width: 100%;
+        min-height: 46px;
+        padding: 13px 16px;
+        border-radius: 18px;
+        font-weight: 800;
+        letter-spacing: -0.01em;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7), 0 12px 28px rgba(15, 23, 42, 0.08);
+      }
+
+      .energy-settings-modal .settings-modal__footer .energy-settings-modal__cancel {
+        border: 1px solid rgba(59, 130, 246, 0.28);
+        background: linear-gradient(135deg, rgba(219, 234, 254, 0.82), rgba(147, 197, 253, 0.34));
+        color: #2563eb;
+      }
+
+      .energy-settings-modal .settings-modal__footer .energy-settings-modal__save {
+        border: 1px solid rgba(34, 197, 94, 0.3);
+        background: linear-gradient(135deg, rgba(220, 252, 231, 0.86), rgba(74, 222, 128, 0.36));
+        color: #15803d;
+      }
+
+      .energy-settings-modal .settings-modal__footer .energy-settings-modal__cancel:hover,
+      .energy-settings-modal .settings-modal__footer .energy-settings-modal__cancel:focus-visible {
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.78), 0 16px 34px rgba(37, 99, 235, 0.16);
+      }
+
+      .energy-settings-modal .settings-modal__footer .energy-settings-modal__save:hover,
+      .energy-settings-modal .settings-modal__footer .energy-settings-modal__save:focus-visible {
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.78), 0 16px 34px rgba(21, 128, 61, 0.16);
       }
 
       .energy-settings-modal .form-message {
@@ -16699,6 +16731,18 @@
         .settings-modal__footer {
           flex-direction: column-reverse;
           align-items: stretch;
+        }
+
+
+
+        .energy-settings-modal .settings-modal__footer {
+          grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+          flex-direction: row;
+        }
+
+        .energy-settings-modal .settings-modal__footer .action-secondary,
+        .energy-settings-modal .settings-modal__footer .action-primary {
+          min-width: 0;
         }
 
         .pending-moves-bulk-confirm-modal

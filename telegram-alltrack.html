@@ -14232,15 +14232,45 @@
         background: rgba(248, 250, 252, 0.82);
       }
 
+      .users-delete-blocked-modal__list .users-delete-blocked-modal__more-item {
+        padding: 0;
+        background: transparent;
+      }
+
       .users-delete-blocked-modal__more {
-        color: #ea580c;
-        font-weight: 800;
+        width: 100%;
+        min-height: 38px;
+        border: 1px solid rgba(59, 125, 255, 0.22);
+        border-radius: 12px;
+        color: var(--accent);
+        background: rgba(59, 125, 255, 0.08);
+        font: inherit;
+        font-weight: 850;
+        cursor: pointer;
+      }
+
+      .users-delete-blocked-modal__more:hover,
+      .users-delete-blocked-modal__more:focus-visible {
+        border-color: rgba(59, 125, 255, 0.55);
+        background: rgba(59, 125, 255, 0.14);
+        outline: none;
       }
 
       .users-delete-blocked-modal__button {
         width: 100%;
         min-height: 50px;
         border-radius: 18px;
+        border: 1.5px solid rgba(59, 125, 255, 0.7);
+        background: rgba(255, 255, 255, 0.78);
+        color: var(--accent);
+        box-shadow: 0 12px 28px rgba(59, 125, 255, 0.12);
+      }
+
+      .users-delete-blocked-modal__button:hover,
+      .users-delete-blocked-modal__button:focus-visible {
+        border-color: var(--accent);
+        background: rgba(59, 125, 255, 0.08);
+        box-shadow: 0 16px 34px rgba(59, 125, 255, 0.18);
       }
 
       @media (max-width: 360px) {
@@ -14622,7 +14652,7 @@
         align-items: center;
         gap: 8px;
         padding: 10px 12px;
-        border-radius: 10px;
+        border-radius: 18px;
         border: 1px solid rgba(226, 232, 240, 0.9);
         background: rgba(255, 255, 255, 0.88);
         box-shadow: 0 8px 18px rgba(15, 23, 42, 0.04);

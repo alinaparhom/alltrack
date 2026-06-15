@@ -29883,17 +29883,27 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           </div>
           <ul class="users-delete-blocked-modal__list"></ul>`;
         const listEl = sectionEl.querySelector(".users-delete-blocked-modal__list");
-        section.items.slice(0, 4).forEach((item) => {
-          const itemEl = document.createElement("li");
-          itemEl.textContent = section.getText(item);
-          listEl.appendChild(itemEl);
-        });
-        if (hiddenCount) {
-          const moreEl = document.createElement("li");
-          moreEl.className = "users-delete-blocked-modal__more";
-          moreEl.textContent = `И ещё ${hiddenCount}`;
-          listEl.appendChild(moreEl);
-        }
+        const renderItems = (isExpanded = false) => {
+          listEl.innerHTML = "";
+          section.items.slice(0, isExpanded ? section.items.length : 4).forEach((item) => {
+            const itemEl = document.createElement("li");
+            itemEl.textContent = section.getText(item);
+            listEl.appendChild(itemEl);
+          });
+          if (hiddenCount && !isExpanded) {
+            const moreItemEl = document.createElement("li");
+            moreItemEl.className = "users-delete-blocked-modal__more-item";
+            const moreButtonEl = document.createElement("button");
+            moreButtonEl.className = "users-delete-blocked-modal__more";
+            moreButtonEl.type = "button";
+            moreButtonEl.textContent = `И ещё ${hiddenCount}`;
+            moreButtonEl.setAttribute("aria-label", `Показать ещё ${hiddenCount} элементов в разделе ${section.title}`);
+            moreButtonEl.addEventListener("click", () => renderItems(true));
+            moreItemEl.appendChild(moreButtonEl);
+            listEl.appendChild(moreItemEl);
+          }
+        };
+        renderItems();
         summaryEl.appendChild(sectionEl);
       });
     }
@@ -36186,17 +36196,27 @@ function setupSuperAdmin() {
           </div>
           <ul class="users-delete-blocked-modal__list"></ul>`;
         const listEl = sectionEl.querySelector(".users-delete-blocked-modal__list");
-        section.items.slice(0, 4).forEach((item) => {
-          const itemEl = document.createElement("li");
-          itemEl.textContent = section.getText(item);
-          listEl.appendChild(itemEl);
-        });
-        if (hiddenCount) {
-          const moreEl = document.createElement("li");
-          moreEl.className = "users-delete-blocked-modal__more";
-          moreEl.textContent = `И ещё ${hiddenCount}`;
-          listEl.appendChild(moreEl);
-        }
+        const renderItems = (isExpanded = false) => {
+          listEl.innerHTML = "";
+          section.items.slice(0, isExpanded ? section.items.length : 4).forEach((item) => {
+            const itemEl = document.createElement("li");
+            itemEl.textContent = section.getText(item);
+            listEl.appendChild(itemEl);
+          });
+          if (hiddenCount && !isExpanded) {
+            const moreItemEl = document.createElement("li");
+            moreItemEl.className = "users-delete-blocked-modal__more-item";
+            const moreButtonEl = document.createElement("button");
+            moreButtonEl.className = "users-delete-blocked-modal__more";
+            moreButtonEl.type = "button";
+            moreButtonEl.textContent = `И ещё ${hiddenCount}`;
+            moreButtonEl.setAttribute("aria-label", `Показать ещё ${hiddenCount} элементов в разделе ${section.title}`);
+            moreButtonEl.addEventListener("click", () => renderItems(true));
+            moreItemEl.appendChild(moreButtonEl);
+            listEl.appendChild(moreItemEl);
+          }
+        };
+        renderItems();
         summaryEl.appendChild(sectionEl);
       });
     }

@@ -476,6 +476,7 @@ export function renderRole(user, options = {}) {
             <div class="settings-modal__header objects-create-modal__header objects-edit-modal__header">
               <div class="settings-modal__title">
                 <h2>Редактирование объекта</h2>
+                <p>Обновите название и координаты объекта</p>
               </div>
               <button
                 class="button-icon objects-modal__close"
@@ -490,7 +491,11 @@ export function renderRole(user, options = {}) {
               class="objects-edit-form form-card"
               data-energy-objects-edit-form
             >
-              <div class="form-field">
+              <div class="objects-edit-form__intro" aria-hidden="true">
+                <span class="objects-edit-form__intro-icon">⌁</span>
+                <span>Данные объекта</span>
+              </div>
+              <div class="form-field objects-edit-form__field objects-edit-form__field--name">
                 <label class="form-label" for="objects-edit-name">
                   Название объекта
                 </label>
@@ -503,7 +508,7 @@ export function renderRole(user, options = {}) {
                   required
                 />
               </div>
-              <div class="form-field">
+              <div class="form-field objects-edit-form__field objects-edit-form__field--coordinates">
                 <label class="form-label" for="objects-edit-coordinates">
                   Координаты (широта, долгота)
                 </label>

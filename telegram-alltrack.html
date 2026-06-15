@@ -15654,27 +15654,7 @@
       }
 
       .objects-edit-modal .objects-modal__close {
-        justify-self: end;
-        align-self: start;
-        width: 44px;
-        height: 44px;
-        margin-top: 2px;
-        border: 0 !important;
-        border-color: transparent !important;
-        background: transparent !important;
-        color: var(--accent);
-        box-shadow: none !important;
-        outline: none;
-      }
-
-      .objects-edit-modal .objects-modal__close:hover,
-      .objects-edit-modal .objects-modal__close:focus-visible {
-        transform: none;
-        box-shadow: none;
-      }
-
-      .objects-edit-modal .objects-modal__close .button-icon-emoji {
-        font-weight: 800;
+        color: inherit;
       }
 
       .objects-create-form,
@@ -15685,11 +15665,68 @@
       }
 
       .objects-edit-form {
+        position: relative;
         min-height: 0;
-        grid-template-rows: auto auto minmax(0, 1fr) auto auto;
+        grid-template-rows: auto auto auto minmax(0, 1fr) auto auto;
         align-content: start;
-        padding-top: 5px;
+        padding: 14px;
         overflow-y: auto;
+        border: 1px solid rgba(226, 232, 240, 0.78);
+        border-radius: 22px;
+        background:
+          radial-gradient(circle at 12% 0%, rgba(59, 130, 246, 0.12), transparent 32%),
+          linear-gradient(160deg, rgba(255, 255, 255, 0.92), rgba(248, 250, 252, 0.72));
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.82), 0 18px 42px rgba(15, 23, 42, 0.08);
+      }
+
+      .objects-edit-form__intro {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        width: fit-content;
+        padding: 7px 10px;
+        border-radius: 999px;
+        border: 1px solid rgba(59, 130, 246, 0.18);
+        background: rgba(239, 246, 255, 0.78);
+        color: #1d4ed8;
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0.01em;
+      }
+
+      .objects-edit-form__intro-icon {
+        display: grid;
+        width: 22px;
+        height: 22px;
+        place-items: center;
+        border-radius: 50%;
+        background: rgba(59, 130, 246, 0.14);
+        font-size: 15px;
+      }
+
+      .objects-edit-form__field {
+        position: relative;
+        gap: 8px;
+        padding: 12px;
+        border: 1px solid rgba(226, 232, 240, 0.82);
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.76);
+        box-shadow: 0 10px 26px rgba(15, 23, 42, 0.05);
+      }
+
+      .objects-edit-form__field .form-input {
+        min-height: 48px;
+        border-radius: 14px;
+        background: rgba(255, 255, 255, 0.92);
+      }
+
+      .objects-edit-form__field .form-label {
+        color: var(--text);
+        font-weight: 800;
+      }
+
+      .objects-edit-form__field .form-hint {
+        padding-left: 2px;
       }
 
       .objects-create-actions {
@@ -15736,6 +15773,35 @@
         border-color: rgba(22, 163, 74, 0.46);
         background: linear-gradient(135deg, rgba(187, 247, 208, 0.92), rgba(34, 197, 94, 0.6));
         color: #166534;
+      }
+
+
+      body[data-theme="dark"] .objects-edit-form {
+        border-color: rgba(148, 170, 210, 0.24);
+        background:
+          radial-gradient(circle at 12% 0%, rgba(96, 165, 250, 0.16), transparent 34%),
+          linear-gradient(160deg, rgba(15, 23, 42, 0.9), rgba(17, 24, 39, 0.72));
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 18px 42px rgba(0, 0, 0, 0.22);
+      }
+
+      body[data-theme="dark"] .objects-edit-form__intro {
+        border-color: rgba(96, 165, 250, 0.26);
+        background: rgba(30, 64, 175, 0.28);
+        color: #bfdbfe;
+      }
+
+      body[data-theme="dark"] .objects-edit-form__intro-icon {
+        background: rgba(96, 165, 250, 0.18);
+      }
+
+      body[data-theme="dark"] .objects-edit-form__field {
+        border-color: rgba(148, 170, 210, 0.22);
+        background: rgba(15, 23, 42, 0.58);
+        box-shadow: 0 10px 26px rgba(0, 0, 0, 0.18);
+      }
+
+      body[data-theme="dark"] .objects-edit-form__field .form-input {
+        background: rgba(15, 23, 42, 0.72);
       }
 
       body[data-theme="dark"] .objects-edit-actions {

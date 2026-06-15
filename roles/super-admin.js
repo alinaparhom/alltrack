@@ -877,7 +877,7 @@ export function renderRole(user) {
                   </div>
                 </div>
                 <div class="form-actions form-actions--compact">
-                  <button class="button-danger users-edit-modal__delete" type="button" data-users-edit-delete>Удалить</button>
+                  <button class="button-danger users-edit-modal__delete" type="button" data-users-edit-delete>Удалить пользователя</button>
                   <button class="button-secondary users-edit-modal__cancel" type="button" data-users-edit-cancel>Отмена</button>
                   <button class="action-primary users-edit-modal__save" type="submit">Сохранить</button>
                 </div>

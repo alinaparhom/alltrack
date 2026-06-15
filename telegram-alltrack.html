@@ -14066,6 +14066,14 @@
         color: var(--accent);
       }
 
+      .users-edit-modal__delete {
+        grid-column: 1 / -1;
+        width: 100%;
+        min-height: 48px;
+        border-radius: 16px;
+        font-weight: 850;
+      }
+
       .users-edit-modal__cancel,
       .users-edit-modal__save {
         min-height: 48px;
@@ -14077,15 +14085,15 @@
       }
 
       .users-edit-modal__cancel {
-        border-color: rgba(239, 68, 68, 0.26);
-        background: linear-gradient(135deg, rgba(254, 242, 242, 0.92), rgba(248, 113, 113, 0.16));
-        color: #dc2626;
-        box-shadow: 0 12px 28px rgba(239, 68, 68, 0.12);
+        border-color: rgba(59, 125, 255, 0.28);
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(219, 234, 254, 0.72));
+        color: var(--accent);
+        box-shadow: 0 12px 28px rgba(59, 125, 255, 0.14), inset 0 1px 0 rgba(255, 255, 255, 0.82);
       }
 
       .users-edit-modal__cancel:hover,
       .users-edit-modal__cancel:focus-visible {
-        box-shadow: 0 16px 34px rgba(239, 68, 68, 0.18);
+        box-shadow: 0 16px 34px rgba(59, 125, 255, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.9);
       }
 
       .users-edit-modal__save {

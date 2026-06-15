@@ -350,6 +350,7 @@ export function renderRole(user, options = {}) {
                   <input
                     class="form-input"
                     id="objects-filter-input"
+                    type="search"
                     name="object-filter"
                     placeholder="Поиск по объектам"
                     aria-label="Быстрый поиск по объектам"

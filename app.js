@@ -6585,6 +6585,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const usersEditOrgNameEl = contentEl.querySelector("[data-users-edit-org-name]");
   const usersEditClearTelegramButton = contentEl.querySelector("[data-users-edit-clear-telegram]");
   const usersEditCreateInviteButton = contentEl.querySelector("[data-users-edit-create-invite]");
+  const usersEditDeleteButton = contentEl.querySelector("[data-users-edit-delete]");
   const usersAddModalEl = contentEl.querySelector("[data-users-add-modal]");
   const usersAddBackdropEl = contentEl.querySelector("[data-users-add-backdrop]");
   const usersAddCloseButton = contentEl.querySelector("[data-users-add-close]");
@@ -29780,6 +29781,84 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
   };
 
+  const buildUserDeleteBlockers = async (orgFolderName, fullName) => {
+    const targetName = normalizePersonName(fullName);
+    if (!orgFolderName || !targetName) return { moves: [], tools: [] };
+    const [rawMoves, rawToolsPrimary, rawToolsLegacy] = await Promise.all([
+      loadJson(`./${orgFolderName}/Перемещения.json`).catch(() => []),
+      loadJson(`./${orgFolderName}/База с инструментами.json`).catch(() => []),
+      loadJson(`./${orgFolderName}/База инструментов.json`).catch(() => []),
+    ]);
+    const moves = (Array.isArray(rawMoves) ? rawMoves : Array.isArray(rawMoves?.moves) ? rawMoves.moves : []).filter((move) => {
+      const receiver = normalizePersonName(move?.["Принял"] ?? "");
+      const answerDate = String(move?.["Дата ответа"] ?? "").trim();
+      return receiver === targetName && !answerDate;
+    });
+    const tools = [...normalizeToolsData(rawToolsPrimary), ...normalizeToolsData(rawToolsLegacy)].filter((tool) => {
+      return normalizePersonName(tool?.["Ответственный"] ?? "") === targetName;
+    });
+    return { moves, tools };
+  };
+
+  const formatUserDeleteBlockers = ({ moves, tools }) => {
+    const lines = ["Удалить из базы пользователя невозможно, так как на нём ещё есть данные:"];
+    if (moves.length) {
+      lines.push("", "Перемещения на принятии:");
+      moves.slice(0, 12).forEach((move) => {
+        lines.push(`• №${move?.["Номер"] ?? "—"} · бух. №${move?.["Бух.номер"] ?? "—"} · ${move?.["Наименование"] ?? move?.["Новый объект"] ?? "без описания"}`);
+      });
+      if (moves.length > 12) lines.push(`• ещё ${moves.length - 12}`);
+    }
+    if (tools.length) {
+      lines.push("", "Инструменты в базе:");
+      tools.slice(0, 12).forEach((tool) => {
+        lines.push(`• №${tool?.["Номер"] ?? "—"} · бух. №${tool?.["Бух.номер"] ?? "—"} · ${tool?.["Наименование"] ?? "без названия"}`);
+      });
+      if (tools.length > 12) lines.push(`• ещё ${tools.length - 12}`);
+    }
+    return lines.join("\n");
+  };
+
+  const deleteUsersEditUser = async () => {
+    if (!usersEditFormEl) return;
+    const formData = new FormData(usersEditFormEl);
+    const userIndex = Number(formData.get("users-edit-index"));
+    if (!Number.isInteger(userIndex) || userIndex < 0) {
+      if (usersEditMessageEl) usersEditMessageEl.textContent = "Не удалось определить пользователя.";
+      return;
+    }
+    try {
+      if (usersEditMessageEl) usersEditMessageEl.textContent = "Проверяем перемещения и инструменты...";
+      const usersData = await loadJson(usersFilePath).catch(() => ({ users: [] }));
+      const nextUsers = Array.isArray(usersData?.users) ? [...usersData.users] : [];
+      const removableUser = nextUsers[userIndex];
+      if (!removableUser) throw new Error("Пользователь не найден");
+      const fullName = String(removableUser?.full_name ?? "").trim();
+      const blockers = await buildUserDeleteBlockers(context.orgFolderName, fullName);
+      if (blockers.moves.length || blockers.tools.length) {
+        const warning = formatUserDeleteBlockers(blockers);
+        window.alert(warning);
+        if (usersEditMessageEl) usersEditMessageEl.textContent = warning;
+        return;
+      }
+      const approved = window.confirm(`Удалить пользователя ${formatFullName(fullName)} из базы? Это действие нельзя отменить.`);
+      if (!approved) {
+        if (usersEditMessageEl) usersEditMessageEl.textContent = "Удаление отменено.";
+        return;
+      }
+      nextUsers.splice(userIndex, 1);
+      await saveJson(usersFilePath, { ...usersData, users: nextUsers }, { user });
+      usersState.users = nextUsers;
+      updateUsersNameSuggestions(nextUsers);
+      updateUsersDetailsView();
+      if (usersEditMessageEl) usersEditMessageEl.textContent = "Пользователь удалён.";
+      setTimeout(closeUsersEditModal, 350);
+    } catch (error) {
+      console.error(error);
+      if (usersEditMessageEl) usersEditMessageEl.textContent = "Не удалось удалить пользователя. Попробуйте позже.";
+    }
+  };
+
   usersEditClearTelegramButton?.addEventListener("click", () => {
     const telegramInput = usersEditFormEl?.elements?.["users-edit-telegram-id"];
     if (telegramInput) {
@@ -29791,6 +29870,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
   });
   usersEditCreateInviteButton?.addEventListener("click", createInviteFromUsersEdit);
+  usersEditDeleteButton?.addEventListener("click", deleteUsersEditUser);
 
   usersEditFormEl?.addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -32959,6 +33039,7 @@ function setupSuperAdmin() {
   const usersEditOrgNameEl = contentEl.querySelector("[data-users-edit-org-name]");
   const usersEditClearTelegramButton = contentEl.querySelector("[data-users-edit-clear-telegram]");
   const usersEditCreateInviteButton = contentEl.querySelector("[data-users-edit-create-invite]");
+  const usersEditDeleteButton = contentEl.querySelector("[data-users-edit-delete]");
   const usersAddModalEl = contentEl.querySelector("[data-users-add-modal]");
   const usersAddBackdropEl = contentEl.querySelector("[data-users-add-backdrop]");
   const usersAddCloseButton = contentEl.querySelector("[data-users-add-close]");
@@ -35927,6 +36008,92 @@ function setupSuperAdmin() {
     }
   };
 
+  const buildUserDeleteBlockers = async (orgFolderName, fullName) => {
+    const targetName = normalizePersonName(fullName);
+    if (!orgFolderName || !targetName) return { moves: [], tools: [] };
+    const [rawMoves, rawToolsPrimary, rawToolsLegacy] = await Promise.all([
+      loadJson(`./${orgFolderName}/Перемещения.json`).catch(() => []),
+      loadJson(`./${orgFolderName}/База с инструментами.json`).catch(() => []),
+      loadJson(`./${orgFolderName}/База инструментов.json`).catch(() => []),
+    ]);
+    const moves = (Array.isArray(rawMoves) ? rawMoves : Array.isArray(rawMoves?.moves) ? rawMoves.moves : []).filter((move) => {
+      const receiver = normalizePersonName(move?.["Принял"] ?? "");
+      const answerDate = String(move?.["Дата ответа"] ?? "").trim();
+      return receiver === targetName && !answerDate;
+    });
+    const tools = [...normalizeToolsData(rawToolsPrimary), ...normalizeToolsData(rawToolsLegacy)].filter((tool) => {
+      return normalizePersonName(tool?.["Ответственный"] ?? "") === targetName;
+    });
+    return { moves, tools };
+  };
+
+  const formatUserDeleteBlockers = ({ moves, tools }) => {
+    const lines = ["Удалить из базы пользователя невозможно, так как на нём ещё есть данные:"];
+    if (moves.length) {
+      lines.push("", "Перемещения на принятии:");
+      moves.slice(0, 12).forEach((move) => {
+        lines.push(`• №${move?.["Номер"] ?? "—"} · бух. №${move?.["Бух.номер"] ?? "—"} · ${move?.["Наименование"] ?? move?.["Новый объект"] ?? "без описания"}`);
+      });
+      if (moves.length > 12) lines.push(`• ещё ${moves.length - 12}`);
+    }
+    if (tools.length) {
+      lines.push("", "Инструменты в базе:");
+      tools.slice(0, 12).forEach((tool) => {
+        lines.push(`• №${tool?.["Номер"] ?? "—"} · бух. №${tool?.["Бух.номер"] ?? "—"} · ${tool?.["Наименование"] ?? "без названия"}`);
+      });
+      if (tools.length > 12) lines.push(`• ещё ${tools.length - 12}`);
+    }
+    return lines.join("\n");
+  };
+
+  const deleteUsersEditUser = async () => {
+    if (!usersEditFormEl) return;
+    const formData = new FormData(usersEditFormEl);
+    const userIndex = Number(formData.get("users-edit-index"));
+    if (!Number.isInteger(userIndex) || userIndex < 0) {
+      if (usersEditMessageEl) usersEditMessageEl.textContent = "Не удалось определить пользователя.";
+      return;
+    }
+    try {
+      if (usersEditMessageEl) usersEditMessageEl.textContent = "Проверяем перемещения и инструменты...";
+      const usersData = await loadJson(usersFilePath).catch(() => ({ users: [] }));
+      const nextUsers = Array.isArray(usersData?.users) ? [...usersData.users] : [];
+      const removableUser = nextUsers[userIndex];
+      if (!removableUser) throw new Error("Пользователь не найден");
+      const fullName = String(removableUser?.full_name ?? "").trim();
+      const orgData = await loadJson(orgFilePath).catch(() => ({ organizations: [] }));
+      const orgFolderName = sanitizeOrganizationFolderName(
+        pickOrganizationShortName(
+          orgData,
+          String(selectedUsersOrgName || removableUser?.organization || "").trim()
+        )
+      );
+      const blockers = await buildUserDeleteBlockers(orgFolderName, fullName);
+      if (blockers.moves.length || blockers.tools.length) {
+        const warning = formatUserDeleteBlockers(blockers);
+        window.alert(warning);
+        if (usersEditMessageEl) usersEditMessageEl.textContent = warning;
+        return;
+      }
+      const approved = window.confirm(`Удалить пользователя ${formatFullName(fullName)} из базы? Это действие нельзя отменить.`);
+      if (!approved) {
+        if (usersEditMessageEl) usersEditMessageEl.textContent = "Удаление отменено.";
+        return;
+      }
+      nextUsers.splice(userIndex, 1);
+      await saveJson(usersFilePath, { ...usersData, users: nextUsers }, { user: currentUser });
+      orgsState.users = nextUsers;
+      updateUsersNameSuggestions(nextUsers);
+      updateUsersDetailsView();
+      await renderUsersOrganizationsList();
+      if (usersEditMessageEl) usersEditMessageEl.textContent = "Пользователь удалён.";
+      setTimeout(closeUsersEditModal, 350);
+    } catch (error) {
+      console.error(error);
+      if (usersEditMessageEl) usersEditMessageEl.textContent = "Не удалось удалить пользователя. Попробуйте позже.";
+    }
+  };
+
   usersEditClearTelegramButton?.addEventListener("click", () => {
     const telegramInput = usersEditFormEl?.elements?.["users-edit-telegram-id"];
     if (telegramInput) {
@@ -35938,6 +36105,7 @@ function setupSuperAdmin() {
     }
   });
   usersEditCreateInviteButton?.addEventListener("click", createInviteFromUsersEdit);
+  usersEditDeleteButton?.addEventListener("click", deleteUsersEditUser);
 
   usersEditFormEl?.addEventListener("submit", async (event) => {
     event.preventDefault();

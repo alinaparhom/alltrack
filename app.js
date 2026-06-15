@@ -30499,11 +30499,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const accordionItems = settingsBodyEl.querySelectorAll(
       "[data-settings-accordion]"
     );
-    accordionItems.forEach((accordion) => {
+    accordionItems.forEach((accordion, index) => {
       const toggle = accordion.querySelector("[data-settings-accordion-toggle]");
       if (!toggle) return;
-      accordion.classList.remove("is-open");
-      toggle.setAttribute("aria-expanded", "false");
+      const isInitiallyOpen = index === 0;
+      accordion.classList.toggle("is-open", isInitiallyOpen);
+      toggle.setAttribute("aria-expanded", String(isInitiallyOpen));
       toggle.addEventListener("click", () => {
         const nextState = !accordion.classList.contains("is-open");
         accordion.classList.toggle("is-open", nextState);

@@ -3715,6 +3715,192 @@ function sendFeedbackStatusNotification(array $entry): void {
   sendTelegramTextMessage($botToken, $telegramId, $message);
 }
 
+
+function resolveMovesTableConfig(array $settings): ?array {
+  $config = $settings["organization"]["movesTable"] ?? $settings["movesTable"] ?? null;
+  return is_array($config) ? $config : null;
+}
+
+function isMovesTableScheduleDue(array $config, DateTimeImmutable $now): bool {
+  $time = normalizeScheduleTimeLabel((string) ($config["time"] ?? ""));
+  if ($time === "") return false;
+  [$hour, $minute] = array_map('intval', explode(':', $time));
+  if ((((int) $now->format("H") * 60) + (int) $now->format("i")) !== (($hour * 60) + $minute)) return false;
+
+  $type = ($config["scheduleType"] ?? "monthDays") === "weekDays" ? "weekDays" : "monthDays";
+  if ($type === "weekDays") {
+    $dayByNumber = [1 => "Пн", 2 => "Вт", 3 => "Ср", 4 => "Чт", 5 => "Пт", 6 => "Сб", 7 => "Вс"];
+    $today = $dayByNumber[(int) $now->format("N")] ?? "";
+    return in_array($today, is_array($config["weekDays"] ?? null) ? $config["weekDays"] : [], true);
+  }
+
+  $days = is_array($config["monthDays"] ?? null) ? $config["monthDays"] : [];
+  $day = (int) $now->format("j");
+  $lastDay = (int) $now->format("t");
+  foreach ($days as $raw) {
+    $value = trim((string) $raw);
+    if ($value === "everyDay") return true;
+    if ($value === "first" && $day === 1) return true;
+    if ($value === "last" && $day === $lastDay) return true;
+    if ($value === "every7" && (($day - 1) % 7) === 0) return true;
+    if (ctype_digit($value) && (int) $value === $day) return true;
+  }
+  return false;
+}
+
+function getMovesTableRecipientChatIds(array $config, array $users): array {
+  $selected = is_array($config["recipients"] ?? null) ? array_map('strval', $config["recipients"]) : [];
+  $selectedMap = array_fill_keys(array_map('trim', $selected), true);
+  $chatIds = [];
+  foreach ($users as $user) {
+    if (!is_array($user)) continue;
+    $keys = [
+      trim((string) ($user["telegram_id"] ?? "")),
+      trim((string) ($user["id"] ?? "")),
+      trim((string) ($user["full_name"] ?? $user["fullName"] ?? "")),
+    ];
+    $isSelected = false;
+    foreach ($keys as $key) {
+      if ($key !== "" && !empty($selectedMap[$key])) { $isSelected = true; break; }
+    }
+    $chatId = normalizeTelegramId($user["telegram_id"] ?? null);
+    if ($isSelected && $chatId) $chatIds[$chatId] = true;
+  }
+  return array_keys($chatIds);
+}
+
+function movesTableColumnDefinitions(): array {
+  return [
+    "appNumber" => ["title" => "Номер", "keys" => ["Номер"]],
+    "accountingNumber" => ["title" => "Бух.номер", "keys" => ["Бух.номер", "Бух номер"]],
+    "moveDate" => ["title" => "Дата перемещения", "keys" => ["Дата перемещения"]],
+    "acceptDate" => ["title" => "Дата принятия", "keys" => ["Дата ответа", "Дата принятия"]],
+    "sender" => ["title" => "Передающий", "keys" => ["Ответственный до перемещения", "Передающий"]],
+    "receiver" => ["title" => "Принимающий", "keys" => ["Ответственный", "Новый ответственный", "Принимающий"]],
+    "movedBy" => ["title" => "Переместил", "keys" => ["Переместил", "Кто переместил", "Ответственный до перемещения"]],
+    "oldObject" => ["title" => "Старый объект", "keys" => ["Старый объект", "Объект до перемещения"]],
+    "newObject" => ["title" => "Новый объект", "keys" => ["Объект", "Новый объект"]],
+    "name" => ["title" => "Наименование", "keys" => ["Наименование"]],
+    "manufacturer" => ["title" => "Производитель", "keys" => ["Производитель"]],
+    "model" => ["title" => "Модель", "keys" => ["Модель"]],
+    "moverId" => ["title" => "ID перемещающего", "keys" => ["ID перемещающего", "telegram_id перемещающего"]],
+    "receiverId" => ["title" => "ID принимающего", "keys" => ["ID принимающего", "telegram_id принимающего"]],
+  ];
+}
+
+function getMoveColumnValue(array $move, array $definition): string {
+  foreach ($definition["keys"] as $key) {
+    $value = trim((string) ($move[$key] ?? ""));
+    if ($value !== "") return $value;
+  }
+  return "";
+}
+
+function buildMovesTableCsv(string $orgName, array $moves, array $config, DateTimeImmutable $now, DateTimeZone $timezone): string {
+  $defs = movesTableColumnDefinitions();
+  $columns = is_array($config["columns"] ?? null) ? array_values(array_filter($config["columns"], 'is_string')) : [];
+  $columns = array_values(array_filter($columns, static fn($id) => isset($defs[$id])));
+  if (empty($columns)) $columns = ["moveDate", "name", "movedBy", "oldObject", "newObject"];
+  $periodDays = max(1, (int) ($config["periodDays"] ?? 7));
+  $end = !empty($config["includeSendDay"]) ? $now->setTime(23, 59, 59) : $now->modify('-1 day')->setTime(23, 59, 59);
+  $start = $end->modify('-' . ($periodDays - 1) . ' days')->setTime(0, 0, 0);
+
+  $fh = fopen('php://temp', 'r+');
+  fwrite($fh, "\xEF\xBB\xBF");
+  fputcsv($fh, ["Организация", $orgName], ';');
+  fputcsv($fh, ["Период", $start->format('d.m.Y') . " — " . $end->format('d.m.Y')], ';');
+  fputcsv($fh, [], ';');
+  fputcsv($fh, array_map(static fn($id) => $defs[$id]["title"], $columns), ';');
+  foreach ($moves as $move) {
+    if (!is_array($move)) continue;
+    $answer = mb_strtolower(trim((string) ($move["Ответ"] ?? "")), 'UTF-8');
+    if ($answer === "" || str_contains($answer, "отмена") || str_contains($answer, "не прин")) continue;
+    $moveDate = parseDateToDateTime((string) ($move["Дата перемещения"] ?? ""), $timezone);
+    if ($moveDate === null || $moveDate < $start || $moveDate > $end) continue;
+    fputcsv($fh, array_map(static fn($id) => getMoveColumnValue($move, $defs[$id]), $columns), ';');
+  }
+  rewind($fh);
+  $csv = stream_get_contents($fh);
+  fclose($fh);
+  return is_string($csv) ? $csv : "";
+}
+
+function sendTelegramDocumentFile(string $botToken, string $chatId, string $filePath, string $caption = ""): array {
+  if (!function_exists("curl_init")) return ["ok" => false, "error" => "На сервере недоступен cURL для отправки документа.", "statusCode" => 0];
+  $curl = curl_init("https://api.telegram.org/bot" . rawurlencode($botToken) . "/sendDocument");
+  if ($curl === false) return ["ok" => false, "error" => "Не удалось инициализировать cURL", "statusCode" => 0];
+  curl_setopt_array($curl, [CURLOPT_POST => true, CURLOPT_RETURNTRANSFER => true, CURLOPT_POSTFIELDS => ["chat_id" => $chatId, "document" => new CURLFile($filePath), "caption" => $caption], CURLOPT_TIMEOUT => 30]);
+  $response = curl_exec($curl);
+  $statusCode = (int) curl_getinfo($curl, CURLINFO_HTTP_CODE);
+  $error = curl_error($curl);
+  curl_close($curl);
+  if ($response === false) return ["ok" => false, "error" => $error ?: "Не удалось подключиться к Telegram API", "statusCode" => $statusCode];
+  $decoded = json_decode($response, true);
+  return !empty($decoded["ok"]) ? ["ok" => true, "statusCode" => $statusCode, "response" => $decoded] : ["ok" => false, "error" => (string) ($decoded["description"] ?? "Неизвестная ошибка Telegram API"), "statusCode" => $statusCode, "response" => $decoded];
+}
+
+function runMovesTableMailing(array $options = []): array {
+  $timezone = new DateTimeZone("Europe/Moscow");
+  $now = new DateTimeImmutable("now", $timezone);
+  $dryRun = !empty($options["dryRun"]);
+  $botToken = getenv("ALLTRACK_BOT_TOKEN") ?: "8549452123:AAGxveuJSVf-xpNHQYTDKDmuMmHjGRVeDj0";
+  $statePath = __DIR__ . DIRECTORY_SEPARATOR . "telegram-moves-table-mailing-state.json";
+  $state = readJsonFile($statePath, ["sent" => []]);
+  $sent = is_array($state["sent"] ?? null) ? $state["sent"] : [];
+  $summary = ["success" => true, "mode" => "moves-table-mailing-cli", "time" => $now->format(DateTimeInterface::ATOM), "dryRun" => $dryRun, "messagesSent" => 0, "organizationsChecked" => 0];
+  $usersData = readJsonFile(__DIR__ . DIRECTORY_SEPARATOR . "users.json", ["users" => []]);
+  $users = is_array($usersData["users"] ?? null) ? $usersData["users"] : [];
+  $orgData = readJsonFile(__DIR__ . DIRECTORY_SEPARATOR . "organizations.json", ["organizations" => []]);
+  foreach ((@scandir(__DIR__) ?: []) as $orgFolder) {
+    if ($orgFolder === "." || $orgFolder === "..") continue;
+    $orgPath = __DIR__ . DIRECTORY_SEPARATOR . $orgFolder;
+    if (!is_dir($orgPath)) continue;
+    $settingsPath = $orgPath . DIRECTORY_SEPARATOR . "Настройки.json";
+    $movesPath = $orgPath . DIRECTORY_SEPARATOR . "Перемещения.json";
+    if (!is_file($settingsPath) || !is_file($movesPath)) continue;
+    $summary["organizationsChecked"]++;
+    $settings = readJsonFile($settingsPath, []);
+    $config = resolveMovesTableConfig($settings);
+    if (!is_array($config) || !isMovesTableScheduleDue($config, $now)) continue;
+    $time = normalizeScheduleTimeLabel((string) ($config["time"] ?? ""));
+    $stateKey = $orgFolder . "|" . $now->format('Y-m-d') . "|" . $time;
+    if (!empty($sent[$stateKey])) continue;
+    $chatIds = getMovesTableRecipientChatIds($config, $users);
+    if (empty($chatIds)) continue;
+    $orgName = resolveOrganizationFullNameByFolder($orgFolder, $orgData);
+    $csv = buildMovesTableCsv($orgName, readJsonArrayFile($movesPath), $config, $now, $timezone);
+    $exportDir = $orgPath . DIRECTORY_SEPARATOR . "exports";
+    if (!is_dir($exportDir)) @mkdir($exportDir, 0775, true);
+    $filePath = $exportDir . DIRECTORY_SEPARATOR . "moves-table-" . $now->format('Y-m-d-H-i') . ".csv";
+    file_put_contents($filePath, $csv, LOCK_EX);
+    alltrack_fix_file_permissions($filePath);
+    foreach ($chatIds as $chatId) {
+      $result = $dryRun ? ["ok" => true] : sendTelegramDocumentFile($botToken, $chatId, $filePath, "📦 Таблица принятых перемещений");
+      if (!empty($result["ok"])) $summary["messagesSent"]++; else appendMailingLog("error", "Ошибка рассылки 'Таблица перемещений'.", ["organization" => $orgFolder, "chatId" => $chatId, "error" => $result["error"] ?? "Неизвестная ошибка"]);
+    }
+    $sent[$stateKey] = $now->format(DateTimeInterface::ATOM);
+    cleanupOldExportFiles($exportDir, 30);
+  }
+  if (!$dryRun) {
+    $encoded = json_encode(["sent" => $sent], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+    if ($encoded !== false && file_put_contents($statePath, $encoded . PHP_EOL, LOCK_EX) !== false) alltrack_fix_file_permissions($statePath);
+  }
+  return $summary;
+}
+
+function runMovesTableMailingIfNeeded(): void {
+  $timezone = new DateTimeZone("Europe/Moscow");
+  $now = new DateTimeImmutable("now", $timezone);
+  $statePath = __DIR__ . DIRECTORY_SEPARATOR . "telegram-moves-table-mailing-last-run.json";
+  $state = readJsonFile($statePath, []);
+  $minute = $now->format("Y-m-d H:i");
+  if (trim((string) ($state["lastRunMinute"] ?? "")) === $minute) return;
+  $result = runMovesTableMailing(["dryRun" => false]);
+  if (empty($result["success"])) appendMailingLog("error", "Не удалось выполнить рассылку 'Таблица перемещений' при автозапуске.", ["result" => $result]);
+  $encoded = json_encode(["lastRunMinute" => $minute, "updatedAt" => $now->format(DateTimeInterface::ATOM)], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+  if ($encoded !== false && file_put_contents($statePath, $encoded . PHP_EOL, LOCK_EX) !== false) alltrack_fix_file_permissions($statePath);
+}
+
 function runScheduledMailingsWithLock(bool $dryRun, bool $useIfNeeded): array {
   $lockPath = __DIR__ . DIRECTORY_SEPARATOR . "telegram-scheduled-mailings.lock";
   $lockHandle = @fopen($lockPath, "c+");
@@ -3742,6 +3928,7 @@ function runScheduledMailingsWithLock(bool $dryRun, bool $useIfNeeded): array {
       runNoPhotoMailingIfNeeded();
       runNoAccountingNumberMailingIfNeeded();
       runPendingAcceptanceMailingIfNeeded();
+      runMovesTableMailingIfNeeded();
       runHourlyMoveArchivesIfNeeded();
 
       $timezone = new DateTimeZone("Europe/Moscow");
@@ -3769,13 +3956,16 @@ function runScheduledMailingsWithLock(bool $dryRun, bool $useIfNeeded): array {
     $pendingAcceptanceMailingResult = runPendingAcceptanceMailing([
       "dryRun" => $dryRun,
     ]);
+    $movesTableResult = runMovesTableMailing([
+      "dryRun" => $dryRun,
+    ]);
     $noPhotoResult = runNoPhotoFineRecalculation([
       "respectTime" => true,
       "dryRun" => $dryRun,
     ]);
 
     return [
-      "success" => !empty($moveRepliesResult["success"]) && !empty($repairsResult["success"]) && !empty($noPhotoMailingResult["success"]) && !empty($noAccountingNumberMailingResult["success"]) && !empty($pendingAcceptanceMailingResult["success"]) && !empty($noPhotoResult["success"]),
+      "success" => !empty($moveRepliesResult["success"]) && !empty($repairsResult["success"]) && !empty($noPhotoMailingResult["success"]) && !empty($noAccountingNumberMailingResult["success"]) && !empty($pendingAcceptanceMailingResult["success"]) && !empty($movesTableResult["success"]) && !empty($noPhotoResult["success"]),
       "mode" => "scheduled-mailings-cli",
       "dryRun" => $dryRun,
       "skipped" => false,
@@ -3784,6 +3974,7 @@ function runScheduledMailingsWithLock(bool $dryRun, bool $useIfNeeded): array {
       "noPhotoMailing" => $noPhotoMailingResult,
       "noAccountingNumberMailing" => $noAccountingNumberMailingResult,
       "pendingAcceptanceMailing" => $pendingAcceptanceMailingResult,
+      "movesTableMailing" => $movesTableResult,
       "noPhotoFines" => $noPhotoResult,
     ];
   } finally {
@@ -3804,6 +3995,14 @@ if ($isCli) {
     echo json_encode($result, JSON_UNESCAPED_UNICODE) . PHP_EOL;
     exit;
   }
+  if (in_array("--run-moves-table-mailing", $argvList, true)) {
+    $result = runMovesTableMailing([
+      "dryRun" => in_array("--dry-run", $argvList, true),
+    ]);
+    echo json_encode($result, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) . PHP_EOL;
+    exit(empty($result["success"]) ? 1 : 0);
+  }
+
   if (in_array("--run-move-replies-mailing", $argvList, true)) {
     $dryRun = in_array("--dry-run", $argvList, true);
     $result = runMoveRepliesMailing([
@@ -3873,6 +4072,7 @@ foreach ($entries as $entry) {
 
 runNoPhotoFineRecalculationIfNeeded();
 runMoveRepliesMailingIfNeeded();
+runMovesTableMailingIfNeeded();
 runRepairsMailingIfNeeded();
 runNoPhotoMailingIfNeeded();
 runNoAccountingNumberMailingIfNeeded();

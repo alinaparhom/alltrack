@@ -157,6 +157,8 @@ const energyMovesTableColumnOptions = [
   { id: "accountingNumber", title: "Бух.номер" },
   { id: "moveDate", title: "Дата перемещения" },
   { id: "acceptDate", title: "Дата принятия" },
+  { id: "sender", title: "Передающий" },
+  { id: "receiver", title: "Принимающий" },
   { id: "movedBy", title: "Переместил" },
   { id: "oldObject", title: "Старый объект" },
   { id: "newObject", title: "Новый объект" },
@@ -5419,7 +5421,7 @@ function buildEnergySettingsMarkup(settings) {
   const columnSelects = [...movesTable.columns, ""].slice(0, columnOptions.length).map((value, index) => `
     <label class="settings-moves-column">
       <span>Столбец ${String.fromCharCode(65 + index)}</span>
-      <select class="form-input" name="moves-table-columns" data-moves-table-column>
+      <select class="form-input settings-moves-column__select" name="moves-table-columns" data-moves-table-column>
         <option value="">Не заполнять</option>
         ${columnOptions.map((option) => `<option value="${option.id}" ${option.id === value ? "selected" : ""}>${escapeHtml(option.title)}</option>`).join("")}
       </select>
@@ -30743,7 +30745,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       wrapper.className = "settings-moves-column";
       wrapper.innerHTML = `
         <span>Столбец ${String.fromCharCode(65 + selects.length)}</span>
-        <select class="form-input" name="moves-table-columns" data-moves-table-column>
+        <select class="form-input settings-moves-column__select" name="moves-table-columns" data-moves-table-column>
           <option value="">Не заполнять</option>
           ${energyMovesTableColumnOptions
             .filter((option) => organizationSettings.dataUsage?.object !== false || !["oldObject", "newObject"].includes(option.id))

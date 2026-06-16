@@ -3800,14 +3800,29 @@ function getMoveColumnValue(array $move, array $definition, array $tool = []): s
   return "";
 }
 
+function normalizeMovesTableToolNumber($value): string {
+  return mb_strtolower(trim((string) $value), 'UTF-8');
+}
+
 function buildToolIndexByNumber(array $tools): array {
   $index = [];
   foreach ($tools as $tool) {
     if (!is_array($tool)) continue;
-    $number = trim((string) ($tool["Номер"] ?? ""));
-    if ($number !== "") $index[$number] = $tool;
+    $number = normalizeMovesTableToolNumber($tool["Номер"] ?? "");
+    if ($number !== "" && !isset($index[$number])) $index[$number] = $tool;
   }
   return $index;
+}
+
+function readToolsBaseForMovesTable(string $orgPath): array {
+  foreach (["База инструментов.json", "База с инструментами.json"] as $fileName) {
+    $path = $orgPath . DIRECTORY_SEPARATOR . $fileName;
+    if (!is_file($path)) continue;
+    $data = readJsonFile($path, []);
+    if (is_array($data["tools"] ?? null)) return $data["tools"];
+    if (is_array($data)) return $data;
+  }
+  return [];
 }
 
 function buildMovesTableRows(string $orgName, array $moves, array $config, DateTimeImmutable $now, DateTimeZone $timezone, array $tools = []): array {
@@ -3827,7 +3842,7 @@ function buildMovesTableRows(string $orgName, array $moves, array $config, DateT
     if ($answer === "" || str_contains($answer, "отмена") || str_contains($answer, "не прин")) continue;
     $moveDate = parseDateToDateTime((string) ($move["Дата перемещения"] ?? ""), $timezone);
     if ($moveDate === null || $moveDate < $start || $moveDate > $end) continue;
-    $number = trim((string) ($move["Номер"] ?? ""));
+    $number = normalizeMovesTableToolNumber($move["Номер"] ?? "");
     $tool = $number !== "" && isset($toolIndex[$number]) ? $toolIndex[$number] : [];
     $rows[] = array_map(static fn($id) => getMoveColumnValue($move, $defs[$id], $tool), $columns);
   }
@@ -3903,7 +3918,6 @@ function runMovesTableMailing(array $options = []): array {
     if (!is_dir($orgPath)) continue;
     $settingsPath = $orgPath . DIRECTORY_SEPARATOR . "Настройки.json";
     $movesPath = $orgPath . DIRECTORY_SEPARATOR . "Перемещения.json";
-    $toolsPath = $orgPath . DIRECTORY_SEPARATOR . "База инструментов.json";
     if (!is_file($settingsPath) || !is_file($movesPath)) continue;
     $summary["organizationsChecked"]++;
     $settings = readJsonFile($settingsPath, []);
@@ -3916,7 +3930,7 @@ function runMovesTableMailing(array $options = []): array {
     if (empty($chatIds)) continue;
     $orgName = resolveOrganizationFullNameByFolder($orgFolder, $orgData);
     $moves = readJsonArrayFile($movesPath);
-    $tools = readJsonArrayFile($toolsPath);
+    $tools = readToolsBaseForMovesTable($orgPath);
     $exportDir = $orgPath . DIRECTORY_SEPARATOR . "exports";
     if (!is_dir($exportDir)) @mkdir($exportDir, 0775, true);
     $filePath = $exportDir . DIRECTORY_SEPARATOR . $now->format('Y-m-d') . ".xlsx";

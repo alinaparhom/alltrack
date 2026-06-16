@@ -5418,15 +5418,35 @@ function buildEnergySettingsMarkup(settings) {
     </label>
   `).join("");
   const columnOptions = energyMovesTableColumnOptions.filter((option) => settings.dataUsage?.object !== false || !["oldObject", "newObject"].includes(option.id));
-  const columnSelects = [...movesTable.columns, ""].slice(0, columnOptions.length).map((value, index) => `
-    <label class="settings-moves-column">
-      <span>Столбец ${String.fromCharCode(65 + index)}</span>
-      <select class="form-input settings-moves-column__select" name="moves-table-columns" data-moves-table-column>
-        <option value="">Не заполнять</option>
-        ${columnOptions.map((option) => `<option value="${option.id}" ${option.id === value ? "selected" : ""}>${escapeHtml(option.title)}</option>`).join("")}
-      </select>
-    </label>
-  `).join("");
+  const renderMovesTableColumnSelect = (value, index) => {
+    const selectedOption = columnOptions.find((option) => option.id === value);
+    return `
+      <div class="settings-moves-column" data-moves-table-column-wrap>
+        <span>Столбец ${String.fromCharCode(65 + index)}</span>
+        <input type="hidden" name="moves-table-columns" value="${escapeHtml(value)}" data-moves-table-column />
+        <button
+          class="settings-moves-column-select__trigger"
+          type="button"
+          data-moves-table-column-trigger
+          aria-expanded="false"
+        >
+          <span data-moves-table-column-label>${escapeHtml(selectedOption?.title ?? "Не заполнять")}</span>
+          <span class="settings-moves-column-select__chevron" aria-hidden="true">⌄</span>
+        </button>
+        <div class="settings-moves-column-select__menu" data-moves-table-column-menu>
+          <button class="settings-moves-column-select__option ${value ? "" : "is-selected"}" type="button" data-moves-table-column-option="">Не заполнять</button>
+          ${columnOptions.map((option) => `
+            <button
+              class="settings-moves-column-select__option ${option.id === value ? "is-selected" : ""}"
+              type="button"
+              data-moves-table-column-option="${option.id}"
+            >${escapeHtml(option.title)}</button>
+          `).join("")}
+        </div>
+      </div>
+    `;
+  };
+  const columnSelects = [...movesTable.columns, ""].slice(0, columnOptions.length).map(renderMovesTableColumnSelect).join("");
 
   return `
     <div class="settings-accordion" data-settings-accordion>
@@ -30735,32 +30755,82 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       setMovesTableRecipientsChecked(false);
     });
 
+    const getMovesTableColumnOptions = () =>
+      energyMovesTableColumnOptions.filter((option) =>
+        organizationSettings.dataUsage?.object !== false || !["oldObject", "newObject"].includes(option.id)
+      );
+
+    const buildMovesTableColumnControl = (value, index) => {
+      const options = getMovesTableColumnOptions();
+      const selectedOption = options.find((option) => option.id === value);
+      return `
+        <div class="settings-moves-column" data-moves-table-column-wrap>
+          <span>Столбец ${String.fromCharCode(65 + index)}</span>
+          <input type="hidden" name="moves-table-columns" value="${escapeHtml(value)}" data-moves-table-column />
+          <button class="settings-moves-column-select__trigger" type="button" data-moves-table-column-trigger aria-expanded="false">
+            <span data-moves-table-column-label>${escapeHtml(selectedOption?.title ?? "Не заполнять")}</span>
+            <span class="settings-moves-column-select__chevron" aria-hidden="true">⌄</span>
+          </button>
+          <div class="settings-moves-column-select__menu" data-moves-table-column-menu>
+            <button class="settings-moves-column-select__option ${value ? "" : "is-selected"}" type="button" data-moves-table-column-option="">Не заполнять</button>
+            ${options.map((option) => `
+              <button class="settings-moves-column-select__option ${option.id === value ? "is-selected" : ""}" type="button" data-moves-table-column-option="${option.id}">${escapeHtml(option.title)}</button>
+            `).join("")}
+          </div>
+        </div>
+      `;
+    };
+
+    const closeMovesTableColumnMenus = (except = null) => {
+      settingsBodyEl.querySelectorAll("[data-moves-table-column-wrap].is-open").forEach((wrap) => {
+        if (wrap === except) return;
+        wrap.classList.remove("is-open");
+        wrap.querySelector("[data-moves-table-column-trigger]")?.setAttribute("aria-expanded", "false");
+      });
+    };
+
     const appendMovesTableColumnIfNeeded = () => {
       const columnsBox = settingsBodyEl.querySelector("[data-moves-table-columns]");
       if (!columnsBox) return;
       const selects = Array.from(columnsBox.querySelectorAll("[data-moves-table-column]"));
       const lastSelect = selects.at(-1);
       if (!lastSelect?.value || selects.length >= energyMovesTableColumnOptions.length) return;
-      const wrapper = document.createElement("label");
-      wrapper.className = "settings-moves-column";
-      wrapper.innerHTML = `
-        <span>Столбец ${String.fromCharCode(65 + selects.length)}</span>
-        <select class="form-input settings-moves-column__select" name="moves-table-columns" data-moves-table-column>
-          <option value="">Не заполнять</option>
-          ${energyMovesTableColumnOptions
-            .filter((option) => organizationSettings.dataUsage?.object !== false || !["oldObject", "newObject"].includes(option.id))
-            .map((option) => `<option value="${option.id}">${escapeHtml(option.title)}</option>`)
-            .join("")}
-        </select>
-      `;
-      columnsBox.append(wrapper);
+      const wrapper = document.createElement("div");
+      wrapper.innerHTML = buildMovesTableColumnControl("", selects.length);
+      columnsBox.append(wrapper.firstElementChild);
     };
+
+    settingsBodyEl.addEventListener("click", (event) => {
+      const trigger = event.target?.closest?.("[data-moves-table-column-trigger]");
+      if (trigger) {
+        const wrap = trigger.closest("[data-moves-table-column-wrap]");
+        const nextOpen = !wrap?.classList.contains("is-open");
+        closeMovesTableColumnMenus(wrap);
+        wrap?.classList.toggle("is-open", nextOpen);
+        trigger.setAttribute("aria-expanded", String(nextOpen));
+        return;
+      }
+
+      const option = event.target?.closest?.("[data-moves-table-column-option]");
+      if (option) {
+        const wrap = option.closest("[data-moves-table-column-wrap]");
+        const input = wrap?.querySelector("[data-moves-table-column]");
+        const label = wrap?.querySelector("[data-moves-table-column-label]");
+        if (input) input.value = option.dataset.movesTableColumnOption ?? "";
+        if (label) label.textContent = option.textContent.trim() || "Не заполнять";
+        wrap?.querySelectorAll("[data-moves-table-column-option]").forEach((item) => item.classList.toggle("is-selected", item === option));
+        closeMovesTableColumnMenus();
+        appendMovesTableColumnIfNeeded();
+        return;
+      }
+
+      if (!event.target?.closest?.("[data-moves-table-column-wrap]")) {
+        closeMovesTableColumnMenus();
+      }
+    });
 
     settingsBodyEl.addEventListener("change", (event) => {
       syncCardState(event.target);
-      if (event.target?.matches("[data-moves-table-column]")) {
-        appendMovesTableColumnIfNeeded();
-      }
     });
   };
 

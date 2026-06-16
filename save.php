@@ -3788,15 +3788,29 @@ function movesTableColumnDefinitions(): array {
   ];
 }
 
-function getMoveColumnValue(array $move, array $definition): string {
+function getMoveColumnValue(array $move, array $definition, array $tool = []): string {
   foreach ($definition["keys"] as $key) {
     $value = trim((string) ($move[$key] ?? ""));
+    if ($value !== "") return $value;
+  }
+  foreach ($definition["keys"] as $key) {
+    $value = trim((string) ($tool[$key] ?? ""));
     if ($value !== "") return $value;
   }
   return "";
 }
 
-function buildMovesTableRows(string $orgName, array $moves, array $config, DateTimeImmutable $now, DateTimeZone $timezone): array {
+function buildToolIndexByNumber(array $tools): array {
+  $index = [];
+  foreach ($tools as $tool) {
+    if (!is_array($tool)) continue;
+    $number = trim((string) ($tool["Номер"] ?? ""));
+    if ($number !== "") $index[$number] = $tool;
+  }
+  return $index;
+}
+
+function buildMovesTableRows(string $orgName, array $moves, array $config, DateTimeImmutable $now, DateTimeZone $timezone, array $tools = []): array {
   $defs = movesTableColumnDefinitions();
   $columns = is_array($config["columns"] ?? null) ? array_values(array_filter($config["columns"], 'is_string')) : [];
   $columns = array_values(array_filter($columns, static fn($id) => isset($defs[$id])));
@@ -3805,19 +3819,17 @@ function buildMovesTableRows(string $orgName, array $moves, array $config, DateT
   $end = !empty($config["includeSendDay"]) ? $now->setTime(23, 59, 59) : $now->modify('-1 day')->setTime(23, 59, 59);
   $start = $end->modify('-' . ($periodDays - 1) . ' days')->setTime(0, 0, 0);
 
-  $rows = [
-    ["Организация", $orgName],
-    ["Период", $start->format('d.m.Y') . " — " . $end->format('d.m.Y')],
-    [],
-    array_map(static fn($id) => $defs[$id]["title"], $columns),
-  ];
+  $toolIndex = buildToolIndexByNumber($tools);
+  $rows = [array_map(static fn($id) => $defs[$id]["title"], $columns)];
   foreach ($moves as $move) {
     if (!is_array($move)) continue;
     $answer = mb_strtolower(trim((string) ($move["Ответ"] ?? "")), 'UTF-8');
     if ($answer === "" || str_contains($answer, "отмена") || str_contains($answer, "не прин")) continue;
     $moveDate = parseDateToDateTime((string) ($move["Дата перемещения"] ?? ""), $timezone);
     if ($moveDate === null || $moveDate < $start || $moveDate > $end) continue;
-    $rows[] = array_map(static fn($id) => getMoveColumnValue($move, $defs[$id]), $columns);
+    $number = trim((string) ($move["Номер"] ?? ""));
+    $tool = $number !== "" && isset($toolIndex[$number]) ? $toolIndex[$number] : [];
+    $rows[] = array_map(static fn($id) => getMoveColumnValue($move, $defs[$id], $tool), $columns);
   }
   return $rows;
 }
@@ -3836,9 +3848,9 @@ function xlsxColumnName(int $index): string {
   return $name;
 }
 
-function buildMovesTableXlsx(string $orgName, array $moves, array $config, DateTimeImmutable $now, DateTimeZone $timezone, string $filePath): bool {
+function buildMovesTableXlsx(string $orgName, array $moves, array $config, DateTimeImmutable $now, DateTimeZone $timezone, string $filePath, array $tools = []): bool {
   if (!class_exists('ZipArchive')) return false;
-  $rows = buildMovesTableRows($orgName, $moves, $config, $now, $timezone);
+  $rows = buildMovesTableRows($orgName, $moves, $config, $now, $timezone, $tools);
   $sheetRows = [];
   foreach ($rows as $rowIndex => $row) {
     $cells = [];
@@ -3853,7 +3865,7 @@ function buildMovesTableXlsx(string $orgName, array $moves, array $config, DateT
   if ($zip->open($filePath, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) return false;
   $zip->addFromString('[Content_Types].xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/></Types>');
   $zip->addFromString('_rels/.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>');
-  $zip->addFromString('xl/workbook.xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Перемещения" sheetId="1" r:id="rId1"/></sheets></workbook>');
+  $zip->addFromString('xl/workbook.xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Пеемещения" sheetId="1" r:id="rId1"/></sheets></workbook>');
   $zip->addFromString('xl/_rels/workbook.xml.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/></Relationships>');
   $zip->addFromString('xl/worksheets/sheet1.xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>' . implode('', $sheetRows) . '</sheetData></worksheet>');
   return $zip->close();
@@ -3891,6 +3903,7 @@ function runMovesTableMailing(array $options = []): array {
     if (!is_dir($orgPath)) continue;
     $settingsPath = $orgPath . DIRECTORY_SEPARATOR . "Настройки.json";
     $movesPath = $orgPath . DIRECTORY_SEPARATOR . "Перемещения.json";
+    $toolsPath = $orgPath . DIRECTORY_SEPARATOR . "База инструментов.json";
     if (!is_file($settingsPath) || !is_file($movesPath)) continue;
     $summary["organizationsChecked"]++;
     $settings = readJsonFile($settingsPath, []);
@@ -3903,10 +3916,11 @@ function runMovesTableMailing(array $options = []): array {
     if (empty($chatIds)) continue;
     $orgName = resolveOrganizationFullNameByFolder($orgFolder, $orgData);
     $moves = readJsonArrayFile($movesPath);
+    $tools = readJsonArrayFile($toolsPath);
     $exportDir = $orgPath . DIRECTORY_SEPARATOR . "exports";
     if (!is_dir($exportDir)) @mkdir($exportDir, 0775, true);
     $filePath = $exportDir . DIRECTORY_SEPARATOR . $now->format('Y-m-d') . ".xlsx";
-    if (!buildMovesTableXlsx($orgName, $moves, $config, $now, $timezone, $filePath)) {
+    if (!buildMovesTableXlsx($orgName, $moves, $config, $now, $timezone, $filePath, $tools)) {
       appendMailingLog("error", "Ошибка создания Excel для рассылки 'Таблица перемещений'.", ["organization" => $orgFolder, "filePath" => $filePath]);
       $summary["success"] = false;
       continue;

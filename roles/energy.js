@@ -160,6 +160,7 @@ export function renderRole(user, options = {}) {
             </div>
             <form class="settings-modal__form" data-energy-settings-form>
               <div class="settings-modal__body" data-energy-settings-body></div>
+              <div class="form-message" data-energy-settings-message></div>
               <div class="settings-modal__footer">
                 <button
                   class="action-secondary energy-settings-modal__cancel"
@@ -170,7 +171,6 @@ export function renderRole(user, options = {}) {
                 </button>
                 <button class="action-primary energy-settings-modal__save" type="submit">Сохранить</button>
               </div>
-              <div class="form-message" data-energy-settings-message></div>
             </form>
           </div>
         </div>

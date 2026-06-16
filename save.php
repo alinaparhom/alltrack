@@ -3796,7 +3796,7 @@ function getMoveColumnValue(array $move, array $definition): string {
   return "";
 }
 
-function buildMovesTableCsv(string $orgName, array $moves, array $config, DateTimeImmutable $now, DateTimeZone $timezone): string {
+function buildMovesTableRows(string $orgName, array $moves, array $config, DateTimeImmutable $now, DateTimeZone $timezone): array {
   $defs = movesTableColumnDefinitions();
   $columns = is_array($config["columns"] ?? null) ? array_values(array_filter($config["columns"], 'is_string')) : [];
   $columns = array_values(array_filter($columns, static fn($id) => isset($defs[$id])));
@@ -3805,24 +3805,58 @@ function buildMovesTableCsv(string $orgName, array $moves, array $config, DateTi
   $end = !empty($config["includeSendDay"]) ? $now->setTime(23, 59, 59) : $now->modify('-1 day')->setTime(23, 59, 59);
   $start = $end->modify('-' . ($periodDays - 1) . ' days')->setTime(0, 0, 0);
 
-  $fh = fopen('php://temp', 'r+');
-  fwrite($fh, "\xEF\xBB\xBF");
-  fputcsv($fh, ["Организация", $orgName], ';');
-  fputcsv($fh, ["Период", $start->format('d.m.Y') . " — " . $end->format('d.m.Y')], ';');
-  fputcsv($fh, [], ';');
-  fputcsv($fh, array_map(static fn($id) => $defs[$id]["title"], $columns), ';');
+  $rows = [
+    ["Организация", $orgName],
+    ["Период", $start->format('d.m.Y') . " — " . $end->format('d.m.Y')],
+    [],
+    array_map(static fn($id) => $defs[$id]["title"], $columns),
+  ];
   foreach ($moves as $move) {
     if (!is_array($move)) continue;
     $answer = mb_strtolower(trim((string) ($move["Ответ"] ?? "")), 'UTF-8');
     if ($answer === "" || str_contains($answer, "отмена") || str_contains($answer, "не прин")) continue;
     $moveDate = parseDateToDateTime((string) ($move["Дата перемещения"] ?? ""), $timezone);
     if ($moveDate === null || $moveDate < $start || $moveDate > $end) continue;
-    fputcsv($fh, array_map(static fn($id) => getMoveColumnValue($move, $defs[$id]), $columns), ';');
+    $rows[] = array_map(static fn($id) => getMoveColumnValue($move, $defs[$id]), $columns);
   }
-  rewind($fh);
-  $csv = stream_get_contents($fh);
-  fclose($fh);
-  return is_string($csv) ? $csv : "";
+  return $rows;
+}
+
+function xlsxEscapeXml(string $value): string {
+  return htmlspecialchars($value, ENT_XML1 | ENT_COMPAT, 'UTF-8');
+}
+
+function xlsxColumnName(int $index): string {
+  $name = "";
+  while ($index > 0) {
+    $index--;
+    $name = chr(65 + ($index % 26)) . $name;
+    $index = intdiv($index, 26);
+  }
+  return $name;
+}
+
+function buildMovesTableXlsx(string $orgName, array $moves, array $config, DateTimeImmutable $now, DateTimeZone $timezone, string $filePath): bool {
+  if (!class_exists('ZipArchive')) return false;
+  $rows = buildMovesTableRows($orgName, $moves, $config, $now, $timezone);
+  $sheetRows = [];
+  foreach ($rows as $rowIndex => $row) {
+    $cells = [];
+    foreach (array_values($row) as $columnIndex => $value) {
+      $cellRef = xlsxColumnName($columnIndex + 1) . ($rowIndex + 1);
+      $cells[] = '<c r="' . $cellRef . '" t="inlineStr"><is><t>' . xlsxEscapeXml((string) $value) . '</t></is></c>';
+    }
+    $sheetRows[] = '<row r="' . ($rowIndex + 1) . '">' . implode('', $cells) . '</row>';
+  }
+
+  $zip = new ZipArchive();
+  if ($zip->open($filePath, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) return false;
+  $zip->addFromString('[Content_Types].xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/></Types>');
+  $zip->addFromString('_rels/.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>');
+  $zip->addFromString('xl/workbook.xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Перемещения" sheetId="1" r:id="rId1"/></sheets></workbook>');
+  $zip->addFromString('xl/_rels/workbook.xml.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/></Relationships>');
+  $zip->addFromString('xl/worksheets/sheet1.xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>' . implode('', $sheetRows) . '</sheetData></worksheet>');
+  return $zip->close();
 }
 
 function sendTelegramDocumentFile(string $botToken, string $chatId, string $filePath, string $caption = ""): array {
@@ -3868,11 +3902,15 @@ function runMovesTableMailing(array $options = []): array {
     $chatIds = getMovesTableRecipientChatIds($config, $users);
     if (empty($chatIds)) continue;
     $orgName = resolveOrganizationFullNameByFolder($orgFolder, $orgData);
-    $csv = buildMovesTableCsv($orgName, readJsonArrayFile($movesPath), $config, $now, $timezone);
+    $moves = readJsonArrayFile($movesPath);
     $exportDir = $orgPath . DIRECTORY_SEPARATOR . "exports";
     if (!is_dir($exportDir)) @mkdir($exportDir, 0775, true);
-    $filePath = $exportDir . DIRECTORY_SEPARATOR . "moves-table-" . $now->format('Y-m-d-H-i') . ".csv";
-    file_put_contents($filePath, $csv, LOCK_EX);
+    $filePath = $exportDir . DIRECTORY_SEPARATOR . $now->format('Y-m-d') . ".xlsx";
+    if (!buildMovesTableXlsx($orgName, $moves, $config, $now, $timezone, $filePath)) {
+      appendMailingLog("error", "Ошибка создания Excel для рассылки 'Таблица перемещений'.", ["organization" => $orgFolder, "filePath" => $filePath]);
+      $summary["success"] = false;
+      continue;
+    }
     alltrack_fix_file_permissions($filePath);
     foreach ($chatIds as $chatId) {
       $result = $dryRun ? ["ok" => true] : sendTelegramDocumentFile($botToken, $chatId, $filePath, "📦 Таблица принятых перемещений");

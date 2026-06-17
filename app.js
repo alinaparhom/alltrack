@@ -20156,16 +20156,45 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
   }
 
+  const resetToolsFilterDropdownMenuPosition = (menuEl) => {
+    if (!menuEl) return;
+    menuEl.style.top = "";
+    menuEl.style.left = "";
+    menuEl.style.right = "";
+    menuEl.style.width = "";
+    menuEl.style.maxWidth = "";
+    menuEl.style.transform = "";
+  };
+
   const closeAllToolsFilterDropdowns = () => {
     toolsFilterEls.forEach((containerEl) => {
       const menuEl = containerEl.querySelector("[data-tools-filter-menu]");
       menuEl?.classList.add("is-hidden");
+      resetToolsFilterDropdownMenuPosition(menuEl);
       containerEl.classList.remove("is-open");
     });
   };
 
   const syncToolsFilterDropdownMenuWidth = (containerEl, menuEl) => {
     if (!containerEl || !menuEl) return;
+    const isWriteOffModalFilter = Boolean(containerEl.closest("[data-writeoff-modal]"));
+    if (isWriteOffModalFilter && typeof window !== "undefined") {
+      const viewportPadding = 5;
+      const viewportWidth =
+        window.visualViewport?.width ?? window.innerWidth ?? document.documentElement.clientWidth;
+      const triggerRect =
+        containerEl.querySelector("[data-tools-filter-trigger]")?.getBoundingClientRect() ??
+        containerEl.getBoundingClientRect();
+      menuEl.style.top = `${Math.max(viewportPadding, Math.round(triggerRect.bottom + 6))}px`;
+      menuEl.style.left = "50vw";
+      menuEl.style.right = "auto";
+      menuEl.style.width = `${Math.max(220, Math.floor(viewportWidth - viewportPadding * 2))}px`;
+      menuEl.style.maxWidth = `calc(100vw - ${viewportPadding * 2}px)`;
+      menuEl.style.transform = "translateX(-50%)";
+      return;
+    }
+    menuEl.style.top = "";
+    menuEl.style.maxWidth = "";
     const isSearchMode = toolsModalEl?.classList.contains("tools-modal--searching");
     if (isSearchMode && typeof window !== "undefined") {
       const viewportPadding = 12;

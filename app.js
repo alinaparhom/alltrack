@@ -15198,12 +15198,16 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const objectValue = String(tool?.["Объект"] ?? "").trim() || "—";
       const numberValue = number || accounting || "—";
       objectLine.textContent = `№ ${numberValue} · Объект: ${objectValue}`;
+      const responsibleValue = String(tool?.["Ответственный"] ?? "").trim();
+      const responsibleLine = document.createElement("div");
+      responsibleLine.className = "writeoff-item__meta-line";
+      responsibleLine.textContent = responsibleValue || "—";
       const costLine = document.createElement("div");
       costLine.textContent = formatToolCostLabel(tool);
       const statusLine = document.createElement("div");
       statusLine.className = "writeoff-item__status-line";
       statusLine.textContent = `Статус: ${statusText || "—"}`;
-      meta.append(objectLine, costLine, statusLine);
+      meta.append(objectLine, responsibleLine, costLine, statusLine);
       accountingColumn.append(accountingValue);
       infoColumn.append(title, meta);
       details.append(accountingColumn, infoColumn);

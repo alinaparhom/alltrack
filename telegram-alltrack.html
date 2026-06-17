@@ -10306,6 +10306,11 @@
       }
 
       .writeoff-modal .tools-filter-dropdown__menu {
+        left: 50%;
+        right: auto;
+        width: calc(100vw - 10px);
+        max-width: calc(100vw - 10px);
+        transform: translateX(-50%);
         border: 1px solid rgba(191, 219, 254, 0.85);
         background: linear-gradient(
           145deg,
@@ -10417,10 +10422,8 @@
         }
 
         .writeoff-modal .tools-filter-dropdown__menu {
-          left: 50%;
-          right: auto;
-          width: min(420px, calc(100vw - 26px));
-          transform: translateX(-50%);
+          width: calc(100vw - 10px);
+          max-width: calc(100vw - 10px);
         }
       }
 

@@ -3775,8 +3775,8 @@ function movesTableColumnDefinitions(): array {
     "accountingNumber" => ["title" => "Бух.номер", "keys" => ["Бух.номер", "Бух номер"]],
     "moveDate" => ["title" => "Дата перемещения", "keys" => ["Дата перемещения"]],
     "acceptDate" => ["title" => "Дата принятия", "keys" => ["Дата ответа", "Дата принятия"]],
-    "sender" => ["title" => "Передающий", "keys" => ["Ответственный до перемещения", "Передающий"]],
-    "receiver" => ["title" => "Принимающий", "keys" => ["Ответственный", "Новый ответственный", "Принимающий"]],
+    "sender" => ["title" => "Передающий", "keys" => ["Ответственный до перемещения", "Переместил", "Передающий"]],
+    "receiver" => ["title" => "Принимающий", "keys" => ["Ответственный", "Новый ответственный", "Принимающий", "Принял"]],
     "movedBy" => ["title" => "Переместил", "keys" => ["Переместил", "Кто переместил", "Ответственный до перемещения"]],
     "oldObject" => ["title" => "Старый объект", "keys" => ["Старый объект", "Объект до перемещения"]],
     "newObject" => ["title" => "Новый объект", "keys" => ["Объект", "Новый объект"]],
@@ -3786,6 +3786,54 @@ function movesTableColumnDefinitions(): array {
     "moverId" => ["title" => "ID перемещающего", "keys" => ["ID перемещающего", "telegram_id перемещающего"]],
     "receiverId" => ["title" => "ID принимающего", "keys" => ["ID принимающего", "telegram_id принимающего"]],
   ];
+}
+
+
+function normalizeMovesTablePersonKey($value): string {
+  return mb_strtolower(preg_replace('/\s+/u', ' ', trim((string) $value)), 'UTF-8');
+}
+
+function normalizeMovesTableOrganizationKey($value): string {
+  return mb_strtolower(preg_replace('/\s+/u', ' ', trim((string) $value)), 'UTF-8');
+}
+
+function buildMovesTableUsersIndex(array $users, string $orgName, string $orgFolder = ""): array {
+  $orgKeys = array_filter([
+    normalizeMovesTableOrganizationKey($orgName),
+    normalizeMovesTableOrganizationKey($orgFolder),
+  ]);
+  $orgMap = array_fill_keys($orgKeys, true);
+  $index = [];
+  foreach ($users as $user) {
+    if (!is_array($user)) continue;
+    $userOrg = normalizeMovesTableOrganizationKey($user["organization"] ?? "");
+    if ($userOrg === "" || ($orgMap && empty($orgMap[$userOrg]))) continue;
+    $name = normalizeMovesTablePersonKey($user["full_name"] ?? $user["fullName"] ?? "");
+    $telegramId = normalizeTelegramId($user["telegram_id"] ?? $user["id"] ?? null);
+    if ($name !== "" && $telegramId) $index[$name] = $telegramId;
+  }
+  return $index;
+}
+
+function resolveMovesTablePersonTelegramId(string $personName, array $usersIndex): string {
+  $nameKey = normalizeMovesTablePersonKey($personName);
+  return $nameKey !== "" ? (string) ($usersIndex[$nameKey] ?? "") : "";
+}
+
+function getMoveSenderName(array $move, array $tool = []): string {
+  foreach (["Ответственный до перемещения", "Переместил", "Передающий"] as $key) {
+    $value = trim((string) ($move[$key] ?? ""));
+    if ($value !== "") return $value;
+  }
+  return trim((string) ($tool["Ответственный до перемещения"] ?? $tool["Переместил"] ?? $tool["Передающий"] ?? ""));
+}
+
+function getMoveReceiverName(array $move, array $tool = []): string {
+  foreach (["Ответственный", "Новый ответственный", "Принимающий", "Принял"] as $key) {
+    $value = trim((string) ($move[$key] ?? ""));
+    if ($value !== "") return $value;
+  }
+  return trim((string) ($tool["Ответственный"] ?? $tool["Новый ответственный"] ?? $tool["Принимающий"] ?? ""));
 }
 
 function getMoveColumnValue(array $move, array $definition, array $tool = []): string {
@@ -3825,7 +3873,7 @@ function readToolsBaseForMovesTable(string $orgPath): array {
   return [];
 }
 
-function buildMovesTableRows(string $orgName, array $moves, array $config, DateTimeImmutable $now, DateTimeZone $timezone, array $tools = []): array {
+function buildMovesTableRows(string $orgName, array $moves, array $config, DateTimeImmutable $now, DateTimeZone $timezone, array $tools = [], array $users = [], string $orgFolder = ""): array {
   $defs = movesTableColumnDefinitions();
   $columns = is_array($config["columns"] ?? null) ? array_values(array_filter($config["columns"], 'is_string')) : [];
   $columns = array_values(array_filter($columns, static fn($id) => isset($defs[$id])));
@@ -3835,6 +3883,7 @@ function buildMovesTableRows(string $orgName, array $moves, array $config, DateT
   $start = $end->modify('-' . ($periodDays - 1) . ' days')->setTime(0, 0, 0);
 
   $toolIndex = buildToolIndexByNumber($tools);
+  $usersIndex = buildMovesTableUsersIndex($users, $orgName, $orgFolder);
   $rows = [array_map(static fn($id) => $defs[$id]["title"], $columns)];
   foreach ($moves as $move) {
     if (!is_array($move)) continue;
@@ -3844,7 +3893,14 @@ function buildMovesTableRows(string $orgName, array $moves, array $config, DateT
     if ($moveDate === null || $moveDate < $start || $moveDate > $end) continue;
     $number = normalizeMovesTableToolNumber($move["Номер"] ?? "");
     $tool = $number !== "" && isset($toolIndex[$number]) ? $toolIndex[$number] : [];
-    $rows[] = array_map(static fn($id) => getMoveColumnValue($move, $defs[$id], $tool), $columns);
+    $senderName = getMoveSenderName($move, $tool);
+    $receiverName = getMoveReceiverName($move, $tool);
+    $rows[] = array_map(static function($id) use ($move, $defs, $tool, $senderName, $receiverName, $usersIndex) {
+      if ($id === "sender") return $senderName;
+      if ($id === "moverId") return getMoveColumnValue($move, $defs[$id], $tool) ?: resolveMovesTablePersonTelegramId($senderName, $usersIndex);
+      if ($id === "receiverId") return getMoveColumnValue($move, $defs[$id], $tool) ?: resolveMovesTablePersonTelegramId($receiverName, $usersIndex);
+      return getMoveColumnValue($move, $defs[$id], $tool);
+    }, $columns);
   }
   return $rows;
 }
@@ -3863,9 +3919,9 @@ function xlsxColumnName(int $index): string {
   return $name;
 }
 
-function buildMovesTableXlsx(string $orgName, array $moves, array $config, DateTimeImmutable $now, DateTimeZone $timezone, string $filePath, array $tools = []): bool {
+function buildMovesTableXlsx(string $orgName, array $moves, array $config, DateTimeImmutable $now, DateTimeZone $timezone, string $filePath, array $tools = [], array $users = [], string $orgFolder = ""): bool {
   if (!class_exists('ZipArchive')) return false;
-  $rows = buildMovesTableRows($orgName, $moves, $config, $now, $timezone, $tools);
+  $rows = buildMovesTableRows($orgName, $moves, $config, $now, $timezone, $tools, $users, $orgFolder);
   $sheetRows = [];
   foreach ($rows as $rowIndex => $row) {
     $cells = [];
@@ -3934,7 +3990,7 @@ function runMovesTableMailing(array $options = []): array {
     $exportDir = $orgPath . DIRECTORY_SEPARATOR . "exports";
     if (!is_dir($exportDir)) @mkdir($exportDir, 0775, true);
     $filePath = $exportDir . DIRECTORY_SEPARATOR . $now->format('Y-m-d') . ".xlsx";
-    if (!buildMovesTableXlsx($orgName, $moves, $config, $now, $timezone, $filePath, $tools)) {
+    if (!buildMovesTableXlsx($orgName, $moves, $config, $now, $timezone, $filePath, $tools, $users, $orgFolder)) {
       appendMailingLog("error", "Ошибка создания Excel для рассылки 'Таблица перемещений'.", ["organization" => $orgFolder, "filePath" => $filePath]);
       $summary["success"] = false;
       continue;

@@ -20180,16 +20180,20 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const isWriteOffModalFilter = Boolean(containerEl.closest("[data-writeoff-modal]"));
     if (isWriteOffModalFilter && typeof window !== "undefined") {
       const viewportPadding = 5;
+      const visualViewport = window.visualViewport;
       const viewportWidth =
-        window.visualViewport?.width ?? window.innerWidth ?? document.documentElement.clientWidth;
+        visualViewport?.width ?? window.innerWidth ?? document.documentElement.clientWidth;
+      const viewportLeft = visualViewport?.offsetLeft ?? 0;
+      const viewportCenter = Math.round(viewportLeft + viewportWidth / 2);
+      const menuWidth = Math.max(220, Math.floor(viewportWidth - viewportPadding * 2));
       const triggerRect =
         containerEl.querySelector("[data-tools-filter-trigger]")?.getBoundingClientRect() ??
         containerEl.getBoundingClientRect();
       menuEl.style.top = `${Math.max(viewportPadding, Math.round(triggerRect.bottom + 6))}px`;
-      menuEl.style.left = "50vw";
+      menuEl.style.left = `${viewportCenter}px`;
       menuEl.style.right = "auto";
-      menuEl.style.width = `${Math.max(220, Math.floor(viewportWidth - viewportPadding * 2))}px`;
-      menuEl.style.maxWidth = `calc(100vw - ${viewportPadding * 2}px)`;
+      menuEl.style.width = `${menuWidth}px`;
+      menuEl.style.maxWidth = `${menuWidth}px`;
       menuEl.style.transform = "translateX(-50%)";
       return;
     }

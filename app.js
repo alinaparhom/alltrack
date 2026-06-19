@@ -20184,7 +20184,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const viewportWidth =
         visualViewport?.width ?? window.innerWidth ?? document.documentElement.clientWidth;
       const viewportLeft = visualViewport?.offsetLeft ?? 0;
-      const viewportCenter = Math.round(viewportLeft + viewportWidth / 2);
+      const dropdownShiftLeft = 5;
+      const viewportCenter = Math.round(viewportLeft + viewportWidth / 2) - dropdownShiftLeft;
       const menuWidth = Math.max(220, Math.floor(viewportWidth - viewportPadding * 2));
       const triggerRect =
         containerEl.querySelector("[data-tools-filter-trigger]")?.getBoundingClientRect() ??

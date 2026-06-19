@@ -20179,7 +20179,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (!containerEl || !menuEl) return;
     const isWriteOffModalFilter = Boolean(containerEl.closest("[data-writeoff-modal]"));
     if (isWriteOffModalFilter && typeof window !== "undefined") {
-      const viewportPadding = 5;
+      const viewportPadding = 10;
       const dropdownGap = 6;
       const visualViewport = window.visualViewport;
       const viewportWidth =
@@ -20188,12 +20188,18 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         visualViewport?.height ?? window.innerHeight ?? document.documentElement.clientHeight;
       const viewportLeft = visualViewport?.offsetLeft ?? 0;
       const viewportTop = visualViewport?.offsetTop ?? 0;
-      const dropdownShiftLeft = 5;
-      const viewportCenter = Math.round(viewportLeft + viewportWidth / 2) - dropdownShiftLeft;
-      const menuWidth = Math.max(220, Math.floor(viewportWidth - viewportPadding * 2));
       const triggerRect =
         containerEl.querySelector("[data-tools-filter-trigger]")?.getBoundingClientRect() ??
         containerEl.getBoundingClientRect();
+      const viewportMaxWidth = Math.max(220, Math.floor(viewportWidth - viewportPadding * 2));
+      const menuWidth = Math.min(
+        viewportMaxWidth,
+        Math.max(220, Math.ceil(triggerRect.width))
+      );
+      const triggerCenter = triggerRect.left + triggerRect.width / 2;
+      const minLeft = viewportLeft + viewportPadding;
+      const maxLeft = viewportLeft + viewportWidth - viewportPadding - menuWidth;
+      const menuLeft = Math.min(Math.max(minLeft, Math.round(triggerCenter - menuWidth / 2)), maxLeft);
       const menuHeight = menuEl.offsetHeight || 0;
       const preferredTop = Math.round(triggerRect.bottom + dropdownGap);
       const maxTop = Math.max(
@@ -20201,11 +20207,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         Math.round(viewportTop + viewportHeight - viewportPadding - menuHeight)
       );
       menuEl.style.top = `${Math.min(Math.max(viewportTop + viewportPadding, preferredTop), maxTop)}px`;
-      menuEl.style.left = `${viewportCenter}px`;
+      menuEl.style.left = `${menuLeft}px`;
       menuEl.style.right = "auto";
       menuEl.style.width = `${menuWidth}px`;
       menuEl.style.maxWidth = `${menuWidth}px`;
-      menuEl.style.transform = "translateX(-50%)";
+      menuEl.style.transform = "none";
       return;
     }
     menuEl.style.top = "";

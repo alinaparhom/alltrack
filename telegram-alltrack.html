@@ -10307,12 +10307,11 @@
 
       .writeoff-modal .tools-filter-dropdown__menu {
         position: fixed;
-        left: calc(50vw - 5px);
         right: auto;
-        width: calc(100vw - 10px);
-        max-width: calc(100vw - 10px);
+        width: min(280px, calc(100vw - 20px));
+        max-width: calc(100vw - 20px);
         box-sizing: border-box;
-        transform: translateX(-50%);
+        transform: none;
         text-align: center;
         border: 1px solid rgba(191, 219, 254, 0.85);
         background: linear-gradient(
@@ -10429,8 +10428,8 @@
         }
 
         .writeoff-modal .tools-filter-dropdown__menu {
-          width: calc(100vw - 10px);
-          max-width: calc(100vw - 10px);
+          width: min(280px, calc(100vw - 20px));
+          max-width: calc(100vw - 20px);
         }
       }
 

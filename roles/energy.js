@@ -1917,12 +1917,9 @@ export function renderRole(user, options = {}) {
             <div class="settings-modal__header writeoff-confirm-modal__header">
               <div class="settings-modal__title">
                 <h2>Подтверждение списания</h2>
-                <p data-writeoff-confirm-subtitle>
-                  Проверьте список и добавьте акт.
-                </p>
               </div>
               <button
-                class="button-icon"
+                class="button-icon tools-modal__close"
                 type="button"
                 data-writeoff-confirm-close
                 aria-label="Закрыть подтверждение"
@@ -1962,7 +1959,7 @@ export function renderRole(user, options = {}) {
                   Отмена
                 </button>
                 <button class="action-primary" type="submit">
-                  Подтвердить списание
+                  Списать
                 </button>
               </div>
             </form>

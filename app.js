@@ -20180,17 +20180,27 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const isWriteOffModalFilter = Boolean(containerEl.closest("[data-writeoff-modal]"));
     if (isWriteOffModalFilter && typeof window !== "undefined") {
       const viewportPadding = 5;
+      const dropdownGap = 6;
       const visualViewport = window.visualViewport;
       const viewportWidth =
         visualViewport?.width ?? window.innerWidth ?? document.documentElement.clientWidth;
+      const viewportHeight =
+        visualViewport?.height ?? window.innerHeight ?? document.documentElement.clientHeight;
       const viewportLeft = visualViewport?.offsetLeft ?? 0;
+      const viewportTop = visualViewport?.offsetTop ?? 0;
       const dropdownShiftLeft = 5;
       const viewportCenter = Math.round(viewportLeft + viewportWidth / 2) - dropdownShiftLeft;
       const menuWidth = Math.max(220, Math.floor(viewportWidth - viewportPadding * 2));
       const triggerRect =
         containerEl.querySelector("[data-tools-filter-trigger]")?.getBoundingClientRect() ??
         containerEl.getBoundingClientRect();
-      menuEl.style.top = `${Math.max(viewportPadding, Math.round(triggerRect.bottom + 6))}px`;
+      const menuHeight = menuEl.offsetHeight || 0;
+      const preferredTop = Math.round(triggerRect.bottom + dropdownGap);
+      const maxTop = Math.max(
+        viewportTop + viewportPadding,
+        Math.round(viewportTop + viewportHeight - viewportPadding - menuHeight)
+      );
+      menuEl.style.top = `${Math.min(Math.max(viewportTop + viewportPadding, preferredTop), maxTop)}px`;
       menuEl.style.left = `${viewportCenter}px`;
       menuEl.style.right = "auto";
       menuEl.style.width = `${menuWidth}px`;
@@ -20308,7 +20318,15 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       });
     };
     window.addEventListener("resize", refreshOpenToolsFilterMenus);
+    window.visualViewport?.addEventListener("resize", refreshOpenToolsFilterMenus);
+    window.visualViewport?.addEventListener("scroll", refreshOpenToolsFilterMenus);
     toolsFiltersPanelEl?.addEventListener("scroll", refreshOpenToolsFilterMenus, {
+      passive: true,
+    });
+    writeOffFiltersPanelEl?.addEventListener("scroll", refreshOpenToolsFilterMenus, {
+      passive: true,
+    });
+    writeOffModalEl?.addEventListener("scroll", refreshOpenToolsFilterMenus, {
       passive: true,
     });
   }

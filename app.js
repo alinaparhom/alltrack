@@ -7305,6 +7305,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const writeOffConfirmMessageEl = contentEl.querySelector(
     "[data-writeoff-confirm-message]"
   );
+  const writeOffConfirmSubmitButton = contentEl.querySelector(
+    "[data-writeoff-confirm-submit]"
+  );
   const writeOffActsInput = contentEl.querySelector("[data-writeoff-acts]");
   const finesModalEl = contentEl.querySelector("[data-fines-modal]");
   const finesBackdropEl = contentEl.querySelector("[data-fines-backdrop]");
@@ -8459,6 +8462,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     selectedIds: new Set(),
     toolMap: new Map(),
     selectedTools: [],
+    confirmTools: [],
     isSaving: false,
     filterWriteOffOnly: false,
   };
@@ -15351,6 +15355,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     writeOffState.search = "";
     writeOffState.selectedIds.clear();
     writeOffState.selectedTools = [];
+    writeOffState.confirmTools = [];
     writeOffState.filterWriteOffOnly = false;
     if (writeOffSearchInput) {
       writeOffSearchInput.value = "";
@@ -15387,19 +15392,36 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     resetWriteOffState();
   };
 
+  const updateWriteOffConfirmSelectionUi = () => {
+    const count = writeOffState.selectedTools.length;
+    if (writeOffConfirmCountEl) {
+      writeOffConfirmCountEl.textContent = String(count);
+    }
+    if (writeOffConfirmSubmitButton) {
+      writeOffConfirmSubmitButton.disabled = count === 0;
+    }
+  };
+
+  const getWriteOffConfirmToolId = (tool, index = 0) =>
+    String(tool?.__selectionId ?? buildToolSelectionId(tool, index));
+
   const renderWriteOffConfirmList = (tools) => {
     if (!writeOffConfirmListEl) return;
     writeOffConfirmListEl.innerHTML = "";
-    tools.forEach((tool) => {
+    tools.forEach((tool, index) => {
       const accounting = String(tool?.["Бух.номер"] ?? "").trim();
       const number = String(tool?.["Номер"] ?? "").trim();
       const name = String(tool?.["Наименование"] ?? "").trim();
-      const item = document.createElement("div");
-      item.className = "writeoff-confirm-item";
+      const item = document.createElement("button");
+      item.className = "writeoff-confirm-item is-selected";
+      item.type = "button";
+      item.dataset.writeoffConfirmId = getWriteOffConfirmToolId(tool, index);
+      item.setAttribute("aria-pressed", "true");
       item.textContent =
         [accounting || number, name].filter(Boolean).join(" · ") || "Инструмент";
       writeOffConfirmListEl.appendChild(item);
     });
+    updateWriteOffConfirmSelectionUi();
   };
 
   const openWriteOffConfirmModal = () => {
@@ -15411,11 +15433,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       setWriteOffMessage("Сначала выберите инструменты.", "error");
       return;
     }
-    writeOffState.selectedTools = selectedTools;
+    writeOffState.confirmTools = selectedTools;
+    writeOffState.selectedTools = [...selectedTools];
     renderWriteOffConfirmList(selectedTools);
-    if (writeOffConfirmCountEl) {
-      writeOffConfirmCountEl.textContent = String(selectedTools.length);
-    }
     if (writeOffActsInput) {
       writeOffActsInput.value = "";
     }
@@ -15492,11 +15512,14 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
   const applyWriteOff = async () => {
     if (writeOffState.isSaving) return;
-    const selectedTools = writeOffState.selectedTools.length
+    const selectedTools = writeOffConfirmModalEl &&
+      !writeOffConfirmModalEl.classList.contains("is-hidden")
       ? writeOffState.selectedTools
-      : Array.from(writeOffState.selectedIds)
-          .map((id) => writeOffState.toolMap.get(id))
-          .filter(Boolean);
+      : writeOffState.selectedTools.length
+        ? writeOffState.selectedTools
+        : Array.from(writeOffState.selectedIds)
+            .map((id) => writeOffState.toolMap.get(id))
+            .filter(Boolean);
     if (!selectedTools.length) {
       setWriteOffConfirmMessage("Сначала выберите инструменты.", "error");
       return;
@@ -19310,6 +19333,33 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       closeWriteOffConfirmModal();
     }
   });
+
+  if (writeOffConfirmListEl) {
+    writeOffConfirmListEl.addEventListener("click", (event) => {
+      const item = event.target.closest("[data-writeoff-confirm-id]");
+      if (!item) return;
+      const toolId = item.dataset.writeoffConfirmId;
+      if (!toolId) return;
+      const isSelected = item.classList.toggle("is-selected");
+      item.setAttribute("aria-pressed", isSelected ? "true" : "false");
+      if (isSelected) {
+        const tool = writeOffState.confirmTools.find(
+          (entry, index) => getWriteOffConfirmToolId(entry, index) === toolId
+        );
+        const hasTool = writeOffState.selectedTools.some(
+          (entry, index) => getWriteOffConfirmToolId(entry, index) === toolId
+        );
+        if (tool && !hasTool) {
+          writeOffState.selectedTools.push(tool);
+        }
+      } else {
+        writeOffState.selectedTools = writeOffState.selectedTools.filter(
+          (tool, index) => getWriteOffConfirmToolId(tool, index) !== toolId
+        );
+      }
+      updateWriteOffConfirmSelectionUi();
+    });
+  }
   if (writeOffConfirmFormEl) {
     writeOffConfirmFormEl.addEventListener("submit", (event) => {
       event.preventDefault();
@@ -20810,11 +20860,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const openWriteOffConfirmForSingleTool = (tool) => {
     if (!tool || !writeOffConfirmModalEl) return;
     writeOffState.selectedIds.clear();
+    writeOffState.confirmTools = [tool];
     writeOffState.selectedTools = [tool];
     renderWriteOffConfirmList([tool]);
-    if (writeOffConfirmCountEl) {
-      writeOffConfirmCountEl.textContent = "1";
-    }
     if (writeOffActsInput) {
       writeOffActsInput.value = "";
     }

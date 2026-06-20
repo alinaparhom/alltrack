@@ -1919,7 +1919,7 @@ export function renderRole(user, options = {}) {
                 <h2>Подтверждение списания</h2>
               </div>
               <button
-                class="button-icon tools-modal__close"
+                class="button-icon tools-modal__close writeoff-confirm-modal__close"
                 type="button"
                 data-writeoff-confirm-close
                 aria-label="Закрыть подтверждение"
@@ -1952,13 +1952,13 @@ export function renderRole(user, options = {}) {
               <div class="form-message" data-writeoff-confirm-message></div>
               <div class="writeoff-confirm-actions">
                 <button
-                  class="action-secondary"
+                  class="action-secondary writeoff-confirm-actions__cancel"
                   type="button"
                   data-writeoff-confirm-cancel
                 >
                   Отмена
                 </button>
-                <button class="action-primary" type="submit">
+                <button class="action-primary writeoff-confirm-actions__submit" type="submit" data-writeoff-confirm-submit>
                   Списать
                 </button>
               </div>

@@ -2647,14 +2647,6 @@ export function renderRole(user, options = {}) {
                 data-remove-photo-view="photos"
               >
                 <div class="remove-photo-tool">
-                  <button
-                    class="button-icon remove-photo-back"
-                    type="button"
-                    data-remove-photo-back
-                    aria-label="Вернуться к списку инструментов"
-                  >
-                    <span class="button-icon-emoji" aria-hidden="true">←</span>
-                  </button>
                   <div class="remove-photo-tool__info">
                     <div class="remove-photo-tool__title" data-remove-photo-tool-title>
                       Инструмент

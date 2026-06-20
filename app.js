@@ -23220,6 +23220,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       photoCountEl.textContent = String(safeCount);
       photoCountEl.title = "Количество фото";
       numberCell.append(numberValueEl, photoCountEl);
+
+      const photoBadgeEl = document.createElement("div");
+      photoBadgeEl.className = "remove-photo-badge";
+      photoBadgeEl.setAttribute("aria-label", `Фото: ${safeCount}`);
+      photoBadgeEl.innerHTML = `<span aria-hidden="true">📷</span><span>${safeCount}</span>`;
+
       const objectCell = objectTrackingEnabled ? buildToolObjectCell(tool) : null;
 
       const infoCell = document.createElement("div");
@@ -23251,7 +23257,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       });
       photoCell.appendChild(thumb);
 
-      row.append(...[numberCell, objectCell, infoCell, photoCell].filter(Boolean));
+      row.append(...[numberCell, objectCell, infoCell, photoCell, photoBadgeEl].filter(Boolean));
       table.appendChild(row);
     });
 

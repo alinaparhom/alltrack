@@ -23587,7 +23587,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         .filter(Boolean)
         .join(" · ");
     }
-    setRemovePhotoSubtitle("Выберите фото для удаления");
+    setRemovePhotoSubtitle("");
     setRemovePhotoMessage("Загружаем фото...");
     setRemovePhotoView("photos");
     const primaryPhotoNumber = resolveToolPhotoNumber(tool);

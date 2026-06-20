@@ -23212,19 +23212,20 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const number = resolveToolNumberValue(tool);
       const count = Number.parseInt(tool?.["Количество фото"] ?? 0, 10);
       const safeCount = Number.isFinite(count) ? count : 0;
+      const photoCountText = `${safeCount} фото`;
       const numberValueEl = document.createElement("div");
       numberValueEl.className = "tools-table__number-value";
       numberValueEl.textContent = number || "—";
       const photoCountEl = document.createElement("div");
       photoCountEl.className = "remove-photo-count remove-photo-count--number";
-      photoCountEl.textContent = String(safeCount);
+      photoCountEl.textContent = photoCountText;
       photoCountEl.title = "Количество фото";
       numberCell.append(numberValueEl, photoCountEl);
 
       const photoBadgeEl = document.createElement("div");
       photoBadgeEl.className = "remove-photo-badge";
-      photoBadgeEl.setAttribute("aria-label", `Фото: ${safeCount}`);
-      photoBadgeEl.innerHTML = `<span aria-hidden="true">📷</span><span>${safeCount}</span>`;
+      photoBadgeEl.setAttribute("aria-label", `У инструмента ${photoCountText}`);
+      photoBadgeEl.innerHTML = `<span aria-hidden="true">📷</span><span>${photoCountText}</span>`;
 
       const objectCell = objectTrackingEnabled ? buildToolObjectCell(tool) : null;
 

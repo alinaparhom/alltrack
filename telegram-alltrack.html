@@ -11105,8 +11105,48 @@
       }
 
       .tools-card__status-value {
-        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
+        max-width: 100%;
+        width: fit-content;
+        padding: 3px 9px;
+        border: 1px solid rgba(22, 163, 74, 0.28);
+        border-radius: 999px;
+        color: #15803d;
+        background: rgba(220, 252, 231, 0.68);
+        font-weight: 800;
         text-decoration: none;
+        box-shadow: 0 6px 16px rgba(22, 163, 74, 0.12);
+      }
+
+      .tools-card__status-value--working {
+        color: #15803d;
+        border-color: rgba(22, 163, 74, 0.34);
+        background: linear-gradient(135deg, rgba(220, 252, 231, 0.82), rgba(240, 253, 244, 0.72));
+      }
+
+      .tools-card__status-value--broken {
+        color: #92400e;
+        border-color: rgba(234, 179, 8, 0.42);
+        background: linear-gradient(135deg, rgba(254, 249, 195, 0.92), rgba(254, 243, 199, 0.78));
+      }
+
+      .tools-card__status-value--repair {
+        color: #c2410c;
+        border-color: rgba(249, 115, 22, 0.4);
+        background: linear-gradient(135deg, rgba(255, 237, 213, 0.92), rgba(254, 215, 170, 0.78));
+      }
+
+      .tools-card__status-value--writeoff {
+        color: #b91c1c;
+        border-color: rgba(239, 68, 68, 0.42);
+        background: linear-gradient(135deg, rgba(254, 226, 226, 0.95), rgba(254, 202, 202, 0.82));
+      }
+
+      .tools-card__status-value--moving {
+        color: #1d4ed8;
+        border-color: rgba(59, 130, 246, 0.42);
+        background: linear-gradient(135deg, rgba(219, 234, 254, 0.92), rgba(191, 219, 254, 0.78));
       }
 
       .tools-card__overlay .tools-card__status {
@@ -13250,6 +13290,44 @@
           0 0 0 2px rgba(148, 163, 184, 0.3) inset,
           0 0 18px rgba(59, 130, 246, 0.2),
           0 14px 28px rgba(15, 23, 42, 0.44);
+      }
+
+      body[data-theme="dark"] .tools-card__status-value {
+        color: #dcfce7 !important;
+        border-color: rgba(74, 222, 128, 0.62);
+        background: linear-gradient(135deg, rgba(22, 163, 74, 0.72), rgba(21, 128, 61, 0.46));
+        box-shadow:
+          0 0 0 1px rgba(220, 252, 231, 0.14) inset,
+          0 8px 18px rgba(22, 163, 74, 0.28);
+        text-shadow: none;
+      }
+
+      body[data-theme="dark"] .tools-card__status-value--broken {
+        color: #fef9c3 !important;
+        border-color: rgba(250, 204, 21, 0.72);
+        background: linear-gradient(135deg, rgba(161, 98, 7, 0.9), rgba(113, 63, 18, 0.66));
+        box-shadow: 0 0 0 1px rgba(254, 240, 138, 0.16) inset, 0 8px 18px rgba(250, 204, 21, 0.26);
+      }
+
+      body[data-theme="dark"] .tools-card__status-value--repair {
+        color: #ffedd5 !important;
+        border-color: rgba(251, 146, 60, 0.74);
+        background: linear-gradient(135deg, rgba(194, 65, 12, 0.88), rgba(124, 45, 18, 0.68));
+        box-shadow: 0 0 0 1px rgba(255, 237, 213, 0.15) inset, 0 8px 18px rgba(249, 115, 22, 0.28);
+      }
+
+      body[data-theme="dark"] .tools-card__status-value--writeoff {
+        color: #fee2e2 !important;
+        border-color: rgba(248, 113, 113, 0.78);
+        background: linear-gradient(135deg, rgba(185, 28, 28, 0.9), rgba(127, 29, 29, 0.72));
+        box-shadow: 0 0 0 1px rgba(254, 226, 226, 0.16) inset, 0 8px 18px rgba(239, 68, 68, 0.3);
+      }
+
+      body[data-theme="dark"] .tools-card__status-value--moving {
+        color: #dbeafe !important;
+        border-color: rgba(96, 165, 250, 0.76);
+        background: linear-gradient(135deg, rgba(37, 99, 235, 0.88), rgba(30, 64, 175, 0.7));
+        box-shadow: 0 0 0 1px rgba(219, 234, 254, 0.16) inset, 0 8px 18px rgba(59, 130, 246, 0.3);
       }
 
       body[data-theme="dark"] .tools-card__badge,

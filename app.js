@@ -12258,6 +12258,17 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       if (normalized === "в процессе перемещения" || normalized === "перемещается") return "#2563eb";
       return "";
     };
+    const getStatusToneClass = (rawStatus) => {
+      const normalized = String(rawStatus ?? "").trim().toLocaleLowerCase("ru");
+      if (normalized === "рабочий" || normalized === "исправный") return "tools-card__status-value--working";
+      if (normalized === "в ремонте") return "tools-card__status-value--repair";
+      if (normalized === "сломан") return "tools-card__status-value--broken";
+      if (normalized === "на списание") return "tools-card__status-value--writeoff";
+      if (normalized === "в процессе перемещения" || normalized === "перемещается") {
+        return "tools-card__status-value--moving";
+      }
+      return "";
+    };
     const appendResponsibleValue = (container, valueText) => {
       const normalized = String(valueText ?? "").trim() || "не указан";
       if (isSearchMode) {
@@ -12291,6 +12302,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       statusLabel.textContent = "";
       const statusValue = document.createElement("span");
       statusValue.textContent = statusText;
+      statusValue.classList.add("tools-card__status-value");
+      const statusToneClass = getStatusToneClass(statusText);
+      if (statusToneClass) statusValue.classList.add(statusToneClass);
       statusValue.style.fontWeight = "700";
       const statusAccentColor = getStatusAccentColor(statusText);
       if (statusAccentColor) {
@@ -12304,6 +12318,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       container.textContent = "";
       const value = document.createElement("span");
       value.className = "tools-card__status-value";
+      const statusToneClass = getStatusToneClass(statusText);
+      if (statusToneClass) value.classList.add(statusToneClass);
       value.textContent = statusText;
       const statusAccentColor = getStatusAccentColor(statusText);
       if (statusAccentColor) {
@@ -12519,7 +12535,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         }
         if (isLargeMyToolsCard) {
           const statusLine = document.createElement("div");
-          statusLine.className = "tools-card__status tools-card__status--my-tools";
+          statusLine.className = "tools-card__status tools-card__status--my-tools tools-card__status-value";
+          const statusToneClass = getStatusToneClass(statusText);
+          if (statusToneClass) statusLine.classList.add(statusToneClass);
           statusLine.textContent = statusText || "не указан";
           const statusAccentColor = getStatusAccentColor(statusText);
           if (statusAccentColor) {
@@ -12577,7 +12595,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
     if (isLargeMyToolsCard) {
       const statusLine = document.createElement("div");
-      statusLine.className = "tools-card__status tools-card__status--my-tools";
+      statusLine.className = "tools-card__status tools-card__status--my-tools tools-card__status-value";
+      const statusToneClass = getStatusToneClass(statusText);
+      if (statusToneClass) statusLine.classList.add(statusToneClass);
       statusLine.textContent = statusText || "не указан";
       const statusAccentColor = getStatusAccentColor(statusText);
       if (statusAccentColor) {

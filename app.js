@@ -12598,6 +12598,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (isMyToolsMode) {
       table.classList.add("tools-table--my-tools");
     }
+    if (toolsState.mode === "remove-photo") {
+      table.classList.add("tools-table--remove-photo");
+    }
     const shouldHighlightToolStatus = ["user", "move-other"].includes(toolsState.mode);
     const isSearchMode =
       toolsState.mode === "base" ||
@@ -12661,6 +12664,14 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       numberValueEl.className = "tools-table__number-value";
       numberValueEl.textContent = number || "—";
       numberCell.appendChild(numberValueEl);
+      if (toolsState.mode === "remove-photo") {
+        const safePhotoCount = Number.isFinite(photoCount) ? photoCount : 0;
+        const photoCountEl = document.createElement("div");
+        photoCountEl.className = "remove-photo-count remove-photo-count--number";
+        photoCountEl.textContent = String(safePhotoCount);
+        photoCountEl.title = "Количество фото";
+        numberCell.appendChild(photoCountEl);
+      }
       if (objectTrackingEnabled) {
         const objectValueEl = document.createElement("div");
         objectValueEl.className = "tools-table__number-object";

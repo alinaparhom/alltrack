@@ -107,6 +107,7 @@
       body[data-theme="dark"] .remove-photo-card,
       body[data-theme="dark"] .remove-photo-tool,
       body[data-theme="dark"] .remove-photo-actions,
+      body[data-theme="dark"] .remove-photo-badge,
       body[data-theme="dark"] .breakdown-tool-card,
       body[data-theme="dark"] .breakdown-photo-item,
       body[data-theme="dark"] .writeoff-item,
@@ -11674,8 +11675,10 @@
       }
 
       .tools-table--remove-photo .tools-table__row {
+        position: relative;
         grid-template-columns: max-content var(--tools-object-column-width) minmax(0, 1fr) auto;
         align-items: start;
+        padding-right: 58px;
       }
 
       .remove-photo-row {
@@ -11684,6 +11687,30 @@
 
       .remove-photo-row:hover {
         box-shadow: 0 14px 28px rgba(15, 23, 42, 0.08);
+      }
+
+      .remove-photo-badge {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        min-width: 40px;
+        min-height: 28px;
+        padding: 5px 9px;
+        border: 1px solid rgba(59, 125, 255, 0.2);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.78);
+        box-shadow: 0 10px 22px rgba(37, 99, 235, 0.14);
+        color: #2563eb;
+        font-size: 12px;
+        font-weight: 800;
+        line-height: 1;
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        pointer-events: none;
       }
 
       .remove-photo-count {
@@ -11824,6 +11851,15 @@
           grid-template-areas:
             "number object info"
             "thumb thumb info";
+          padding-right: 54px;
+        }
+
+        .remove-photo-badge {
+          top: 8px;
+          right: 8px;
+          min-width: 36px;
+          min-height: 26px;
+          padding: 5px 8px;
         }
 
         .tools-table--remove-photo .tools-table__cell--number {

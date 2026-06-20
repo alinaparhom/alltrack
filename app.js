@@ -12322,9 +12322,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const createRemovePhotoBadge = () => {
       const badge = document.createElement("div");
       badge.className = "remove-photo-badge remove-photo-badge--tool";
-      const photoCountText = `${safePhotoCount} фото`;
-      badge.setAttribute("aria-label", `У инструмента ${photoCountText}`);
-      badge.innerHTML = `<span aria-hidden="true">📷</span><span>${photoCountText}</span>`;
+      const photoCountText = String(safePhotoCount);
+      badge.setAttribute("aria-label", `У инструмента ${photoCountText} фото`);
+      badge.textContent = photoCountText;
       return badge;
     };
 
@@ -12829,11 +12829,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       }
       if (toolsState.mode === "remove-photo") {
         const safePhotoCount = Number.isFinite(photoCount) ? photoCount : 0;
-        const photoCountText = `${safePhotoCount} фото`;
+        const photoCountText = String(safePhotoCount);
         const photoBadgeEl = document.createElement("div");
         photoBadgeEl.className = "remove-photo-badge remove-photo-badge--tool";
-        photoBadgeEl.setAttribute("aria-label", `У инструмента ${photoCountText}`);
-        photoBadgeEl.innerHTML = `<span aria-hidden="true">📷</span><span>${photoCountText}</span>`;
+        photoBadgeEl.setAttribute("aria-label", `У инструмента ${photoCountText} фото`);
+        photoBadgeEl.textContent = photoCountText;
         row.classList.add("tools-table__row--remove-photo");
         row.append(numberCell, infoCell, photoCell, photoBadgeEl);
       } else {
@@ -23241,7 +23241,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const number = resolveToolNumberValue(tool);
       const count = Number.parseInt(tool?.["Количество фото"] ?? 0, 10);
       const safeCount = Number.isFinite(count) ? count : 0;
-      const photoCountText = `${safeCount} фото`;
+      const photoCountText = String(safeCount);
       const numberValueEl = document.createElement("div");
       numberValueEl.className = "tools-table__number-value";
       numberValueEl.textContent = number || "—";
@@ -23253,8 +23253,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
       const photoBadgeEl = document.createElement("div");
       photoBadgeEl.className = "remove-photo-badge";
-      photoBadgeEl.setAttribute("aria-label", `У инструмента ${photoCountText}`);
-      photoBadgeEl.innerHTML = `<span aria-hidden="true">📷</span><span>${photoCountText}</span>`;
+      photoBadgeEl.setAttribute("aria-label", `У инструмента ${photoCountText} фото`);
+      photoBadgeEl.textContent = photoCountText;
 
       const objectCell = objectTrackingEnabled ? buildToolObjectCell(tool) : null;
 

@@ -10617,6 +10617,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       toolsState.mode === "search" ||
       toolsState.mode === "no-accounting-number" ||
       toolsState.mode === "add-photo" ||
+      toolsState.mode === "remove-photo" ||
       toolsState.mode === "user" ||
       toolsState.mode === "move-other" ||
       isRepairLikeMode();
@@ -10680,6 +10681,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       toolsState.mode === "search" ||
       toolsState.mode === "no-accounting-number" ||
       toolsState.mode === "add-photo" ||
+      toolsState.mode === "remove-photo" ||
       toolsState.mode === "user" ||
       toolsState.mode === "move-other" ||
       isRepairLikeMode();
@@ -12276,7 +12278,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const createResponsibleStatusLine = () => {
       const line = document.createElement("div");
       line.className = "tools-card__responsible-status";
-      if (!isSearchMode && toolsState.mode !== "add-photo") {
+      if (!isSearchMode && toolsState.mode !== "add-photo" && toolsState.mode !== "remove-photo") {
         const responsibleLabel = document.createElement("span");
         responsibleLabel.textContent = "Ответственный: ";
         line.appendChild(responsibleLabel);
@@ -12586,6 +12588,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       toolsState.mode === "search" ||
       toolsState.mode === "no-accounting-number" ||
       toolsState.mode === "add-photo" ||
+      toolsState.mode === "remove-photo" ||
       toolsState.mode === "user" ||
       toolsState.mode === "move-other" ||
       toolsState.mode === "repair" ||
@@ -12736,7 +12739,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           responsibleValue,
           String(tool?.["Ответственный"] ?? "").trim() || "не указан"
         );
-        if (!isSearchMode && toolsState.mode !== "add-photo") {
+        if (!isSearchMode && toolsState.mode !== "add-photo" && toolsState.mode !== "remove-photo") {
           const responsibleLabel = document.createElement("span");
           responsibleLabel.textContent = "Ответственный: ";
           responsibleLine.append(responsibleLabel, responsibleValue);
@@ -13660,6 +13663,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     toolsModalEl.classList.remove("tools-modal--my-tools");
     if (toolsState.mode === "add-photo") {
       closeAddPhotoDetailModal({ keepBodyLocked: false });
+    }
+    if (toolsState.mode === "remove-photo") {
+      closeRemovePhotoModal({ keepBodyLocked: true });
     }
     document.body.style.overflow = "";
     resetToolsSelection();
@@ -21004,6 +21010,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       if (
         toolsState.mode === "base" ||
         toolsState.mode === "search" ||
+        toolsState.mode === "remove-photo" ||
         isRepairLikeMode()
       )
         return;
@@ -21103,6 +21110,16 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         const tool = toolsState.toolMap.get(item.dataset.toolId);
         if (tool) {
           openAddPhotoToolModalForTool(tool);
+        }
+        return;
+      }
+      if (toolsState.mode === "remove-photo") {
+        const tool = toolsState.toolMap.get(item.dataset.toolId);
+        if (tool && removePhotoModalEl) {
+          removePhotoModalEl.classList.remove("is-hidden");
+          removePhotoState.orgFolder = toolsState.orgFolder || context.orgFolderName || "";
+          setRemovePhotoView("photos");
+          openRemovePhotoTool(tool);
         }
         return;
       }
@@ -23703,27 +23720,60 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   };
 
   const openRemovePhotoModal = async () => {
-    if (!removePhotoModalEl) return;
-    removePhotoModalEl.classList.remove("is-hidden");
+    if (!toolsModalEl) return;
+    resetToolsTopZoneStability();
+    toolsState.mode = "remove-photo";
+    toolsState.view = "table";
+    toolsState.searchSortDirection = "desc";
+    toolsState.activeReplacementResponsible = "";
+    setToolsStatusStandaloneVisibility(false);
+    setToolsTitle("Удалить фото");
+    setToolsResponsibleFilterVisibility(true);
+    syncToolsModalModeClass();
+    updateToolsReplacementPendingLinkVisibility();
+    syncToolsMapViewButtonVisibility();
+    toolsModalEl.classList.remove("is-hidden");
     document.body.style.overflow = "hidden";
-    setRemovePhotoView("list");
-    resetRemovePhotoSelection();
-    setRemovePhotoSubtitle("Загружаем список...");
-    await loadRemovePhotoTools();
+    setToolsSubtitle("Загружаем инструменты с фото...");
+    const numberConfig = await resolveToolsNumberConfig();
+    updateToolsNumberConfig(numberConfig);
+    await loadBaseTools();
+    toolsState.tools = toolsState.tools.filter((tool) => {
+      const photoCount = Number.parseInt(tool?.["Количество фото"] ?? 0, 10);
+      return Number.isFinite(photoCount) && photoCount > 0;
+    });
+    toolsState.toolMap = new Map(
+      toolsState.tools.map((tool) => [tool.__selectionId, tool])
+    );
+    prepareToolsFilters();
+    applyToolsFilters();
+    setToolsSubtitle(
+      toolsState.tools.length
+        ? `Показано ${toolsState.filtered.length} из ${toolsState.tools.length}`
+        : "Инструменты с фото не найдены."
+    );
+    syncToolsViewButtons();
     if (
-      removePhotoSearchInput &&
+      toolsSearchInput &&
       (typeof window === "undefined" ||
         !window.matchMedia ||
         !window.matchMedia("(max-width: 520px)").matches)
     ) {
-      removePhotoSearchInput.focus();
+      toolsSearchInput.focus();
     }
   };
 
-  const closeRemovePhotoModal = () => {
+  const closeRemovePhotoModal = ({ keepBodyLocked = false } = {}) => {
     if (!removePhotoModalEl) return;
     removePhotoModalEl.classList.add("is-hidden");
-    document.body.style.overflow = "";
+    const keepToolsListLocked =
+      keepBodyLocked ||
+      (toolsModalEl &&
+        !toolsModalEl.classList.contains("is-hidden") &&
+        toolsState.mode === "remove-photo");
+    if (!keepToolsListLocked) {
+      document.body.style.overflow = "";
+    }
   };
 
   if (removePhotoBackdropEl) {
@@ -23739,6 +23789,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   });
   if (removePhotoBackButton) {
     removePhotoBackButton.addEventListener("click", () => {
+      if (toolsModalEl && !toolsModalEl.classList.contains("is-hidden") && toolsState.mode === "remove-photo") {
+        closeRemovePhotoModal({ keepBodyLocked: true });
+        resetRemovePhotoSelection();
+        return;
+      }
       setRemovePhotoView("list");
       resetRemovePhotoSelection();
     });

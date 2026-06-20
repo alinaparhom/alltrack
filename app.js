@@ -12317,6 +12317,16 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     };
     const myToolsPrimaryLine = fullLine || numberLine || fallbackTitle;
     const myToolsSecondaryLine = `${accountingNumber || "—"} / ${objectName || "—"}`;
+    const safePhotoCount = Number.isFinite(photoCount) ? photoCount : 0;
+    const shouldShowRemovePhotoCount = toolsState.mode === "remove-photo";
+    const createRemovePhotoBadge = () => {
+      const badge = document.createElement("div");
+      badge.className = "remove-photo-badge remove-photo-badge--tool";
+      const photoCountText = `${safePhotoCount} фото`;
+      badge.setAttribute("aria-label", `У инструмента ${photoCountText}`);
+      badge.innerHTML = `<span aria-hidden="true">📷</span><span>${photoCountText}</span>`;
+      return badge;
+    };
 
     if (viewMode === "list") {
       const row = document.createElement("div");
@@ -12413,6 +12423,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         kitBadge.setAttribute("aria-label", "Открыть комплектацию инструмента");
         row.appendChild(kitBadge);
       }
+      if (shouldShowRemovePhotoCount) {
+        row.classList.add("tools-row--remove-photo");
+        row.appendChild(createRemovePhotoBadge());
+      }
       return row;
     }
 
@@ -12459,6 +12473,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       kitBadge.textContent = `Комплектация: ${kitItems.length}`;
       kitBadge.setAttribute("aria-label", "Открыть комплектацию инструмента");
       media.appendChild(kitBadge);
+    }
+    if (shouldShowRemovePhotoCount) {
+      card.classList.add("tools-card--remove-photo");
+      media.appendChild(createRemovePhotoBadge());
     }
 
     if (viewMode === "large" || isCompactMobile) {
@@ -12809,7 +12827,18 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       if (shouldUseSearchLayout) {
         row.classList.add("tools-table__row--search");
       }
-      row.append(numberCell, infoCell, photoCell);
+      if (toolsState.mode === "remove-photo") {
+        const safePhotoCount = Number.isFinite(photoCount) ? photoCount : 0;
+        const photoCountText = `${safePhotoCount} фото`;
+        const photoBadgeEl = document.createElement("div");
+        photoBadgeEl.className = "remove-photo-badge remove-photo-badge--tool";
+        photoBadgeEl.setAttribute("aria-label", `У инструмента ${photoCountText}`);
+        photoBadgeEl.innerHTML = `<span aria-hidden="true">📷</span><span>${photoCountText}</span>`;
+        row.classList.add("tools-table__row--remove-photo");
+        row.append(numberCell, infoCell, photoCell, photoBadgeEl);
+      } else {
+        row.append(numberCell, infoCell, photoCell);
+      }
       table.appendChild(row);
     });
 

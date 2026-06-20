@@ -23210,7 +23210,16 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const numberCell = document.createElement("div");
       numberCell.className = "tools-table__cell tools-table__cell--number";
       const number = resolveToolNumberValue(tool);
-      numberCell.textContent = number || "—";
+      const count = Number.parseInt(tool?.["Количество фото"] ?? 0, 10);
+      const safeCount = Number.isFinite(count) ? count : 0;
+      const numberValueEl = document.createElement("div");
+      numberValueEl.className = "tools-table__number-value";
+      numberValueEl.textContent = number || "—";
+      const photoCountEl = document.createElement("div");
+      photoCountEl.className = "remove-photo-count remove-photo-count--number";
+      photoCountEl.textContent = String(safeCount);
+      photoCountEl.title = "Количество фото";
+      numberCell.append(numberValueEl, photoCountEl);
       const objectCell = objectTrackingEnabled ? buildToolObjectCell(tool) : null;
 
       const infoCell = document.createElement("div");
@@ -23224,13 +23233,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const manufacturer = String(tool?.["Производитель"] ?? "").trim();
       const model = String(tool?.["Модель"] ?? "").trim();
       const accountingNumber = String(tool?.["Бух.номер"] ?? "").trim();
-      const count = Number.parseInt(tool?.["Количество фото"] ?? 0, 10);
-      const safeCount = Number.isFinite(count) ? count : 0;
       meta.innerHTML = `
         <div>Производитель: ${manufacturer || "—"} · Модель: ${model || "—"}</div>
         <div>Бух.номер: ${accountingNumber || "—"}</div>
         <div>${formatToolCostLabel(tool)}</div>
-        <div class="remove-photo-count">Фото: ${safeCount}</div>
       `;
       infoCell.append(title, meta);
 

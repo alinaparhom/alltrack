@@ -10756,7 +10756,8 @@
 
       .writeoff-confirm-modal__panel {
         width: min(620px, calc(100vw - 18px));
-        height: auto;
+        height: min(92vh, 760px);
+        height: min(92dvh, 760px);
         max-height: min(92vh, 760px);
         max-height: min(92dvh, 760px);
         border-radius: 28px;
@@ -10827,6 +10828,7 @@
 
       .writeoff-confirm-modal__panel .settings-modal__body {
         align-content: start;
+        grid-template-rows: auto auto minmax(0, 1fr) auto;
         overflow: hidden;
       }
 
@@ -10905,9 +10907,9 @@
       .writeoff-confirm-actions .action-secondary,
       .writeoff-confirm-actions .action-primary {
         min-width: 160px;
-        min-height: 0;
+        min-height: 38px;
         height: auto;
-        padding: 9px 16px;
+        padding: 0 16px;
         line-height: 1.15;
         border-radius: 14px;
         border-width: 1px;
@@ -10962,7 +10964,8 @@
       @media (max-width: 520px) {
         .writeoff-confirm-modal__panel {
           width: calc(100vw - 10px);
-          height: auto;
+          height: calc(100vh - 10px);
+          height: calc(100dvh - 10px);
           border-radius: 22px;
           max-height: calc(100vh - 10px);
           max-height: calc(100dvh - 10px);

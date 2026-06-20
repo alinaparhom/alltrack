@@ -11689,10 +11689,21 @@
         box-shadow: 0 14px 28px rgba(15, 23, 42, 0.08);
       }
 
+      .tools-row--remove-photo,
+      .tools-table__row--remove-photo {
+        position: relative;
+        padding-right: 82px;
+      }
+
+      .tools-card--remove-photo .tools-kit-badge--card {
+        top: 48px;
+      }
+
       .remove-photo-badge {
         position: absolute;
         top: 10px;
         right: 10px;
+        z-index: 5;
         display: inline-flex;
         align-items: center;
         justify-content: center;
@@ -11711,6 +11722,11 @@
         backdrop-filter: blur(12px);
         -webkit-backdrop-filter: blur(12px);
         pointer-events: none;
+      }
+
+      .tools-card__media > .remove-photo-badge--tool {
+        top: 10px;
+        right: 10px;
       }
 
       .remove-photo-count {
@@ -11852,6 +11868,11 @@
             "number object info"
             "thumb thumb info";
           padding: 12px 70px 12px 12px;
+        }
+
+        .tools-row--remove-photo,
+        .tools-table__row--remove-photo {
+          padding-right: 70px;
         }
 
         .remove-photo-badge {

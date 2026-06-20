@@ -10756,13 +10756,13 @@
 
       .writeoff-confirm-modal__panel {
         width: min(620px, calc(100vw - 18px));
-        height: min(92vh, 760px);
-        height: min(92dvh, 760px);
-        max-height: min(92vh, 760px);
-        max-height: min(92dvh, 760px);
+        height: auto;
+        max-height: calc(100vh - 18px);
+        max-height: calc(100dvh - 18px);
         border-radius: 28px;
         overflow: hidden;
-        grid-template-rows: auto minmax(0, auto);
+        display: grid;
+        grid-template-rows: auto minmax(0, 1fr);
         border: 1px solid rgba(255, 255, 255, 0.72);
         background:
           radial-gradient(circle at 16% 0%, rgba(220, 38, 38, 0.12), transparent 34%),
@@ -10828,7 +10828,8 @@
 
       .writeoff-confirm-modal__panel .settings-modal__body {
         align-content: start;
-        grid-template-rows: auto auto minmax(0, 1fr) auto;
+        grid-template-rows: auto auto auto auto;
+        min-height: 0;
         overflow: hidden;
       }
 
@@ -10839,8 +10840,8 @@
       .writeoff-confirm-list {
         display: grid;
         gap: 8px;
-        max-height: min(250px, 34vh);
-        max-height: min(250px, 34dvh);
+        max-height: clamp(96px, calc(100vh - 390px), 250px);
+        max-height: clamp(96px, calc(100dvh - 390px), 250px);
         overflow: auto;
         overscroll-behavior: contain;
         padding-right: 2px;
@@ -10906,9 +10907,12 @@
 
       .writeoff-confirm-actions .action-secondary,
       .writeoff-confirm-actions .action-primary {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
         min-width: 160px;
         min-height: 38px;
-        height: auto;
+        height: 38px;
         padding: 0 16px;
         line-height: 1.15;
         border-radius: 14px;
@@ -10964,8 +10968,7 @@
       @media (max-width: 520px) {
         .writeoff-confirm-modal__panel {
           width: calc(100vw - 10px);
-          height: calc(100vh - 10px);
-          height: calc(100dvh - 10px);
+          height: auto;
           border-radius: 22px;
           max-height: calc(100vh - 10px);
           max-height: calc(100dvh - 10px);
@@ -10980,8 +10983,8 @@
         }
 
         .writeoff-confirm-list {
-          max-height: 32vh;
-          max-height: 32dvh;
+          max-height: clamp(96px, calc(100vh - 350px), 250px);
+          max-height: clamp(96px, calc(100dvh - 350px), 250px);
         }
 
         .writeoff-confirm-actions {

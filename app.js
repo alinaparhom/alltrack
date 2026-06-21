@@ -15265,7 +15265,27 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       costLine.textContent = formatToolCostLabel(tool);
       const statusLine = document.createElement("div");
       statusLine.className = "writeoff-item__status-line";
-      statusLine.textContent = `Статус: ${statusText || "—"}`;
+      const statusLabel = document.createElement("span");
+      statusLabel.className = "writeoff-item__status-label";
+      statusLabel.textContent = "Статус:";
+      const statusBadge = document.createElement("span");
+      statusBadge.className = "writeoff-item__status-badge tools-card__status-value";
+      const normalizedStatus = String(statusText ?? "").trim().toLocaleLowerCase("ru");
+      const statusToneClass =
+        normalizedStatus === "рабочий" || normalizedStatus === "исправный"
+          ? "tools-card__status-value--working"
+          : normalizedStatus === "в ремонте"
+            ? "tools-card__status-value--repair"
+            : normalizedStatus === "сломан"
+              ? "tools-card__status-value--broken"
+              : normalizedStatus === "на списание"
+                ? "tools-card__status-value--writeoff"
+                : normalizedStatus === "в процессе перемещения" || normalizedStatus === "перемещается"
+                  ? "tools-card__status-value--moving"
+                  : "";
+      if (statusToneClass) statusBadge.classList.add(statusToneClass);
+      statusBadge.textContent = statusText || "—";
+      statusLine.append(statusLabel, statusBadge);
       meta.append(objectLine, responsibleLine, costLine, statusLine);
       accountingColumn.append(accountingValue);
       infoColumn.append(title, meta);

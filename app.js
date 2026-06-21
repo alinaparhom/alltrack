@@ -15249,9 +15249,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const meta = document.createElement("div");
       meta.className = "writeoff-item__meta";
       const isMovingNow = Boolean(tool?.__pendingMove);
-      const statusText = isMovingNow
-        ? "в процессе перемещения"
-        : String(tool?.["Статус"] ?? "").trim();
+      const statusText = normalizeToolsInfoStatus(tool?.["Статус"], isMovingNow);
       const objectLine = document.createElement("div");
       objectLine.className = "writeoff-item__meta-line writeoff-item__meta-line--main";
       const objectValue = String(tool?.["Объект"] ?? "").trim() || "—";

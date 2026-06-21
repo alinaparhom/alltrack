@@ -466,6 +466,64 @@
         color: #86efac;
       }
 
+
+      body[data-theme="dark"] .settings-modal__footer,
+      body[data-theme="dark"] .camera-modal__footer,
+      body[data-theme="dark"] .feedback-modal__footer,
+      body[data-theme="dark"] .breakdown-form__footer,
+      body[data-theme="dark"] .repair-form__footer,
+      body[data-theme="dark"] .tools-info-modal__footer,
+      body[data-theme="dark"] .writeoff-confirm-actions,
+      body[data-theme="dark"] .pending-moves-modal__footer,
+      body[data-theme="dark"] .tools-modal[data-add-photo-modal] .tools-add-photo-upload-wrap {
+        border-top: 1px solid rgba(148, 170, 210, 0.26);
+        background:
+          linear-gradient(180deg, rgba(23, 31, 52, 0.78), rgba(12, 18, 32, 0.96)),
+          radial-gradient(circle at 50% 0%, rgba(123, 178, 255, 0.16), transparent 58%);
+        box-shadow:
+          0 -18px 42px rgba(0, 0, 0, 0.4),
+          inset 0 1px 0 rgba(255, 255, 255, 0.06);
+        backdrop-filter: blur(18px) saturate(1.12);
+        -webkit-backdrop-filter: blur(18px) saturate(1.12);
+      }
+
+      body[data-theme="dark"] .breakdown-form__actions,
+      body[data-theme="dark"] .writeoff-confirm-actions {
+        background: transparent;
+      }
+
+      body[data-theme="dark"] .feedback-modal__footer .action-secondary,
+      body[data-theme="dark"] .breakdown-form__actions .breakdown-form__cancel {
+        border-color: rgba(248, 113, 113, 0.38);
+        background: linear-gradient(135deg, rgba(127, 29, 29, 0.42), rgba(69, 10, 10, 0.34));
+        color: #fecaca;
+      }
+
+      body[data-theme="dark"] .feedback-modal__footer .action-primary,
+      body[data-theme="dark"] .breakdown-form__actions .breakdown-form__submit {
+        border-color: rgba(87, 224, 155, 0.36);
+        background: linear-gradient(135deg, rgba(20, 83, 45, 0.48), rgba(6, 78, 59, 0.34));
+        color: #bbf7d0;
+      }
+
+      body[data-theme="dark"] .repair-form__actions .action-primary,
+      body[data-theme="dark"] .repair-form__actions .action-secondary,
+      body[data-theme="dark"] .camera-modal__footer .action-primary,
+      body[data-theme="dark"] .camera-modal__footer .action-secondary,
+      body[data-theme="dark"] .tools-modal[data-add-photo-modal] .tools-add-photo-upload {
+        border-color: rgba(96, 165, 250, 0.36);
+        background: linear-gradient(135deg, rgba(30, 64, 175, 0.5), rgba(30, 58, 138, 0.38));
+        color: #dbeafe;
+        box-shadow: 0 12px 26px rgba(15, 23, 42, 0.34);
+      }
+
+      body[data-theme="dark"] .tools-info-modal__footer [data-tools-info-cancel-move] {
+        border-color: rgba(250, 204, 21, 0.38);
+        background: linear-gradient(135deg, rgba(113, 63, 18, 0.52), rgba(66, 32, 6, 0.42));
+        color: #fde68a;
+        box-shadow: 0 12px 28px rgba(0, 0, 0, 0.32);
+      }
+
       body[data-theme="dark"] .add-tool-success-modal__panel {
         background: linear-gradient(160deg, rgba(16, 24, 40, 0.98), rgba(20, 30, 52, 0.92));
         border-color: rgba(148, 170, 210, 0.35);

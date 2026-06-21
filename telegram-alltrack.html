@@ -18370,6 +18370,45 @@
         top: 0 !important;
       }
 
+
+      /* Единый тёмный стиль заголовков страниц: как на странице «Списание». */
+      body[data-theme="dark"] .app-header,
+      body[data-theme="dark"] .settings-modal__header,
+      body[data-theme="dark"] .tools-modal__header,
+      body[data-theme="dark"] .writeoff-modal__header,
+      body[data-theme="dark"] .objects-modal__header,
+      body[data-theme="dark"] .writeoff-confirm-modal__header,
+      body[data-theme="dark"] .tools-kit-preview-modal__header {
+        background:
+          linear-gradient(135deg, rgba(23, 31, 52, 0.96), rgba(13, 20, 36, 0.88)),
+          radial-gradient(circle at 12% 0%, rgba(123, 178, 255, 0.22), transparent 42%) !important;
+        border-color: rgba(148, 170, 210, 0.22) !important;
+        border-bottom-color: rgba(148, 170, 210, 0.28) !important;
+        box-shadow:
+          0 16px 38px rgba(0, 0, 0, 0.36),
+          inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
+        backdrop-filter: blur(18px) !important;
+        -webkit-backdrop-filter: blur(18px) !important;
+      }
+
+      body[data-theme="dark"] .settings-modal__header,
+      body[data-theme="dark"] .tools-modal__header,
+      body[data-theme="dark"] .writeoff-modal__header,
+      body[data-theme="dark"] .objects-modal__header,
+      body[data-theme="dark"] .writeoff-confirm-modal__header,
+      body[data-theme="dark"] .tools-kit-preview-modal__header {
+        border-inline: 0 !important;
+        border-top: 0 !important;
+      }
+
+      body[data-theme="dark"] .settings-modal__title h2,
+      body[data-theme="dark"] .settings-modal__title p,
+      body[data-theme="dark"] .app-title-text,
+      body[data-theme="dark"] .app-title-position,
+      body[data-theme="dark"] .app-title-meta {
+        text-shadow: 0 1px 16px rgba(123, 178, 255, 0.18);
+      }
+
     </style>
   </head>
   <body>

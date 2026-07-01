@@ -261,31 +261,37 @@ export function renderRole(user) {
                 <strong data-super-stats-focus>Перемещения</strong>
               </div>
             </section>
-            <div class="super-stats-filters">
-              <label class="super-stats-field">
+            <div class="super-stats-toolbar" aria-label="Настройки статистики">
+              <label class="super-stats-field super-stats-field--wide">
                 <span>Организация</span>
                 <select class="form-input" data-super-stats-org>
                   <option value="all">Все организации</option>
                 </select>
               </label>
-              <label class="super-stats-field">
-                <span>Период</span>
-                <select class="form-input" data-super-stats-period>
+              <div class="super-stats-segment" role="radiogroup" aria-label="Период статистики">
+                <button class="super-stats-segment__button is-active" type="button" data-super-stats-period-button="day">День</button>
+                <button class="super-stats-segment__button" type="button" data-super-stats-period-button="month">Месяц</button>
+                <button class="super-stats-segment__button" type="button" data-super-stats-period-button="year">Год</button>
+                <button class="super-stats-segment__button" type="button" data-super-stats-period-button="custom">Календарь</button>
+                <select class="super-stats-native-select" data-super-stats-period aria-label="Период статистики">
                   <option value="day">Сегодня</option>
                   <option value="month">Этот месяц</option>
                   <option value="year">Этот год</option>
                   <option value="custom">Календарь</option>
                 </select>
-              </label>
-              <label class="super-stats-field">
-                <span>Главный график</span>
-                <select class="form-input" data-super-stats-metric>
+              </div>
+              <div class="super-stats-metric-tabs" role="radiogroup" aria-label="Главный показатель">
+                <button class="super-stats-metric-tab is-active" type="button" data-super-stats-metric-button="moves">🔁 Перемещения</button>
+                <button class="super-stats-metric-tab" type="button" data-super-stats-metric-button="amount">₽ Сумма</button>
+                <button class="super-stats-metric-tab" type="button" data-super-stats-metric-button="tools">🧰 МТЦ</button>
+                <button class="super-stats-metric-tab" type="button" data-super-stats-metric-button="toolsAmount">💎 Стоимость</button>
+                <select class="super-stats-native-select" data-super-stats-metric aria-label="Главный график">
                   <option value="moves">Перемещения</option>
                   <option value="amount">Сумма перемещений</option>
                   <option value="tools">МТЦ в базе</option>
                   <option value="toolsAmount">Стоимость МТЦ</option>
                 </select>
-              </label>
+              </div>
               <label class="super-stats-field super-stats-custom is-hidden" data-super-stats-custom-field>
                 <span>С даты</span>
                 <input class="form-input" type="date" data-super-stats-date-from />
@@ -302,12 +308,16 @@ export function renderRole(user) {
               <div class="super-stats-card super-stats-card--money"><span class="super-stats-card__icon">₽</span><span class="super-stats-card__label">Сумма перемещений</span><strong data-super-stats-amount>—</strong><small>по стоимости МТЦ</small></div>
             </div>
             <div class="super-stats-layout">
-              <section class="super-stats-panel">
+              <section class="super-stats-panel super-stats-panel--main">
                 <div class="super-stats-panel__head"><div><span>Рейтинг организаций</span><strong data-super-stats-chart-title>По перемещениям</strong></div><em data-super-stats-chart-count>—</em></div>
                 <div class="super-stats-chart" aria-label="Статистика по организациям" data-super-stats-chart></div>
               </section>
               <aside class="super-stats-panel super-stats-insights" data-super-stats-insights></aside>
             </div>
+            <section class="super-stats-panel super-stats-timeline-panel">
+              <div class="super-stats-panel__head"><div><span>Динамика</span><strong data-super-stats-timeline-title>Активность по дням</strong></div><em data-super-stats-timeline-total>—</em></div>
+              <div class="super-stats-timeline" aria-label="Динамика за период" data-super-stats-timeline></div>
+            </section>
             <div class="form-message" data-super-stats-status></div>
           </div>
         </div>

@@ -33631,6 +33631,11 @@ function setupSuperAdmin() {
   const superStatsSummaryEl = contentEl.querySelector("[data-super-stats-summary]");
   const superStatsOrgSelect = contentEl.querySelector("[data-super-stats-org]");
   const superStatsPeriodSelect = contentEl.querySelector("[data-super-stats-period]");
+  const superStatsMetricSelect = contentEl.querySelector("[data-super-stats-metric]");
+  const superStatsFocusEl = contentEl.querySelector("[data-super-stats-focus]");
+  const superStatsChartTitleEl = contentEl.querySelector("[data-super-stats-chart-title]");
+  const superStatsChartCountEl = contentEl.querySelector("[data-super-stats-chart-count]");
+  const superStatsInsightsEl = contentEl.querySelector("[data-super-stats-insights]");
   const superStatsCustomFields = contentEl.querySelectorAll("[data-super-stats-custom-field]");
   const superStatsDateFromInput = contentEl.querySelector("[data-super-stats-date-from]");
   const superStatsDateToInput = contentEl.querySelector("[data-super-stats-date-to]");
@@ -33919,10 +33924,33 @@ function setupSuperAdmin() {
     const isCustom = superStatsPeriodSelect?.value === "custom";
     superStatsCustomFields.forEach((field) => field.classList.toggle("is-hidden", !isCustom));
   };
+  const superStatsMetricConfig = {
+    moves: { title: "По перемещениям", label: "Перемещения", format: formatStatsNumber },
+    amount: { title: "По сумме перемещений", label: "Сумма", format: formatStatsMoney },
+    tools: { title: "По количеству МТЦ", label: "МТЦ", format: formatStatsNumber },
+    toolsAmount: { title: "По стоимости МТЦ", label: "Стоимость", format: formatStatsMoney },
+  };
+  const renderSuperStatsInsights = (items, totals) => {
+    if (!superStatsInsightsEl) return;
+    const leader = items[0];
+    const avgMoves = items.length ? Math.round(totals.moves / items.length) : 0;
+    const leaderName = leader ? escapeHtml(leader.name) : "Нет данных";
+    superStatsInsightsEl.innerHTML = `
+      <div class="super-stats-panel__head"><div><span>Умные подсказки</span><strong>Что важно сейчас</strong></div></div>
+      <div class="super-stats-insight"><span>🏆</span><div><strong>${leaderName}</strong><small>${leader ? "лидер выбранного рейтинга" : "попробуйте другой период"}</small></div></div>
+      <div class="super-stats-insight"><span>📊</span><div><strong>${formatStatsNumber(avgMoves)}</strong><small>перемещений в среднем на организацию</small></div></div>
+      <div class="super-stats-insight"><span>💎</span><div><strong>${formatStatsMoney(totals.toolsAmount)}</strong><small>общая стоимость МТЦ в базе</small></div></div>
+    `;
+  };
   const renderSuperStatsChart = (items) => {
     if (!superStatsChartEl) return;
     superStatsChartEl.innerHTML = "";
-    const maxMoves = Math.max(1, ...items.map((item) => item.moves));
+    const metric = superStatsMetricSelect?.value || "moves";
+    const config = superStatsMetricConfig[metric] || superStatsMetricConfig.moves;
+    if (superStatsFocusEl) superStatsFocusEl.textContent = config.label;
+    if (superStatsChartTitleEl) superStatsChartTitleEl.textContent = config.title;
+    if (superStatsChartCountEl) superStatsChartCountEl.textContent = `${formatStatsNumber(items.length)} орг.`;
+    const maxValue = Math.max(1, ...items.map((item) => item[metric] || 0));
     items.forEach((item) => {
       const row = document.createElement("div");
       row.className = "super-stats-chart__row";
@@ -33931,11 +33959,11 @@ function setupSuperAdmin() {
       const name = document.createElement("span");
       name.textContent = item.name;
       const value = document.createElement("strong");
-      value.textContent = `${formatStatsNumber(item.moves)} · ${formatStatsMoney(item.amount)}`;
+      value.textContent = config.format(item[metric] || 0);
       const bar = document.createElement("div");
       bar.className = "super-stats-chart__bar";
       const fill = document.createElement("span");
-      fill.style.width = `${Math.max(6, Math.round((item.moves / maxMoves) * 100))}%`;
+      fill.style.width = `${Math.max(6, Math.round(((item[metric] || 0) / maxValue) * 100))}%`;
       top.append(name, value);
       bar.append(fill);
       row.append(top, bar);
@@ -33990,7 +34018,10 @@ function setupSuperAdmin() {
       if (superStatsMovesEl) superStatsMovesEl.textContent = formatStatsNumber(totals.moves);
       if (superStatsAmountEl) superStatsAmountEl.textContent = formatStatsMoney(totals.amount);
       if (superStatsSummaryEl) superStatsSummaryEl.textContent = `${selectedOrg === "all" ? "Все организации" : rows[0]?.name || "Организация"} · ${range.label}`;
-      renderSuperStatsChart(rows.sort((a, b) => b.moves - a.moves));
+      const metric = superStatsMetricSelect?.value || "moves";
+      const sortedRows = rows.sort((a, b) => (b[metric] || 0) - (a[metric] || 0));
+      renderSuperStatsChart(sortedRows);
+      renderSuperStatsInsights(sortedRows, totals);
       if (superStatsStatusEl) superStatsStatusEl.textContent = "";
     } catch (error) {
       console.error(error);
@@ -36342,6 +36373,7 @@ function setupSuperAdmin() {
     updateSuperStatsCustomVisibility();
     refreshSuperStats();
   });
+  superStatsMetricSelect?.addEventListener("change", refreshSuperStats);
   superStatsDateFromInput?.addEventListener("change", refreshSuperStats);
   superStatsDateToInput?.addEventListener("change", refreshSuperStats);
   openAddOrgButton?.addEventListener("click", showForm);

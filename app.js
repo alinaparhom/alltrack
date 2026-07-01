@@ -33880,12 +33880,9 @@ function setupSuperAdmin() {
 
 
   const formatStatsNumber = (value) => new Intl.NumberFormat("ru-RU").format(Number(value) || 0);
-  const formatStatsMoney = (value) =>
-    new Intl.NumberFormat("ru-RU", {
-      style: "currency",
-      currency: "RUB",
-      maximumFractionDigits: 0,
-    }).format(Number(value) || 0);
+  const formatStatsMoney = (value) => `${new Intl.NumberFormat("ru-RU", {
+    maximumFractionDigits: 0,
+  }).format(Number(value) || 0)} Br`;
   const toIsoDate = (date) => {
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, "0");

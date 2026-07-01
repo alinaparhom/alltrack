@@ -2370,10 +2370,9 @@
         top: 0;
         z-index: 3;
         flex: 0 0 auto;
-        display: flex;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
         align-items: center;
-        justify-content: space-between;
-        flex-wrap: nowrap;
         gap: 12px;
         min-height: 52px;
         padding: 8px 14px;
@@ -2424,7 +2423,8 @@
         display: grid;
         grid-template-columns: minmax(0, 1.45fr) minmax(280px, 0.55fr);
         grid-template-areas:
-          "summary filters"
+          "summary summary"
+          "filters filters"
           "main side"
           "timeline timeline"
           "status status";
@@ -2510,27 +2510,27 @@
       .super-stats-toolbar {
         grid-area: filters;
         display: grid;
-        grid-template-columns: minmax(0, 1fr) 76px;
-        align-content: start;
+        grid-template-columns: minmax(180px, 1.25fr) minmax(72px, 0.34fr) minmax(250px, 1.1fr) minmax(310px, 1.4fr);
+        align-items: end;
         gap: 8px;
-        padding: 8px;
+        padding: 7px;
         border-radius: 20px;
       }
 
-      .super-stats-field--wide,
-      .super-stats-segment,
-      .super-stats-metric-tabs {
-        grid-column: 1 / -1;
+      .super-stats-custom {
+        grid-column: span 1;
       }
 
       .super-stats-segment,
       .super-stats-metric-tabs {
         position: relative;
         display: flex;
-        flex-wrap: wrap;
-        gap: 6px;
+        flex-wrap: nowrap;
+        gap: 5px;
         min-width: 0;
-        padding: 5px;
+        padding: 4px;
+        overflow-x: auto;
+        scrollbar-width: none;
         border-radius: 16px;
         background: rgba(241, 245, 249, 0.78);
         border: 1px solid rgba(226, 232, 240, 0.84);
@@ -2538,8 +2538,8 @@
 
       .super-stats-segment__button,
       .super-stats-metric-tab {
-        flex: 1 1 auto;
-        min-height: 32px;
+        flex: 1 0 max-content;
+        min-height: 30px;
         border: 0;
         border-radius: 12px;
         padding: 6px 8px;
@@ -2858,7 +2858,12 @@
         }
 
         .super-stats-toolbar {
-          grid-template-columns: minmax(0, 1fr) 92px;
+          grid-template-columns: minmax(220px, 1fr) 92px;
+        }
+
+        .super-stats-segment,
+        .super-stats-metric-tabs {
+          grid-column: 1 / -1;
         }
       }
 
@@ -2871,7 +2876,7 @@
         }
 
         .super-stats-modal__header {
-          padding: 12px 14px;
+          padding: 10px 12px;
         }
 
         .super-stats-modal__body {
@@ -2891,8 +2896,9 @@
         }
 
         .super-stats-toolbar {
-          grid-template-columns: 1fr 82px;
-          padding: 9px;
+          grid-template-columns: minmax(0, 1fr) 78px;
+          gap: 7px;
+          padding: 7px;
         }
 
         .super-stats-cards {
@@ -2919,13 +2925,13 @@
         .super-stats-segment,
         .super-stats-metric-tabs {
           gap: 5px;
-          padding: 5px;
+          padding: 4px;
         }
 
         .super-stats-segment__button,
         .super-stats-metric-tab {
-          min-height: 36px;
-          padding: 7px 8px;
+          min-height: 32px;
+          padding: 6px 8px;
           font-size: 11px;
         }
 

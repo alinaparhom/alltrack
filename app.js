@@ -33642,6 +33642,14 @@ function setupSuperAdmin() {
   const superStatsCustomFields = contentEl.querySelectorAll("[data-super-stats-custom-field]");
   const superStatsDateFromInput = contentEl.querySelector("[data-super-stats-date-from]");
   const superStatsDateToInput = contentEl.querySelector("[data-super-stats-date-to]");
+  const superStatsRangeToggle = contentEl.querySelector("[data-super-stats-range-toggle]");
+  const superStatsDateFromLabel = contentEl.querySelector("[data-super-stats-date-from-label]");
+  const superStatsDateToLabel = contentEl.querySelector("[data-super-stats-date-to-label]");
+  const superStatsCalendarEl = contentEl.querySelector("[data-super-stats-calendar]");
+  const superStatsCalendarGridEl = contentEl.querySelector("[data-super-stats-calendar-grid]");
+  const superStatsCalendarTitleEl = contentEl.querySelector("[data-super-stats-calendar-title]");
+  const superStatsCalendarPrevButton = contentEl.querySelector("[data-super-stats-calendar-prev]");
+  const superStatsCalendarNextButton = contentEl.querySelector("[data-super-stats-calendar-next]");
   const superStatsUsersEl = contentEl.querySelector("[data-super-stats-users]");
   const superStatsToolsEl = contentEl.querySelector("[data-super-stats-tools]");
   const superStatsToolsAmountEl = contentEl.querySelector("[data-super-stats-tools-amount]");
@@ -33891,6 +33899,59 @@ function setupSuperAdmin() {
     const date = new Date(year, Number(match[2]) - 1, Number(match[1]));
     return Number.isNaN(date.getTime()) ? null : date;
   };
+
+  const superStatsCalendarState = { view: new Date() };
+  const formatStatsRangeDate = (value) => {
+    if (!value) return "Не выбрано";
+    const date = new Date(`${value}T00:00:00`);
+    return Number.isNaN(date.getTime())
+      ? "Не выбрано"
+      : date.toLocaleDateString("ru-RU", { day: "2-digit", month: "short", year: "numeric" });
+  };
+  const updateSuperStatsRangeLabels = () => {
+    if (superStatsDateFromLabel) superStatsDateFromLabel.textContent = formatStatsRangeDate(superStatsDateFromInput?.value);
+    if (superStatsDateToLabel) superStatsDateToLabel.textContent = formatStatsRangeDate(superStatsDateToInput?.value);
+  };
+  const renderSuperStatsCalendar = () => {
+    if (!superStatsCalendarGridEl || !superStatsCalendarTitleEl) return;
+    const view = superStatsCalendarState.view;
+    const year = view.getFullYear();
+    const month = view.getMonth();
+    const first = new Date(year, month, 1);
+    const offset = (first.getDay() + 6) % 7;
+    const fromValue = superStatsDateFromInput?.value || "";
+    const toValue = superStatsDateToInput?.value || "";
+    superStatsCalendarTitleEl.textContent = first.toLocaleDateString("ru-RU", { month: "long", year: "numeric" });
+    superStatsCalendarGridEl.innerHTML = "";
+    for (let index = 0; index < 42; index += 1) {
+      const date = new Date(year, month, index - offset + 1);
+      const value = toIsoDate(date);
+      const button = document.createElement("button");
+      button.type = "button";
+      button.textContent = String(date.getDate());
+      button.dataset.date = value;
+      button.className = "super-stats-calendar__day";
+      if (date.getMonth() !== month) button.classList.add("is-muted");
+      if (value === fromValue || value === toValue) button.classList.add("is-edge");
+      if (fromValue && toValue && value > fromValue && value < toValue) button.classList.add("is-between");
+      button.addEventListener("click", () => {
+        if (!superStatsDateFromInput || !superStatsDateToInput) return;
+        if (!superStatsDateFromInput.value || (superStatsDateFromInput.value && superStatsDateToInput.value) || value < superStatsDateFromInput.value) {
+          superStatsDateFromInput.value = value;
+          superStatsDateToInput.value = "";
+        } else {
+          superStatsDateToInput.value = value;
+          superStatsCalendarEl?.classList.add("is-hidden");
+          superStatsRangeToggle?.setAttribute("aria-expanded", "false");
+          refreshSuperStats();
+        }
+        updateSuperStatsRangeLabels();
+        renderSuperStatsCalendar();
+      });
+      superStatsCalendarGridEl.appendChild(button);
+    }
+  };
+
   const getStatsRange = () => {
     const now = new Date();
     const period = superStatsPeriodSelect?.value || "day";
@@ -33939,6 +34000,13 @@ function setupSuperAdmin() {
   const updateSuperStatsCustomVisibility = () => {
     const isCustom = superStatsPeriodSelect?.value === "custom";
     superStatsCustomFields.forEach((field) => field.classList.toggle("is-hidden", !isCustom));
+    if (!isCustom) {
+      superStatsCalendarEl?.classList.add("is-hidden");
+      superStatsRangeToggle?.setAttribute("aria-expanded", "false");
+    } else {
+      updateSuperStatsRangeLabels();
+      renderSuperStatsCalendar();
+    }
     syncSuperStatsControls();
   };
   const superStatsMetricConfig = {
@@ -33953,7 +34021,7 @@ function setupSuperAdmin() {
     const avgMoves = items.length ? Math.round(totals.moves / items.length) : 0;
     const leaderName = leader ? escapeHtml(leader.name) : "Нет данных";
     superStatsInsightsEl.innerHTML = `
-      <div class="super-stats-panel__head"><div><span>KPI</span><strong>Итоги</strong></div></div>
+      <div class="super-stats-panel__head"><div><span>KPI</span><strong>Коротко</strong></div></div>
       <div class="super-stats-insight"><span>🏆</span><div><strong>${leaderName}</strong><small>${leader ? "лидер" : "нет данных"}</small></div></div>
       <div class="super-stats-insight"><span>📊</span><div><strong>${formatStatsNumber(avgMoves)}</strong><small>среднее</small></div></div>
       <div class="super-stats-insight"><span>💎</span><div><strong>${formatStatsMoney(totals.toolsAmount)}</strong><small>МТЦ</small></div></div>
@@ -36457,8 +36525,22 @@ function setupSuperAdmin() {
       refreshSuperStats();
     });
   });
-  superStatsDateFromInput?.addEventListener("change", refreshSuperStats);
-  superStatsDateToInput?.addEventListener("change", refreshSuperStats);
+  superStatsRangeToggle?.addEventListener("click", () => {
+    const isHidden = superStatsCalendarEl?.classList.contains("is-hidden");
+    superStatsCalendarEl?.classList.toggle("is-hidden", !isHidden);
+    superStatsRangeToggle?.setAttribute("aria-expanded", isHidden ? "true" : "false");
+    renderSuperStatsCalendar();
+  });
+  superStatsCalendarPrevButton?.addEventListener("click", () => {
+    superStatsCalendarState.view = new Date(superStatsCalendarState.view.getFullYear(), superStatsCalendarState.view.getMonth() - 1, 1);
+    renderSuperStatsCalendar();
+  });
+  superStatsCalendarNextButton?.addEventListener("click", () => {
+    superStatsCalendarState.view = new Date(superStatsCalendarState.view.getFullYear(), superStatsCalendarState.view.getMonth() + 1, 1);
+    renderSuperStatsCalendar();
+  });
+  superStatsDateFromInput?.addEventListener("change", () => { updateSuperStatsRangeLabels(); renderSuperStatsCalendar(); refreshSuperStats(); });
+  superStatsDateToInput?.addEventListener("change", () => { updateSuperStatsRangeLabels(); renderSuperStatsCalendar(); refreshSuperStats(); });
   openAddOrgButton?.addEventListener("click", showForm);
   backButton?.addEventListener("click", showDashboard);
   openOrgsButtons.forEach((button) => {

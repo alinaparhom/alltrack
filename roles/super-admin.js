@@ -306,14 +306,25 @@ export function renderRole(user) {
                   <option value="toolsAmount">Стоимость МТЦ</option>
                 </select>
               </div>
-              <label class="super-stats-field super-stats-custom is-hidden" data-super-stats-custom-field>
-                <span>С даты</span>
-                <input class="form-input" type="date" data-super-stats-date-from />
-              </label>
-              <label class="super-stats-field super-stats-custom is-hidden" data-super-stats-custom-field>
-                <span>По дату</span>
-                <input class="form-input" type="date" data-super-stats-date-to />
-              </label>
+              <div class="super-stats-field super-stats-custom super-stats-range is-hidden" data-super-stats-custom-field>
+                <span>Диапазон дат</span>
+                <button class="super-stats-range__trigger" type="button" data-super-stats-range-toggle aria-expanded="false">
+                  <span><small>С даты</small><strong data-super-stats-date-from-label>Не выбрано</strong></span>
+                  <i aria-hidden="true">→</i>
+                  <span><small>По дату</small><strong data-super-stats-date-to-label>Не выбрано</strong></span>
+                </button>
+                <input type="hidden" data-super-stats-date-from />
+                <input type="hidden" data-super-stats-date-to />
+                <div class="super-stats-calendar is-hidden" data-super-stats-calendar>
+                  <div class="super-stats-calendar__head">
+                    <button type="button" data-super-stats-calendar-prev aria-label="Предыдущий месяц">‹</button>
+                    <strong data-super-stats-calendar-title>Месяц</strong>
+                    <button type="button" data-super-stats-calendar-next aria-label="Следующий месяц">›</button>
+                  </div>
+                  <div class="super-stats-calendar__week" aria-hidden="true"><span>Пн</span><span>Вт</span><span>Ср</span><span>Чт</span><span>Пт</span><span>Сб</span><span>Вс</span></div>
+                  <div class="super-stats-calendar__grid" data-super-stats-calendar-grid></div>
+                </div>
+              </div>
             </div>
 
             <div class="super-stats-layout">

@@ -33631,7 +33631,9 @@ function setupSuperAdmin() {
   const superStatsSummaryEl = contentEl.querySelector("[data-super-stats-summary]");
   const superStatsOrgSelect = contentEl.querySelector("[data-super-stats-org]");
   const superStatsPeriodSelect = contentEl.querySelector("[data-super-stats-period]");
+  const superStatsPeriodButtons = contentEl.querySelectorAll("[data-super-stats-period-button]");
   const superStatsMetricSelect = contentEl.querySelector("[data-super-stats-metric]");
+  const superStatsMetricButtons = contentEl.querySelectorAll("[data-super-stats-metric-button]");
   const superStatsFocusEl = contentEl.querySelector("[data-super-stats-focus]");
   const superStatsChartTitleEl = contentEl.querySelector("[data-super-stats-chart-title]");
   const superStatsChartCountEl = contentEl.querySelector("[data-super-stats-chart-count]");
@@ -33645,6 +33647,9 @@ function setupSuperAdmin() {
   const superStatsMovesEl = contentEl.querySelector("[data-super-stats-moves]");
   const superStatsAmountEl = contentEl.querySelector("[data-super-stats-amount]");
   const superStatsChartEl = contentEl.querySelector("[data-super-stats-chart]");
+  const superStatsTimelineTitleEl = contentEl.querySelector("[data-super-stats-timeline-title]");
+  const superStatsTimelineTotalEl = contentEl.querySelector("[data-super-stats-timeline-total]");
+  const superStatsTimelineEl = contentEl.querySelector("[data-super-stats-timeline]");
   const superStatsStatusEl = contentEl.querySelector("[data-super-stats-status]");
   const orgsModalEl = contentEl.querySelector("[data-orgs-modal]");
   const orgsBackdropEl = contentEl.querySelector("[data-orgs-backdrop]");
@@ -33920,9 +33925,20 @@ function setupSuperAdmin() {
     });
     return map;
   };
+  const syncSuperStatsControls = () => {
+    const period = superStatsPeriodSelect?.value || "day";
+    const metric = superStatsMetricSelect?.value || "moves";
+    superStatsPeriodButtons.forEach((button) => {
+      button.classList.toggle("is-active", button.dataset.superStatsPeriodButton === period);
+    });
+    superStatsMetricButtons.forEach((button) => {
+      button.classList.toggle("is-active", button.dataset.superStatsMetricButton === metric);
+    });
+  };
   const updateSuperStatsCustomVisibility = () => {
     const isCustom = superStatsPeriodSelect?.value === "custom";
     superStatsCustomFields.forEach((field) => field.classList.toggle("is-hidden", !isCustom));
+    syncSuperStatsControls();
   };
   const superStatsMetricConfig = {
     moves: { title: "По перемещениям", label: "Перемещения", format: formatStatsNumber },
@@ -33973,6 +33989,41 @@ function setupSuperAdmin() {
       superStatsChartEl.innerHTML = '<div class="super-stats-empty">Нет данных за выбранный период.</div>';
     }
   };
+
+  const buildStatsTimeline = (rows) => {
+    if (!superStatsTimelineEl) return;
+    const metric = superStatsMetricSelect?.value || "moves";
+    const config = superStatsMetricConfig[metric] || superStatsMetricConfig.moves;
+    const isInventoryMetric = metric === "tools" || metric === "toolsAmount";
+    const points = isInventoryMetric
+      ? rows.map((row) => [row.name, row[metric] || 0]).filter(([, value]) => value > 0)
+      : (() => {
+          const totalsByDate = new Map();
+          rows.forEach((row) => {
+            (row.daily || []).forEach((point) => {
+              totalsByDate.set(point.date, (totalsByDate.get(point.date) || 0) + (point[metric] || 0));
+            });
+          });
+          return [...totalsByDate.entries()].sort(([a], [b]) => a.localeCompare(b));
+        })();
+    const total = points.reduce((sum, [, value]) => sum + value, 0);
+    const maxValue = Math.max(1, ...points.map(([, value]) => value));
+    if (superStatsTimelineTitleEl) superStatsTimelineTitleEl.textContent = isInventoryMetric ? `${config.label}: по организациям` : `${config.label}: динамика`;
+    if (superStatsTimelineTotalEl) superStatsTimelineTotalEl.textContent = config.format(total);
+    if (!points.length) {
+      superStatsTimelineEl.innerHTML = '<div class="super-stats-empty">Нет данных для дополнительного графика.</div>';
+      return;
+    }
+    superStatsTimelineEl.innerHTML = points.map(([key, value]) => {
+      const height = Math.max(10, Math.round((value / maxValue) * 100));
+      const label = isInventoryMetric ? escapeHtml(String(key).slice(0, 8)) : (() => {
+        const [, month, day] = String(key).split("-");
+        return `${day}.${month}`;
+      })();
+      return `<div class="super-stats-timeline__bar" title="${escapeHtml(String(key))}: ${config.format(value)}"><span style="height:${height}%"></span><small>${label}</small></div>`;
+    }).join("");
+  };
+
   const refreshSuperStats = async () => {
     if (!superStatsModalEl) return;
     if (superStatsStatusEl) superStatsStatusEl.textContent = "Считаем статистику...";
@@ -33995,13 +34046,23 @@ function setupSuperAdmin() {
         const moves = Array.isArray(rawMoves) ? rawMoves : Array.isArray(rawMoves?.moves) ? rawMoves.moves : [];
         const costs = buildToolCostMap(tools);
         const periodMoves = moves.filter((move) => isDateInRange(parseRuDate(move?.["Дата перемещения"]), range));
+        const dailyMap = new Map();
         const amount = periodMoves.reduce((sum, move) => {
           const number = String(move?.["Номер"] ?? "").trim();
           const accounting = String(move?.["Бух.номер"] ?? "").trim();
-          return sum + (costs.get(number) ?? costs.get(accounting) ?? 0);
+          const moveAmount = costs.get(number) ?? costs.get(accounting) ?? 0;
+          const moveDate = parseRuDate(move?.["Дата перемещения"]);
+          if (moveDate) {
+            const dateKey = toIsoDate(moveDate);
+            const point = dailyMap.get(dateKey) || { date: dateKey, moves: 0, amount: 0, tools: 0, toolsAmount: 0 };
+            point.moves += 1;
+            point.amount += moveAmount;
+            dailyMap.set(dateKey, point);
+          }
+          return sum + moveAmount;
         }, 0);
         const toolsAmount = tools.reduce((sum, tool) => sum + getToolPrice(tool), 0);
-        return { name: String(org?.short_name ?? org?.full_name ?? "Организация").trim(), tools: tools.length, toolsAmount, moves: periodMoves.length, amount };
+        return { name: String(org?.short_name ?? org?.full_name ?? "Организация").trim(), tools: tools.length, toolsAmount, moves: periodMoves.length, amount, daily: [...dailyMap.values()] };
       }));
       const totals = rows.reduce(
         (acc, row) => ({
@@ -34022,6 +34083,7 @@ function setupSuperAdmin() {
       const sortedRows = rows.sort((a, b) => (b[metric] || 0) - (a[metric] || 0));
       renderSuperStatsChart(sortedRows);
       renderSuperStatsInsights(sortedRows, totals);
+      buildStatsTimeline(rows);
       if (superStatsStatusEl) superStatsStatusEl.textContent = "";
     } catch (error) {
       console.error(error);
@@ -36373,7 +36435,24 @@ function setupSuperAdmin() {
     updateSuperStatsCustomVisibility();
     refreshSuperStats();
   });
-  superStatsMetricSelect?.addEventListener("change", refreshSuperStats);
+  superStatsPeriodButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      if (superStatsPeriodSelect) superStatsPeriodSelect.value = button.dataset.superStatsPeriodButton || "day";
+      updateSuperStatsCustomVisibility();
+      refreshSuperStats();
+    });
+  });
+  superStatsMetricSelect?.addEventListener("change", () => {
+    syncSuperStatsControls();
+    refreshSuperStats();
+  });
+  superStatsMetricButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      if (superStatsMetricSelect) superStatsMetricSelect.value = button.dataset.superStatsMetricButton || "moves";
+      syncSuperStatsControls();
+      refreshSuperStats();
+    });
+  });
   superStatsDateFromInput?.addEventListener("change", refreshSuperStats);
   superStatsDateToInput?.addEventListener("change", refreshSuperStats);
   openAddOrgButton?.addEventListener("click", showForm);

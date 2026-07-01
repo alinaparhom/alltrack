@@ -2353,8 +2353,8 @@
 
       .super-stats-modal__panel {
         width: min(calc(100vw - 20px), 1180px);
-        height: min(96dvh, 900px);
-        max-height: min(96dvh, 900px);
+        height: min(94dvh, 820px);
+        max-height: min(94dvh, 820px);
         display: flex;
         flex-direction: column;
         overflow: hidden;
@@ -2373,21 +2373,27 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
+        flex-wrap: nowrap;
         gap: 12px;
-        padding: 14px 16px;
+        min-height: 58px;
+        padding: 10px 14px;
         border-bottom: 1px solid rgba(226, 232, 240, 0.72);
         background: rgba(255, 255, 255, 0.78);
         backdrop-filter: blur(18px);
       }
 
       .super-stats-modal__header .settings-modal__title {
+        flex: 1 1 auto;
         min-width: 0;
       }
 
       .super-stats-modal__header h2 {
         margin: 0;
-        font-size: clamp(20px, 4vw, 28px);
+        font-size: clamp(19px, 3.4vw, 25px);
         line-height: 1.1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
       }
 
       .button-icon.super-stats-modal__close,
@@ -2397,8 +2403,8 @@
       body[data-theme="dark"] .button-icon.super-stats-modal__close:hover,
       body[data-theme="dark"] .button-icon.super-stats-modal__close:focus-visible {
         flex: 0 0 auto;
-        width: 42px;
-        height: 42px;
+        width: 38px;
+        height: 38px;
         border: 0;
         outline: 0;
         box-shadow: 0 12px 28px rgba(15, 23, 42, 0.10);
@@ -2421,11 +2427,11 @@
           "main side"
           "timeline timeline"
           "status status";
-        gap: 12px;
+        gap: 10px;
         overflow-y: auto;
         overflow-x: hidden;
         -webkit-overflow-scrolling: touch;
-        padding: 14px 16px max(20px, env(safe-area-inset-bottom));
+        padding: 10px 14px max(16px, env(safe-area-inset-bottom));
       }
 
       .super-stats-hero,
@@ -2434,7 +2440,7 @@
       .super-stats-card {
         border: 1px solid rgba(226, 232, 240, 0.82);
         background: rgba(255, 255, 255, 0.72);
-        box-shadow: 0 18px 45px rgba(15, 23, 42, 0.07);
+        box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
         backdrop-filter: blur(18px);
       }
 
@@ -2444,9 +2450,9 @@
         align-items: center;
         justify-content: space-between;
         gap: 12px;
-        min-height: 118px;
-        padding: 16px;
-        border-radius: 28px;
+        min-height: 88px;
+        padding: 12px;
+        border-radius: 22px;
         background:
           linear-gradient(135deg, rgba(59, 125, 255, 0.14), rgba(20, 184, 166, 0.08)),
           rgba(255, 255, 255, 0.76);
@@ -2462,16 +2468,16 @@
       }
 
       .super-stats-hero h3 {
-        margin: 5px 0 0;
+        margin: 3px 0 0;
         color: var(--text);
-        font-size: clamp(25px, 5vw, 42px);
+        font-size: clamp(22px, 4.2vw, 34px);
         line-height: 1.05;
       }
 
       .super-stats-hero__badge {
-        min-width: 152px;
-        padding: 13px 14px;
-        border-radius: 24px;
+        min-width: 136px;
+        padding: 10px 12px;
+        border-radius: 18px;
         background: linear-gradient(135deg, #3b7dff, #14b8a6);
         color: #fff;
         display: grid;
@@ -2494,11 +2500,11 @@
       .super-stats-toolbar {
         grid-area: filters;
         display: grid;
-        grid-template-columns: minmax(0, 1fr) 86px;
+        grid-template-columns: minmax(0, 1fr) 76px;
         align-content: start;
         gap: 8px;
-        padding: 10px;
-        border-radius: 24px;
+        padding: 8px;
+        border-radius: 20px;
       }
 
       .super-stats-field--wide,
@@ -2514,8 +2520,8 @@
         flex-wrap: wrap;
         gap: 6px;
         min-width: 0;
-        padding: 6px;
-        border-radius: 18px;
+        padding: 5px;
+        border-radius: 16px;
         background: rgba(241, 245, 249, 0.78);
         border: 1px solid rgba(226, 232, 240, 0.84);
       }
@@ -2523,10 +2529,10 @@
       .super-stats-segment__button,
       .super-stats-metric-tab {
         flex: 1 1 auto;
-        min-height: 36px;
+        min-height: 32px;
         border: 0;
-        border-radius: 14px;
-        padding: 7px 9px;
+        border-radius: 12px;
+        padding: 6px 8px;
         background: transparent;
         color: var(--title-muted);
         font: inherit;
@@ -2567,16 +2573,16 @@
       }
 
       .super-stats-field .form-input {
-        min-height: 40px;
-        border-radius: 15px;
-        font-size: 13px;
+        min-height: 36px;
+        border-radius: 13px;
+        font-size: 12px;
       }
 
       .super-stats-cards {
         grid-area: cards;
         display: grid;
         grid-template-columns: repeat(4, minmax(0, 1fr));
-        gap: 10px;
+        gap: 8px;
       }
 
       .super-stats-card {
@@ -2584,10 +2590,10 @@
         overflow: hidden;
         display: grid;
         grid-template-columns: auto 1fr;
-        gap: 5px 10px;
-        min-height: 96px;
-        padding: 13px;
-        border-radius: 24px;
+        gap: 4px 9px;
+        min-height: 78px;
+        padding: 10px;
+        border-radius: 20px;
       }
 
       .super-stats-card::after {
@@ -2602,8 +2608,8 @@
 
       .super-stats-card__icon {
         grid-row: 1 / 3;
-        width: 40px;
-        height: 40px;
+        width: 34px;
+        height: 34px;
         display: inline-flex;
         align-items: center;
         justify-content: center;
@@ -2622,7 +2628,7 @@
 
       .super-stats-card strong {
         color: var(--text);
-        font-size: clamp(20px, 4vw, 29px);
+        font-size: clamp(18px, 3.4vw, 25px);
         line-height: 1.05;
       }
 
@@ -2652,8 +2658,8 @@
 
       .super-stats-panel {
         min-width: 0;
-        padding: 14px;
-        border-radius: 26px;
+        padding: 11px;
+        border-radius: 22px;
       }
 
       .super-stats-panel--main {
@@ -2695,14 +2701,14 @@
 
       .super-stats-chart {
         display: grid;
-        gap: 9px;
+        gap: 7px;
       }
 
       .super-stats-chart__row {
         display: grid;
-        gap: 8px;
-        padding: 10px;
-        border-radius: 20px;
+        gap: 6px;
+        padding: 8px;
+        border-radius: 16px;
         background: rgba(248, 250, 252, 0.68);
       }
 
@@ -2729,7 +2735,7 @@
       }
 
       .super-stats-chart__bar {
-        height: 15px;
+        height: 12px;
         overflow: hidden;
         border-radius: 999px;
         background: rgba(59, 125, 255, 0.1);
@@ -2754,10 +2760,10 @@
         gap: 8px;
         width: 100%;
         max-width: 100%;
-        min-height: 190px;
+        min-height: 150px;
         overflow-x: auto;
         overflow-y: hidden;
-        padding: 12px 2px 8px;
+        padding: 8px 2px 4px;
         -webkit-overflow-scrolling: touch;
       }
 
@@ -2767,7 +2773,7 @@
         grid-template-rows: 1fr auto;
         align-items: end;
         gap: 7px;
-        height: 150px;
+        height: 112px;
         color: var(--title-muted);
         font-size: 10px;
         font-weight: 900;
@@ -2787,8 +2793,8 @@
         display: flex;
         gap: 10px;
         align-items: center;
-        padding: 12px;
-        border-radius: 20px;
+        padding: 9px;
+        border-radius: 16px;
         background: rgba(248, 250, 252, 0.78);
       }
 

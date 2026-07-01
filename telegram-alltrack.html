@@ -2679,8 +2679,9 @@
         grid-area: side;
         align-content: start;
         display: grid;
-        gap: 7px;
-        padding: 9px;
+        grid-template-columns: 1fr;
+        gap: 5px;
+        padding: 8px;
       }
 
       .super-stats-panel__head {
@@ -2803,24 +2804,28 @@
       }
 
       .super-stats-insight {
-        display: flex;
-        gap: 8px;
+        display: grid;
+        grid-template-columns: 26px minmax(0, 1fr);
+        gap: 7px;
         align-items: center;
-        min-height: 52px;
-        padding: 7px;
-        border-radius: 14px;
-        background: rgba(248, 250, 252, 0.78);
+        min-height: 42px;
+        padding: 6px;
+        border: 1px solid rgba(226, 232, 240, 0.62);
+        border-radius: 13px;
+        background: linear-gradient(135deg, rgba(248, 250, 252, 0.86), rgba(255, 255, 255, 0.62));
       }
 
       .super-stats-insight > span {
-        width: 30px;
-        height: 30px;
-        flex: 0 0 30px;
-        border-radius: 12px;
+        width: 26px;
+        height: 26px;
+        min-width: 26px;
+        border-radius: 10px;
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        background: #fff;
+        background: rgba(255, 255, 255, 0.88);
+        box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06);
+        font-size: 14px;
       }
 
       .super-stats-insight strong,
@@ -2829,15 +2834,29 @@
       }
 
       .super-stats-insight strong {
+        overflow: hidden;
         color: var(--text);
-        font-size: 14px;
+        font-size: 13px;
+        line-height: 1.12;
+        text-overflow: ellipsis;
+        white-space: nowrap;
       }
 
       .super-stats-insight small {
-        margin-top: 1px;
+        margin-top: 0;
         color: var(--title-muted);
-        font-size: 11px;
-        font-weight: 800;
+        font-size: 10px;
+        font-weight: 850;
+        line-height: 1.1;
+      }
+
+      .super-stats-insights .super-stats-panel__head {
+        margin-bottom: 1px;
+      }
+
+      .super-stats-insights .super-stats-panel__head strong {
+        color: var(--text);
+        font-size: 14px;
       }
 
       .super-stats-empty {
@@ -2874,6 +2893,15 @@
 
         .super-stats-insights {
           grid-template-columns: repeat(3, minmax(0, 1fr));
+          align-items: stretch;
+        }
+
+        .super-stats-insights .super-stats-panel__head {
+          grid-column: 1 / -1;
+        }
+
+        .super-stats-insight {
+          min-height: 44px;
         }
       }
 
@@ -2938,6 +2966,7 @@
 
         .super-stats-insights {
           grid-template-columns: 1fr;
+          gap: 5px;
         }
 
         .super-stats-segment,

@@ -250,6 +250,17 @@ export function renderRole(user) {
             </button>
           </div>
           <div class="settings-modal__body super-stats-modal__body">
+            <section class="super-stats-hero" aria-label="Сводка статистики">
+              <div>
+                <span class="super-stats-eyebrow">Живой дэшборд</span>
+                <h3>Контроль организаций, МТЦ и движений</h3>
+                <p>Настройте период, организацию и главный показатель — данные пересчитаются автоматически.</p>
+              </div>
+              <div class="super-stats-hero__badge">
+                <span>Фокус</span>
+                <strong data-super-stats-focus>Перемещения</strong>
+              </div>
+            </section>
             <div class="super-stats-filters">
               <label class="super-stats-field">
                 <span>Организация</span>
@@ -266,6 +277,15 @@ export function renderRole(user) {
                   <option value="custom">Календарь</option>
                 </select>
               </label>
+              <label class="super-stats-field">
+                <span>Главный график</span>
+                <select class="form-input" data-super-stats-metric>
+                  <option value="moves">Перемещения</option>
+                  <option value="amount">Сумма перемещений</option>
+                  <option value="tools">МТЦ в базе</option>
+                  <option value="toolsAmount">Стоимость МТЦ</option>
+                </select>
+              </label>
               <label class="super-stats-field super-stats-custom is-hidden" data-super-stats-custom-field>
                 <span>С даты</span>
                 <input class="form-input" type="date" data-super-stats-date-from />
@@ -276,29 +296,18 @@ export function renderRole(user) {
               </label>
             </div>
             <div class="super-stats-cards">
-              <div class="super-stats-card">
-                <span class="super-stats-card__icon">👥</span>
-                <span class="super-stats-card__label">Пользователей</span>
-                <strong data-super-stats-users>—</strong>
-              </div>
-              <div class="super-stats-card">
-                <span class="super-stats-card__icon">🧰</span>
-                <span class="super-stats-card__label">МТЦ в базе</span>
-                <strong data-super-stats-tools>—</strong>
-                <span class="super-stats-card__subvalue" data-super-stats-tools-amount>на сумму —</span>
-              </div>
-              <div class="super-stats-card">
-                <span class="super-stats-card__icon">🔁</span>
-                <span class="super-stats-card__label">Перемещений</span>
-                <strong data-super-stats-moves>—</strong>
-              </div>
-              <div class="super-stats-card super-stats-card--money">
-                <span class="super-stats-card__icon">₽</span>
-                <span class="super-stats-card__label">Сумма перемещений</span>
-                <strong data-super-stats-amount>—</strong>
-              </div>
+              <div class="super-stats-card"><span class="super-stats-card__icon">👥</span><span class="super-stats-card__label">Пользователей</span><strong data-super-stats-users>—</strong><small>активных в выбранных организациях</small></div>
+              <div class="super-stats-card"><span class="super-stats-card__icon">🧰</span><span class="super-stats-card__label">МТЦ в базе</span><strong data-super-stats-tools>—</strong><span class="super-stats-card__subvalue" data-super-stats-tools-amount>на сумму —</span></div>
+              <div class="super-stats-card"><span class="super-stats-card__icon">🔁</span><span class="super-stats-card__label">Перемещений</span><strong data-super-stats-moves>—</strong><small>за выбранный период</small></div>
+              <div class="super-stats-card super-stats-card--money"><span class="super-stats-card__icon">₽</span><span class="super-stats-card__label">Сумма перемещений</span><strong data-super-stats-amount>—</strong><small>по стоимости МТЦ</small></div>
             </div>
-            <div class="super-stats-chart" aria-label="Статистика по организациям" data-super-stats-chart></div>
+            <div class="super-stats-layout">
+              <section class="super-stats-panel">
+                <div class="super-stats-panel__head"><div><span>Рейтинг организаций</span><strong data-super-stats-chart-title>По перемещениям</strong></div><em data-super-stats-chart-count>—</em></div>
+                <div class="super-stats-chart" aria-label="Статистика по организациям" data-super-stats-chart></div>
+              </section>
+              <aside class="super-stats-panel super-stats-insights" data-super-stats-insights></aside>
+            </div>
             <div class="form-message" data-super-stats-status></div>
           </div>
         </div>

@@ -2708,8 +2708,8 @@
         align-content: start;
         display: grid;
         grid-template-columns: 1fr;
-        gap: 8px;
-        padding: 10px;
+        gap: 6px;
+        padding: 8px;
         background:
           linear-gradient(145deg, rgba(255, 255, 255, 0.86), rgba(239, 246, 255, 0.7)),
           rgba(255, 255, 255, 0.78);
@@ -2727,8 +2727,8 @@
         display: block;
         margin-top: 2px;
         color: var(--text);
-        font-size: 15px;
-        line-height: 1.15;
+        font-size: 14px;
+        line-height: 1.12;
       }
 
       .super-stats-panel__head em {
@@ -2838,11 +2838,11 @@
         position: relative;
         overflow: hidden;
         display: grid;
-        grid-template-columns: 34px minmax(0, 1fr);
-        gap: 9px;
+        grid-template-columns: 30px minmax(0, 1fr);
+        gap: 8px;
         align-items: center;
-        min-height: 76px;
-        padding: 10px;
+        min-height: 62px;
+        padding: 8px;
         border: 1px solid rgba(226, 232, 240, 0.8);
         border-radius: 18px;
         background: linear-gradient(135deg, rgba(255, 255, 255, 0.94), rgba(248, 250, 252, 0.78));
@@ -2854,8 +2854,8 @@
         position: absolute;
         right: -28px;
         bottom: -34px;
-        width: 86px;
-        height: 86px;
+        width: 70px;
+        height: 70px;
         border-radius: 999px;
         background: rgba(59, 125, 255, 0.08);
         pointer-events: none;
@@ -2869,16 +2869,16 @@
       .super-stats-insight > span {
         position: relative;
         z-index: 1;
-        width: 34px;
-        height: 34px;
-        min-width: 34px;
-        border-radius: 14px;
+        width: 30px;
+        height: 30px;
+        min-width: 30px;
+        border-radius: 12px;
         display: inline-flex;
         align-items: center;
         justify-content: center;
         background: rgba(255, 255, 255, 0.92);
         box-shadow: 0 10px 22px rgba(15, 23, 42, 0.08);
-        font-size: 17px;
+        font-size: 15px;
       }
 
       .super-stats-insight > div {
@@ -2913,9 +2913,9 @@
       }
 
       .super-stats-insight p {
-        margin: 4px 0 0;
+        margin: 2px 0 0;
         color: var(--title-muted);
-        font-size: 11px;
+        font-size: 10px;
         font-weight: 800;
         line-height: 1.25;
       }
@@ -3037,6 +3037,44 @@
         .super-stats-insights {
           grid-template-columns: 1fr;
           gap: 5px;
+          padding: 7px;
+          border-radius: 18px;
+        }
+
+        .super-stats-insights .super-stats-panel__head {
+          display: grid;
+          grid-template-columns: 1fr auto;
+          margin-bottom: 1px;
+        }
+
+        .super-stats-insight {
+          grid-template-columns: 28px minmax(0, 1fr);
+          min-height: 52px;
+          padding: 7px 8px;
+          border-radius: 15px;
+        }
+
+        .super-stats-insight > span {
+          width: 28px;
+          height: 28px;
+          min-width: 28px;
+          border-radius: 11px;
+          font-size: 14px;
+        }
+
+        .super-stats-insight small {
+          margin-bottom: 2px;
+          font-size: 9px;
+        }
+
+        .super-stats-insight strong {
+          font-size: 14px;
+        }
+
+        .super-stats-insight p {
+          margin-top: 1px;
+          font-size: 10px;
+          line-height: 1.15;
         }
 
         .super-stats-calendar {

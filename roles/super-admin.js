@@ -249,14 +249,22 @@ export function renderRole(user) {
             </button>
           </div>
           <div class="settings-modal__body super-stats-modal__body">
-            <section class="super-stats-hero" aria-label="Сводка статистики">
-              <div>
-                <span class="super-stats-eyebrow">Дэшборд</span>
-                <h3 data-super-stats-focus>Перемещения</h3>
+            <section class="super-stats-summary" aria-label="Сводка статистики">
+              <div class="super-stats-hero">
+                <div>
+                  <span class="super-stats-eyebrow">Дэшборд</span>
+                  <h3 data-super-stats-focus>Перемещения</h3>
+                </div>
+                <div class="super-stats-hero__badge">
+                  <span>Период</span>
+                  <strong data-super-stats-summary>Сегодня</strong>
+                </div>
               </div>
-              <div class="super-stats-hero__badge">
-                <span>Период</span>
-                <strong data-super-stats-summary>Сегодня</strong>
+              <div class="super-stats-cards">
+                <div class="super-stats-card"><span class="super-stats-card__icon">👥</span><span class="super-stats-card__label">Пользователи</span><strong data-super-stats-users>—</strong></div>
+                <div class="super-stats-card"><span class="super-stats-card__icon">🧰</span><span class="super-stats-card__label">МТЦ</span><strong data-super-stats-tools>—</strong><span class="super-stats-card__subvalue" data-super-stats-tools-amount>—</span></div>
+                <div class="super-stats-card"><span class="super-stats-card__icon">🔁</span><span class="super-stats-card__label">Перемещения</span><strong data-super-stats-moves>—</strong></div>
+                <div class="super-stats-card super-stats-card--money"><span class="super-stats-card__icon">₽</span><span class="super-stats-card__label">Сумма</span><strong data-super-stats-amount>—</strong></div>
               </div>
             </section>
             <div class="super-stats-toolbar" aria-label="Настройки статистики">
@@ -307,12 +315,7 @@ export function renderRole(user) {
                 <input class="form-input" type="date" data-super-stats-date-to />
               </label>
             </div>
-            <div class="super-stats-cards">
-              <div class="super-stats-card"><span class="super-stats-card__icon">👥</span><span class="super-stats-card__label">Пользователи</span><strong data-super-stats-users>—</strong></div>
-              <div class="super-stats-card"><span class="super-stats-card__icon">🧰</span><span class="super-stats-card__label">МТЦ</span><strong data-super-stats-tools>—</strong><span class="super-stats-card__subvalue" data-super-stats-tools-amount>—</span></div>
-              <div class="super-stats-card"><span class="super-stats-card__icon">🔁</span><span class="super-stats-card__label">Перемещения</span><strong data-super-stats-moves>—</strong></div>
-              <div class="super-stats-card super-stats-card--money"><span class="super-stats-card__icon">₽</span><span class="super-stats-card__label">Сумма</span><strong data-super-stats-amount>—</strong></div>
-            </div>
+
             <div class="super-stats-layout">
               <section class="super-stats-panel super-stats-panel--main">
                 <div class="super-stats-panel__head"><div><span>Рейтинг организаций</span><strong data-super-stats-chart-title>По перемещениям</strong></div><em data-super-stats-chart-count>—</em></div>

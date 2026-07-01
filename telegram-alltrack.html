@@ -2708,8 +2708,11 @@
         align-content: start;
         display: grid;
         grid-template-columns: 1fr;
-        gap: 4px;
-        padding: 7px;
+        gap: 8px;
+        padding: 10px;
+        background:
+          linear-gradient(145deg, rgba(255, 255, 255, 0.86), rgba(239, 246, 255, 0.7)),
+          rgba(255, 255, 255, 0.78);
       }
 
       .super-stats-panel__head {
@@ -2832,50 +2835,89 @@
       }
 
       .super-stats-insight {
+        position: relative;
+        overflow: hidden;
         display: grid;
-        grid-template-columns: 26px minmax(0, 1fr);
-        gap: 7px;
+        grid-template-columns: 34px minmax(0, 1fr);
+        gap: 9px;
         align-items: center;
-        min-height: 36px;
-        padding: 5px;
-        border: 1px solid rgba(226, 232, 240, 0.62);
-        border-radius: 13px;
-        background: linear-gradient(135deg, rgba(248, 250, 252, 0.86), rgba(255, 255, 255, 0.62));
+        min-height: 76px;
+        padding: 10px;
+        border: 1px solid rgba(226, 232, 240, 0.8);
+        border-radius: 18px;
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.94), rgba(248, 250, 252, 0.78));
+        box-shadow: 0 12px 26px rgba(15, 23, 42, 0.06);
+      }
+
+      .super-stats-insight::after {
+        content: "";
+        position: absolute;
+        right: -28px;
+        bottom: -34px;
+        width: 86px;
+        height: 86px;
+        border-radius: 999px;
+        background: rgba(59, 125, 255, 0.08);
+        pointer-events: none;
+      }
+
+      .super-stats-insight--leader {
+        border-color: rgba(59, 125, 255, 0.22);
+        background: linear-gradient(135deg, rgba(59, 125, 255, 0.13), rgba(255, 255, 255, 0.92));
       }
 
       .super-stats-insight > span {
-        width: 24px;
-        height: 24px;
-        min-width: 24px;
-        border-radius: 10px;
+        position: relative;
+        z-index: 1;
+        width: 34px;
+        height: 34px;
+        min-width: 34px;
+        border-radius: 14px;
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        background: rgba(255, 255, 255, 0.88);
-        box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06);
-        font-size: 14px;
+        background: rgba(255, 255, 255, 0.92);
+        box-shadow: 0 10px 22px rgba(15, 23, 42, 0.08);
+        font-size: 17px;
+      }
+
+      .super-stats-insight > div {
+        position: relative;
+        z-index: 1;
+        min-width: 0;
       }
 
       .super-stats-insight strong,
-      .super-stats-insight small {
+      .super-stats-insight small,
+      .super-stats-insight p {
         display: block;
       }
 
       .super-stats-insight strong {
         overflow: hidden;
         color: var(--text);
-        font-size: 12px;
-        line-height: 1.12;
+        font-size: 15px;
+        line-height: 1.15;
         text-overflow: ellipsis;
         white-space: nowrap;
       }
 
       .super-stats-insight small {
-        margin-top: 0;
-        color: var(--title-muted);
+        margin-bottom: 3px;
+        color: var(--accent);
         font-size: 10px;
-        font-weight: 850;
+        font-weight: 950;
         line-height: 1.1;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+
+      .super-stats-insight p {
+        margin: 4px 0 0;
+        color: var(--title-muted);
+        font-size: 11px;
+        font-weight: 800;
+        line-height: 1.25;
       }
 
       .super-stats-insights .super-stats-panel__head {
@@ -2929,7 +2971,7 @@
         }
 
         .super-stats-insight {
-          min-height: 44px;
+          min-height: 92px;
         }
       }
 

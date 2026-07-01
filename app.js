@@ -34021,10 +34021,22 @@ function setupSuperAdmin() {
     const avgMoves = items.length ? Math.round(totals.moves / items.length) : 0;
     const leaderName = leader ? escapeHtml(leader.name) : "Нет данных";
     superStatsInsightsEl.innerHTML = `
-      <div class="super-stats-panel__head"><div><span>KPI</span><strong>Коротко</strong></div></div>
-      <div class="super-stats-insight"><span>🏆</span><div><strong>${leaderName}</strong><small>${leader ? "лидер" : "нет данных"}</small></div></div>
-      <div class="super-stats-insight"><span>📊</span><div><strong>${formatStatsNumber(avgMoves)}</strong><small>среднее</small></div></div>
-      <div class="super-stats-insight"><span>💎</span><div><strong>${formatStatsMoney(totals.toolsAmount)}</strong><small>МТЦ</small></div></div>
+      <div class="super-stats-panel__head super-stats-insights__head">
+        <div><span>KPI</span><strong>Коротко</strong></div>
+        <em>3 метрики</em>
+      </div>
+      <div class="super-stats-insight super-stats-insight--leader">
+        <span aria-hidden="true">🏆</span>
+        <div><small>Лидер периода</small><strong>${leaderName}</strong><p>${leader ? "Организация с максимальным показателем" : "Выберите период с данными"}</p></div>
+      </div>
+      <div class="super-stats-insight">
+        <span aria-hidden="true">📊</span>
+        <div><small>Среднее перемещений</small><strong>${formatStatsNumber(avgMoves)}</strong><p>На одну организацию</p></div>
+      </div>
+      <div class="super-stats-insight">
+        <span aria-hidden="true">💎</span>
+        <div><small>Стоимость МТЦ</small><strong>${formatStatsMoney(totals.toolsAmount)}</strong><p>По выбранной выборке</p></div>
+      </div>
     `;
   };
   const renderSuperStatsChart = (items) => {

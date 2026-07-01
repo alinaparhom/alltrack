@@ -238,7 +238,6 @@ export function renderRole(user) {
           <div class="settings-modal__header super-stats-modal__header">
             <div class="settings-modal__title">
               <h2>Статистика</h2>
-              <p data-super-stats-summary>Выберите период и организацию</p>
             </div>
             <button
               class="button-icon super-stats-modal__close"
@@ -252,13 +251,12 @@ export function renderRole(user) {
           <div class="settings-modal__body super-stats-modal__body">
             <section class="super-stats-hero" aria-label="Сводка статистики">
               <div>
-                <span class="super-stats-eyebrow">Живой дэшборд</span>
-                <h3>Контроль организаций, МТЦ и движений</h3>
-                <p>Настройте период, организацию и главный показатель — данные пересчитаются автоматически.</p>
+                <span class="super-stats-eyebrow">Дэшборд</span>
+                <h3 data-super-stats-focus>Перемещения</h3>
               </div>
               <div class="super-stats-hero__badge">
-                <span>Фокус</span>
-                <strong data-super-stats-focus>Перемещения</strong>
+                <span>Период</span>
+                <strong data-super-stats-summary>Сегодня</strong>
               </div>
             </section>
             <div class="super-stats-toolbar" aria-label="Настройки статистики">
@@ -266,6 +264,14 @@ export function renderRole(user) {
                 <span>Организация</span>
                 <select class="form-input" data-super-stats-org>
                   <option value="all">Все организации</option>
+                </select>
+              </label>
+              <label class="super-stats-field">
+                <span>Топ</span>
+                <select class="form-input" data-super-stats-limit>
+                  <option value="5">5</option>
+                  <option value="10" selected>10</option>
+                  <option value="0">Все</option>
                 </select>
               </label>
               <div class="super-stats-segment" role="radiogroup" aria-label="Период статистики">
@@ -302,10 +308,10 @@ export function renderRole(user) {
               </label>
             </div>
             <div class="super-stats-cards">
-              <div class="super-stats-card"><span class="super-stats-card__icon">👥</span><span class="super-stats-card__label">Пользователей</span><strong data-super-stats-users>—</strong><small>активных в выбранных организациях</small></div>
-              <div class="super-stats-card"><span class="super-stats-card__icon">🧰</span><span class="super-stats-card__label">МТЦ в базе</span><strong data-super-stats-tools>—</strong><span class="super-stats-card__subvalue" data-super-stats-tools-amount>на сумму —</span></div>
-              <div class="super-stats-card"><span class="super-stats-card__icon">🔁</span><span class="super-stats-card__label">Перемещений</span><strong data-super-stats-moves>—</strong><small>за выбранный период</small></div>
-              <div class="super-stats-card super-stats-card--money"><span class="super-stats-card__icon">₽</span><span class="super-stats-card__label">Сумма перемещений</span><strong data-super-stats-amount>—</strong><small>по стоимости МТЦ</small></div>
+              <div class="super-stats-card"><span class="super-stats-card__icon">👥</span><span class="super-stats-card__label">Пользователи</span><strong data-super-stats-users>—</strong></div>
+              <div class="super-stats-card"><span class="super-stats-card__icon">🧰</span><span class="super-stats-card__label">МТЦ</span><strong data-super-stats-tools>—</strong><span class="super-stats-card__subvalue" data-super-stats-tools-amount>—</span></div>
+              <div class="super-stats-card"><span class="super-stats-card__icon">🔁</span><span class="super-stats-card__label">Перемещения</span><strong data-super-stats-moves>—</strong></div>
+              <div class="super-stats-card super-stats-card--money"><span class="super-stats-card__icon">₽</span><span class="super-stats-card__label">Сумма</span><strong data-super-stats-amount>—</strong></div>
             </div>
             <div class="super-stats-layout">
               <section class="super-stats-panel super-stats-panel--main">

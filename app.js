@@ -33633,6 +33633,7 @@ function setupSuperAdmin() {
   const superStatsPeriodSelect = contentEl.querySelector("[data-super-stats-period]");
   const superStatsPeriodButtons = contentEl.querySelectorAll("[data-super-stats-period-button]");
   const superStatsMetricSelect = contentEl.querySelector("[data-super-stats-metric]");
+  const superStatsLimitSelect = contentEl.querySelector("[data-super-stats-limit]");
   const superStatsMetricButtons = contentEl.querySelectorAll("[data-super-stats-metric-button]");
   const superStatsFocusEl = contentEl.querySelector("[data-super-stats-focus]");
   const superStatsChartTitleEl = contentEl.querySelector("[data-super-stats-chart-title]");
@@ -33952,10 +33953,10 @@ function setupSuperAdmin() {
     const avgMoves = items.length ? Math.round(totals.moves / items.length) : 0;
     const leaderName = leader ? escapeHtml(leader.name) : "Нет данных";
     superStatsInsightsEl.innerHTML = `
-      <div class="super-stats-panel__head"><div><span>Умные подсказки</span><strong>Что важно сейчас</strong></div></div>
-      <div class="super-stats-insight"><span>🏆</span><div><strong>${leaderName}</strong><small>${leader ? "лидер выбранного рейтинга" : "попробуйте другой период"}</small></div></div>
-      <div class="super-stats-insight"><span>📊</span><div><strong>${formatStatsNumber(avgMoves)}</strong><small>перемещений в среднем на организацию</small></div></div>
-      <div class="super-stats-insight"><span>💎</span><div><strong>${formatStatsMoney(totals.toolsAmount)}</strong><small>общая стоимость МТЦ в базе</small></div></div>
+      <div class="super-stats-panel__head"><div><span>KPI</span><strong>Итоги</strong></div></div>
+      <div class="super-stats-insight"><span>🏆</span><div><strong>${leaderName}</strong><small>${leader ? "лидер" : "нет данных"}</small></div></div>
+      <div class="super-stats-insight"><span>📊</span><div><strong>${formatStatsNumber(avgMoves)}</strong><small>среднее</small></div></div>
+      <div class="super-stats-insight"><span>💎</span><div><strong>${formatStatsMoney(totals.toolsAmount)}</strong><small>МТЦ</small></div></div>
     `;
   };
   const renderSuperStatsChart = (items) => {
@@ -34075,15 +34076,17 @@ function setupSuperAdmin() {
       );
       if (superStatsUsersEl) superStatsUsersEl.textContent = formatStatsNumber(filteredUsers.length);
       if (superStatsToolsEl) superStatsToolsEl.textContent = formatStatsNumber(totals.tools);
-      if (superStatsToolsAmountEl) superStatsToolsAmountEl.textContent = `на сумму ${formatStatsMoney(totals.toolsAmount)}`;
+      if (superStatsToolsAmountEl) superStatsToolsAmountEl.textContent = formatStatsMoney(totals.toolsAmount);
       if (superStatsMovesEl) superStatsMovesEl.textContent = formatStatsNumber(totals.moves);
       if (superStatsAmountEl) superStatsAmountEl.textContent = formatStatsMoney(totals.amount);
-      if (superStatsSummaryEl) superStatsSummaryEl.textContent = `${selectedOrg === "all" ? "Все организации" : rows[0]?.name || "Организация"} · ${range.label}`;
+      if (superStatsSummaryEl) superStatsSummaryEl.textContent = `${selectedOrg === "all" ? "Все" : rows[0]?.name || "Организация"} · ${range.label}`;
       const metric = superStatsMetricSelect?.value || "moves";
+      const limit = Number(superStatsLimitSelect?.value || 10);
       const sortedRows = rows.sort((a, b) => (b[metric] || 0) - (a[metric] || 0));
-      renderSuperStatsChart(sortedRows);
+      const visibleRows = limit > 0 ? sortedRows.slice(0, limit) : sortedRows;
+      renderSuperStatsChart(visibleRows);
       renderSuperStatsInsights(sortedRows, totals);
-      buildStatsTimeline(rows);
+      buildStatsTimeline(visibleRows);
       if (superStatsStatusEl) superStatsStatusEl.textContent = "";
     } catch (error) {
       console.error(error);
@@ -36446,6 +36449,7 @@ function setupSuperAdmin() {
     syncSuperStatsControls();
     refreshSuperStats();
   });
+  superStatsLimitSelect?.addEventListener("change", refreshSuperStats);
   superStatsMetricButtons.forEach((button) => {
     button.addEventListener("click", () => {
       if (superStatsMetricSelect) superStatsMetricSelect.value = button.dataset.superStatsMetricButton || "moves";

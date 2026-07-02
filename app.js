@@ -3354,13 +3354,32 @@ function renderUserSettingsView(user, preferences, pendingAcceptanceMailing) {
     <section class="role-card user-settings-page">
       <div class="user-settings-hero">
         <div class="user-settings-hero__glow" aria-hidden="true"></div>
+        <div class="settings-profile-photo settings-profile-photo--hero">
+          <div class="settings-profile-photo__preview settings-profile-photo__preview--hero">
+            <img
+              src="${escapeHtml(resolvePreferredUserPhotoUrl(user))}"
+              alt="Фото пользователя"
+              data-settings-photo-preview
+            />
+          </div>
+          <label class="settings-profile-photo__button settings-photo-action">
+            <span aria-hidden="true">📷</span>
+            <span>Заменить</span>
+            <input
+              class="settings-profile-photo__input"
+              type="file"
+              accept="image/*"
+              data-settings-photo-input
+            />
+          </label>
+        </div>
         <div class="user-settings-hero__content">
           <div class="user-settings-hero__title-row">
-            <span class="user-settings-eyebrow">Персональные настройки</span>
+            <span class="user-settings-eyebrow">Мой профиль</span>
             <span class="user-settings-status" aria-label="Статус профиля">Активен</span>
           </div>
-          <h1>Настройте рабочее пространство</h1>
-          <p>Соберите удобный главный экран, напоминания и тему под свой ежедневный ритм.</p>
+          <h1>${escapeHtml(formatShortName(fullName) || fullName)}</h1>
+          <p>${escapeHtml(roleTitle)}</p>
           <div class="user-settings-hero__badges" aria-label="Краткая сводка настроек">
             <span><small>Организация</small>${escapeHtml(organizationTitle)}</span>
             <span><small>Тема</small>${normalized.theme === "telegram" ? "Telegram" : normalized.theme === "dark" ? "Тёмная" : "Светлая"}</span>
@@ -3371,30 +3390,13 @@ function renderUserSettingsView(user, preferences, pendingAcceptanceMailing) {
 
       <form class="form-grid user-settings-form" data-settings-form>
         <div class="settings-section settings-section--profile">
-          <label class="settings-profile-card" aria-label="Заменить фото профиля">
-            <span class="settings-profile-photo settings-profile-photo--card">
-              <span class="settings-profile-photo__preview settings-profile-photo__preview--card">
-                <img
-                  src="${escapeHtml(resolvePreferredUserPhotoUrl(user))}"
-                  alt="Фото пользователя"
-                  data-settings-photo-preview
-                />
-              </span>
-              <span class="settings-profile-photo__hint">Нажмите на фото</span>
-              <input
-                class="settings-profile-photo__input"
-                type="file"
-                accept="image/*"
-                data-settings-photo-input
-              />
-            </span>
-            <span class="settings-profile-card__body">
-              <span class="settings-profile-card__label">Общая информация</span>
-              <strong>${escapeHtml(formatShortName(fullName) || fullName)}</strong>
-              <span class="settings-profile-card__meta">${escapeHtml(roleTitle)}</span>
-            </span>
-          </label>
-          <div class="form-field settings-field-card settings-field-card--position">
+          <div class="settings-section-head">
+            <span class="settings-section-icon" aria-hidden="true">👤</span>
+            <div>
+              <div class="settings-section-title">Должность</div>
+            </div>
+          </div>
+          <div class="form-field settings-field-card">
             <label class="form-label" for="user-settings-position">Должность</label>
             <input
               class="form-input"

@@ -18374,10 +18374,11 @@
       .user-settings-hero {
         position: relative;
         display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
         gap: 10px;
         align-items: center;
         min-height: 0;
-        padding: 14px;
+        padding: 10px;
         border-radius: 22px;
         overflow: hidden;
         background:
@@ -18401,79 +18402,40 @@
         pointer-events: none;
       }
 
-      .settings-profile-card {
+      .settings-profile-photo--hero {
         position: relative;
         display: grid;
-        grid-template-columns: auto minmax(0, 1fr);
-        gap: 12px;
-        align-items: center;
-        padding: 10px;
-        border-radius: 18px;
-        background:
-          linear-gradient(135deg, rgba(255, 255, 255, 0.92), rgba(239, 246, 255, 0.76)),
-          radial-gradient(circle at 0% 0%, rgba(59, 125, 255, 0.16), transparent 42%);
-        border: 1px solid rgba(59, 125, 255, 0.14);
-        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.78);
-        cursor: pointer;
-      }
-
-      .settings-profile-photo--card {
-        position: relative;
-        display: grid;
-        gap: 5px;
+        gap: 6px;
         justify-items: center;
         z-index: 1;
       }
 
-      .settings-profile-photo__preview--card {
-        width: 62px;
-        height: 62px;
-        border-radius: 20px;
-        border: 2px solid rgba(255, 255, 255, 0.9);
+      .settings-profile-photo__preview--hero {
+        width: 58px;
+        height: 58px;
+        border-radius: 18px;
+        border: 2px solid rgba(255, 255, 255, 0.86);
         box-shadow:
-          0 18px 34px rgba(37, 99, 235, 0.2),
+          0 18px 34px rgba(37, 99, 235, 0.22),
           0 0 0 6px rgba(59, 125, 255, 0.08);
       }
 
-      .settings-profile-photo__hint {
-        color: #2f6be6;
-        font-size: 10px;
-        font-weight: 900;
-        line-height: 1;
-        text-align: center;
-      }
-
-      .settings-profile-card__body {
-        display: grid;
-        gap: 3px;
-        min-width: 0;
-      }
-
-      .settings-profile-card__label {
-        width: fit-content;
-        padding: 4px 8px;
+      .settings-photo-action {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        min-height: 28px;
+        padding: 5px 9px;
         border-radius: 999px;
-        background: rgba(59, 125, 255, 0.1);
-        color: #2f6be6;
-        font-size: 10px;
-        font-weight: 900;
-        letter-spacing: 0.02em;
-        text-transform: uppercase;
-      }
-
-      .settings-profile-card__body strong {
-        color: var(--text);
-        font-size: clamp(18px, 4.8vw, 23px);
-        line-height: 1.08;
-        letter-spacing: -0.04em;
-        overflow-wrap: anywhere;
-      }
-
-      .settings-profile-card__meta {
-        color: var(--muted);
-        font-size: var(--text-sm);
+        border: 1px solid rgba(59, 125, 255, 0.22);
+        background: rgba(255, 255, 255, 0.86);
+        color: #1f4db6;
+        font-size: 12px;
         font-weight: 800;
-        overflow-wrap: anywhere;
+        box-shadow: 0 10px 24px rgba(59, 125, 255, 0.14);
+        cursor: pointer;
       }
 
       .user-settings-hero__content {
@@ -18566,16 +18528,10 @@
         gap: 10px;
       }
 
-      .user-settings-form .settings-section--profile,
       .user-settings-form .settings-section:nth-of-type(2),
       .user-settings-form .settings-section:nth-of-type(3),
       .user-settings-form .user-settings-message {
         grid-column: 1 / -1;
-      }
-
-      .settings-section--profile {
-        grid-template-columns: minmax(0, 1fr) minmax(220px, 0.72fr);
-        align-items: stretch;
       }
 
       .user-settings-page .settings-section {
@@ -18684,9 +18640,10 @@
         }
 
         .user-settings-hero {
+          grid-template-columns: auto minmax(0, 1fr);
           justify-items: stretch;
           text-align: left;
-          padding: 12px;
+          padding: 10px;
           border-radius: 22px;
         }
 
@@ -18704,18 +18661,23 @@
           grid-column: 1 / -1;
         }
 
-        .settings-profile-photo__preview--card {
-          width: 56px;
-          height: 56px;
+        .settings-profile-photo__preview--hero {
+          width: 54px;
+          height: 54px;
           border-radius: 18px;
         }
 
-        .settings-profile-photo__hint {
-          font-size: 9px;
+        .settings-photo-action span:last-of-type {
+          display: none;
         }
 
-        .user-settings-form,
-        .settings-section--profile {
+        .settings-photo-action {
+          width: 30px;
+          min-height: 30px;
+          padding: 0;
+        }
+
+        .user-settings-form {
           grid-template-columns: 1fr;
         }
 
@@ -19573,8 +19535,7 @@
       body[data-theme="dark"] .user-settings-eyebrow,
       body[data-theme="dark"] .user-settings-status,
       body[data-theme="dark"] .user-settings-hero__badges span,
-      body[data-theme="dark"] .settings-profile-card,
-      body[data-theme="dark"] .settings-profile-card__label,
+      body[data-theme="dark"] .settings-photo-action,
       body[data-theme="dark"] .settings-field-card,
       body[data-theme="dark"] .user-settings-message:not(:empty) {
         background: rgba(15, 23, 42, 0.72);

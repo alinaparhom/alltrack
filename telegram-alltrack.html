@@ -18222,12 +18222,23 @@
       }
 
       .button-icon--back .button-icon-emoji {
-        font-size: 20px;
+        font-size: 24px;
         font-weight: 800;
+        line-height: 1;
         text-shadow:
           0 0 0 currentColor,
-          0.6px 0 currentColor,
-          -0.6px 0 currentColor;
+          0.4px 0 currentColor,
+          -0.4px 0 currentColor;
+      }
+
+      .button-icon--back[aria-label*="Закрыть"] {
+        color: #dc2626;
+        border-color: rgba(220, 38, 38, 0.45);
+      }
+
+      .button-icon--back[aria-label*="Закрыть"]:hover,
+      .button-icon--back[aria-label*="Закрыть"]:focus-visible {
+        box-shadow: 0 10px 22px rgba(220, 38, 38, 0.2);
       }
 
       .button-telegram {
@@ -18351,8 +18362,8 @@
       .user-settings-page {
         position: relative;
         display: grid;
-        gap: 14px;
-        padding: clamp(12px, 3.5vw, 18px);
+        gap: 10px;
+        padding: clamp(10px, 3vw, 14px);
         overflow: hidden;
         background:
           radial-gradient(circle at 12% 0%, rgba(90, 161, 255, 0.18), transparent 36%),
@@ -18364,11 +18375,11 @@
         position: relative;
         display: grid;
         grid-template-columns: auto minmax(0, 1fr);
-        gap: 14px;
+        gap: 12px;
         align-items: center;
-        min-height: 138px;
-        padding: 16px;
-        border-radius: 28px;
+        min-height: 0;
+        padding: 12px;
+        border-radius: 24px;
         overflow: hidden;
         background:
           linear-gradient(135deg, rgba(59, 125, 255, 0.16), rgba(255, 255, 255, 0.78)),
@@ -18400,9 +18411,9 @@
       }
 
       .settings-profile-photo__preview--hero {
-        width: 86px;
-        height: 86px;
-        border-radius: 28px;
+        width: 68px;
+        height: 68px;
+        border-radius: 22px;
         border: 2px solid rgba(255, 255, 255, 0.86);
         box-shadow:
           0 18px 34px rgba(37, 99, 235, 0.22),
@@ -18415,8 +18426,8 @@
         align-items: center;
         justify-content: center;
         gap: 6px;
-        min-height: 34px;
-        padding: 8px 12px;
+        min-height: 30px;
+        padding: 6px 10px;
         border-radius: 999px;
         border: 1px solid rgba(59, 125, 255, 0.22);
         background: rgba(255, 255, 255, 0.86);
@@ -18450,7 +18461,7 @@
       .user-settings-hero h1 {
         margin: 0;
         color: var(--text);
-        font-size: clamp(22px, 6vw, 32px);
+        font-size: clamp(20px, 5.4vw, 28px);
         line-height: 1.05;
         letter-spacing: -0.04em;
         overflow-wrap: anywhere;
@@ -18487,7 +18498,7 @@
       .user-settings-form {
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 12px;
+        gap: 10px;
       }
 
       .user-settings-form .settings-section:nth-of-type(2),
@@ -18499,9 +18510,9 @@
       .user-settings-page .settings-section {
         display: grid;
         align-content: start;
-        gap: 12px;
-        padding: 14px;
-        border-radius: 24px;
+        gap: 10px;
+        padding: 12px;
+        border-radius: 20px;
         background: rgba(255, 255, 255, 0.78);
         border: 1px solid rgba(226, 232, 240, 0.86);
         box-shadow:
@@ -18521,24 +18532,24 @@
       .settings-section-icon {
         display: inline-grid;
         place-items: center;
-        width: 38px;
-        height: 38px;
-        border-radius: 15px;
+        width: 34px;
+        height: 34px;
+        border-radius: 13px;
         background: linear-gradient(135deg, rgba(59, 125, 255, 0.16), rgba(90, 161, 255, 0.22));
         box-shadow: inset 0 0 0 1px rgba(59, 125, 255, 0.16);
       }
 
       .settings-field-card {
         margin-top: 0;
-        padding: 10px;
-        border-radius: 18px;
+        padding: 8px;
+        border-radius: 16px;
         background: rgba(248, 250, 252, 0.78);
         border: 1px solid rgba(226, 232, 240, 0.78);
       }
 
       .user-settings-page .form-input {
-        min-height: 48px;
-        border-radius: 16px;
+        min-height: 42px;
+        border-radius: 14px;
         background: rgba(255, 255, 255, 0.9);
       }
 
@@ -18568,7 +18579,7 @@
       .user-settings-page .settings-group-button {
         width: 100%;
         justify-content: center;
-        min-height: 50px;
+        min-height: 44px;
         background: linear-gradient(135deg, rgba(59, 125, 255, 0.13), rgba(255, 255, 255, 0.86));
       }
 
@@ -19521,9 +19532,9 @@
               class="button-icon button-icon--back is-hidden"
               type="button"
               data-settings-back-header
-              aria-label="Назад"
+              aria-label="Закрыть настройки"
             >
-              <span class="button-icon-emoji" aria-hidden="true">←</span>
+              <span class="button-icon-emoji" aria-hidden="true">×</span>
             </button>
             <button
               class="pending-stat is-hidden"

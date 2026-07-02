@@ -3374,12 +3374,13 @@ function renderUserSettingsView(user, preferences, pendingAcceptanceMailing) {
           </label>
         </div>
         <div class="user-settings-hero__content">
-          <span class="user-settings-eyebrow">Персональные настройки</span>
+          <span class="user-settings-eyebrow">Мой профиль</span>
           <h1>${escapeHtml(formatShortName(fullName) || fullName)}</h1>
-          <p>${escapeHtml(roleTitle)} · ${escapeHtml(organizationTitle)}</p>
+          <p>${escapeHtml(roleTitle)}</p>
           <div class="user-settings-hero__badges" aria-label="Краткая сводка настроек">
-            <span>✨ ${normalized.theme === "telegram" ? "Тема Telegram" : normalized.theme === "dark" ? "Тёмная тема" : "Светлая тема"}</span>
-            <span>🔔 ${escapeHtml(activeDaysText)}</span>
+            <span>${escapeHtml(organizationTitle)}</span>
+            <span>${normalized.theme === "telegram" ? "Telegram" : normalized.theme === "dark" ? "Тёмная" : "Светлая"}</span>
+            <span>${escapeHtml(activeDaysText)}</span>
           </div>
         </div>
       </div>
@@ -3389,8 +3390,7 @@ function renderUserSettingsView(user, preferences, pendingAcceptanceMailing) {
           <div class="settings-section-head">
             <span class="settings-section-icon" aria-hidden="true">👤</span>
             <div>
-              <div class="settings-section-title">Профиль</div>
-              <p>Укажите должность — она будет показана в шапке приложения.</p>
+              <div class="settings-section-title">Должность</div>
             </div>
           </div>
           <div class="form-field settings-field-card">
@@ -3410,8 +3410,7 @@ function renderUserSettingsView(user, preferences, pendingAcceptanceMailing) {
           <div class="settings-section-head">
             <span class="settings-section-icon" aria-hidden="true">🧭</span>
             <div>
-              <div class="settings-section-title">Вид главного экрана</div>
-              <p>Выберите, как отображать быстрые действия.</p>
+              <div class="settings-section-title">Главный экран</div>
             </div>
           </div>
           <div class="toggle-group toggle-group--visual">
@@ -3488,8 +3487,7 @@ function renderUserSettingsView(user, preferences, pendingAcceptanceMailing) {
           <div class="settings-section-head">
             <span class="settings-section-icon" aria-hidden="true">🔔</span>
             <div>
-              <div class="settings-section-title">Напоминания о принятии</div>
-              <p>Выберите удобные дни и время для рассылки по инструментам.</p>
+              <div class="settings-section-title">Напоминания</div>
             </div>
           </div>
           <div class="settings-weekdays" role="group" aria-label="Дни рассылки">
@@ -3525,8 +3523,7 @@ function renderUserSettingsView(user, preferences, pendingAcceptanceMailing) {
           <div class="settings-section-head">
             <span class="settings-section-icon" aria-hidden="true">🧩</span>
             <div>
-              <div class="settings-section-title">Группировка функций</div>
-              <p>Перейдите к главному экрану и расставьте функции как удобно.</p>
+              <div class="settings-section-title">Порядок функций</div>
             </div>
           </div>
           <input type="hidden" name="grouping" value="free" />
@@ -3536,15 +3533,14 @@ function renderUserSettingsView(user, preferences, pendingAcceptanceMailing) {
             data-settings-grouping
           >
             <span class="settings-group-icon" aria-hidden="true">↕</span>
-            <span>Настроить порядок функций</span>
+            <span>Настроить</span>
           </button>
         </div>
         <div class="settings-section">
           <div class="settings-section-head">
             <span class="settings-section-icon" aria-hidden="true">🎨</span>
             <div>
-              <div class="settings-section-title">Оформление</div>
-              <p>Настройте тему под освещение и стиль Telegram.</p>
+              <div class="settings-section-title">Тема</div>
             </div>
           </div>
           <div class="toggle-group toggle-group--theme">

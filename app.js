@@ -3344,30 +3344,56 @@ function renderUserSettingsView(user, preferences, pendingAcceptanceMailing) {
   const normalized = normalizePreferences(preferences);
   const mailingSchedule = normalizePendingAcceptanceMailing(pendingAcceptanceMailing);
   const userPosition = String(user?.position ?? "").trim();
+  const fullName = String(user?.full_name ?? "Пользователь").trim() || "Пользователь";
+  const roleTitle = String(user?.role ?? "Роль не указана").trim() || "Роль не указана";
+  const organizationTitle = String(user?.organization ?? "Организация").trim() || "Организация";
+  const activeDaysText = mailingSchedule.days.length
+    ? `${mailingSchedule.days.length} дн. в неделю`
+    : "Дни не выбраны";
   return `
-    <section class="role-card">
-      <form class="form-grid" data-settings-form>
-        <div class="settings-section">
-          <div class="settings-section-title">Профиль</div>
-          <div class="settings-profile-photo">
-            <div class="settings-profile-photo__preview">
-              <img
-                src="${escapeHtml(resolvePreferredUserPhotoUrl(user))}"
-                alt="Фото пользователя"
-                data-settings-photo-preview
-              />
-            </div>
-            <label class="button button--ghost settings-profile-photo__button">
-              <span>Заменить фото</span>
-              <input
-                class="settings-profile-photo__input"
-                type="file"
-                accept="image/*"
-                data-settings-photo-input
-              />
-            </label>
+    <section class="role-card user-settings-page">
+      <div class="user-settings-hero">
+        <div class="user-settings-hero__glow" aria-hidden="true"></div>
+        <div class="settings-profile-photo settings-profile-photo--hero">
+          <div class="settings-profile-photo__preview settings-profile-photo__preview--hero">
+            <img
+              src="${escapeHtml(resolvePreferredUserPhotoUrl(user))}"
+              alt="Фото пользователя"
+              data-settings-photo-preview
+            />
           </div>
-          <div class="form-field">
+          <label class="settings-profile-photo__button settings-photo-action">
+            <span aria-hidden="true">📷</span>
+            <span>Заменить</span>
+            <input
+              class="settings-profile-photo__input"
+              type="file"
+              accept="image/*"
+              data-settings-photo-input
+            />
+          </label>
+        </div>
+        <div class="user-settings-hero__content">
+          <span class="user-settings-eyebrow">Персональные настройки</span>
+          <h1>${escapeHtml(formatShortName(fullName) || fullName)}</h1>
+          <p>${escapeHtml(roleTitle)} · ${escapeHtml(organizationTitle)}</p>
+          <div class="user-settings-hero__badges" aria-label="Краткая сводка настроек">
+            <span>✨ ${normalized.theme === "telegram" ? "Тема Telegram" : normalized.theme === "dark" ? "Тёмная тема" : "Светлая тема"}</span>
+            <span>🔔 ${escapeHtml(activeDaysText)}</span>
+          </div>
+        </div>
+      </div>
+
+      <form class="form-grid user-settings-form" data-settings-form>
+        <div class="settings-section settings-section--profile">
+          <div class="settings-section-head">
+            <span class="settings-section-icon" aria-hidden="true">👤</span>
+            <div>
+              <div class="settings-section-title">Профиль</div>
+              <p>Укажите должность — она будет показана в шапке приложения.</p>
+            </div>
+          </div>
+          <div class="form-field settings-field-card">
             <label class="form-label" for="user-settings-position">Должность</label>
             <input
               class="form-input"
@@ -3381,7 +3407,13 @@ function renderUserSettingsView(user, preferences, pendingAcceptanceMailing) {
           </div>
         </div>
         <div class="settings-section">
-          <div class="settings-section-title">Вид значков на странице</div>
+          <div class="settings-section-head">
+            <span class="settings-section-icon" aria-hidden="true">🧭</span>
+            <div>
+              <div class="settings-section-title">Вид главного экрана</div>
+              <p>Выберите, как отображать быстрые действия.</p>
+            </div>
+          </div>
           <div class="toggle-group toggle-group--visual">
             <label>
               <input
@@ -3453,7 +3485,13 @@ function renderUserSettingsView(user, preferences, pendingAcceptanceMailing) {
           </div>
         </div>
         <div class="settings-section">
-          <div class="settings-section-title">Рассылка по инструментам на принятии</div>
+          <div class="settings-section-head">
+            <span class="settings-section-icon" aria-hidden="true">🔔</span>
+            <div>
+              <div class="settings-section-title">Напоминания о принятии</div>
+              <p>Выберите удобные дни и время для рассылки по инструментам.</p>
+            </div>
+          </div>
           <div class="settings-weekdays" role="group" aria-label="Дни рассылки">
             ${weekDayOptions
               .map(
@@ -3472,7 +3510,7 @@ function renderUserSettingsView(user, preferences, pendingAcceptanceMailing) {
               )
               .join("")}
           </div>
-          <div class="form-field">
+          <div class="form-field settings-field-card">
             <label class="form-label" for="user-settings-pending-mailing-time">Время рассылки</label>
             <input
               class="form-input"
@@ -3483,21 +3521,33 @@ function renderUserSettingsView(user, preferences, pendingAcceptanceMailing) {
             />
           </div>
         </div>
-        <div class="settings-section">
-          <div class="settings-section-title">Группировка функций</div>
+        <div class="settings-section settings-section--compact">
+          <div class="settings-section-head">
+            <span class="settings-section-icon" aria-hidden="true">🧩</span>
+            <div>
+              <div class="settings-section-title">Группировка функций</div>
+              <p>Перейдите к главному экрану и расставьте функции как удобно.</p>
+            </div>
+          </div>
           <input type="hidden" name="grouping" value="free" />
           <button
             class="settings-group-button"
             type="button"
             data-settings-grouping
           >
-            <span class="settings-group-icon" aria-hidden="true">🧩</span>
-            <span>Группировка</span>
+            <span class="settings-group-icon" aria-hidden="true">↕</span>
+            <span>Настроить порядок функций</span>
           </button>
         </div>
         <div class="settings-section">
-          <div class="settings-section-title">Тема</div>
-          <div class="toggle-group">
+          <div class="settings-section-head">
+            <span class="settings-section-icon" aria-hidden="true">🎨</span>
+            <div>
+              <div class="settings-section-title">Оформление</div>
+              <p>Настройте тему под освещение и стиль Telegram.</p>
+            </div>
+          </div>
+          <div class="toggle-group toggle-group--theme">
             <label>
               <input
                 class="toggle-input"
@@ -3506,7 +3556,7 @@ function renderUserSettingsView(user, preferences, pendingAcceptanceMailing) {
                 value="light"
                 ${normalized.theme === "light" ? "checked" : ""}
               />
-              <span class="toggle-option">Светлая</span>
+              <span class="toggle-option">☀️ Светлая</span>
             </label>
             <label>
               <input
@@ -3516,7 +3566,7 @@ function renderUserSettingsView(user, preferences, pendingAcceptanceMailing) {
                 value="dark"
                 ${normalized.theme === "dark" ? "checked" : ""}
               />
-              <span class="toggle-option">Тёмная</span>
+              <span class="toggle-option">🌙 Тёмная</span>
             </label>
             <label>
               <input
@@ -3526,11 +3576,11 @@ function renderUserSettingsView(user, preferences, pendingAcceptanceMailing) {
                 value="telegram"
                 ${normalized.theme === "telegram" ? "checked" : ""}
               />
-              <span class="toggle-option">Как в Telegram</span>
+              <span class="toggle-option">💬 Как в Telegram</span>
             </label>
           </div>
         </div>
-        <div class="form-message" data-settings-message></div>
+        <div class="form-message user-settings-message" data-settings-message aria-live="polite"></div>
       </form>
     </section>
   `;

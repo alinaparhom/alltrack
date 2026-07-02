@@ -1119,10 +1119,10 @@ function updateHeaderUserBadge(fullName = "", { forceInitials = false } = {}) {
 
 function applyUserSettingsHeader() {
   if (appTitleTextEl) {
-    appTitleTextEl.textContent = "Настройки профиля";
+    appTitleTextEl.textContent = "Мой профиль";
   }
   if (appTitlePositionEl) {
-    appTitlePositionEl.textContent = "Внешний вид, уведомления и главный экран";
+    appTitlePositionEl.textContent = "";
   }
   if (userInitialsEl) {
     userInitialsEl.textContent = "⚙";
@@ -3396,7 +3396,6 @@ function renderUserSettingsView(user, preferences, pendingAcceptanceMailing) {
           </div>
           <div class="user-settings-hero__content">
             <div class="user-settings-hero__title-row">
-              <span class="user-settings-eyebrow">Мой профиль</span>
               <span class="user-settings-status" aria-label="Статус профиля">Активен</span>
             </div>
             <h1>${escapeHtml(formatShortName(fullName) || fullName)}</h1>

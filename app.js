@@ -1116,6 +1116,26 @@ function updateHeaderUserBadge(fullName = "", { forceInitials = false } = {}) {
 
   tryNextCandidate();
 }
+
+function applyUserSettingsHeader() {
+  if (appTitleTextEl) {
+    appTitleTextEl.textContent = "Настройки профиля";
+  }
+  if (appTitlePositionEl) {
+    appTitlePositionEl.textContent = "Внешний вид, уведомления и главный экран";
+  }
+  if (userInitialsEl) {
+    userInitialsEl.textContent = "⚙";
+  }
+  if (userPhotoEl) {
+    userPhotoEl.classList.add("is-hidden");
+    userPhotoEl.removeAttribute("src");
+    userPhotoEl.onerror = null;
+    userPhotoEl.onload = null;
+    userPhotoEl.closest(".app-title-badge")?.setAttribute("data-has-photo", "false");
+  }
+}
+
 function collectTelegramContext() {
   const webApp = window.Telegram?.WebApp ?? null;
   const initData = webApp?.initData ?? null;
@@ -37652,17 +37672,10 @@ async function showUserSettings() {
 
   const userName = formatShortName(currentUser.full_name);
   if (userNameEl) userNameEl.textContent = userName;
-  if (appTitleTextEl) {
-    appTitleTextEl.textContent = formatHeaderUserName(currentUser.full_name ?? "");
-  }
-  if (appTitlePositionEl) {
-    appTitlePositionEl.textContent =
-      String(currentUser.position ?? "").trim() || "Должность не указана";
-  }
+  applyUserSettingsHeader();
   if (userOrgEl) {
     userOrgEl.textContent = await resolveUserOrganizationFullName(currentUser);
   }
-  updateHeaderUserBadge(currentUser.full_name ?? "");
   if (appUserEl) {
     appUserEl.classList.add("is-hidden");
   }
@@ -37737,7 +37750,7 @@ async function showUserSettings() {
       if (photoPreviewEl) {
         photoPreviewEl.src = `${buildUserPhotoSrc(savedPath)}?v=${Date.now()}`;
       }
-      updateHeaderUserBadge(currentUser?.full_name ?? "");
+      applyUserSettingsHeader();
       updateMessage("Фото обновлено");
     } catch (error) {
       console.warn("Не удалось сохранить фото профиля.", error);

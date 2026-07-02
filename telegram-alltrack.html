@@ -1432,6 +1432,31 @@
         outline-offset: 2px;
       }
 
+      body.is-user-settings .app-title-badge {
+        color: #1f4db6;
+        background:
+          radial-gradient(circle at 30% 18%, rgba(255, 255, 255, 0.95), transparent 32%),
+          linear-gradient(135deg, rgba(219, 234, 254, 0.96), rgba(191, 219, 254, 0.82));
+        border-color: rgba(59, 125, 255, 0.2);
+        box-shadow:
+          0 14px 28px rgba(59, 125, 255, 0.16),
+          inset 0 1px 0 rgba(255, 255, 255, 0.9);
+      }
+
+      body.is-user-settings .app-title-badge [data-user-initials] {
+        opacity: 1;
+        font-size: 18px;
+        letter-spacing: 0;
+      }
+
+      body.is-user-settings .app-title-text {
+        color: var(--text);
+      }
+
+      body.is-user-settings .app-title-position {
+        color: var(--muted);
+      }
+
       body[data-icon-style="icon-only"] .action-card {
         justify-content: center;
         text-align: center;

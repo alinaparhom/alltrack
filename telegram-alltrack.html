@@ -18485,10 +18485,21 @@
       }
 
       .user-settings-form {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 12px;
       }
 
+      .user-settings-form .settings-section:nth-of-type(2),
+      .user-settings-form .settings-section:nth-of-type(3),
+      .user-settings-form .user-settings-message {
+        grid-column: 1 / -1;
+      }
+
       .user-settings-page .settings-section {
+        display: grid;
+        align-content: start;
+        gap: 12px;
         padding: 14px;
         border-radius: 24px;
         background: rgba(255, 255, 255, 0.78);
@@ -18504,7 +18515,7 @@
         display: grid;
         grid-template-columns: auto minmax(0, 1fr);
         gap: 10px;
-        align-items: start;
+        align-items: center;
       }
 
       .settings-section-icon {
@@ -18518,6 +18529,7 @@
       }
 
       .settings-field-card {
+        margin-top: 0;
         padding: 10px;
         border-radius: 18px;
         background: rgba(248, 250, 252, 0.78);
@@ -18532,7 +18544,15 @@
 
       .user-settings-page .toggle-group {
         width: 100%;
+        gap: 8px;
+        padding: 6px;
+        border-radius: 22px;
         background: rgba(248, 250, 252, 0.75);
+      }
+
+      .user-settings-page .toggle-option,
+      .user-settings-page .settings-day-chip {
+        border-radius: 16px;
       }
 
       .toggle-group--theme {
@@ -18601,6 +18621,10 @@
           border-radius: 24px;
         }
 
+        .user-settings-form {
+          grid-template-columns: 1fr;
+        }
+
         .user-settings-page .settings-section {
           padding: 12px;
           border-radius: 20px;
@@ -18608,6 +18632,10 @@
 
         .toggle-group--theme {
           grid-template-columns: 1fr;
+        }
+
+        .user-settings-hero__badges span {
+          max-width: 100%;
         }
       }
 

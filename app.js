@@ -1124,16 +1124,7 @@ function applyUserSettingsHeader() {
   if (appTitlePositionEl) {
     appTitlePositionEl.textContent = "";
   }
-  if (userInitialsEl) {
-    userInitialsEl.textContent = "⚙";
-  }
-  if (userPhotoEl) {
-    userPhotoEl.classList.add("is-hidden");
-    userPhotoEl.removeAttribute("src");
-    userPhotoEl.onerror = null;
-    userPhotoEl.onload = null;
-    userPhotoEl.closest(".app-title-badge")?.setAttribute("data-has-photo", "false");
-  }
+  updateHeaderUserBadge(currentUser?.full_name ?? "");
 }
 
 function collectTelegramContext() {

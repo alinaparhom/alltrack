@@ -3374,13 +3374,16 @@ function renderUserSettingsView(user, preferences, pendingAcceptanceMailing) {
           </label>
         </div>
         <div class="user-settings-hero__content">
-          <span class="user-settings-eyebrow">Мой профиль</span>
+          <div class="user-settings-hero__title-row">
+            <span class="user-settings-eyebrow">Мой профиль</span>
+            <span class="user-settings-status" aria-label="Статус профиля">Активен</span>
+          </div>
           <h1>${escapeHtml(formatShortName(fullName) || fullName)}</h1>
           <p>${escapeHtml(roleTitle)}</p>
           <div class="user-settings-hero__badges" aria-label="Краткая сводка настроек">
-            <span>${escapeHtml(organizationTitle)}</span>
-            <span>${normalized.theme === "telegram" ? "Telegram" : normalized.theme === "dark" ? "Тёмная" : "Светлая"}</span>
-            <span>${escapeHtml(activeDaysText)}</span>
+            <span><small>Организация</small>${escapeHtml(organizationTitle)}</span>
+            <span><small>Тема</small>${normalized.theme === "telegram" ? "Telegram" : normalized.theme === "dark" ? "Тёмная" : "Светлая"}</span>
+            <span><small>Рассылка</small>${escapeHtml(activeDaysText)}</span>
           </div>
         </div>
       </div>

@@ -3367,9 +3367,6 @@ function renderUserSettingsView(user, preferences, pendingAcceptanceMailing) {
   const fullName = String(user?.full_name ?? "Пользователь").trim() || "Пользователь";
   const roleTitle = String(user?.role ?? "Роль не указана").trim() || "Роль не указана";
   const organizationTitle = String(user?.organization ?? "Организация").trim() || "Организация";
-  const activeDaysText = mailingSchedule.days.length
-    ? `${mailingSchedule.days.length} дн. в неделю`
-    : "Дни не выбраны";
   return `
     <section class="role-card user-settings-page">
       <form class="form-grid user-settings-form" data-settings-form>
@@ -3395,9 +3392,6 @@ function renderUserSettingsView(user, preferences, pendingAcceptanceMailing) {
             </label>
           </div>
           <div class="user-settings-hero__content">
-            <div class="user-settings-hero__title-row">
-              <span class="user-settings-status" aria-label="Статус профиля">Активен</span>
-            </div>
             <h1>${escapeHtml(formatShortName(fullName) || fullName)}</h1>
             <div class="user-settings-hero__meta">
               <span>${escapeHtml(roleTitle)}</span>
@@ -3415,10 +3409,6 @@ function renderUserSettingsView(user, preferences, pendingAcceptanceMailing) {
                 autocomplete="organization-title"
               />
             </label>
-            <div class="user-settings-hero__badges" aria-label="Краткая сводка настроек">
-              <span><small>Тема</small>${normalized.theme === "telegram" ? "Telegram" : normalized.theme === "dark" ? "Тёмная" : "Светлая"}</span>
-              <span><small>Рассылка</small>${escapeHtml(activeDaysText)}</span>
-            </div>
           </div>
         </div>
         <div class="settings-section">

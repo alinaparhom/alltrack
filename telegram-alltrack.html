@@ -18404,10 +18404,10 @@
         display: grid;
         grid-template-columns: auto minmax(0, 1fr);
         grid-column: 1 / -1;
-        gap: 9px;
+        gap: 12px;
         align-items: center;
         min-height: 0;
-        padding: 9px;
+        padding: 12px;
         border-radius: 22px;
         overflow: hidden;
         background:
@@ -18434,7 +18434,7 @@
       .settings-profile-photo--hero {
         position: relative;
         display: grid;
-        gap: 6px;
+        gap: 7px;
         justify-items: center;
         z-index: 1;
       }
@@ -18471,7 +18471,7 @@
         position: relative;
         z-index: 1;
         display: grid;
-        gap: 4px;
+        gap: 7px;
         min-width: 0;
       }
 
@@ -18483,8 +18483,7 @@
         min-width: 0;
       }
 
-      .user-settings-eyebrow,
-      .user-settings-status {
+      .user-settings-eyebrow {
         width: fit-content;
         padding: 4px 8px;
         border-radius: 999px;
@@ -18494,13 +18493,6 @@
         font-weight: 800;
         letter-spacing: 0.02em;
         text-transform: uppercase;
-      }
-
-      .user-settings-status {
-        background: rgba(34, 197, 94, 0.12);
-        color: #15803d;
-        border: 1px solid rgba(34, 197, 94, 0.18);
-        white-space: nowrap;
       }
 
       .user-settings-hero h1 {
@@ -18582,37 +18574,6 @@
       .user-settings-position__input:focus {
         background: rgba(255, 255, 255, 0.94);
         box-shadow: 0 0 0 2px rgba(59, 125, 255, 0.16);
-      }
-
-      .user-settings-hero__badges {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 6px;
-        margin-top: 2px;
-      }
-
-      .user-settings-hero__badges span {
-        display: inline-grid;
-        gap: 1px;
-        align-items: center;
-        min-height: 30px;
-        padding: 5px 8px;
-        border-radius: 999px;
-        background: rgba(255, 255, 255, 0.72);
-        border: 1px solid rgba(226, 232, 240, 0.82);
-        color: var(--text);
-        font-size: 12px;
-        font-weight: 800;
-        line-height: 1.15;
-      }
-
-      .user-settings-hero__badges small {
-        display: block;
-        color: var(--muted);
-        font-size: 9px;
-        font-weight: 800;
-        letter-spacing: 0.03em;
-        text-transform: uppercase;
       }
 
       .user-settings-form {
@@ -18736,22 +18697,12 @@
           grid-template-columns: auto minmax(0, 1fr);
           justify-items: stretch;
           text-align: left;
-          padding: 9px;
+          padding: 10px;
           border-radius: 20px;
         }
 
         .user-settings-hero__content {
           justify-items: stretch;
-        }
-
-        .user-settings-hero__badges {
-          display: grid;
-          grid-template-columns: repeat(2, minmax(0, 1fr));
-          justify-content: stretch;
-        }
-
-        .user-settings-hero__badges span:first-child {
-          grid-column: 1 / -1;
         }
 
         .settings-profile-photo__preview--hero {
@@ -18783,9 +18734,6 @@
           grid-template-columns: 1fr;
         }
 
-        .user-settings-hero__badges span {
-          max-width: 100%;
-        }
       }
 
       .settings-weekdays {
@@ -19626,23 +19574,15 @@
       }
 
       body[data-theme="dark"] .user-settings-eyebrow,
-      body[data-theme="dark"] .user-settings-status,
       body[data-theme="dark"] .user-settings-hero__meta span,
       body[data-theme="dark"] .user-settings-position,
       body[data-theme="dark"] .user-settings-position__input,
-      body[data-theme="dark"] .user-settings-hero__badges span,
       body[data-theme="dark"] .settings-photo-action,
       body[data-theme="dark"] .settings-field-card,
       body[data-theme="dark"] .user-settings-message:not(:empty) {
         background: rgba(15, 23, 42, 0.72);
         border-color: rgba(148, 170, 210, 0.26);
         color: #bfdbfe;
-      }
-
-      body[data-theme="dark"] .user-settings-status {
-        color: #86efac;
-        border-color: rgba(74, 222, 128, 0.22);
-        background: rgba(22, 163, 74, 0.14);
       }
 
       body[data-theme="dark"] .user-settings-page .form-input {

@@ -3411,15 +3411,16 @@ function renderUserSettingsView(user, preferences, pendingAcceptanceMailing) {
             </label>
           </div>
         </div>
-        <div class="settings-section">
-          <div class="settings-section-head">
+        <div class="settings-section settings-section--home-screen">
+          <div class="settings-section-head settings-section-head--compact">
             <span class="settings-section-icon" aria-hidden="true">🧭</span>
             <div>
               <div class="settings-section-title">Главный экран</div>
+              <p>Как показывать кнопки функций</p>
             </div>
           </div>
-          <div class="toggle-group toggle-group--visual">
-            <label>
+          <div class="settings-home-options" role="radiogroup" aria-label="Вид кнопок на главном экране">
+            <label class="settings-home-option">
               <input
                 class="toggle-input"
                 type="radio"
@@ -3427,22 +3428,17 @@ function renderUserSettingsView(user, preferences, pendingAcceptanceMailing) {
                 value="icon-only"
                 ${normalized.iconStyle === "icon-only" ? "checked" : ""}
               />
-              <span class="toggle-option toggle-option--visual">
-                <span class="toggle-visual toggle-visual--icon-only">
-                  <span class="toggle-visual-tile">
-                    <span class="toggle-visual-icon"></span>
-                  </span>
-                  <span class="toggle-visual-tile">
-                    <span class="toggle-visual-icon"></span>
-                  </span>
-                  <span class="toggle-visual-tile">
-                    <span class="toggle-visual-icon"></span>
-                  </span>
+              <span class="settings-home-card">
+                <span class="settings-home-card__preview settings-home-card__preview--icons" aria-hidden="true">
+                  <span></span><span></span><span></span>
                 </span>
-                <span class="toggle-label">Только значок</span>
+                <span class="settings-home-card__text">
+                  <span class="settings-home-card__title">Компактно</span>
+                  <span class="settings-home-card__hint">Только значки</span>
+                </span>
               </span>
             </label>
-            <label>
+            <label class="settings-home-option">
               <input
                 class="toggle-input"
                 type="radio"
@@ -3450,21 +3446,17 @@ function renderUserSettingsView(user, preferences, pendingAcceptanceMailing) {
                 value="icon-title"
                 ${normalized.iconStyle === "icon-title" ? "checked" : ""}
               />
-              <span class="toggle-option toggle-option--visual">
-                <span class="toggle-visual toggle-visual--icon-title">
-                  <span class="toggle-visual-tile">
-                    <span class="toggle-visual-icon"></span>
-                    <span class="toggle-visual-line"></span>
-                  </span>
-                  <span class="toggle-visual-tile">
-                    <span class="toggle-visual-icon"></span>
-                    <span class="toggle-visual-line"></span>
-                  </span>
+              <span class="settings-home-card">
+                <span class="settings-home-card__preview settings-home-card__preview--row" aria-hidden="true">
+                  <span></span><i></i>
                 </span>
-                <span class="toggle-label">Значок и название</span>
+                <span class="settings-home-card__text">
+                  <span class="settings-home-card__title">Понятно</span>
+                  <span class="settings-home-card__hint">Значок + название</span>
+                </span>
               </span>
             </label>
-            <label>
+            <label class="settings-home-option">
               <input
                 class="toggle-input"
                 type="radio"
@@ -3472,18 +3464,14 @@ function renderUserSettingsView(user, preferences, pendingAcceptanceMailing) {
                 value="icon-title-below"
                 ${normalized.iconStyle === "icon-title-below" ? "checked" : ""}
               />
-              <span class="toggle-option toggle-option--visual">
-                <span class="toggle-visual toggle-visual--icon-title-below">
-                  <span class="toggle-visual-tile">
-                    <span class="toggle-visual-icon"></span>
-                    <span class="toggle-visual-line"></span>
-                  </span>
-                  <span class="toggle-visual-tile">
-                    <span class="toggle-visual-icon"></span>
-                    <span class="toggle-visual-line"></span>
-                  </span>
+              <span class="settings-home-card">
+                <span class="settings-home-card__preview settings-home-card__preview--stack" aria-hidden="true">
+                  <span></span><i></i>
                 </span>
-                <span class="toggle-label">Название под значком</span>
+                <span class="settings-home-card__text">
+                  <span class="settings-home-card__title">Воздушно</span>
+                  <span class="settings-home-card__hint">Название снизу</span>
+                </span>
               </span>
             </label>
           </div>

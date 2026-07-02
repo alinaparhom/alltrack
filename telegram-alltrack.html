@@ -1454,7 +1454,7 @@
       }
 
       body.is-user-settings .app-title-position {
-        color: var(--muted);
+        display: none;
       }
 
       body[data-icon-style="icon-only"] .action-card {
@@ -18258,12 +18258,15 @@
 
       .button-icon--back[aria-label*="Закрыть"] {
         color: #dc2626;
-        border-color: rgba(220, 38, 38, 0.45);
+        border: 0;
+        background: transparent;
+        box-shadow: none;
       }
 
       .button-icon--back[aria-label*="Закрыть"]:hover,
       .button-icon--back[aria-label*="Закрыть"]:focus-visible {
-        box-shadow: 0 10px 22px rgba(220, 38, 38, 0.2);
+        transform: none;
+        box-shadow: none;
       }
 
       .button-telegram {
@@ -18401,10 +18404,10 @@
         display: grid;
         grid-template-columns: auto minmax(0, 1fr);
         grid-column: 1 / -1;
-        gap: 10px;
+        gap: 9px;
         align-items: center;
         min-height: 0;
-        padding: 10px;
+        padding: 9px;
         border-radius: 22px;
         overflow: hidden;
         background:
@@ -18437,8 +18440,8 @@
       }
 
       .settings-profile-photo__preview--hero {
-        width: 58px;
-        height: 58px;
+        width: 52px;
+        height: 52px;
         border-radius: 18px;
         border: 2px solid rgba(255, 255, 255, 0.86);
         box-shadow:
@@ -18452,8 +18455,8 @@
         align-items: center;
         justify-content: center;
         gap: 6px;
-        min-height: 28px;
-        padding: 5px 9px;
+        min-height: 26px;
+        padding: 4px 8px;
         border-radius: 999px;
         border: 1px solid rgba(59, 125, 255, 0.22);
         background: rgba(255, 255, 255, 0.86);
@@ -18468,7 +18471,7 @@
         position: relative;
         z-index: 1;
         display: grid;
-        gap: 5px;
+        gap: 4px;
         min-width: 0;
       }
 
@@ -18544,8 +18547,8 @@
         align-items: center;
         gap: 8px;
         width: 100%;
-        min-height: 40px;
-        padding: 5px 6px 5px 10px;
+        min-height: 36px;
+        padding: 4px 5px 4px 9px;
         border-radius: 16px;
         background: rgba(255, 255, 255, 0.78);
         border: 1px solid rgba(59, 125, 255, 0.16);
@@ -18564,8 +18567,8 @@
       .user-settings-position__input {
         width: 100%;
         min-width: 0;
-        min-height: 30px;
-        padding: 5px 8px;
+        min-height: 28px;
+        padding: 4px 8px;
         border: 0;
         border-radius: 12px;
         background: rgba(248, 250, 252, 0.78);
@@ -18592,8 +18595,8 @@
         display: inline-grid;
         gap: 1px;
         align-items: center;
-        min-height: 34px;
-        padding: 6px 9px;
+        min-height: 30px;
+        padding: 5px 8px;
         border-radius: 999px;
         background: rgba(255, 255, 255, 0.72);
         border: 1px solid rgba(226, 232, 240, 0.82);
@@ -18733,8 +18736,8 @@
           grid-template-columns: auto minmax(0, 1fr);
           justify-items: stretch;
           text-align: left;
-          padding: 10px;
-          border-radius: 22px;
+          padding: 9px;
+          border-radius: 20px;
         }
 
         .user-settings-hero__content {
@@ -18752,8 +18755,8 @@
         }
 
         .settings-profile-photo__preview--hero {
-          width: 54px;
-          height: 54px;
+          width: 50px;
+          height: 50px;
           border-radius: 18px;
         }
 
@@ -19679,7 +19682,7 @@
               data-settings-back-header
               aria-label="Закрыть настройки"
             >
-              <span class="button-icon-emoji" aria-hidden="true">×</span>
+              <span class="button-icon-emoji" aria-hidden="true">✕</span>
             </button>
             <button
               class="pending-stat is-hidden"

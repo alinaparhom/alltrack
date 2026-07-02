@@ -37668,7 +37668,7 @@ async function showUserSettings() {
   }
   updateHeaderUserBadge(currentUser.full_name ?? "");
   if (appUserEl) {
-    appUserEl.classList.remove("is-hidden");
+    appUserEl.classList.add("is-hidden");
   }
   setUserSettingsMode(true);
   if (energyPendingStatEl) {

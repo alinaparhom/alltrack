@@ -3529,15 +3529,16 @@ function renderUserSettingsView(user, preferences, pendingAcceptanceMailing) {
             <span>Настроить</span>
           </button>
         </div>
-        <div class="settings-section">
-          <div class="settings-section-head">
+        <div class="settings-section settings-section--theme">
+          <div class="settings-section-head settings-section-head--theme">
             <span class="settings-section-icon" aria-hidden="true">🎨</span>
             <div>
               <div class="settings-section-title">Тема</div>
+              <p>Выберите оформление</p>
             </div>
           </div>
-          <div class="toggle-group toggle-group--theme">
-            <label>
+          <div class="toggle-group toggle-group--theme" role="radiogroup" aria-label="Тема приложения">
+            <label class="theme-choice">
               <input
                 class="toggle-input"
                 type="radio"
@@ -3545,9 +3546,12 @@ function renderUserSettingsView(user, preferences, pendingAcceptanceMailing) {
                 value="light"
                 ${normalized.theme === "light" ? "checked" : ""}
               />
-              <span class="toggle-option">☀️ Светлая</span>
+              <span class="theme-choice__button">
+                <span class="theme-choice__icon" aria-hidden="true">☀️</span>
+                <span>Светлая</span>
+              </span>
             </label>
-            <label>
+            <label class="theme-choice">
               <input
                 class="toggle-input"
                 type="radio"
@@ -3555,9 +3559,12 @@ function renderUserSettingsView(user, preferences, pendingAcceptanceMailing) {
                 value="dark"
                 ${normalized.theme === "dark" ? "checked" : ""}
               />
-              <span class="toggle-option">🌙 Тёмная</span>
+              <span class="theme-choice__button">
+                <span class="theme-choice__icon" aria-hidden="true">🌙</span>
+                <span>Тёмная</span>
+              </span>
             </label>
-            <label>
+            <label class="theme-choice">
               <input
                 class="toggle-input"
                 type="radio"
@@ -3565,7 +3572,10 @@ function renderUserSettingsView(user, preferences, pendingAcceptanceMailing) {
                 value="telegram"
                 ${normalized.theme === "telegram" ? "checked" : ""}
               />
-              <span class="toggle-option">💬 Как в Telegram</span>
+              <span class="theme-choice__button">
+                <span class="theme-choice__icon" aria-hidden="true">💬</span>
+                <span>Telegram</span>
+              </span>
             </label>
           </div>
         </div>

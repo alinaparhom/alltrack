@@ -18477,9 +18477,23 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     updateInfoMovesHistoryResetButtons();
 
     if (infoMovesHistorySummaryEl) {
-      infoMovesHistorySummaryEl.textContent = infoMovesHistoryState.allMoves.length
-        ? `Показано: ${filteredMoves.length} из ${infoMovesHistoryState.allMoves.length}`
-        : "Перемещений пока нет.";
+      const acceptedCount = filteredMoves.filter((move) => String(move?.["Ответ"] ?? "").trim().toLowerCase() === "принял").length;
+      const declinedCount = Math.max(filteredMoves.length - acceptedCount, 0);
+      infoMovesHistorySummaryEl.innerHTML = "";
+      [
+        ["Показано", `${filteredMoves.length} из ${infoMovesHistoryState.allMoves.length}`],
+        ["Принято", `${acceptedCount}`],
+        ["Отклонено", `${declinedCount}`],
+      ].forEach(([label, value]) => {
+        const card = document.createElement("div");
+        card.className = "info-moves-history-summary__card";
+        const labelEl = document.createElement("small");
+        labelEl.textContent = label;
+        const valueEl = document.createElement("strong");
+        valueEl.textContent = infoMovesHistoryState.allMoves.length ? value : "0";
+        card.append(labelEl, valueEl);
+        infoMovesHistorySummaryEl.appendChild(card);
+      });
     }
 
     if (infoMovesHistoryEmptyEl) {
@@ -18541,9 +18555,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const titleTextWrap = document.createElement("div");
       titleTextWrap.className = "info-moves-history-item__title-text";
       const titleText = document.createElement("span");
-      titleText.textContent = toolLabel;
+      titleText.textContent = number ? `Инструмент №${number}` : `Инструмент ${toolLabel}`;
       const titleDate = document.createElement("small");
-      titleDate.textContent = formatInfoValue(move?.["Дата перемещения"]);
+      titleDate.textContent = `${formatInfoValue(move?.["Дата перемещения"])} • ${accounting ? `Бух. № ${accounting}` : "Бух. номер не указан"}`;
       titleTextWrap.append(titleText, titleDate);
       titleMain.append(titleIcon, titleTextWrap);
       const titleBadge = document.createElement("em");
@@ -18552,7 +18566,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
       const route = document.createElement("div");
       route.className = "info-moves-history-item__route";
-      const sender = formatInfoValue(move?.["Переместил"]);
+      const sender = formatInfoValue(move?.["Переместил"] || move?.["Ответственный до перемещения"]);
       const receiver = formatInfoValue(move?.["Принял"]);
       route.innerHTML = "";
       const fromEl = document.createElement("span");

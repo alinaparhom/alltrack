@@ -18363,6 +18363,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
   const getInfoMovesHistoryIcon = (label) => {
     const normalized = String(label ?? "").trim().toLowerCase();
+    if (normalized.includes("бух")) return "№";
     if (normalized.includes("номер")) return "#";
     if (normalized.includes("перемест") || normalized.includes("передал")) return "↗";
     if (normalized.includes("принял")) return "✓";
@@ -18370,8 +18371,20 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (normalized.includes("новый")) return "▷";
     if (normalized.includes("дата")) return "◷";
     if (normalized.includes("ответ")) return "✓";
-    if (normalized.includes("причина") || normalized.includes("комментар")) return "…";
+    if (normalized.includes("причина")) return "?";
+    if (normalized.includes("комментар")) return "💬";
     return "•";
+  };
+
+  const createInfoMovesHistoryRoutePoint = (label, value) => {
+    const point = document.createElement("span");
+    point.className = "info-moves-history-item__route-point";
+    const labelEl = document.createElement("small");
+    labelEl.textContent = label;
+    const valueEl = document.createElement("b");
+    valueEl.textContent = formatInfoValue(value);
+    point.append(labelEl, valueEl);
+    return point;
   };
 
   const buildInfoMovesHistoryRow = (label, value, options = {}) => {
@@ -18552,17 +18565,14 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
       const route = document.createElement("div");
       route.className = "info-moves-history-item__route";
-      const sender = formatInfoValue(move?.["Переместил"]);
-      const receiver = formatInfoValue(move?.["Принял"]);
-      route.innerHTML = "";
-      const fromEl = document.createElement("span");
-      fromEl.textContent = sender;
       const arrowEl = document.createElement("strong");
       arrowEl.setAttribute("aria-hidden", "true");
       arrowEl.textContent = "→";
-      const toEl = document.createElement("span");
-      toEl.textContent = receiver;
-      route.append(fromEl, arrowEl, toEl);
+      route.append(
+        createInfoMovesHistoryRoutePoint("Передал", move?.["Переместил"]),
+        arrowEl,
+        createInfoMovesHistoryRoutePoint("Принял", move?.["Принял"])
+      );
 
       const grid = document.createElement("div");
       grid.className = "info-moves-history-item__grid";
@@ -18570,10 +18580,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         ...[
           buildInfoMovesHistoryRow("Номер", move?.["Номер"]),
           buildInfoMovesHistoryRow("Бух.номер", move?.["Бух.номер"]),
-          objectTrackingEnabled ? buildInfoMovesHistoryRow("Старый объект", move?.["Старый объект"]) : null,
-          objectTrackingEnabled ? buildInfoMovesHistoryRow("Новый объект", move?.["Новый объект"]) : null,
-          buildInfoMovesHistoryRow("Дата ответа", move?.["Дата ответа"]),
-          buildInfoMovesHistoryRow("Ответ", move?.["Ответ"]),
+          objectTrackingEnabled ? buildInfoMovesHistoryRow("Откуда", move?.["Старый объект"]) : null,
+          objectTrackingEnabled ? buildInfoMovesHistoryRow("Куда", move?.["Новый объект"]) : null,
+          buildInfoMovesHistoryRow("Ответили", move?.["Дата ответа"]),
           move?.["Причина перемещения"] ? buildInfoMovesHistoryRow("Причина", move?.["Причина перемещения"], { wide: true }) : null,
           move?.["Комментарий к ответу"] ? buildInfoMovesHistoryRow("Комментарий", move?.["Комментарий к ответу"], { wide: true }) : null,
         ].filter(Boolean)

@@ -6248,7 +6248,8 @@
       .info-moves-history-summary {
         font-size: var(--text-sm);
         color: var(--muted);
-        padding: 0 2px;
+        padding: 2px 4px 0;
+        font-weight: 700;
       }
 
       .info-moves-history-list {
@@ -6269,10 +6270,10 @@
         align-items: center;
         justify-content: space-between;
         gap: 10px;
-        padding: 8px 10px;
+        padding: 7px 10px;
         border: 1px solid rgba(148, 163, 184, 0.2);
-        border-radius: 14px;
-        background: rgba(248, 251, 255, 0.93);
+        border-radius: 999px;
+        background: rgba(248, 251, 255, 0.88);
         backdrop-filter: blur(12px);
         -webkit-backdrop-filter: blur(12px);
         color: var(--text);
@@ -6294,14 +6295,16 @@
         position: relative;
         overflow: hidden;
         border: 1px solid rgba(148, 163, 184, 0.22);
-        border-radius: 18px;
-        background: linear-gradient(145deg, rgba(255, 255, 255, 0.9), rgba(248, 251, 255, 0.78));
+        border-radius: 20px;
+        background:
+          radial-gradient(circle at 14px 12px, rgba(96, 165, 250, 0.16), transparent 34px),
+          linear-gradient(145deg, rgba(255, 255, 255, 0.92), rgba(248, 251, 255, 0.8));
         backdrop-filter: blur(14px);
         -webkit-backdrop-filter: blur(14px);
         box-shadow: 0 10px 26px rgba(15, 23, 42, 0.07);
-        padding: 8px;
+        padding: 9px;
         display: grid;
-        gap: 6px;
+        gap: 7px;
       }
 
       .info-moves-history-item::before {
@@ -6401,20 +6404,39 @@
         display: grid;
         grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
         align-items: center;
-        gap: 8px;
-        padding: 7px 9px;
-        border-radius: 14px;
-        background: rgba(239, 246, 255, 0.72);
+        gap: 7px;
+        padding: 7px;
+        border-radius: 16px;
+        border: 1px solid rgba(96, 165, 250, 0.16);
+        background: rgba(239, 246, 255, 0.74);
         color: var(--text);
-        font-size: 12px;
-        font-weight: 800;
       }
 
-      .info-moves-history-item__route span {
+      .info-moves-history-item__route-point {
+        min-width: 0;
+        display: grid;
+        gap: 1px;
+        padding: 2px 4px;
+      }
+
+      .info-moves-history-item__route-point small {
+        color: var(--muted);
+        font-size: 9px;
+        font-weight: 900;
+        line-height: 1.05;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+
+      .info-moves-history-item__route-point b {
         min-width: 0;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
+        color: var(--text);
+        font-size: 12px;
+        font-weight: 900;
+        line-height: 1.15;
       }
 
       .info-moves-history-item__route strong {
@@ -6425,7 +6447,7 @@
       .info-moves-history-item__grid {
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 5px;
+        gap: 6px;
       }
 
       .info-moves-history-item__row {
@@ -6434,9 +6456,9 @@
         align-items: start;
         gap: 6px;
         min-width: 0;
-        padding: 6px;
-        border-radius: 13px;
-        background: rgba(255, 255, 255, 0.58);
+        padding: 7px;
+        border-radius: 14px;
+        background: rgba(255, 255, 255, 0.62);
         border: 1px solid rgba(148, 163, 184, 0.14);
       }
 
@@ -6458,6 +6480,11 @@
         font-weight: 800;
         word-break: break-word;
         line-height: 1.25;
+      }
+
+      .info-moves-history-item__row--wide .info-moves-history-item__value {
+        font-weight: 700;
+        color: var(--text-secondary);
       }
 
 

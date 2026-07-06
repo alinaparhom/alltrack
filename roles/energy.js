@@ -4721,8 +4721,9 @@ export function renderRole(user, options = {}) {
               </button>
             </div>
             <div class="settings-modal__body info-moves-history-modal__body">
-              <div class="info-pending-toolbar info-moves-history-toolbar">
-                <label class="tools-search info-pending-search-field info-moves-history-search" aria-label="Поиск по истории перемещений">
+              <section class="info-moves-history-layout-block info-moves-history-layout-block--tools" aria-label="Поиск, фильтры и сортировка истории перемещений">
+                <div class="info-pending-toolbar info-moves-history-toolbar">
+                  <label class="tools-search info-pending-search-field info-moves-history-search" aria-label="Поиск по истории перемещений">
                   <input
                     class="form-input tools-search__input info-pending-search info-moves-history-search__input"
                     type="search"
@@ -4730,9 +4731,9 @@ export function renderRole(user, options = {}) {
                     data-info-moves-history-search
                     autocomplete="off"
                   />
-                </label>
-              </div>
-              <div class="info-pending-controls info-moves-history-controls" role="group" aria-label="Группировка, сортировка и фильтры истории">
+                  </label>
+                </div>
+                <div class="info-pending-controls info-moves-history-controls" role="group" aria-label="Группировка, сортировка и фильтры истории">
                 <button type="button" class="info-pending-mode-toggle" data-info-moves-history-group-mode="user" aria-pressed="false">По пользователю</button>
                 <button type="button" class="info-pending-mode-toggle" data-info-moves-history-group-mode="date" aria-pressed="false">По дате</button>
                 <div class="tools-filter-dropdown info-pending-sort-dropdown info-moves-history-sort-dropdown" data-info-moves-history-sort-dropdown>
@@ -4756,11 +4757,14 @@ export function renderRole(user, options = {}) {
                     <button class="button secondary-button info-moves-history-reset-all" type="button" data-info-moves-history-reset>Сбросить фильтры</button>
                   </div>
                 </div>
-                <select class="visually-hidden" data-info-moves-history-sort aria-label="Сортировка"><option value="date-desc">Новые сверху</option><option value="date-asc">Старые сверху</option><option value="number-asc">Номер ↑</option><option value="accounting-asc">Бух.номер ↑</option><option value="user-asc">Пользователь А-Я</option></select>
-              </div>
-              <div class="info-moves-history-summary" data-info-moves-history-summary></div>
-              <div class="info-moves-history-list" data-info-moves-history-list></div>
-              <div class="tools-empty is-hidden" data-info-moves-history-empty>История перемещений не найдена.</div>
+                  <select class="visually-hidden" data-info-moves-history-sort aria-label="Сортировка"><option value="date-desc">Новые сверху</option><option value="date-asc">Старые сверху</option><option value="number-asc">Номер ↑</option><option value="accounting-asc">Бух.номер ↑</option><option value="user-asc">Пользователь А-Я</option></select>
+                </div>
+              </section>
+              <section class="info-moves-history-layout-block info-moves-history-layout-block--list" aria-label="Список перемещений">
+                <div class="info-moves-history-summary" data-info-moves-history-summary></div>
+                <div class="info-moves-history-list" data-info-moves-history-list></div>
+                <div class="tools-empty is-hidden" data-info-moves-history-empty>История перемещений не найдена.</div>
+              </section>
             </div>
           </div>
         </div>

@@ -4424,7 +4424,6 @@ export function renderRole(user, options = {}) {
             <div class="settings-modal__header info-hub-modal__header info-hub-modal__header--compact">
               <div class="settings-modal__title info-hub-modal__title">
                 <h2>Информация</h2>
-                <p>Выберите нужный раздел — всё по инструментам собрано в понятных карточках.</p>
               </div>
               <button
                 class="button-icon"

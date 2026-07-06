@@ -4737,18 +4737,22 @@ export function renderRole(user, options = {}) {
                     class="button-secondary info-moves-history-filters-toggle"
                     data-info-moves-history-filters-toggle
                     aria-expanded="false"
-                  ><span aria-hidden="true">⚙</span><span>Фильтры</span></button>
+                    aria-label="Фильтры"
+                    title="Фильтры"
+                  ><span aria-hidden="true">⚙</span><span class="visually-hidden">Фильтры</span></button>
                   <button
                     type="button"
                     class="button-secondary info-moves-history-reset-all is-hidden"
                     data-info-moves-history-reset-all
-                  ><span aria-hidden="true">↺</span><span>Сбросить</span></button>
+                    aria-label="Сбросить все фильтры"
+                    title="Сбросить все фильтры"
+                  ><span aria-hidden="true">↺</span><span class="visually-hidden">Сбросить все фильтры</span></button>
                 </div>
               </div>
               <div class="info-moves-history-filters is-hidden" data-info-moves-history-filters-panel>
                 <div class="info-moves-history-filters__row">
                   <label class="form-field">
-                    <span class="info-moves-history-filter-label">Номер инструмента <button type="button" class="info-moves-history-filter-reset is-hidden" data-info-moves-history-reset="number">Сбросить</button></span>
+                    <span class="info-moves-history-filter-label">Номер инструмента <button type="button" class="info-moves-history-filter-reset is-hidden" data-info-moves-history-reset="number" title="Сбросить" aria-label="Сбросить"><span aria-hidden="true">✕</span><span class="visually-hidden">Сбросить</span></button></span>
                     <input
                       class="form-input"
                       type="text"
@@ -4758,7 +4762,7 @@ export function renderRole(user, options = {}) {
                     />
                   </label>
                   <label class="form-field">
-                    <span class="info-moves-history-filter-label">Бух.номер <button type="button" class="info-moves-history-filter-reset is-hidden" data-info-moves-history-reset="accounting">Сбросить</button></span>
+                    <span class="info-moves-history-filter-label">Бух.номер <button type="button" class="info-moves-history-filter-reset is-hidden" data-info-moves-history-reset="accounting" title="Сбросить" aria-label="Сбросить"><span aria-hidden="true">✕</span><span class="visually-hidden">Сбросить</span></button></span>
                     <input
                       class="form-input"
                       type="text"
@@ -4769,7 +4773,7 @@ export function renderRole(user, options = {}) {
                 </div>
                 <div class="info-moves-history-filters__row">
                   <label class="form-field">
-                    <span class="info-moves-history-filter-label">По передающему <button type="button" class="info-moves-history-filter-reset is-hidden" data-info-moves-history-reset="sender">Сбросить</button></span>
+                    <span class="info-moves-history-filter-label">По передающему <button type="button" class="info-moves-history-filter-reset is-hidden" data-info-moves-history-reset="sender" title="Сбросить" aria-label="Сбросить"><span aria-hidden="true">✕</span><span class="visually-hidden">Сбросить</span></button></span>
                     <div
                       class="tools-filter-dropdown info-moves-history-responsible-dropdown"
                       data-info-moves-history-person-dropdown="sender"
@@ -4795,7 +4799,7 @@ export function renderRole(user, options = {}) {
                     </div>
                   </label>
                   <label class="form-field">
-                    <span class="info-moves-history-filter-label">По принимающему <button type="button" class="info-moves-history-filter-reset is-hidden" data-info-moves-history-reset="receiver">Сбросить</button></span>
+                    <span class="info-moves-history-filter-label">По принимающему <button type="button" class="info-moves-history-filter-reset is-hidden" data-info-moves-history-reset="receiver" title="Сбросить" aria-label="Сбросить"><span aria-hidden="true">✕</span><span class="visually-hidden">Сбросить</span></button></span>
                     <div
                       class="tools-filter-dropdown info-moves-history-responsible-dropdown"
                       data-info-moves-history-person-dropdown="receiver"
@@ -4823,7 +4827,7 @@ export function renderRole(user, options = {}) {
                 </div>
                 <div class="info-moves-history-filters__row info-moves-history-filters__row--dates">
                   <div class="form-field info-moves-history-date-field">
-                    <span class="info-moves-history-filter-label">Дата перемещения <button type="button" class="info-moves-history-filter-reset is-hidden" data-info-moves-history-reset="moveDate">Сбросить</button></span>
+                    <span class="info-moves-history-filter-label">Дата перемещения <button type="button" class="info-moves-history-filter-reset is-hidden" data-info-moves-history-reset="moveDate" title="Сбросить" aria-label="Сбросить"><span aria-hidden="true">✕</span><span class="visually-hidden">Сбросить</span></button></span>
                     <button
                       type="button"
                       class="form-input info-moves-history-date-trigger"
@@ -4846,7 +4850,7 @@ export function renderRole(user, options = {}) {
                     </div>
                   </div>
                   <div class="form-field info-moves-history-date-field">
-                    <span class="info-moves-history-filter-label">Дата ответа <button type="button" class="info-moves-history-filter-reset is-hidden" data-info-moves-history-reset="responseDate">Сбросить</button></span>
+                    <span class="info-moves-history-filter-label">Дата ответа <button type="button" class="info-moves-history-filter-reset is-hidden" data-info-moves-history-reset="responseDate" title="Сбросить" aria-label="Сбросить"><span aria-hidden="true">✕</span><span class="visually-hidden">Сбросить</span></button></span>
                     <button
                       type="button"
                       class="form-input info-moves-history-date-trigger"
@@ -4871,11 +4875,11 @@ export function renderRole(user, options = {}) {
                 </div>
               </div>
               <div class="info-moves-history-groupbar" aria-label="Группировка истории перемещений">
-                <span class="info-moves-history-groupbar__label"><span aria-hidden="true">▦</span> Группировать</span>
-                <button type="button" class="info-moves-history-groupchip is-active" data-info-moves-history-group="date"><span aria-hidden="true">◷</span> по датам</button>
-                <button type="button" class="info-moves-history-groupchip" data-info-moves-history-group="tool"><span aria-hidden="true">#</span> по инструменту</button>
-                <button type="button" class="info-moves-history-groupchip" data-info-moves-history-group="receiver"><span aria-hidden="true">✓</span> по принимающему</button>
-                <button type="button" class="info-moves-history-groupchip" data-info-moves-history-group="status"><span aria-hidden="true">●</span> по ответу</button>
+                <span class="info-moves-history-groupbar__label" title="Группировать"><span aria-hidden="true">▦</span><span class="visually-hidden">Группировать</span></span>
+                <button type="button" class="info-moves-history-groupchip is-active" data-info-moves-history-group="date" aria-label="Группировать по датам" title="По датам"><span aria-hidden="true">◷</span><span class="visually-hidden">по датам</span></button>
+                <button type="button" class="info-moves-history-groupchip" data-info-moves-history-group="tool" aria-label="Группировать по инструменту" title="По инструменту"><span aria-hidden="true">#</span><span class="visually-hidden">по инструменту</span></button>
+                <button type="button" class="info-moves-history-groupchip" data-info-moves-history-group="receiver" aria-label="Группировать по принимающему" title="По принимающему"><span aria-hidden="true">✓</span><span class="visually-hidden">по принимающему</span></button>
+                <button type="button" class="info-moves-history-groupchip" data-info-moves-history-group="status" aria-label="Группировать по ответу" title="По ответу"><span aria-hidden="true">●</span><span class="visually-hidden">по ответу</span></button>
               </div>
               <div class="info-moves-history-summary" data-info-moves-history-summary></div>
               <div class="info-moves-history-list" data-info-moves-history-list></div>

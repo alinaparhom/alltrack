@@ -4734,8 +4734,14 @@ export function renderRole(user, options = {}) {
                   </label>
                 </div>
                 <div class="info-pending-controls info-moves-history-controls" role="group" aria-label="Группировка, сортировка и фильтры истории">
-                <button type="button" class="info-pending-mode-toggle" data-info-moves-history-group-mode="user" aria-pressed="false">По пользователю</button>
-                <button type="button" class="info-pending-mode-toggle" data-info-moves-history-group-mode="date" aria-pressed="false">По дате</button>
+                <div class="tools-filter-dropdown info-pending-sort-dropdown info-moves-history-group-dropdown" data-info-moves-history-group-dropdown>
+                  <button type="button" class="tools-filters-toggle info-moves-history-group-trigger" data-info-moves-history-group-trigger aria-expanded="false" aria-label="Группировка" title="Группировка">
+                    <span class="tools-filters-toggle__icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false" fill="none"><rect x="4" y="5" width="7" height="6" rx="2" stroke="currentColor" stroke-width="2"/><rect x="13" y="5" width="7" height="6" rx="2" stroke="currentColor" stroke-width="2"/><rect x="4" y="14" width="7" height="6" rx="2" stroke="currentColor" stroke-width="2"/><rect x="13" y="14" width="7" height="6" rx="2" stroke="currentColor" stroke-width="2"/></svg></span>
+                  </button>
+                  <div class="tools-filter-dropdown__menu is-hidden" data-info-moves-history-group-menu>
+                    <div class="tools-filter-dropdown__options" data-info-moves-history-group-options></div>
+                  </div>
+                </div>
                 <div class="tools-filter-dropdown info-pending-sort-dropdown info-moves-history-sort-dropdown" data-info-moves-history-sort-dropdown>
                   <button type="button" class="tools-filters-toggle tools-sort-toggle info-pending-sort-trigger info-moves-history-sort-trigger" data-info-moves-history-sort-trigger aria-expanded="false" aria-label="Сортировка" title="Сортировка">
                     <span class="tools-sort-toggle__icon is-desc" aria-hidden="true"><svg class="tools-sort-toggle__chevron" viewBox="0 0 24 24" focusable="false"><path d="M7 10l5 5 5-5" /></svg></span>
@@ -4750,10 +4756,15 @@ export function renderRole(user, options = {}) {
                   </button>
                   <div class="info-pending-filters__panel info-moves-history-filters__panel is-hidden" data-info-moves-history-filters-panel>
                     <label class="form-field"><span class="form-label">Выводить по</span><select class="form-control" data-info-moves-history-view><option value="number">Номеру</option><option value="accounting">Бух.номеру</option><option value="date">Дате</option><option value="user">Пользователю</option></select></label>
-                    <label class="form-field"><span class="form-label">Группировка</span><select class="form-control" data-info-moves-history-group><option value="none">Без группировки</option><option value="date">По дате</option><option value="user">По пользователю</option><option value="tool">По инструменту</option><option value="answer">По статусу ответа</option></select></label>
                     <label class="form-field"><span class="form-label">Статус</span><select class="form-control" data-info-moves-history-answer><option value="all">Все</option><option value="answered">С ответом</option><option value="cancelled">Отменённые</option></select></label>
-                    <label class="form-field"><span class="form-label">Дата с</span><input class="form-control" type="date" data-info-moves-history-date-from /></label>
-                    <label class="form-field"><span class="form-label">Дата по</span><input class="form-control" type="date" data-info-moves-history-date-to /></label>
+                    <div class="form-field info-moves-history-date-field">
+                      <span class="form-label">По дате</span>
+                      <button class="form-control info-moves-history-date-trigger" type="button" data-info-moves-history-date-trigger aria-expanded="false">Любой период</button>
+                      <div class="info-moves-history-date-popover is-hidden" data-info-moves-history-date-popover>
+                        <label><span>С какого числа</span><input class="form-control" type="date" data-info-moves-history-date-from /></label>
+                        <label><span>По какое число</span><input class="form-control" type="date" data-info-moves-history-date-to /></label>
+                      </div>
+                    </div>
                     <button class="button secondary-button info-moves-history-reset-all" type="button" data-info-moves-history-reset>Сбросить фильтры</button>
                   </div>
                 </div>

@@ -7126,10 +7126,15 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const infoMovesHistorySortTriggerEl = contentEl.querySelector("[data-info-moves-history-sort-trigger]");
   const infoMovesHistorySortMenuEl = contentEl.querySelector("[data-info-moves-history-sort-menu]");
   const infoMovesHistorySortOptionsEl = contentEl.querySelector("[data-info-moves-history-sort-options]");
-  const infoMovesHistoryGroupModeButtonEls = contentEl.querySelectorAll("[data-info-moves-history-group-mode]");
+  const infoMovesHistoryGroupDropdownEl = contentEl.querySelector("[data-info-moves-history-group-dropdown]");
+  const infoMovesHistoryGroupTriggerEl = contentEl.querySelector("[data-info-moves-history-group-trigger]");
+  const infoMovesHistoryGroupMenuEl = contentEl.querySelector("[data-info-moves-history-group-menu]");
+  const infoMovesHistoryGroupOptionsEl = contentEl.querySelector("[data-info-moves-history-group-options]");
   const infoMovesHistoryFiltersToggleEl = contentEl.querySelector("[data-info-moves-history-filters-toggle]");
   const infoMovesHistoryFiltersPanelEl = contentEl.querySelector("[data-info-moves-history-filters-panel]");
   const infoMovesHistoryAnswerEl = contentEl.querySelector("[data-info-moves-history-answer]");
+  const infoMovesHistoryDateTriggerEl = contentEl.querySelector("[data-info-moves-history-date-trigger]");
+  const infoMovesHistoryDatePopoverEl = contentEl.querySelector("[data-info-moves-history-date-popover]");
   const infoMovesHistoryDateFromEl = contentEl.querySelector("[data-info-moves-history-date-from]");
   const infoMovesHistoryDateToEl = contentEl.querySelector("[data-info-moves-history-date-to]");
   const infoMovesHistoryResetEl = contentEl.querySelector("[data-info-moves-history-reset]");
@@ -8268,6 +8273,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     isDatePickerOpen: false,
     isSortOpen: false,
   };
+  const infoMovesHistoryGroupModes = [
+    { value: "sender", label: "По передающему" },
+    { value: "receiver", label: "По принимающему" },
+    { value: "date", label: "По дате" },
+  ];
   const infoMovesHistorySortModes = [
     { value: "date-desc", label: "Сначала новые" },
     { value: "date-asc", label: "Сначала старые" },
@@ -8279,7 +8289,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     items: [],
     filters: { search: "", view: "number", group: "none", sort: "date-desc", answer: "all", dateFrom: "", dateTo: "" },
     isSortOpen: false,
+    isGroupOpen: false,
     isFiltersOpen: false,
+    isDatePickerOpen: false,
   };
   const infoByDatesState = {
     activeTab: "registrations",
@@ -17849,6 +17861,19 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   };
 
 
+  const setInfoMovesHistoryGroupDropdownOpen = (isOpen) => {
+    infoMovesHistoryState.isGroupOpen = Boolean(isOpen);
+    infoMovesHistoryGroupDropdownEl?.classList.toggle("is-open", infoMovesHistoryState.isGroupOpen);
+    infoMovesHistoryGroupMenuEl?.classList.toggle("is-hidden", !infoMovesHistoryState.isGroupOpen);
+    infoMovesHistoryGroupTriggerEl?.setAttribute("aria-expanded", String(infoMovesHistoryState.isGroupOpen));
+  };
+
+  const setInfoMovesHistoryDatePickerOpen = (isOpen) => {
+    infoMovesHistoryState.isDatePickerOpen = Boolean(isOpen);
+    infoMovesHistoryDatePopoverEl?.classList.toggle("is-hidden", !infoMovesHistoryState.isDatePickerOpen);
+    infoMovesHistoryDateTriggerEl?.setAttribute("aria-expanded", String(infoMovesHistoryState.isDatePickerOpen));
+  };
+
   const setInfoMovesHistorySortDropdownOpen = (isOpen) => {
     infoMovesHistoryState.isSortOpen = Boolean(isOpen);
     infoMovesHistorySortDropdownEl?.classList.toggle("is-open", infoMovesHistoryState.isSortOpen);
@@ -17871,6 +17896,37 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       infoMovesHistorySortTriggerEl.title = `Сортировка: ${currentOption.label}`;
       infoMovesHistorySortTriggerEl.classList.toggle("is-active", currentOption.value !== "date-desc");
     }
+    const currentGroup = String(infoMovesHistoryState.filters.group || "none");
+    const currentGroupOption = infoMovesHistoryGroupModes.find((option) => option.value === currentGroup);
+    if (infoMovesHistoryGroupEl instanceof HTMLSelectElement) infoMovesHistoryGroupEl.value = currentGroup;
+    if (infoMovesHistoryGroupTriggerEl instanceof HTMLElement) {
+      const groupLabel = currentGroupOption?.label || "Группировка";
+      infoMovesHistoryGroupTriggerEl.setAttribute("aria-label", groupLabel);
+      infoMovesHistoryGroupTriggerEl.title = groupLabel;
+      infoMovesHistoryGroupTriggerEl.classList.toggle("is-active", currentGroup !== "none");
+    }
+    if (infoMovesHistoryGroupOptionsEl instanceof HTMLElement) {
+      infoMovesHistoryGroupOptionsEl.innerHTML = "";
+      [{ value: "none", label: "Без группировки" }, ...infoMovesHistoryGroupModes].forEach((option) => {
+        const optionLabelEl = document.createElement("label");
+        optionLabelEl.className = "tools-filter-option";
+        const radioEl = document.createElement("input");
+        radioEl.type = "radio";
+        radioEl.name = "info-moves-history-group";
+        radioEl.value = option.value;
+        radioEl.checked = option.value === currentGroup;
+        optionLabelEl.append(radioEl, document.createTextNode(option.label));
+        infoMovesHistoryGroupOptionsEl.append(optionLabelEl);
+      });
+    }
+    if (infoMovesHistoryDateTriggerEl instanceof HTMLElement) {
+      const { dateFrom, dateTo } = infoMovesHistoryState.filters;
+      const fromLabel = formatDateValue(parseIsoDateValue(dateFrom) || new Date(dateFrom));
+      const toLabel = formatDateValue(parseIsoDateValue(dateTo) || new Date(dateTo));
+      const label = dateFrom && dateTo ? `${fromLabel} — ${toLabel}` : dateFrom ? `С ${fromLabel}` : dateTo ? `До ${toLabel}` : "Любой период";
+      infoMovesHistoryDateTriggerEl.textContent = label;
+      infoMovesHistoryDateTriggerEl.classList.toggle("is-active", Boolean(dateFrom || dateTo));
+    }
     if (infoMovesHistorySortOptionsEl instanceof HTMLElement) {
       infoMovesHistorySortOptionsEl.innerHTML = "";
       infoMovesHistorySortModes.forEach((option, index) => {
@@ -17886,12 +17942,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         infoMovesHistorySortOptionsEl.append(optionLabelEl);
       });
     }
-    infoMovesHistoryGroupModeButtonEls.forEach((buttonEl) => {
-      const mode = String(buttonEl.dataset.infoMovesHistoryGroupMode ?? "").trim();
-      const isActive = infoMovesHistoryState.filters.group === mode;
-      buttonEl.classList.toggle("is-active", isActive);
-      buttonEl.setAttribute("aria-pressed", String(isActive));
-    });
   };
   const getInfoMoveUser = (move) =>
     String(move?.["Принял"] ?? move?.["Ответственный"] ?? move?.["Ответственный до перемещения"] ?? move?.["Переместил"] ?? "").trim();
@@ -17906,9 +17956,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const getInfoMoveGroupLabel = (move) => {
     const group = infoMovesHistoryState.filters.group;
     if (group === "date") return formatInfoValue(move?.["Дата перемещения"]);
-    if (group === "user") return getInfoMoveUser(move) || "Пользователь не указан";
-    if (group === "tool") return `${formatInfoValue(move?.["Номер"])} • ${formatInfoValue(move?.["Бух.номер"])}`;
-    if (group === "answer") return String(move?.["Ответ"] ?? "").trim() || "Без ответа";
+    if (group === "sender") return String(move?.["Переместил энергетик"] ?? move?.["Переместил"] ?? move?.["Ответственный до перемещения"] ?? "").trim() || "Передающий не указан";
+    if (group === "receiver") return String(move?.["Принял"] ?? move?.["Ответственный"] ?? "").trim() || "Принимающий не указан";
     return "";
   };
 
@@ -18085,7 +18134,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     infoMovesHistoryModalEl.classList.remove("is-hidden");
     document.body.style.overflow = "hidden";
     setInfoMovesHistorySortDropdownOpen(false);
+    setInfoMovesHistoryGroupDropdownOpen(false);
     setInfoMovesHistoryFiltersOpen(false);
+    setInfoMovesHistoryDatePickerOpen(false);
     renderInfoMovesHistoryControls();
     await loadInfoMovesHistory();
   };
@@ -19639,18 +19690,29 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     renderInfoMovesHistoryControls();
     renderInfoMovesHistory();
   });
-  infoMovesHistoryGroupModeButtonEls.forEach((buttonEl) => {
-    buttonEl.addEventListener("click", () => {
-      const mode = String(buttonEl.dataset.infoMovesHistoryGroupMode ?? "").trim();
-      infoMovesHistoryState.filters.group = infoMovesHistoryState.filters.group === mode ? "none" : mode;
-      if (infoMovesHistoryGroupEl instanceof HTMLSelectElement) infoMovesHistoryGroupEl.value = infoMovesHistoryState.filters.group;
-      renderInfoMovesHistoryControls();
-      renderInfoMovesHistory();
-    });
+  infoMovesHistoryGroupTriggerEl?.addEventListener("click", (event) => {
+    event.stopPropagation();
+    setInfoMovesHistorySortDropdownOpen(false);
+    setInfoMovesHistoryFiltersOpen(false);
+    setInfoMovesHistoryGroupDropdownOpen(!infoMovesHistoryState.isGroupOpen);
+  });
+  infoMovesHistoryGroupOptionsEl?.addEventListener("change", (event) => {
+    const target = event.target instanceof HTMLInputElement ? event.target : null;
+    if (!target) return;
+    infoMovesHistoryState.filters.group = String(target.value || "none");
+    if (infoMovesHistoryGroupEl instanceof HTMLSelectElement) infoMovesHistoryGroupEl.value = infoMovesHistoryState.filters.group;
+    setInfoMovesHistoryGroupDropdownOpen(false);
+    renderInfoMovesHistoryControls();
+    renderInfoMovesHistory();
+  });
+  infoMovesHistoryDateTriggerEl?.addEventListener("click", (event) => {
+    event.stopPropagation();
+    setInfoMovesHistoryDatePickerOpen(!infoMovesHistoryState.isDatePickerOpen);
   });
   infoMovesHistoryFiltersToggleEl?.addEventListener("click", (event) => {
     event.stopPropagation();
     setInfoMovesHistorySortDropdownOpen(false);
+    setInfoMovesHistoryGroupDropdownOpen(false);
     setInfoMovesHistoryFiltersOpen(!infoMovesHistoryState.isFiltersOpen);
   });
   infoMovesHistoryFiltersPanelEl?.addEventListener("click", (event) => {
@@ -19680,7 +19742,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (infoMovesHistoryDateFromEl) infoMovesHistoryDateFromEl.value = "";
     if (infoMovesHistoryDateToEl) infoMovesHistoryDateToEl.value = "";
     setInfoMovesHistorySortDropdownOpen(false);
+    setInfoMovesHistoryGroupDropdownOpen(false);
     setInfoMovesHistoryFiltersOpen(false);
+    setInfoMovesHistoryDatePickerOpen(false);
     renderInfoMovesHistoryControls();
     renderInfoMovesHistory();
   });

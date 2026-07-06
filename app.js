@@ -7118,9 +7118,17 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const infoMovesHistoryCloseButton = contentEl.querySelector(
     "[data-info-moves-history-close]"
   );
-  const infoMovesHistoryPlaceholderEl = contentEl.querySelector(
-    "[data-info-moves-history-placeholder]"
-  );
+  const infoMovesHistorySearchEl = contentEl.querySelector("[data-info-moves-history-search]");
+  const infoMovesHistoryViewEl = contentEl.querySelector("[data-info-moves-history-view]");
+  const infoMovesHistoryGroupEl = contentEl.querySelector("[data-info-moves-history-group]");
+  const infoMovesHistorySortEl = contentEl.querySelector("[data-info-moves-history-sort]");
+  const infoMovesHistoryAnswerEl = contentEl.querySelector("[data-info-moves-history-answer]");
+  const infoMovesHistoryDateFromEl = contentEl.querySelector("[data-info-moves-history-date-from]");
+  const infoMovesHistoryDateToEl = contentEl.querySelector("[data-info-moves-history-date-to]");
+  const infoMovesHistoryResetEl = contentEl.querySelector("[data-info-moves-history-reset]");
+  const infoMovesHistorySummaryEl = contentEl.querySelector("[data-info-moves-history-summary]");
+  const infoMovesHistoryListEl = contentEl.querySelector("[data-info-moves-history-list]");
+  const infoMovesHistoryEmptyEl = contentEl.querySelector("[data-info-moves-history-empty]");
   const infoByDatesModalEl = contentEl.querySelector("[data-info-by-dates-modal]");
   const infoByDatesBackdropEl = contentEl.querySelector("[data-info-by-dates-backdrop]");
   const infoByDatesCloseButton = contentEl.querySelector("[data-info-by-dates-close]");
@@ -8252,6 +8260,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     isFiltersOpen: false,
     isDatePickerOpen: false,
     isSortOpen: false,
+  };
+  const infoMovesHistoryState = {
+    items: [],
+    filters: { search: "", view: "number", group: "none", sort: "date-desc", answer: "all", dateFrom: "", dateTo: "" },
   };
   const infoByDatesState = {
     activeTab: "registrations",
@@ -17818,14 +17830,169 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     await loadInfoPendingList();
   };
 
-  const openInfoMovesHistoryModal = () => {
+  const getInfoMoveUser = (move) =>
+    String(move?.["Принял"] ?? move?.["Ответственный"] ?? move?.["Ответственный до перемещения"] ?? move?.["Переместил"] ?? "").trim();
+
+  const getInfoMoveSearchText = (move) =>
+    [
+      "Номер", "Бух.номер", "Наименование", "Производитель", "Модель", "Дата перемещения",
+      "Переместил", "Принял", "Ответственный", "Ответственный до перемещения", "Старый объект",
+      "Новый объект", "Причина перемещения", "Ответ", "Комментарий к ответу",
+    ].map((key) => move?.[key]).join(" ").toLowerCase();
+
+  const getInfoMoveGroupLabel = (move) => {
+    const group = infoMovesHistoryState.filters.group;
+    if (group === "date") return formatInfoValue(move?.["Дата перемещения"]);
+    if (group === "user") return getInfoMoveUser(move) || "Пользователь не указан";
+    if (group === "tool") return `${formatInfoValue(move?.["Номер"])} • ${formatInfoValue(move?.["Бух.номер"])}`;
+    if (group === "answer") return String(move?.["Ответ"] ?? "").trim() || "Без ответа";
+    return "";
+  };
+
+  const createInfoMovesHistoryRow = (icon, label, value, wide = false) => {
+    const row = document.createElement("div");
+    row.className = `info-moves-history-item__row${wide ? " info-moves-history-item__row--wide" : ""}`;
+    const iconEl = document.createElement("span");
+    iconEl.className = "info-moves-history-item__icon";
+    iconEl.textContent = icon;
+    const textEl = document.createElement("span");
+    textEl.className = "info-moves-history-item__text";
+    const labelEl = document.createElement("span");
+    labelEl.className = "info-moves-history-item__label";
+    labelEl.textContent = label;
+    const valueEl = document.createElement("span");
+    valueEl.className = "info-moves-history-item__value";
+    valueEl.textContent = formatInfoValue(value);
+    textEl.append(labelEl, valueEl);
+    row.append(iconEl, textEl);
+    return row;
+  };
+
+  const getFilteredInfoMovesHistory = () => {
+    const filters = infoMovesHistoryState.filters;
+    const query = filters.search.trim().toLowerCase();
+    const from = parseIsoDateValue(filters.dateFrom);
+    const to = parseIsoDateValue(filters.dateTo);
+    return infoMovesHistoryState.items.filter((move) => {
+      if (query && !getInfoMoveSearchText(move).includes(query)) return false;
+      const answer = String(move?.["Ответ"] ?? "").trim().toLowerCase();
+      if (filters.answer === "answered" && !answer) return false;
+      if (filters.answer === "pending" && answer) return false;
+      if (filters.answer === "cancelled" && !answer.includes("отмена")) return false;
+      const moveDate = parseDateValue(move?.["Дата перемещения"]);
+      if ((from || to) && !moveDate) return false;
+      if (from && moveDate < from) return false;
+      if (to) {
+        const end = new Date(to.getFullYear(), to.getMonth(), to.getDate(), 23, 59, 59, 999);
+        if (moveDate > end) return false;
+      }
+      return true;
+    }).sort((a, b) => {
+      const sort = filters.sort;
+      if (sort.startsWith("date")) {
+        const aTime = parseDateValue(a?.["Дата перемещения"])?.getTime() || 0;
+        const bTime = parseDateValue(b?.["Дата перемещения"])?.getTime() || 0;
+        return sort === "date-asc" ? aTime - bTime : bTime - aTime;
+      }
+      const key = sort === "accounting-asc" ? "Бух.номер" : sort === "user-asc" ? null : "Номер";
+      const aValue = key ? String(a?.[key] ?? "") : getInfoMoveUser(a);
+      const bValue = key ? String(b?.[key] ?? "") : getInfoMoveUser(b);
+      return aValue.localeCompare(bValue, "ru", { numeric: true, sensitivity: "base" });
+    });
+  };
+
+  const renderInfoMovesHistory = () => {
+    if (!infoMovesHistoryListEl || !infoMovesHistoryEmptyEl || !infoMovesHistorySummaryEl) return;
+    const filtered = getFilteredInfoMovesHistory();
+    const uniqueTools = new Set(filtered.map((move) => `${move?.["Номер"] ?? ""}|${move?.["Бух.номер"] ?? ""}`)).size;
+    const pendingCount = filtered.filter((move) => !String(move?.["Ответ"] ?? "").trim()).length;
+    infoMovesHistorySummaryEl.innerHTML = `<div class="info-moves-history-summary__card"><small>Записей</small><strong>${filtered.length} из ${infoMovesHistoryState.items.length}</strong></div><div class="info-moves-history-summary__card"><small>Инструментов</small><strong>${uniqueTools}</strong></div><div class="info-moves-history-summary__card"><small>Без ответа</small><strong>${pendingCount}</strong></div>`;
+    infoMovesHistoryListEl.innerHTML = "";
+    infoMovesHistoryEmptyEl.classList.toggle("is-hidden", filtered.length > 0);
+    let currentGroup = null;
+    filtered.forEach((move) => {
+      const groupLabel = getInfoMoveGroupLabel(move);
+      if (infoMovesHistoryState.filters.group !== "none" && groupLabel !== currentGroup) {
+        currentGroup = groupLabel;
+        const group = document.createElement("div");
+        group.className = "info-moves-history-group";
+        const groupTitle = document.createElement("strong");
+        groupTitle.textContent = groupLabel;
+        const groupCount = document.createElement("span");
+        groupCount.textContent = String(filtered.filter((item) => getInfoMoveGroupLabel(item) === groupLabel).length);
+        group.append(groupTitle, groupCount);
+        infoMovesHistoryListEl.appendChild(group);
+      }
+      const card = document.createElement("article");
+      const answer = String(move?.["Ответ"] ?? "").trim();
+      card.className = `info-moves-history-item${answer.toLowerCase().includes("отмена") ? " info-moves-history-item--danger" : ""}`;
+      const titleText = infoMovesHistoryState.filters.view === "accounting" ? formatInfoValue(move?.["Бух.номер"]) : infoMovesHistoryState.filters.view === "date" ? formatInfoValue(move?.["Дата перемещения"]) : infoMovesHistoryState.filters.view === "user" ? (getInfoMoveUser(move) || "Пользователь не указан") : formatInfoValue(move?.["Номер"]);
+      const subtitle = `${formatInfoValue(move?.["Наименование"])} • ${formatInfoValue(move?.["Производитель"])} ${formatInfoValue(move?.["Модель"])}`;
+      const title = document.createElement("div");
+      title.className = "info-moves-history-item__title";
+      const titleMain = document.createElement("div");
+      titleMain.className = "info-moves-history-item__title-main";
+      const titleIcon = document.createElement("span");
+      titleIcon.className = "info-moves-history-item__title-icon";
+      titleIcon.textContent = "⇄";
+      const titleTextEl = document.createElement("span");
+      titleTextEl.className = "info-moves-history-item__title-text";
+      const titleValueEl = document.createElement("span");
+      titleValueEl.textContent = titleText;
+      const subtitleEl = document.createElement("small");
+      subtitleEl.textContent = subtitle;
+      titleTextEl.append(titleValueEl, subtitleEl);
+      titleMain.append(titleIcon, titleTextEl);
+      const answerEl = document.createElement("em");
+      answerEl.textContent = answer || "Без ответа";
+      title.append(titleMain, answerEl);
+      const route = document.createElement("div");
+      route.className = "info-moves-history-item__route";
+      const fromEl = document.createElement("span");
+      const fromLabel = document.createElement("small");
+      fromLabel.textContent = "Откуда / передал";
+      const fromValue = document.createElement("b");
+      fromValue.textContent = formatInfoValue(move?.["Старый объект"] || move?.["Ответственный до перемещения"] || move?.["Переместил"]);
+      fromEl.append(fromLabel, fromValue);
+      const arrowEl = document.createElement("strong");
+      arrowEl.textContent = "→";
+      const toEl = document.createElement("span");
+      const toLabel = document.createElement("small");
+      toLabel.textContent = "Куда / принял";
+      const toValue = document.createElement("b");
+      toValue.textContent = formatInfoValue(move?.["Новый объект"] || move?.["Принял"] || move?.["Ответственный"]);
+      toEl.append(toLabel, toValue);
+      route.append(fromEl, arrowEl, toEl);
+      const grid = document.createElement("div");
+      grid.className = "info-moves-history-item__grid";
+      grid.append(
+        createInfoMovesHistoryRow("#", "Номер", move?.["Номер"]),
+        createInfoMovesHistoryRow("№", "Бух.номер", move?.["Бух.номер"]),
+        createInfoMovesHistoryRow("📅", "Дата", move?.["Дата перемещения"]),
+        createInfoMovesHistoryRow("👤", "Пользователь", getInfoMoveUser(move)),
+        createInfoMovesHistoryRow("✍", "Причина", move?.["Причина перемещения"] || move?.["Комментарий к ответу"], true)
+      );
+      card.append(title, route, grid);
+      infoMovesHistoryListEl.appendChild(card);
+    });
+  };
+
+  const loadInfoMovesHistory = async () => {
+    if (!context.orgFolderName) {
+      infoMovesHistoryState.items = [];
+      renderInfoMovesHistory();
+      return;
+    }
+    const moves = await loadOrgMovesIncludingHistory(context.orgFolderName, "историю перемещений");
+    infoMovesHistoryState.items = parseCollectionItems(moves, "moves");
+    renderInfoMovesHistory();
+  };
+
+  const openInfoMovesHistoryModal = async () => {
     if (!infoMovesHistoryModalEl) return;
     infoMovesHistoryModalEl.classList.remove("is-hidden");
     document.body.style.overflow = "hidden";
-    if (infoMovesHistoryPlaceholderEl) {
-      infoMovesHistoryPlaceholderEl.textContent =
-        "Страница в разработке. Здесь позже появится новая история перемещений.";
-    }
+    await loadInfoMovesHistory();
   };
 
   const closeInfoMovesHistoryModal = () => {
@@ -19358,6 +19525,34 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (event.key === "Escape") {
       closeInfoMovesHistoryModal();
     }
+  });
+  infoMovesHistorySearchEl?.addEventListener("input", (event) => {
+    infoMovesHistoryState.filters.search = String(event.target.value ?? "");
+    renderInfoMovesHistory();
+  });
+  [
+    [infoMovesHistoryViewEl, "view"],
+    [infoMovesHistoryGroupEl, "group"],
+    [infoMovesHistorySortEl, "sort"],
+    [infoMovesHistoryAnswerEl, "answer"],
+    [infoMovesHistoryDateFromEl, "dateFrom"],
+    [infoMovesHistoryDateToEl, "dateTo"],
+  ].forEach(([element, key]) => {
+    element?.addEventListener("change", (event) => {
+      infoMovesHistoryState.filters[key] = String(event.target.value ?? "");
+      renderInfoMovesHistory();
+    });
+  });
+  infoMovesHistoryResetEl?.addEventListener("click", () => {
+    infoMovesHistoryState.filters = { search: "", view: "number", group: "none", sort: "date-desc", answer: "all", dateFrom: "", dateTo: "" };
+    if (infoMovesHistorySearchEl) infoMovesHistorySearchEl.value = "";
+    if (infoMovesHistoryViewEl) infoMovesHistoryViewEl.value = "number";
+    if (infoMovesHistoryGroupEl) infoMovesHistoryGroupEl.value = "none";
+    if (infoMovesHistorySortEl) infoMovesHistorySortEl.value = "date-desc";
+    if (infoMovesHistoryAnswerEl) infoMovesHistoryAnswerEl.value = "all";
+    if (infoMovesHistoryDateFromEl) infoMovesHistoryDateFromEl.value = "";
+    if (infoMovesHistoryDateToEl) infoMovesHistoryDateToEl.value = "";
+    renderInfoMovesHistory();
   });
 
 

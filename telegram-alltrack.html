@@ -5989,6 +5989,20 @@
         box-shadow: 0 10px 24px rgba(27, 83, 179, 0.35);
       }
 
+
+      body[data-theme="dark"] .info-moves-history-placeholder {
+        border-color: rgba(148, 170, 210, 0.3);
+        background:
+          radial-gradient(circle at 18% 8%, rgba(96, 165, 250, 0.18), transparent 36%),
+          linear-gradient(145deg, rgba(23, 31, 52, 0.88), rgba(15, 23, 42, 0.78));
+        box-shadow: 0 22px 55px rgba(0, 0, 0, 0.28);
+      }
+
+      body[data-theme="dark"] .info-moves-history-placeholder__icon {
+        background: rgba(96, 165, 250, 0.14);
+        color: #93c5fd;
+      }
+
       body[data-theme="dark"] .info-by-dates-tab {
         background: rgba(23, 31, 52, 0.92);
         border-color: rgba(148, 170, 210, 0.35);
@@ -6050,11 +6064,52 @@
 
       .info-moves-history-modal__body {
         display: grid;
-        grid-template-rows: auto auto auto auto minmax(0, 1fr);
-        gap: 8px;
+        place-items: center;
         min-height: 0;
-        overflow: hidden;
-        padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+        overflow: auto;
+        padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+      }
+
+      .info-moves-history-placeholder {
+        width: min(100%, 520px);
+        margin: auto;
+        padding: clamp(22px, 7vw, 36px);
+        border: 1px solid rgba(148, 163, 184, 0.22);
+        border-radius: 28px;
+        background:
+          radial-gradient(circle at 18% 8%, rgba(96, 165, 250, 0.22), transparent 36%),
+          linear-gradient(145deg, rgba(255, 255, 255, 0.88), rgba(241, 247, 255, 0.72));
+        box-shadow: 0 22px 55px rgba(15, 23, 42, 0.12);
+        text-align: center;
+        backdrop-filter: blur(18px);
+        -webkit-backdrop-filter: blur(18px);
+      }
+
+      .info-moves-history-placeholder__icon {
+        display: inline-grid;
+        place-items: center;
+        width: 68px;
+        height: 68px;
+        margin-bottom: 16px;
+        border-radius: 22px;
+        background: rgba(37, 99, 235, 0.1);
+        color: #2563eb;
+        font-size: 32px;
+      }
+
+      .info-moves-history-placeholder h3 {
+        margin: 0 0 8px;
+        color: var(--text);
+        font-size: clamp(20px, 5vw, 26px);
+        line-height: 1.15;
+      }
+
+      .info-moves-history-placeholder p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 14px;
+        font-weight: 700;
+        line-height: 1.5;
       }
 
       .info-moves-history-toolbar,

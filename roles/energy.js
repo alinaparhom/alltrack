@@ -4423,9 +4423,8 @@ export function renderRole(user, options = {}) {
           >
             <div class="settings-modal__header info-hub-modal__header info-hub-modal__header--compact">
               <div class="settings-modal__title info-hub-modal__title">
-                <span class="info-hub-modal__eyebrow">Центр данных</span>
                 <h2>Информация</h2>
-                <p>Быстрый доступ к движению, ремонту и финансовым событиям по инструменту.</p>
+                <p>Выберите нужный раздел — всё по инструментам собрано в понятных карточках.</p>
               </div>
               <button
                 class="button-icon"
@@ -4487,21 +4486,6 @@ export function renderRole(user, options = {}) {
                   <span class="info-hub-option__arrow" aria-hidden="true">›</span>
                 </button>
               </div>
-              <section class="info-hub-suggestions" aria-labelledby="info-hub-suggestions-title">
-                <div class="info-hub-suggestions__header">
-                  <span class="info-hub-suggestions__icon" aria-hidden="true">✨</span>
-                  <div>
-                    <h3 id="info-hub-suggestions-title">Что ещё можно вывести</h3>
-                    <p>Идеи для следующих полезных виджетов в этом разделе.</p>
-                  </div>
-                </div>
-                <div class="info-hub-suggestions__list">
-                  <span>Просроченные подтверждения</span>
-                  <span>Топ часто перемещаемых инструментов</span>
-                  <span>Инструменты без фото</span>
-                  <span>Среднее время ремонта</span>
-                </div>
-              </section>
             </div>
           </div>
         </div>

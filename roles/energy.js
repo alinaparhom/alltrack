@@ -4721,23 +4721,30 @@ export function renderRole(user, options = {}) {
               </button>
             </div>
             <div class="settings-modal__body info-moves-history-modal__body">
-              <div class="info-moves-history-toolbar">
-                <label class="info-moves-history-search" aria-label="Поиск по истории перемещений">
-                  <span class="info-moves-history-search__icon" aria-hidden="true">⌕</span>
-                  <input class="info-moves-history-search__input" type="search" placeholder="Поиск: номер, бух.номер, инструмент, пользователь..." data-info-moves-history-search />
-                </label>
-                <div class="info-moves-history-filters-controls">
-                  <button class="button info-moves-history-reset-all" type="button" data-info-moves-history-reset aria-label="Сбросить фильтры">↺</button>
+              <div class="info-moves-history-toolbar tools-controls">
+                <div class="tools-controls__row info-moves-history-toolbar__top">
+                  <label class="tools-search info-moves-history-search" aria-label="Поиск по истории перемещений">
+                    <input
+                      class="form-input tools-search__input info-moves-history-search__input"
+                      type="search"
+                      placeholder="Поиск: номер, бух.номер, инструмент, пользователь..."
+                      data-info-moves-history-search
+                      autocomplete="off"
+                    />
+                  </label>
+                  <div class="tools-actions info-moves-history-actions">
+                    <button class="tools-filters-toggle info-moves-history-reset-all" type="button" data-info-moves-history-reset aria-label="Сбросить фильтры" title="Сбросить фильтры">↺</button>
+                  </div>
                 </div>
-              </div>
-              <div class="info-moves-history-filters">
-                <div class="info-moves-history-filters__row">
-                  <label class="form-field"><span class="form-label">Выводить по</span><select class="form-control" data-info-moves-history-view><option value="number">Номеру</option><option value="accounting">Бух.номеру</option><option value="date">Дате</option><option value="user">Пользователю</option></select></label>
-                  <label class="form-field"><span class="form-label">Группировка</span><select class="form-control" data-info-moves-history-group><option value="none">Без группировки</option><option value="date">По дате</option><option value="user">По пользователю</option><option value="tool">По инструменту</option><option value="answer">По статусу ответа</option></select></label>
-                  <label class="form-field"><span class="form-label">Сортировка</span><select class="form-control" data-info-moves-history-sort><option value="date-desc">Новые сверху</option><option value="date-asc">Старые сверху</option><option value="number-asc">Номер ↑</option><option value="accounting-asc">Бух.номер ↑</option><option value="user-asc">Пользователь А-Я</option></select></label>
-                  <label class="form-field"><span class="form-label">Статус</span><select class="form-control" data-info-moves-history-answer><option value="all">Все</option><option value="answered">С ответом</option><option value="pending">Без ответа</option><option value="cancelled">Отменённые</option></select></label>
-                  <label class="form-field"><span class="form-label">Дата с</span><input class="form-control" type="date" data-info-moves-history-date-from /></label>
-                  <label class="form-field"><span class="form-label">Дата по</span><input class="form-control" type="date" data-info-moves-history-date-to /></label>
+                <div class="info-moves-history-filters">
+                  <div class="info-moves-history-filters__row">
+                    <label class="form-field"><span class="form-label">Выводить по</span><select class="form-control" data-info-moves-history-view><option value="number">Номеру</option><option value="accounting">Бух.номеру</option><option value="date">Дате</option><option value="user">Пользователю</option></select></label>
+                    <label class="form-field"><span class="form-label">Группировка</span><select class="form-control" data-info-moves-history-group><option value="none">Без группировки</option><option value="date">По дате</option><option value="user">По пользователю</option><option value="tool">По инструменту</option><option value="answer">По статусу ответа</option></select></label>
+                    <label class="form-field"><span class="form-label">Сортировка</span><select class="form-control" data-info-moves-history-sort><option value="date-desc">Новые сверху</option><option value="date-asc">Старые сверху</option><option value="number-asc">Номер ↑</option><option value="accounting-asc">Бух.номер ↑</option><option value="user-asc">Пользователь А-Я</option></select></label>
+                    <label class="form-field"><span class="form-label">Статус</span><select class="form-control" data-info-moves-history-answer><option value="all">Все</option><option value="answered">С ответом</option><option value="pending">Без ответа</option><option value="cancelled">Отменённые</option></select></label>
+                    <label class="form-field"><span class="form-label">Дата с</span><input class="form-control" type="date" data-info-moves-history-date-from /></label>
+                    <label class="form-field"><span class="form-label">Дата по</span><input class="form-control" type="date" data-info-moves-history-date-to /></label>
+                  </div>
                 </div>
               </div>
               <div class="info-moves-history-summary" data-info-moves-history-summary></div>

@@ -32435,6 +32435,16 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (option === "by-dates") {
       closeInfoModal();
       void openInfoByDatesModal();
+      return;
+    }
+    if (option === "repair") {
+      closeInfoModal();
+      void openRepairModal();
+      return;
+    }
+    if (option === "fines") {
+      closeInfoModal();
+      void openFinesModal();
     }
   });
 

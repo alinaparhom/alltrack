@@ -18044,15 +18044,20 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       route.append(fromEl, arrowEl, toEl);
       const grid = document.createElement("div");
       grid.className = "info-moves-history-item__grid";
+      const previousResponsibleValue = move?.["Ответственный до перемещения"] || move?.["Переместил"];
+      const movedByValue = getInfoMoveEnergyMover(move) || move?.["Переместил"];
+      const movedByLabel = getInfoMoveEnergyMover(move) ? "Переместил энергетик" : "Переместил";
+      const shouldShowMovedBy =
+        normalizePersonName(previousResponsibleValue) !== normalizePersonName(movedByValue);
       grid.append(
-        createInfoMovesHistoryRow("#", "Номер", move?.["Номер"]),
-        createInfoMovesHistoryRow("№", "Бух.номер", move?.["Бух.номер"]),
-        createInfoMovesHistoryRow("📦", "Ответственный до", move?.["Ответственный до перемещения"] || move?.["Переместил"]),
-        createInfoMovesHistoryRow("👷", getInfoMoveEnergyMover(move) ? "Перемещение энергетиком" : "Переместил", getInfoMoveEnergyMover(move) || move?.["Переместил"]),
+        createInfoMovesHistoryRow("📦", "Ответственный до", previousResponsibleValue),
         createInfoMovesHistoryRow("✅", "Принимал", move?.["Принял"] || move?.["Ответственный"]),
+        ...(shouldShowMovedBy
+          ? [createInfoMovesHistoryRow("👷", movedByLabel, movedByValue, true)]
+          : []),
         createInfoMovesHistoryRow("📅", "Дата перемещения", move?.["Дата перемещения"]),
         createInfoMovesHistoryRow("🕓", "Дата ответа", move?.["Дата ответа"]),
-        createInfoMovesHistoryRow("✍", tone === "danger" ? "Причина отказа" : "Причина", tone === "danger" ? getInfoMoveRejectReason(move) : (move?.["Причина перемещения"] || move?.["Комментарий к ответу"]), true)
+        createInfoMovesHistoryRow("✍", tone === "danger" ? "Причина отказа" : "Причина перемещения", tone === "danger" ? getInfoMoveRejectReason(move) : (move?.["Причина перемещения"] || move?.["Комментарий к ответу"]), true)
       );
       card.append(title, route, grid);
       infoMovesHistoryListEl.appendChild(card);

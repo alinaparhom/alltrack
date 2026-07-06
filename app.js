@@ -18018,9 +18018,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       titleTextEl.className = "info-moves-history-item__title-text";
       const titleValueEl = document.createElement("span");
       titleValueEl.textContent = titleText;
+      const accountingNumberValue = String(move?.["Бух.номер"] ?? "").trim();
+      const accountingNumberEl = document.createElement("small");
+      accountingNumberEl.className = "info-moves-history-item__accounting";
+      accountingNumberEl.textContent = `Бух.номер: ${formatInfoValue(accountingNumberValue)}`;
       const subtitleEl = document.createElement("small");
       subtitleEl.textContent = subtitle;
-      titleTextEl.append(titleValueEl, subtitleEl);
+      titleTextEl.append(titleValueEl, accountingNumberEl, subtitleEl);
       titleMain.append(titleIcon, titleTextEl);
       const answerEl = document.createElement("em");
       answerEl.textContent = answer || "Без ответа";

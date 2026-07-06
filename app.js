@@ -18361,16 +18361,37 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     renderInfoMovesHistoryList();
   };
 
-  const buildInfoMovesHistoryRow = (label, value) => {
+  const getInfoMovesHistoryIcon = (label) => {
+    const normalized = String(label ?? "").trim().toLowerCase();
+    if (normalized.includes("номер")) return "#";
+    if (normalized.includes("перемест") || normalized.includes("передал")) return "↗";
+    if (normalized.includes("принял")) return "✓";
+    if (normalized.includes("старый")) return "◁";
+    if (normalized.includes("новый")) return "▷";
+    if (normalized.includes("дата")) return "◷";
+    if (normalized.includes("ответ")) return "✓";
+    if (normalized.includes("причина") || normalized.includes("комментар")) return "…";
+    return "•";
+  };
+
+  const buildInfoMovesHistoryRow = (label, value, options = {}) => {
     const row = document.createElement("div");
     row.className = "info-moves-history-item__row";
+    if (options.wide) row.classList.add("info-moves-history-item__row--wide");
+    const iconEl = document.createElement("span");
+    iconEl.className = "info-moves-history-item__icon";
+    iconEl.setAttribute("aria-hidden", "true");
+    iconEl.textContent = options.icon || getInfoMovesHistoryIcon(label);
+    const textWrapEl = document.createElement("div");
+    textWrapEl.className = "info-moves-history-item__text";
     const labelEl = document.createElement("div");
     labelEl.className = "info-moves-history-item__label";
     labelEl.textContent = label;
     const valueEl = document.createElement("div");
     valueEl.className = "info-moves-history-item__value";
     valueEl.textContent = formatInfoValue(value);
-    row.append(labelEl, valueEl);
+    textWrapEl.append(labelEl, valueEl);
+    row.append(iconEl, textWrapEl);
     return row;
   };
 
@@ -18508,13 +18529,40 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       title.className = "info-moves-history-item__title";
       const number = String(move?.["Номер"] ?? "").trim();
       const accounting = String(move?.["Бух.номер"] ?? "").trim();
+      const toolLabel = number || accounting || "Инструмент";
       const responseLabel = String(move?.["Ответ"] ?? "").trim() || "Без ответа";
-      title.innerHTML = "";
+      const isAccepted = response === "принял";
+      const titleMain = document.createElement("div");
+      titleMain.className = "info-moves-history-item__title-main";
+      const titleIcon = document.createElement("span");
+      titleIcon.className = "info-moves-history-item__title-icon";
+      titleIcon.setAttribute("aria-hidden", "true");
+      titleIcon.textContent = isAccepted ? "✓" : "!";
+      const titleTextWrap = document.createElement("div");
+      titleTextWrap.className = "info-moves-history-item__title-text";
       const titleText = document.createElement("span");
-      titleText.textContent = `${formatInfoValue(move?.["Дата перемещения"])} · ${number || accounting || "Инструмент"}`;
+      titleText.textContent = toolLabel;
+      const titleDate = document.createElement("small");
+      titleDate.textContent = formatInfoValue(move?.["Дата перемещения"]);
+      titleTextWrap.append(titleText, titleDate);
+      titleMain.append(titleIcon, titleTextWrap);
       const titleBadge = document.createElement("em");
       titleBadge.textContent = responseLabel;
-      title.append(titleText, titleBadge);
+      title.append(titleMain, titleBadge);
+
+      const route = document.createElement("div");
+      route.className = "info-moves-history-item__route";
+      const sender = formatInfoValue(move?.["Переместил"]);
+      const receiver = formatInfoValue(move?.["Принял"]);
+      route.innerHTML = "";
+      const fromEl = document.createElement("span");
+      fromEl.textContent = sender;
+      const arrowEl = document.createElement("strong");
+      arrowEl.setAttribute("aria-hidden", "true");
+      arrowEl.textContent = "→";
+      const toEl = document.createElement("span");
+      toEl.textContent = receiver;
+      route.append(fromEl, arrowEl, toEl);
 
       const grid = document.createElement("div");
       grid.className = "info-moves-history-item__grid";
@@ -18522,16 +18570,16 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         ...[
           buildInfoMovesHistoryRow("Номер", move?.["Номер"]),
           buildInfoMovesHistoryRow("Бух.номер", move?.["Бух.номер"]),
-          buildInfoMovesHistoryRow("Переместил", move?.["Переместил"]),
-          buildInfoMovesHistoryRow("Принял", move?.["Принял"]),
           objectTrackingEnabled ? buildInfoMovesHistoryRow("Старый объект", move?.["Старый объект"]) : null,
           objectTrackingEnabled ? buildInfoMovesHistoryRow("Новый объект", move?.["Новый объект"]) : null,
           buildInfoMovesHistoryRow("Дата ответа", move?.["Дата ответа"]),
           buildInfoMovesHistoryRow("Ответ", move?.["Ответ"]),
+          move?.["Причина перемещения"] ? buildInfoMovesHistoryRow("Причина", move?.["Причина перемещения"], { wide: true }) : null,
+          move?.["Комментарий к ответу"] ? buildInfoMovesHistoryRow("Комментарий", move?.["Комментарий к ответу"], { wide: true }) : null,
         ].filter(Boolean)
       );
 
-      item.append(title, grid);
+      item.append(title, route, grid);
       infoMovesHistoryListEl.appendChild(item);
     });
   };

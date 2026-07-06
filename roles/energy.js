@@ -4737,12 +4737,12 @@ export function renderRole(user, options = {}) {
                     class="button-secondary info-moves-history-filters-toggle"
                     data-info-moves-history-filters-toggle
                     aria-expanded="false"
-                  >Фильтры</button>
+                  ><span aria-hidden="true">⚙</span><span>Фильтры</span></button>
                   <button
                     type="button"
                     class="button-secondary info-moves-history-reset-all is-hidden"
                     data-info-moves-history-reset-all
-                  >Сбросить все</button>
+                  ><span aria-hidden="true">↺</span><span>Сбросить</span></button>
                 </div>
               </div>
               <div class="info-moves-history-filters is-hidden" data-info-moves-history-filters-panel>
@@ -4871,11 +4871,11 @@ export function renderRole(user, options = {}) {
                 </div>
               </div>
               <div class="info-moves-history-groupbar" aria-label="Группировка истории перемещений">
-                <span class="info-moves-history-groupbar__label">Группировать</span>
-                <button type="button" class="info-moves-history-groupchip is-active" data-info-moves-history-group="date">по датам</button>
-                <button type="button" class="info-moves-history-groupchip" data-info-moves-history-group="tool">по инструменту</button>
-                <button type="button" class="info-moves-history-groupchip" data-info-moves-history-group="receiver">по принимающему</button>
-                <button type="button" class="info-moves-history-groupchip" data-info-moves-history-group="status">по ответу</button>
+                <span class="info-moves-history-groupbar__label"><span aria-hidden="true">▦</span> Группировать</span>
+                <button type="button" class="info-moves-history-groupchip is-active" data-info-moves-history-group="date"><span aria-hidden="true">◷</span> по датам</button>
+                <button type="button" class="info-moves-history-groupchip" data-info-moves-history-group="tool"><span aria-hidden="true">#</span> по инструменту</button>
+                <button type="button" class="info-moves-history-groupchip" data-info-moves-history-group="receiver"><span aria-hidden="true">✓</span> по принимающему</button>
+                <button type="button" class="info-moves-history-groupchip" data-info-moves-history-group="status"><span aria-hidden="true">●</span> по ответу</button>
               </div>
               <div class="info-moves-history-summary" data-info-moves-history-summary></div>
               <div class="info-moves-history-list" data-info-moves-history-list></div>

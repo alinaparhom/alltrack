@@ -18031,9 +18031,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const renderInfoMovesHistory = () => {
     if (!infoMovesHistoryListEl || !infoMovesHistoryEmptyEl || !infoMovesHistorySummaryEl) return;
     const filtered = getFilteredInfoMovesHistory();
-    const uniqueTools = new Set(filtered.map((move) => `${move?.["Номер"] ?? ""}|${move?.["Бух.номер"] ?? ""}`)).size;
-    const answeredTotal = infoMovesHistoryState.items.filter((move) => String(move?.["Ответ"] ?? "").trim()).length;
-    infoMovesHistorySummaryEl.innerHTML = `<div class="info-moves-history-summary__card"><small>Записей</small><strong>${filtered.length} из ${answeredTotal}</strong></div><div class="info-moves-history-summary__card"><small>Инструментов</small><strong>${uniqueTools}</strong></div><div class="info-moves-history-summary__card"><small>Без ответа</small><strong>скрыты</strong></div>`;
+    infoMovesHistorySummaryEl.innerHTML = "";
     infoMovesHistoryListEl.innerHTML = "";
     infoMovesHistoryEmptyEl.classList.toggle("is-hidden", filtered.length > 0);
     let currentGroup = null;
@@ -18070,7 +18068,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const accountingNumberValue = String(move?.["Бух.номер"] ?? "").trim();
       const accountingNumberEl = document.createElement("small");
       accountingNumberEl.className = "info-moves-history-item__accounting";
-      accountingNumberEl.textContent = `Бух.номер: ${formatInfoValue(accountingNumberValue)}`;
+      accountingNumberEl.textContent = formatInfoValue(accountingNumberValue);
       const subtitleEl = document.createElement("small");
       subtitleEl.textContent = subtitle;
       titleTextEl.append(titleValueEl, accountingNumberEl, subtitleEl);

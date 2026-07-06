@@ -7105,6 +7105,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const infoMovesHistoryCloseButton = contentEl.querySelector(
     "[data-info-moves-history-close]"
   );
+  const infoMovesHistorySearchEl = contentEl.querySelector(
+    "[data-info-moves-history-search]"
+  );
+  const infoMovesHistoryGroupEls = contentEl.querySelectorAll(
+    "[data-info-moves-history-group]"
+  );
   const infoMovesHistoryFiltersToggleEl = contentEl.querySelector(
     "[data-info-moves-history-filters-toggle]"
   );
@@ -8333,6 +8339,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     senderOptions: [],
     receiverOptions: [],
     filters: {
+      search: "",
+      group: "date",
       number: "",
       accounting: "",
       sender: [],
@@ -18081,6 +18089,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   };
 
   const getInfoMovesHistoryFilters = () => ({
+    search: String(infoMovesHistorySearchEl?.value ?? "").trim(),
+    group: String(infoMovesHistoryState.filters.group || "date"),
     number: String(infoMovesHistoryFilterNumberEl?.value ?? "").trim(),
     accounting: String(infoMovesHistoryFilterAccountingEl?.value ?? "").trim(),
     sender: parseInfoMovesHistoryPersonFilter(infoMovesHistoryFilterSenderEl?.value ?? ""),
@@ -18115,6 +18125,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   };
 
   const applyInfoMovesHistoryFilters = (moves, filters) => {
+    const normalizedSearch = String(filters.search ?? "").trim().toLowerCase();
     const normalizedNumber = normalizeToolNumberValue(filters.number);
     const normalizedAccounting = filters.accounting.toLowerCase();
     const normalizedSender = new Set(
@@ -18140,6 +18151,23 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         .toLowerCase();
       const moveDate = formatIsoDateValue(parseDateValue(move?.["Дата перемещения"]));
       const responseDate = formatIsoDateValue(parseDateValue(move?.["Дата ответа"]));
+      const searchableText = [
+        move?.["Номер"],
+        move?.["Бух.номер"],
+        move?.["Наименование"],
+        move?.["Производитель"],
+        move?.["Модель"],
+        move?.["Переместил"],
+        move?.["Принял"],
+        move?.["Старый объект"],
+        move?.["Новый объект"],
+        move?.["Дата перемещения"],
+        move?.["Дата ответа"],
+        move?.["Ответ"],
+        move?.["Причина перемещения"],
+        move?.["Комментарий к ответу"],
+      ].map((value) => String(value ?? "").trim().toLowerCase()).join(" ");
+      if (normalizedSearch && !searchableText.includes(normalizedSearch)) return false;
       if (normalizedNumber && moveNumber !== normalizedNumber) return false;
       if (normalizedAccounting && !moveAccounting.includes(normalizedAccounting)) {
         return false;
@@ -18334,6 +18362,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   };
 
   const resetInfoMovesHistoryFilter = (key) => {
+    if (key === "search" && infoMovesHistorySearchEl) infoMovesHistorySearchEl.value = "";
     if (key === "number" && infoMovesHistoryFilterNumberEl) infoMovesHistoryFilterNumberEl.value = "";
     if (key === "accounting" && infoMovesHistoryFilterAccountingEl) infoMovesHistoryFilterAccountingEl.value = "";
     if (key === "sender" && infoMovesHistoryFilterSenderEl) infoMovesHistoryFilterSenderEl.value = "";
@@ -18351,7 +18380,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       renderInfoMovesHistoryCalendar("response");
     }
     if (key === "all") {
-      ["number", "accounting", "sender", "receiver", "moveDate", "responseDate"].forEach((item) => resetInfoMovesHistoryFilter(item));
+      ["search", "number", "accounting", "sender", "receiver", "moveDate", "responseDate"].forEach((item) => resetInfoMovesHistoryFilter(item));
       return;
     }
   };
@@ -18359,6 +18388,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const updateInfoMovesHistoryResetButtons = () => {
     const filters = getInfoMovesHistoryFilters();
     const active = {
+      search: Boolean(filters.search),
       number: Boolean(filters.number),
       accounting: Boolean(filters.accounting),
       sender: Array.isArray(filters.sender) && filters.sender.length > 0,
@@ -18371,6 +18401,35 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       buttonEl.classList.toggle("is-hidden", !active[key]);
     });
     infoMovesHistoryResetAllEl?.classList.toggle("is-hidden", !Object.values(active).some(Boolean));
+  };
+
+  const getInfoMovesHistoryGroupLabel = (move, group) => {
+    if (group === "tool") {
+      const number = String(move?.["Номер"] ?? "").trim();
+      const accounting = String(move?.["Бух.номер"] ?? "").trim();
+      return number || accounting ? `Инструмент ${number || accounting}` : "Инструмент не указан";
+    }
+    if (group === "receiver") {
+      return String(move?.["Принял"] ?? "").trim() || "Принимающий не указан";
+    }
+    if (group === "status") {
+      return String(move?.["Ответ"] ?? "").trim() || "Без ответа";
+    }
+    const date = parseDateValue(move?.["Дата перемещения"]);
+    return date instanceof Date && !Number.isNaN(date.getTime())
+      ? date.toLocaleDateString("ru-RU", { day: "2-digit", month: "long", year: "numeric" })
+      : "Дата не указана";
+  };
+
+  const createInfoMovesHistoryGroupHeader = (label, count) => {
+    const header = document.createElement("div");
+    header.className = "info-moves-history-group";
+    const title = document.createElement("strong");
+    title.textContent = label;
+    const badge = document.createElement("span");
+    badge.textContent = `${count}`;
+    header.append(title, badge);
+    return header;
   };
 
   const renderInfoMovesHistoryList = () => {
@@ -18399,7 +18458,32 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
 
     if (!infoMovesHistoryListEl) return;
-    filteredMoves.forEach((move) => {
+    const groupMode = infoMovesHistoryState.filters.group || "date";
+    const visibleMoves = [...filteredMoves].sort((a, b) => {
+      const aGroup = getInfoMovesHistoryGroupLabel(a, groupMode);
+      const bGroup = getInfoMovesHistoryGroupLabel(b, groupMode);
+      if (groupMode !== "date" && aGroup !== bGroup) return aGroup.localeCompare(bGroup, "ru");
+      const aDate = parseDateValue(a?.["Дата перемещения"]);
+      const bDate = parseDateValue(b?.["Дата перемещения"]);
+      const aTime = aDate instanceof Date && !Number.isNaN(aDate.getTime()) ? aDate.getTime() : 0;
+      const bTime = bDate instanceof Date && !Number.isNaN(bDate.getTime()) ? bDate.getTime() : 0;
+      return bTime - aTime;
+    });
+    let lastGroupKey = "";
+    const groupCounts = visibleMoves.reduce((acc, move) => {
+      const label = getInfoMovesHistoryGroupLabel(move, groupMode);
+      acc.set(label, (acc.get(label) || 0) + 1);
+      return acc;
+    }, new Map());
+
+    visibleMoves.forEach((move) => {
+      const groupLabel = getInfoMovesHistoryGroupLabel(move, groupMode);
+      if (groupLabel !== lastGroupKey) {
+        infoMovesHistoryListEl.appendChild(
+          createInfoMovesHistoryGroupHeader(groupLabel, groupCounts.get(groupLabel) || 0)
+        );
+        lastGroupKey = groupLabel;
+      }
       const item = document.createElement("article");
       item.className = "info-moves-history-item";
       const response = String(move?.["Ответ"] ?? "").trim().toLowerCase();
@@ -18409,13 +18493,21 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
       const title = document.createElement("div");
       title.className = "info-moves-history-item__title";
-      title.textContent = formatInfoValue(move?.["Дата перемещения"]);
+      const number = String(move?.["Номер"] ?? "").trim();
+      const accounting = String(move?.["Бух.номер"] ?? "").trim();
+      const responseLabel = String(move?.["Ответ"] ?? "").trim() || "Без ответа";
+      title.innerHTML = "";
+      const titleText = document.createElement("span");
+      titleText.textContent = `${formatInfoValue(move?.["Дата перемещения"])} · ${number || accounting || "Инструмент"}`;
+      const titleBadge = document.createElement("em");
+      titleBadge.textContent = responseLabel;
+      title.append(titleText, titleBadge);
 
       const grid = document.createElement("div");
       grid.className = "info-moves-history-item__grid";
       grid.append(
         ...[
-          buildInfoMovesHistoryRow("Номер инструмента", move?.["Номер"]),
+          buildInfoMovesHistoryRow("Номер", move?.["Номер"]),
           buildInfoMovesHistoryRow("Бух.номер", move?.["Бух.номер"]),
           buildInfoMovesHistoryRow("Переместил", move?.["Переместил"]),
           buildInfoMovesHistoryRow("Принял", move?.["Принял"]),
@@ -20005,6 +20097,17 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (event.key === "Escape") {
       closeInfoMovesHistoryModal();
     }
+  });
+  infoMovesHistorySearchEl?.addEventListener("input", renderInfoMovesHistoryList);
+  infoMovesHistoryGroupEls.forEach((buttonEl) => {
+    buttonEl.addEventListener("click", () => {
+      const group = String(buttonEl.dataset.infoMovesHistoryGroup ?? "date").trim() || "date";
+      infoMovesHistoryState.filters.group = group;
+      infoMovesHistoryGroupEls.forEach((item) => {
+        item.classList.toggle("is-active", item === buttonEl);
+      });
+      renderInfoMovesHistoryList();
+    });
   });
   infoMovesHistoryFiltersToggleEl?.addEventListener("click", (event) => {
     event.stopPropagation();

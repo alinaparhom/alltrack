@@ -4678,18 +4678,29 @@ export function renderRole(user, options = {}) {
               </button>
             </div>
             <div class="settings-modal__body info-moves-history-modal__body">
-              <div class="info-moves-history-filters-controls">
-                <button
-                  type="button"
-                  class="button-secondary info-moves-history-filters-toggle"
-                  data-info-moves-history-filters-toggle
-                  aria-expanded="false"
-                >Фильтры</button>
-                <button
-                  type="button"
-                  class="button-secondary info-moves-history-reset-all is-hidden"
-                  data-info-moves-history-reset-all
-                >Сбросить все</button>
+              <div class="info-moves-history-toolbar">
+                <label class="info-moves-history-search" aria-label="Поиск по истории перемещений">
+                  <span class="info-moves-history-search__icon" aria-hidden="true">⌕</span>
+                  <input
+                    type="search"
+                    class="info-moves-history-search__input"
+                    placeholder="Поиск: номер, бух.номер, ФИО, объект, ответ"
+                    data-info-moves-history-search
+                  />
+                </label>
+                <div class="info-moves-history-filters-controls">
+                  <button
+                    type="button"
+                    class="button-secondary info-moves-history-filters-toggle"
+                    data-info-moves-history-filters-toggle
+                    aria-expanded="false"
+                  >Фильтры</button>
+                  <button
+                    type="button"
+                    class="button-secondary info-moves-history-reset-all is-hidden"
+                    data-info-moves-history-reset-all
+                  >Сбросить все</button>
+                </div>
               </div>
               <div class="info-moves-history-filters is-hidden" data-info-moves-history-filters-panel>
                 <div class="info-moves-history-filters__row">
@@ -4815,6 +4826,13 @@ export function renderRole(user, options = {}) {
                     </div>
                   </div>
                 </div>
+              </div>
+              <div class="info-moves-history-groupbar" aria-label="Группировка истории перемещений">
+                <span class="info-moves-history-groupbar__label">Группировать</span>
+                <button type="button" class="info-moves-history-groupchip is-active" data-info-moves-history-group="date">по датам</button>
+                <button type="button" class="info-moves-history-groupchip" data-info-moves-history-group="tool">по инструменту</button>
+                <button type="button" class="info-moves-history-groupchip" data-info-moves-history-group="receiver">по принимающему</button>
+                <button type="button" class="info-moves-history-groupchip" data-info-moves-history-group="status">по ответу</button>
               </div>
               <div class="info-moves-history-summary" data-info-moves-history-summary></div>
               <div class="info-moves-history-list" data-info-moves-history-list></div>

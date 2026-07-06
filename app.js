@@ -5902,6 +5902,19 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const infoBackdropEl = contentEl.querySelector("[data-energy-info-backdrop]");
   const infoCloseButton = contentEl.querySelector("[data-energy-info-close]");
   const infoGridEl = contentEl.querySelector("[data-energy-info-grid]");
+  const infoStatisticsModalEl = contentEl.querySelector("[data-info-statistics-modal]");
+  const infoStatisticsBackdropEl = contentEl.querySelector("[data-info-statistics-backdrop]");
+  const infoStatisticsCloseButton = contentEl.querySelector("[data-info-statistics-close]");
+  const infoStatisticsSubtitleEl = contentEl.querySelector("[data-info-statistics-subtitle]");
+  const infoStatisticsStatusEl = contentEl.querySelector("[data-info-statistics-status]");
+  const infoStatisticsValueEls = {
+    tools: contentEl.querySelector("[data-info-statistics-tools]"),
+    working: contentEl.querySelector("[data-info-statistics-working]"),
+    moves: contentEl.querySelector("[data-info-statistics-moves]"),
+    repairs: contentEl.querySelector("[data-info-statistics-repairs]"),
+    breakdowns: contentEl.querySelector("[data-info-statistics-breakdowns]"),
+    fines: contentEl.querySelector("[data-info-statistics-fines]"),
+  };
   const downloadOptionsGridEl = contentEl.querySelector("[data-download-options-grid]");
   const downloadSubtitleEl = contentEl.querySelector("[data-energy-download-subtitle]");
   const downloadMessageEl = contentEl.querySelector("[data-energy-download-message]");
@@ -31376,6 +31389,60 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     document.body.style.overflow = "hidden";
   };
 
+  const closeInfoStatisticsModal = () => {
+    if (!infoStatisticsModalEl) return;
+    infoStatisticsModalEl.classList.add("is-hidden");
+    document.body.style.overflow = "";
+  };
+
+  const setInfoStatisticsValue = (key, value) => {
+    const element = infoStatisticsValueEls[key];
+    if (element) element.textContent = String(value ?? "—");
+  };
+
+  const loadInfoStatisticsArray = async (orgFolder, fileName) => {
+    if (!orgFolder) return [];
+    try {
+      const data = await loadJson(`./${orgFolder}/${fileName}`);
+      return Array.isArray(data) ? data : [];
+    } catch (error) {
+      console.warn(`Не удалось загрузить ${fileName} для статистики.`, error);
+      return [];
+    }
+  };
+
+  const openInfoStatisticsModal = async () => {
+    if (!infoStatisticsModalEl) return;
+    infoStatisticsModalEl.classList.remove("is-hidden");
+    document.body.style.overflow = "hidden";
+    if (infoStatisticsStatusEl) infoStatisticsStatusEl.textContent = "Загружаем статистику...";
+    if (infoStatisticsSubtitleEl) {
+      infoStatisticsSubtitleEl.textContent = context.orgFullName || context.orgShortName || context.orgFolderName || "Краткая сводка по организации";
+    }
+    Object.keys(infoStatisticsValueEls).forEach((key) => setInfoStatisticsValue(key, "—"));
+
+    const orgFolder = context.orgFolderName ?? "";
+    const [tools, moves, repairs, breakdowns, fines] = await Promise.all([
+      loadInfoStatisticsArray(orgFolder, "База с инструментами.json"),
+      loadInfoStatisticsArray(orgFolder, "Перемещения.json"),
+      loadInfoStatisticsArray(orgFolder, "Ремонты.json"),
+      loadInfoStatisticsArray(orgFolder, "Поломки.json"),
+      loadInfoStatisticsArray(orgFolder, "Штрафы.json"),
+    ]);
+    const workingCount = tools.filter((tool) => {
+      const status = String(tool?.["Статус"] ?? "").trim().toLocaleLowerCase("ru");
+      return status === "исправен" || status === "в работе";
+    }).length;
+
+    setInfoStatisticsValue("tools", tools.length);
+    setInfoStatisticsValue("working", workingCount);
+    setInfoStatisticsValue("moves", moves.length);
+    setInfoStatisticsValue("repairs", repairs.length);
+    setInfoStatisticsValue("breakdowns", breakdowns.length);
+    setInfoStatisticsValue("fines", fines.length);
+    if (infoStatisticsStatusEl) infoStatisticsStatusEl.textContent = "Статистика обновлена.";
+  };
+
   const triggerExcelDownload = async (fileBlob, blobUrl, fileName, serverFileUrl = "") => {
     if (!fileBlob || !blobUrl) return;
 
@@ -32548,6 +32615,19 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (option === "fines") {
       closeInfoModal();
       void openFinesModal();
+      return;
+    }
+    if (option === "statistics") {
+      closeInfoModal();
+      void openInfoStatisticsModal();
+    }
+  });
+
+  infoStatisticsBackdropEl?.addEventListener("click", closeInfoStatisticsModal);
+  infoStatisticsCloseButton?.addEventListener("click", closeInfoStatisticsModal);
+  infoStatisticsModalEl?.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      closeInfoStatisticsModal();
     }
   });
 

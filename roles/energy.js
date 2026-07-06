@@ -4476,6 +4476,14 @@ export function renderRole(user, options = {}) {
                   </span>
                   <span class="info-hub-option__arrow" aria-hidden="true">›</span>
                 </button>
+                <button type="button" class="info-hub-option info-hub-option--primary" data-energy-info-option="statistics">
+                  <span class="info-hub-option__icon" aria-hidden="true">📊</span>
+                  <span class="info-hub-option__content">
+                    <span class="info-hub-option__text">Статистика</span>
+                    <span class="info-hub-option__hint">Краткая сводка по МТЦ, движениям и ремонтам</span>
+                  </span>
+                  <span class="info-hub-option__arrow" aria-hidden="true">›</span>
+                </button>
                 <button type="button" class="info-hub-option info-hub-option--disabled" data-energy-info-option="instructions" disabled>
                   <span class="info-hub-option__icon" aria-hidden="true">📘</span>
                   <span class="info-hub-option__content">
@@ -4485,6 +4493,41 @@ export function renderRole(user, options = {}) {
                   <span class="info-hub-option__arrow" aria-hidden="true">›</span>
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+        <div class="settings-modal info-statistics-modal is-hidden" data-info-statistics-modal>
+          <div class="settings-modal__backdrop" data-info-statistics-backdrop></div>
+          <div
+            class="settings-modal__panel tools-modal__panel info-statistics-modal__panel"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Статистика"
+          >
+            <div class="settings-modal__header tools-modal__header">
+              <div class="settings-modal__title">
+                <h2>Статистика</h2>
+                <p data-info-statistics-subtitle>Краткая сводка по организации</p>
+              </div>
+              <button
+                class="button-icon"
+                type="button"
+                data-info-statistics-close
+                aria-label="Закрыть статистику"
+              >
+                <span class="button-icon-emoji" aria-hidden="true">✕</span>
+              </button>
+            </div>
+            <div class="settings-modal__body tools-modal__body info-statistics-modal__body">
+              <div class="dashboard-stats info-statistics-grid" data-info-statistics-grid>
+                <div class="stat-card"><div class="stat-card-header"><span class="stat-icon">🧰</span><div class="stat-label">МТЦ</div></div><div class="stat-row"><span class="stat-value" data-info-statistics-tools>—</span><span class="stat-pill">в базе</span></div></div>
+                <div class="stat-card"><div class="stat-card-header"><span class="stat-icon">✅</span><div class="stat-label">В работе</div></div><div class="stat-row"><span class="stat-value" data-info-statistics-working>—</span><span class="stat-pill">активно</span></div></div>
+                <div class="stat-card"><div class="stat-card-header"><span class="stat-icon">🔁</span><div class="stat-label">Перемещений</div></div><div class="stat-row"><span class="stat-value" data-info-statistics-moves>—</span><span class="stat-pill">всего</span></div></div>
+                <div class="stat-card"><div class="stat-card-header"><span class="stat-icon">🛠️</span><div class="stat-label">Ремонтов</div></div><div class="stat-row"><span class="stat-value" data-info-statistics-repairs>—</span><span class="stat-pill">записей</span></div></div>
+                <div class="stat-card"><div class="stat-card-header"><span class="stat-icon">⚠️</span><div class="stat-label">Поломок</div></div><div class="stat-row"><span class="stat-value" data-info-statistics-breakdowns>—</span><span class="stat-pill">записей</span></div></div>
+                <div class="stat-card"><div class="stat-card-header"><span class="stat-icon">💸</span><div class="stat-label">Штрафов</div></div><div class="stat-row"><span class="stat-value" data-info-statistics-fines>—</span><span class="stat-pill">записей</span></div></div>
+              </div>
+              <div class="form-message" role="status" data-info-statistics-status></div>
             </div>
           </div>
         </div>

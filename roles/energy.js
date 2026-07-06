@@ -4710,7 +4710,7 @@ export function renderRole(user, options = {}) {
             <div class="settings-modal__header info-moves-history-modal__header">
               <div class="settings-modal__title">
                 <h2>История перемещений</h2>
-                <p class="info-moves-history-modal__subtitle">Все завершённые передачи: кто передал, кто принял и когда.</p>
+                <p class="info-moves-history-modal__subtitle">Компактная лента завершённых перемещений с поиском, фильтрами и понятным маршрутом.</p>
               </div>
               <button
                 class="button-icon"
@@ -4728,7 +4728,7 @@ export function renderRole(user, options = {}) {
                   <input
                     type="search"
                     class="info-moves-history-search__input"
-                    placeholder="Поиск по номеру, ФИО, объекту"
+                    placeholder="Номер, бух.номер, ФИО или объект"
                     data-info-moves-history-search
                   />
                 </label>
@@ -4740,7 +4740,7 @@ export function renderRole(user, options = {}) {
                     aria-expanded="false"
                     aria-label="Фильтры"
                     title="Фильтры"
-                  ><span aria-hidden="true">⚙</span><span class="visually-hidden">Фильтры</span></button>
+                  ><span aria-hidden="true">☰</span><span class="visually-hidden">Фильтры</span></button>
                   <button
                     type="button"
                     class="button-secondary info-moves-history-reset-all is-hidden"
@@ -4876,7 +4876,7 @@ export function renderRole(user, options = {}) {
                 </div>
               </div>
               <div class="info-moves-history-groupbar" aria-label="Группировка истории перемещений">
-                <span class="info-moves-history-groupbar__label">Группировать</span>
+                <span class="info-moves-history-groupbar__label">Вид</span>
                 <button type="button" class="info-moves-history-groupchip is-active" data-info-moves-history-group="date">По датам</button>
                 <button type="button" class="info-moves-history-groupchip" data-info-moves-history-group="tool">Инструмент</button>
                 <button type="button" class="info-moves-history-groupchip" data-info-moves-history-group="receiver">Получатель</button>

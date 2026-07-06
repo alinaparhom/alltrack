@@ -4710,7 +4710,6 @@ export function renderRole(user, options = {}) {
             <div class="settings-modal__header info-moves-history-modal__header">
               <div class="settings-modal__title">
                 <h2>История перемещений</h2>
-                <p class="info-moves-history-modal__subtitle">Все перемещения организации: поиск, фильтры, группировки и сортировка.</p>
               </div>
               <button
                 class="button-icon"

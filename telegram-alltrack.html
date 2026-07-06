@@ -153,7 +153,8 @@
         color: #bfdbfe;
       }
 
-      body[data-theme="dark"] .info-moves-history-date-field .download-moves-calendar {
+      body[data-theme="dark"] .info-moves-history-date-field .download-moves-calendar,
+      body[data-theme="dark"] .info-moves-history-date-popover {
         background: rgba(13, 20, 36, 0.98);
       }
       body[data-theme="dark"] .tools-info-modal__body {
@@ -6288,7 +6289,8 @@
       }
 
       .info-moves-history-responsible-dropdown .tools-filter-dropdown__menu,
-      .info-moves-history-date-field .download-moves-calendar {
+      .info-moves-history-date-field .download-moves-calendar,
+      .info-moves-history-date-popover {
         position: fixed;
         left: 12px;
         right: 12px;
@@ -6304,11 +6306,27 @@
       .info-moves-history-date-field { position: relative; }
       .info-moves-history-date-trigger { width: 100%; display: flex; align-items: center; justify-content: flex-start; font: inherit; color: var(--text-primary); }
 
-      .info-moves-history-date-field .download-moves-calendar {
+      .info-moves-history-date-field .download-moves-calendar,
+      .info-moves-history-date-popover {
         background: rgba(255, 255, 255, 0.98);
         border: 1px solid rgba(148, 163, 184, 0.35);
         box-shadow: 0 20px 32px rgba(15, 23, 42, 0.22);
         border-radius: 16px;
+      }
+
+      .info-moves-history-date-popover {
+        z-index: 950;
+        display: grid;
+        gap: 10px;
+        padding: 12px;
+      }
+
+      .info-moves-history-date-popover label {
+        display: grid;
+        gap: 6px;
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 800;
       }
 
       .info-moves-history-groupbar { display: flex; align-items: center; gap: 6px; overflow-x: auto; padding: 1px 1px 4px; scrollbar-width: none; }
@@ -19509,7 +19527,8 @@
           gap: 6px;
         }
 
-        .info-moves-history-date-field .download-moves-calendar {
+        .info-moves-history-date-field .download-moves-calendar,
+        .info-moves-history-date-popover {
           width: 100%;
           left: 8px;
           right: 8px;

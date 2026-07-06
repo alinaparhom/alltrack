@@ -4423,9 +4423,7 @@ export function renderRole(user, options = {}) {
           >
             <div class="settings-modal__header info-hub-modal__header info-hub-modal__header--compact">
               <div class="settings-modal__title info-hub-modal__title">
-                <span class="info-hub-modal__eyebrow">Центр информации</span>
                 <h2>Информация</h2>
-                <p>Быстрый доступ к историям, спискам и служебным разделам.</p>
               </div>
               <button
                 class="button-icon"

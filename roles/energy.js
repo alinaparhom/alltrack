@@ -4422,8 +4422,10 @@ export function renderRole(user, options = {}) {
             aria-label="Раздел информации"
           >
             <div class="settings-modal__header info-hub-modal__header info-hub-modal__header--compact">
-              <div class="settings-modal__title">
+              <div class="settings-modal__title info-hub-modal__title">
+                <span class="info-hub-modal__eyebrow">Центр информации</span>
                 <h2>Информация</h2>
+                <p>Быстрый доступ к историям, спискам и служебным разделам.</p>
               </div>
               <button
                 class="button-icon"
@@ -4436,29 +4438,53 @@ export function renderRole(user, options = {}) {
             </div>
             <div class="settings-modal__body info-hub-modal__body">
               <div class="info-hub-modal__grid" data-energy-info-grid>
-                <button type="button" class="info-hub-option" data-energy-info-option="instructions">
-                  <span class="info-hub-option__icon" aria-hidden="true">📘</span>
-                  <span class="info-hub-option__text">Инструкции</span>
-                </button>
-                <button type="button" class="info-hub-option" data-energy-info-option="pending-list">
+                <button type="button" class="info-hub-option info-hub-option--primary" data-energy-info-option="pending-list">
                   <span class="info-hub-option__icon" aria-hidden="true">📥</span>
-                  <span class="info-hub-option__text">Список на принятии</span>
+                  <span class="info-hub-option__content">
+                    <span class="info-hub-option__text">Список на принятии</span>
+                    <span class="info-hub-option__hint">Кто должен подтвердить передачу инструмента</span>
+                  </span>
+                  <span class="info-hub-option__arrow" aria-hidden="true">›</span>
                 </button>
-                <button type="button" class="info-hub-option" data-energy-info-option="moves-history">
+                <button type="button" class="info-hub-option info-hub-option--primary" data-energy-info-option="moves-history">
                   <span class="info-hub-option__icon" aria-hidden="true">🧭</span>
-                  <span class="info-hub-option__text">История перемещений</span>
+                  <span class="info-hub-option__content">
+                    <span class="info-hub-option__text">История перемещений</span>
+                    <span class="info-hub-option__hint">Полный путь инструмента и ответы</span>
+                  </span>
+                  <span class="info-hub-option__arrow" aria-hidden="true">›</span>
                 </button>
                 <button type="button" class="info-hub-option" data-energy-info-option="by-dates">
                   <span class="info-hub-option__icon" aria-hidden="true">📅</span>
-                  <span class="info-hub-option__text">По датам</span>
+                  <span class="info-hub-option__content">
+                    <span class="info-hub-option__text">По датам</span>
+                    <span class="info-hub-option__hint">События за выбранный период</span>
+                  </span>
+                  <span class="info-hub-option__arrow" aria-hidden="true">›</span>
                 </button>
                 <button type="button" class="info-hub-option" data-energy-info-option="repair">
                   <span class="info-hub-option__icon" aria-hidden="true">🛠️</span>
-                  <span class="info-hub-option__text">Ремонт</span>
+                  <span class="info-hub-option__content">
+                    <span class="info-hub-option__text">Ремонт</span>
+                    <span class="info-hub-option__hint">Отправка и закрытие ремонта</span>
+                  </span>
+                  <span class="info-hub-option__arrow" aria-hidden="true">›</span>
                 </button>
                 <button type="button" class="info-hub-option" data-energy-info-option="fines">
                   <span class="info-hub-option__icon" aria-hidden="true">💸</span>
-                  <span class="info-hub-option__text">Штрафы</span>
+                  <span class="info-hub-option__content">
+                    <span class="info-hub-option__text">Штрафы</span>
+                    <span class="info-hub-option__hint">Проверка начислений и причин</span>
+                  </span>
+                  <span class="info-hub-option__arrow" aria-hidden="true">›</span>
+                </button>
+                <button type="button" class="info-hub-option info-hub-option--disabled" data-energy-info-option="instructions" disabled>
+                  <span class="info-hub-option__icon" aria-hidden="true">📘</span>
+                  <span class="info-hub-option__content">
+                    <span class="info-hub-option__text">Инструкции</span>
+                    <span class="info-hub-option__hint">Скоро: подсказки по работе с разделами</span>
+                  </span>
+                  <span class="info-hub-option__arrow" aria-hidden="true">›</span>
                 </button>
               </div>
             </div>

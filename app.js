@@ -18556,12 +18556,14 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const receiver = formatInfoValue(move?.["Принял"]);
       route.innerHTML = "";
       const fromEl = document.createElement("span");
-      fromEl.textContent = sender;
+      fromEl.innerHTML = `<small>Передал</small><b></b>`;
+      fromEl.querySelector("b").textContent = sender;
       const arrowEl = document.createElement("strong");
       arrowEl.setAttribute("aria-hidden", "true");
       arrowEl.textContent = "→";
       const toEl = document.createElement("span");
-      toEl.textContent = receiver;
+      toEl.innerHTML = `<small>Принял</small><b></b>`;
+      toEl.querySelector("b").textContent = receiver;
       route.append(fromEl, arrowEl, toEl);
 
       const grid = document.createElement("div");

@@ -4721,31 +4721,42 @@ export function renderRole(user, options = {}) {
               </button>
             </div>
             <div class="settings-modal__body info-moves-history-modal__body">
-              <div class="info-moves-history-toolbar tools-controls">
-                <div class="tools-controls__row info-moves-history-toolbar__top">
-                  <label class="tools-search info-moves-history-search" aria-label="Поиск по истории перемещений">
-                    <input
-                      class="form-input tools-search__input info-moves-history-search__input"
-                      type="search"
-                      placeholder="Поиск: номер, бух.номер, инструмент, пользователь..."
-                      data-info-moves-history-search
-                      autocomplete="off"
-                    />
-                  </label>
-                  <div class="tools-actions info-moves-history-actions">
-                    <button class="tools-filters-toggle info-moves-history-reset-all" type="button" data-info-moves-history-reset aria-label="Сбросить фильтры" title="Сбросить фильтры">↺</button>
+              <div class="info-pending-toolbar info-moves-history-toolbar">
+                <label class="tools-search info-pending-search-field info-moves-history-search" aria-label="Поиск по истории перемещений">
+                  <input
+                    class="form-input tools-search__input info-pending-search info-moves-history-search__input"
+                    type="search"
+                    placeholder="Поиск: номер, бух.номер, инструмент, пользователь..."
+                    data-info-moves-history-search
+                    autocomplete="off"
+                  />
+                </label>
+              </div>
+              <div class="info-pending-controls info-moves-history-controls" role="group" aria-label="Группировка, сортировка и фильтры истории">
+                <button type="button" class="info-pending-mode-toggle" data-info-moves-history-group-mode="user" aria-pressed="false">По пользователю</button>
+                <button type="button" class="info-pending-mode-toggle" data-info-moves-history-group-mode="date" aria-pressed="false">По дате</button>
+                <div class="tools-filter-dropdown info-pending-sort-dropdown info-moves-history-sort-dropdown" data-info-moves-history-sort-dropdown>
+                  <button type="button" class="tools-filters-toggle tools-sort-toggle info-pending-sort-trigger info-moves-history-sort-trigger" data-info-moves-history-sort-trigger aria-expanded="false" aria-label="Сортировка" title="Сортировка">
+                    <span class="tools-sort-toggle__icon is-desc" aria-hidden="true"><svg class="tools-sort-toggle__chevron" viewBox="0 0 24 24" focusable="false"><path d="M7 10l5 5 5-5" /></svg></span>
+                  </button>
+                  <div class="tools-filter-dropdown__menu is-hidden" data-info-moves-history-sort-menu>
+                    <div class="tools-filter-dropdown__options" data-info-moves-history-sort-options></div>
                   </div>
                 </div>
-                <div class="info-moves-history-filters">
-                  <div class="info-moves-history-filters__row">
+                <div class="info-pending-filters info-moves-history-filters">
+                  <button type="button" class="tools-filters-toggle info-pending-filters__toggle" data-info-moves-history-filters-toggle aria-label="Открыть фильтры" aria-expanded="false">
+                    <span class="tools-filters-toggle__icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false" fill="none"><line x1="4" y1="7" x2="20" y2="7" stroke="currentColor" stroke-width="2" stroke-linecap="round" /><circle cx="15" cy="7" r="2.5" fill="currentColor" /><line x1="4" y1="17" x2="20" y2="17" stroke="currentColor" stroke-width="2" stroke-linecap="round" /><circle cx="9" cy="17" r="2.5" fill="currentColor" /></svg></span>
+                  </button>
+                  <div class="info-pending-filters__panel info-moves-history-filters__panel is-hidden" data-info-moves-history-filters-panel>
                     <label class="form-field"><span class="form-label">Выводить по</span><select class="form-control" data-info-moves-history-view><option value="number">Номеру</option><option value="accounting">Бух.номеру</option><option value="date">Дате</option><option value="user">Пользователю</option></select></label>
                     <label class="form-field"><span class="form-label">Группировка</span><select class="form-control" data-info-moves-history-group><option value="none">Без группировки</option><option value="date">По дате</option><option value="user">По пользователю</option><option value="tool">По инструменту</option><option value="answer">По статусу ответа</option></select></label>
-                    <label class="form-field"><span class="form-label">Сортировка</span><select class="form-control" data-info-moves-history-sort><option value="date-desc">Новые сверху</option><option value="date-asc">Старые сверху</option><option value="number-asc">Номер ↑</option><option value="accounting-asc">Бух.номер ↑</option><option value="user-asc">Пользователь А-Я</option></select></label>
                     <label class="form-field"><span class="form-label">Статус</span><select class="form-control" data-info-moves-history-answer><option value="all">Все</option><option value="answered">С ответом</option><option value="pending">Без ответа</option><option value="cancelled">Отменённые</option></select></label>
                     <label class="form-field"><span class="form-label">Дата с</span><input class="form-control" type="date" data-info-moves-history-date-from /></label>
                     <label class="form-field"><span class="form-label">Дата по</span><input class="form-control" type="date" data-info-moves-history-date-to /></label>
+                    <button class="button secondary-button info-moves-history-reset-all" type="button" data-info-moves-history-reset>Сбросить фильтры</button>
                   </div>
                 </div>
+                <select class="visually-hidden" data-info-moves-history-sort aria-label="Сортировка"><option value="date-desc">Новые сверху</option><option value="date-asc">Старые сверху</option><option value="number-asc">Номер ↑</option><option value="accounting-asc">Бух.номер ↑</option><option value="user-asc">Пользователь А-Я</option></select>
               </div>
               <div class="info-moves-history-summary" data-info-moves-history-summary></div>
               <div class="info-moves-history-list" data-info-moves-history-list></div>

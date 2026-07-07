@@ -18097,19 +18097,15 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const route = document.createElement("div");
       route.className = "info-moves-history-item__route";
       const fromEl = document.createElement("span");
-      const fromLabel = document.createElement("small");
-      fromLabel.textContent = "С объекта";
       const fromValue = document.createElement("b");
       fromValue.textContent = formatInfoValue(move?.["Старый объект"] || move?.["Ответственный до перемещения"] || move?.["Переместил"]);
-      fromEl.append(fromLabel, fromValue);
+      fromEl.appendChild(fromValue);
       const arrowEl = document.createElement("strong");
       arrowEl.textContent = "→";
       const toEl = document.createElement("span");
-      const toLabel = document.createElement("small");
-      toLabel.textContent = "На объект";
       const toValue = document.createElement("b");
       toValue.textContent = formatInfoValue(move?.["Новый объект"] || move?.["Принял"] || move?.["Ответственный"]);
-      toEl.append(toLabel, toValue);
+      toEl.appendChild(toValue);
       route.append(fromEl, arrowEl, toEl);
       const grid = document.createElement("div");
       grid.className = "info-moves-history-item__grid";
@@ -18118,7 +18114,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const movedByLabel = getInfoMoveEnergyMover(move) ? "Переместил энергетик" : "Переместил";
       const shouldShowMovedBy =
         normalizePersonName(previousResponsibleValue) !== normalizePersonName(movedByValue);
-      grid.append(
+      const reasonValue = tone === "danger"
+        ? getInfoMoveRejectReason(move)
+        : String(move?.["Причина перемещения"] ?? move?.["Комментарий к ответу"] ?? "").trim();
+      const gridItems = [
         createInfoMovesHistoryRow("📦", "", previousResponsibleValue),
         createInfoMovesHistoryGridArrow(),
         createInfoMovesHistoryRow("✅", "", move?.["Принял"] || move?.["Ответственный"]),
@@ -18133,9 +18132,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
             createInfoMovesHistoryRow("🕓", "Дата ответа", move?.["Дата ответа"])
           );
           return dates;
-        })(),
-        createInfoMovesHistoryRow("✍", tone === "danger" ? "Причина отказа" : "Причина перемещения", tone === "danger" ? getInfoMoveRejectReason(move) : (move?.["Причина перемещения"] || move?.["Комментарий к ответу"]), true)
-      );
+        })()
+      ];
+      if (reasonValue) {
+        gridItems.push(createInfoMovesHistoryRow("✍", tone === "danger" ? "Причина отказа" : "Причина перемещения", reasonValue, true));
+      }
+      grid.append(...gridItems);
       card.append(title, route, grid);
       infoMovesHistoryListEl.appendChild(card);
     });

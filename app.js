@@ -18356,38 +18356,19 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const card = document.createElement("article");
       card.className = `info-by-dates-item info-by-dates-item--${tab}`;
 
-      const title = document.createElement("div");
-      title.className = "info-by-dates-item__title";
-      const icon = document.createElement("span");
-      icon.className = "info-by-dates-item__icon";
-      icon.textContent = tab === "moves" ? "⇄" : tab === "writeoff" ? "−" : "+";
-      const titleText = document.createElement("div");
-      titleText.className = "info-by-dates-item__title-text";
-      const titleName = document.createElement("strong");
-      titleName.textContent =
+      const eventDate =
         tab === "moves"
-          ? "Перемещение"
+          ? item?.["Дата перемещения"]
           : tab === "writeoff"
-            ? "Списание"
-            : "Регистрация";
-      const titleDate = document.createElement("small");
-      titleDate.textContent =
-        tab === "moves"
-          ? formatInfoValue(item?.["Дата перемещения"])
-          : tab === "writeoff"
-            ? formatInfoValue(item?.["Дата списания"])
-            : formatInfoValue(item?.["Дата покупки"]);
-      titleText.append(titleName, titleDate);
-      const numberBadge = document.createElement("em");
-      numberBadge.className = "info-by-dates-item__badge";
-      numberBadge.textContent = `№ ${formatInfoValue(item?.["Номер"])}`;
-      title.append(icon, titleText, numberBadge);
+            ? item?.["Дата списания"]
+            : item?.["Дата покупки"];
 
       const grid = document.createElement("div");
       grid.className = "info-by-dates-item__grid";
       if (tab === "moves") {
         grid.append(
           ...[
+            createInfoByDatesRow("Дата", eventDate),
             createInfoByDatesRow("Номер", item?.["Номер"]),
             createInfoByDatesRow("Бух.номер", item?.["Бух.номер"]),
             createInfoByDatesRow("Передал", item?.["Переместил"]),
@@ -18399,6 +18380,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       } else if (tab === "writeoff") {
         grid.append(
           ...[
+            createInfoByDatesRow("Дата", eventDate),
             createInfoByDatesRow("Номер", item?.["Номер"]),
             createInfoByDatesRow("Бух.номер", item?.["Бух.номер"]),
             createInfoByDatesRow("Наименование", item?.["Наименование"]),
@@ -18410,6 +18392,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       } else {
         grid.append(
           ...[
+            createInfoByDatesRow("Дата", eventDate),
             createInfoByDatesRow("Номер", item?.["Номер"]),
             createInfoByDatesRow("Бух.номер", item?.["Бух.номер"]),
             createInfoByDatesRow("Наименование", item?.["Наименование"]),
@@ -18420,7 +18403,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         );
       }
 
-      card.append(title, grid);
+      card.append(grid);
       infoByDatesListEl.appendChild(card);
     });
   };

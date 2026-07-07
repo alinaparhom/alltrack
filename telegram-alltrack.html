@@ -6017,36 +6017,33 @@
         display: grid;
         grid-auto-rows: max-content;
         align-content: start;
-        gap: 8px;
+        gap: 5px;
         min-height: 0;
         overflow: auto;
         padding-right: 2px;
-        padding-bottom: 16px;
+        padding-bottom: 12px;
       }
 
       .info-by-dates-item {
         position: relative;
-        overflow: visible;
-        display: grid;
-        grid-template-rows: auto auto;
-        align-content: start;
+        overflow: hidden;
+        display: block;
         height: auto;
         min-height: max-content;
-        gap: 9px;
-        padding: 11px;
-        border: 1px solid rgba(148, 163, 184, 0.18);
-        border-radius: 22px;
-        background: rgba(255, 255, 255, 0.82);
-        box-shadow: 0 12px 28px rgba(15, 23, 42, 0.07);
-        backdrop-filter: blur(14px);
-        -webkit-backdrop-filter: blur(14px);
+        padding: 5px 6px 5px 9px;
+        border: 1px solid rgba(148, 163, 184, 0.16);
+        border-radius: 14px;
+        background: rgba(255, 255, 255, 0.78);
+        box-shadow: 0 7px 18px rgba(15, 23, 42, 0.045);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
       }
 
       .info-by-dates-item::before {
         content: "";
         position: absolute;
         inset: 0 auto 0 0;
-        width: 4px;
+        width: 3px;
         background: linear-gradient(180deg, #60a5fa, #2563eb);
       }
 
@@ -6062,75 +6059,12 @@
         background: linear-gradient(180deg, #4ade80, #16a34a);
       }
 
-      .info-by-dates-item__title {
-        display: grid;
-        grid-template-columns: 36px minmax(0, 1fr) auto;
-        align-items: center;
-        gap: 9px;
-        min-width: 0;
-      }
-
-      .info-by-dates-item__icon {
-        width: 36px;
-        height: 36px;
-        display: inline-grid;
-        place-items: center;
-        border-radius: 14px;
-        background: rgba(59, 125, 255, 0.1);
-        color: var(--accent);
-        font-size: 17px;
-        font-weight: 950;
-      }
-
-      .info-by-dates-item--writeoff .info-by-dates-item__icon {
-        background: rgba(225, 29, 72, 0.1);
-        color: #be123c;
-      }
-
-      .info-by-dates-item--registrations .info-by-dates-item__icon {
-        background: rgba(34, 197, 94, 0.13);
-        color: #15803d;
-      }
-
-      .info-by-dates-item__title-text {
-        min-width: 0;
-        display: grid;
-        gap: 2px;
-      }
-
-      .info-by-dates-item__title-text strong {
-        color: var(--text);
-        font-size: 14px;
-        font-weight: 950;
-        line-height: 1.15;
-      }
-
-      .info-by-dates-item__title-text small {
-        color: var(--muted);
-        font-size: 11px;
-        font-weight: 800;
-      }
-
-      .info-by-dates-item__badge {
-        max-width: 118px;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        border-radius: 999px;
-        padding: 6px 9px;
-        background: rgba(15, 23, 42, 0.05);
-        color: #475569;
-        font-style: normal;
-        font-size: 11px;
-        font-weight: 900;
-      }
-
       .info-by-dates-item__grid {
         display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-columns: repeat(3, minmax(0, 1fr));
         grid-auto-rows: max-content;
         align-items: start;
-        gap: 6px;
+        gap: 3px;
       }
 
       .info-by-dates-item__meta {
@@ -6138,27 +6072,27 @@
         min-height: max-content;
         display: grid;
         align-content: start;
-        gap: 2px;
-        padding: 8px;
-        border-radius: 14px;
-        background: rgba(248, 250, 252, 0.78);
-        border: 1px solid rgba(148, 163, 184, 0.12);
+        gap: 0;
+        padding: 4px 5px;
+        border-radius: 9px;
+        background: rgba(248, 250, 252, 0.62);
+        border: 1px solid rgba(148, 163, 184, 0.1);
       }
 
       .info-by-dates-item__label {
         color: var(--muted);
-        font-size: 9px;
+        font-size: 8px;
         font-weight: 900;
-        line-height: 1.1;
+        line-height: 1;
         text-transform: uppercase;
-        letter-spacing: 0.04em;
+        letter-spacing: 0.025em;
       }
 
       .info-by-dates-item__value {
         color: var(--text);
-        font-size: 12px;
+        font-size: 10.5px;
         font-weight: 850;
-        line-height: 1.25;
+        line-height: 1.12;
         white-space: normal;
         overflow-wrap: anywhere;
         word-break: break-word;
@@ -19830,7 +19764,7 @@
         }
 
         .info-by-dates-item__grid {
-          grid-template-columns: 1fr;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
         }
       }
 

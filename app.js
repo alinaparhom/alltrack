@@ -18097,15 +18097,19 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const route = document.createElement("div");
       route.className = "info-moves-history-item__route";
       const fromEl = document.createElement("span");
+      const fromLabel = document.createElement("small");
+      fromLabel.textContent = "С объекта";
       const fromValue = document.createElement("b");
       fromValue.textContent = formatInfoValue(move?.["Старый объект"] || move?.["Ответственный до перемещения"] || move?.["Переместил"]);
-      fromEl.appendChild(fromValue);
+      fromEl.append(fromLabel, fromValue);
       const arrowEl = document.createElement("strong");
       arrowEl.textContent = "→";
       const toEl = document.createElement("span");
+      const toLabel = document.createElement("small");
+      toLabel.textContent = "На объект";
       const toValue = document.createElement("b");
       toValue.textContent = formatInfoValue(move?.["Новый объект"] || move?.["Принял"] || move?.["Ответственный"]);
-      toEl.appendChild(toValue);
+      toEl.append(toLabel, toValue);
       route.append(fromEl, arrowEl, toEl);
       const grid = document.createElement("div");
       grid.className = "info-moves-history-item__grid";
@@ -18121,8 +18125,15 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         ...(shouldShowMovedBy
           ? [createInfoMovesHistoryRow("👷", movedByLabel, movedByValue, true)]
           : []),
-        createInfoMovesHistoryRow("📅", "Дата перемещения", move?.["Дата перемещения"], true),
-        createInfoMovesHistoryRow("🕓", "Дата ответа", move?.["Дата ответа"], true),
+        (() => {
+          const dates = document.createElement("div");
+          dates.className = "info-moves-history-item__dates";
+          dates.append(
+            createInfoMovesHistoryRow("📅", "Дата перемещения", move?.["Дата перемещения"]),
+            createInfoMovesHistoryRow("🕓", "Дата ответа", move?.["Дата ответа"])
+          );
+          return dates;
+        })(),
         createInfoMovesHistoryRow("✍", tone === "danger" ? "Причина отказа" : "Причина перемещения", tone === "danger" ? getInfoMoveRejectReason(move) : (move?.["Причина перемещения"] || move?.["Комментарий к ответу"]), true)
       );
       card.append(title, route, grid);

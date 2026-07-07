@@ -8345,6 +8345,42 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const pendingPhotoViewerBackdropEl = pendingMovePhotoViewerEl.querySelector(
     "[data-pending-photo-viewer-backdrop]"
   );
+  const toolsNotesModalEl = document.createElement("div");
+  toolsNotesModalEl.className = "settings-modal tools-notes-modal is-hidden";
+  toolsNotesModalEl.innerHTML = `
+    <div class="settings-modal__backdrop" data-tools-notes-backdrop></div>
+    <section class="settings-modal__panel tools-notes-modal__panel" role="dialog" aria-modal="true" aria-label="Заметки по инструменту">
+      <header class="settings-modal__header tools-notes-modal__header">
+        <div>
+          <h2 data-tools-notes-title>Заметки</h2>
+          <p data-tools-notes-subtitle>История заметок по инструменту</p>
+        </div>
+        <button type="button" class="button-icon tools-modal__close" data-tools-notes-close aria-label="Закрыть заметки">
+          <span class="button-icon-emoji" aria-hidden="true">✕</span>
+        </button>
+      </header>
+      <div class="settings-modal__body tools-notes-modal__body">
+        <div class="tools-notes-list" data-tools-notes-list></div>
+        <form class="tools-notes-form" data-tools-notes-form>
+          <label class="tools-notes-form__label" for="tools-notes-text">Новая заметка</label>
+          <textarea id="tools-notes-text" class="form-input tools-notes-form__textarea" data-tools-notes-text rows="4" placeholder="Напишите, что важно помнить по этому инструменту..."></textarea>
+          <div class="tools-notes-form__footer">
+            <p class="tools-notes-message" data-tools-notes-message></p>
+            <button type="submit" class="action-primary tools-notes-form__save" data-tools-notes-save>Добавить</button>
+          </div>
+        </form>
+      </div>
+    </section>
+  `;
+  document.body.appendChild(toolsNotesModalEl);
+  const toolsNotesTitleEl = toolsNotesModalEl.querySelector("[data-tools-notes-title]");
+  const toolsNotesSubtitleEl = toolsNotesModalEl.querySelector("[data-tools-notes-subtitle]");
+  const toolsNotesListEl = toolsNotesModalEl.querySelector("[data-tools-notes-list]");
+  const toolsNotesFormEl = toolsNotesModalEl.querySelector("[data-tools-notes-form]");
+  const toolsNotesTextEl = toolsNotesModalEl.querySelector("[data-tools-notes-text]");
+  const toolsNotesMessageEl = toolsNotesModalEl.querySelector("[data-tools-notes-message]");
+  const toolsNotesSaveButton = toolsNotesModalEl.querySelector("[data-tools-notes-save]");
+
   const toolsCancelMoveState = {
     move: null,
     moveIndex: null,
@@ -8383,6 +8419,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     repairs: [],
     photos: [],
     kitExpanded: false,
+  };
+  const toolsNotesState = {
+    tool: null,
+    orgFolder: "",
+    isSaving: false,
   };
   let pendingMovesDeclineResolver = null;
   const toolsMoveState = {
@@ -12154,6 +12195,167 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     });
   };
 
+  const normalizeToolNotes = (tool) => {
+    const notes = tool?.["Заметки"] ?? tool?.notes ?? [];
+    if (!Array.isArray(notes)) return [];
+    return notes
+      .map((note) => ({
+        text: String(note?.text ?? note?.["Текст"] ?? "").trim(),
+        author: String(note?.author ?? note?.["Автор"] ?? "").trim(),
+        createdAt: String(note?.createdAt ?? note?.["Дата"] ?? "").trim(),
+      }))
+      .filter((note) => note.text);
+  };
+
+  const getToolNotesCount = (tool) => normalizeToolNotes(tool).length;
+
+  const formatToolNoteDate = (value) => {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return value || "только что";
+    return date.toLocaleString("ru-RU", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  const buildToolsNotesButton = (tool, extraClass = "") => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = ["tools-notes-trigger", extraClass].filter(Boolean).join(" ");
+    button.dataset.toolsNotesOpen = "true";
+    const count = getToolNotesCount(tool);
+    button.setAttribute(
+      "aria-label",
+      count > 0
+        ? `Открыть заметки инструмента, записей: ${count}`
+        : "Добавить заметку к инструменту"
+    );
+    button.innerHTML = `<span aria-hidden="true">📝</span>${
+      count > 0 ? `<span class="tools-notes-trigger__count">${count}</span>` : ""
+    }`;
+    return button;
+  };
+
+  const renderToolsNotesList = () => {
+    if (!toolsNotesListEl) return;
+    const notes = normalizeToolNotes(toolsNotesState.tool);
+    toolsNotesListEl.innerHTML = "";
+    if (!notes.length) {
+      const empty = document.createElement("div");
+      empty.className = "tools-notes-empty";
+      empty.textContent =
+        "Заметок пока нет. Добавьте первую — она сохранится с автором и датой.";
+      toolsNotesListEl.appendChild(empty);
+      return;
+    }
+    notes
+      .slice()
+      .reverse()
+      .forEach((note) => {
+        const item = document.createElement("article");
+        item.className = "tools-note-item";
+        const meta = document.createElement("div");
+        meta.className = "tools-note-item__meta";
+        meta.textContent = `${note.author || "Пользователь"} · ${formatToolNoteDate(
+          note.createdAt
+        )}`;
+        const text = document.createElement("div");
+        text.className = "tools-note-item__text";
+        text.textContent = note.text;
+        item.append(meta, text);
+        toolsNotesListEl.appendChild(item);
+      });
+  };
+
+  const openToolsNotesModal = (tool) => {
+    if (!toolsNotesModalEl || !tool) return;
+    toolsNotesState.tool = tool;
+    toolsNotesState.orgFolder = toolsState.orgFolder || context.orgFolderName || "";
+    const number = resolveToolNumberValue(tool);
+    const title =
+      [tool?.["Наименование"], tool?.["Производитель"], tool?.["Модель"]]
+        .map((value) => String(value ?? "").trim())
+        .filter(Boolean)
+        .join(" ") || "Инструмент";
+    if (toolsNotesTitleEl) toolsNotesTitleEl.textContent = "Заметки";
+    if (toolsNotesSubtitleEl) {
+      toolsNotesSubtitleEl.textContent = `${title}${number ? ` · №${number}` : ""}`;
+    }
+    if (toolsNotesTextEl) toolsNotesTextEl.value = "";
+    if (toolsNotesMessageEl) toolsNotesMessageEl.textContent = "";
+    renderToolsNotesList();
+    toolsNotesModalEl.classList.remove("is-hidden");
+    document.body.style.overflow = "hidden";
+    requestAnimationFrame(() => toolsNotesTextEl?.focus());
+  };
+
+  const closeToolsNotesModal = () => {
+    toolsNotesModalEl?.classList.add("is-hidden");
+    toolsNotesState.tool = null;
+    toolsNotesState.isSaving = false;
+    document.body.style.overflow = "";
+  };
+
+  const isSamePersistentTool = (source, target) => {
+    const sourceNumber = String(source?.["Номер"] ?? "").trim();
+    const targetNumber = String(target?.["Номер"] ?? "").trim();
+    if (sourceNumber && targetNumber) return sourceNumber === targetNumber;
+    const sourceAccounting = String(source?.["Бух.номер"] ?? "").trim();
+    const targetAccounting = String(target?.["Бух.номер"] ?? "").trim();
+    if (sourceAccounting && targetAccounting) return sourceAccounting === targetAccounting;
+    return false;
+  };
+
+  const saveToolNote = async (text) => {
+    const cleanText = String(text ?? "").trim();
+    if (!cleanText || !toolsNotesState.tool || toolsNotesState.isSaving) return;
+    const orgFolder =
+      toolsNotesState.orgFolder || toolsState.orgFolder || context.orgFolderName || "";
+    if (!orgFolder) throw new Error("Не удалось определить организацию.");
+    toolsNotesState.isSaving = true;
+    if (toolsNotesSaveButton) toolsNotesSaveButton.disabled = true;
+    const author =
+      String(
+        currentUser?.full_name ?? currentUser?.fullName ?? currentUserLabel ?? "Пользователь"
+      ).trim() || "Пользователь";
+    const note = { text: cleanText, author, createdAt: new Date().toISOString() };
+    const toolsPath = `./${orgFolder}/База с инструментами.json`;
+    const raw = await loadJson(toolsPath);
+    const tools = Array.isArray(raw) ? raw : Array.isArray(raw?.tools) ? raw.tools : [];
+    const index = tools.findIndex((entry) =>
+      isSamePersistentTool(entry, toolsNotesState.tool)
+    );
+    if (index < 0) throw new Error("Инструмент не найден в базе.");
+    const updatedTool = {
+      ...tools[index],
+      "Заметки": [...normalizeToolNotes(tools[index]), note],
+    };
+    tools[index] = updatedTool;
+    const payload = Array.isArray(raw) ? tools : { ...raw, tools };
+    await saveJson(toolsPath, payload, { user: currentUser });
+    const updatedRuntimeTool = {
+      ...toolsNotesState.tool,
+      "Заметки": updatedTool["Заметки"],
+    };
+    toolsNotesState.tool = updatedRuntimeTool;
+    const updateRuntimeEntry = (entry) =>
+      isSamePersistentTool(entry, updatedRuntimeTool)
+        ? { ...entry, "Заметки": updatedTool["Заметки"] }
+        : entry;
+    toolsState.tools = toolsState.tools.map(updateRuntimeEntry);
+    toolsState.filtered = toolsState.filtered.map(updateRuntimeEntry);
+    toolsState.toolMap = new Map(toolsState.tools.map((entry) => [entry.__selectionId, entry]));
+    if (toolsNotesTextEl) toolsNotesTextEl.value = "";
+    renderToolsNotesList();
+    renderToolsList();
+    if (toolsNotesMessageEl) toolsNotesMessageEl.textContent = "Заметка сохранена.";
+    toolsNotesState.isSaving = false;
+    if (toolsNotesSaveButton) toolsNotesSaveButton.disabled = false;
+  };
+
   const renderToolCard = (
     tool,
     viewMode,
@@ -12406,6 +12608,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       }
       main.append(title, meta);
       row.appendChild(main);
+      row.appendChild(buildToolsNotesButton(tool, "tools-notes-trigger--row"));
       if (!hasPhoto) {
         const badge = document.createElement("div");
         badge.className = "tools-row__badge";
@@ -12453,6 +12656,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     });
 
     media.appendChild(img);
+    media.appendChild(buildToolsNotesButton(tool, "tools-notes-trigger--card"));
 
     if (!hasPhoto) {
       const badge = document.createElement("div");
@@ -12829,6 +13033,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       if (shouldUseSearchLayout) {
         row.classList.add("tools-table__row--search");
       }
+      photoCell.appendChild(buildToolsNotesButton(tool, "tools-notes-trigger--thumb"));
       if (toolsState.mode === "remove-photo") {
         const safePhotoCount = Number.isFinite(photoCount) ? photoCount : 0;
         const photoCountText = String(safePhotoCount);
@@ -20778,6 +20983,14 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     });
 
     toolsListEl.addEventListener("click", (event) => {
+      const notesButton = event.target.closest("[data-tools-notes-open]");
+      if (notesButton) {
+        const item = notesButton.closest("[data-tools-item]");
+        if (!item) return;
+        const tool = toolsState.toolMap.get(item.dataset.toolId);
+        if (tool) openToolsNotesModal(tool);
+        return;
+      }
       const openKitButton = event.target.closest("[data-tools-kit-open]");
       if (openKitButton) {
         const item = openKitButton.closest("[data-tools-item]");
@@ -20909,6 +21122,30 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       photoButton.click();
     });
   }
+  toolsNotesModalEl.addEventListener("click", (event) => {
+    if (event.target.closest("[data-tools-notes-close]") || event.target.closest("[data-tools-notes-backdrop]")) {
+      closeToolsNotesModal();
+    }
+  });
+  toolsNotesFormEl?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    if (!toolsNotesTextEl) return;
+    const text = toolsNotesTextEl.value.trim();
+    if (!text) {
+      if (toolsNotesMessageEl) toolsNotesMessageEl.textContent = "Напишите текст заметки.";
+      return;
+    }
+    try {
+      if (toolsNotesMessageEl) toolsNotesMessageEl.textContent = "Сохраняем...";
+      await saveToolNote(text);
+    } catch (error) {
+      console.warn("Не удалось сохранить заметку.", error);
+      toolsNotesState.isSaving = false;
+      if (toolsNotesSaveButton) toolsNotesSaveButton.disabled = false;
+      if (toolsNotesMessageEl) toolsNotesMessageEl.textContent = error?.message || "Не удалось сохранить заметку.";
+    }
+  });
+
   const clearAddPhotoList = () => {
     if (addPhotoListEl) {
       addPhotoListEl.innerHTML = "";

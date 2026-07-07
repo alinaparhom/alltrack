@@ -18298,7 +18298,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
   const createInfoByDatesRow = (label, value, options = {}) => {
     const row = document.createElement("div");
-    row.className = `info-by-dates-item__meta${options.wide ? " info-by-dates-item__meta--wide" : ""}`;
+    row.className = `info-by-dates-item__meta${options.wide ? " info-by-dates-item__meta--wide" : ""}${options.inline ? " info-by-dates-item__meta--inline" : ""}`;
     const labelEl = document.createElement("span");
     labelEl.className = "info-by-dates-item__label";
     labelEl.textContent = label;
@@ -18403,22 +18403,22 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       } else {
         grid.append(
           ...[
-            createInfoByDatesRow("📅", eventDate, { labelTitle: "Дата" }),
+            createInfoByDatesRow("📅", eventDate, { labelTitle: "Дата", inline: true }),
             createInfoByDatesRow(
               "🔢",
               createInfoByDatesCompactValue(
                 item?.["Номер"] ? `№ ${item?.["Номер"]}` : "",
-                item?.["Бух.номер"] ? `Бух. № ${item?.["Бух.номер"]}` : ""
+                item?.["Бух.номер"] ? `Бух.номер: ${item?.["Бух.номер"]}` : ""
               ),
-              { labelTitle: "Номер и бухгалтерский номер" }
+              { labelTitle: "Номер и бухгалтерский номер", inline: true }
             ),
             createInfoByDatesRow(
               "🧰",
               createInfoByDatesCompactValue(item?.["Наименование"], item?.["Производитель"], item?.["Модель"]),
-              { labelTitle: "Инструмент", wide: true }
+              { labelTitle: "Инструмент", wide: true, inline: true }
             ),
-            createInfoByDatesRow("👤", item?.["Ответственный"], { labelTitle: "Ответственный" }),
-            objectTrackingEnabled ? createInfoByDatesRow("📍", item?.["Объект"], { labelTitle: "Объект" }) : null,
+            createInfoByDatesRow("👤", item?.["Ответственный"], { labelTitle: "Ответственный", inline: true }),
+            objectTrackingEnabled ? createInfoByDatesRow("📍", item?.["Объект"], { labelTitle: "Объект", inline: true }) : null,
           ].filter(Boolean)
         );
       }

@@ -6083,6 +6083,25 @@
         grid-column: span 2;
       }
 
+      .info-by-dates-item__meta--inline {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .info-by-dates-item__meta--inline .info-by-dates-item__label {
+        flex: 0 0 auto;
+        font-size: 14px;
+        line-height: 1;
+        text-transform: none;
+        letter-spacing: 0;
+      }
+
+      .info-by-dates-item__meta--inline .info-by-dates-item__value {
+        flex: 1 1 auto;
+        min-width: 0;
+      }
+
       .info-by-dates-item__label {
         color: var(--muted);
         font-size: 8px;
@@ -6094,8 +6113,8 @@
 
       .info-by-dates-item__value {
         color: var(--text);
-        font-size: 10.5px;
-        font-weight: 850;
+        font-size: 12px;
+        font-weight: 900;
         line-height: 1.12;
         white-space: normal;
         overflow-wrap: anywhere;
@@ -19761,6 +19780,10 @@
           min-height: 38px;
           padding: 9px 10px;
           font-size: 12px;
+        }
+
+        .info-by-dates-item__value {
+          font-size: 12.5px;
         }
 
         .info-by-dates-tab {

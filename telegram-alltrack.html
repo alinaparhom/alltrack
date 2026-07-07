@@ -6079,6 +6079,10 @@
         border: 1px solid rgba(148, 163, 184, 0.1);
       }
 
+      .info-by-dates-item__meta--wide {
+        grid-column: span 2;
+      }
+
       .info-by-dates-item__label {
         color: var(--muted);
         font-size: 8px;
@@ -19765,6 +19769,10 @@
 
         .info-by-dates-item__grid {
           grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .info-by-dates-item__meta--wide {
+          grid-column: 1 / -1;
         }
       }
 

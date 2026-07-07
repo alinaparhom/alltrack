@@ -4732,8 +4732,7 @@ export function renderRole(user, options = {}) {
                     autocomplete="off"
                   />
                   </label>
-                </div>
-                <div class="info-pending-controls info-moves-history-controls" role="group" aria-label="Группировка, сортировка и фильтры истории">
+                  <div class="info-pending-controls info-moves-history-controls" role="group" aria-label="Группировка, сортировка и фильтры истории">
                 <div class="tools-filter-dropdown info-pending-sort-dropdown info-moves-history-group-dropdown" data-info-moves-history-group-dropdown>
                   <button type="button" class="tools-filters-toggle info-moves-history-group-trigger" data-info-moves-history-group-trigger aria-expanded="false" aria-label="Группировка" title="Группировка">
                     <span class="tools-filters-toggle__icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false" fill="none"><rect x="4" y="5" width="7" height="6" rx="2" stroke="currentColor" stroke-width="2"/><rect x="13" y="5" width="7" height="6" rx="2" stroke="currentColor" stroke-width="2"/><rect x="4" y="14" width="7" height="6" rx="2" stroke="currentColor" stroke-width="2"/><rect x="13" y="14" width="7" height="6" rx="2" stroke="currentColor" stroke-width="2"/></svg></span>
@@ -4769,6 +4768,7 @@ export function renderRole(user, options = {}) {
                   </div>
                 </div>
                   <select class="visually-hidden" data-info-moves-history-sort aria-label="Сортировка"><option value="date-desc">Новые сверху</option><option value="date-asc">Старые сверху</option><option value="number-asc">Номер ↑</option><option value="accounting-asc">Бух.номер ↑</option><option value="user-asc">Пользователь А-Я</option></select>
+                  </div>
                 </div>
               </section>
               <section class="info-moves-history-layout-block info-moves-history-layout-block--list" aria-label="Список перемещений">

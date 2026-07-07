@@ -4830,8 +4830,6 @@ export function renderRole(user, options = {}) {
                 <button type="button" class="info-by-dates-tab" data-info-by-dates-tab="moves"><span>⇄</span>Перемещения</button>
                 <button type="button" class="info-by-dates-tab" data-info-by-dates-tab="writeoff"><span>−</span>Списания</button>
               </div>
-
-              <div class="info-by-dates-summary" data-info-by-dates-summary aria-live="polite"></div>
               <div class="info-by-dates-list" data-info-by-dates-list></div>
               <div class="tools-empty is-hidden" data-info-by-dates-empty>За выбранные даты данных нет.</div>
             </div>

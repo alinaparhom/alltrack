@@ -4790,7 +4790,7 @@ export function renderRole(user, options = {}) {
             <div class="settings-modal__header info-by-dates-modal__header">
               <div class="settings-modal__title">
                 <h2>По датам</h2>
-                <p data-info-by-dates-subtitle>Выберите дату или диапазон дат.</p>
+                <p data-info-by-dates-subtitle>Быстрый обзор регистраций, перемещений и списаний.</p>
               </div>
               <button class="button-icon" type="button" data-info-by-dates-close aria-label="Закрыть">
                 <span class="button-icon-emoji" aria-hidden="true">✕</span>
@@ -4826,13 +4826,13 @@ export function renderRole(user, options = {}) {
                 <div class="download-moves-calendar__selected" data-info-by-dates-calendar-selected-range></div>
               </div>
 
-              <div class="info-by-dates-tabs" data-info-by-dates-tabs>
-                <button type="button" class="info-by-dates-tab is-active" data-info-by-dates-tab="registrations">Регистрация</button>
-                <button type="button" class="info-by-dates-tab" data-info-by-dates-tab="moves">Перемещения</button>
-                <button type="button" class="info-by-dates-tab" data-info-by-dates-tab="writeoff">Списания</button>
+              <div class="info-by-dates-tabs" data-info-by-dates-tabs aria-label="Тип данных по датам">
+                <button type="button" class="info-by-dates-tab is-active" data-info-by-dates-tab="registrations"><span>＋</span>Регистрация</button>
+                <button type="button" class="info-by-dates-tab" data-info-by-dates-tab="moves"><span>⇄</span>Перемещения</button>
+                <button type="button" class="info-by-dates-tab" data-info-by-dates-tab="writeoff"><span>−</span>Списания</button>
               </div>
 
-              <div class="info-by-dates-summary" data-info-by-dates-summary></div>
+              <div class="info-by-dates-summary" data-info-by-dates-summary aria-live="polite"></div>
               <div class="info-by-dates-list" data-info-by-dates-list></div>
               <div class="tools-empty is-hidden" data-info-by-dates-empty>За выбранные даты данных нет.</div>
             </div>

@@ -18300,12 +18300,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
   const createInfoByDatesRow = (label, value) => {
     const row = document.createElement("div");
-    row.className = "info-moves-history-item__row";
-    const labelEl = document.createElement("div");
-    labelEl.className = "info-moves-history-item__label";
+    row.className = "info-by-dates-item__meta";
+    const labelEl = document.createElement("span");
+    labelEl.className = "info-by-dates-item__label";
     labelEl.textContent = label;
-    const valueEl = document.createElement("div");
-    valueEl.className = "info-moves-history-item__value";
+    const valueEl = document.createElement("strong");
+    valueEl.className = "info-by-dates-item__value";
     valueEl.textContent = formatInfoValue(value);
     row.append(labelEl, valueEl);
     return row;
@@ -18348,9 +18348,16 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
             : item?.["Дата покупки"]
     );
 
-    infoByDatesSummaryEl.textContent = source.length
-      ? `Показано: ${filtered.length} из ${source.length}`
-      : "Данных пока нет.";
+    const activeLabel =
+      tab === "moves" ? "Перемещения" : tab === "writeoff" ? "Списания" : "Регистрация";
+    infoByDatesSummaryEl.innerHTML = "";
+    const summaryCount = document.createElement("strong");
+    summaryCount.textContent = String(filtered.length);
+    const summaryText = document.createElement("span");
+    summaryText.textContent = source.length
+      ? `${activeLabel}: показано из ${source.length}`
+      : `${activeLabel}: данных пока нет`;
+    infoByDatesSummaryEl.append(summaryCount, summaryText);
 
     infoByDatesEmptyEl.classList.toggle("is-hidden", filtered.length > 0);
     if (!filtered.length) {
@@ -18360,19 +18367,37 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
     filtered.forEach((item) => {
       const card = document.createElement("article");
-      card.className = "info-moves-history-item";
+      card.className = `info-by-dates-item info-by-dates-item--${tab}`;
 
       const title = document.createElement("div");
-      title.className = "info-moves-history-item__title";
-      title.textContent =
+      title.className = "info-by-dates-item__title";
+      const icon = document.createElement("span");
+      icon.className = "info-by-dates-item__icon";
+      icon.textContent = tab === "moves" ? "⇄" : tab === "writeoff" ? "−" : "+";
+      const titleText = document.createElement("div");
+      titleText.className = "info-by-dates-item__title-text";
+      const titleName = document.createElement("strong");
+      titleName.textContent =
         tab === "moves"
-          ? `Перемещение • ${formatInfoValue(item?.["Дата перемещения"])}`
+          ? "Перемещение"
           : tab === "writeoff"
-            ? `Списание • ${formatInfoValue(item?.["Дата списания"])}`
-            : `Регистрация • ${formatInfoValue(item?.["Дата покупки"])}`;
+            ? "Списание"
+            : "Регистрация";
+      const titleDate = document.createElement("small");
+      titleDate.textContent =
+        tab === "moves"
+          ? formatInfoValue(item?.["Дата перемещения"])
+          : tab === "writeoff"
+            ? formatInfoValue(item?.["Дата списания"])
+            : formatInfoValue(item?.["Дата покупки"]);
+      titleText.append(titleName, titleDate);
+      const numberBadge = document.createElement("em");
+      numberBadge.className = "info-by-dates-item__badge";
+      numberBadge.textContent = `№ ${formatInfoValue(item?.["Номер"])}`;
+      title.append(icon, titleText, numberBadge);
 
       const grid = document.createElement("div");
-      grid.className = "info-moves-history-item__grid";
+      grid.className = "info-by-dates-item__grid";
       if (tab === "moves") {
         grid.append(
           ...[

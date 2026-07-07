@@ -6055,8 +6055,56 @@
         background: linear-gradient(180deg, #fb7185, #e11d48);
       }
 
+      .info-by-dates-item--registrations {
+        padding: 8px;
+        border-color: rgba(34, 197, 94, 0.2);
+        background:
+          radial-gradient(circle at 0% 0%, rgba(74, 222, 128, 0.18), transparent 34%),
+          linear-gradient(145deg, rgba(255, 255, 255, 0.92), rgba(240, 253, 244, 0.74));
+        box-shadow: 0 12px 30px rgba(21, 128, 61, 0.08);
+      }
+
       .info-by-dates-item--registrations::before {
-        background: linear-gradient(180deg, #4ade80, #16a34a);
+        width: 4px;
+        background: linear-gradient(180deg, #86efac, #16a34a);
+      }
+
+      .info-by-dates-item--registrations .info-by-dates-item__grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 6px;
+      }
+
+      .info-by-dates-item--registrations .info-by-dates-item__meta {
+        min-height: 38px;
+        padding: 8px 9px;
+        border-color: rgba(34, 197, 94, 0.14);
+        background: rgba(255, 255, 255, 0.72);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
+      }
+
+      .info-by-dates-item--registrations .info-by-dates-item__meta--wide {
+        grid-column: 1 / -1;
+      }
+
+      .info-by-dates-item--registrations .info-by-dates-item__meta--inline {
+        gap: 8px;
+      }
+
+      .info-by-dates-item--registrations .info-by-dates-item__label {
+        width: 26px;
+        height: 26px;
+        display: inline-grid;
+        flex: 0 0 26px;
+        place-items: center;
+        border-radius: 10px;
+        background: linear-gradient(135deg, rgba(34, 197, 94, 0.16), rgba(59, 130, 246, 0.1));
+        color: #15803d;
+        font-size: 14px;
+      }
+
+      .info-by-dates-item--registrations .info-by-dates-item__value {
+        font-size: 12.5px;
+        line-height: 1.18;
       }
 
       .info-by-dates-item__grid {
@@ -6160,6 +6208,25 @@
         background: rgba(23, 31, 52, 0.92);
         border-color: rgba(148, 170, 210, 0.35);
         color: var(--text);
+      }
+
+      body[data-theme="dark"] .info-by-dates-item--registrations {
+        border-color: rgba(74, 222, 128, 0.22);
+        background:
+          radial-gradient(circle at 0% 0%, rgba(34, 197, 94, 0.2), transparent 36%),
+          linear-gradient(145deg, rgba(18, 29, 47, 0.92), rgba(13, 36, 28, 0.78));
+        box-shadow: 0 14px 34px rgba(0, 0, 0, 0.24);
+      }
+
+      body[data-theme="dark"] .info-by-dates-item--registrations .info-by-dates-item__meta {
+        border-color: rgba(74, 222, 128, 0.16);
+        background: rgba(15, 23, 42, 0.58);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+      }
+
+      body[data-theme="dark"] .info-by-dates-item--registrations .info-by-dates-item__label {
+        background: linear-gradient(135deg, rgba(74, 222, 128, 0.18), rgba(96, 165, 250, 0.14));
+        color: #86efac;
       }
 
 

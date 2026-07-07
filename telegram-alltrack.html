@@ -12426,6 +12426,7 @@
       }
 
       .tools-card {
+        position: relative;
         border-radius: 18px;
         border: 1px solid rgba(226, 232, 240, 0.9);
         background: rgba(255, 255, 255, 0.82);
@@ -12778,6 +12779,16 @@
         position: absolute;
         right: 10px;
         bottom: 10px;
+      }
+
+      .tools-notes-trigger--thumb {
+        right: 0;
+        bottom: auto;
+        top: 0;
+        width: 28px;
+        height: 28px;
+        border-radius: 10px;
+        font-size: 13px;
       }
 
       .tools-notes-trigger--row {
@@ -13185,9 +13196,12 @@
       }
 
       .tools-table__cell--thumb {
+        position: relative;
         display: flex;
         align-items: center;
         justify-self: end;
+        padding-top: 8px;
+        padding-right: 8px;
       }
 
       .tools-table__cell--action {

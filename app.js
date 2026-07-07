@@ -12656,7 +12656,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     });
 
     media.appendChild(img);
-    media.appendChild(buildToolsNotesButton(tool, "tools-notes-trigger--card"));
+    card.appendChild(buildToolsNotesButton(tool, "tools-notes-trigger--card"));
 
     if (!hasPhoto) {
       const badge = document.createElement("div");

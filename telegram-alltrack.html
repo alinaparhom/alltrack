@@ -5880,16 +5880,38 @@
         padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
       }
 
+      .info-by-dates-modal__panel {
+        max-width: min(560px, calc(100vw - 16px));
+      }
+
+      .info-by-dates-modal__header {
+        background: linear-gradient(135deg, rgba(255,255,255,.96), rgba(239,246,255,.9));
+      }
+
+      .info-by-dates-modal__body {
+        gap: 10px;
+        background:
+          radial-gradient(circle at 18% 0%, rgba(93,155,255,.14), transparent 32%),
+          linear-gradient(180deg, rgba(248,251,255,.95), rgba(255,255,255,.92));
+      }
+
       .info-by-dates-calendar {
         position: sticky;
         top: 0;
         z-index: 20;
+        border: 1px solid rgba(148, 163, 184, 0.2);
+        border-radius: 22px;
+        background: rgba(255,255,255,.82);
+        box-shadow: 0 14px 34px rgba(15, 23, 42, 0.08);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        padding: 10px;
       }
 
       .info-by-dates-calendar__actions {
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 10px;
+        gap: 8px;
         margin: 8px 0;
       }
 
@@ -5939,14 +5961,30 @@
 
       .info-by-dates-tab {
         flex: 1 1 0;
-        min-width: 108px;
+        min-width: 104px;
         min-height: 40px;
-        border-radius: 12px;
-        border: 1px solid rgba(148, 163, 184, 0.28);
+        border-radius: 999px;
+        border: 1px solid rgba(148, 163, 184, 0.22);
         background: rgba(255, 255, 255, 0.78);
         color: var(--text);
-        font-size: 13px;
-        font-weight: 700;
+        font-size: 12px;
+        font-weight: 850;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        box-shadow: 0 8px 20px rgba(15,23,42,.04);
+      }
+
+      .info-by-dates-tab span {
+        display: inline-grid;
+        place-items: center;
+        width: 20px;
+        height: 20px;
+        border-radius: 999px;
+        background: rgba(59,125,255,.1);
+        color: var(--accent);
+        font-weight: 950;
       }
 
       .info-by-dates-tab.is-active {
@@ -5955,9 +5993,34 @@
         color: #fff;
       }
 
+      .info-by-dates-tab.is-active span {
+        background: rgba(255,255,255,.22);
+        color: #fff;
+      }
+
       .info-by-dates-summary {
-        font-size: var(--text-sm);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 9px 10px;
+        border: 1px solid rgba(148, 163, 184, 0.18);
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.76);
+        box-shadow: 0 8px 20px rgba(15, 23, 42, 0.05);
+        font-size: 12px;
         color: var(--muted);
+      }
+
+      .info-by-dates-summary strong {
+        min-width: 34px;
+        height: 30px;
+        display: inline-grid;
+        place-items: center;
+        border-radius: 12px;
+        background: rgba(59, 125, 255, 0.12);
+        color: var(--accent);
+        font-size: 16px;
+        font-weight: 950;
       }
 
       .info-by-dates-list {
@@ -5967,6 +6030,136 @@
         overflow: auto;
         padding-right: 2px;
         padding-bottom: 16px;
+      }
+
+      .info-by-dates-item {
+        position: relative;
+        overflow: hidden;
+        display: grid;
+        gap: 9px;
+        padding: 11px;
+        border: 1px solid rgba(148, 163, 184, 0.18);
+        border-radius: 22px;
+        background: rgba(255, 255, 255, 0.82);
+        box-shadow: 0 12px 28px rgba(15, 23, 42, 0.07);
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+      }
+
+      .info-by-dates-item::before {
+        content: "";
+        position: absolute;
+        inset: 0 auto 0 0;
+        width: 4px;
+        background: linear-gradient(180deg, #60a5fa, #2563eb);
+      }
+
+      .info-by-dates-item--moves::before {
+        background: linear-gradient(180deg, #38bdf8, #2563eb);
+      }
+
+      .info-by-dates-item--writeoff::before {
+        background: linear-gradient(180deg, #fb7185, #e11d48);
+      }
+
+      .info-by-dates-item--registrations::before {
+        background: linear-gradient(180deg, #4ade80, #16a34a);
+      }
+
+      .info-by-dates-item__title {
+        display: grid;
+        grid-template-columns: 36px minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 9px;
+        min-width: 0;
+      }
+
+      .info-by-dates-item__icon {
+        width: 36px;
+        height: 36px;
+        display: inline-grid;
+        place-items: center;
+        border-radius: 14px;
+        background: rgba(59, 125, 255, 0.1);
+        color: var(--accent);
+        font-size: 17px;
+        font-weight: 950;
+      }
+
+      .info-by-dates-item--writeoff .info-by-dates-item__icon {
+        background: rgba(225, 29, 72, 0.1);
+        color: #be123c;
+      }
+
+      .info-by-dates-item--registrations .info-by-dates-item__icon {
+        background: rgba(34, 197, 94, 0.13);
+        color: #15803d;
+      }
+
+      .info-by-dates-item__title-text {
+        min-width: 0;
+        display: grid;
+        gap: 2px;
+      }
+
+      .info-by-dates-item__title-text strong {
+        color: var(--text);
+        font-size: 14px;
+        font-weight: 950;
+        line-height: 1.15;
+      }
+
+      .info-by-dates-item__title-text small {
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 800;
+      }
+
+      .info-by-dates-item__badge {
+        max-width: 118px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        border-radius: 999px;
+        padding: 6px 9px;
+        background: rgba(15, 23, 42, 0.05);
+        color: #475569;
+        font-style: normal;
+        font-size: 11px;
+        font-weight: 900;
+      }
+
+      .info-by-dates-item__grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 6px;
+      }
+
+      .info-by-dates-item__meta {
+        min-width: 0;
+        display: grid;
+        gap: 2px;
+        padding: 8px;
+        border-radius: 14px;
+        background: rgba(248, 250, 252, 0.78);
+        border: 1px solid rgba(148, 163, 184, 0.12);
+      }
+
+      .info-by-dates-item__label {
+        color: var(--muted);
+        font-size: 9px;
+        font-weight: 900;
+        line-height: 1.1;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+
+      .info-by-dates-item__value {
+        color: var(--text);
+        font-size: 12px;
+        font-weight: 850;
+        line-height: 1.25;
+        word-break: break-word;
       }
 
       body[data-theme="dark"] .info-by-dates-modal__panel {

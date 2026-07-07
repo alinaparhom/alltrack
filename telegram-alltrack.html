@@ -12812,6 +12812,8 @@
       }
 
       .tools-notes-modal {
+        align-items: center;
+        justify-items: center;
         place-items: center;
         padding: max(14px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(14px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
         z-index: 18020;
@@ -12822,7 +12824,7 @@
         height: auto;
         max-height: min(84vh, 720px);
         overflow: hidden;
-        border-radius: 28px;
+        border-radius: 32px;
         grid-template-rows: auto minmax(0, 1fr);
         background:
           radial-gradient(circle at 18% 0%, rgba(96, 165, 250, 0.24), transparent 36%),
@@ -12913,14 +12915,15 @@
 
       @media (max-width: 480px) {
         .tools-notes-modal {
-          align-items: end;
-          padding: 10px;
+          align-items: center;
+          justify-items: center;
+          padding: max(14px, env(safe-area-inset-top)) 12px max(14px, env(safe-area-inset-bottom));
         }
 
         .tools-notes-modal__panel {
-          width: 100%;
+          width: min(100%, 420px);
           max-height: 82vh;
-          border-radius: 26px;
+          border-radius: 30px;
         }
 
         .tools-notes-modal__header {

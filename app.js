@@ -18406,10 +18406,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
             createInfoByDatesRow("📅", eventDate, { labelTitle: "Дата", inline: true }),
             createInfoByDatesRow(
               "🔢",
-              createInfoByDatesCompactValue(
-                item?.["Номер"] ? `№ ${item?.["Номер"]}` : "",
-                item?.["Бух.номер"] ? `Бух.номер: ${item?.["Бух.номер"]}` : ""
-              ),
+              createInfoByDatesCompactValue(item?.["Номер"], item?.["Бух.номер"]),
               { labelTitle: "Номер и бухгалтерский номер", inline: true }
             ),
             createInfoByDatesRow(

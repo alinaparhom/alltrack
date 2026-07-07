@@ -17961,11 +17961,14 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     return "";
   };
 
+  const isInfoMoveObjectChange = (move) =>
+    String(move?.["Ответ"] ?? "").trim().toLowerCase().includes("смена объекта");
+
   const getInfoMoveTone = (move) => {
     const answer = String(move?.["Ответ"] ?? "").trim().toLowerCase();
     if (answer.includes("не прин")) return "danger";
     if (answer.includes("отмена")) return "warning";
-    if (answer.includes("смена объекта")) return "object";
+    if (isInfoMoveObjectChange(move)) return "object";
     if (answer === "принял" || answer.includes("принял")) return "success";
     return "neutral";
   };
@@ -18118,13 +18121,18 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const reasonValue = tone === "danger"
         ? getInfoMoveRejectReason(move)
         : String(move?.["Причина перемещения"] ?? move?.["Комментарий к ответу"] ?? "").trim();
+      const isObjectChange = isInfoMoveObjectChange(move);
       const gridItems = [
-        createInfoMovesHistoryRow("📦", "", previousResponsibleValue),
-        createInfoMovesHistoryGridArrow(),
-        createInfoMovesHistoryRow("✅", "", move?.["Принял"] || move?.["Ответственный"]),
-        ...(shouldShowMovedBy
-          ? [createInfoMovesHistoryRow("👷", movedByLabel, movedByValue, true)]
-          : []),
+        ...(isObjectChange
+          ? []
+          : [
+              createInfoMovesHistoryRow("📦", "", previousResponsibleValue),
+              createInfoMovesHistoryGridArrow(),
+              createInfoMovesHistoryRow("✅", "", move?.["Принял"] || move?.["Ответственный"]),
+              ...(shouldShowMovedBy
+                ? [createInfoMovesHistoryRow("👷", movedByLabel, movedByValue, true)]
+                : []),
+            ]),
         (() => {
           const dates = document.createElement("div");
           dates.className = "info-moves-history-item__dates";

@@ -17983,13 +17983,16 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     iconEl.textContent = icon;
     const textEl = document.createElement("span");
     textEl.className = "info-moves-history-item__text";
-    const labelEl = document.createElement("span");
-    labelEl.className = "info-moves-history-item__label";
-    labelEl.textContent = label;
     const valueEl = document.createElement("span");
     valueEl.className = "info-moves-history-item__value";
     valueEl.textContent = formatInfoValue(value);
-    textEl.append(labelEl, valueEl);
+    if (label) {
+      const labelEl = document.createElement("span");
+      labelEl.className = "info-moves-history-item__label";
+      labelEl.textContent = label;
+      textEl.appendChild(labelEl);
+    }
+    textEl.appendChild(valueEl);
     row.append(iconEl, textEl);
     return row;
   };
@@ -18094,19 +18097,15 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const route = document.createElement("div");
       route.className = "info-moves-history-item__route";
       const fromEl = document.createElement("span");
-      const fromLabel = document.createElement("small");
-      fromLabel.textContent = "Откуда / ответственный до";
       const fromValue = document.createElement("b");
       fromValue.textContent = formatInfoValue(move?.["Старый объект"] || move?.["Ответственный до перемещения"] || move?.["Переместил"]);
-      fromEl.append(fromLabel, fromValue);
+      fromEl.appendChild(fromValue);
       const arrowEl = document.createElement("strong");
       arrowEl.textContent = "→";
       const toEl = document.createElement("span");
-      const toLabel = document.createElement("small");
-      toLabel.textContent = "Куда / принял";
       const toValue = document.createElement("b");
       toValue.textContent = formatInfoValue(move?.["Новый объект"] || move?.["Принял"] || move?.["Ответственный"]);
-      toEl.append(toLabel, toValue);
+      toEl.appendChild(toValue);
       route.append(fromEl, arrowEl, toEl);
       const grid = document.createElement("div");
       grid.className = "info-moves-history-item__grid";
@@ -18116,9 +18115,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const shouldShowMovedBy =
         normalizePersonName(previousResponsibleValue) !== normalizePersonName(movedByValue);
       grid.append(
-        createInfoMovesHistoryRow("📦", "Ответственный до", previousResponsibleValue),
+        createInfoMovesHistoryRow("📦", "", previousResponsibleValue),
         createInfoMovesHistoryGridArrow(),
-        createInfoMovesHistoryRow("✅", "Принимал", move?.["Принял"] || move?.["Ответственный"]),
+        createInfoMovesHistoryRow("✅", "", move?.["Принял"] || move?.["Ответственный"]),
         ...(shouldShowMovedBy
           ? [createInfoMovesHistoryRow("👷", movedByLabel, movedByValue, true)]
           : []),

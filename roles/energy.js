@@ -4751,8 +4751,8 @@ export function renderRole(user, options = {}) {
                   </div>
                 </div>
                 <div class="info-pending-filters info-moves-history-filters">
-                  <button type="button" class="tools-filters-toggle info-pending-filters__toggle info-moves-history-filters__toggle" data-info-moves-history-filters-toggle aria-label="Открыть фильтры" aria-expanded="false">
-                    <span class="info-moves-history-filters__toggle-text">Фильтры</span>
+                  <button type="button" class="tools-filters-toggle info-pending-filters__toggle info-moves-history-filters__toggle" data-info-moves-history-filters-toggle aria-label="Открыть фильтры" title="Фильтры" aria-expanded="false">
+                    <span class="tools-filters-toggle__icon info-moves-history-filters__toggle-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false" fill="none"><path d="M4 6h16M7 12h10M10 18h4" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg></span>
                   </button>
                   <div class="info-pending-filters__panel info-moves-history-filters__panel is-hidden" data-info-moves-history-filters-panel>
                     <label class="form-field"><span class="form-label">Выводить по</span><select class="form-control" data-info-moves-history-view><option value="number">Номеру</option><option value="accounting">Бух.номеру</option><option value="date">Дате</option><option value="user">Пользователю</option></select></label>

@@ -5880,12 +5880,27 @@
         padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
       }
 
-      .info-by-dates-modal__panel {
-        max-width: min(560px, calc(100vw - 16px));
-      }
-
       .info-by-dates-modal__header {
         background: linear-gradient(135deg, rgba(255,255,255,.96), rgba(239,246,255,.9));
+      }
+
+      .info-by-dates-modal__header .button-icon[aria-label*="Закрыть"],
+      .info-by-dates-modal__header .button-icon[aria-label*="Закрыть"]:hover,
+      .info-by-dates-modal__header .button-icon[aria-label*="Закрыть"]:focus-visible {
+        width: 44px;
+        height: 44px;
+        flex: 0 0 auto;
+        border: 0;
+        background: transparent;
+        color: #ef4444;
+        box-shadow: none;
+      }
+
+      .info-by-dates-modal__header .button-icon[aria-label*="Закрыть"] .button-icon-emoji {
+        color: #ef4444;
+        font-size: 22px;
+        font-weight: 900;
+        line-height: 1;
       }
 
       .info-by-dates-modal__body {

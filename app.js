@@ -7144,7 +7144,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const infoByDatesModalEl = contentEl.querySelector("[data-info-by-dates-modal]");
   const infoByDatesBackdropEl = contentEl.querySelector("[data-info-by-dates-backdrop]");
   const infoByDatesCloseButton = contentEl.querySelector("[data-info-by-dates-close]");
-  const infoByDatesSubtitleEl = contentEl.querySelector("[data-info-by-dates-subtitle]");
   const infoByDatesSummaryEl = contentEl.querySelector("[data-info-by-dates-summary]");
   const infoByDatesListEl = contentEl.querySelector("[data-info-by-dates-list]");
   const infoByDatesEmptyEl = contentEl.querySelector("[data-info-by-dates-empty]");
@@ -18487,9 +18486,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (!infoByDatesModalEl) return;
     infoByDatesModalEl.classList.remove("is-hidden");
     document.body.style.overflow = "hidden";
-    if (infoByDatesSubtitleEl) {
-      infoByDatesSubtitleEl.textContent = "Выберите дату или диапазон дат.";
-    }
     infoByDatesState.isCalendarCollapsed = false;
     updateInfoByDatesCalendarVisibility();
     renderInfoByDatesCalendar();

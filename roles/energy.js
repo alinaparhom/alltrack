@@ -4790,7 +4790,6 @@ export function renderRole(user, options = {}) {
             <div class="settings-modal__header info-by-dates-modal__header">
               <div class="settings-modal__title">
                 <h2>По датам</h2>
-                <p data-info-by-dates-subtitle>Быстрый обзор регистраций, перемещений и списаний.</p>
               </div>
               <button class="button-icon" type="button" data-info-by-dates-close aria-label="Закрыть">
                 <span class="button-icon-emoji" aria-hidden="true">✕</span>

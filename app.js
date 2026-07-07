@@ -12289,7 +12289,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     renderToolsNotesList();
     toolsNotesModalEl.classList.remove("is-hidden");
     document.body.style.overflow = "hidden";
-    requestAnimationFrame(() => toolsNotesTextEl?.focus());
   };
 
   const closeToolsNotesModal = () => {

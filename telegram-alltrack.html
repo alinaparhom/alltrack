@@ -5868,12 +5868,12 @@
 
       .info-by-dates-modal__header {
         grid-template-columns: minmax(0, 1fr) auto;
-        align-items: start;
+        align-items: center;
       }
 
       .info-by-dates-modal__body {
         display: grid;
-        grid-template-rows: auto auto auto auto minmax(0, 1fr);
+        grid-template-rows: auto auto minmax(0, 1fr) auto;
         gap: 10px;
         min-height: 0;
         overflow: hidden;
@@ -6011,31 +6011,6 @@
       .info-by-dates-tab.is-active span {
         background: rgba(255,255,255,.22);
         color: #fff;
-      }
-
-      .info-by-dates-summary {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 9px 10px;
-        border: 1px solid rgba(148, 163, 184, 0.18);
-        border-radius: 18px;
-        background: rgba(255, 255, 255, 0.76);
-        box-shadow: 0 8px 20px rgba(15, 23, 42, 0.05);
-        font-size: 12px;
-        color: var(--muted);
-      }
-
-      .info-by-dates-summary strong {
-        min-width: 34px;
-        height: 30px;
-        display: inline-grid;
-        place-items: center;
-        border-radius: 12px;
-        background: rgba(59, 125, 255, 0.12);
-        color: var(--accent);
-        font-size: 16px;
-        font-weight: 950;
       }
 
       .info-by-dates-list {
@@ -18457,7 +18432,7 @@
         overflow: hidden;
         border: 0;
         border-radius: 0;
-        grid-template-rows: auto auto auto auto minmax(0, 1fr);
+        grid-template-rows: auto auto minmax(0, 1fr) auto;
         align-content: start;
       }
 

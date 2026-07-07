@@ -7144,7 +7144,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const infoByDatesModalEl = contentEl.querySelector("[data-info-by-dates-modal]");
   const infoByDatesBackdropEl = contentEl.querySelector("[data-info-by-dates-backdrop]");
   const infoByDatesCloseButton = contentEl.querySelector("[data-info-by-dates-close]");
-  const infoByDatesSummaryEl = contentEl.querySelector("[data-info-by-dates-summary]");
   const infoByDatesListEl = contentEl.querySelector("[data-info-by-dates-list]");
   const infoByDatesEmptyEl = contentEl.querySelector("[data-info-by-dates-empty]");
   const infoByDatesTabEls = contentEl.querySelectorAll("[data-info-by-dates-tab]");
@@ -18191,7 +18190,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const from = infoByDatesState.filters.dateFrom;
     const to = infoByDatesState.filters.dateTo;
     if (!from && !to) {
-      infoByDatesCalendarSelectedRangeEl.textContent = "Выберите дату или диапазон.";
+      infoByDatesCalendarSelectedRangeEl.textContent = "";
       return;
     }
     if (from && !to) {
@@ -18326,7 +18325,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   };
 
   const renderInfoByDatesList = () => {
-    if (!infoByDatesListEl || !infoByDatesEmptyEl || !infoByDatesSummaryEl) return;
+    if (!infoByDatesListEl || !infoByDatesEmptyEl) return;
     infoByDatesListEl.innerHTML = "";
 
     const tab = infoByDatesState.activeTab;
@@ -18346,17 +18345,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
             ? item?.["Дата списания"]
             : item?.["Дата покупки"]
     );
-
-    const activeLabel =
-      tab === "moves" ? "Перемещения" : tab === "writeoff" ? "Списания" : "Регистрация";
-    infoByDatesSummaryEl.innerHTML = "";
-    const summaryCount = document.createElement("strong");
-    summaryCount.textContent = String(filtered.length);
-    const summaryText = document.createElement("span");
-    summaryText.textContent = source.length
-      ? `${activeLabel}: показано из ${source.length}`
-      : `${activeLabel}: данных пока нет`;
-    infoByDatesSummaryEl.append(summaryCount, summaryText);
 
     infoByDatesEmptyEl.classList.toggle("is-hidden", filtered.length > 0);
     if (!filtered.length) {

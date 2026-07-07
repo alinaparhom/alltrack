@@ -17994,6 +17994,14 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     return row;
   };
 
+  const createInfoMovesHistoryGridArrow = () => {
+    const arrowEl = document.createElement("strong");
+    arrowEl.className = "info-moves-history-item__grid-arrow";
+    arrowEl.textContent = "→";
+    arrowEl.setAttribute("aria-hidden", "true");
+    return arrowEl;
+  };
+
   const getFilteredInfoMovesHistory = () => {
     const filters = infoMovesHistoryState.filters;
     const query = filters.search.trim().toLowerCase();
@@ -18053,7 +18061,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const tone = getInfoMoveTone(move);
       card.className = `info-moves-history-item info-moves-history-item--${tone}`;
       const titleText = infoMovesHistoryState.filters.view === "accounting" ? formatInfoValue(move?.["Бух.номер"]) : infoMovesHistoryState.filters.view === "date" ? formatInfoValue(move?.["Дата перемещения"]) : infoMovesHistoryState.filters.view === "user" ? (getInfoMoveUser(move) || "Пользователь не указан") : formatInfoValue(move?.["Номер"]);
-      const subtitle = `${formatInfoValue(move?.["Наименование"])} • ${formatInfoValue(move?.["Производитель"])} ${formatInfoValue(move?.["Модель"])}`;
+      const nameText = String(move?.["Наименование"] ?? "").trim();
+      const manufacturerModelText = [move?.["Производитель"], move?.["Модель"]]
+        .map((part) => String(part ?? "").trim())
+        .filter(Boolean)
+        .join(" ");
+      const subtitle = [nameText, manufacturerModelText].filter(Boolean).join(" • ");
       const title = document.createElement("div");
       title.className = "info-moves-history-item__title";
       const titleMain = document.createElement("div");
@@ -18068,10 +18081,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const accountingNumberValue = String(move?.["Бух.номер"] ?? "").trim();
       const accountingNumberEl = document.createElement("small");
       accountingNumberEl.className = "info-moves-history-item__accounting";
-      accountingNumberEl.textContent = formatInfoValue(accountingNumberValue);
+      accountingNumberEl.textContent = accountingNumberValue;
       const subtitleEl = document.createElement("small");
       subtitleEl.textContent = subtitle;
-      titleTextEl.append(titleValueEl, accountingNumberEl, subtitleEl);
+      titleTextEl.append(titleValueEl);
+      if (accountingNumberValue) titleTextEl.appendChild(accountingNumberEl);
+      if (subtitle) titleTextEl.appendChild(subtitleEl);
       titleMain.append(titleIcon, titleTextEl);
       const answerEl = document.createElement("em");
       answerEl.textContent = answer || "Без ответа";
@@ -18102,12 +18117,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         normalizePersonName(previousResponsibleValue) !== normalizePersonName(movedByValue);
       grid.append(
         createInfoMovesHistoryRow("📦", "Ответственный до", previousResponsibleValue),
+        createInfoMovesHistoryGridArrow(),
         createInfoMovesHistoryRow("✅", "Принимал", move?.["Принял"] || move?.["Ответственный"]),
         ...(shouldShowMovedBy
           ? [createInfoMovesHistoryRow("👷", movedByLabel, movedByValue, true)]
           : []),
-        createInfoMovesHistoryRow("📅", "Дата перемещения", move?.["Дата перемещения"]),
-        createInfoMovesHistoryRow("🕓", "Дата ответа", move?.["Дата ответа"]),
+        createInfoMovesHistoryRow("📅", "Дата перемещения", move?.["Дата перемещения"], true),
+        createInfoMovesHistoryRow("🕓", "Дата ответа", move?.["Дата ответа"], true),
         createInfoMovesHistoryRow("✍", tone === "danger" ? "Причина отказа" : "Причина перемещения", tone === "danger" ? getInfoMoveRejectReason(move) : (move?.["Причина перемещения"] || move?.["Комментарий к ответу"]), true)
       );
       card.append(title, route, grid);

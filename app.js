@@ -17966,7 +17966,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (answer.includes("не прин")) return "danger";
     if (answer.includes("отмена")) return "warning";
     if (answer.includes("смена объекта")) return "object";
-    return "success";
+    if (answer === "принял" || answer.includes("принял")) return "success";
+    return "neutral";
   };
 
   const getInfoMoveEnergyMover = (move) =>

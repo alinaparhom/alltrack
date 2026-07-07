@@ -18296,17 +18296,28 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     ];
   };
 
-  const createInfoByDatesRow = (label, value) => {
+  const createInfoByDatesRow = (label, value, options = {}) => {
     const row = document.createElement("div");
-    row.className = "info-by-dates-item__meta";
+    row.className = `info-by-dates-item__meta${options.wide ? " info-by-dates-item__meta--wide" : ""}`;
     const labelEl = document.createElement("span");
     labelEl.className = "info-by-dates-item__label";
     labelEl.textContent = label;
+    if (options.labelTitle) {
+      labelEl.title = options.labelTitle;
+      labelEl.setAttribute("aria-label", options.labelTitle);
+    }
     const valueEl = document.createElement("strong");
     valueEl.className = "info-by-dates-item__value";
     valueEl.textContent = formatInfoValue(value);
     row.append(labelEl, valueEl);
     return row;
+  };
+
+  const createInfoByDatesCompactValue = (...values) => {
+    const parts = values
+      .map((value) => String(value ?? "").trim())
+      .filter(Boolean);
+    return parts.length ? parts.join(" · ") : "";
   };
 
   const applyInfoByDatesFilter = (items, getDate) => {
@@ -18392,13 +18403,22 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       } else {
         grid.append(
           ...[
-            createInfoByDatesRow("Дата", eventDate),
-            createInfoByDatesRow("Номер", item?.["Номер"]),
-            createInfoByDatesRow("Бух.номер", item?.["Бух.номер"]),
-            createInfoByDatesRow("Наименование", item?.["Наименование"]),
-            createInfoByDatesRow("Ответственный", item?.["Ответственный"]),
-            objectTrackingEnabled ? createInfoByDatesRow("Объект", item?.["Объект"]) : null,
-            createInfoByDatesRow("Статус", item?.["Статус"]),
+            createInfoByDatesRow("📅", eventDate, { labelTitle: "Дата" }),
+            createInfoByDatesRow(
+              "🔢",
+              createInfoByDatesCompactValue(
+                item?.["Номер"] ? `№ ${item?.["Номер"]}` : "",
+                item?.["Бух.номер"] ? `Бух. № ${item?.["Бух.номер"]}` : ""
+              ),
+              { labelTitle: "Номер и бухгалтерский номер" }
+            ),
+            createInfoByDatesRow(
+              "🧰",
+              createInfoByDatesCompactValue(item?.["Наименование"], item?.["Производитель"], item?.["Модель"]),
+              { labelTitle: "Инструмент", wide: true }
+            ),
+            createInfoByDatesRow("👤", item?.["Ответственный"], { labelTitle: "Ответственный" }),
+            objectTrackingEnabled ? createInfoByDatesRow("📍", item?.["Объект"], { labelTitle: "Объект" }) : null,
           ].filter(Boolean)
         );
       }

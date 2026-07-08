@@ -4600,10 +4600,10 @@ export function renderRole(user, options = {}) {
             aria-modal="true"
             aria-label="Статистика"
           >
-            <div class="settings-modal__header tools-modal__header">
+            <div class="settings-modal__header tools-modal__header info-statistics-modal__header">
               <div class="settings-modal__title">
                 <h2>Статистика</h2>
-                <p data-info-statistics-subtitle>Краткая сводка по организации</p>
+                <p data-info-statistics-subtitle>Краткая сводка по МТЦ, движениям и ремонтам</p>
               </div>
               <button
                 class="button-icon"

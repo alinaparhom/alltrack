@@ -6150,7 +6150,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const infoFinesMonthsEmptyEl = contentEl.querySelector("[data-info-fines-months-empty]");
   const infoFinesTypesCountEl = contentEl.querySelector("[data-info-fines-types-count]");
   const infoFinesMonthsCountEl = contentEl.querySelector("[data-info-fines-months-count]");
-  const infoInstructionsSectionEl = contentEl.querySelector(".info-fines-instructions");
+  const infoInstructionsModalEl = contentEl.querySelector("[data-info-instructions-modal]");
+  const infoInstructionsBackdropEl = contentEl.querySelector("[data-info-instructions-backdrop]");
+  const infoInstructionsCloseButton = contentEl.querySelector("[data-info-instructions-close]");
   const infoInstructionsGridEl = contentEl.querySelector("[data-info-instructions-grid]");
   const infoInstructionsTabEls = Array.from(contentEl.querySelectorAll("[data-info-instructions-tab]"));
   const infoInstructionsItems = [
@@ -31611,6 +31613,18 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     });
   };
 
+  const closeInfoInstructionsModal = () => {
+    if (!infoInstructionsModalEl) return;
+    infoInstructionsModalEl.classList.add("is-hidden");
+    document.body.style.overflow = "";
+  };
+  const openInfoInstructionsModal = () => {
+    if (!infoInstructionsModalEl) return;
+    renderInfoInstructions();
+    infoInstructionsModalEl.classList.remove("is-hidden");
+    document.body.style.overflow = "hidden";
+  };
+
   const closeInfoFinesModal = () => {
     if (!infoFinesModalEl) return;
     infoFinesModalEl.classList.add("is-hidden");
@@ -31741,15 +31755,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
     infoFinesMonthsEmptyEl?.classList.toggle("is-hidden", data.months.length > 0);
   };
-  const openInfoFinesModal = async (options = {}) => {
+  const openInfoFinesModal = async () => {
     if (!infoFinesModalEl) return;
-    renderInfoInstructions();
     infoFinesModalEl.classList.remove("is-hidden");
-    if (options.scrollToInstructions) {
-      window.requestAnimationFrame(() => {
-        infoInstructionsSectionEl?.scrollIntoView({ behavior: "smooth", block: "start" });
-      });
-    }
     document.body.style.overflow = "hidden";
     if (infoFinesStatusEl) infoFinesStatusEl.textContent = "Загружаем штрафы...";
     try {
@@ -32981,9 +32989,14 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       void openInfoRepairModal();
       return;
     }
-    if (option === "fines" || option === "instructions") {
+    if (option === "fines") {
       closeInfoModal();
-      void openInfoFinesModal({ scrollToInstructions: option === "instructions" });
+      void openInfoFinesModal();
+      return;
+    }
+    if (option === "instructions") {
+      closeInfoModal();
+      openInfoInstructionsModal();
       return;
     }
     if (option === "statistics") {
@@ -33009,6 +33022,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   infoFinesModalEl?.addEventListener("keydown", (event) => {
     if (event.key === "Escape") {
       closeInfoFinesModal();
+    }
+  });
+  infoInstructionsBackdropEl?.addEventListener("click", closeInfoInstructionsModal);
+  infoInstructionsCloseButton?.addEventListener("click", closeInfoInstructionsModal);
+  infoInstructionsModalEl?.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      closeInfoInstructionsModal();
     }
   });
   infoInstructionsTabEls.forEach((tabEl) => {

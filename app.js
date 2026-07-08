@@ -27672,6 +27672,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     inputEl,
     containerEl,
     getOptions,
+    getSuggestions = null,
     onResolve = null,
   }) => {
     if (!inputEl || !containerEl) return;
@@ -27680,6 +27681,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       inputEl,
       containerEl,
       getItems: (query) => {
+        if (typeof getSuggestions === "function") {
+          return getSuggestions(query);
+        }
         const options = getOptions();
         return getSelectableSuggestions(options, query, options.length);
       },
@@ -27708,6 +27712,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     inputEl: usersEditRoleInput,
     containerEl: usersEditRoleSuggestionsEl,
     getOptions: getUsersEditRoleOptions,
+    getSuggestions: () => getUsersEditRoleOptions(),
   });
 
   const getRepairOrganizationSuggestions = (query) => {

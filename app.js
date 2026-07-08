@@ -31669,6 +31669,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (!infoInstructionsModalEl) return;
     renderInfoInstructions();
     infoInstructionsModalEl.classList.remove("is-hidden");
+    requestAnimationFrame(() => {
+      const scrollBody = infoInstructionsModalEl.querySelector(".info-instructions-modal__body");
+      scrollBody?.scrollTo({ top: 0, left: 0 });
+    });
     document.body.style.overflow = "hidden";
   };
 

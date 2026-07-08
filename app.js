@@ -31586,21 +31586,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       if (!userSummary || typeof userSummary !== "object") return;
       Object.entries(userSummary).forEach(([typeName, typeSummary]) => {
         if (!typeSummary || typeof typeSummary !== "object") return;
-        const accrued = getFineInfoNumber(typeSummary["Штрафы по отвеченным перемещениям"] ?? typeSummary["Начислено"]);
-        const issued = getFineInfoNumber(typeSummary["Выставленные штрафы"]);
-        const forgiven = getFineInfoNumber(typeSummary["Простили"]);
         const balance = getFineInfoNumber(typeSummary["Остаток"]);
-        if (!accrued && !issued && !forgiven && !balance) return;
+        if (balance <= 0) return;
         const key = String(typeName || "Другие штрафы");
-        const item = types.get(key) ?? { title: key, accrued: 0, issued: 0, forgiven: 0, balance: 0, users: [] };
-        item.accrued += accrued;
-        item.issued += issued;
-        item.forgiven += forgiven;
+        const item = types.get(key) ?? { title: key, balance: 0, users: [] };
         item.balance += balance;
-        if (balance > 0) {
-          usersWithBalance.add(userName);
-          item.users.push({ name: userName, balance, issued, accrued });
-        }
+        usersWithBalance.add(userName);
+        item.users.push({ name: userName, balance });
         types.set(key, item);
       });
     });
@@ -31625,37 +31617,35 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       userItem.total += amount; userItem.count += 1; userItem.types.set(type, userTypeTotal + amount);
       month.types.set(type, typeItem); month.users.set(responsible, userItem); months.set(monthKey, month);
     });
-    return { types: [...types.values()].sort((a,b)=>b.balance-a.balance || b.issued-a.issued), months: [...months.values()].sort((a,b)=>String(b.key).localeCompare(String(a.key))), usersWithBalance };
+    return { types: [...types.values()].sort((a,b)=>b.balance-a.balance || a.title.localeCompare(b.title, "ru")), months: [...months.values()].sort((a,b)=>String(b.key).localeCompare(String(a.key))), usersWithBalance };
   };
   const renderInfoFines = (rawFines) => {
     const data = collectInfoFinesData(rawFines);
-    const totals = data.types.reduce((acc, item) => ({ balance: acc.balance + item.balance, issued: acc.issued + item.issued, accrued: acc.accrued + item.accrued }), { balance: 0, issued: 0, accrued: 0 });
+    const totals = data.types.reduce((acc, item) => ({ balance: acc.balance + item.balance }), { balance: 0 });
     setInfoFinesValue("balance", formatInfoFineMoney(totals.balance));
-    setInfoFinesValue("issued", formatInfoFineMoney(totals.issued));
-    setInfoFinesValue("accrued", formatInfoFineMoney(totals.accrued));
     setInfoFinesValue("users", String(data.usersWithBalance.size));
-    if (infoFinesTypesCountEl) infoFinesTypesCountEl.textContent = `${data.types.length} видов`;
+    if (infoFinesTypesCountEl) infoFinesTypesCountEl.textContent = "";
     if (infoFinesMonthsCountEl) infoFinesMonthsCountEl.textContent = `${data.months.length} мес.`;
     if (infoFinesTypesEl) {
       infoFinesTypesEl.innerHTML = "";
       data.types.forEach((item) => {
         const card = document.createElement("article");
         card.className = "info-fines-type";
-        const topUsers = item.users.sort((a,b)=>b.balance-a.balance).slice(0, 3);
-        card.innerHTML = `<div class="info-fines-type__top"><h4></h4><strong>💰 ${formatInfoFineMoney(item.balance)} р.</strong></div><div class="info-fines-type__stats"><span>📈 Начислено: ${formatInfoFineMoney(item.accrued)} р.</span><span>🧾 Выставлено: ${formatInfoFineMoney(item.issued)} р.</span><span>🤝 Простили: ${formatInfoFineMoney(item.forgiven)} р.</span></div><div class="info-fines-type__users" aria-label="Пользователи с текущим штрафом"></div>`;
+        const usersWithUnissuedFines = item.users.sort((a,b)=>b.balance-a.balance || a.name.localeCompare(b.name, "ru"));
+        card.innerHTML = `<div class="info-fines-type__top"><h4></h4><strong>💰 ${formatInfoFineMoney(item.balance)} р.</strong></div><div class="info-fines-type__users" aria-label="Пользователи с невыставленными штрафами"></div>`;
         card.querySelector("h4").textContent = item.title;
         const usersEl = card.querySelector(".info-fines-type__users");
         if (usersEl) {
-          if (topUsers.length) {
-            usersEl.innerHTML = '<span class="info-fines-type__users-title">👥 Пользователи:</span>';
-            topUsers.forEach((user) => {
+          if (usersWithUnissuedFines.length) {
+            usersEl.innerHTML = '<span class="info-fines-type__users-title">👥 Пользователи с невыставленными штрафами:</span>';
+            usersWithUnissuedFines.forEach((user) => {
               const row = document.createElement("span");
               row.className = "info-fines-type__user";
               row.textContent = `${formatFullName(user.name, 4)} — ${formatInfoFineMoney(user.balance)} р.`;
               usersEl.appendChild(row);
             });
           } else {
-            usersEl.textContent = "✅ Нет сотрудников с остатком";
+            usersEl.textContent = "✅ Нет сотрудников с невыставленными штрафами";
           }
         }
         infoFinesTypesEl.appendChild(card);

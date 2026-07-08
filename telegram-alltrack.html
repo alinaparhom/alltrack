@@ -19634,8 +19634,7 @@
 
 
 
-      .info-fines-modal__panel,
-      .info-instructions-modal__panel {
+      .info-fines-modal__panel {
         width: min(1120px, calc(100vw - 18px));
         max-height: min(92dvh, 920px);
         overflow: hidden;
@@ -19647,8 +19646,7 @@
         backdrop-filter: blur(22px);
       }
 
-      .info-fines-modal__header,
-      .info-instructions-modal__header {
+      .info-fines-modal__header {
         grid-template-columns: minmax(0, 1fr) auto;
         align-items: center;
         gap: 10px;
@@ -19688,8 +19686,65 @@
         gap: 8px;
       }
 
-      .info-fines-modal__body,
+      .info-instructions-modal {
+        place-items: stretch;
+        padding: 0;
+      }
+
+      .info-instructions-modal__panel {
+        width: 100vw;
+        height: 100dvh;
+        max-height: 100dvh;
+        overflow: hidden;
+        border-radius: 0;
+        background:
+          radial-gradient(circle at 10% 0%, rgba(59, 125, 255, 0.16), transparent 34%),
+          radial-gradient(circle at 92% 8%, rgba(16, 185, 129, 0.13), transparent 30%),
+          linear-gradient(180deg, rgba(248, 250, 252, 0.98), rgba(239, 246, 255, 0.94));
+        backdrop-filter: blur(22px);
+      }
+
+      .info-instructions-modal__header {
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 10px;
+        padding-top: calc(14px + env(safe-area-inset-top));
+        border-bottom: 1px solid rgba(226, 232, 240, 0.86);
+        background: rgba(255, 255, 255, 0.76);
+        backdrop-filter: blur(18px);
+        -webkit-backdrop-filter: blur(18px);
+      }
+
+      .info-instructions-modal__title p {
+        margin: 4px 0 0;
+        color: var(--muted);
+        font-size: 13px;
+        font-weight: 750;
+        line-height: 1.35;
+      }
+
+      .info-instructions-back {
+        min-height: 42px;
+        border-radius: 999px;
+        padding: 0 14px;
+        white-space: nowrap;
+      }
+
       .info-instructions-modal__body {
+        display: grid;
+        gap: 14px;
+        width: min(1120px, 100%);
+        margin: 0 auto;
+        padding-bottom: calc(22px + env(safe-area-inset-bottom));
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+
+
+      .info-fines-modal__body {
         display: grid;
         gap: 14px;
         overflow-y: auto;
@@ -20075,8 +20130,7 @@
       }
 
       @media (max-width: 760px) {
-        .info-fines-modal__panel,
-        .info-instructions-modal__panel {
+        .info-fines-modal__panel {
           width: 100%;
           height: 100dvh;
           max-height: 100dvh;

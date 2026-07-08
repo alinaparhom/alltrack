@@ -6126,6 +6126,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     total: contentEl.querySelector("[data-info-repair-total]"),
     sum: contentEl.querySelector("[data-info-repair-sum]"),
     orgs: contentEl.querySelector("[data-info-repair-orgs]"),
+    average: contentEl.querySelector("[data-info-repair-average]"),
   };
   const infoStatisticsModalEl = contentEl.querySelector("[data-info-statistics-modal]");
   const infoStatisticsBackdropEl = contentEl.querySelector("[data-info-statistics-backdrop]");
@@ -31475,7 +31476,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       top.append(title, count);
       const meta = document.createElement("div");
       meta.className = "info-repair-bar__meta";
-      meta.textContent = `Сумма: ${formatNotificationCostWithoutCurrency(item.amount)} р.`;
+      meta.textContent = `${formatNotificationCostWithoutCurrency(item.amount)} р. · ${item.count} шт.`;
       const track = document.createElement("div");
       track.className = "info-repair-bar__track";
       const fill = document.createElement("div");
@@ -31502,12 +31503,14 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const toolMap = buildRepairToolMap(tools);
     const activeTools = tools.filter((tool) => String(tool?.["Статус"] ?? "").trim().toLocaleLowerCase("ru") === "в ремонте");
     const totalAmount = repairs.reduce((sum, entry) => sum + getRepairEntryCost(entry), 0);
+    const averageAmount = repairs.length ? Math.round(totalAmount / repairs.length) : 0;
     const organizationGroups = buildRepairGroups(repairs, toolMap, "Организация");
 
     setInfoRepairValue("active", activeTools.length);
     setInfoRepairValue("total", repairs.length);
     setInfoRepairValue("sum", formatNotificationCostWithoutCurrency(totalAmount));
     setInfoRepairValue("orgs", organizationGroups.length);
+    setInfoRepairValue("average", formatNotificationCostWithoutCurrency(averageAmount));
     if (infoRepairActiveCountEl) infoRepairActiveCountEl.textContent = `${activeTools.length} шт.`;
 
     if (infoRepairActiveListEl) {
@@ -31532,6 +31535,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           String(tool?.["Модель"] ?? "").trim(),
           String(lastRepair?.["Дата отправки в ремонт"] ?? "").trim(),
         ].filter(Boolean).join(" · ");
+        item.title = meta.textContent;
         item.append(title, meta);
         infoRepairActiveListEl.appendChild(item);
       });
@@ -31541,7 +31545,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     renderInfoRepairBars(infoRepairManufacturerListEl, buildRepairGroups(repairs, toolMap, "Производитель"));
     renderInfoRepairBars(infoRepairModelListEl, buildRepairGroups(repairs, toolMap, "Модель"));
     renderInfoRepairBars(infoRepairNameListEl, buildRepairGroups(repairs, toolMap, "Наименование"));
-    if (infoRepairStatusEl) infoRepairStatusEl.textContent = "Аналитика ремонтов обновлена.";
+    if (infoRepairStatusEl) infoRepairStatusEl.textContent = "Готово";
   };
 
   const closeInfoStatisticsModal = () => {

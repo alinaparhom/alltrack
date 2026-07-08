@@ -1117,6 +1117,76 @@ function updateHeaderUserBadge(fullName = "", { forceInitials = false } = {}) {
   tryNextCandidate();
 }
 
+
+function updateEnergyDesktopProfile() {
+  const profileEl = contentEl?.querySelector?.("[data-energy-desktop-profile]");
+  if (!profileEl || !currentUser) return;
+
+  const nameEl = profileEl.querySelector("[data-energy-desktop-name]");
+  const positionEl = profileEl.querySelector("[data-energy-desktop-position]");
+  const initialsEl = profileEl.querySelector("[data-energy-desktop-initials]");
+  const photoEl = profileEl.querySelector("[data-energy-desktop-photo]");
+  const photoButtonEl = profileEl.querySelector("[data-user-settings-trigger]");
+  const fullName = currentUser.full_name ?? "";
+
+  if (nameEl) {
+    nameEl.textContent = formatHeaderUserName(fullName);
+  }
+  if (positionEl) {
+    positionEl.textContent =
+      String(currentUser.position ?? "").trim() || "Должность не указана";
+  }
+  if (initialsEl) {
+    initialsEl.textContent = getInitials(fullName);
+  }
+  if (photoButtonEl && !photoButtonEl.dataset.energyProfileBound) {
+    photoButtonEl.dataset.energyProfileBound = "true";
+    photoButtonEl.addEventListener("click", openUserSettings);
+  }
+  if (!photoEl) return;
+
+  const photoCandidates = getUserPhotoCandidates(currentUser);
+  const applyNoPhotoState = () => {
+    photoEl.classList.add("is-hidden");
+    photoEl.removeAttribute("src");
+    photoEl.onerror = null;
+    photoEl.onload = null;
+    if (photoButtonEl) {
+      photoButtonEl.dataset.hasPhoto = "false";
+    }
+  };
+
+  let candidateIndex = 0;
+  const tryNextCandidate = () => {
+    if (candidateIndex >= photoCandidates.length) {
+      applyNoPhotoState();
+      return;
+    }
+
+    const nextPhotoUrl = photoCandidates[candidateIndex];
+    candidateIndex += 1;
+    photoEl.classList.remove("is-hidden");
+    if (photoButtonEl) {
+      photoButtonEl.dataset.hasPhoto = "true";
+    }
+    photoEl.onload = () => {
+      photoEl.onerror = null;
+      photoEl.onload = null;
+    };
+    photoEl.onerror = () => {
+      tryNextCandidate();
+    };
+    photoEl.src = nextPhotoUrl;
+  };
+
+  if (!photoCandidates.length) {
+    applyNoPhotoState();
+    return;
+  }
+
+  tryNextCandidate();
+}
+
 function applyUserSettingsHeader() {
   if (appTitleTextEl) {
     appTitleTextEl.textContent = "Мой профиль";
@@ -37541,6 +37611,7 @@ async function renderUserRoleView() {
       : {};
 
   contentEl.innerHTML = renderRole(currentUserLabel, renderOptions);
+  updateEnergyDesktopProfile();
   if (userNameEl) userNameEl.textContent = userName;
   if (appTitleTextEl) {
     appTitleTextEl.textContent = formatHeaderUserName(currentUser.full_name ?? "");

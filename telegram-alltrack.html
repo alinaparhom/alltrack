@@ -3561,6 +3561,83 @@
         width: 100%;
       }
 
+
+      .energy-desktop-profile {
+        display: none;
+      }
+
+      .energy-desktop-profile__photo {
+        position: relative;
+        overflow: hidden;
+        flex: 0 0 auto;
+        width: 82px;
+        height: 82px;
+        border: 1px solid rgba(226, 232, 240, 0.9);
+        border-radius: 26px;
+        background: linear-gradient(145deg, rgba(255, 255, 255, 0.92), rgba(236, 244, 255, 0.72));
+        color: var(--accent);
+        box-shadow: 0 18px 42px rgba(35, 56, 105, 0.12);
+        font-size: 28px;
+        font-weight: 900;
+        letter-spacing: 0.04em;
+        cursor: pointer;
+      }
+
+      .energy-desktop-profile__photo img {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      .energy-desktop-profile__photo[data-has-photo="true"] span {
+        opacity: 0;
+      }
+
+      .energy-desktop-profile__content {
+        display: grid;
+        gap: 7px;
+        min-width: 0;
+      }
+
+      .energy-desktop-profile__eyebrow {
+        width: fit-content;
+        padding: 5px 10px;
+        border-radius: 999px;
+        background: rgba(59, 125, 255, 0.11);
+        color: var(--accent);
+        font-size: 11px;
+        font-weight: 900;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .energy-desktop-profile__name {
+        color: var(--text);
+        font-size: clamp(24px, 2vw, 32px);
+        line-height: 1.05;
+        letter-spacing: -0.04em;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .energy-desktop-profile__position {
+        width: fit-content;
+        max-width: 100%;
+        padding: 8px 12px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.68);
+        border: 1px solid rgba(226, 232, 240, 0.86);
+        color: var(--muted);
+        font-size: 13px;
+        font-weight: 800;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
       body.is-ios .energy-grid,
       body.is-ios .energy-grid [data-energy-item],
       body.is-ios .quick-access-list,
@@ -21174,7 +21251,7 @@
           --desktop-map-column: clamp(560px, 52vw, 840px);
           display: grid;
           grid-template-columns: minmax(520px, var(--desktop-map-column)) minmax(360px, 1fr);
-          grid-template-rows: minmax(0, 1fr) auto;
+          grid-template-rows: auto minmax(0, 1fr) auto;
           align-items: stretch;
           gap: 16px 22px;
           height: 100%;
@@ -21183,7 +21260,7 @@
 
         body.is-energy-role:not(.is-user-settings) .tools-map-card {
           position: relative;
-          grid-row: 1 / span 2;
+          grid-row: 1 / span 3;
           top: auto;
           min-height: 0;
           height: 100%;
@@ -21241,9 +21318,32 @@
           height: 11px;
         }
 
-        body.is-energy-role:not(.is-user-settings) .energy-actions-scroll {
+        body.is-energy-role:not(.is-user-settings) .energy-desktop-profile {
           grid-column: 2;
           grid-row: 1;
+          display: flex;
+          align-items: center;
+          gap: 18px;
+          min-width: 0;
+          padding: 18px;
+          border: 1px solid rgba(226, 232, 240, 0.86);
+          border-radius: 28px;
+          background:
+            linear-gradient(145deg, rgba(255, 255, 255, 0.86), rgba(248, 251, 255, 0.66)),
+            radial-gradient(circle at 12% 0%, rgba(59, 125, 255, 0.14), transparent 36%);
+          box-shadow: 0 18px 42px rgba(26, 31, 46, 0.08);
+        }
+
+        body[data-theme="dark"].is-energy-role:not(.is-user-settings) .energy-desktop-profile {
+          background:
+            linear-gradient(145deg, rgba(20, 30, 52, 0.9), rgba(15, 23, 42, 0.76)),
+            radial-gradient(circle at 12% 0%, rgba(96, 165, 250, 0.16), transparent 36%);
+          border-color: rgba(148, 170, 210, 0.22);
+        }
+
+        body.is-energy-role:not(.is-user-settings) .energy-actions-scroll {
+          grid-column: 2;
+          grid-row: 2;
           min-height: 0;
           height: 100%;
           margin-top: 0;
@@ -21260,7 +21360,7 @@
 
         body.is-energy-role:not(.is-user-settings) .quick-access {
           grid-column: 2;
-          grid-row: 2;
+          grid-row: 3;
           display: grid;
           position: static;
           margin: 0;

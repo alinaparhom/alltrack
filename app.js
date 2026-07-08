@@ -5809,6 +5809,48 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const desktopProfileInitialsEl = contentEl.querySelector("[data-energy-profile-initials]");
   const desktopProfileNameEl = contentEl.querySelector("[data-energy-profile-name]");
   const desktopProfilePositionEl = contentEl.querySelector("[data-energy-profile-position]");
+  const desktopProfileReportCountEl = contentEl.querySelector("[data-energy-profile-report-count]");
+  const desktopProfileReportAmountEl = contentEl.querySelector("[data-energy-profile-report-amount]");
+  const desktopProfileObjectsCountEl = contentEl.querySelector("[data-energy-profile-objects-count]");
+  const isToolOnReport = (tool) => {
+    const accountingNumber = String(
+      tool?.["Номер по бухгалтерии"] ?? tool?.accountingNumber ?? ""
+    )
+      .trim()
+      .toLowerCase();
+    return /(?:^|\s)на\s+отч[её]те(?:\s|$)/i.test(accountingNumber);
+  };
+  const syncDesktopProfileStats = async () => {
+    if (!desktopProfileReportCountEl && !desktopProfileReportAmountEl && !desktopProfileObjectsCountEl) return;
+    const userName = normalizePersonName(user?.full_name ?? user?.fullName ?? "");
+    const toolsDatabasePath =
+      contextOverride?.toolsDatabasePath ??
+      `./${contextOverride?.orgFolderName ?? ""}/База с инструментами.json`;
+    try {
+      const tools = normalizeToolsData(await loadJson(toolsDatabasePath).catch(() => []));
+      const userTools = tools.filter(
+        (tool) => normalizePersonName(tool?.["Ответственный"] ?? "") === userName
+      );
+      const reportTools = userTools.filter(isToolOnReport);
+      const reportAmount = reportTools.reduce((sum, tool) => {
+        const value = normalizeCostValue(tool?.["Стоимость"]);
+        return sum + (Number.isFinite(value) ? value : 0);
+      }, 0);
+      const objectsCount = new Set(
+        userTools
+          .map((tool) => sanitizeObjectName(tool?.["Объект"] ?? tool?.object ?? ""))
+          .filter(Boolean)
+          .map((name) => name.toLowerCase())
+      ).size;
+      if (desktopProfileReportCountEl) desktopProfileReportCountEl.textContent = String(reportTools.length);
+      if (desktopProfileReportAmountEl) {
+        desktopProfileReportAmountEl.textContent = formatCostValueWithCurrency(reportAmount, "0 р.");
+      }
+      if (desktopProfileObjectsCountEl) desktopProfileObjectsCountEl.textContent = String(objectsCount);
+    } catch (error) {
+      console.warn("Не удалось загрузить статистику профиля.", error);
+    }
+  };
   const syncDesktopProfilePanel = () => {
     if (!desktopProfilePanelEl) return;
     const fullName = String(user?.full_name ?? user?.fullName ?? "").trim();
@@ -5856,6 +5898,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     tryNextCandidate();
   };
   syncDesktopProfilePanel();
+  syncDesktopProfileStats();
 
   const groupPanel = contentEl.querySelector("[data-energy-group-panel]");
   const createGroupButton = contentEl.querySelector("[data-energy-create-group]");

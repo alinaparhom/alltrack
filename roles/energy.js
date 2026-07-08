@@ -4537,8 +4537,9 @@ export function renderRole(user, options = {}) {
             aria-label="Аналитика ремонтов"
           >
             <div class="settings-modal__header tools-modal__header info-repair-modal__header">
-              <div class="settings-modal__title">
-                <h2>Ремонт</h2>
+              <div class="settings-modal__title info-repair-modal__title">
+                <h2>Ремонты</h2>
+                <p data-info-repair-subtitle>Короткая сводка по организации</p>
               </div>
               <button
                 class="button-icon"
@@ -4554,7 +4555,8 @@ export function renderRole(user, options = {}) {
                 <div class="info-repair-summary__title">
                   <span class="info-repair-summary__icon" aria-hidden="true">🛠️</span>
                   <div>
-                    <h3>Общая информация</h3>
+                    <h3>Сводка</h3>
+                    <p>сейчас · всего · деньги</p>
                   </div>
                 </div>
                 <div class="info-repair-summary__metrics">
@@ -4562,16 +4564,17 @@ export function renderRole(user, options = {}) {
                   <div class="info-repair-summary__metric"><span>Всего</span><strong data-info-repair-total>—</strong><small>записей</small></div>
                   <div class="info-repair-summary__metric"><span>Сумма</span><strong data-info-repair-sum>—</strong><small>руб.</small></div>
                   <div class="info-repair-summary__metric"><span>Организации</span><strong data-info-repair-orgs>—</strong><small>подрядчиков</small></div>
+                  <div class="info-repair-summary__metric"><span>Средний чек</span><strong data-info-repair-average>—</strong><small>руб.</small></div>
                 </div>
               </section>
               <div class="info-repair-layout">
                 <section class="info-repair-card">
-                  <div class="info-repair-card__header"><h3>Инструменты сейчас в ремонте</h3><span data-info-repair-active-count>—</span></div>
+                  <div class="info-repair-card__header"><h3>Сейчас в ремонте</h3><span data-info-repair-active-count>—</span></div>
                   <div class="info-repair-list" data-info-repair-active-list></div>
                   <div class="tools-empty is-hidden" data-info-repair-active-empty>Сейчас нет инструментов в ремонте.</div>
                 </section>
                 <section class="info-repair-card">
-                  <div class="info-repair-card__header"><h3>Ремонты по организациям</h3><span>суммы</span></div>
+                  <div class="info-repair-card__header"><h3>Организации</h3><span>суммы</span></div>
                   <div class="info-repair-bars" data-info-repair-org-list></div>
                 </section>
                 <section class="info-repair-card">
@@ -4583,7 +4586,7 @@ export function renderRole(user, options = {}) {
                   <div class="info-repair-bars" data-info-repair-model-list></div>
                 </section>
                 <section class="info-repair-card info-repair-card--wide">
-                  <div class="info-repair-card__header"><h3>Наименования</h3><span>частота ремонтов</span></div>
+                  <div class="info-repair-card__header"><h3>Наименования</h3><span>частота</span></div>
                   <div class="info-repair-bars" data-info-repair-name-list></div>
                 </section>
               </div>

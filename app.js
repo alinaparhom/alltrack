@@ -31493,7 +31493,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     document.body.style.overflow = "hidden";
     if (infoRepairStatusEl) infoRepairStatusEl.textContent = "Загружаем аналитику ремонтов...";
     if (infoRepairSubtitleEl) {
-      infoRepairSubtitleEl.textContent = context.orgFullName || context.orgShortName || context.orgFolderName || "Аналитика ремонтов";
+      infoRepairSubtitleEl.textContent = "Инструменты в ремонте, подрядчики, суммы и статистика";
     }
     Object.keys(infoRepairValueEls).forEach((key) => setInfoRepairValue(key, "—"));
 

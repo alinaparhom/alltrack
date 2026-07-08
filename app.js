@@ -1093,7 +1093,16 @@ function getUserPhotoCandidates(user, { forceInitials = false } = {}) {
     candidates.push(buildUserPhotoSrc(customPhotoPath));
   }
 
-  const telegramPhoto = extractTelegramUserPhotoUrl();
+  const savedTelegramPhoto = String(user?.telegram_photo_url ?? "").trim();
+  if (savedTelegramPhoto) {
+    candidates.push(savedTelegramPhoto);
+  }
+
+  const currentTelegramId = normalizeTelegramId(window.Telegram?.WebApp?.initDataUnsafe?.user?.id);
+  const userTelegramId = normalizeTelegramId(user?.telegram_id);
+  const telegramPhoto = currentTelegramId && currentTelegramId === userTelegramId
+    ? extractTelegramUserPhotoUrl()
+    : "";
   if (telegramPhoto) {
     candidates.push(telegramPhoto);
   }
@@ -1101,6 +1110,36 @@ function getUserPhotoCandidates(user, { forceInitials = false } = {}) {
   return Array.from(new Set(candidates.filter(Boolean)));
 }
 
+async function syncCurrentUserTelegramPhoto(user) {
+  const telegramPhoto = extractTelegramUserPhotoUrl();
+  const telegramId = normalizeTelegramId(user?.telegram_id);
+  if (!telegramPhoto || !telegramId) return user;
+
+  const currentSavedPhoto = String(user?.telegram_photo_url ?? "").trim();
+  if (currentSavedPhoto === telegramPhoto) return user;
+
+  try {
+    const usersData = await loadJson(usersFilePath).catch(() => ({ users: [] }));
+    const users = Array.isArray(usersData?.users) ? [...usersData.users] : [];
+    const userIndex = users.findIndex(
+      (item) => normalizeTelegramId(item?.telegram_id) === telegramId
+    );
+    if (userIndex < 0) return user;
+
+    users[userIndex] = {
+      ...users[userIndex],
+      telegram_photo_url: telegramPhoto,
+    };
+    await saveJson(usersFilePath, { ...usersData, users }, { user });
+    return {
+      ...user,
+      telegram_photo_url: telegramPhoto,
+    };
+  } catch (error) {
+    console.warn("Не удалось сохранить фото Telegram пользователя.", error);
+    return user;
+  }
+}
 
 function createUserDetailsAvatar(user) {
   const avatar = document.createElement("div");
@@ -1111,21 +1150,27 @@ function createUserDetailsAvatar(user) {
   initials.textContent = getInitials(String(user?.full_name ?? "").trim());
   avatar.appendChild(initials);
 
-  const photoSrc = buildUserPhotoSrc(user?.profile_photo);
-  if (photoSrc) {
+  const photoCandidates = getUserPhotoCandidates(user);
+  if (photoCandidates.length) {
     const photo = document.createElement("img");
     photo.className = "users-details__photo";
-    photo.src = photoSrc;
+    photo.src = photoCandidates[0];
     photo.alt = `Фото ${formatFullName(String(user?.full_name ?? "").trim()) || "пользователя"}`;
     photo.loading = "lazy";
     photo.decoding = "async";
+    let candidateIndex = 0;
     photo.addEventListener("load", () => {
       avatar.dataset.hasPhoto = "true";
-    }, { once: true });
+    });
     photo.addEventListener("error", () => {
+      candidateIndex += 1;
+      if (photoCandidates[candidateIndex]) {
+        photo.src = photoCandidates[candidateIndex];
+        return;
+      }
       photo.remove();
       delete avatar.dataset.hasPhoto;
-    }, { once: true });
+    });
     avatar.appendChild(photo);
   }
 
@@ -38324,7 +38369,8 @@ async function loadUser() {
     }
 
     user.role = resolvedRoleId;
-    currentUser = user;
+    currentUser = await syncCurrentUserTelegramPhoto(user);
+    user = currentUser;
     currentUserLabel = userLabel;
     currentSettingsContext = await resolveUserSettingsContext(user);
     const savedPreferences =

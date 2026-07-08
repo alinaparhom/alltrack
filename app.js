@@ -31590,9 +31590,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
 
   const getInfoInstructionPath = (title, type) => {
-    const folder = type === "pdf" ? "PDF инструкции" : "Видео инструкции";
+    const folder = type === "pdf" ? "instruction-pdf" : "instruction-videos";
     const extension = type === "pdf" ? ".pdf" : ".mp4";
-    return `./${encodeURIComponent(folder)}/${encodeURIComponent(title)}${extension}`;
+    return `./${folder}/${encodeURIComponent(title)}${extension}`;
   };
 
   const renderInfoInstructions = () => {

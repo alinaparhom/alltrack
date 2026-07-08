@@ -4685,16 +4685,17 @@ export function renderRole(user, options = {}) {
             <div class="settings-modal__header info-instructions-modal__header">
               <div class="settings-modal__title info-instructions-modal__title">
                 <h2><span aria-hidden="true">📘</span> Инструкции</h2>
+                <p>Выберите формат и откройте нужную инструкцию отдельным файлом.</p>
               </div>
-              <button class="button-icon" type="button" data-info-instructions-close aria-label="Закрыть инструкции">
-                <span class="button-icon-emoji" aria-hidden="true">✕</span>
+              <button class="button-secondary info-instructions-back" type="button" data-info-instructions-close aria-label="Вернуться в информацию">
+                <span aria-hidden="true">←</span> Назад
               </button>
             </div>
             <div class="settings-modal__body info-instructions-modal__body">
               <section class="info-instructions-card" aria-label="Инструкции по действиям">
                 <div class="info-instructions-card__header">
                   <h3>Выберите формат инструкции</h3>
-                  <span>Видео и PDF</span>
+                  <span>Файлы из папок в корне сайта</span>
                 </div>
                 <div class="info-instructions-tabs" role="tablist" aria-label="Формат инструкции">
                   <button class="info-instructions-tab is-active" type="button" role="tab" aria-selected="true" data-info-instructions-tab="video">🎬 Видео</button>

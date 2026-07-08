@@ -452,11 +452,16 @@ async function loadOrganizationUserToolsCounts(orgFolderName) {
       : Array.isArray(rawTools?.tools)
         ? rawTools.tools
         : [];
-    return tools.reduce((counts, tool) => {
+    return tools.reduce((stats, tool) => {
       const responsible = normalizePersonName(tool?.["Ответственный"] ?? "");
-      if (!responsible) return counts;
-      counts.set(responsible, (counts.get(responsible) ?? 0) + 1);
-      return counts;
+      if (!responsible) return stats;
+      const current = stats.get(responsible) ?? { count: 0, amount: 0 };
+      const cost = normalizeCostValue(tool?.["Стоимость"]);
+      stats.set(responsible, {
+        count: current.count + 1,
+        amount: current.amount + (Number.isFinite(cost) ? cost : 0),
+      });
+      return stats;
     }, new Map());
   } catch (error) {
     console.warn("Не удалось загрузить инструменты для счётчика.", error);
@@ -468,12 +473,18 @@ async function loadUserToolsCount(orgFolderName, user) {
   const userName = normalizePersonName(user?.full_name ?? user?.fullName ?? "");
   if (!userName) return 0;
   const counts = await loadOrganizationUserToolsCounts(orgFolderName);
-  return counts.get(userName) ?? 0;
+  const stats = counts.get(userName);
+  return typeof stats === "number" ? stats : stats?.count ?? 0;
 }
 
-function formatUserToolsBadgeText(count) {
+function formatUserToolsBadgeText(stats) {
+  const count = typeof stats === "number" ? stats : stats?.count;
+  const amount = typeof stats === "number" ? 0 : stats?.amount;
   const safeCount = Number.isFinite(Number(count)) ? Math.max(0, Number(count)) : 0;
-  return `${safeCount} ед.`;
+  const safeAmount = Number.isFinite(Number(amount)) ? Math.max(0, Number(amount)) : 0;
+  const roundedAmount = Math.round(safeAmount);
+  const amountText = roundedAmount.toLocaleString("ru-RU");
+  return `${safeCount} ед. · ${amountText} р.`;
 }
 
 function getToolNumberVariants(value) {
@@ -29684,9 +29695,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
       const toolsTag = document.createElement("span");
       toolsTag.className = "users-details__tools-count";
-      const toolsCount = toolsCounts.get(normalizePersonName(entry?.full_name ?? "")) ?? 0;
-      toolsTag.textContent = formatUserToolsBadgeText(toolsCount);
-      toolsTag.title = `Единиц на пользователе: ${toolsCount}`;
+      const toolsStats = toolsCounts.get(normalizePersonName(entry?.full_name ?? "")) ?? { count: 0, amount: 0 };
+      toolsTag.textContent = formatUserToolsBadgeText(toolsStats);
+      toolsTag.title = `Инструментов: ${toolsStats.count ?? 0}, сумма: ${Math.round(toolsStats.amount ?? 0).toLocaleString("ru-RU")} р.`;
 
       const telegramStatus = document.createElement("span");
       telegramStatus.className = "users-details__status";
@@ -29694,8 +29705,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const isVacation = Boolean(entry?.on_vacation);
       const vacationReplacer = String(entry?.vacation_replacer ?? "").trim();
       telegramStatus.textContent = hasTelegramId
-        ? "ID привязан · нажмите, чтобы редактировать"
-        : "ID не привязан · нажмите, чтобы редактировать";
+        ? "ID привязан"
+        : "ID не привязан";
       telegramStatus.classList.toggle("is-linked", hasTelegramId);
       meta.append(roleTag, toolsTag, telegramStatus);
 
@@ -36359,16 +36370,16 @@ function setupSuperAdmin() {
 
       const toolsTag = document.createElement("span");
       toolsTag.className = "users-details__tools-count";
-      const toolsCount = toolsCounts.get(normalizePersonName(user?.full_name ?? "")) ?? 0;
-      toolsTag.textContent = formatUserToolsBadgeText(toolsCount);
-      toolsTag.title = `Единиц на пользователе: ${toolsCount}`;
+      const toolsStats = toolsCounts.get(normalizePersonName(user?.full_name ?? "")) ?? { count: 0, amount: 0 };
+      toolsTag.textContent = formatUserToolsBadgeText(toolsStats);
+      toolsTag.title = `Инструментов: ${toolsStats.count ?? 0}, сумма: ${Math.round(toolsStats.amount ?? 0).toLocaleString("ru-RU")} р.`;
 
       const telegramStatus = document.createElement("span");
       telegramStatus.className = "users-details__status";
       const hasTelegramId = Boolean(normalizeTelegramId(user?.telegram_id));
       telegramStatus.textContent = hasTelegramId
-        ? "ID привязан · нажмите, чтобы редактировать"
-        : "ID не привязан · нажмите, чтобы редактировать";
+        ? "ID привязан"
+        : "ID не привязан";
       telegramStatus.classList.toggle("is-linked", hasTelegramId);
       meta.append(roleTag, toolsTag, telegramStatus);
 

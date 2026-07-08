@@ -5139,14 +5139,14 @@ function buildEnergySettingsMarkup(settings) {
         })
         .join("");
       return `
-        <div class="settings-role" data-access-role="${roleKey}">
+        <div class="settings-role settings-fine-card" data-access-role="${roleKey}">
           <button
-            class="settings-role__header"
+            class="settings-role__header settings-fine-card__header"
             type="button"
             data-access-role-toggle
             aria-expanded="false"
           >
-            <span class="settings-chip">${escapeHtml(role)}</span>
+            <span class="settings-role__title">${escapeHtml(role)}</span>
             <span class="settings-role__icon" aria-hidden="true">⌄</span>
           </button>
           <div class="settings-role__content">
@@ -5164,12 +5164,12 @@ function buildEnergySettingsMarkup(settings) {
             (name) => `
               <button
                 type="button"
-                class="settings-chip"
+                class="settings-group-card"
                 data-energy-group-chip
                 data-group-name="${escapeHtml(name)}"
               >
-                <span>${escapeHtml(name)}</span>
-                <span aria-hidden="true">✕</span>
+                <span class="settings-group-card__name">${escapeHtml(name)}</span>
+                <span class="settings-group-card__remove" aria-hidden="true">✕</span>
               </button>
             `
           )
@@ -5542,7 +5542,7 @@ function buildEnergySettingsMarkup(settings) {
             <span aria-hidden="true">+</span>
           </button>
         </div>
-        <div class="settings-inline" data-energy-group-list>
+        <div class="settings-existing-groups" data-energy-group-list>
           ${groupChips}
         </div>
       </div>
@@ -30921,12 +30921,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
                 (name) => `
                   <button
                     type="button"
-                    class="settings-chip"
+                    class="settings-group-card"
                     data-energy-group-chip
                     data-group-name="${escapeHtml(name)}"
                   >
-                    <span>${escapeHtml(name)}</span>
-                    <span aria-hidden="true">✕</span>
+                    <span class="settings-group-card__name">${escapeHtml(name)}</span>
+                    <span class="settings-group-card__remove" aria-hidden="true">✕</span>
                   </button>
                 `
               )

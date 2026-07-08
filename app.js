@@ -8363,20 +8363,16 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         </button>
       </header>
       <div class="settings-modal__body tools-notes-modal__body">
-        <div class="tools-notes-hero">
-          <div>
-            <span class="tools-notes-hero__eyebrow">Быстрые пометки</span>
-            <p class="tools-notes-hero__text">Фиксируйте состояние, договорённости и важные детали — всё останется в карточке инструмента.</p>
-          </div>
-          <span class="tools-notes-hero__count" data-tools-notes-count>0</span>
+        <div class="tools-notes-hero" aria-live="polite">
+          <span class="tools-notes-hero__label">Всего заметок</span>
+          <span class="tools-notes-hero__count" data-tools-notes-count>0 записей</span>
         </div>
         <div class="tools-notes-list" data-tools-notes-list></div>
         <form class="tools-notes-form" data-tools-notes-form>
           <label class="tools-notes-form__label" for="tools-notes-text">Новая заметка</label>
           <textarea id="tools-notes-text" class="form-input tools-notes-form__textarea" data-tools-notes-text rows="4" placeholder="Напишите, что важно помнить по этому инструменту..."></textarea>
           <div class="tools-notes-form__footer">
-            <p class="tools-notes-message" data-tools-notes-message>Добавьте короткую понятную запись.</p>
-            <span class="tools-notes-form__counter" data-tools-notes-counter>0 символов</span>
+            <p class="tools-notes-message" data-tools-notes-message aria-live="polite"></p>
             <button type="submit" class="action-primary tools-notes-form__save" data-tools-notes-save>Добавить</button>
           </div>
         </form>
@@ -8388,7 +8384,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const toolsNotesSubtitleEl = toolsNotesModalEl.querySelector("[data-tools-notes-subtitle]");
   const toolsNotesListEl = toolsNotesModalEl.querySelector("[data-tools-notes-list]");
   const toolsNotesCountEl = toolsNotesModalEl.querySelector("[data-tools-notes-count]");
-  const toolsNotesCounterEl = toolsNotesModalEl.querySelector("[data-tools-notes-counter]");
   const toolsNotesFormEl = toolsNotesModalEl.querySelector("[data-tools-notes-form]");
   const toolsNotesTextEl = toolsNotesModalEl.querySelector("[data-tools-notes-text]");
   const toolsNotesMessageEl = toolsNotesModalEl.querySelector("[data-tools-notes-message]");
@@ -12261,12 +12256,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     return button;
   };
 
-  const updateToolsNotesCounter = () => {
-    if (!toolsNotesCounterEl || !toolsNotesTextEl) return;
-    const length = toolsNotesTextEl.value.trim().length;
-    toolsNotesCounterEl.textContent = `${length} ${getRussianPlural(length, "символ", "символа", "символов")}`;
-  };
-
   const renderToolsNotesList = () => {
     if (!toolsNotesListEl) return;
     const notes = normalizeToolNotes(toolsNotesState.tool);
@@ -12321,8 +12310,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       toolsNotesSubtitleEl.textContent = `${title}${number ? ` · №${number}` : ""}`;
     }
     if (toolsNotesTextEl) toolsNotesTextEl.value = "";
-    updateToolsNotesCounter();
-    if (toolsNotesMessageEl) toolsNotesMessageEl.textContent = "Добавьте короткую понятную запись.";
+    if (toolsNotesMessageEl) toolsNotesMessageEl.textContent = "";
     renderToolsNotesList();
     toolsNotesModalEl.classList.remove("is-hidden");
     document.body.style.overflow = "hidden";
@@ -12344,8 +12332,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (sourceAccounting && targetAccounting) return sourceAccounting === targetAccounting;
     return false;
   };
-
-  toolsNotesTextEl?.addEventListener("input", updateToolsNotesCounter);
 
   const saveToolNote = async (text) => {
     const cleanText = String(text ?? "").trim();
@@ -12387,7 +12373,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     toolsState.filtered = toolsState.filtered.map(updateRuntimeEntry);
     toolsState.toolMap = new Map(toolsState.tools.map((entry) => [entry.__selectionId, entry]));
     if (toolsNotesTextEl) toolsNotesTextEl.value = "";
-    updateToolsNotesCounter();
     renderToolsNotesList();
     renderToolsList();
     if (toolsNotesMessageEl) toolsNotesMessageEl.textContent = "Заметка сохранена.";

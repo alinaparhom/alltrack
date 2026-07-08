@@ -6141,6 +6141,22 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     breakdowns: contentEl.querySelector("[data-info-statistics-breakdowns]"),
     fines: contentEl.querySelector("[data-info-statistics-fines]"),
   };
+  const infoFinesModalEl = contentEl.querySelector("[data-info-fines-modal]");
+  const infoFinesBackdropEl = contentEl.querySelector("[data-info-fines-backdrop]");
+  const infoFinesCloseButton = contentEl.querySelector("[data-info-fines-close]");
+  const infoFinesStatusEl = contentEl.querySelector("[data-info-fines-status]");
+  const infoFinesTypesEl = contentEl.querySelector("[data-info-fines-types]");
+  const infoFinesTypesEmptyEl = contentEl.querySelector("[data-info-fines-types-empty]");
+  const infoFinesMonthsEl = contentEl.querySelector("[data-info-fines-months]");
+  const infoFinesMonthsEmptyEl = contentEl.querySelector("[data-info-fines-months-empty]");
+  const infoFinesTypesCountEl = contentEl.querySelector("[data-info-fines-types-count]");
+  const infoFinesMonthsCountEl = contentEl.querySelector("[data-info-fines-months-count]");
+  const infoFinesValueEls = {
+    balance: contentEl.querySelector("[data-info-fines-balance]"),
+    issued: contentEl.querySelector("[data-info-fines-issued]"),
+    accrued: contentEl.querySelector("[data-info-fines-accrued]"),
+    users: contentEl.querySelector("[data-info-fines-users]"),
+  };
   const downloadOptionsGridEl = contentEl.querySelector("[data-download-options-grid]");
   const downloadSubtitleEl = contentEl.querySelector("[data-energy-download-subtitle]");
   const downloadMessageEl = contentEl.querySelector("[data-energy-download-message]");
@@ -31548,6 +31564,128 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (infoRepairStatusEl) infoRepairStatusEl.textContent = "Готово";
   };
 
+
+  const closeInfoFinesModal = () => {
+    if (!infoFinesModalEl) return;
+    infoFinesModalEl.classList.add("is-hidden");
+    document.body.style.overflow = "";
+  };
+  const setInfoFinesValue = (key, value) => {
+    const element = infoFinesValueEls[key];
+    if (element) element.textContent = value;
+  };
+  const getFineInfoNumber = (value) => normalizeCostValue(value) || 0;
+  const formatInfoFineMoney = (value) => formatFineMoney(getFineInfoNumber(value));
+  const collectInfoFinesData = (rawFines) => {
+    const summary = rawFines?.["Штрафы по пользователям"] && typeof rawFines["Штрафы по пользователям"] === "object"
+      ? rawFines["Штрафы по пользователям"]
+      : {};
+    const types = new Map();
+    const usersWithBalance = new Set();
+    Object.entries(summary).forEach(([userName, userSummary]) => {
+      if (!userSummary || typeof userSummary !== "object") return;
+      Object.entries(userSummary).forEach(([typeName, typeSummary]) => {
+        if (!typeSummary || typeof typeSummary !== "object") return;
+        const accrued = getFineInfoNumber(typeSummary["Штрафы по отвеченным перемещениям"] ?? typeSummary["Начислено"]);
+        const issued = getFineInfoNumber(typeSummary["Выставленные штрафы"]);
+        const forgiven = getFineInfoNumber(typeSummary["Простили"]);
+        const balance = getFineInfoNumber(typeSummary["Остаток"]);
+        if (!accrued && !issued && !forgiven && !balance) return;
+        const key = String(typeName || "Другие штрафы");
+        const item = types.get(key) ?? { title: key, accrued: 0, issued: 0, forgiven: 0, balance: 0, users: [] };
+        item.accrued += accrued;
+        item.issued += issued;
+        item.forgiven += forgiven;
+        item.balance += balance;
+        if (balance > 0) {
+          usersWithBalance.add(userName);
+          item.users.push({ name: userName, balance, issued, accrued });
+        }
+        types.set(key, item);
+      });
+    });
+    const history = Array.isArray(rawFines?.fines) ? rawFines.fines : Array.isArray(rawFines) ? rawFines : [];
+    const months = new Map();
+    history.forEach((fine) => {
+      const action = String(fine?.["Действие"] ?? "").trim().toLowerCase();
+      const reason = String(fine?.["Причина"] ?? "").trim().toLowerCase();
+      if (action && !action.includes("выстав")) return;
+      if (!action && reason.includes("прощ")) return;
+      const amount = getFineInfoNumber(fine?.["Сумма"]);
+      if (!amount) return;
+      const rawDate = String(fine?.["Дата"] ?? "").slice(0, 10);
+      const monthKey = /^\d{4}-\d{2}/.test(rawDate) ? rawDate.slice(0, 7) : "Без даты";
+      const type = String(fine?.["Тип штрафа"] ?? "Другие штрафы").trim() || "Другие штрафы";
+      const month = months.get(monthKey) ?? { key: monthKey, total: 0, count: 0, types: new Map() };
+      const typeItem = month.types.get(type) ?? { title: type, total: 0, count: 0 };
+      month.total += amount; month.count += 1; typeItem.total += amount; typeItem.count += 1;
+      month.types.set(type, typeItem); months.set(monthKey, month);
+    });
+    return { types: [...types.values()].sort((a,b)=>b.balance-a.balance || b.issued-a.issued), months: [...months.values()].sort((a,b)=>String(b.key).localeCompare(String(a.key))), usersWithBalance };
+  };
+  const renderInfoFines = (rawFines) => {
+    const data = collectInfoFinesData(rawFines);
+    const totals = data.types.reduce((acc, item) => ({ balance: acc.balance + item.balance, issued: acc.issued + item.issued, accrued: acc.accrued + item.accrued }), { balance: 0, issued: 0, accrued: 0 });
+    setInfoFinesValue("balance", formatInfoFineMoney(totals.balance));
+    setInfoFinesValue("issued", formatInfoFineMoney(totals.issued));
+    setInfoFinesValue("accrued", formatInfoFineMoney(totals.accrued));
+    setInfoFinesValue("users", String(data.usersWithBalance.size));
+    if (infoFinesTypesCountEl) infoFinesTypesCountEl.textContent = `${data.types.length} видов`;
+    if (infoFinesMonthsCountEl) infoFinesMonthsCountEl.textContent = `${data.months.length} мес.`;
+    if (infoFinesTypesEl) {
+      infoFinesTypesEl.innerHTML = "";
+      data.types.forEach((item) => {
+        const card = document.createElement("article");
+        card.className = "info-fines-type";
+        const topUsers = item.users.sort((a,b)=>b.balance-a.balance).slice(0, 3).map((user) => `${formatFullName(user.name, 4)} — ${formatInfoFineMoney(user.balance)} р.`).join(" · ");
+        card.innerHTML = `<div class="info-fines-type__top"><h4></h4><strong>${formatInfoFineMoney(item.balance)} р.</strong></div><div class="info-fines-type__stats"><span>Начислено: ${formatInfoFineMoney(item.accrued)} р.</span><span>Выставлено: ${formatInfoFineMoney(item.issued)} р.</span><span>Простили: ${formatInfoFineMoney(item.forgiven)} р.</span></div><div class="info-fines-type__users"></div>`;
+        card.querySelector("h4").textContent = item.title;
+        card.querySelector(".info-fines-type__users").textContent = topUsers || "Нет сотрудников с остатком";
+        infoFinesTypesEl.appendChild(card);
+      });
+    }
+    infoFinesTypesEmptyEl?.classList.toggle("is-hidden", data.types.length > 0);
+    if (infoFinesMonthsEl) {
+      infoFinesMonthsEl.innerHTML = "";
+      data.months.forEach((month) => {
+        const date = /^\d{4}-\d{2}$/.test(month.key) ? new Date(`${month.key}-01T00:00:00`) : null;
+        const title = date ? date.toLocaleDateString("ru-RU", { month: "long", year: "numeric" }) : month.key;
+        const card = document.createElement("article");
+        card.className = "info-fines-month";
+        card.innerHTML = `<div class="info-fines-month__top"><h4></h4><strong>${formatInfoFineMoney(month.total)} р.</strong><span>${month.count} записей</span></div><div class="info-fines-month__rows"></div>`;
+        card.querySelector("h4").textContent = title;
+        const rowsEl = card.querySelector(".info-fines-month__rows");
+        [...month.types.values()].sort((a,b)=>b.total-a.total).forEach((type) => {
+          const row = document.createElement("div");
+          row.className = "info-fines-month__row";
+          const name = document.createElement("span");
+          name.textContent = type.title;
+          const total = document.createElement("strong");
+          total.textContent = `${formatInfoFineMoney(type.total)} р.`;
+          const count = document.createElement("small");
+          count.textContent = `${type.count} зап.`;
+          row.append(name, total, count);
+          rowsEl?.appendChild(row);
+        });
+        infoFinesMonthsEl.appendChild(card);
+      });
+    }
+    infoFinesMonthsEmptyEl?.classList.toggle("is-hidden", data.months.length > 0);
+  };
+  const openInfoFinesModal = async () => {
+    if (!infoFinesModalEl) return;
+    infoFinesModalEl.classList.remove("is-hidden");
+    document.body.style.overflow = "hidden";
+    if (infoFinesStatusEl) infoFinesStatusEl.textContent = "Загружаем штрафы...";
+    try {
+      const rawFines = await loadJson(`./${context.orgFolderName}/Штрафы.json`).catch(() => ({}));
+      renderInfoFines(rawFines);
+      if (infoFinesStatusEl) infoFinesStatusEl.textContent = "Данные обновлены.";
+    } catch (error) {
+      console.error(error);
+      if (infoFinesStatusEl) infoFinesStatusEl.textContent = "Не удалось загрузить информацию по штрафам.";
+    }
+  };
   const closeInfoStatisticsModal = () => {
     if (!infoStatisticsModalEl) return;
     infoStatisticsModalEl.classList.add("is-hidden");
@@ -32773,7 +32911,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
     if (option === "fines") {
       closeInfoModal();
-      void openFinesModal();
+      void openInfoFinesModal();
       return;
     }
     if (option === "statistics") {
@@ -32792,6 +32930,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   infoStatisticsModalEl?.addEventListener("keydown", (event) => {
     if (event.key === "Escape") {
       closeInfoStatisticsModal();
+    }
+  });
+  infoFinesBackdropEl?.addEventListener("click", closeInfoFinesModal);
+  infoFinesCloseButton?.addEventListener("click", closeInfoFinesModal);
+  infoFinesModalEl?.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      closeInfoFinesModal();
     }
   });
 

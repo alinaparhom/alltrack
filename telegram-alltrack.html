@@ -19604,6 +19604,213 @@
         opacity: 0.62;
       }
 
+
+
+      .info-fines-modal__panel {
+        width: min(1120px, calc(100vw - 18px));
+        max-height: min(92dvh, 920px);
+        overflow: hidden;
+        border-radius: 28px;
+      }
+
+      .info-fines-modal__body {
+        display: grid;
+        gap: 12px;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      .info-fines-hero,
+      .info-fines-card {
+        border: 1px solid rgba(226, 232, 240, 0.9);
+        border-radius: 24px;
+        background: linear-gradient(145deg, rgba(255,255,255,0.92), rgba(248,250,252,0.72));
+        box-shadow: 0 18px 42px rgba(15, 23, 42, 0.08);
+      }
+
+      .info-fines-hero {
+        display: grid;
+        gap: 14px;
+        padding: 14px;
+      }
+
+      .info-fines-hero__title {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        min-width: 0;
+      }
+
+      .info-fines-hero__icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 46px;
+        height: 46px;
+        border-radius: 18px;
+        background: rgba(59, 125, 255, 0.12);
+        font-size: 23px;
+      }
+
+      .info-fines-hero h3,
+      .info-fines-card h3,
+      .info-fines-type h4,
+      .info-fines-month h4 {
+        margin: 0;
+        color: var(--text);
+        font-weight: 900;
+        line-height: 1.18;
+      }
+
+      .info-fines-hero p {
+        margin: 3px 0 0;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .info-fines-metrics {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 8px;
+      }
+
+      .info-fines-metric {
+        display: grid;
+        gap: 2px;
+        min-width: 0;
+        padding: 10px;
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.76);
+        box-shadow: inset 0 0 0 1px rgba(226, 232, 240, 0.72);
+      }
+
+      .info-fines-metric span,
+      .info-fines-metric small {
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 800;
+      }
+
+      .info-fines-metric strong {
+        overflow: hidden;
+        color: var(--accent);
+        font-size: clamp(18px, 3vw, 27px);
+        line-height: 1;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .info-fines-layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        gap: 12px;
+      }
+
+      .info-fines-card {
+        display: grid;
+        align-content: start;
+        gap: 10px;
+        min-width: 0;
+        padding: 12px;
+      }
+
+      .info-fines-card__header,
+      .info-fines-type__top,
+      .info-fines-month__top,
+      .info-fines-month__row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        min-width: 0;
+      }
+
+      .info-fines-card__header span,
+      .info-fines-month__top span {
+        flex: 0 0 auto;
+        padding: 5px 9px;
+        border-radius: 999px;
+        background: rgba(59, 125, 255, 0.1);
+        color: var(--accent);
+        font-size: 11px;
+        font-weight: 900;
+      }
+
+      .info-fines-types,
+      .info-fines-months,
+      .info-fines-month__rows {
+        display: grid;
+        gap: 8px;
+      }
+
+      .info-fines-type,
+      .info-fines-month {
+        display: grid;
+        gap: 8px;
+        padding: 10px;
+        border: 1px solid rgba(226, 232, 240, 0.78);
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.72);
+      }
+
+      .info-fines-type__top strong,
+      .info-fines-month__top strong,
+      .info-fines-month__row strong {
+        color: var(--accent);
+        font-weight: 900;
+        white-space: nowrap;
+      }
+
+      .info-fines-type__stats {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+
+      .info-fines-type__stats span,
+      .info-fines-type__users,
+      .info-fines-month__row small {
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 800;
+        line-height: 1.35;
+      }
+
+      .info-fines-type__stats span,
+      .info-fines-month__row {
+        padding: 6px 8px;
+        border-radius: 12px;
+        background: rgba(248, 250, 252, 0.9);
+      }
+
+      .info-fines-month__row span {
+        min-width: 0;
+        overflow: hidden;
+        color: var(--text);
+        font-size: 13px;
+        font-weight: 850;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      @media (max-width: 760px) {
+        .info-fines-modal__panel {
+          width: 100%;
+          height: 100dvh;
+          max-height: 100dvh;
+          border-radius: 0;
+        }
+
+        .info-fines-metrics,
+        .info-fines-layout {
+          grid-template-columns: 1fr 1fr;
+        }
+
+        .info-fines-layout {
+          grid-template-columns: 1fr;
+        }
+      }
+
       .fines-modal {
         box-sizing: border-box;
         place-items: stretch;

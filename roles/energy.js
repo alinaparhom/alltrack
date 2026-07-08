@@ -130,14 +130,14 @@ export function renderRole(user, options = {}) {
                 <div class="energy-profile-panel__position" data-energy-profile-position></div>
                 <div class="energy-profile-panel__stats" data-energy-profile-stats aria-live="polite">
                   <div class="energy-profile-panel__stat">
-                    <span class="energy-profile-panel__stat-icon" aria-hidden="true">📋</span>
+                    <span class="energy-profile-panel__stat-icon" aria-hidden="true">🧰</span>
                     <span class="energy-profile-panel__stat-value" data-energy-profile-report-count>0</span>
-                    <span class="energy-profile-panel__stat-label">ед. на отчёте</span>
+                    <span class="energy-profile-panel__stat-label">инструментов</span>
                   </div>
                   <div class="energy-profile-panel__stat energy-profile-panel__stat--accent">
-                    <span class="energy-profile-panel__stat-icon" aria-hidden="true">💎</span>
+                    <span class="energy-profile-panel__stat-icon" aria-hidden="true">₽</span>
                     <span class="energy-profile-panel__stat-value" data-energy-profile-report-amount>0 р.</span>
-                    <span class="energy-profile-panel__stat-label">сумма</span>
+                    <span class="energy-profile-panel__stat-label">общая сумма</span>
                   </div>
                   <div class="energy-profile-panel__stat">
                     <span class="energy-profile-panel__stat-icon" aria-hidden="true">🏢</span>

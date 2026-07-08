@@ -1101,6 +1101,37 @@ function getUserPhotoCandidates(user, { forceInitials = false } = {}) {
   return Array.from(new Set(candidates.filter(Boolean)));
 }
 
+
+function createUserDetailsAvatar(user) {
+  const avatar = document.createElement("div");
+  avatar.className = "users-details__avatar";
+
+  const initials = document.createElement("span");
+  initials.className = "users-details__initials";
+  initials.textContent = getInitials(String(user?.full_name ?? "").trim());
+  avatar.appendChild(initials);
+
+  const photoSrc = buildUserPhotoSrc(user?.profile_photo);
+  if (photoSrc) {
+    const photo = document.createElement("img");
+    photo.className = "users-details__photo";
+    photo.src = photoSrc;
+    photo.alt = `Фото ${formatFullName(String(user?.full_name ?? "").trim()) || "пользователя"}`;
+    photo.loading = "lazy";
+    photo.decoding = "async";
+    photo.addEventListener("load", () => {
+      avatar.dataset.hasPhoto = "true";
+    }, { once: true });
+    photo.addEventListener("error", () => {
+      photo.remove();
+      delete avatar.dataset.hasPhoto;
+    }, { once: true });
+    avatar.appendChild(photo);
+  }
+
+  return avatar;
+}
+
 function updateHeaderUserBadge(fullName = "", { forceInitials = false } = {}) {
   const initials = getInitials(fullName);
   if (userInitialsEl) {
@@ -29696,9 +29727,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       card.setAttribute("role", "button");
       card.setAttribute("tabindex", "0");
 
-      const initials = document.createElement("div");
-      initials.className = "users-details__initials";
-      initials.textContent = getInitials(String(entry?.full_name ?? "").trim());
+      const avatar = createUserDetailsAvatar(entry);
 
       const info = document.createElement("div");
       info.className = "users-details__info";
@@ -29744,7 +29773,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       editHint.textContent = "✎";
 
       info.append(name, meta);
-      card.append(initials, info, editHint);
+      card.append(avatar, info, editHint);
       card.setAttribute(
         "aria-label",
         `Редактировать данные пользователя: ${name.textContent}`
@@ -36368,9 +36397,7 @@ function setupSuperAdmin() {
       const card = document.createElement("div");
       card.className = "users-details__card";
 
-      const initials = document.createElement("div");
-      initials.className = "users-details__initials";
-      initials.textContent = getInitials(String(user?.full_name ?? "").trim());
+      const avatar = createUserDetailsAvatar(user);
 
       const info = document.createElement("div");
       info.className = "users-details__info";
@@ -36404,7 +36431,7 @@ function setupSuperAdmin() {
       editHint.textContent = "✎";
 
       info.append(name, meta);
-      card.append(initials, info, editHint);
+      card.append(avatar, info, editHint);
       card.classList.add("is-actionable");
       card.setAttribute("role", "button");
       card.setAttribute("tabindex", "0");

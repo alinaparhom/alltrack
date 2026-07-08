@@ -4930,6 +4930,26 @@
       .form-select--selectable:invalid {
         color: var(--muted);
       }
+      .users-edit-role-field {
+        z-index: 5;
+      }
+
+      .users-edit-role-field__input {
+        cursor: pointer;
+        caret-color: transparent;
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.94), rgba(244, 248, 255, 0.82));
+      }
+
+      .users-edit-role-field__input::placeholder {
+        color: var(--muted);
+      }
+
+      .users-edit-role-field__suggestions {
+        max-height: min(320px, 44vh);
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+
 
       .form-input:focus {
         outline: none;

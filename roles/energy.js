@@ -4133,14 +4133,20 @@ export function renderRole(user, options = {}) {
                   </div>
                   <div class="form-field form-field--selectable users-edit-role-field">
                     <label class="form-label" for="users-edit-role">Роль пользователя</label>
-                    <select class="form-input form-select--selectable users-edit-role-field__select" id="users-edit-role" name="users-edit-role" required>
-                      <option value="Бухгалтерия">Бухгалтерия</option>
-                      <option value="Главный инженер">Главный инженер</option>
-                      <option value="Энергетик">Энергетик</option>
-                      <option value="Контроль">Контроль</option>
-                      <option value="Руководитель">Руководитель</option>
-                      <option value="Ответственный">Ответственный</option>
-                    </select>
+                    <input
+                      class="form-input form-input--selectable users-edit-role-field__input"
+                      type="text"
+                      id="users-edit-role"
+                      name="users-edit-role"
+                      autocomplete="off"
+                      inputmode="none"
+                      readonly
+                      required
+                      placeholder="Выберите роль"
+                      data-users-edit-role-input
+                      data-role-options="Бухгалтерия|Главный инженер|Энергетик|Контроль|Руководитель|Ответственный"
+                    />
+                    <div class="suggestions is-hidden users-edit-role-field__suggestions" data-users-edit-role-suggestions></div>
                   </div>
                   <div class="form-field">
                     <label class="form-label" for="users-edit-position">Должность</label>

@@ -4539,7 +4539,6 @@ export function renderRole(user, options = {}) {
             <div class="settings-modal__header tools-modal__header info-repair-modal__header">
               <div class="settings-modal__title info-repair-modal__title">
                 <h2>Ремонты</h2>
-                <p data-info-repair-subtitle>Короткая сводка по организации</p>
               </div>
               <button
                 class="button-icon"
@@ -4556,7 +4555,6 @@ export function renderRole(user, options = {}) {
                   <span class="info-repair-summary__icon" aria-hidden="true">🛠️</span>
                   <div>
                     <h3>Сводка</h3>
-                    <p>сейчас · всего · деньги</p>
                   </div>
                 </div>
                 <div class="info-repair-summary__metrics">
@@ -4574,19 +4572,19 @@ export function renderRole(user, options = {}) {
                   <div class="tools-empty is-hidden" data-info-repair-active-empty>Сейчас нет инструментов в ремонте.</div>
                 </section>
                 <section class="info-repair-card">
-                  <div class="info-repair-card__header"><h3>Организации</h3><span>суммы</span></div>
+                  <div class="info-repair-card__header"><h3>Организации</h3></div>
                   <div class="info-repair-bars" data-info-repair-org-list></div>
                 </section>
                 <section class="info-repair-card">
-                  <div class="info-repair-card__header"><h3>Производители</h3><span>топ</span></div>
+                  <div class="info-repair-card__header"><h3>Производители</h3></div>
                   <div class="info-repair-bars" data-info-repair-manufacturer-list></div>
                 </section>
                 <section class="info-repair-card">
-                  <div class="info-repair-card__header"><h3>Модели</h3><span>топ</span></div>
+                  <div class="info-repair-card__header"><h3>Модели</h3></div>
                   <div class="info-repair-bars" data-info-repair-model-list></div>
                 </section>
                 <section class="info-repair-card info-repair-card--wide">
-                  <div class="info-repair-card__header"><h3>Наименования</h3><span>частота</span></div>
+                  <div class="info-repair-card__header"><h3>Наименования</h3></div>
                   <div class="info-repair-bars" data-info-repair-name-list></div>
                 </section>
               </div>

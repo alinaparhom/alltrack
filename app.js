@@ -6154,7 +6154,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const infoInstructionsBackdropEl = contentEl.querySelector("[data-info-instructions-backdrop]");
   const infoInstructionsCloseButton = contentEl.querySelector("[data-info-instructions-close]");
   const infoInstructionsGridEl = contentEl.querySelector("[data-info-instructions-grid]");
-  const infoInstructionsTabEls = Array.from(contentEl.querySelectorAll("[data-info-instructions-tab]"));
   const infoInstructionsItems = [
     "Переместить",
     "Отменить перемещение",
@@ -6173,7 +6172,24 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     "Пользователи",
     "Объекты",
   ];
-  let infoInstructionsActiveTab = "video";
+  const infoInstructionIconMap = new Map([
+    ["Переместить", "🔁"],
+    ["Отменить перемещение", "↩️"],
+    ["Принять", "✅"],
+    ["Не принять", "🚫"],
+    ["Найти инструмент", "🔎"],
+    ["Сломано", "🛠️"],
+    ["В ремонт", "🧰"],
+    ["Отремонтировано", "✨"],
+    ["Новая единица", "➕"],
+    ["На списание", "🧾"],
+    ["Списать", "♻️"],
+    ["Добавить фото", "📸"],
+    ["Удалить фото", "🗑️"],
+    ["Отредактировать базу", "✏️"],
+    ["Пользователи", "👥"],
+    ["Объекты", "📍"],
+  ]);
   const infoFinesValueEls = {
     balance: contentEl.querySelector("[data-info-fines-balance]"),
     issued: contentEl.querySelector("[data-info-fines-issued]"),
@@ -31595,21 +31611,52 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     return `./${folder}/${encodeURIComponent(title)}${extension}`;
   };
 
+  const getInfoInstructionPlaceholderPath = (title, type) => (
+    `./instruction-placeholder.html?title=${encodeURIComponent(title)}&type=${encodeURIComponent(type)}`
+  );
+
+  const updateInfoInstructionActionAvailability = async (link, title, type) => {
+    if (!link) return;
+    const filePath = getInfoInstructionPath(title, type);
+    try {
+      const response = await fetch(filePath, { method: "HEAD", cache: "no-store" });
+      if (response.ok) {
+        link.href = filePath;
+        link.classList.remove("is-missing");
+        link.querySelector(".info-instruction-action__status")?.replaceChildren(document.createTextNode("Открыть"));
+        return;
+      }
+    } catch (error) {
+      // Для локального открытия без сервера HEAD может быть недоступен — оставляем заглушку.
+    }
+    link.href = getInfoInstructionPlaceholderPath(title, type);
+    link.classList.add("is-missing");
+    link.querySelector(".info-instruction-action__status")?.replaceChildren(document.createTextNode("Заглушка"));
+  };
+
   const renderInfoInstructions = () => {
     if (!infoInstructionsGridEl) return;
-    const isPdf = infoInstructionsActiveTab === "pdf";
     infoInstructionsGridEl.innerHTML = "";
     infoInstructionsItems.forEach((title) => {
-      const link = document.createElement("a");
-      link.className = "info-instruction-link";
-      link.href = getInfoInstructionPath(title, infoInstructionsActiveTab);
-      link.target = "_blank";
-      link.rel = "noopener noreferrer";
-      link.setAttribute("aria-label", `${isPdf ? "Открыть PDF" : "Открыть видео"}: ${title}`);
-      link.innerHTML = `<span class="info-instruction-link__icon" aria-hidden="true">${isPdf ? "📄" : "▶️"}</span><span class="info-instruction-link__title"></span><span class="info-instruction-link__type">${isPdf ? "PDF" : "Видео"}</span>`;
-      const titleEl = link.querySelector(".info-instruction-link__title");
+      const card = document.createElement("article");
+      card.className = "info-instruction-link";
+      card.innerHTML = `
+        <span class="info-instruction-link__icon" aria-hidden="true">${infoInstructionIconMap.get(title) ?? "📘"}</span>
+        <span class="info-instruction-link__title"></span>
+        <span class="info-instruction-link__type">Выберите удобный формат</span>
+        <span class="info-instruction-actions">
+          <a class="info-instruction-action" href="${getInfoInstructionPlaceholderPath(title, "video")}" target="_blank" rel="noopener noreferrer" aria-label="Открыть видеоинструкцию: ${title}">
+            <span aria-hidden="true">🎬</span><span>Видео</span><small class="info-instruction-action__status">Проверка…</small>
+          </a>
+          <a class="info-instruction-action" href="${getInfoInstructionPlaceholderPath(title, "pdf")}" target="_blank" rel="noopener noreferrer" aria-label="Открыть PDF-инструкцию: ${title}">
+            <span aria-hidden="true">📄</span><span>PDF</span><small class="info-instruction-action__status">Проверка…</small>
+          </a>
+        </span>`;
+      const titleEl = card.querySelector(".info-instruction-link__title");
       if (titleEl) titleEl.textContent = title;
-      infoInstructionsGridEl.appendChild(link);
+      infoInstructionsGridEl.appendChild(card);
+      updateInfoInstructionActionAvailability(card.querySelector('a[aria-label^="Открыть видеоинструкцию"]'), title, "video");
+      updateInfoInstructionActionAvailability(card.querySelector('a[aria-label^="Открыть PDF-инструкцию"]'), title, "pdf");
     });
   };
 
@@ -33031,20 +33078,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       closeInfoInstructionsModal();
     }
   });
-  infoInstructionsTabEls.forEach((tabEl) => {
-    tabEl.addEventListener("click", () => {
-      const nextTab = String(tabEl.dataset.infoInstructionsTab ?? "").trim();
-      if (!nextTab || nextTab === infoInstructionsActiveTab) return;
-      infoInstructionsActiveTab = nextTab;
-      infoInstructionsTabEls.forEach((item) => {
-        const isActive = String(item.dataset.infoInstructionsTab ?? "").trim() === nextTab;
-        item.classList.toggle("is-active", isActive);
-        item.setAttribute("aria-selected", isActive ? "true" : "false");
-      });
-      renderInfoInstructions();
-    });
-  });
-
   infoByDatesBackdropEl?.addEventListener("click", closeInfoByDatesModal);
   infoByDatesCloseButton?.addEventListener("click", closeInfoByDatesModal);
   infoByDatesModalEl?.addEventListener("keydown", (event) => {

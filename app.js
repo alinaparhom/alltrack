@@ -8351,21 +8351,32 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     <div class="settings-modal__backdrop" data-tools-notes-backdrop></div>
     <section class="settings-modal__panel tools-notes-modal__panel" role="dialog" aria-modal="true" aria-label="Заметки по инструменту">
       <header class="settings-modal__header tools-notes-modal__header">
-        <div>
-          <h2 data-tools-notes-title>Заметки</h2>
-          <p data-tools-notes-subtitle>История заметок по инструменту</p>
+        <div class="tools-notes-modal__title-wrap">
+          <span class="tools-notes-modal__icon" aria-hidden="true">📝</span>
+          <div>
+            <h2 data-tools-notes-title>Заметки</h2>
+            <p data-tools-notes-subtitle>История заметок по инструменту</p>
+          </div>
         </div>
-        <button type="button" class="button-icon tools-modal__close" data-tools-notes-close aria-label="Закрыть заметки">
+        <button type="button" class="button-icon tools-modal__close tools-notes-modal__close" data-tools-notes-close aria-label="Закрыть заметки">
           <span class="button-icon-emoji" aria-hidden="true">✕</span>
         </button>
       </header>
       <div class="settings-modal__body tools-notes-modal__body">
+        <div class="tools-notes-hero">
+          <div>
+            <span class="tools-notes-hero__eyebrow">Быстрые пометки</span>
+            <p class="tools-notes-hero__text">Фиксируйте состояние, договорённости и важные детали — всё останется в карточке инструмента.</p>
+          </div>
+          <span class="tools-notes-hero__count" data-tools-notes-count>0</span>
+        </div>
         <div class="tools-notes-list" data-tools-notes-list></div>
         <form class="tools-notes-form" data-tools-notes-form>
           <label class="tools-notes-form__label" for="tools-notes-text">Новая заметка</label>
           <textarea id="tools-notes-text" class="form-input tools-notes-form__textarea" data-tools-notes-text rows="4" placeholder="Напишите, что важно помнить по этому инструменту..."></textarea>
           <div class="tools-notes-form__footer">
-            <p class="tools-notes-message" data-tools-notes-message></p>
+            <p class="tools-notes-message" data-tools-notes-message>Добавьте короткую понятную запись.</p>
+            <span class="tools-notes-form__counter" data-tools-notes-counter>0 символов</span>
             <button type="submit" class="action-primary tools-notes-form__save" data-tools-notes-save>Добавить</button>
           </div>
         </form>
@@ -8376,6 +8387,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const toolsNotesTitleEl = toolsNotesModalEl.querySelector("[data-tools-notes-title]");
   const toolsNotesSubtitleEl = toolsNotesModalEl.querySelector("[data-tools-notes-subtitle]");
   const toolsNotesListEl = toolsNotesModalEl.querySelector("[data-tools-notes-list]");
+  const toolsNotesCountEl = toolsNotesModalEl.querySelector("[data-tools-notes-count]");
+  const toolsNotesCounterEl = toolsNotesModalEl.querySelector("[data-tools-notes-counter]");
   const toolsNotesFormEl = toolsNotesModalEl.querySelector("[data-tools-notes-form]");
   const toolsNotesTextEl = toolsNotesModalEl.querySelector("[data-tools-notes-text]");
   const toolsNotesMessageEl = toolsNotesModalEl.querySelector("[data-tools-notes-message]");
@@ -12209,6 +12222,15 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
   const getToolNotesCount = (tool) => normalizeToolNotes(tool).length;
 
+  const getRussianPlural = (count, one, few, many) => {
+    const abs = Math.abs(Number(count)) % 100;
+    const last = abs % 10;
+    if (abs > 10 && abs < 20) return many;
+    if (last > 1 && last < 5) return few;
+    if (last === 1) return one;
+    return many;
+  };
+
   const formatToolNoteDate = (value) => {
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return value || "только что";
@@ -12239,9 +12261,19 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     return button;
   };
 
+  const updateToolsNotesCounter = () => {
+    if (!toolsNotesCounterEl || !toolsNotesTextEl) return;
+    const length = toolsNotesTextEl.value.trim().length;
+    toolsNotesCounterEl.textContent = `${length} ${getRussianPlural(length, "символ", "символа", "символов")}`;
+  };
+
   const renderToolsNotesList = () => {
     if (!toolsNotesListEl) return;
     const notes = normalizeToolNotes(toolsNotesState.tool);
+    if (toolsNotesCountEl) {
+      const count = notes.length;
+      toolsNotesCountEl.textContent = `${count} ${getRussianPlural(count, "запись", "записи", "записей")}`;
+    }
     toolsNotesListEl.innerHTML = "";
     if (!notes.length) {
       const empty = document.createElement("div");
@@ -12265,6 +12297,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         const text = document.createElement("div");
         text.className = "tools-note-item__text";
         text.textContent = note.text;
+        const dot = document.createElement("span");
+        dot.className = "tools-note-item__dot";
+        dot.setAttribute("aria-hidden", "true");
+        item.append(dot);
         item.append(meta, text);
         toolsNotesListEl.appendChild(item);
       });
@@ -12285,7 +12321,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       toolsNotesSubtitleEl.textContent = `${title}${number ? ` · №${number}` : ""}`;
     }
     if (toolsNotesTextEl) toolsNotesTextEl.value = "";
-    if (toolsNotesMessageEl) toolsNotesMessageEl.textContent = "";
+    updateToolsNotesCounter();
+    if (toolsNotesMessageEl) toolsNotesMessageEl.textContent = "Добавьте короткую понятную запись.";
     renderToolsNotesList();
     toolsNotesModalEl.classList.remove("is-hidden");
     document.body.style.overflow = "hidden";
@@ -12307,6 +12344,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (sourceAccounting && targetAccounting) return sourceAccounting === targetAccounting;
     return false;
   };
+
+  toolsNotesTextEl?.addEventListener("input", updateToolsNotesCounter);
 
   const saveToolNote = async (text) => {
     const cleanText = String(text ?? "").trim();
@@ -12348,6 +12387,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     toolsState.filtered = toolsState.filtered.map(updateRuntimeEntry);
     toolsState.toolMap = new Map(toolsState.tools.map((entry) => [entry.__selectionId, entry]));
     if (toolsNotesTextEl) toolsNotesTextEl.value = "";
+    updateToolsNotesCounter();
     renderToolsNotesList();
     renderToolsList();
     if (toolsNotesMessageEl) toolsNotesMessageEl.textContent = "Заметка сохранена.";

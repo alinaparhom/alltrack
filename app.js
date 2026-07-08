@@ -6131,7 +6131,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const infoStatisticsModalEl = contentEl.querySelector("[data-info-statistics-modal]");
   const infoStatisticsBackdropEl = contentEl.querySelector("[data-info-statistics-backdrop]");
   const infoStatisticsCloseButton = contentEl.querySelector("[data-info-statistics-close]");
-  const infoStatisticsSubtitleEl = contentEl.querySelector("[data-info-statistics-subtitle]");
   const infoStatisticsStatusEl = contentEl.querySelector("[data-info-statistics-status]");
   const infoStatisticsValueEls = {
     tools: contentEl.querySelector("[data-info-statistics-tools]"),
@@ -31789,9 +31788,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     infoStatisticsModalEl.classList.remove("is-hidden");
     document.body.style.overflow = "hidden";
     if (infoStatisticsStatusEl) infoStatisticsStatusEl.textContent = "Загружаем статистику...";
-    if (infoStatisticsSubtitleEl) {
-      infoStatisticsSubtitleEl.textContent = "Краткая сводка по МТЦ, движениям и ремонтам";
-    }
     Object.keys(infoStatisticsValueEls).forEach((key) => setInfoStatisticsValue(key, "—"));
 
     const orgFolder = context.orgFolderName ?? "";

@@ -19619,9 +19619,32 @@
       }
 
       .info-fines-modal__header {
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 10px;
         border-bottom: 1px solid rgba(226, 232, 240, 0.86);
         background: rgba(255, 255, 255, 0.72);
         backdrop-filter: blur(18px);
+        -webkit-backdrop-filter: blur(18px);
+      }
+
+      .info-fines-modal__header .button-icon[aria-label*="Закрыть"],
+      .info-fines-modal__header .button-icon[aria-label*="Закрыть"]:hover,
+      .info-fines-modal__header .button-icon[aria-label*="Закрыть"]:focus-visible {
+        width: 44px;
+        height: 44px;
+        flex: 0 0 auto;
+        border: 0;
+        background: transparent;
+        color: #ef4444;
+        box-shadow: none;
+      }
+
+      .info-fines-modal__header .button-icon[aria-label*="Закрыть"] .button-icon-emoji {
+        color: #ef4444;
+        font-size: 22px;
+        font-weight: 900;
+        line-height: 1;
       }
 
       .info-fines-modal__title h2 {
@@ -19648,6 +19671,9 @@
 
       .info-fines-hero {
         display: grid;
+        justify-self: start;
+        width: fit-content;
+        max-width: 100%;
         gap: 16px;
         padding: 16px;
         position: relative;
@@ -19815,6 +19841,25 @@
         line-height: 1.35;
       }
 
+      .info-fines-type__users {
+        display: grid;
+        gap: 5px;
+        justify-items: start;
+      }
+
+      .info-fines-type__users-title {
+        color: var(--muted);
+      }
+
+      .info-fines-type__user {
+        display: block;
+        width: 100%;
+        padding: 6px 8px;
+        border-radius: 12px;
+        background: rgba(248, 250, 252, 0.9);
+        color: var(--text);
+      }
+
       .info-fines-type__stats span,
       .info-fines-month__row {
         padding: 6px 8px;
@@ -19843,6 +19888,10 @@
         .info-fines-modal__body {
           gap: 10px;
           padding-bottom: calc(16px + env(safe-area-inset-bottom));
+        }
+
+        .info-fines-hero {
+          width: 100%;
         }
 
         .info-fines-metrics,

@@ -31637,10 +31637,23 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       data.types.forEach((item) => {
         const card = document.createElement("article");
         card.className = "info-fines-type";
-        const topUsers = item.users.sort((a,b)=>b.balance-a.balance).slice(0, 3).map((user) => `${formatFullName(user.name, 4)} — ${formatInfoFineMoney(user.balance)} р.`).join(" · ");
-        card.innerHTML = `<div class="info-fines-type__top"><h4></h4><strong>💰 ${formatInfoFineMoney(item.balance)} р.</strong></div><div class="info-fines-type__stats"><span>📈 Начислено: ${formatInfoFineMoney(item.accrued)} р.</span><span>🧾 Выставлено: ${formatInfoFineMoney(item.issued)} р.</span><span>🤝 Простили: ${formatInfoFineMoney(item.forgiven)} р.</span></div><div class="info-fines-type__users"></div>`;
+        const topUsers = item.users.sort((a,b)=>b.balance-a.balance).slice(0, 3);
+        card.innerHTML = `<div class="info-fines-type__top"><h4></h4><strong>💰 ${formatInfoFineMoney(item.balance)} р.</strong></div><div class="info-fines-type__stats"><span>📈 Начислено: ${formatInfoFineMoney(item.accrued)} р.</span><span>🧾 Выставлено: ${formatInfoFineMoney(item.issued)} р.</span><span>🤝 Простили: ${formatInfoFineMoney(item.forgiven)} р.</span></div><div class="info-fines-type__users" aria-label="Пользователи с текущим штрафом"></div>`;
         card.querySelector("h4").textContent = item.title;
-        card.querySelector(".info-fines-type__users").textContent = topUsers ? `👥 ${topUsers}` : "✅ Нет сотрудников с остатком";
+        const usersEl = card.querySelector(".info-fines-type__users");
+        if (usersEl) {
+          if (topUsers.length) {
+            usersEl.innerHTML = '<span class="info-fines-type__users-title">👥 Пользователи:</span>';
+            topUsers.forEach((user) => {
+              const row = document.createElement("span");
+              row.className = "info-fines-type__user";
+              row.textContent = `${formatFullName(user.name, 4)} — ${formatInfoFineMoney(user.balance)} р.`;
+              usersEl.appendChild(row);
+            });
+          } else {
+            usersEl.textContent = "✅ Нет сотрудников с остатком";
+          }
+        }
         infoFinesTypesEl.appendChild(card);
       });
     }

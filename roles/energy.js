@@ -117,22 +117,6 @@ export function renderRole(user, options = {}) {
             </button>
           </div>
         </div>
-        <aside class="energy-desktop-profile" data-energy-desktop-profile aria-label="Профиль пользователя">
-          <button
-            class="energy-desktop-profile__photo"
-            type="button"
-            data-user-settings-trigger
-            aria-label="Открыть настройки профиля"
-          >
-            <img src="" alt="Фото профиля" data-energy-desktop-photo class="is-hidden" />
-            <span data-energy-desktop-initials>AA</span>
-          </button>
-          <div class="energy-desktop-profile__content">
-            <span class="energy-desktop-profile__eyebrow">Профиль</span>
-            <strong class="energy-desktop-profile__name" data-energy-desktop-name>AllTrack</strong>
-            <span class="energy-desktop-profile__position" data-energy-desktop-position>Должность не указана</span>
-          </div>
-        </aside>
         <div class="energy-actions-scroll" data-energy-actions-scroll>
           <div class="action-grid energy-grid" data-energy-grid>
             ${actionsMarkup}

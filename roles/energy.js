@@ -4677,23 +4677,23 @@ export function renderRole(user, options = {}) {
         <div class="settings-modal info-instructions-modal is-hidden" data-info-instructions-modal>
           <div class="settings-modal__backdrop" data-info-instructions-backdrop></div>
           <div
-            class="settings-modal__panel info-fines-modal__panel info-instructions-modal__panel"
+            class="settings-modal__panel info-instructions-modal__panel"
             role="dialog"
             aria-modal="true"
             aria-label="Инструкции"
           >
-            <div class="settings-modal__header info-fines-modal__header">
-              <div class="settings-modal__title info-fines-modal__title">
+            <div class="settings-modal__header info-instructions-modal__header">
+              <div class="settings-modal__title info-instructions-modal__title">
                 <h2><span aria-hidden="true">📘</span> Инструкции</h2>
               </div>
               <button class="button-icon" type="button" data-info-instructions-close aria-label="Закрыть инструкции">
                 <span class="button-icon-emoji" aria-hidden="true">✕</span>
               </button>
             </div>
-            <div class="settings-modal__body info-fines-modal__body info-instructions-modal__body">
-              <section class="info-fines-card info-fines-instructions" aria-label="Инструкции по действиям">
-                <div class="info-fines-card__header">
-                  <h3>Выберите формат</h3>
+            <div class="settings-modal__body info-instructions-modal__body">
+              <section class="info-instructions-card" aria-label="Инструкции по действиям">
+                <div class="info-instructions-card__header">
+                  <h3>Выберите формат инструкции</h3>
                   <span>Видео и PDF</span>
                 </div>
                 <div class="info-instructions-tabs" role="tablist" aria-label="Формат инструкции">

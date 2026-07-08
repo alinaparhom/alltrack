@@ -4516,11 +4516,11 @@ export function renderRole(user, options = {}) {
                   </span>
                   <span class="info-hub-option__arrow" aria-hidden="true">›</span>
                 </button>
-                <button type="button" class="info-hub-option info-hub-option--disabled" data-energy-info-option="instructions" disabled>
+                <button type="button" class="info-hub-option" data-energy-info-option="instructions">
                   <span class="info-hub-option__icon" aria-hidden="true">📘</span>
                   <span class="info-hub-option__content">
                     <span class="info-hub-option__text">Инструкции</span>
-                    <span class="info-hub-option__hint">Скоро: короткие подсказки для новых сотрудников</span>
+                    <span class="info-hub-option__hint">Видео и PDF-подсказки по действиям</span>
                   </span>
                   <span class="info-hub-option__arrow" aria-hidden="true">›</span>
                 </button>
@@ -4658,6 +4658,17 @@ export function renderRole(user, options = {}) {
                   <div class="info-fines-metric"><span>📈 Начислено</span><strong data-info-fines-accrued>—</strong><small>руб.</small></div>
                   <div class="info-fines-metric"><span>👥 Сотрудников</span><strong data-info-fines-users>—</strong><small>с остатком</small></div>
                 </div>
+              </section>
+              <section class="info-fines-card info-fines-instructions" aria-label="Инструкции по работе со штрафами">
+                <div class="info-fines-card__header">
+                  <h3>📘 Инструкции</h3>
+                  <span>Видео и PDF</span>
+                </div>
+                <div class="info-instructions-tabs" role="tablist" aria-label="Формат инструкции">
+                  <button class="info-instructions-tab is-active" type="button" role="tab" aria-selected="true" data-info-instructions-tab="video">🎬 Видео</button>
+                  <button class="info-instructions-tab" type="button" role="tab" aria-selected="false" data-info-instructions-tab="pdf">📄 PDF</button>
+                </div>
+                <div class="info-instructions-grid" data-info-instructions-grid></div>
               </section>
               <div class="info-fines-layout">
                 <section class="info-fines-card info-fines-card--wide">

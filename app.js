@@ -31616,10 +31616,14 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const rawDate = String(fine?.["Дата"] ?? "").slice(0, 10);
       const monthKey = /^\d{4}-\d{2}/.test(rawDate) ? rawDate.slice(0, 7) : "Без даты";
       const type = String(fine?.["Тип штрафа"] ?? "Другие штрафы").trim() || "Другие штрафы";
-      const month = months.get(monthKey) ?? { key: monthKey, total: 0, count: 0, types: new Map() };
+      const responsible = String(fine?.["Ответственный"] ?? fine?.["Пользователь"] ?? fine?.["Сотрудник"] ?? "Не указан").trim() || "Не указан";
+      const month = months.get(monthKey) ?? { key: monthKey, total: 0, count: 0, types: new Map(), users: new Map() };
       const typeItem = month.types.get(type) ?? { title: type, total: 0, count: 0 };
+      const userItem = month.users.get(responsible) ?? { name: responsible, total: 0, count: 0, types: new Map() };
+      const userTypeTotal = getFineInfoNumber(userItem.types.get(type));
       month.total += amount; month.count += 1; typeItem.total += amount; typeItem.count += 1;
-      month.types.set(type, typeItem); months.set(monthKey, month);
+      userItem.total += amount; userItem.count += 1; userItem.types.set(type, userTypeTotal + amount);
+      month.types.set(type, typeItem); month.users.set(responsible, userItem); months.set(monthKey, month);
     });
     return { types: [...types.values()].sort((a,b)=>b.balance-a.balance || b.issued-a.issued), months: [...months.values()].sort((a,b)=>String(b.key).localeCompare(String(a.key))), usersWithBalance };
   };
@@ -31665,8 +31669,24 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         const title = date ? date.toLocaleDateString("ru-RU", { month: "long", year: "numeric" }) : month.key;
         const card = document.createElement("article");
         card.className = "info-fines-month";
-        card.innerHTML = `<div class="info-fines-month__top"><h4></h4><strong>🧾 ${formatInfoFineMoney(month.total)} р.</strong><span>📝 ${month.count} записей</span></div><div class="info-fines-month__rows"></div>`;
+        card.innerHTML = `<div class="info-fines-month__top"><h4></h4><strong>🧾 ${formatInfoFineMoney(month.total)} р.</strong><span>📝 ${month.count} записей</span></div><div class="info-fines-month__section-title">👥 Кому выставлено</div><div class="info-fines-month__users"></div><div class="info-fines-month__section-title">🏷️ По видам</div><div class="info-fines-month__rows"></div>`;
         card.querySelector("h4").textContent = title;
+        const usersEl = card.querySelector(".info-fines-month__users");
+        [...month.users.values()].sort((a,b)=>b.total-a.total || a.name.localeCompare(b.name, "ru")).forEach((user) => {
+          const row = document.createElement("div");
+          row.className = "info-fines-month__user";
+          const name = document.createElement("span");
+          name.textContent = formatFullName(user.name, 4);
+          const total = document.createElement("strong");
+          total.textContent = `💸 ${formatInfoFineMoney(user.total)} р.`;
+          const details = document.createElement("small");
+          const typeDetails = [...user.types.entries()]
+            .sort((a,b)=>getFineInfoNumber(b[1])-getFineInfoNumber(a[1]))
+            .map(([typeName, typeTotal]) => `${typeName}: ${formatInfoFineMoney(typeTotal)} р.`);
+          details.textContent = typeDetails.length ? typeDetails.join(" · ") : `📝 ${user.count} зап.`;
+          row.append(name, total, details);
+          usersEl?.appendChild(row);
+        });
         const rowsEl = card.querySelector(".info-fines-month__rows");
         [...month.types.values()].sort((a,b)=>b.total-a.total).forEach((type) => {
           const row = document.createElement("div");

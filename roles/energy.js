@@ -118,9 +118,22 @@ export function renderRole(user, options = {}) {
           </div>
         </div>
         <div class="energy-actions-scroll" data-energy-actions-scroll>
-          <div class="action-grid energy-grid" data-energy-grid>
-            ${actionsMarkup}
-            ${groupToggleMarkup}
+          <div class="energy-home-layout">
+            <aside class="energy-profile-panel" data-energy-profile-panel aria-label="Профиль пользователя">
+              <div class="energy-profile-panel__photo" data-energy-profile-photo-wrap data-has-photo="false">
+                <img class="is-hidden" data-energy-profile-photo alt="Фото пользователя" />
+                <span data-energy-profile-initials></span>
+              </div>
+              <div class="energy-profile-panel__content">
+                <div class="energy-profile-panel__label">Ваш профиль</div>
+                <div class="energy-profile-panel__name" data-energy-profile-name></div>
+                <div class="energy-profile-panel__position" data-energy-profile-position></div>
+              </div>
+            </aside>
+            <div class="action-grid energy-grid" data-energy-grid>
+              ${actionsMarkup}
+              ${groupToggleMarkup}
+            </div>
           </div>
           <div class="energy-group-panel is-hidden" data-energy-group-panel>
             <div class="energy-group-info">

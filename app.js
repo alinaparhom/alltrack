@@ -5803,6 +5803,60 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const gridEl = contentEl.querySelector("[data-energy-grid]");
   if (!gridEl) return;
 
+  const desktopProfilePanelEl = contentEl.querySelector("[data-energy-profile-panel]");
+  const desktopProfilePhotoWrapEl = contentEl.querySelector("[data-energy-profile-photo-wrap]");
+  const desktopProfilePhotoEl = contentEl.querySelector("[data-energy-profile-photo]");
+  const desktopProfileInitialsEl = contentEl.querySelector("[data-energy-profile-initials]");
+  const desktopProfileNameEl = contentEl.querySelector("[data-energy-profile-name]");
+  const desktopProfilePositionEl = contentEl.querySelector("[data-energy-profile-position]");
+  const syncDesktopProfilePanel = () => {
+    if (!desktopProfilePanelEl) return;
+    const fullName = String(user?.full_name ?? user?.fullName ?? "").trim();
+    if (desktopProfileNameEl) {
+      desktopProfileNameEl.textContent = formatHeaderUserName(fullName);
+    }
+    if (desktopProfilePositionEl) {
+      desktopProfilePositionEl.textContent =
+        String(user?.position ?? "").trim() || "Должность не указана";
+    }
+    if (desktopProfileInitialsEl) {
+      desktopProfileInitialsEl.textContent = getInitials(fullName);
+    }
+    if (!(desktopProfilePhotoEl instanceof HTMLImageElement)) return;
+
+    const photoCandidates = getUserPhotoCandidates(user);
+    let candidateIndex = 0;
+    const applyNoPhotoState = () => {
+      desktopProfilePhotoEl.classList.add("is-hidden");
+      desktopProfilePhotoEl.removeAttribute("src");
+      desktopProfilePhotoEl.onerror = null;
+      desktopProfilePhotoEl.onload = null;
+      if (desktopProfilePhotoWrapEl) desktopProfilePhotoWrapEl.dataset.hasPhoto = "false";
+    };
+    const tryNextCandidate = () => {
+      if (candidateIndex >= photoCandidates.length) {
+        applyNoPhotoState();
+        return;
+      }
+      const nextPhotoUrl = photoCandidates[candidateIndex];
+      candidateIndex += 1;
+      desktopProfilePhotoEl.classList.remove("is-hidden");
+      if (desktopProfilePhotoWrapEl) desktopProfilePhotoWrapEl.dataset.hasPhoto = "true";
+      desktopProfilePhotoEl.onload = () => {
+        desktopProfilePhotoEl.onerror = null;
+        desktopProfilePhotoEl.onload = null;
+      };
+      desktopProfilePhotoEl.onerror = tryNextCandidate;
+      desktopProfilePhotoEl.src = nextPhotoUrl;
+    };
+    if (!photoCandidates.length) {
+      applyNoPhotoState();
+      return;
+    }
+    tryNextCandidate();
+  };
+  syncDesktopProfilePanel();
+
   const groupPanel = contentEl.querySelector("[data-energy-group-panel]");
   const createGroupButton = contentEl.querySelector("[data-energy-create-group]");
   const cancelGroupButton = contentEl.querySelector("[data-energy-cancel-group]");

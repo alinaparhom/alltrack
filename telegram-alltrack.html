@@ -19776,7 +19776,8 @@
       .info-fines-card__header,
       .info-fines-type__top,
       .info-fines-month__top,
-      .info-fines-month__row {
+      .info-fines-month__row,
+      .info-fines-month__user {
         display: flex;
         align-items: center;
         justify-content: space-between;
@@ -19797,6 +19798,7 @@
 
       .info-fines-types,
       .info-fines-months,
+      .info-fines-month__users,
       .info-fines-month__rows {
         display: grid;
         gap: 8px;
@@ -19821,7 +19823,8 @@
 
       .info-fines-type__top strong,
       .info-fines-month__top strong,
-      .info-fines-month__row strong {
+      .info-fines-month__row strong,
+      .info-fines-month__user strong {
         color: var(--accent);
         font-weight: 900;
         white-space: nowrap;
@@ -19835,7 +19838,9 @@
 
       .info-fines-type__stats span,
       .info-fines-type__users,
-      .info-fines-month__row small {
+      .info-fines-month__row small,
+      .info-fines-month__user small,
+      .info-fines-month__section-title {
         color: var(--muted);
         font-size: 12px;
         font-weight: 800;
@@ -19862,13 +19867,34 @@
       }
 
       .info-fines-type__stats span,
-      .info-fines-month__row {
+      .info-fines-month__row,
+      .info-fines-month__user {
         padding: 6px 8px;
         border-radius: 12px;
         background: rgba(248, 250, 252, 0.9);
       }
 
-      .info-fines-month__row span {
+      .info-fines-month__section-title {
+        margin-top: 2px;
+        font-size: 11px;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+      }
+
+      .info-fines-month__user {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: start;
+        background: linear-gradient(145deg, rgba(239, 246, 255, 0.9), rgba(240, 253, 244, 0.72));
+      }
+
+      .info-fines-month__user small {
+        grid-column: 1 / -1;
+      }
+
+      .info-fines-month__row span,
+      .info-fines-month__user span {
         min-width: 0;
         overflow: hidden;
         color: var(--text);

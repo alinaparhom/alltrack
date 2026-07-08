@@ -20506,7 +20506,15 @@
         }
 
         .quick-access {
-          display: none;
+          display: grid;
+          position: static;
+          margin-top: 12px;
+          padding: 12px;
+        }
+
+        .quick-access-list {
+          justify-content: flex-start;
+          flex-wrap: wrap;
         }
       }
 
@@ -21166,14 +21174,16 @@
           --desktop-map-column: clamp(560px, 52vw, 840px);
           display: grid;
           grid-template-columns: minmax(520px, var(--desktop-map-column)) minmax(360px, 1fr);
+          grid-template-rows: minmax(0, 1fr) auto;
           align-items: stretch;
-          gap: 22px;
+          gap: 16px 22px;
           height: 100%;
           min-height: 0;
         }
 
         body.is-energy-role:not(.is-user-settings) .tools-map-card {
           position: relative;
+          grid-row: 1 / span 2;
           top: auto;
           min-height: 0;
           height: 100%;
@@ -21232,6 +21242,8 @@
         }
 
         body.is-energy-role:not(.is-user-settings) .energy-actions-scroll {
+          grid-column: 2;
+          grid-row: 1;
           min-height: 0;
           height: 100%;
           margin-top: 0;
@@ -21244,6 +21256,32 @@
           grid-template-columns: repeat(3, minmax(0, 1fr));
           gap: 14px;
           align-content: start;
+        }
+
+        body.is-energy-role:not(.is-user-settings) .quick-access {
+          grid-column: 2;
+          grid-row: 2;
+          display: grid;
+          position: static;
+          margin: 0;
+          padding: 12px;
+          border: 1px solid rgba(226, 232, 240, 0.86);
+          border-radius: 24px;
+          background: rgba(255, 255, 255, 0.76);
+          box-shadow: 0 16px 38px rgba(26, 31, 46, 0.08);
+        }
+
+        body.is-energy-role:not(.is-user-settings) .quick-access-list {
+          --quick-access-gap: 10px;
+          --quick-access-item-size: 58px;
+          justify-content: flex-start;
+          flex-wrap: wrap;
+          min-height: var(--quick-access-item-size);
+        }
+
+        body.is-energy-role:not(.is-user-settings) .quick-access-item {
+          border-radius: 18px;
+          font-size: 21px;
         }
 
         body.is-energy-role:not(.is-user-settings) .energy-grid .action-card {

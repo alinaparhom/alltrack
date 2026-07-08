@@ -4496,7 +4496,7 @@ export function renderRole(user, options = {}) {
                   <span class="info-hub-option__icon" aria-hidden="true">🛠️</span>
                   <span class="info-hub-option__content">
                     <span class="info-hub-option__text">Ремонт</span>
-                    <span class="info-hub-option__hint">Отправка и закрытие ремонта</span>
+                    <span class="info-hub-option__hint">Аналитика, суммы и инструменты в ремонте</span>
                   </span>
                   <span class="info-hub-option__arrow" aria-hidden="true">›</span>
                 </button>
@@ -4525,6 +4525,70 @@ export function renderRole(user, options = {}) {
                   <span class="info-hub-option__arrow" aria-hidden="true">›</span>
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+        <div class="settings-modal info-repair-modal is-hidden" data-info-repair-modal>
+          <div class="settings-modal__backdrop" data-info-repair-backdrop></div>
+          <div
+            class="settings-modal__panel tools-modal__panel info-repair-modal__panel"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Аналитика ремонтов"
+          >
+            <div class="settings-modal__header tools-modal__header info-repair-modal__header">
+              <div class="settings-modal__title">
+                <h2>Ремонт</h2>
+                <p data-info-repair-subtitle>Инструменты в ремонте, организации, суммы и статистика</p>
+              </div>
+              <button
+                class="button-icon"
+                type="button"
+                data-info-repair-close
+                aria-label="Закрыть аналитику ремонтов"
+              >
+                <span class="button-icon-emoji" aria-hidden="true">✕</span>
+              </button>
+            </div>
+            <div class="settings-modal__body tools-modal__body info-repair-modal__body">
+              <div class="info-repair-hero">
+                <div>
+                  <div class="info-repair-hero__eyebrow">Сводка по ремонтам</div>
+                  <h3>Контроль ремонтов без лишних переходов</h3>
+                  <p>Смотрите текущие ремонты, подрядчиков, популярные производители, модели, наименования и итоговые суммы.</p>
+                </div>
+                <span class="info-repair-hero__icon" aria-hidden="true">🛠️</span>
+              </div>
+              <div class="dashboard-stats info-repair-stats">
+                <div class="stat-card"><div class="stat-card-header"><span class="stat-icon">🧰</span><div class="stat-label">Сейчас в ремонте</div></div><div class="stat-row"><span class="stat-value" data-info-repair-active>—</span><span class="stat-pill">МТЦ</span></div></div>
+                <div class="stat-card"><div class="stat-card-header"><span class="stat-icon">📋</span><div class="stat-label">Всего ремонтов</div></div><div class="stat-row"><span class="stat-value" data-info-repair-total>—</span><span class="stat-pill">записей</span></div></div>
+                <div class="stat-card"><div class="stat-card-header"><span class="stat-icon">💳</span><div class="stat-label">Сумма ремонтов</div></div><div class="stat-row"><span class="stat-value" data-info-repair-sum>—</span><span class="stat-pill">руб.</span></div></div>
+                <div class="stat-card"><div class="stat-card-header"><span class="stat-icon">🏢</span><div class="stat-label">Организаций</div></div><div class="stat-row"><span class="stat-value" data-info-repair-orgs>—</span><span class="stat-pill">подрядчиков</span></div></div>
+              </div>
+              <div class="info-repair-layout">
+                <section class="info-repair-card">
+                  <div class="info-repair-card__header"><h3>Инструменты сейчас в ремонте</h3><span data-info-repair-active-count>—</span></div>
+                  <div class="info-repair-list" data-info-repair-active-list></div>
+                  <div class="tools-empty is-hidden" data-info-repair-active-empty>Сейчас нет инструментов в ремонте.</div>
+                </section>
+                <section class="info-repair-card">
+                  <div class="info-repair-card__header"><h3>Ремонты по организациям</h3><span>суммы</span></div>
+                  <div class="info-repair-bars" data-info-repair-org-list></div>
+                </section>
+                <section class="info-repair-card">
+                  <div class="info-repair-card__header"><h3>Производители</h3><span>топ</span></div>
+                  <div class="info-repair-bars" data-info-repair-manufacturer-list></div>
+                </section>
+                <section class="info-repair-card">
+                  <div class="info-repair-card__header"><h3>Модели</h3><span>топ</span></div>
+                  <div class="info-repair-bars" data-info-repair-model-list></div>
+                </section>
+                <section class="info-repair-card info-repair-card--wide">
+                  <div class="info-repair-card__header"><h3>Наименования</h3><span>частота ремонтов</span></div>
+                  <div class="info-repair-bars" data-info-repair-name-list></div>
+                </section>
+              </div>
+              <div class="form-message" role="status" data-info-repair-status></div>
             </div>
           </div>
         </div>

@@ -6064,6 +6064,24 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const infoBackdropEl = contentEl.querySelector("[data-energy-info-backdrop]");
   const infoCloseButton = contentEl.querySelector("[data-energy-info-close]");
   const infoGridEl = contentEl.querySelector("[data-energy-info-grid]");
+  const infoRepairModalEl = contentEl.querySelector("[data-info-repair-modal]");
+  const infoRepairBackdropEl = contentEl.querySelector("[data-info-repair-backdrop]");
+  const infoRepairCloseButton = contentEl.querySelector("[data-info-repair-close]");
+  const infoRepairSubtitleEl = contentEl.querySelector("[data-info-repair-subtitle]");
+  const infoRepairStatusEl = contentEl.querySelector("[data-info-repair-status]");
+  const infoRepairActiveListEl = contentEl.querySelector("[data-info-repair-active-list]");
+  const infoRepairActiveEmptyEl = contentEl.querySelector("[data-info-repair-active-empty]");
+  const infoRepairActiveCountEl = contentEl.querySelector("[data-info-repair-active-count]");
+  const infoRepairOrgListEl = contentEl.querySelector("[data-info-repair-org-list]");
+  const infoRepairManufacturerListEl = contentEl.querySelector("[data-info-repair-manufacturer-list]");
+  const infoRepairModelListEl = contentEl.querySelector("[data-info-repair-model-list]");
+  const infoRepairNameListEl = contentEl.querySelector("[data-info-repair-name-list]");
+  const infoRepairValueEls = {
+    active: contentEl.querySelector("[data-info-repair-active]"),
+    total: contentEl.querySelector("[data-info-repair-total]"),
+    sum: contentEl.querySelector("[data-info-repair-sum]"),
+    orgs: contentEl.querySelector("[data-info-repair-orgs]"),
+  };
   const infoStatisticsModalEl = contentEl.querySelector("[data-info-statistics-modal]");
   const infoStatisticsBackdropEl = contentEl.querySelector("[data-info-statistics-backdrop]");
   const infoStatisticsCloseButton = contentEl.querySelector("[data-info-statistics-close]");
@@ -31342,6 +31360,148 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     document.body.style.overflow = "hidden";
   };
 
+  const closeInfoRepairModal = () => {
+    if (!infoRepairModalEl) return;
+    infoRepairModalEl.classList.add("is-hidden");
+    document.body.style.overflow = "";
+  };
+
+  const setInfoRepairValue = (key, value) => {
+    const element = infoRepairValueEls[key];
+    if (element) element.textContent = String(value ?? "—");
+  };
+
+  const getRepairToolKey = (entry) => {
+    const number = normalizeToolNumberValue(entry?.["Номер"] ?? "");
+    const accounting = String(entry?.["Бух.номер"] ?? "").trim().toLowerCase();
+    return number ? `n:${number}` : accounting ? `a:${accounting}` : "";
+  };
+
+  const buildRepairToolMap = (tools) => {
+    const map = new Map();
+    tools.forEach((tool) => {
+      const key = getRepairToolKey(tool);
+      if (key) map.set(key, tool);
+    });
+    return map;
+  };
+
+  const getRepairEntryCost = (entry) =>
+    normalizeCostValue(entry?.["Стоимость ремонта"]) ??
+    normalizeCostValue(entry?.["Предварительная стоимость ремонта"]) ??
+    0;
+
+  const getRepairEntryLabel = (entry, tool, fieldName, fallback = "Не указано") =>
+    String(tool?.[fieldName] ?? entry?.[fieldName] ?? "").trim() || fallback;
+
+  const buildRepairGroups = (repairs, toolMap, fieldName) => {
+    const groups = new Map();
+    repairs.forEach((entry) => {
+      const tool = toolMap.get(getRepairToolKey(entry));
+      const title = getRepairEntryLabel(entry, tool, fieldName);
+      const current = groups.get(title) ?? { title, count: 0, amount: 0 };
+      current.count += 1;
+      current.amount += getRepairEntryCost(entry);
+      groups.set(title, current);
+    });
+    return Array.from(groups.values()).sort((a, b) => b.count - a.count || b.amount - a.amount).slice(0, 8);
+  };
+
+  const renderInfoRepairBars = (container, items, emptyText = "Нет данных") => {
+    if (!container) return;
+    container.innerHTML = "";
+    if (!items.length) {
+      const empty = document.createElement("div");
+      empty.className = "tools-empty";
+      empty.textContent = emptyText;
+      container.appendChild(empty);
+      return;
+    }
+    const maxCount = Math.max(...items.map((item) => item.count), 1);
+    items.forEach((item) => {
+      const row = document.createElement("div");
+      row.className = "info-repair-bar";
+      const top = document.createElement("div");
+      top.className = "info-repair-bar__top";
+      const title = document.createElement("span");
+      title.textContent = item.title;
+      const count = document.createElement("span");
+      count.textContent = `${item.count} шт.`;
+      top.append(title, count);
+      const meta = document.createElement("div");
+      meta.className = "info-repair-bar__meta";
+      meta.textContent = `Сумма: ${formatNotificationCostWithoutCurrency(item.amount)} р.`;
+      const track = document.createElement("div");
+      track.className = "info-repair-bar__track";
+      const fill = document.createElement("div");
+      fill.className = "info-repair-bar__fill";
+      fill.style.width = `${Math.max(8, Math.round((item.count / maxCount) * 100))}%`;
+      track.appendChild(fill);
+      row.append(top, meta, track);
+      container.appendChild(row);
+    });
+  };
+
+  const openInfoRepairModal = async () => {
+    if (!infoRepairModalEl) return;
+    infoRepairModalEl.classList.remove("is-hidden");
+    document.body.style.overflow = "hidden";
+    if (infoRepairStatusEl) infoRepairStatusEl.textContent = "Загружаем аналитику ремонтов...";
+    if (infoRepairSubtitleEl) {
+      infoRepairSubtitleEl.textContent = context.orgFullName || context.orgShortName || context.orgFolderName || "Аналитика ремонтов";
+    }
+    Object.keys(infoRepairValueEls).forEach((key) => setInfoRepairValue(key, "—"));
+
+    const orgFolder = context.orgFolderName ?? "";
+    const [tools, repairs] = await Promise.all([
+      loadInfoStatisticsArray(orgFolder, "База с инструментами.json"),
+      loadInfoStatisticsArray(orgFolder, "Ремонты.json"),
+    ]);
+    const toolMap = buildRepairToolMap(tools);
+    const activeTools = tools.filter((tool) => String(tool?.["Статус"] ?? "").trim().toLocaleLowerCase("ru") === "в ремонте");
+    const totalAmount = repairs.reduce((sum, entry) => sum + getRepairEntryCost(entry), 0);
+    const organizationGroups = buildRepairGroups(repairs, toolMap, "Организация");
+
+    setInfoRepairValue("active", activeTools.length);
+    setInfoRepairValue("total", repairs.length);
+    setInfoRepairValue("sum", formatNotificationCostWithoutCurrency(totalAmount));
+    setInfoRepairValue("orgs", organizationGroups.length);
+    if (infoRepairActiveCountEl) infoRepairActiveCountEl.textContent = `${activeTools.length} шт.`;
+
+    if (infoRepairActiveListEl) {
+      infoRepairActiveListEl.innerHTML = "";
+      activeTools.slice(0, 20).forEach((tool) => {
+        const key = getRepairToolKey(tool);
+        const lastRepair = [...repairs].reverse().find((entry) => getRepairToolKey(entry) === key) ?? {};
+        const item = document.createElement("div");
+        item.className = "info-repair-item";
+        const title = document.createElement("div");
+        title.className = "info-repair-item__title";
+        const name = document.createElement("span");
+        name.textContent = `${resolveToolNumberValue(tool) || "—"} · ${String(tool?.["Наименование"] ?? "Без названия").trim()}`;
+        const cost = document.createElement("span");
+        cost.textContent = formatCostValueWithCurrency(lastRepair?.["Предварительная стоимость ремонта"], "—");
+        title.append(name, cost);
+        const meta = document.createElement("div");
+        meta.className = "info-repair-item__meta";
+        meta.textContent = [
+          String(lastRepair?.["Организация"] ?? "Организация не указана").trim(),
+          String(tool?.["Производитель"] ?? "").trim(),
+          String(tool?.["Модель"] ?? "").trim(),
+          String(lastRepair?.["Дата отправки в ремонт"] ?? "").trim(),
+        ].filter(Boolean).join(" · ");
+        item.append(title, meta);
+        infoRepairActiveListEl.appendChild(item);
+      });
+    }
+    infoRepairActiveEmptyEl?.classList.toggle("is-hidden", activeTools.length > 0);
+    renderInfoRepairBars(infoRepairOrgListEl, organizationGroups);
+    renderInfoRepairBars(infoRepairManufacturerListEl, buildRepairGroups(repairs, toolMap, "Производитель"));
+    renderInfoRepairBars(infoRepairModelListEl, buildRepairGroups(repairs, toolMap, "Модель"));
+    renderInfoRepairBars(infoRepairNameListEl, buildRepairGroups(repairs, toolMap, "Наименование"));
+    if (infoRepairStatusEl) infoRepairStatusEl.textContent = "Аналитика ремонтов обновлена.";
+  };
+
   const closeInfoStatisticsModal = () => {
     if (!infoStatisticsModalEl) return;
     infoStatisticsModalEl.classList.add("is-hidden");
@@ -32562,7 +32722,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
     if (option === "repair") {
       closeInfoModal();
-      void openRepairModal();
+      void openInfoRepairModal();
       return;
     }
     if (option === "fines") {
@@ -32576,6 +32736,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
   });
 
+  infoRepairBackdropEl?.addEventListener("click", closeInfoRepairModal);
+  infoRepairCloseButton?.addEventListener("click", closeInfoRepairModal);
+  infoRepairModalEl?.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") closeInfoRepairModal();
+  });
   infoStatisticsBackdropEl?.addEventListener("click", closeInfoStatisticsModal);
   infoStatisticsCloseButton?.addEventListener("click", closeInfoStatisticsModal);
   infoStatisticsModalEl?.addEventListener("keydown", (event) => {

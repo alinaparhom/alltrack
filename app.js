@@ -200,6 +200,10 @@ const responsibleLikeRoles = new Set([responsibleRole, chiefEngineerRole]);
 const isControlRole = (role) => String(role ?? "").trim() === controlRole;
 const workerRole = "Рабочий";
 const workerTelegramIdMarker = "не нужен";
+const usersEditableRoleOptions = Array.from(
+  new Set([...roleMap.keys(), workerRole].map((role) => String(role ?? "").trim()).filter(Boolean))
+);
+const getUsersEditableRoleOptions = () => [...usersEditableRoleOptions];
 const isWorkerRole = (role) => String(role ?? "").trim() === workerRole;
 const isWorkerUser = (entry) => isWorkerRole(entry?.role);
 const isHiddenListUser = (entry) => isControlRole(entry?.role);
@@ -27702,11 +27706,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   };
 
 
-  const getUsersEditRoleOptions = () =>
-    String(usersEditRoleInput?.dataset?.roleOptions ?? "")
-      .split("|")
-      .map((item) => item.trim())
-      .filter(Boolean);
+  const getUsersEditRoleOptions = () => getUsersEditableRoleOptions();
+  if (usersEditRoleInput) {
+    usersEditRoleInput.dataset.roleOptions = getUsersEditRoleOptions().join("|");
+  }
 
   attachStrictSearchSelect({
     inputEl: usersEditRoleInput,
@@ -30505,6 +30508,21 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (!fullName || !roleName || !Number.isInteger(userIndex) || userIndex < 0) {
       if (usersEditMessageEl) usersEditMessageEl.textContent = "Заполните фамилию, имя и роль.";
       return;
+    }
+    const sourceUser = Number.isInteger(userIndex) ? usersState.users[userIndex] : null;
+    const previousTelegramId = String(sourceUser?.telegram_id ?? "").trim();
+    if (telegramId !== previousTelegramId) {
+      const previousLabel = previousTelegramId || "пусто";
+      const nextLabel = telegramId || "пусто";
+      const approvedTelegramChange = window.confirm(
+        `Подтвердите изменение Telegram ID: ${previousLabel} → ${nextLabel}. Продолжить?`
+      );
+      if (!approvedTelegramChange) {
+        if (usersEditMessageEl) {
+          usersEditMessageEl.textContent = "Изменение Telegram ID отменено.";
+        }
+        return;
+      }
     }
     try {
       const usersData = await loadJson(usersFilePath).catch(() => ({ users: [] }));
@@ -35173,10 +35191,8 @@ function setupSuperAdmin() {
   const attachUsersEditRoleDropdown = () => {
     if (!usersEditRoleInput || !usersEditRoleSuggestionsEl) return;
     const fieldEl = usersEditRoleInput.closest(".form-field--selectable");
-    const options = String(usersEditRoleInput.dataset.roleOptions ?? "")
-      .split("|")
-      .map((item) => item.trim())
-      .filter(Boolean);
+    const options = getUsersEditableRoleOptions();
+    usersEditRoleInput.dataset.roleOptions = options.join("|");
     const hide = () => {
       usersEditRoleSuggestionsEl.classList.add("is-hidden");
       usersEditRoleInput.setAttribute("aria-expanded", "false");
@@ -37319,6 +37335,21 @@ function setupSuperAdmin() {
     if (!fullName || !roleName || !Number.isInteger(userIndex) || userIndex < 0) {
       if (usersEditMessageEl) usersEditMessageEl.textContent = "Заполните фамилию, имя и роль.";
       return;
+    }
+    const sourceUser = Number.isInteger(userIndex) ? orgsState.users[userIndex] : null;
+    const previousTelegramId = String(sourceUser?.telegram_id ?? "").trim();
+    if (telegramId !== previousTelegramId) {
+      const previousLabel = previousTelegramId || "пусто";
+      const nextLabel = telegramId || "пусто";
+      const approvedTelegramChange = window.confirm(
+        `Подтвердите изменение Telegram ID: ${previousLabel} → ${nextLabel}. Продолжить?`
+      );
+      if (!approvedTelegramChange) {
+        if (usersEditMessageEl) {
+          usersEditMessageEl.textContent = "Изменение Telegram ID отменено.";
+        }
+        return;
+      }
     }
     try {
       const usersData = await loadJson(usersFilePath).catch(() => ({ users: [] }));

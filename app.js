@@ -8352,7 +8352,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     <section class="settings-modal__panel tools-notes-modal__panel" role="dialog" aria-modal="true" aria-label="Заметки по инструменту">
       <header class="settings-modal__header tools-notes-modal__header">
         <div class="tools-notes-modal__title-wrap">
-          <span class="tools-notes-modal__icon" aria-hidden="true">📝</span>
+          <span class="tools-notes-modal__icon">
+            <span class="tools-notes-modal__emoji" aria-hidden="true">📝</span>
+            <span class="tools-notes-modal__badge" data-tools-notes-count aria-live="polite">0</span>
+          </span>
           <div>
             <h2 data-tools-notes-title>Заметки</h2>
             <p data-tools-notes-subtitle>История заметок по инструменту</p>
@@ -8363,10 +8366,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         </button>
       </header>
       <div class="settings-modal__body tools-notes-modal__body">
-        <div class="tools-notes-hero" aria-live="polite">
-          <span class="tools-notes-hero__label">Всего заметок</span>
-          <span class="tools-notes-hero__count" data-tools-notes-count>0 записей</span>
-        </div>
         <div class="tools-notes-list" data-tools-notes-list></div>
         <form class="tools-notes-form" data-tools-notes-form>
           <label class="tools-notes-form__label" for="tools-notes-text">Новая заметка</label>
@@ -12261,7 +12260,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const notes = normalizeToolNotes(toolsNotesState.tool);
     if (toolsNotesCountEl) {
       const count = notes.length;
-      toolsNotesCountEl.textContent = `${count} ${getRussianPlural(count, "запись", "записи", "записей")}`;
+      toolsNotesCountEl.textContent = String(count);
+      toolsNotesCountEl.setAttribute("aria-label", `${count} ${getRussianPlural(count, "запись", "записи", "записей")}`);
     }
     toolsNotesListEl.innerHTML = "";
     if (!notes.length) {

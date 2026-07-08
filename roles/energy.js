@@ -135,8 +135,8 @@ export function renderRole(user, options = {}) {
                     <span class="energy-profile-panel__stat-label">инструментов</span>
                   </div>
                   <div class="energy-profile-panel__stat energy-profile-panel__stat--accent">
-                    <span class="energy-profile-panel__stat-icon" aria-hidden="true">₽</span>
-                    <span class="energy-profile-panel__stat-value" data-energy-profile-report-amount>0 р.</span>
+                    <span class="energy-profile-panel__stat-icon" aria-hidden="true">Br</span>
+                    <span class="energy-profile-panel__stat-value" data-energy-profile-report-amount>0 Br</span>
                     <span class="energy-profile-panel__stat-label">общая сумма</span>
                   </div>
                   <div class="energy-profile-panel__stat">

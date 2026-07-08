@@ -6151,6 +6151,28 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const infoFinesMonthsEmptyEl = contentEl.querySelector("[data-info-fines-months-empty]");
   const infoFinesTypesCountEl = contentEl.querySelector("[data-info-fines-types-count]");
   const infoFinesMonthsCountEl = contentEl.querySelector("[data-info-fines-months-count]");
+  const infoInstructionsSectionEl = contentEl.querySelector(".info-fines-instructions");
+  const infoInstructionsGridEl = contentEl.querySelector("[data-info-instructions-grid]");
+  const infoInstructionsTabEls = Array.from(contentEl.querySelectorAll("[data-info-instructions-tab]"));
+  const infoInstructionsItems = [
+    "Переместить",
+    "Отменить перемещение",
+    "Принять",
+    "Не принять",
+    "Найти инструмент",
+    "Сломано",
+    "В ремонт",
+    "Отремонтировано",
+    "Новая единица",
+    "На списание",
+    "Списать",
+    "Добавить фото",
+    "Удалить фото",
+    "Отредактировать базу",
+    "Пользователи",
+    "Объекты",
+  ];
+  let infoInstructionsActiveTab = "video";
   const infoFinesValueEls = {
     balance: contentEl.querySelector("[data-info-fines-balance]"),
     issued: contentEl.querySelector("[data-info-fines-issued]"),
@@ -31565,6 +31587,31 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   };
 
 
+
+  const getInfoInstructionPath = (title, type) => {
+    const folder = type === "pdf" ? "PDF инструкции" : "Видео инструкции";
+    const extension = type === "pdf" ? ".pdf" : ".mp4";
+    return `./${encodeURIComponent(folder)}/${encodeURIComponent(title)}${extension}`;
+  };
+
+  const renderInfoInstructions = () => {
+    if (!infoInstructionsGridEl) return;
+    const isPdf = infoInstructionsActiveTab === "pdf";
+    infoInstructionsGridEl.innerHTML = "";
+    infoInstructionsItems.forEach((title) => {
+      const link = document.createElement("a");
+      link.className = "info-instruction-link";
+      link.href = getInfoInstructionPath(title, infoInstructionsActiveTab);
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      link.setAttribute("aria-label", `${isPdf ? "Открыть PDF" : "Открыть видео"}: ${title}`);
+      link.innerHTML = `<span class="info-instruction-link__icon" aria-hidden="true">${isPdf ? "📄" : "▶️"}</span><span class="info-instruction-link__title"></span><span class="info-instruction-link__type">${isPdf ? "PDF" : "Видео"}</span>`;
+      const titleEl = link.querySelector(".info-instruction-link__title");
+      if (titleEl) titleEl.textContent = title;
+      infoInstructionsGridEl.appendChild(link);
+    });
+  };
+
   const closeInfoFinesModal = () => {
     if (!infoFinesModalEl) return;
     infoFinesModalEl.classList.add("is-hidden");
@@ -31695,9 +31742,15 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
     infoFinesMonthsEmptyEl?.classList.toggle("is-hidden", data.months.length > 0);
   };
-  const openInfoFinesModal = async () => {
+  const openInfoFinesModal = async (options = {}) => {
     if (!infoFinesModalEl) return;
+    renderInfoInstructions();
     infoFinesModalEl.classList.remove("is-hidden");
+    if (options.scrollToInstructions) {
+      window.requestAnimationFrame(() => {
+        infoInstructionsSectionEl?.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    }
     document.body.style.overflow = "hidden";
     if (infoFinesStatusEl) infoFinesStatusEl.textContent = "Загружаем штрафы...";
     try {
@@ -32932,9 +32985,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       void openInfoRepairModal();
       return;
     }
-    if (option === "fines") {
+    if (option === "fines" || option === "instructions") {
       closeInfoModal();
-      void openInfoFinesModal();
+      void openInfoFinesModal({ scrollToInstructions: option === "instructions" });
       return;
     }
     if (option === "statistics") {
@@ -32961,6 +33014,19 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (event.key === "Escape") {
       closeInfoFinesModal();
     }
+  });
+  infoInstructionsTabEls.forEach((tabEl) => {
+    tabEl.addEventListener("click", () => {
+      const nextTab = String(tabEl.dataset.infoInstructionsTab ?? "").trim();
+      if (!nextTab || nextTab === infoInstructionsActiveTab) return;
+      infoInstructionsActiveTab = nextTab;
+      infoInstructionsTabEls.forEach((item) => {
+        const isActive = String(item.dataset.infoInstructionsTab ?? "").trim() === nextTab;
+        item.classList.toggle("is-active", isActive);
+        item.setAttribute("aria-selected", isActive ? "true" : "false");
+      });
+      renderInfoInstructions();
+    });
   });
 
   infoByDatesBackdropEl?.addEventListener("click", closeInfoByDatesModal);

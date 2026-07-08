@@ -102,6 +102,7 @@
       body[data-theme="dark"] .settings-day-groups,
       body[data-theme="dark"] .settings-telegram-group,
       body[data-theme="dark"] .settings-empty-note,
+      body[data-theme="dark"] .settings-group-card,
       body[data-theme="dark"] .tools-map-card,
       body[data-theme="dark"] .tools-map-legend-item,
       body[data-theme="dark"] .remove-photo-card,
@@ -734,6 +735,11 @@
       }
 
       body[data-theme="dark"] .settings-accordion__icon,
+      body[data-theme="dark"] .settings-role__title,
+      body[data-theme="dark"] .settings-group-card {
+        color: var(--text);
+      }
+
       body[data-theme="dark"] .settings-role__icon {
         background: rgba(123, 178, 255, 0.2);
         color: var(--accent);
@@ -7302,16 +7308,17 @@
 
       .settings-list {
         display: grid;
-        gap: 6px;
+        gap: 10px;
       }
 
       .settings-role {
         display: grid;
-        gap: 6px;
-        padding: 6px;
-        border-radius: 14px;
+        gap: 10px;
+        padding: 10px 12px;
+        border-radius: 16px;
         border: 1px solid rgba(226, 232, 240, 0.9);
-        background: rgba(255, 255, 255, 0.72);
+        background: rgba(255, 255, 255, 0.78);
+        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
       }
 
       .settings-role__header {
@@ -7322,10 +7329,16 @@
         border: none;
         background: transparent;
         padding: 0;
+        min-height: 32px;
         cursor: pointer;
         text-align: left;
         font: inherit;
         color: inherit;
+      }
+
+      .settings-role__title {
+        font-weight: 600;
+        color: var(--text);
       }
 
       .settings-role__icon {
@@ -7368,6 +7381,47 @@
       .settings-chip.is-muted {
         background: rgba(148, 163, 184, 0.15);
         color: var(--muted);
+      }
+
+      .settings-existing-groups {
+        display: grid;
+        gap: 10px;
+      }
+
+      .settings-group-card {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        width: 100%;
+        min-height: 46px;
+        padding: 10px 12px;
+        border-radius: 16px;
+        border: 1px solid rgba(226, 232, 240, 0.9);
+        background: rgba(255, 255, 255, 0.78);
+        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
+        color: var(--text);
+        font: inherit;
+        text-align: left;
+        cursor: pointer;
+        touch-action: manipulation;
+      }
+
+      .settings-group-card__name {
+        font-weight: 600;
+      }
+
+      .settings-group-card__remove {
+        display: grid;
+        place-items: center;
+        flex: 0 0 auto;
+        width: 24px;
+        height: 24px;
+        border-radius: 999px;
+        background: rgba(239, 68, 68, 0.1);
+        color: #ef4444;
+        font-size: 13px;
+        font-weight: 800;
       }
 
       .settings-modal__footer {

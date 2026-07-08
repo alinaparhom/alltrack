@@ -21580,6 +21580,28 @@
         padding-bottom: calc(18px + env(safe-area-inset-bottom)) !important;
       }
 
+      /* Страница «Информация → Ремонт» скроллится целиком: в ней несколько
+         аналитических карточек без .tools-list, поэтому body должен получать
+         вертикальный скролл на Android, iOS и в Telegram Web. */
+      .info-repair-modal .info-repair-modal__panel {
+        grid-template-rows: auto minmax(0, 1fr) !important;
+        overflow: hidden !important;
+      }
+
+      .info-repair-modal .info-repair-modal__body {
+        display: grid !important;
+        grid-template-rows: none !important;
+        align-content: start !important;
+        min-height: 0 !important;
+        height: 100% !important;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+        overscroll-behavior-y: contain !important;
+        -webkit-overflow-scrolling: touch !important;
+        touch-action: pan-y !important;
+        padding-bottom: calc(18px + env(safe-area-inset-bottom)) !important;
+      }
+
       .tools-modal--my-tools .tools-modal__header,
       .tools-modal--my-tools .tools-controls {
         position: sticky !important;

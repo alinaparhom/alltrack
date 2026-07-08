@@ -5812,14 +5812,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const desktopProfileReportCountEl = contentEl.querySelector("[data-energy-profile-report-count]");
   const desktopProfileReportAmountEl = contentEl.querySelector("[data-energy-profile-report-amount]");
   const desktopProfileObjectsCountEl = contentEl.querySelector("[data-energy-profile-objects-count]");
-  const isToolOnReport = (tool) => {
-    const accountingNumber = String(
-      tool?.["Номер по бухгалтерии"] ?? tool?.accountingNumber ?? ""
-    )
-      .trim()
-      .toLowerCase();
-    return /(?:^|\s)на\s+отч[её]те(?:\s|$)/i.test(accountingNumber);
-  };
   const syncDesktopProfileStats = async () => {
     if (!desktopProfileReportCountEl && !desktopProfileReportAmountEl && !desktopProfileObjectsCountEl) return;
     const userName = normalizePersonName(user?.full_name ?? user?.fullName ?? "");
@@ -5831,8 +5823,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const userTools = tools.filter(
         (tool) => normalizePersonName(tool?.["Ответственный"] ?? "") === userName
       );
-      const reportTools = userTools.filter(isToolOnReport);
-      const reportAmount = reportTools.reduce((sum, tool) => {
+      const reportAmount = userTools.reduce((sum, tool) => {
         const value = normalizeCostValue(tool?.["Стоимость"]);
         return sum + (Number.isFinite(value) ? value : 0);
       }, 0);
@@ -5842,7 +5833,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           .filter(Boolean)
           .map((name) => name.toLowerCase())
       ).size;
-      if (desktopProfileReportCountEl) desktopProfileReportCountEl.textContent = String(reportTools.length);
+      if (desktopProfileReportCountEl) desktopProfileReportCountEl.textContent = String(userTools.length);
       if (desktopProfileReportAmountEl) {
         desktopProfileReportAmountEl.textContent = formatCostValueWithCurrency(reportAmount, "0 р.");
       }

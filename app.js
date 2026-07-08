@@ -6965,6 +6965,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const usersEditCloseButton = contentEl.querySelector("[data-users-edit-close]");
   const usersEditCancelButton = contentEl.querySelector("[data-users-edit-cancel]");
   const usersEditFormEl = contentEl.querySelector("[data-users-edit-form]");
+  const usersEditRoleInput = contentEl.querySelector("[data-users-edit-role-input]");
+  const usersEditRoleSuggestionsEl = contentEl.querySelector("[data-users-edit-role-suggestions]");
   const usersEditMessageEl = contentEl.querySelector("[data-users-edit-message]");
   const usersEditOrgNameEl = contentEl.querySelector("[data-users-edit-org-name]");
   const usersEditClearTelegramButton = contentEl.querySelector("[data-users-edit-clear-telegram]");
@@ -27695,6 +27697,19 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     attachStrictOptionValue(inputEl, getOptions, onResolve);
   };
 
+
+  const getUsersEditRoleOptions = () =>
+    String(usersEditRoleInput?.dataset?.roleOptions ?? "")
+      .split("|")
+      .map((item) => item.trim())
+      .filter(Boolean);
+
+  attachStrictSearchSelect({
+    inputEl: usersEditRoleInput,
+    containerEl: usersEditRoleSuggestionsEl,
+    getOptions: getUsersEditRoleOptions,
+  });
+
   const getRepairOrganizationSuggestions = (query) => {
     const values = repairFormState.organizations ?? [];
     if (!normalizeSuggestionValue(query)) {
@@ -33888,6 +33903,8 @@ function setupSuperAdmin() {
   const usersEditCloseButton = contentEl.querySelector("[data-users-edit-close]");
   const usersEditCancelButton = contentEl.querySelector("[data-users-edit-cancel]");
   const usersEditFormEl = contentEl.querySelector("[data-users-edit-form]");
+  const usersEditRoleInput = contentEl.querySelector("[data-users-edit-role-input]");
+  const usersEditRoleSuggestionsEl = contentEl.querySelector("[data-users-edit-role-suggestions]");
   const usersEditMessageEl = contentEl.querySelector("[data-users-edit-message]");
   const usersEditOrgNameEl = contentEl.querySelector("[data-users-edit-org-name]");
   const usersEditClearTelegramButton = contentEl.querySelector("[data-users-edit-clear-telegram]");
@@ -35147,6 +35164,36 @@ function setupSuperAdmin() {
     usersAddMiddleNameSuggestionsEl,
     "middleNames"
   );
+
+  const attachUsersEditRoleDropdown = () => {
+    if (!usersEditRoleInput || !usersEditRoleSuggestionsEl) return;
+    const fieldEl = usersEditRoleInput.closest(".form-field--selectable");
+    const options = String(usersEditRoleInput.dataset.roleOptions ?? "")
+      .split("|")
+      .map((item) => item.trim())
+      .filter(Boolean);
+    const hide = () => {
+      usersEditRoleSuggestionsEl.classList.add("is-hidden");
+      usersEditRoleInput.setAttribute("aria-expanded", "false");
+      fieldEl?.classList.remove("is-suggestions-open");
+    };
+    const show = () => {
+      renderSuggestions(usersEditRoleSuggestionsEl, options, usersEditRoleInput);
+      usersEditRoleInput.setAttribute("aria-expanded", "true");
+      fieldEl?.classList.add("is-suggestions-open");
+    };
+    usersEditRoleSuggestionsEl.setAttribute("role", "listbox");
+    usersEditRoleInput.setAttribute("role", "combobox");
+    usersEditRoleInput.setAttribute("aria-autocomplete", "none");
+    usersEditRoleInput.setAttribute("aria-expanded", "false");
+    usersEditRoleInput.addEventListener("focus", show);
+    usersEditRoleInput.addEventListener("click", show);
+    usersEditRoleInput.addEventListener("blur", () => {
+      setTimeout(hide, 120);
+    });
+  };
+
+  attachUsersEditRoleDropdown();
 
   const createResponsibleInvite = async (user) => {
     if (!usersInviteBox || !user) return;

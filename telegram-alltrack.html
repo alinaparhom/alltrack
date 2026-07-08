@@ -19611,11 +19611,28 @@
         max-height: min(92dvh, 920px);
         overflow: hidden;
         border-radius: 28px;
+        background:
+          radial-gradient(circle at 12% 0%, rgba(59, 125, 255, 0.14), transparent 34%),
+          radial-gradient(circle at 88% 10%, rgba(16, 185, 129, 0.12), transparent 30%),
+          rgba(255, 255, 255, 0.88);
+        backdrop-filter: blur(22px);
+      }
+
+      .info-fines-modal__header {
+        border-bottom: 1px solid rgba(226, 232, 240, 0.86);
+        background: rgba(255, 255, 255, 0.72);
+        backdrop-filter: blur(18px);
+      }
+
+      .info-fines-modal__title h2 {
+        display: flex;
+        align-items: center;
+        gap: 8px;
       }
 
       .info-fines-modal__body {
         display: grid;
-        gap: 12px;
+        gap: 14px;
         overflow-y: auto;
         -webkit-overflow-scrolling: touch;
       }
@@ -19624,14 +19641,28 @@
       .info-fines-card {
         border: 1px solid rgba(226, 232, 240, 0.9);
         border-radius: 24px;
-        background: linear-gradient(145deg, rgba(255,255,255,0.92), rgba(248,250,252,0.72));
+        background: linear-gradient(145deg, rgba(255,255,255,0.94), rgba(248,250,252,0.76));
         box-shadow: 0 18px 42px rgba(15, 23, 42, 0.08);
+        backdrop-filter: blur(16px);
       }
 
       .info-fines-hero {
         display: grid;
-        gap: 14px;
-        padding: 14px;
+        gap: 16px;
+        padding: 16px;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .info-fines-hero::after {
+        content: "";
+        position: absolute;
+        inset: auto -48px -70px auto;
+        width: 180px;
+        height: 180px;
+        border-radius: 999px;
+        background: rgba(59, 125, 255, 0.1);
+        pointer-events: none;
       }
 
       .info-fines-hero__title {
@@ -19648,8 +19679,9 @@
         width: 46px;
         height: 46px;
         border-radius: 18px;
-        background: rgba(59, 125, 255, 0.12);
+        background: linear-gradient(145deg, rgba(59, 125, 255, 0.16), rgba(16, 185, 129, 0.12));
         font-size: 23px;
+        box-shadow: inset 0 0 0 1px rgba(59, 125, 255, 0.12);
       }
 
       .info-fines-hero h3,
@@ -19678,7 +19710,7 @@
         display: grid;
         gap: 2px;
         min-width: 0;
-        padding: 10px;
+        padding: 12px;
         border-radius: 18px;
         background: rgba(255, 255, 255, 0.76);
         box-shadow: inset 0 0 0 1px rgba(226, 232, 240, 0.72);
@@ -19709,9 +19741,9 @@
       .info-fines-card {
         display: grid;
         align-content: start;
-        gap: 10px;
+        gap: 12px;
         min-width: 0;
-        padding: 12px;
+        padding: 14px;
       }
 
       .info-fines-card__header,
@@ -19750,7 +19782,14 @@
         padding: 10px;
         border: 1px solid rgba(226, 232, 240, 0.78);
         border-radius: 18px;
-        background: rgba(255, 255, 255, 0.72);
+        background: rgba(255, 255, 255, 0.78);
+        transition: transform 0.18s ease, box-shadow 0.18s ease;
+      }
+
+      .info-fines-type:hover,
+      .info-fines-month:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 14px 30px rgba(15, 23, 42, 0.07);
       }
 
       .info-fines-type__top strong,
@@ -19799,6 +19838,11 @@
           height: 100dvh;
           max-height: 100dvh;
           border-radius: 0;
+        }
+
+        .info-fines-modal__body {
+          gap: 10px;
+          padding-bottom: calc(16px + env(safe-area-inset-bottom));
         }
 
         .info-fines-metrics,

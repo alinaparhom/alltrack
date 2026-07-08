@@ -31638,9 +31638,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         const card = document.createElement("article");
         card.className = "info-fines-type";
         const topUsers = item.users.sort((a,b)=>b.balance-a.balance).slice(0, 3).map((user) => `${formatFullName(user.name, 4)} — ${formatInfoFineMoney(user.balance)} р.`).join(" · ");
-        card.innerHTML = `<div class="info-fines-type__top"><h4></h4><strong>${formatInfoFineMoney(item.balance)} р.</strong></div><div class="info-fines-type__stats"><span>Начислено: ${formatInfoFineMoney(item.accrued)} р.</span><span>Выставлено: ${formatInfoFineMoney(item.issued)} р.</span><span>Простили: ${formatInfoFineMoney(item.forgiven)} р.</span></div><div class="info-fines-type__users"></div>`;
+        card.innerHTML = `<div class="info-fines-type__top"><h4></h4><strong>💰 ${formatInfoFineMoney(item.balance)} р.</strong></div><div class="info-fines-type__stats"><span>📈 Начислено: ${formatInfoFineMoney(item.accrued)} р.</span><span>🧾 Выставлено: ${formatInfoFineMoney(item.issued)} р.</span><span>🤝 Простили: ${formatInfoFineMoney(item.forgiven)} р.</span></div><div class="info-fines-type__users"></div>`;
         card.querySelector("h4").textContent = item.title;
-        card.querySelector(".info-fines-type__users").textContent = topUsers || "Нет сотрудников с остатком";
+        card.querySelector(".info-fines-type__users").textContent = topUsers ? `👥 ${topUsers}` : "✅ Нет сотрудников с остатком";
         infoFinesTypesEl.appendChild(card);
       });
     }
@@ -31652,7 +31652,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         const title = date ? date.toLocaleDateString("ru-RU", { month: "long", year: "numeric" }) : month.key;
         const card = document.createElement("article");
         card.className = "info-fines-month";
-        card.innerHTML = `<div class="info-fines-month__top"><h4></h4><strong>${formatInfoFineMoney(month.total)} р.</strong><span>${month.count} записей</span></div><div class="info-fines-month__rows"></div>`;
+        card.innerHTML = `<div class="info-fines-month__top"><h4></h4><strong>🧾 ${formatInfoFineMoney(month.total)} р.</strong><span>📝 ${month.count} записей</span></div><div class="info-fines-month__rows"></div>`;
         card.querySelector("h4").textContent = title;
         const rowsEl = card.querySelector(".info-fines-month__rows");
         [...month.types.values()].sort((a,b)=>b.total-a.total).forEach((type) => {
@@ -31661,9 +31661,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           const name = document.createElement("span");
           name.textContent = type.title;
           const total = document.createElement("strong");
-          total.textContent = `${formatInfoFineMoney(type.total)} р.`;
+          total.textContent = `💸 ${formatInfoFineMoney(type.total)} р.`;
           const count = document.createElement("small");
-          count.textContent = `${type.count} зап.`;
+          count.textContent = `📝 ${type.count} зап.`;
           row.append(name, total, count);
           rowsEl?.appendChild(row);
         });

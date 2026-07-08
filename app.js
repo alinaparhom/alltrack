@@ -477,14 +477,35 @@ async function loadUserToolsCount(orgFolderName, user) {
   return typeof stats === "number" ? stats : stats?.count ?? 0;
 }
 
-function formatUserToolsBadgeText(stats) {
+function getUserToolsStats(stats) {
   const count = typeof stats === "number" ? stats : stats?.count;
   const amount = typeof stats === "number" ? 0 : stats?.amount;
   const safeCount = Number.isFinite(Number(count)) ? Math.max(0, Number(count)) : 0;
   const safeAmount = Number.isFinite(Number(amount)) ? Math.max(0, Number(amount)) : 0;
-  const roundedAmount = Math.round(safeAmount);
-  const amountText = roundedAmount.toLocaleString("ru-RU");
-  return `${safeCount} ед. · ${amountText} р.`;
+  return {
+    count: safeCount,
+    amount: Math.round(safeAmount),
+  };
+}
+
+function formatUserToolsBadgeText(stats) {
+  const { count, amount } = getUserToolsStats(stats);
+  return `${count} ед. · ${amount.toLocaleString("ru-RU")} р.`;
+}
+
+function createUserToolsBadges(stats) {
+  const { count, amount } = getUserToolsStats(stats);
+  const countTag = document.createElement("span");
+  countTag.className = "users-details__tools-count";
+  countTag.textContent = `${count} ед.`;
+  countTag.title = `Количество единиц: ${count}`;
+
+  const amountTag = document.createElement("span");
+  amountTag.className = "users-details__tools-count users-details__tools-count--amount";
+  amountTag.textContent = `${amount.toLocaleString("ru-RU")} р.`;
+  amountTag.title = `Суммарная стоимость: ${amount.toLocaleString("ru-RU")} р.`;
+
+  return { countTag, amountTag };
 }
 
 function getToolNumberVariants(value) {
@@ -29693,11 +29714,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const roleName = String(entry?.role ?? "роль").trim();
       roleTag.textContent = roleName;
 
-      const toolsTag = document.createElement("span");
-      toolsTag.className = "users-details__tools-count";
       const toolsStats = toolsCounts.get(normalizePersonName(entry?.full_name ?? "")) ?? { count: 0, amount: 0 };
-      toolsTag.textContent = formatUserToolsBadgeText(toolsStats);
-      toolsTag.title = `Инструментов: ${toolsStats.count ?? 0}, сумма: ${Math.round(toolsStats.amount ?? 0).toLocaleString("ru-RU")} р.`;
+      const { countTag: toolsCountTag, amountTag: toolsAmountTag } = createUserToolsBadges(toolsStats);
 
       const telegramStatus = document.createElement("span");
       telegramStatus.className = "users-details__status";
@@ -29708,7 +29726,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         ? "ID привязан"
         : "ID не привязан";
       telegramStatus.classList.toggle("is-linked", hasTelegramId);
-      meta.append(roleTag, toolsTag, telegramStatus);
+      meta.append(roleTag, toolsCountTag, toolsAmountTag, telegramStatus);
 
       if (isVacation) {
         card.classList.add("is-vacation");
@@ -36368,11 +36386,8 @@ function setupSuperAdmin() {
       const roleName = String(user?.role ?? "роль").trim();
       roleTag.textContent = roleName;
 
-      const toolsTag = document.createElement("span");
-      toolsTag.className = "users-details__tools-count";
       const toolsStats = toolsCounts.get(normalizePersonName(user?.full_name ?? "")) ?? { count: 0, amount: 0 };
-      toolsTag.textContent = formatUserToolsBadgeText(toolsStats);
-      toolsTag.title = `Инструментов: ${toolsStats.count ?? 0}, сумма: ${Math.round(toolsStats.amount ?? 0).toLocaleString("ru-RU")} р.`;
+      const { countTag: toolsCountTag, amountTag: toolsAmountTag } = createUserToolsBadges(toolsStats);
 
       const telegramStatus = document.createElement("span");
       telegramStatus.className = "users-details__status";
@@ -36381,7 +36396,7 @@ function setupSuperAdmin() {
         ? "ID привязан"
         : "ID не привязан";
       telegramStatus.classList.toggle("is-linked", hasTelegramId);
-      meta.append(roleTag, toolsTag, telegramStatus);
+      meta.append(roleTag, toolsCountTag, toolsAmountTag, telegramStatus);
 
       const editHint = document.createElement("span");
       editHint.className = "users-details__edit-hint";

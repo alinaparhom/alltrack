@@ -865,10 +865,6 @@ export function renderRole(user) {
           <div class="settings-modal__header users-add-modal__header">
             <div class="settings-modal__title">
               <h2>Редактировать пользователя</h2>
-              <div class="users-add__meta">
-                <span>Организация:</span>
-                <span class="users-add__org" data-users-edit-org-name>—</span>
-              </div>
             </div>
             <button class="button-icon users-add-modal__close users-edit-modal__close" type="button" data-users-edit-close aria-label="Закрыть окно редактирования пользователя">
               <span class="button-icon-emoji" aria-hidden="true">✕</span>
@@ -890,9 +886,9 @@ export function renderRole(user) {
                   <label class="form-label" for="users-edit-middle-name">Отчество</label>
                   <input class="form-input" type="text" id="users-edit-middle-name" name="users-edit-middle-name" autocomplete="additional-name" placeholder="Иванович" />
                 </div>
-                <div class="form-field">
+                <div class="form-field form-field--selectable users-edit-role-field">
                   <label class="form-label" for="users-edit-role">Роль пользователя</label>
-                  <select class="form-input" id="users-edit-role" name="users-edit-role" required>
+                  <select class="form-input form-select--selectable users-edit-role-field__select" id="users-edit-role" name="users-edit-role" required>
                     <option value="Энергетик">Энергетик</option>
                     <option value="Ответственный">Ответственный</option>
                     <option value="Руководитель">Руководитель</option>

@@ -1337,6 +1337,13 @@ function formatCostValueWithCurrency(value, fallback = "—") {
   return /(?:₽|р\.|руб(?:\.|л(?:ей|я)?)?)/i.test(text) ? text : `${text} р.`;
 }
 
+function formatDesktopProfileReportAmount(value) {
+  const amount = normalizeCostValue(value) || 0;
+  return `${new Intl.NumberFormat("ru-RU", {
+    maximumFractionDigits: 0,
+  }).format(amount)} Br`;
+}
+
 function appendPersonNameWithBoldSurname(container, value, fallback = "—") {
   if (!container) return;
   const normalized = String(value ?? "").trim() || fallback;
@@ -5835,7 +5842,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       ).size;
       if (desktopProfileReportCountEl) desktopProfileReportCountEl.textContent = String(userTools.length);
       if (desktopProfileReportAmountEl) {
-        desktopProfileReportAmountEl.textContent = formatCostValueWithCurrency(reportAmount, "0 р.");
+        desktopProfileReportAmountEl.textContent = formatDesktopProfileReportAmount(reportAmount);
       }
       if (desktopProfileObjectsCountEl) desktopProfileObjectsCountEl.textContent = String(objectsCount);
     } catch (error) {

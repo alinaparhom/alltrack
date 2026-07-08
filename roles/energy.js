@@ -4504,7 +4504,7 @@ export function renderRole(user, options = {}) {
                   <span class="info-hub-option__icon" aria-hidden="true">💸</span>
                   <span class="info-hub-option__content">
                     <span class="info-hub-option__text">Штрафы</span>
-                    <span class="info-hub-option__hint">Проверка начислений и причин</span>
+                    <span class="info-hub-option__hint">Текущие остатки и выставленные штрафы</span>
                   </span>
                   <span class="info-hub-option__arrow" aria-hidden="true">›</span>
                 </button>
@@ -4624,6 +4624,56 @@ export function renderRole(user, options = {}) {
                 <div class="stat-card"><div class="stat-card-header"><span class="stat-icon">💸</span><div class="stat-label">Штрафов</div></div><div class="stat-row"><span class="stat-value" data-info-statistics-fines>—</span><span class="stat-pill">записей</span></div></div>
               </div>
               <div class="form-message" role="status" data-info-statistics-status></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-modal info-fines-modal is-hidden" data-info-fines-modal>
+          <div class="settings-modal__backdrop" data-info-fines-backdrop></div>
+          <div
+            class="settings-modal__panel tools-modal__panel info-fines-modal__panel"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Информация по штрафам"
+          >
+            <div class="settings-modal__header tools-modal__header info-fines-modal__header">
+              <div class="settings-modal__title info-fines-modal__title">
+                <h2>Штрафы</h2>
+                <p data-info-fines-subtitle>Текущие остатки и уже выставленные штрафы по месяцам</p>
+              </div>
+              <button class="button-icon" type="button" data-info-fines-close aria-label="Закрыть информацию по штрафам">
+                <span class="button-icon-emoji" aria-hidden="true">✕</span>
+              </button>
+            </div>
+            <div class="settings-modal__body tools-modal__body info-fines-modal__body">
+              <section class="info-fines-hero" aria-label="Краткая сводка по штрафам">
+                <div class="info-fines-hero__title">
+                  <span class="info-fines-hero__icon" aria-hidden="true">💸</span>
+                  <div>
+                    <h3>Сводка</h3>
+                    <p>Все суммы сгруппированы по видам штрафов</p>
+                  </div>
+                </div>
+                <div class="info-fines-metrics">
+                  <div class="info-fines-metric"><span>Остаток</span><strong data-info-fines-balance>—</strong><small>руб.</small></div>
+                  <div class="info-fines-metric"><span>Выставлено</span><strong data-info-fines-issued>—</strong><small>руб.</small></div>
+                  <div class="info-fines-metric"><span>Начислено</span><strong data-info-fines-accrued>—</strong><small>руб.</small></div>
+                  <div class="info-fines-metric"><span>Сотрудников</span><strong data-info-fines-users>—</strong><small>с остатком</small></div>
+                </div>
+              </section>
+              <div class="info-fines-layout">
+                <section class="info-fines-card info-fines-card--wide">
+                  <div class="info-fines-card__header"><h3>Текущие штрафы по видам</h3><span data-info-fines-types-count>—</span></div>
+                  <div class="info-fines-types" data-info-fines-types></div>
+                  <div class="tools-empty is-hidden" data-info-fines-types-empty>Текущих штрафов нет.</div>
+                </section>
+                <section class="info-fines-card info-fines-card--wide">
+                  <div class="info-fines-card__header"><h3>Уже выставлено по месяцам</h3><span data-info-fines-months-count>—</span></div>
+                  <div class="info-fines-months" data-info-fines-months></div>
+                  <div class="tools-empty is-hidden" data-info-fines-months-empty>Выставленных штрафов пока нет.</div>
+                </section>
+              </div>
+              <div class="form-message" role="status" data-info-fines-status></div>
             </div>
           </div>
         </div>

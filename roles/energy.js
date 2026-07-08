@@ -4556,7 +4556,6 @@ export function renderRole(user, options = {}) {
                   <span class="info-repair-summary__icon" aria-hidden="true">🛠️</span>
                   <div>
                     <h3>Общая информация</h3>
-                    <p>Коротко по ремонтам выбранной организации</p>
                   </div>
                 </div>
                 <div class="info-repair-summary__metrics">

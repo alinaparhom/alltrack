@@ -2267,6 +2267,208 @@
         font-weight: 600;
       }
 
+      @media (min-width: 1024px) and (hover: hover) and (pointer: fine) {
+        :root {
+          --space: 20px;
+          --grid-gap: 16px;
+          --radius: 32px;
+          --radius-card: 22px;
+          --action-card-height: 104px;
+          --quick-access-offset: 0px;
+        }
+
+        body {
+          align-items: center;
+          justify-content: center;
+          padding: 28px;
+          background:
+            radial-gradient(circle at 12% 8%, rgba(59, 125, 255, 0.18), transparent 30%),
+            radial-gradient(circle at 88% 12%, rgba(45, 212, 191, 0.16), transparent 28%),
+            linear-gradient(135deg, #f8fbff 0%, #eef4ff 46%, #f7f9ff 100%);
+        }
+
+        body[data-theme="dark"] {
+          background:
+            radial-gradient(circle at 14% 10%, rgba(123, 178, 255, 0.2), transparent 30%),
+            radial-gradient(circle at 86% 12%, rgba(45, 212, 191, 0.14), transparent 26%),
+            linear-gradient(135deg, #0b1020 0%, #10192e 52%, #0d1424 100%);
+        }
+
+        .screen {
+          width: min(100%, 1440px);
+          height: min(100%, 940px);
+          max-height: calc(100dvh - 56px);
+          border-radius: 34px;
+          padding: 22px;
+          border-color: rgba(255, 255, 255, 0.76);
+          background:
+            linear-gradient(145deg, rgba(255, 255, 255, 0.88), rgba(255, 255, 255, 0.62));
+          box-shadow:
+            0 34px 90px rgba(35, 56, 105, 0.16),
+            inset 0 1px 0 rgba(255, 255, 255, 0.9);
+        }
+
+        body[data-theme="dark"] .screen {
+          background:
+            linear-gradient(145deg, rgba(17, 25, 44, 0.94), rgba(15, 23, 42, 0.82));
+          border-color: rgba(148, 170, 210, 0.22);
+        }
+
+        .screen::before {
+          inset: -120px -80px auto auto;
+          width: 320px;
+          height: 320px;
+          filter: blur(8px);
+          opacity: 0.75;
+          pointer-events: none;
+        }
+
+        .app-header {
+          grid-template-columns: minmax(0, 1fr);
+          gap: 14px;
+          margin-bottom: 18px;
+          padding: 14px 16px;
+          border: 1px solid rgba(226, 232, 240, 0.82);
+          border-radius: 26px;
+          background: rgba(255, 255, 255, 0.68);
+          box-shadow: 0 18px 42px rgba(26, 31, 46, 0.08);
+        }
+
+        body[data-theme="dark"] .app-header {
+          background: rgba(23, 31, 52, 0.74);
+          border-color: rgba(148, 170, 210, 0.22);
+        }
+
+        .app-title-row {
+          gap: 18px;
+        }
+
+        .app-title-badge {
+          width: 54px;
+          height: 54px;
+          border-radius: 18px;
+          font-size: 23px;
+        }
+
+        .app-title-text {
+          font-size: clamp(22px, 2vw, 30px);
+          letter-spacing: -0.03em;
+        }
+
+        .app-title-meta,
+        .app-title-position {
+          font-size: 13px;
+        }
+
+        .app-user {
+          margin-bottom: 16px;
+          border-radius: 22px;
+          padding: 14px 16px;
+        }
+
+        .app-scroll {
+          padding: 2px 4px 4px;
+          scrollbar-gutter: stable;
+        }
+
+        .app-scroll::-webkit-scrollbar,
+        .settings-modal__body::-webkit-scrollbar,
+        .tools-info-modal__body::-webkit-scrollbar {
+          width: 10px;
+          height: 10px;
+        }
+
+        .app-scroll::-webkit-scrollbar-thumb,
+        .settings-modal__body::-webkit-scrollbar-thumb,
+        .tools-info-modal__body::-webkit-scrollbar-thumb {
+          border: 3px solid transparent;
+          border-radius: 999px;
+          background: rgba(59, 125, 255, 0.32);
+          background-clip: content-box;
+        }
+
+        [data-content] {
+          display: grid;
+          gap: 18px;
+        }
+
+        .dashboard-stats,
+        .statistics-grid {
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+          gap: 16px;
+        }
+
+        .action-grid {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: 16px;
+        }
+
+        .action-card,
+        .stat-card,
+        .form-card,
+        .role-tile,
+        .energy-group-panel {
+          border-radius: 24px;
+          border-color: rgba(226, 232, 240, 0.86);
+          background: rgba(255, 255, 255, 0.78);
+          box-shadow: 0 16px 36px rgba(26, 31, 46, 0.075);
+        }
+
+        .action-card {
+          min-height: var(--action-card-height);
+          padding: 18px;
+          transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+        }
+
+        .action-card:hover,
+        .stat-card--action:hover,
+        .role-tile:hover {
+          transform: translateY(-3px);
+          border-color: rgba(59, 125, 255, 0.32);
+          box-shadow: 0 22px 50px rgba(35, 56, 105, 0.14);
+        }
+
+        .stat-icon,
+        .action-icon,
+        .section-icon {
+          width: 44px;
+          height: 44px;
+          border-radius: 16px;
+          font-size: 21px;
+          background: linear-gradient(135deg, rgba(59, 125, 255, 0.16), rgba(90, 161, 255, 0.08));
+        }
+
+        .quick-access {
+          position: static;
+          margin-top: 4px;
+          padding: 16px;
+          border: 1px solid rgba(226, 232, 240, 0.86);
+          border-radius: 26px;
+          background: rgba(255, 255, 255, 0.74);
+          box-shadow: 0 18px 42px rgba(26, 31, 46, 0.08);
+        }
+
+        .quick-access-list {
+          --quick-access-gap: 12px;
+          --quick-access-item-size: 68px;
+          justify-content: flex-start;
+          flex-wrap: wrap;
+        }
+
+        .quick-access-item {
+          border-radius: 20px;
+          font-size: 24px;
+        }
+
+        .settings-modal__panel,
+        .tools-info-modal__panel,
+        .info-moves-history-modal__panel,
+        .super-stats-modal__panel {
+          border-radius: 30px;
+          box-shadow: 0 34px 90px rgba(15, 23, 42, 0.22);
+        }
+      }
+
       @media (max-width: 420px) {
         .app-title-meta {
           font-size: 11px;

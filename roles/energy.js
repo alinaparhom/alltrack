@@ -4539,7 +4539,6 @@ export function renderRole(user, options = {}) {
             <div class="settings-modal__header tools-modal__header info-repair-modal__header">
               <div class="settings-modal__title">
                 <h2>Ремонт</h2>
-                <p data-info-repair-subtitle>Инструменты в ремонте, организации, суммы и статистика</p>
               </div>
               <button
                 class="button-icon"

@@ -31492,9 +31492,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     infoRepairModalEl.classList.remove("is-hidden");
     document.body.style.overflow = "hidden";
     if (infoRepairStatusEl) infoRepairStatusEl.textContent = "Загружаем аналитику ремонтов...";
-    if (infoRepairSubtitleEl) {
-      infoRepairSubtitleEl.textContent = "Инструменты в ремонте, подрядчики, суммы и статистика";
-    }
     Object.keys(infoRepairValueEls).forEach((key) => setInfoRepairValue(key, "—"));
 
     const orgFolder = context.orgFolderName ?? "";

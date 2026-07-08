@@ -4551,20 +4551,21 @@ export function renderRole(user, options = {}) {
               </button>
             </div>
             <div class="settings-modal__body tools-modal__body info-repair-modal__body">
-              <div class="info-repair-hero">
-                <div>
-                  <div class="info-repair-hero__eyebrow">Сводка по ремонтам</div>
-                  <h3>Контроль ремонтов без лишних переходов</h3>
-                  <p>Смотрите текущие ремонты, подрядчиков, популярные производители, модели, наименования и итоговые суммы.</p>
+              <section class="info-repair-summary" aria-label="Общая информация по ремонтам организации">
+                <div class="info-repair-summary__title">
+                  <span class="info-repair-summary__icon" aria-hidden="true">🛠️</span>
+                  <div>
+                    <h3>Общая информация</h3>
+                    <p>Коротко по ремонтам выбранной организации</p>
+                  </div>
                 </div>
-                <span class="info-repair-hero__icon" aria-hidden="true">🛠️</span>
-              </div>
-              <div class="dashboard-stats info-repair-stats">
-                <div class="stat-card"><div class="stat-card-header"><span class="stat-icon">🧰</span><div class="stat-label">Сейчас в ремонте</div></div><div class="stat-row"><span class="stat-value" data-info-repair-active>—</span><span class="stat-pill">МТЦ</span></div></div>
-                <div class="stat-card"><div class="stat-card-header"><span class="stat-icon">📋</span><div class="stat-label">Всего ремонтов</div></div><div class="stat-row"><span class="stat-value" data-info-repair-total>—</span><span class="stat-pill">записей</span></div></div>
-                <div class="stat-card"><div class="stat-card-header"><span class="stat-icon">💳</span><div class="stat-label">Сумма ремонтов</div></div><div class="stat-row"><span class="stat-value" data-info-repair-sum>—</span><span class="stat-pill">руб.</span></div></div>
-                <div class="stat-card"><div class="stat-card-header"><span class="stat-icon">🏢</span><div class="stat-label">Организаций</div></div><div class="stat-row"><span class="stat-value" data-info-repair-orgs>—</span><span class="stat-pill">подрядчиков</span></div></div>
-              </div>
+                <div class="info-repair-summary__metrics">
+                  <div class="info-repair-summary__metric"><span>Сейчас</span><strong data-info-repair-active>—</strong><small>МТЦ</small></div>
+                  <div class="info-repair-summary__metric"><span>Всего</span><strong data-info-repair-total>—</strong><small>записей</small></div>
+                  <div class="info-repair-summary__metric"><span>Сумма</span><strong data-info-repair-sum>—</strong><small>руб.</small></div>
+                  <div class="info-repair-summary__metric"><span>Организации</span><strong data-info-repair-orgs>—</strong><small>подрядчиков</small></div>
+                </div>
+              </section>
               <div class="info-repair-layout">
                 <section class="info-repair-card">
                   <div class="info-repair-card__header"><h3>Инструменты сейчас в ремонте</h3><span data-info-repair-active-count>—</span></div>

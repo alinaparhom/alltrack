@@ -643,6 +643,13 @@ export function renderRole(user, options = {}) {
                     >
                       Мои
                     </button>
+                    <button
+                      class="demand-toggle__button"
+                      type="button"
+                      data-demand-view="closed"
+                    >
+                      Закрытые
+                    </button>
                   </div>
                 </div>
                 <div class="demand-filters__panel is-hidden" data-demand-filters-panel>

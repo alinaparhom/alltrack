@@ -351,6 +351,18 @@ function isDemandOverdue(item) {
   return getDaysDifference(new Date(), needDate) > 0;
 }
 
+function getDemandClosedDate(item) {
+  return normalizeDemandNeedDate(item?.closedAt ?? item?.closed_at ?? item?.completedAt ?? item?.completed_at ?? item?.updatedAt ?? "");
+}
+
+function isDemandClosedLate(item) {
+  if (!item || item.status === "open") return false;
+  const needDate = parseIsoDateValue(item.needDate);
+  const closedDate = parseIsoDateValue(getDemandClosedDate(item));
+  if (!needDate || !closedDate) return false;
+  return getDaysDifference(closedDate, needDate) > 0;
+}
+
 function normalizeCostValue(value) {
   if (value === null || value === undefined) {
     return null;
@@ -4803,6 +4815,7 @@ function normalizeDemandData(raw) {
       const status = item.status === "done" ? "done" : "open";
       const createdAt = sanitizeDemandLabel(item.createdAt ?? item.date ?? "") || getToday();
       const updatedAt = sanitizeDemandLabel(item.updatedAt ?? "");
+      const closedAt = getDemandClosedDate(item);
       const needDate = normalizeDemandNeedDate(
         item.needDate ??
           item.neededDate ??
@@ -4825,6 +4838,7 @@ function normalizeDemandData(raw) {
         needDate,
         createdAt,
         updatedAt,
+        closedAt,
       };
     })
     .filter(Boolean);
@@ -9965,8 +9979,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const viewFilter = demandState.filters.view;
     const currentUserKey = buildUserKey(user);
     demandState.filtered = demandState.items.filter((item) => {
-      if (item.status !== "open") return false;
-      if (statusFilter !== "all" && item.status !== statusFilter) return false;
+      const isClosedView = viewFilter === "closed";
+      if (isClosedView) {
+        if (item.status !== "done") return false;
+      } else if (item.status !== "open") {
+        return false;
+      }
+      if (!isClosedView && statusFilter !== "all" && item.status !== statusFilter) return false;
       if (objectTrackingEnabled && objectFilter && item.object !== objectFilter) return false;
       if (userFilter && item.requestedBy !== userFilter) return false;
       if (viewFilter === "mine" && item.requestedById !== currentUserKey) {
@@ -9990,7 +10009,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       if (a.status !== b.status) {
         return a.status === "open" ? -1 : 1;
       }
-      return String(b.createdAt).localeCompare(String(a.createdAt), "ru");
+      const aDate = a.status === "done" ? getDemandClosedDate(a) || a.updatedAt || a.createdAt : a.createdAt;
+      const bDate = b.status === "done" ? getDemandClosedDate(b) || b.updatedAt || b.createdAt : b.createdAt;
+      return String(bDate).localeCompare(String(aDate), "ru");
     });
   };
 
@@ -10510,12 +10531,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const card = document.createElement("div");
       const priorityKey = normalizeDemandPriority(item.priority ?? "");
       const isImportant = priorityKey === "red";
-      const isOverdue = isDemandOverdue(item);
+      const isClosed = item.status === "done";
+      const isOverdue = isClosed ? isDemandClosedLate(item) : isDemandOverdue(item);
       card.className = "demand-card";
       if (isImportant) card.classList.add("demand-card--important");
       if (isOverdue) card.classList.add("demand-card--overdue");
       if (isImportant && isOverdue) card.classList.add("demand-card--important-overdue");
-      if (item.status === "done") {
+      if (isClosed) {
         card.classList.add("is-done");
       }
       const content = document.createElement("div");
@@ -10553,7 +10575,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const needDateLabel = formatDemandNeedDate(item.needDate);
       const needDateText = needDateLabel || "не указано";
       const createdLabel = formatDemandCreatedLabel(item.createdAt);
-      const datesText = `Нужно: ${needDateText} · Создано: ${createdLabel || "—"}`;
+      const closedDateLabel = formatDemandNeedDate(getDemandClosedDate(item));
+      const datesText = isClosed
+        ? `Нужно: ${needDateText} · Закрыто: ${closedDateLabel || "—"}`
+        : `Нужно: ${needDateText} · Создано: ${createdLabel || "—"}`;
       const metaItems = [
         objectTrackingEnabled ? { icon: "📍", value: item.object || "—" } : null,
         { icon: "👤", value: item.requestedBy || "Без автора" },
@@ -10621,9 +10646,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
       if (!note.textContent) {
         content.append(title, chips, meta);
-        card.append(content, actions);
       } else {
         content.append(title, chips, meta, note);
+      }
+      if (isClosed) {
+        card.append(content);
+      } else {
         card.append(content, actions);
       }
       demandListEl.appendChild(card);
@@ -10968,7 +10996,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const nextStatus = entry.status === "open" ? "done" : "open";
       demandState.items = demandState.items.map((item) =>
         item.id === id
-          ? { ...item, status: nextStatus, updatedAt: getToday() }
+          ? {
+              ...item,
+              status: nextStatus,
+              updatedAt: getToday(),
+              closedAt: nextStatus === "done" ? getToday() : "",
+            }
           : item
       );
       await saveDemandItems();

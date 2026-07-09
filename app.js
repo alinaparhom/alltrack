@@ -6347,7 +6347,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const objectsItemsEl = contentEl.querySelector("[data-energy-objects-items]");
   const objectsEmptyEl = contentEl.querySelector("[data-energy-objects-empty]");
   const objectsCountEl = contentEl.querySelector("[data-energy-objects-count]");
-  const objectsSubtitleEl = contentEl.querySelector("[data-energy-objects-subtitle]");
   const objectsCreateModalEl = contentEl.querySelector(
     "[data-energy-objects-create-modal]"
   );
@@ -9024,10 +9023,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   let selectedUsersOrgDisplayName = "";
   let selectedUsersOrgNames = [];
   let selectedVacationUser = null;
-
-  if (objectsSubtitleEl) {
-    objectsSubtitleEl.textContent = "Быстро находите, добавляйте и редактируйте объекты";
-  }
 
   const buildToolsMapBounds = (points) => {
     const safePoints = Array.isArray(points) ? points : [];

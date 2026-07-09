@@ -10525,31 +10525,35 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const needDateLabel = formatDemandNeedDate(item.needDate);
       const needDateText = needDateLabel || "не указано";
       const createdLabel = formatDemandCreatedLabel(item.createdAt);
-      const priorityLabel = demandPriorityLabels[priorityKey] || "обычно";
       const metaItems = [
-        objectTrackingEnabled ? { icon: "📍", label: "Объект", value: item.object || "—" } : null,
-        { icon: "👤", label: "Автор", value: item.requestedBy || "Без автора" },
-        { icon: "⏱", label: "Нужно", value: needDateText },
-        { icon: "🕒", label: "Создано", value: createdLabel },
+        objectTrackingEnabled ? { icon: "📍", value: item.object || "—" } : null,
+        { icon: "👤", value: item.requestedBy || "Без автора" },
+        { icon: "⏱", value: needDateText },
+        { icon: "🕒", value: createdLabel ? `Создано ${createdLabel}` : "Создано —" },
       ];
-      metaItems.filter(Boolean).forEach(({ icon, label, value }) => {
+      metaItems.filter(Boolean).forEach(({ icon, value }) => {
         const line = document.createElement("div");
         line.className = "demand-card__meta-line";
-        line.innerHTML = `<span class="demand-card__meta-icon" aria-hidden="true">${icon}</span><span class="demand-card__meta-label">${label}</span><strong>${escapeHtml(value)}</strong>`;
+        line.innerHTML = `<span class="demand-card__meta-icon" aria-hidden="true">${icon}</span><strong>${escapeHtml(value)}</strong>`;
         meta.appendChild(line);
       });
 
       const chips = document.createElement("div");
       chips.className = "demand-card__tags";
-      const statusChip = document.createElement("span");
-      statusChip.className = item.status === "open" ? "demand-chip" : "demand-chip demand-chip--done";
-      statusChip.textContent = item.status === "open" ? "🟢 В работе" : "✅ Закрыта";
-      const priorityChip = document.createElement("span");
-      priorityChip.className = priorityKey
-        ? `demand-chip demand-chip--priority demand-chip--priority-${priorityKey}`
-        : "demand-chip demand-chip--priority";
-      priorityChip.textContent = priorityKey ? `⚡ ${priorityLabel}` : "⚪ обычно";
-      chips.append(statusChip, priorityChip);
+      if (item.status !== "open") {
+        const statusChip = document.createElement("span");
+        statusChip.className = "demand-chip demand-chip--done";
+        statusChip.textContent = "✅ Закрыта";
+        chips.append(statusChip);
+      }
+      if (priorityKey === "red") {
+        const priorityChip = document.createElement("span");
+        priorityChip.className = "demand-chip demand-chip--priority demand-chip--priority-red";
+        priorityChip.setAttribute("aria-label", "Высокий приоритет");
+        priorityChip.title = "Высокий приоритет";
+        priorityChip.textContent = "";
+        chips.append(priorityChip);
+      }
 
       const note = document.createElement("div");
       note.className = "demand-card__note";
@@ -10703,8 +10707,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const openDemandModal = async () => {
     if (!demandModalEl) return;
     if (demandSubtitleEl) {
-      demandSubtitleEl.textContent =
-        context.orgFullName ?? context.orgShortName ?? context.orgFolderName ?? "";
+      demandSubtitleEl.textContent = "Что нужно, кому и к какому сроку";
     }
     setDemandFormVisibility(false);
     setDemandFiltersVisibility(false);

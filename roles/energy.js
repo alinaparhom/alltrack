@@ -588,7 +588,6 @@ export function renderRole(user, options = {}) {
           >
             <div class="settings-modal__header demand-modal__header">
               <div class="settings-modal__title demand-modal__title">
-                <span class="demand-modal__eyebrow">📌 быстрый список</span>
                 <h2>Заявки</h2>
                 <p data-demand-subtitle>Что нужно, кому и к какому сроку</p>
               </div>
@@ -602,24 +601,6 @@ export function renderRole(user, options = {}) {
               </button>
             </div>
             <div class="settings-modal__body demand-modal__body">
-              <div class="demand-summary" data-demand-summary>
-                <div class="demand-summary__main">
-                  <span class="demand-summary__count" data-demand-open-count>0</span>
-                  <span class="demand-summary__label">актуальных</span>
-                </div>
-                <div class="demand-summary__actions">
-                  <button
-                    class="demand-summary__add"
-                    type="button"
-                    data-demand-toggle-form
-                    aria-label="Добавить заявку"
-                    aria-expanded="false"
-                  >
-                    <span aria-hidden="true">＋</span>
-                    <span class="demand-summary__add-text">Новая</span>
-                  </button>
-                </div>
-              </div>
               <div class="demand-filters">
                 <div class="demand-filters__bar">
                   <label class="demand-search">
@@ -696,6 +677,24 @@ export function renderRole(user, options = {}) {
               <div class="demand-empty is-hidden" data-demand-empty>
                 <strong>✨ Заявок нет</strong>
                 <span>Нажмите «Новая» и добавьте потребность.</span>
+              </div>
+              <div class="demand-summary" data-demand-summary>
+                <div class="demand-summary__main">
+                  <span class="demand-summary__count" data-demand-open-count>0</span>
+                  <span class="demand-summary__label">актуальных заявок</span>
+                </div>
+                <div class="demand-summary__actions">
+                  <button
+                    class="demand-summary__add"
+                    type="button"
+                    data-demand-toggle-form
+                    aria-label="Добавить заявку"
+                    aria-expanded="false"
+                  >
+                    <span aria-hidden="true">＋</span>
+                    <span class="demand-summary__add-text">Добавить заявку</span>
+                  </button>
+                </div>
               </div>
             </div>
           </div>

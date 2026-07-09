@@ -14829,6 +14829,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
   const renderToolsInfoKit = (tool) => {
     if (!toolsInfoKitEl || !toolsInfoKitToggleButton || !toolsInfoKitListEl) return;
+    if (!toolsInfoKitEl.contains(toolsInfoKitToggleButton)) {
+      toolsInfoKitEl.prepend(toolsInfoKitToggleButton);
+    }
+    toolsInfoKitToggleButton.classList.remove("tools-info-inline-action", "tools-info-inline-action--emoji");
+    toolsInfoKitToggleButton.removeAttribute("title");
     const kit = Array.isArray(tool?.["Комплектация"]) ? tool["Комплектация"] : [];
     const parseKitCount = (value) => {
       if (value == null) return 0;
@@ -14899,6 +14904,24 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       String(tool?.["Модель"] ?? "").trim(),
     ].filter(Boolean);
     const isSearchMode = toolsState.mode === "search";
+    toolsInfoGridEl.classList.toggle("tools-info-grid--search-card", isSearchMode);
+    if (isSearchMode) {
+      const statusText = normalizeToolsInfoStatus(tool?.["Статус"], Boolean(tool?.__pendingMove));
+      const isMoving = statusText === "Перемещается";
+      toolsInfoGridEl.innerHTML = `
+        <div class="tools-info-search-hero">
+          <button class="tools-info-search-photo" type="button" data-tools-info-cover-open aria-label="Открыть фото инструмента">
+            <img data-tools-info-cover-image src="${escapeHtml(toolPhotoPlaceholder)}" alt="Фото инструмента" loading="lazy" />
+          </button>
+          <div class="tools-info-search-main">
+            <div class="tools-info-search-title">${escapeHtml(String(tool?.["Наименование"] ?? "").trim() || "Инструмент")}</div>
+            <div class="tools-info-search-brand">${escapeHtml([tool?.["Производитель"], tool?.["Модель"]].map((v) => String(v ?? "").trim()).filter(Boolean).join(" · ") || "—")}</div>
+            <div class="tools-info-search-numbers">№ ${escapeHtml(formatInfoValue(toolNumber))} · Бух. № ${escapeHtml(formatInfoValue(accountingNumber))}</div>
+            ${isMoving ? `<div class="tools-info-search-moving">↔ ${escapeHtml(statusText)}</div>` : ""}
+          </div>
+        </div>
+      `;
+    }
     const info = isWriteOffInfoMode
       ? [
           { label: "Номер", value: toolNumber },
@@ -14933,9 +14956,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     ];
     info
       .filter(({ label }) => objectTrackingEnabled || !isObjectRelatedLabel(label))
+      .filter(({ label }) => !isSearchMode || ["Ответственный", "Объект", "Статус", "Стоимость", "Дата покупки"].includes(label))
       .forEach(({ label, value, hideLabelInSearch }) => {
       const row = document.createElement("div");
       row.className = "tools-info-row";
+      if (isSearchMode) row.classList.add("tools-info-row--search");
       if (label === "Статус") {
         row.classList.add("tools-info-row--status");
       }
@@ -14956,6 +14981,17 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         statusLine.appendChild(statusText);
         const statusActions = document.createElement("div");
         statusActions.className = "tools-info-inline-actions";
+        if (isSearchMode && toolsInfoKitToggleButton && !toolsInfoKitEl?.classList.contains("is-hidden")) {
+          toolsInfoKitToggleButton.classList.add("tools-info-inline-action", "tools-info-inline-action--emoji");
+          toolsInfoKitToggleButton.textContent = "🧰";
+          toolsInfoKitToggleButton.title = "Комплектация";
+          statusActions.appendChild(toolsInfoKitToggleButton);
+        }
+        if (isSearchMode) {
+          const notesButton = buildToolsNotesButton(tool, "tools-info-inline-action tools-info-inline-action--emoji");
+          notesButton.title = "Заметки";
+          statusActions.appendChild(notesButton);
+        }
         [toolsInfoShareButton, toolsInfoCopyButton].forEach((button) => {
           if (!button) return;
           button.classList.add("tools-info-inline-action");
@@ -15128,6 +15164,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       "tools-item--pending-response",
       shouldHighlightPending
     );
+    toolsInfoModalPanelEl.classList.toggle("tools-info-modal__panel--search", toolsState.mode === "search");
   };
 
   const buildToolsInfoMatcher = (tool) => {
@@ -15219,6 +15256,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       toolsInfoPhotosSummaryEl.textContent = files.length
         ? ""
         : "Фото пока не загружены.";
+    }
+    const coverImage = toolsInfoGridEl?.querySelector("[data-tools-info-cover-image]");
+    if (coverImage) {
+      coverImage.src = files[0]?.url || toolPhotoPlaceholder;
     }
     if (toolsInfoPhotosEmptyEl) {
       toolsInfoPhotosEmptyEl.classList.toggle("is-hidden", files.length > 0);
@@ -15492,8 +15533,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     applyToolsInfoPanelTone(tool);
     toolsInfoState.kitExpanded = false;
     toolsInfoState.historyLoaded = false;
-    renderToolsInfoGrid(tool);
     renderToolsInfoKit(tool);
+    renderToolsInfoGrid(tool);
     toolsInfoState.moves = [];
     toolsInfoState.breakdowns = [];
     toolsInfoState.repairs = [];
@@ -15512,7 +15553,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
     if (toolsInfoRepairsEmptyEl) toolsInfoRepairsEmptyEl.classList.add("is-hidden");
     setToolsInfoTab("moves");
-    setToolsInfoHistoryOpened(false);
+    setToolsInfoHistoryOpened(toolsState.mode === "search");
     syncToolsInfoMoveButtonVisibility();
     toolsInfoModalEl.classList.remove("is-hidden");
     document.body.style.overflow = "hidden";
@@ -19774,6 +19815,25 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       closeToolsInfoModal();
     }
   });
+  if (toolsInfoGridEl) {
+    toolsInfoGridEl.addEventListener("click", (event) => {
+      const photoButton = event.target.closest("[data-tools-info-cover-open]");
+      if (photoButton) {
+        const tool = toolsInfoState.tool;
+        if (!tool) return;
+        openPendingMovePhotoViewer({
+          tool,
+          fallbackNumber: resolveToolNumberValue(tool),
+          title: toolsInfoTitleEl?.textContent || "Инструмент",
+        });
+        return;
+      }
+      const notesButton = event.target.closest("[data-tools-notes-open]");
+      if (notesButton && toolsInfoState.tool) {
+        openToolsNotesModal(toolsInfoState.tool);
+      }
+    });
+  }
   if (toolsInfoKitToggleButton) {
     toolsInfoKitToggleButton.addEventListener("click", toggleToolsInfoKit);
   }

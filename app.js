@@ -344,6 +344,13 @@ function getDaysDifference(laterDate, earlierDate) {
   return Math.floor(diffMs / 86400000);
 }
 
+function isDemandOverdue(item) {
+  if (!item || item.status !== "open") return false;
+  const needDate = parseIsoDateValue(item.needDate);
+  if (!needDate) return false;
+  return getDaysDifference(new Date(), needDate) > 0;
+}
+
 function normalizeCostValue(value) {
   if (value === null || value === undefined) {
     return null;
@@ -10502,9 +10509,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     demandState.filtered.forEach((item) => {
       const card = document.createElement("div");
       const priorityKey = normalizeDemandPriority(item.priority ?? "");
-      card.className = priorityKey
-        ? `demand-card demand-card--priority-${priorityKey}`
-        : "demand-card";
+      const isImportant = priorityKey === "red";
+      const isOverdue = isDemandOverdue(item);
+      card.className = "demand-card";
+      if (isImportant) card.classList.add("demand-card--important");
+      if (isOverdue) card.classList.add("demand-card--overdue");
+      if (isImportant && isOverdue) card.classList.add("demand-card--important-overdue");
       if (item.status === "done") {
         card.classList.add("is-done");
       }
@@ -10518,15 +10528,25 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const titleQuantity = document.createElement("span");
       titleQuantity.className = "demand-card__quantity";
       titleQuantity.textContent = `×${item.quantity}`;
-      title.append(titleName);
-      if (priorityKey === "red") {
+      if (isImportant || isOverdue) {
         const priorityDot = document.createElement("span");
-        priorityDot.className = "demand-chip demand-chip--priority demand-chip--priority-red demand-card__priority-dot";
-        priorityDot.setAttribute("aria-label", "Высокий приоритет");
-        priorityDot.title = "Высокий приоритет";
+        priorityDot.className = "demand-chip demand-chip--priority demand-card__priority-dot";
+        if (isImportant && isOverdue) {
+          priorityDot.classList.add("demand-chip--priority-mixed");
+          priorityDot.setAttribute("aria-label", "Важная и просроченная заявка");
+          priorityDot.title = "Важная и просроченная";
+        } else if (isOverdue) {
+          priorityDot.classList.add("demand-chip--priority-overdue");
+          priorityDot.setAttribute("aria-label", "Просроченная заявка");
+          priorityDot.title = "Просроченная";
+        } else {
+          priorityDot.classList.add("demand-chip--priority-important");
+          priorityDot.setAttribute("aria-label", "Важная заявка");
+          priorityDot.title = "Важная";
+        }
         title.append(priorityDot);
       }
-      title.append(titleQuantity);
+      title.append(titleName, titleQuantity);
 
       const meta = document.createElement("div");
       meta.className = "demand-card__meta";

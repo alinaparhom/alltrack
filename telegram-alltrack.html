@@ -8300,7 +8300,7 @@
         grid-template-columns: minmax(0, 1fr) auto;
         align-items: start;
         gap: 8px;
-        padding: calc(12px + max(0px, env(safe-area-inset-top))) 12px 8px;
+        padding: calc(12px + max(0px, env(safe-area-inset-top))) 12px 0;
         border-bottom: 1px solid rgba(226, 232, 240, 0.72);
         background:
           radial-gradient(circle at 12% 0%, rgba(59, 125, 255, 0.16), transparent 34%),
@@ -8790,12 +8790,29 @@
         min-width: 0;
       }
 
-      .demand-card--priority-red {
-        border-color: rgba(248, 113, 113, 0.46);
+      .demand-card--priority-red,
+      .demand-card--important {
+        border-color: rgba(245, 158, 11, 0.5);
         background:
-          linear-gradient(90deg, rgba(248, 113, 113, 0.2), transparent 26%),
-          linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(254, 242, 242, 0.86));
-        box-shadow: 0 8px 22px rgba(248, 113, 113, 0.13);
+          linear-gradient(90deg, rgba(251, 191, 36, 0.28), transparent 32%),
+          linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(254, 249, 195, 0.9));
+        box-shadow: 0 8px 22px rgba(245, 158, 11, 0.14);
+      }
+
+      .demand-card--overdue {
+        border-color: rgba(248, 113, 113, 0.52);
+        background:
+          linear-gradient(90deg, rgba(248, 113, 113, 0.24), transparent 32%),
+          linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(254, 226, 226, 0.9));
+        box-shadow: 0 8px 22px rgba(239, 68, 68, 0.15);
+      }
+
+      .demand-card--important-overdue {
+        border-color: rgba(249, 115, 22, 0.58);
+        background:
+          linear-gradient(110deg, rgba(251, 191, 36, 0.34) 0%, rgba(251, 191, 36, 0.22) 42%, rgba(248, 113, 113, 0.28) 100%),
+          linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(255, 247, 237, 0.88));
+        box-shadow: 0 8px 24px rgba(249, 115, 22, 0.16);
       }
 
       .demand-card.is-done {
@@ -8883,15 +8900,34 @@
         border-color: rgba(148, 163, 184, 0.3);
       }
 
-      .demand-chip--priority-red {
+      .demand-chip--priority-red,
+      .demand-chip--priority-important,
+      .demand-chip--priority-overdue,
+      .demand-chip--priority-mixed {
         width: 18px;
         min-width: 18px;
         height: 18px;
         padding: 0;
-        background: linear-gradient(135deg, #ef4444, #b91c1c);
         color: #fff;
-        border-color: rgba(248, 113, 113, 0.55);
+      }
+
+      .demand-chip--priority-red,
+      .demand-chip--priority-important {
+        background: linear-gradient(135deg, #facc15, #f59e0b);
+        border-color: rgba(245, 158, 11, 0.58);
+        box-shadow: 0 6px 14px rgba(245, 158, 11, 0.25);
+      }
+
+      .demand-chip--priority-overdue {
+        background: linear-gradient(135deg, #ef4444, #b91c1c);
+        border-color: rgba(248, 113, 113, 0.58);
         box-shadow: 0 6px 14px rgba(239, 68, 68, 0.24);
+      }
+
+      .demand-chip--priority-mixed {
+        background: linear-gradient(135deg, #facc15 0%, #f59e0b 45%, #ef4444 100%);
+        border-color: rgba(249, 115, 22, 0.62);
+        box-shadow: 0 6px 14px rgba(249, 115, 22, 0.25);
       }
 
       .demand-chip--priority-yellow {
@@ -8923,11 +8959,12 @@
 
       .demand-card__actions {
         position: static;
-        display: flex;
-        flex-wrap: wrap;
-        gap: 6px;
-        justify-content: flex-end;
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 8px;
+        justify-content: stretch;
         align-items: center;
+        width: 100%;
       }
 
       .demand-action {
@@ -8935,7 +8972,8 @@
         background: rgba(255, 255, 255, 0.85);
         color: var(--text);
         border-radius: 11px;
-        width: 32px;
+        width: 100%;
+        min-width: 0;
         height: 32px;
         padding: 0;
         font-size: 14px;

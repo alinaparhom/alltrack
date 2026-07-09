@@ -10525,18 +10525,31 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const needDateLabel = formatDemandNeedDate(item.needDate);
       const needDateText = needDateLabel || "не указано";
       const createdLabel = formatDemandCreatedLabel(item.createdAt);
+      const priorityLabel = demandPriorityLabels[priorityKey] || "обычно";
       const metaItems = [
-        objectTrackingEnabled ? { label: "Объект", value: item.object || "—" } : null,
-        { label: "Ответственный", value: item.requestedBy || "Без автора" },
-        { label: "Нужно", value: needDateText },
-        { label: "Создано", value: createdLabel },
+        objectTrackingEnabled ? { icon: "📍", label: "Объект", value: item.object || "—" } : null,
+        { icon: "👤", label: "Автор", value: item.requestedBy || "Без автора" },
+        { icon: "⏱", label: "Нужно", value: needDateText },
+        { icon: "🕒", label: "Создано", value: createdLabel },
       ];
-      metaItems.filter(Boolean).forEach(({ label, value }) => {
+      metaItems.filter(Boolean).forEach(({ icon, label, value }) => {
         const line = document.createElement("div");
         line.className = "demand-card__meta-line";
-        line.textContent = `${label}: ${value}`;
+        line.innerHTML = `<span class="demand-card__meta-icon" aria-hidden="true">${icon}</span><span class="demand-card__meta-label">${label}</span><strong>${escapeHtml(value)}</strong>`;
         meta.appendChild(line);
       });
+
+      const chips = document.createElement("div");
+      chips.className = "demand-card__tags";
+      const statusChip = document.createElement("span");
+      statusChip.className = item.status === "open" ? "demand-chip" : "demand-chip demand-chip--done";
+      statusChip.textContent = item.status === "open" ? "🟢 В работе" : "✅ Закрыта";
+      const priorityChip = document.createElement("span");
+      priorityChip.className = priorityKey
+        ? `demand-chip demand-chip--priority demand-chip--priority-${priorityKey}`
+        : "demand-chip demand-chip--priority";
+      priorityChip.textContent = priorityKey ? `⚡ ${priorityLabel}` : "⚪ обычно";
+      chips.append(statusChip, priorityChip);
 
       const note = document.createElement("div");
       note.className = "demand-card__note";
@@ -10584,10 +10597,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       actions.append(toggleButton, requestMapButton, editButton, deleteButton);
 
       if (!note.textContent) {
-        content.append(title, meta);
+        content.append(title, chips, meta);
         card.append(content, actions);
       } else {
-        content.append(title, meta, note);
+        content.append(title, chips, meta, note);
         card.append(content, actions);
       }
       demandListEl.appendChild(card);

@@ -587,8 +587,10 @@ export function renderRole(user, options = {}) {
             aria-label="Заявки"
           >
             <div class="settings-modal__header demand-modal__header">
-              <div class="settings-modal__title">
+              <div class="settings-modal__title demand-modal__title">
+                <span class="demand-modal__eyebrow">📌 быстрый список</span>
                 <h2>Заявки</h2>
+                <p data-demand-subtitle>Что нужно, кому и к какому сроку</p>
               </div>
               <button
                 class="button-icon demand-modal__close"
@@ -603,7 +605,7 @@ export function renderRole(user, options = {}) {
               <div class="demand-summary" data-demand-summary>
                 <div class="demand-summary__main">
                   <span class="demand-summary__count" data-demand-open-count>0</span>
-                  <span class="demand-summary__label">актуальных заявок</span>
+                  <span class="demand-summary__label">актуальных</span>
                 </div>
                 <div class="demand-summary__actions">
                   <button
@@ -613,7 +615,8 @@ export function renderRole(user, options = {}) {
                     aria-label="Добавить заявку"
                     aria-expanded="false"
                   >
-                    +
+                    <span aria-hidden="true">＋</span>
+                    <span class="demand-summary__add-text">Новая</span>
                   </button>
                 </div>
               </div>
@@ -691,7 +694,8 @@ export function renderRole(user, options = {}) {
               </div>
               <div class="demand-list" data-demand-list></div>
               <div class="demand-empty is-hidden" data-demand-empty>
-                Пока нет потребностей. Добавьте первую заявку сверху.
+                <strong>✨ Заявок нет</strong>
+                <span>Нажмите «Новая» и добавьте потребность.</span>
               </div>
             </div>
           </div>

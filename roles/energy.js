@@ -513,7 +513,6 @@ export function renderRole(user, options = {}) {
             <div class="settings-modal__header objects-create-modal__header objects-edit-modal__header">
               <div class="settings-modal__title">
                 <h2>Редактирование объекта</h2>
-                <p>Обновите название и координаты объекта</p>
               </div>
               <button
                 class="button-icon objects-modal__close"

@@ -14905,9 +14905,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     ].filter(Boolean);
     const isSearchMode = toolsState.mode === "search";
     toolsInfoGridEl.classList.toggle("tools-info-grid--search-card", isSearchMode);
+    const searchStatusText = isSearchMode
+      ? normalizeToolsInfoStatus(tool?.["Статус"], Boolean(tool?.__pendingMove))
+      : "";
+    const isSearchMoving = searchStatusText === "Перемещается";
     if (isSearchMode) {
-      const statusText = normalizeToolsInfoStatus(tool?.["Статус"], Boolean(tool?.__pendingMove));
-      const isMoving = statusText === "Перемещается";
       toolsInfoGridEl.innerHTML = `
         <div class="tools-info-search-hero">
           <button class="tools-info-search-photo" type="button" data-tools-info-cover-open aria-label="Открыть фото инструмента">
@@ -14916,8 +14918,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           <div class="tools-info-search-main">
             <div class="tools-info-search-title">${escapeHtml(String(tool?.["Наименование"] ?? "").trim() || "Инструмент")}</div>
             <div class="tools-info-search-brand">${escapeHtml([tool?.["Производитель"], tool?.["Модель"]].map((v) => String(v ?? "").trim()).filter(Boolean).join(" · ") || "—")}</div>
-            <div class="tools-info-search-numbers">№ ${escapeHtml(formatInfoValue(toolNumber))} · Бух. № ${escapeHtml(formatInfoValue(accountingNumber))}</div>
-            ${isMoving ? `<div class="tools-info-search-moving">↔ ${escapeHtml(statusText)}</div>` : ""}
+            <div class="tools-info-search-numbers">🔢 № ${escapeHtml(formatInfoValue(toolNumber))} · Бух. № ${escapeHtml(formatInfoValue(accountingNumber))}</div>
+            ${isSearchMoving ? `<div class="tools-info-search-moving">↔ ${escapeHtml(searchStatusText)}</div>` : ""}
           </div>
         </div>
       `;
@@ -14957,6 +14959,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     info
       .filter(({ label }) => objectTrackingEnabled || !isObjectRelatedLabel(label))
       .filter(({ label }) => !isSearchMode || ["Ответственный", "Объект", "Статус", "Стоимость", "Дата покупки"].includes(label))
+      .filter(({ label }) => !(isSearchMode && isSearchMoving && label === "Статус"))
       .forEach(({ label, value, hideLabelInSearch }) => {
       const row = document.createElement("div");
       row.className = "tools-info-row";
@@ -14966,7 +14969,14 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       }
       const labelEl = document.createElement("div");
       labelEl.className = "tools-info-label";
-      labelEl.textContent = isSearchMode && hideLabelInSearch ? "" : label;
+      const searchLabels = {
+        "Ответственный": "👤 Ответственный",
+        "Объект": "📍 Объект",
+        "Статус": "✅ Статус",
+        "Стоимость": "💰 Стоимость",
+        "Дата покупки": "📅 Покупка",
+      };
+      labelEl.textContent = isSearchMode ? (searchLabels[label] || label) : (hideLabelInSearch ? "" : label);
       const valueEl = document.createElement("div");
       valueEl.className = "tools-info-value";
       const formattedValue = formatInfoValue(value);

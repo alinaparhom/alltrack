@@ -31742,11 +31742,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         <span class="info-instruction-link__icon" aria-hidden="true">${infoInstructionIconMap.get(title) ?? "📘"}</span>
         <span class="info-instruction-link__title"></span>
         <span class="info-instruction-actions">
-          <a class="info-instruction-action" href="${getInfoInstructionPlaceholderPath(title, "video")}" target="_blank" rel="noopener noreferrer" aria-label="Открыть видеоинструкцию: ${title}" title="Видеоинструкция">
-            <span class="info-instruction-action__icon" aria-hidden="true">🎬</span>
+          <a class="info-instruction-action info-instruction-action--video" href="${getInfoInstructionPlaceholderPath(title, "video")}" target="_blank" rel="noopener noreferrer" aria-label="Открыть видеоинструкцию: ${title}" title="Видеоинструкция">
+            <span class="info-instruction-action__icon" aria-hidden="true">▶</span>
+            <span class="info-instruction-action__label">Видео</span>
           </a>
           <a class="info-instruction-action info-instruction-action--pdf" href="${getInfoInstructionPlaceholderPath(title, "pdf")}" target="_blank" rel="noopener noreferrer" aria-label="Открыть PDF-инструкцию: ${title}" title="PDF-инструкция">
             <span class="info-instruction-action__icon info-instruction-action__icon--pdf" aria-hidden="true"></span>
+            <span class="info-instruction-action__label">PDF</span>
           </a>
         </span>`;
       const titleEl = card.querySelector(".info-instruction-link__title");

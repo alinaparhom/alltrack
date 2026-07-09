@@ -8879,6 +8879,14 @@
         font-weight: 700;
       }
 
+      .demand-card__meta-line--dates {
+        flex: 1 1 100%;
+      }
+
+      .demand-card__meta-line--dates strong {
+        white-space: nowrap;
+      }
+
       .demand-card__tags {
         display: flex;
         flex-wrap: wrap;
@@ -8987,9 +8995,10 @@
       }
 
       .demand-action--primary {
-        border-color: rgba(34, 197, 94, 0.35);
-        background: rgba(34, 197, 94, 0.16);
+        border-color: rgba(22, 163, 74, 0.78);
+        background: linear-gradient(135deg, rgba(220, 252, 231, 0.96), rgba(187, 247, 208, 0.72));
         color: #15803d;
+        box-shadow: 0 8px 18px rgba(22, 163, 74, 0.16);
       }
 
       .demand-action--danger {
@@ -22233,6 +22242,10 @@
         padding-top: 0 !important;
         margin-top: 0 !important;
       }
+      .demand-modal__header + .demand-modal__body {
+        padding-top: var(--demand-header-search-gap) !important;
+      }
+
 
       .settings-modal__body > :is(.tools-controls, .demand-search, .objects-toolbar, .download-responsible__search):first-child,
       .tools-controls__row:first-child,

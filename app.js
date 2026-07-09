@@ -183,6 +183,7 @@ const buildUploadUserMeta = ({ organizationName } = {}) => {
       telegram_id: currentUser?.telegram_id ?? null,
       full_name: currentUser?.full_name ?? currentUser?.fullName ?? "",
       role: currentUser?.role ?? "",
+      position: currentUser?.position ?? "",
       organization: organizationName || currentUser?.organization || "",
     },
   };
@@ -1352,6 +1353,103 @@ async function waitForTelegramId({ timeoutMs = 12000, intervalMs = 200 } = {}) {
     telegramId = getTelegramId();
   }
   return telegramId;
+}
+
+const visitLogSessionStorageKey = "alltrack-visit-log-session-id";
+let visitLogSessionId = "";
+let visitLogOpened = false;
+let visitLogClosed = false;
+
+function createVisitLogSessionId() {
+  const randomPart =
+    typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  return `visit-${randomPart}`;
+}
+
+function getVisitLogSessionId() {
+  if (visitLogSessionId) return visitLogSessionId;
+  try {
+    visitLogSessionId = sessionStorage.getItem(visitLogSessionStorageKey) || "";
+    if (!visitLogSessionId) {
+      visitLogSessionId = createVisitLogSessionId();
+      sessionStorage.setItem(visitLogSessionStorageKey, visitLogSessionId);
+    }
+  } catch (error) {
+    visitLogSessionId = createVisitLogSessionId();
+  }
+  return visitLogSessionId;
+}
+
+function buildVisitLogPayload(action) {
+  if (!currentUser) return null;
+  return {
+    entries: [
+      {
+        type: "visit-log",
+        action,
+        session_id: getVisitLogSessionId(),
+        user: {
+          telegram_id: currentUser.telegram_id ?? null,
+          full_name: currentUser.full_name ?? currentUser.fullName ?? "",
+          role: currentUser.role ?? "",
+          position: currentUser.position ?? "",
+          organization: currentUser.organization ?? "",
+        },
+      },
+    ],
+  };
+}
+
+async function writeVisitLog(action, { keepalive = false } = {}) {
+  const payload = buildVisitLogPayload(action);
+  if (!payload) return;
+  const body = JSON.stringify(payload);
+
+  if (keepalive && typeof navigator !== "undefined" && typeof navigator.sendBeacon === "function") {
+    const sent = navigator.sendBeacon(
+      saveEndpoint,
+      new Blob([body], { type: "application/json" })
+    );
+    if (sent) return;
+  }
+
+  await fetch(saveEndpoint, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body,
+    keepalive,
+  });
+}
+
+function registerVisitLogCloseHandlers() {
+  if (registerVisitLogCloseHandlers.registered) return;
+  registerVisitLogCloseHandlers.registered = true;
+  const close = () => {
+    if (visitLogClosed || !visitLogOpened) return;
+    visitLogClosed = true;
+    void writeVisitLog("close", { keepalive: true }).catch((error) => {
+      console.warn("Не удалось записать выход из приложения.", error);
+    });
+  };
+  window.addEventListener("pagehide", close);
+  window.addEventListener("beforeunload", close);
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "hidden") close();
+  });
+}
+
+async function startVisitLog() {
+  if (visitLogOpened || !currentUser) return;
+  visitLogOpened = true;
+  visitLogClosed = false;
+  registerVisitLogCloseHandlers();
+  try {
+    await writeVisitLog("open");
+  } catch (error) {
+    console.warn("Не удалось записать вход в приложение.", error);
+  }
 }
 
 async function appendAuthLog(step, detail = {}) {
@@ -38670,6 +38768,7 @@ async function loadUser() {
     });
 
     await renderUserRoleView();
+    void startVisitLog();
     void appendAuthLog("role_rendered", {
       telegramId: telegramIdKey,
       role: user.role ?? null,

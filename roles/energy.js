@@ -806,6 +806,12 @@ export function renderRole(user, options = {}) {
                           <button type="button" data-demand-date-prev aria-label="Предыдущий месяц">‹</button>
                           <strong data-demand-date-month>Месяц</strong>
                           <button type="button" data-demand-date-next aria-label="Следующий месяц">›</button>
+                          <button
+                            class="demand-date-picker__close"
+                            type="button"
+                            data-demand-date-close
+                            aria-label="Закрыть календарь"
+                          >×</button>
                         </div>
                         <div class="demand-date-picker__week" aria-hidden="true"><span>Пн</span><span>Вт</span><span>Ср</span><span>Чт</span><span>Пт</span><span>Сб</span><span>Вс</span></div>
                         <div class="demand-date-picker__days" data-demand-date-days></div>

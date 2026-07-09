@@ -6406,6 +6406,14 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const demandPriorityInputs = contentEl.querySelectorAll("[data-demand-priority]");
   const demandNoteInput = contentEl.querySelector("[data-demand-note]");
   const demandDateInput = contentEl.querySelector("[data-demand-date]");
+  const demandDatePickerEl = contentEl.querySelector("[data-demand-date-picker]");
+  const demandDateTriggerEl = contentEl.querySelector("[data-demand-date-trigger]");
+  const demandDateLabelEl = contentEl.querySelector("[data-demand-date-label]");
+  const demandDateCalendarEl = contentEl.querySelector("[data-demand-date-calendar]");
+  const demandDateMonthEl = contentEl.querySelector("[data-demand-date-month]");
+  const demandDateDaysEl = contentEl.querySelector("[data-demand-date-days]");
+  const demandDatePrevEl = contentEl.querySelector("[data-demand-date-prev]");
+  const demandDateNextEl = contentEl.querySelector("[data-demand-date-next]");
   const demandStepEls = contentEl.querySelectorAll("[data-demand-step]");
   const demandMessageEl = contentEl.querySelector("[data-demand-message]");
   const demandSubmitButton = contentEl.querySelector("[data-demand-submit]");
@@ -9943,6 +9951,63 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     setDemandFormTitle(isEdit ? "edit" : "add");
   };
 
+
+  let demandDateVisibleMonth = new Date();
+
+  const buildDemandMonthDays = (monthDate) => {
+    const firstDay = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1);
+    const lastDay = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0);
+    const leadingDays = (firstDay.getDay() + 6) % 7;
+    const days = Array.from({ length: leadingDays }, () => null);
+    for (let day = 1; day <= lastDay.getDate(); day += 1) {
+      days.push(new Date(monthDate.getFullYear(), monthDate.getMonth(), day));
+    }
+    while (days.length % 7 !== 0) days.push(null);
+    return days;
+  };
+
+  const updateDemandDateLabel = () => {
+    const selectedDate = parseIsoDateValue(demandDateInput?.value ?? "");
+    if (demandDateLabelEl) {
+      demandDateLabelEl.textContent = selectedDate ? formatDateValue(selectedDate) : "Выберите дату";
+    }
+    demandDateTriggerEl?.classList.toggle("is-filled", Boolean(selectedDate));
+  };
+
+  const renderDemandDateCalendar = () => {
+    if (!demandDateDaysEl || !demandDateMonthEl) return;
+    const monthDate = new Date(demandDateVisibleMonth.getFullYear(), demandDateVisibleMonth.getMonth(), 1);
+    const selectedIso = demandDateInput?.value ?? "";
+    const todayIso = formatIsoDateValue(new Date());
+    demandDateMonthEl.textContent = monthDate.toLocaleDateString("ru-RU", { month: "long", year: "numeric" });
+    demandDateDaysEl.innerHTML = "";
+    buildDemandMonthDays(monthDate).forEach((dayDate) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "demand-date-picker__day";
+      if (!dayDate) {
+        button.classList.add("is-empty");
+        button.tabIndex = -1;
+        demandDateDaysEl.append(button);
+        return;
+      }
+      const iso = formatIsoDateValue(dayDate);
+      button.textContent = String(dayDate.getDate());
+      button.dataset.demandDateValue = iso;
+      button.classList.toggle("is-today", iso === todayIso);
+      button.classList.toggle("is-selected", iso === selectedIso);
+      demandDateDaysEl.append(button);
+    });
+    updateDemandDateLabel();
+  };
+
+  const setDemandDateCalendarOpen = (isOpen) => {
+    if (!demandDateCalendarEl) return;
+    demandDateCalendarEl.classList.toggle("is-hidden", !isOpen);
+    demandDateTriggerEl?.setAttribute("aria-expanded", String(isOpen));
+    if (isOpen) renderDemandDateCalendar();
+  };
+
   const updateDemandSteps = () => {
     const values = {
       item:
@@ -9966,6 +10031,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     demandState.editingId = null;
     setDemandSubmitButton("add");
     setDemandPriorityValue("");
+    demandDateVisibleMonth = new Date();
+    setDemandDateCalendarOpen(false);
+    renderDemandDateCalendar();
     updateDemandSteps();
   };
 
@@ -9977,7 +10045,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (demandQuantityInput) demandQuantityInput.value = String(entry.quantity);
     if (demandUnitInput) demandUnitInput.value = entry.unit;
     if (demandObjectInput) demandObjectInput.value = entry.object;
-    if (demandDateInput) demandDateInput.value = entry.needDate ?? "";
+    if (demandDateInput) {
+      demandDateInput.value = entry.needDate ?? "";
+      const selectedDate = parseIsoDateValue(demandDateInput.value);
+      if (selectedDate) demandDateVisibleMonth = selectedDate;
+      renderDemandDateCalendar();
+    }
     if (demandNoteInput) demandNoteInput.value = entry.note ?? "";
     setDemandPriorityValue(entry.priority ?? "");
     setDemandSubmitButton("edit");
@@ -10886,6 +10959,33 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     resetDemandForm();
     setDemandFormVisibility(false);
     setDemandMessage("");
+  });
+
+  demandDateTriggerEl?.addEventListener("click", () => {
+    const isOpen = !demandDateCalendarEl?.classList.contains("is-hidden");
+    const selectedDate = parseIsoDateValue(demandDateInput?.value ?? "");
+    if (selectedDate) demandDateVisibleMonth = selectedDate;
+    setDemandDateCalendarOpen(!isOpen);
+  });
+  demandDatePrevEl?.addEventListener("click", () => {
+    demandDateVisibleMonth = new Date(demandDateVisibleMonth.getFullYear(), demandDateVisibleMonth.getMonth() - 1, 1);
+    renderDemandDateCalendar();
+  });
+  demandDateNextEl?.addEventListener("click", () => {
+    demandDateVisibleMonth = new Date(demandDateVisibleMonth.getFullYear(), demandDateVisibleMonth.getMonth() + 1, 1);
+    renderDemandDateCalendar();
+  });
+  demandDateDaysEl?.addEventListener("click", (event) => {
+    const dayButton = event.target.closest("[data-demand-date-value]");
+    if (!dayButton || !demandDateInput) return;
+    demandDateInput.value = dayButton.dataset.demandDateValue ?? "";
+    demandDateInput.dispatchEvent(new Event("change", { bubbles: true }));
+    setDemandDateCalendarOpen(false);
+    renderDemandDateCalendar();
+  });
+  document.addEventListener("click", (event) => {
+    if (!demandDatePickerEl || demandDatePickerEl.contains(event.target)) return;
+    setDemandDateCalendarOpen(false);
   });
 
   [demandItemInput, demandQuantityInput, demandObjectInput, demandDateInput].forEach(

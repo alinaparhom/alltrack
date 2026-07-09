@@ -790,12 +790,27 @@ export function renderRole(user, options = {}) {
                   </label>
                   <label class="form-field demand-form__field demand-form__date">
                     <span class="form-label"><span class="demand-form__label-main"><i aria-hidden="true">📅</i> Когда нужно</span></span>
-                    <input
-                      class="form-input"
-                      type="date"
-                      data-demand-date
-                      required
-                    />
+                    <div class="demand-date-picker" data-demand-date-picker>
+                      <input type="hidden" data-demand-date required />
+                      <button
+                        class="form-input demand-date-picker__trigger"
+                        type="button"
+                        data-demand-date-trigger
+                        aria-expanded="false"
+                      >
+                        <span data-demand-date-label>Выберите дату</span>
+                        <i aria-hidden="true">⌄</i>
+                      </button>
+                      <div class="demand-date-picker__calendar is-hidden" data-demand-date-calendar>
+                        <div class="demand-date-picker__head">
+                          <button type="button" data-demand-date-prev aria-label="Предыдущий месяц">‹</button>
+                          <strong data-demand-date-month>Месяц</strong>
+                          <button type="button" data-demand-date-next aria-label="Следующий месяц">›</button>
+                        </div>
+                        <div class="demand-date-picker__week" aria-hidden="true"><span>Пн</span><span>Вт</span><span>Ср</span><span>Чт</span><span>Пт</span><span>Сб</span><span>Вс</span></div>
+                        <div class="demand-date-picker__days" data-demand-date-days></div>
+                      </div>
+                    </div>
                   </label>
                 </div>
                 <label class="form-field demand-form__field demand-form__field--note">

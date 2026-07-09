@@ -15563,7 +15563,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
     if (toolsInfoRepairsEmptyEl) toolsInfoRepairsEmptyEl.classList.add("is-hidden");
     setToolsInfoTab("moves");
-    setToolsInfoHistoryOpened(toolsState.mode === "search");
+    setToolsInfoHistoryOpened(false);
     syncToolsInfoMoveButtonVisibility();
     toolsInfoModalEl.classList.remove("is-hidden");
     document.body.style.overflow = "hidden";
@@ -16808,7 +16808,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (!toolsInfoCancelMoveButton) return;
     toolsInfoCancelMoveButton.classList.add("is-hidden");
     toolsInfoCancelMoveButton.disabled = true;
-    if (toolsState.mode === "search") return;
+    if (toolsState.mode === "search") {
+      toolsInfoCancelMoveButton.setAttribute("aria-hidden", "true");
+      return;
+    }
+    toolsInfoCancelMoveButton.removeAttribute("aria-hidden");
     if (!tool) return;
     const orgFolder = context.orgFolderName ?? "";
     if (!orgFolder) return;
@@ -20079,6 +20083,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
   if (toolsInfoCancelMoveButton) {
     toolsInfoCancelMoveButton.addEventListener("click", () => {
+      if (toolsState.mode === "search") return;
       const tool = toolsInfoState.tool;
       if (!tool) return;
       void openToolsCancelMoveModal(tool);

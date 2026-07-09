@@ -34770,6 +34770,18 @@ function setupSuperAdmin() {
   };
   const buildStatsOrgFolder = (org) =>
     sanitizeOrganizationFolderName(String(org?.short_name ?? org?.shortName ?? org?.full_name ?? org?.fullName ?? "").trim());
+  const hiddenSuperStatsOrgNames = new Set(["биммакс", "тест", "тест2"]);
+  const normalizeSuperStatsOrgName = (value) =>
+    String(value ?? "")
+      .trim()
+      .toLowerCase()
+      .replace(/[ё]/g, "е")
+      .replace(/[^a-zа-я0-9]/gi, "");
+  const isHiddenSuperStatsOrg = (org) => {
+    const names = getOrgNames(org);
+    names.push(buildStatsOrgFolder(org));
+    return names.some((name) => hiddenSuperStatsOrgNames.has(normalizeSuperStatsOrgName(name)));
+  };
   const getToolPrice = (tool) => Number(String(tool?.["Стоимость"] ?? 0).replace(/\s/g, "").replace(",", ".")) || 0;
   const buildToolCostMap = (tools) => {
     const map = new Map();
@@ -34911,7 +34923,9 @@ function setupSuperAdmin() {
     if (superStatsStatusEl) superStatsStatusEl.textContent = "Считаем статистику...";
     try {
       const [orgData, usersData] = await Promise.all([loadJson(orgFilePath), loadJson(usersFilePath)]);
-      const organizations = Array.isArray(orgData?.organizations) ? orgData.organizations : [];
+      const organizations = Array.isArray(orgData?.organizations)
+        ? orgData.organizations.filter((org) => !isHiddenSuperStatsOrg(org))
+        : [];
       const users = Array.isArray(usersData?.users) ? usersData.users.filter((entry) => !isHiddenListUser(entry)) : [];
       const selectedOrg = superStatsOrgSelect?.value || "all";
       const selectedOrgs = selectedOrg === "all" ? organizations : organizations.filter((org) => buildStatsOrgFolder(org) === selectedOrg);
@@ -34999,7 +35013,9 @@ function setupSuperAdmin() {
     if (!superStatsOrgSelect) return;
     const currentValue = superStatsOrgSelect.value || "all";
     const orgData = await loadJson(orgFilePath).catch(() => ({ organizations: [] }));
-    const organizations = Array.isArray(orgData?.organizations) ? orgData.organizations : [];
+    const organizations = Array.isArray(orgData?.organizations)
+      ? orgData.organizations.filter((org) => !isHiddenSuperStatsOrg(org))
+      : [];
     superStatsOrgSelect.innerHTML = '<option value="all">Все организации</option>';
     organizations.forEach((org) => {
       const option = document.createElement("option");

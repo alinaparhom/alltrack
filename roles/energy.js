@@ -715,9 +715,7 @@ export function renderRole(user, options = {}) {
           >
             <div class="settings-modal__header demand-form-modal__header">
               <div class="settings-modal__title demand-form-modal__title">
-                <span class="demand-modal__eyebrow">Новая потребность</span>
                 <h2 data-demand-form-title>Новая заявка</h2>
-                <p>Заполните главное: что нужно, сколько, куда и к какому сроку.</p>
               </div>
               <button
                 class="button-icon demand-form-modal__close"
@@ -733,18 +731,17 @@ export function renderRole(user, options = {}) {
                 <div class="demand-form__hero" aria-hidden="true">
                   <div class="demand-form__hero-icon">🧰</div>
                   <div class="demand-form__hero-text">
-                    <strong>Создаём понятную заявку</strong>
-                    <span>Подсказки помогут выбрать инструмент и объект без ошибок.</span>
+                    <strong>Этапы создания</strong>
                   </div>
                 </div>
                 <div class="demand-form__steps" aria-label="Шаги заполнения заявки">
-                  <span><b>1</b> Что нужно</span>
-                  <span><b>2</b> Куда</span>
-                  <span><b>3</b> Срок</span>
+                  <span data-demand-step="item"><b>1</b> Что нужно</span>
+                  <span data-demand-step="object"><b>2</b> Куда</span>
+                  <span data-demand-step="date"><b>3</b> Срок</span>
                 </div>
                 <div class="demand-form__grid">
                   <label class="form-field demand-form__field demand-form__field--item">
-                    <span class="form-label"><span class="demand-form__label-main"><i aria-hidden="true">🔎</i> Что нужно</span> <small>начните вводить название</small></span>
+                    <span class="form-label"><span class="demand-form__label-main"><i aria-hidden="true">🔎</i> Что нужно</span></span>
                     <div class="suggestions-field">
                       <input
                         class="form-input"
@@ -761,7 +758,7 @@ export function renderRole(user, options = {}) {
                     </div>
                   </label>
                   <label class="form-field demand-form__field demand-form__quantity">
-                    <span class="form-label"><span class="demand-form__label-main"><i aria-hidden="true">#</i> Количество</span> <small>сколько нужно</small></span>
+                    <span class="form-label"><span class="demand-form__label-main"><i aria-hidden="true">#</i> Количество</span></span>
                     <div class="demand-quantity">
                       <input
                         class="form-input"
@@ -775,7 +772,7 @@ export function renderRole(user, options = {}) {
                     </div>
                   </label>
                   <label class="form-field demand-form__field demand-form__field--object">
-                    <span class="form-label"><span class="demand-form__label-main"><i aria-hidden="true">📍</i> Объект</span> <small>куда доставить</small></span>
+                    <span class="form-label"><span class="demand-form__label-main"><i aria-hidden="true">📍</i> Объект</span></span>
                     <div class="suggestions-field">
                       <input
                         class="form-input"
@@ -792,7 +789,7 @@ export function renderRole(user, options = {}) {
                     </div>
                   </label>
                   <label class="form-field demand-form__field demand-form__date">
-                    <span class="form-label"><span class="demand-form__label-main"><i aria-hidden="true">📅</i> Когда нужно</span> <small>выберите дату</small></span>
+                    <span class="form-label"><span class="demand-form__label-main"><i aria-hidden="true">📅</i> Когда нужно</span></span>
                     <input
                       class="form-input"
                       type="date"

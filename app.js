@@ -4708,13 +4708,7 @@ function normalizeDemandPriority(value = "") {
   if (["red", "high", "urgent", "высокий", "красный"].includes(normalized)) {
     return "red";
   }
-  if (["yellow", "medium", "средний", "желтый", "жёлтый"].includes(normalized)) {
-    return "yellow";
-  }
-  if (["green", "low", "низкий", "зелёный", "зеленый"].includes(normalized)) {
-    return "green";
-  }
-  return "green";
+  return "";
 }
 
 function buildDemandId() {
@@ -9881,8 +9875,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
   const demandPriorityLabels = {
     red: "Высокий",
-    yellow: "Средний",
-    green: "Низкий",
   };
 
   const pluralizeDemandDays = (count) => {
@@ -9906,7 +9898,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const selected = Array.from(demandPriorityInputs || []).find(
       (input) => input.checked
     );
-    return normalizeDemandPriority(selected?.value ?? "green");
+    return normalizeDemandPriority(selected?.value ?? "");
   };
 
   const setDemandPriorityValue = (value) => {
@@ -9935,7 +9927,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
     demandState.editingId = null;
     setDemandSubmitButton("add");
-    setDemandPriorityValue("green");
+    setDemandPriorityValue("");
   };
 
   const startEditDemand = (entry) => {
@@ -9948,7 +9940,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (demandObjectInput) demandObjectInput.value = entry.object;
     if (demandDateInput) demandDateInput.value = entry.needDate ?? "";
     if (demandNoteInput) demandNoteInput.value = entry.note ?? "";
-    setDemandPriorityValue(entry.priority ?? "green");
+    setDemandPriorityValue(entry.priority ?? "");
     setDemandSubmitButton("edit");
     demandItemInput?.focus();
   };
@@ -10509,8 +10501,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     demandListEl.innerHTML = "";
     demandState.filtered.forEach((item) => {
       const card = document.createElement("div");
-      const priorityKey = normalizeDemandPriority(item.priority ?? "green");
-      card.className = `demand-card demand-card--priority-${priorityKey}`;
+      const priorityKey = normalizeDemandPriority(item.priority ?? "");
+      card.className = priorityKey
+        ? `demand-card demand-card--priority-${priorityKey}`
+        : "demand-card";
       if (item.status === "done") {
         card.classList.add("is-done");
       }
@@ -10523,7 +10517,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       titleName.textContent = item.item;
       const titleQuantity = document.createElement("span");
       titleQuantity.className = "demand-card__quantity";
-      titleQuantity.textContent = `${item.quantity} ${item.unit}`;
+      titleQuantity.textContent = `×${item.quantity}`;
       title.append(titleName, titleQuantity);
 
       const meta = document.createElement("div");
@@ -10808,7 +10802,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       ? findOptionMatch(objectRaw, demandState.objects)
       : defaultObjectName;
     const quantity = normalizeNumber(demandQuantityInput?.value ?? 0, 0);
-    const unit = sanitizeDemandLabel(demandUnitInput?.value ?? "шт") || "шт";
+    const unit = "";
     const note = sanitizeDemandLabel(demandNoteInput?.value ?? "");
     const needDate = normalizeDemandNeedDate(demandDateInput?.value ?? "");
     const priority = getSelectedDemandPriority();

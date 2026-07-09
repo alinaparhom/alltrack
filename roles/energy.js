@@ -589,7 +589,6 @@ export function renderRole(user, options = {}) {
             <div class="settings-modal__header demand-modal__header">
               <div class="settings-modal__title">
                 <h2>Заявки</h2>
-                <p data-demand-subtitle>Собираем потребности по объектам</p>
               </div>
               <button
                 class="button-icon demand-modal__close"
@@ -751,15 +750,6 @@ export function renderRole(user, options = {}) {
                         data-demand-quantity
                         required
                       />
-                      <select class="form-input" data-demand-unit>
-                        <option value="шт" selected>шт</option>
-                        <option value="компл">компл</option>
-                        <option value="м">м</option>
-                        <option value="м²">м²</option>
-                        <option value="м³">м³</option>
-                        <option value="кг">кг</option>
-                        <option value="л">л</option>
-                      </select>
                     </div>
                   </label>
                   <label class="form-field">
@@ -789,39 +779,6 @@ export function renderRole(user, options = {}) {
                     />
                   </label>
                 </div>
-                <label class="form-field">
-                  <span class="form-label">Приоритет</span>
-                  <div class="demand-priority">
-                    <label class="demand-priority__option demand-priority__option--red">
-                      <input
-                        type="radio"
-                        name="demand-priority"
-                        value="red"
-                        data-demand-priority
-                      />
-                      <span>Высокий</span>
-                    </label>
-                    <label class="demand-priority__option demand-priority__option--yellow">
-                      <input
-                        type="radio"
-                        name="demand-priority"
-                        value="yellow"
-                        data-demand-priority
-                      />
-                      <span>Средний</span>
-                    </label>
-                    <label class="demand-priority__option demand-priority__option--green">
-                      <input
-                        type="radio"
-                        name="demand-priority"
-                        value="green"
-                        data-demand-priority
-                        checked
-                      />
-                      <span>Низкий</span>
-                    </label>
-                  </div>
-                </label>
                 <label class="form-field">
                   <span class="form-label">Комментарий</span>
                   <textarea

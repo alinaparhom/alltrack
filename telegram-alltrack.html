@@ -8235,9 +8235,11 @@
       }
 
       .demand-modal__panel {
-        width: min(760px, calc(100% - 20px));
-        max-height: calc(100vh - 20px);
-        border-radius: 22px;
+        width: 100vw;
+        height: 100vh;
+        max-width: 100vw;
+        max-height: 100vh;
+        border-radius: 0;
         grid-template-rows: auto minmax(0, 1fr);
         background: linear-gradient(160deg, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.82));
         border: 1px solid rgba(148, 163, 184, 0.25);
@@ -8298,7 +8300,7 @@
         grid-template-columns: minmax(0, 1fr) auto;
         align-items: start;
         gap: 8px;
-        padding: 16px 18px 10px;
+        padding: calc(12px + max(0px, env(safe-area-inset-top))) 12px 8px;
         border-bottom: 1px solid rgba(226, 232, 240, 0.85);
         background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0));
       }
@@ -8316,11 +8318,6 @@
         font-size: 24px;
       }
 
-      .demand-modal__header .settings-modal__title p {
-        font-size: 16px;
-        color: var(--muted);
-      }
-
       .demand-form-modal__header .settings-modal__title h2 {
         font-size: 22px;
       }
@@ -8331,10 +8328,25 @@
       }
 
       .demand-modal__close {
-        margin-top: 0;
-        width: 56px;
-        height: 56px;
-        border-radius: 18px;
+        justify-self: end;
+        align-self: start;
+        margin-top: -2px;
+        margin-right: -2px;
+        border: 0 !important;
+        border-color: transparent !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        outline: none;
+      }
+
+      .demand-modal__close:hover,
+      .demand-modal__close:focus-visible {
+        transform: none;
+        box-shadow: none;
+      }
+
+      .demand-modal__close .button-icon-emoji {
+        font-weight: 800;
       }
 
       .demand-form-modal__close {
@@ -8345,10 +8357,11 @@
       }
 
       .demand-modal__body {
-        padding: 12px 16px 16px;
+        padding: 8px 12px calc(14px + max(0px, env(safe-area-inset-bottom)));
         display: grid;
-        gap: 10px;
-        overflow: auto;
+        grid-template-rows: auto auto minmax(0, 1fr) auto;
+        gap: 8px;
+        overflow: hidden;
       }
 
       .demand-form-modal__body {
@@ -8363,11 +8376,12 @@
         grid-template-columns: minmax(0, 1fr) auto;
         align-items: center;
         gap: 4px 10px;
-        padding: 6px 10px;
-        min-height: 46px;
-        border-radius: 14px;
-        background: var(--glass);
+        padding: 8px 10px;
+        min-height: 48px;
+        border-radius: 16px;
+        background: linear-gradient(135deg, rgba(239, 246, 255, 0.92), rgba(240, 253, 244, 0.82));
         border: 1px solid rgba(148, 163, 184, 0.2);
+        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
       }
 
       .demand-summary__main {
@@ -8440,7 +8454,7 @@
 
       .demand-quantity {
         display: grid;
-        grid-template-columns: minmax(0, 1fr) 88px;
+        grid-template-columns: minmax(0, 1fr);
         gap: 8px;
       }
 
@@ -8704,7 +8718,11 @@
 
       .demand-list {
         display: grid;
+        align-content: start;
         gap: 8px;
+        min-height: 0;
+        overflow: auto;
+        padding-bottom: 2px;
       }
 
       .demand-card {
@@ -8712,11 +8730,10 @@
         display: grid;
         grid-template-columns: minmax(0, 1fr) auto;
         gap: 10px;
-        padding: 10px 14px;
-        border-radius: 14px;
-        background: var(--glass);
+        padding: 10px 12px;
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.86);
         border: 1px solid rgba(148, 163, 184, 0.18);
-        border-left: 4px solid rgba(34, 197, 94, 0.6);
         box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
         align-items: start;
       }
@@ -8728,15 +8745,8 @@
       }
 
       .demand-card--priority-red {
-        border-left-color: rgba(248, 113, 113, 0.8);
-      }
-
-      .demand-card--priority-yellow {
-        border-left-color: rgba(251, 191, 36, 0.85);
-      }
-
-      .demand-card--priority-green {
-        border-left-color: rgba(34, 197, 94, 0.8);
+        border-color: rgba(248, 113, 113, 0.38);
+        box-shadow: 0 10px 24px rgba(248, 113, 113, 0.11);
       }
 
       .demand-card.is-done {

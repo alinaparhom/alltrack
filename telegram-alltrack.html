@@ -8387,7 +8387,7 @@
       }
 
       .demand-modal__body {
-        padding: 8px 12px calc(14px + max(0px, env(safe-area-inset-bottom)));
+        padding: 5px 12px calc(14px + max(0px, env(safe-area-inset-bottom)));
         display: grid;
         grid-template-rows: auto minmax(0, 1fr) auto;
         gap: 8px;
@@ -8556,8 +8556,8 @@
 
       .demand-filters {
         display: grid;
-        gap: 4px;
-        margin-top: -2px;
+        gap: 5px;
+        margin-top: 0;
       }
 
       .demand-filters__bar {
@@ -8569,7 +8569,7 @@
 
       .demand-filters__tabs {
         display: flex;
-        flex-wrap: wrap;
+        width: 100%;
         gap: 6px;
         align-items: center;
       }
@@ -8624,7 +8624,8 @@
       }
 
       .demand-toggle {
-        display: inline-flex;
+        display: flex;
+        width: 100%;
         padding: 3px;
         border-radius: 999px;
         border: 1px solid rgba(148, 163, 184, 0.2);
@@ -8633,12 +8634,13 @@
       }
 
       .demand-toggle__button {
+        flex: 1 1 0;
         border: none;
         background: transparent;
-        padding: 6px 12px;
+        padding: 8px 12px;
         border-radius: 999px;
         font-size: 12px;
-        font-weight: 600;
+        font-weight: 700;
         color: var(--muted);
       }
 
@@ -8770,8 +8772,8 @@
       .demand-card {
         position: relative;
         display: grid;
-        grid-template-columns: minmax(0, 1fr) auto;
-        gap: 8px;
+        grid-template-columns: minmax(0, 1fr);
+        gap: 7px;
         padding: 9px;
         border-radius: 16px;
         background: linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(248, 250, 252, 0.82));
@@ -8803,11 +8805,16 @@
       .demand-card__title {
         display: flex;
         flex-wrap: wrap;
-        align-items: baseline;
-        gap: 8px;
+        align-items: center;
+        gap: 7px;
         font-size: 14px;
         font-weight: 800;
         letter-spacing: -0.02em;
+      }
+
+      .demand-card__priority-dot {
+        flex: 0 0 auto;
+        transform: translateY(1px);
       }
 
       .demand-card__quantity {
@@ -8916,10 +8923,11 @@
 
       .demand-card__actions {
         position: static;
-        display: grid;
+        display: flex;
+        flex-wrap: wrap;
         gap: 6px;
-        justify-items: end;
-        align-content: start;
+        justify-content: flex-end;
+        align-items: center;
       }
 
       .demand-action {

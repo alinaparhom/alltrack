@@ -10518,7 +10518,15 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const titleQuantity = document.createElement("span");
       titleQuantity.className = "demand-card__quantity";
       titleQuantity.textContent = `×${item.quantity}`;
-      title.append(titleName, titleQuantity);
+      title.append(titleName);
+      if (priorityKey === "red") {
+        const priorityDot = document.createElement("span");
+        priorityDot.className = "demand-chip demand-chip--priority demand-chip--priority-red demand-card__priority-dot";
+        priorityDot.setAttribute("aria-label", "Высокий приоритет");
+        priorityDot.title = "Высокий приоритет";
+        title.append(priorityDot);
+      }
+      title.append(titleQuantity);
 
       const meta = document.createElement("div");
       meta.className = "demand-card__meta";
@@ -10546,15 +10554,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         statusChip.textContent = "✅ Закрыта";
         chips.append(statusChip);
       }
-      if (priorityKey === "red") {
-        const priorityChip = document.createElement("span");
-        priorityChip.className = "demand-chip demand-chip--priority demand-chip--priority-red";
-        priorityChip.setAttribute("aria-label", "Высокий приоритет");
-        priorityChip.title = "Высокий приоритет";
-        priorityChip.textContent = "";
-        chips.append(priorityChip);
-      }
-
       const note = document.createElement("div");
       note.className = "demand-card__note";
       note.textContent = item.note || "";
@@ -10595,7 +10594,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       deleteButton.className = "demand-action demand-action--danger";
       deleteButton.dataset.demandAction = "delete";
       deleteButton.dataset.demandId = item.id;
-      deleteButton.innerHTML = "✕";
+      deleteButton.innerHTML = "🗑️";
       deleteButton.setAttribute("aria-label", "Удалить заявку");
       deleteButton.title = "Удалить заявку";
       actions.append(toggleButton, requestMapButton, editButton, deleteButton);
@@ -10706,9 +10705,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
   const openDemandModal = async () => {
     if (!demandModalEl) return;
-    if (demandSubtitleEl) {
-      demandSubtitleEl.textContent = "Что нужно, кому и к какому сроку";
-    }
     setDemandFormVisibility(false);
     setDemandFiltersVisibility(false);
     setDemandContentView("list");

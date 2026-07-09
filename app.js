@@ -10632,7 +10632,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       requestMapButton.title = "Открыть карту заявки";
       const editButton = document.createElement("button");
       editButton.type = "button";
-      editButton.className = "demand-action";
+      editButton.className = "demand-action demand-action--edit";
       editButton.dataset.demandAction = "edit";
       editButton.dataset.demandId = item.id;
       editButton.innerHTML = "✎";

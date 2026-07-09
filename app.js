@@ -16808,6 +16808,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (!toolsInfoCancelMoveButton) return;
     toolsInfoCancelMoveButton.classList.add("is-hidden");
     toolsInfoCancelMoveButton.disabled = true;
+    if (toolsState.mode === "search") return;
     if (!tool) return;
     const orgFolder = context.orgFolderName ?? "";
     if (!orgFolder) return;

@@ -31786,10 +31786,45 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   };
   const getFineInfoNumber = (value) => normalizeCostValue(value) || 0;
   const formatInfoFineMoney = (value) => formatFineMoney(getFineInfoNumber(value));
-  const collectInfoFinesData = (rawFines) => {
-    const summary = rawFines?.["Штрафы по пользователям"] && typeof rawFines["Штрафы по пользователям"] === "object"
+  const getInfoFinesOrganizationScope = async () => {
+    const orgNames = new Set(
+      [context.orgFullName, context.orgShortName, context.orgFolderName, currentUser?.organization]
+        .map((name) => normalizeOrganizationName(name))
+        .filter(Boolean)
+    );
+    const usersData = await loadJson(usersFilePath).catch(() => ({ users: [] }));
+    const users = Array.isArray(usersData?.users) ? usersData.users : [];
+    const allowedUsers = new Set();
+    users.forEach((entry) => {
+      const entryOrg = normalizeOrganizationName(entry?.organization ?? "");
+      if (!entryOrg || !orgNames.has(entryOrg)) return;
+      const fullName = normalizePersonName(entry?.full_name ?? entry?.fullName ?? "");
+      if (fullName) allowedUsers.add(fullName);
+    });
+    return { orgNames, allowedUsers };
+  };
+
+  const isInfoFineInOrganizationScope = (fine, scope) => {
+    const orgName = normalizeOrganizationName(
+      fine?.["Организация"] ?? fine?.organization ?? fine?.org ?? ""
+    );
+    if (orgName) return scope.orgNames.has(orgName);
+    const responsible = normalizePersonName(
+      fine?.["Ответственный"] ?? fine?.["Пользователь"] ?? fine?.["Сотрудник"] ?? ""
+    );
+    return !scope.allowedUsers.size || !responsible || scope.allowedUsers.has(responsible);
+  };
+
+  const collectInfoFinesData = (rawFines, scope = { orgNames: new Set(), allowedUsers: new Set() }) => {
+    const rawSummary = rawFines?.["Штрафы по пользователям"] && typeof rawFines["Штрафы по пользователям"] === "object"
       ? rawFines["Штрафы по пользователям"]
       : {};
+    const summary = Object.fromEntries(
+      Object.entries(rawSummary).filter(([userName]) => {
+        const normalizedName = normalizePersonName(userName);
+        return !scope.allowedUsers.size || !normalizedName || scope.allowedUsers.has(normalizedName);
+      })
+    );
     const types = new Map();
     const usersWithBalance = new Set();
     Object.entries(summary).forEach(([userName, userSummary]) => {
@@ -31809,6 +31844,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const history = Array.isArray(rawFines?.fines) ? rawFines.fines : Array.isArray(rawFines) ? rawFines : [];
     const months = new Map();
     history.forEach((fine) => {
+      if (!isInfoFineInOrganizationScope(fine, scope)) return;
       const action = String(fine?.["Действие"] ?? "").trim().toLowerCase();
       const reason = String(fine?.["Причина"] ?? "").trim().toLowerCase();
       if (action && !action.includes("выстав")) return;
@@ -31829,8 +31865,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     });
     return { types: [...types.values()].sort((a,b)=>b.balance-a.balance || a.title.localeCompare(b.title, "ru")), months: [...months.values()].sort((a,b)=>String(b.key).localeCompare(String(a.key))), usersWithBalance };
   };
-  const renderInfoFines = (rawFines) => {
-    const data = collectInfoFinesData(rawFines);
+  const renderInfoFines = (rawFines, scope) => {
+    const data = collectInfoFinesData(rawFines, scope);
     const totals = data.types.reduce((acc, item) => ({ balance: acc.balance + item.balance }), { balance: 0 });
     setInfoFinesValue("balance", formatInfoFineMoney(totals.balance));
     setInfoFinesValue("users", String(data.usersWithBalance.size));
@@ -31912,8 +31948,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (infoFinesStatusEl) infoFinesStatusEl.textContent = "Загружаем штрафы...";
     try {
       const rawFines = await loadJson(`./${context.orgFolderName}/Штрафы.json`).catch(() => ({}));
-      renderInfoFines(rawFines);
-      if (infoFinesStatusEl) infoFinesStatusEl.textContent = "Данные обновлены.";
+      const scope = await getInfoFinesOrganizationScope();
+      renderInfoFines(rawFines, scope);
+      if (infoFinesStatusEl) {
+        const orgTitle = context.orgFullName || context.orgShortName || context.orgFolderName || "организации";
+        infoFinesStatusEl.textContent = `Данные обновлены только по организации: ${orgTitle}.`;
+      }
     } catch (error) {
       console.error(error);
       if (infoFinesStatusEl) infoFinesStatusEl.textContent = "Не удалось загрузить информацию по штрафам.";

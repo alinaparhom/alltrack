@@ -714,9 +714,10 @@ export function renderRole(user, options = {}) {
             aria-label="Заявка"
           >
             <div class="settings-modal__header demand-form-modal__header">
-              <div class="settings-modal__title">
+              <div class="settings-modal__title demand-form-modal__title">
+                <span class="demand-modal__eyebrow">Новая потребность</span>
                 <h2 data-demand-form-title>Новая заявка</h2>
-                <p>Заполните нужный инструмент и детали</p>
+                <p>4 быстрых поля — и заявка сразу попадёт в общий список</p>
               </div>
               <button
                 class="button-icon demand-form-modal__close"
@@ -731,7 +732,7 @@ export function renderRole(user, options = {}) {
               <form class="demand-form form-card" data-demand-form>
                 <div class="demand-form__grid">
                   <label class="form-field">
-                    <span class="form-label">Что нужно</span>
+                    <span class="form-label">Что нужно <small>начните вводить название</small></span>
                     <div class="suggestions-field">
                       <input
                         class="form-input"
@@ -748,7 +749,7 @@ export function renderRole(user, options = {}) {
                     </div>
                   </label>
                   <label class="form-field demand-form__quantity">
-                    <span class="form-label">Количество</span>
+                    <span class="form-label">Количество <small>сколько нужно</small></span>
                     <div class="demand-quantity">
                       <input
                         class="form-input"
@@ -762,7 +763,7 @@ export function renderRole(user, options = {}) {
                     </div>
                   </label>
                   <label class="form-field">
-                    <span class="form-label">Объект</span>
+                    <span class="form-label">Объект <small>куда доставить</small></span>
                     <div class="suggestions-field">
                       <input
                         class="form-input"
@@ -779,7 +780,7 @@ export function renderRole(user, options = {}) {
                     </div>
                   </label>
                   <label class="form-field demand-form__date">
-                    <span class="form-label">Когда нужно</span>
+                    <span class="form-label">Когда нужно <small>выберите дату</small></span>
                     <input
                       class="form-input"
                       type="date"
@@ -789,7 +790,7 @@ export function renderRole(user, options = {}) {
                   </label>
                 </div>
                 <label class="form-field">
-                  <span class="form-label">Комментарий</span>
+                  <span class="form-label">Комментарий <small>необязательно</small></span>
                   <textarea
                     class="form-input demand-form__note"
                     rows="2"

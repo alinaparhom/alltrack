@@ -2606,8 +2606,19 @@ function resolveOrganizationFolderForEntry(array $entry): ?string {
   $orgsData = readJsonFile($orgsPath, ["organizations" => []]);
 
   $telegramId = normalizeTelegramId($user["telegram_id"] ?? null);
+  $requestedOrganization = normalizeOrganizationName((string) ($user["organization"] ?? ""));
   $matchedUser = null;
-  if ($telegramId) {
+  if ($telegramId && $requestedOrganization !== "") {
+    foreach (($usersData["users"] ?? []) as $item) {
+      $itemId = normalizeTelegramId($item["telegram_id"] ?? null);
+      $itemOrganization = normalizeOrganizationName((string) ($item["organization"] ?? ""));
+      if ($itemId === $telegramId && $itemOrganization === $requestedOrganization) {
+        $matchedUser = $item;
+        break;
+      }
+    }
+  }
+  if ($telegramId && !$matchedUser) {
     foreach (($usersData["users"] ?? []) as $item) {
       $itemId = normalizeTelegramId($item["telegram_id"] ?? null);
       if ($itemId === $telegramId) {
@@ -2707,6 +2718,7 @@ function createOrganizationFolders(array $newOrganizations): void {
     "Ремонты.json" => [],
     "Поломки.json" => [],
     "Настройки.json" => ["users" => []],
+    "Журнал посещений.json" => ["entries" => []],
   ];
   $folders = [
     "Фото инструментов",
@@ -3052,6 +3064,100 @@ function deleteFileEntry(array $entry): void {
   }
 }
 
+
+function sanitizeVisitLogText($value, int $maxLength = 200): string {
+  $text = preg_replace('/\s+/u', ' ', trim((string) $value));
+  if (!is_string($text)) {
+    return "";
+  }
+  return mb_substr($text, 0, $maxLength, "UTF-8");
+}
+
+function normalizeVisitLogAction($value): string {
+  $action = trim((string) $value);
+  return $action === "close" ? "close" : "open";
+}
+
+function buildVisitLogUser(array $entry): array {
+  $user = is_array($entry["user"] ?? null) ? $entry["user"] : [];
+  return [
+    "telegram_id" => normalizeTelegramId($user["telegram_id"] ?? null),
+    "full_name" => sanitizeVisitLogText($user["full_name"] ?? ($user["fullName"] ?? "")),
+    "role" => sanitizeVisitLogText($user["role"] ?? ""),
+    "position" => sanitizeVisitLogText($user["position"] ?? ""),
+    "organization" => sanitizeVisitLogText($user["organization"] ?? ""),
+  ];
+}
+
+function saveVisitLogEntry(array $entry): void {
+  $orgFolder = resolveOrganizationFolderForEntry($entry);
+  if (!$orgFolder) {
+    http_response_code(403);
+    echo json_encode(["error" => "Не удалось определить организацию для журнала посещений."]);
+    exit;
+  }
+
+  $orgPath = __DIR__ . DIRECTORY_SEPARATOR . $orgFolder;
+  if (!ensureDirectory($orgPath)) {
+    http_response_code(500);
+    echo json_encode(["error" => "Не удалось создать папку организации."]);
+    exit;
+  }
+
+  $targetPath = $orgPath . DIRECTORY_SEPARATOR . "Журнал посещений.json";
+  $sessionId = sanitizeVisitLogText($entry["session_id"] ?? $entry["sessionId"] ?? "", 80);
+  if ($sessionId === "") {
+    $sessionId = bin2hex(random_bytes(12));
+  }
+  $now = (new DateTimeImmutable("now", new DateTimeZone("Europe/Moscow")))->format(DateTimeInterface::ATOM);
+  $action = normalizeVisitLogAction($entry["action"] ?? "open");
+  $user = buildVisitLogUser($entry);
+
+  withPathLock($targetPath, static function () use ($targetPath, $sessionId, $now, $action, $user): void {
+    $log = readJsonFile($targetPath, ["entries" => []]);
+    $entries = is_array($log["entries"] ?? null) ? $log["entries"] : [];
+    $foundIndex = null;
+
+    foreach ($entries as $index => $item) {
+      if (is_array($item) && (string) ($item["session_id"] ?? "") === $sessionId) {
+        $foundIndex = $index;
+        break;
+      }
+    }
+
+    if ($foundIndex === null) {
+      $entries[] = [
+        "session_id" => $sessionId,
+        "user" => $user,
+        "opened_at" => $now,
+        "closed_at" => $action === "close" ? $now : null,
+        "last_event_at" => $now,
+      ];
+    } else {
+      $current = is_array($entries[$foundIndex]) ? $entries[$foundIndex] : [];
+      $entries[$foundIndex] = array_merge($current, [
+        "user" => array_merge(is_array($current["user"] ?? null) ? $current["user"] : [], $user),
+        "closed_at" => $action === "close" ? $now : ($current["closed_at"] ?? null),
+        "last_event_at" => $now,
+      ]);
+      if (empty($entries[$foundIndex]["opened_at"])) {
+        $entries[$foundIndex]["opened_at"] = $now;
+      }
+    }
+
+    if (count($entries) > 5000) {
+      $entries = array_slice($entries, -5000);
+    }
+
+    $encoded = json_encode(["entries" => $entries], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+    if ($encoded === false || writeFileAtomically($targetPath, $encoded . PHP_EOL) === false) {
+      http_response_code(500);
+      echo json_encode(["error" => "Не удалось сохранить журнал посещений."]);
+      exit;
+    }
+  });
+}
+
 function saveEntry(array $entry, array $allowedFiles): void {
   if (($entry["type"] ?? "") === "file") {
     saveFileEntry($entry);
@@ -3071,6 +3177,10 @@ function saveEntry(array $entry, array $allowedFiles): void {
   }
   if (($entry["type"] ?? "") === "feedback-status-update") {
     sendFeedbackStatusNotification($entry);
+    return;
+  }
+  if (($entry["type"] ?? "") === "visit-log") {
+    saveVisitLogEntry($entry);
     return;
   }
   $path = $entry["path"] ?? "";

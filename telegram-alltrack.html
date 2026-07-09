@@ -874,6 +874,21 @@
         color: #0b1220;
       }
 
+      body[data-theme="dark"] .demand-action--complete {
+        background: rgba(87, 224, 155, 0.18);
+        border-color: rgba(87, 224, 155, 0.4);
+        color: var(--success);
+        box-shadow: 0 14px 28px rgba(0, 0, 0, 0.35);
+      }
+
+      body[data-theme="dark"] .demand-action--complete:hover,
+      body[data-theme="dark"] .demand-action--complete:focus-visible {
+        background: rgba(87, 224, 155, 0.18);
+        border-color: rgba(87, 224, 155, 0.4);
+        color: var(--success);
+        box-shadow: 0 16px 30px rgba(0, 0, 0, 0.38);
+      }
+
       body[data-theme="dark"] .demand-filters__toggle {
         background: rgba(18, 25, 42, 0.92);
         border-color: rgba(148, 170, 210, 0.25);
@@ -9001,24 +9016,23 @@
       }
 
       .demand-action--complete {
-        border-color: #16a34a;
-        background:
-          linear-gradient(135deg, #34d399, #16a34a),
-          #22c55e;
-        color: #ffffff;
-        text-shadow: 0 1px 1px rgba(20, 83, 45, 0.35);
-        box-shadow:
-          0 10px 22px rgba(22, 163, 74, 0.28),
-          inset 0 1px 0 rgba(255, 255, 255, 0.45);
+        border-color: rgba(47, 158, 103, 0.28);
+        background: var(--success-soft);
+        color: var(--success);
+        text-shadow: none;
+        box-shadow: 0 10px 18px rgba(47, 158, 103, 0.16);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
       }
 
       .demand-action--complete:hover,
       .demand-action--complete:focus-visible {
-        border-color: #15803d;
-        background:
-          linear-gradient(135deg, #22c55e, #15803d),
-          #16a34a;
-        color: #ffffff;
+        border-color: rgba(47, 158, 103, 0.28);
+        background: var(--success-soft);
+        color: var(--success);
+        transform: translateY(-1px);
+        box-shadow: 0 14px 26px rgba(47, 158, 103, 0.22);
       }
 
       .demand-action--edit {

@@ -6406,6 +6406,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const demandPriorityInputs = contentEl.querySelectorAll("[data-demand-priority]");
   const demandNoteInput = contentEl.querySelector("[data-demand-note]");
   const demandDateInput = contentEl.querySelector("[data-demand-date]");
+  const demandStepEls = contentEl.querySelectorAll("[data-demand-step]");
   const demandMessageEl = contentEl.querySelector("[data-demand-message]");
   const demandSubmitButton = contentEl.querySelector("[data-demand-submit]");
   const demandCancelButton = contentEl.querySelector("[data-demand-cancel]");
@@ -9942,6 +9943,22 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     setDemandFormTitle(isEdit ? "edit" : "add");
   };
 
+  const updateDemandSteps = () => {
+    const values = {
+      item:
+        Boolean(sanitizeDemandLabel(demandItemInput?.value ?? "")) &&
+        normalizeNumber(demandQuantityInput?.value ?? 0, 0) > 0,
+      object: objectTrackingEnabled
+        ? Boolean(sanitizeDemandLabel(demandObjectInput?.value ?? ""))
+        : true,
+      date: Boolean(normalizeDemandNeedDate(demandDateInput?.value ?? "")),
+    };
+    demandStepEls.forEach((stepEl) => {
+      const step = stepEl.dataset.demandStep;
+      stepEl.classList.toggle("is-complete", Boolean(values[step]));
+    });
+  };
+
   const resetDemandForm = () => {
     if (demandFormEl) {
       demandFormEl.reset();
@@ -9949,6 +9966,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     demandState.editingId = null;
     setDemandSubmitButton("add");
     setDemandPriorityValue("");
+    updateDemandSteps();
   };
 
   const startEditDemand = (entry) => {
@@ -9963,6 +9981,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (demandNoteInput) demandNoteInput.value = entry.note ?? "";
     setDemandPriorityValue(entry.priority ?? "");
     setDemandSubmitButton("edit");
+    updateDemandSteps();
   };
 
   const updateDemandSummary = () => {
@@ -10868,6 +10887,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     setDemandFormVisibility(false);
     setDemandMessage("");
   });
+
+  [demandItemInput, demandQuantityInput, demandObjectInput, demandDateInput].forEach(
+    (inputEl) => {
+      inputEl?.addEventListener("input", updateDemandSteps);
+      inputEl?.addEventListener("change", updateDemandSteps);
+    }
+  );
 
   demandFormEl?.addEventListener("submit", async (event) => {
     event.preventDefault();

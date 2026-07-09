@@ -371,7 +371,6 @@ export function renderRole(user, options = {}) {
             <div class="settings-modal__header objects-modal__header">
               <div class="settings-modal__title">
                 <h2>Объекты</h2>
-                <p data-energy-objects-subtitle>Управляйте списком объектов</p>
               </div>
               <button
                 class="button-icon objects-modal__close"

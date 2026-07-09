@@ -34437,6 +34437,8 @@ function setupSuperAdmin() {
   const superStatsToolsAmountEl = contentEl.querySelector("[data-super-stats-tools-amount]");
   const superStatsMovesEl = contentEl.querySelector("[data-super-stats-moves]");
   const superStatsAmountEl = contentEl.querySelector("[data-super-stats-amount]");
+  const superStatsLoginsEl = contentEl.querySelector("[data-super-stats-logins]");
+  const superStatsWorkTimeEl = contentEl.querySelector("[data-super-stats-work-time]");
   const superStatsChartEl = contentEl.querySelector("[data-super-stats-chart]");
   const superStatsTimelineTitleEl = contentEl.querySelector("[data-super-stats-timeline-title]");
   const superStatsTimelineTotalEl = contentEl.querySelector("[data-super-stats-timeline-total]");
@@ -34680,6 +34682,17 @@ function setupSuperAdmin() {
     const date = new Date(year, Number(match[2]) - 1, Number(match[1]));
     return Number.isNaN(date.getTime()) ? null : date;
   };
+  const parseStatsDateTime = (value) => {
+    if (!value) return null;
+    const date = new Date(String(value));
+    return Number.isNaN(date.getTime()) ? null : date;
+  };
+  const formatStatsDuration = (value) => {
+    const totalMinutes = Math.max(0, Math.round((Number(value) || 0) / 60000));
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    return hours > 0 ? `${formatStatsNumber(hours)} ч ${minutes} мин` : `${minutes} мин`;
+  };
 
   const superStatsCalendarState = { view: new Date() };
   const formatStatsRangeDate = (value) => {
@@ -34795,16 +34808,19 @@ function setupSuperAdmin() {
     amount: { title: "По сумме перемещений", label: "Сумма", format: formatStatsMoney },
     tools: { title: "По количеству МТЦ", label: "МТЦ", format: formatStatsNumber },
     toolsAmount: { title: "По стоимости МТЦ", label: "Стоимость", format: formatStatsMoney },
+    logins: { title: "По количеству входов", label: "Входы", format: formatStatsNumber },
+    workTime: { title: "По времени работы", label: "Время работы", format: formatStatsDuration },
   };
   const renderSuperStatsInsights = (items, totals) => {
     if (!superStatsInsightsEl) return;
     const leader = items[0];
     const avgMoves = items.length ? Math.round(totals.moves / items.length) : 0;
+    const avgWorkTime = totals.logins ? Math.round(totals.workTime / totals.logins) : 0;
     const leaderName = leader ? escapeHtml(leader.name) : "Нет данных";
     superStatsInsightsEl.innerHTML = `
       <div class="super-stats-panel__head super-stats-insights__head">
         <div><span>KPI</span><strong>Коротко</strong></div>
-        <em>3 метрики</em>
+        <em>4 метрики</em>
       </div>
       <div class="super-stats-insight super-stats-insight--leader">
         <span aria-hidden="true">🏆</span>
@@ -34817,6 +34833,10 @@ function setupSuperAdmin() {
       <div class="super-stats-insight">
         <span aria-hidden="true">💎</span>
         <div><small>Стоимость МТЦ</small><strong>${formatStatsMoney(totals.toolsAmount)}</strong><p>По выбранной выборке</p></div>
+      </div>
+      <div class="super-stats-insight">
+        <span aria-hidden="true">⏱</span>
+        <div><small>Средняя сессия</small><strong>${formatStatsDuration(avgWorkTime)}</strong><p>По входам за период</p></div>
       </div>
     `;
   };
@@ -34900,12 +34920,14 @@ function setupSuperAdmin() {
       const filteredUsers = selectedOrg === "all" ? users : users.filter((user) => selectedOrgNames.has(String(user?.organization ?? "").trim()));
       const rows = await Promise.all(selectedOrgs.map(async (org) => {
         const folder = buildStatsOrgFolder(org);
-        const [rawTools, rawMoves] = await Promise.all([
+        const [rawTools, rawMoves, rawVisits] = await Promise.all([
           loadJson(`./${folder}/База с инструментами.json`).catch(() => []),
           loadJson(`./${folder}/Перемещения.json`).catch(() => []),
+          loadJson(`./${folder}/Журнал посещений.json`).catch(() => ({ entries: [] })),
         ]);
         const tools = Array.isArray(rawTools) ? rawTools : Array.isArray(rawTools?.tools) ? rawTools.tools : [];
         const moves = Array.isArray(rawMoves) ? rawMoves : Array.isArray(rawMoves?.moves) ? rawMoves.moves : [];
+        const visits = Array.isArray(rawVisits) ? rawVisits : Array.isArray(rawVisits?.entries) ? rawVisits.entries : [];
         const costs = buildToolCostMap(tools);
         const periodMoves = moves.filter((move) => isDateInRange(parseRuDate(move?.["Дата перемещения"]), range));
         const dailyMap = new Map();
@@ -34916,15 +34938,30 @@ function setupSuperAdmin() {
           const moveDate = parseRuDate(move?.["Дата перемещения"]);
           if (moveDate) {
             const dateKey = toIsoDate(moveDate);
-            const point = dailyMap.get(dateKey) || { date: dateKey, moves: 0, amount: 0, tools: 0, toolsAmount: 0 };
+            const point = dailyMap.get(dateKey) || { date: dateKey, moves: 0, amount: 0, tools: 0, toolsAmount: 0, logins: 0, workTime: 0 };
             point.moves += 1;
             point.amount += moveAmount;
             dailyMap.set(dateKey, point);
           }
           return sum + moveAmount;
         }, 0);
+        let logins = 0;
+        let workTime = 0;
+        visits.forEach((visit) => {
+          const openedAt = parseStatsDateTime(visit?.opened_at ?? visit?.openedAt);
+          if (!isDateInRange(openedAt, range)) return;
+          const closedAt = parseStatsDateTime(visit?.closed_at ?? visit?.closedAt ?? visit?.last_event_at ?? visit?.lastEventAt) || openedAt;
+          const duration = Math.max(0, closedAt.getTime() - openedAt.getTime());
+          const dateKey = toIsoDate(openedAt);
+          const point = dailyMap.get(dateKey) || { date: dateKey, moves: 0, amount: 0, tools: 0, toolsAmount: 0, logins: 0, workTime: 0 };
+          point.logins += 1;
+          point.workTime += duration;
+          dailyMap.set(dateKey, point);
+          logins += 1;
+          workTime += duration;
+        });
         const toolsAmount = tools.reduce((sum, tool) => sum + getToolPrice(tool), 0);
-        return { name: String(org?.short_name ?? org?.full_name ?? "Организация").trim(), tools: tools.length, toolsAmount, moves: periodMoves.length, amount, daily: [...dailyMap.values()] };
+        return { name: String(org?.short_name ?? org?.full_name ?? "Организация").trim(), tools: tools.length, toolsAmount, moves: periodMoves.length, amount, logins, workTime, daily: [...dailyMap.values()] };
       }));
       const totals = rows.reduce(
         (acc, row) => ({
@@ -34932,14 +34969,18 @@ function setupSuperAdmin() {
           toolsAmount: acc.toolsAmount + row.toolsAmount,
           moves: acc.moves + row.moves,
           amount: acc.amount + row.amount,
+          logins: acc.logins + row.logins,
+          workTime: acc.workTime + row.workTime,
         }),
-        { tools: 0, toolsAmount: 0, moves: 0, amount: 0 }
+        { tools: 0, toolsAmount: 0, moves: 0, amount: 0, logins: 0, workTime: 0 }
       );
       if (superStatsUsersEl) superStatsUsersEl.textContent = formatStatsNumber(filteredUsers.length);
       if (superStatsToolsEl) superStatsToolsEl.textContent = formatStatsNumber(totals.tools);
       if (superStatsToolsAmountEl) superStatsToolsAmountEl.textContent = formatStatsMoney(totals.toolsAmount);
       if (superStatsMovesEl) superStatsMovesEl.textContent = formatStatsNumber(totals.moves);
       if (superStatsAmountEl) superStatsAmountEl.textContent = formatStatsMoney(totals.amount);
+      if (superStatsLoginsEl) superStatsLoginsEl.textContent = formatStatsNumber(totals.logins);
+      if (superStatsWorkTimeEl) superStatsWorkTimeEl.textContent = formatStatsDuration(totals.workTime);
       if (superStatsSummaryEl) superStatsSummaryEl.textContent = `${selectedOrg === "all" ? "Все" : rows[0]?.name || "Организация"} · ${range.label}`;
       const metric = superStatsMetricSelect?.value || "moves";
       const limit = Number(superStatsLimitSelect?.value || 10);

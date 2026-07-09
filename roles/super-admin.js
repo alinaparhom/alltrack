@@ -265,6 +265,8 @@ export function renderRole(user) {
                 <div class="super-stats-card"><span class="super-stats-card__icon">🧰</span><span class="super-stats-card__label">МТЦ</span><strong data-super-stats-tools>—</strong><span class="super-stats-card__subvalue" data-super-stats-tools-amount>—</span></div>
                 <div class="super-stats-card"><span class="super-stats-card__icon">🔁</span><span class="super-stats-card__label">Перемещения</span><strong data-super-stats-moves>—</strong></div>
                 <div class="super-stats-card super-stats-card--money"><span class="super-stats-card__icon">Br</span><span class="super-stats-card__label">Сумма</span><strong data-super-stats-amount>—</strong></div>
+                <div class="super-stats-card"><span class="super-stats-card__icon">🚪</span><span class="super-stats-card__label">Входы</span><strong data-super-stats-logins>—</strong></div>
+                <div class="super-stats-card"><span class="super-stats-card__icon">⏱</span><span class="super-stats-card__label">Время работы</span><strong data-super-stats-work-time>—</strong></div>
               </div>
             </section>
             <div class="super-stats-toolbar" aria-label="Настройки статистики">
@@ -299,11 +301,15 @@ export function renderRole(user) {
                 <button class="super-stats-metric-tab" type="button" data-super-stats-metric-button="amount">Br Сумма</button>
                 <button class="super-stats-metric-tab" type="button" data-super-stats-metric-button="tools">🧰 МТЦ</button>
                 <button class="super-stats-metric-tab" type="button" data-super-stats-metric-button="toolsAmount">💎 Стоимость</button>
+                <button class="super-stats-metric-tab" type="button" data-super-stats-metric-button="logins">🚪 Входы</button>
+                <button class="super-stats-metric-tab" type="button" data-super-stats-metric-button="workTime">⏱ Время</button>
                 <select class="super-stats-native-select" data-super-stats-metric aria-label="Главный график">
                   <option value="moves">Перемещения</option>
                   <option value="amount">Сумма перемещений</option>
                   <option value="tools">МТЦ в базе</option>
                   <option value="toolsAmount">Стоимость МТЦ</option>
+                  <option value="logins">Количество входов</option>
+                  <option value="workTime">Время работы</option>
                 </select>
               </div>
               <div class="super-stats-field super-stats-custom super-stats-range is-hidden" data-super-stats-custom-field>

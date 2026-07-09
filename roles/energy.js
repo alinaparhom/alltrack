@@ -589,7 +589,6 @@ export function renderRole(user, options = {}) {
             <div class="settings-modal__header demand-modal__header">
               <div class="settings-modal__title demand-modal__title">
                 <h2>Заявки</h2>
-                <p data-demand-subtitle>Что нужно, кому и к какому сроку</p>
               </div>
               <button
                 class="button-icon demand-modal__close"

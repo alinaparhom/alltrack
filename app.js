@@ -10607,7 +10607,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       actions.className = "demand-card__actions";
       const toggleButton = document.createElement("button");
       toggleButton.type = "button";
-      toggleButton.className = "demand-action demand-action--primary";
+      toggleButton.className = [
+        "demand-action",
+        "demand-action--primary",
+        item.status === "open" ? "demand-action--complete" : "demand-action--restore",
+      ].join(" ");
       toggleButton.dataset.demandAction = "toggle";
       toggleButton.dataset.demandId = item.id;
       toggleButton.innerHTML =

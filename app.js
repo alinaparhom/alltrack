@@ -10576,13 +10576,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const needDateText = needDateLabel || "не указано";
       const createdLabel = formatDemandCreatedLabel(item.createdAt);
       const closedDateLabel = formatDemandNeedDate(getDemandClosedDate(item));
-      const datesText = isClosed
-        ? `Нужно: ${needDateText} · Закрыто: ${closedDateLabel || "—"}`
-        : `Нужно: ${needDateText} · Создано: ${createdLabel || "—"}`;
+      const secondaryDateLabel = isClosed ? closedDateLabel || "—" : createdLabel || "—";
+      const secondaryDateTitle = isClosed ? "Дата закрытия" : "Дата создания";
       const metaItems = [
         objectTrackingEnabled ? { icon: "📍", value: item.object || "—" } : null,
         { icon: "👤", value: item.requestedBy || "Без автора" },
-        { icon: "⏱", value: datesText, className: "demand-card__meta-line--dates" },
       ];
       metaItems.filter(Boolean).forEach(({ icon, value, className }) => {
         const line = document.createElement("div");
@@ -10590,6 +10588,21 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         line.innerHTML = `<span class="demand-card__meta-icon" aria-hidden="true">${icon}</span><strong>${escapeHtml(value)}</strong>`;
         meta.appendChild(line);
       });
+
+      const dates = document.createElement("div");
+      dates.className = "demand-card__dates";
+      [
+        { icon: "📅", value: needDateText, title: "Срок заявки" },
+        { icon: isClosed ? "✅" : "✨", value: secondaryDateLabel, title: secondaryDateTitle },
+      ].forEach(({ icon, value, title }) => {
+        const line = document.createElement("div");
+        line.className = "demand-card__meta-line demand-card__meta-line--date";
+        line.title = title;
+        line.setAttribute("aria-label", `${title}: ${value}`);
+        line.innerHTML = `<span class="demand-card__meta-icon" aria-hidden="true">${icon}</span><strong>${escapeHtml(value)}</strong>`;
+        dates.appendChild(line);
+      });
+      meta.appendChild(dates);
 
       const chips = document.createElement("div");
       chips.className = "demand-card__tags";
@@ -10624,12 +10637,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         item.status === "open" ? "Закрыть заявку" : "Вернуть в работу";
       const requestMapButton = document.createElement("button");
       requestMapButton.type = "button";
-      requestMapButton.className = "demand-action";
+      requestMapButton.className = "demand-action demand-action--map";
       requestMapButton.dataset.demandAction = "map";
       requestMapButton.dataset.demandId = item.id;
-      requestMapButton.innerHTML = "🗺️";
-      requestMapButton.setAttribute("aria-label", "Открыть карту заявки");
-      requestMapButton.title = "Открыть карту заявки";
+      requestMapButton.innerHTML = `<span class="demand-action__map" aria-hidden="true"><span class="demand-action__map-base">🗺️</span><span class="demand-action__map-lens">🔎</span></span>`;
+      requestMapButton.setAttribute("aria-label", "Раскрыть карту заявки");
+      requestMapButton.title = "Раскрыть карту заявки";
       const editButton = document.createElement("button");
       editButton.type = "button";
       editButton.className = "demand-action demand-action--edit";

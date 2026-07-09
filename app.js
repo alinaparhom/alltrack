@@ -10553,15 +10553,15 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const needDateLabel = formatDemandNeedDate(item.needDate);
       const needDateText = needDateLabel || "не указано";
       const createdLabel = formatDemandCreatedLabel(item.createdAt);
+      const datesText = `Нужно: ${needDateText} · Создано: ${createdLabel || "—"}`;
       const metaItems = [
         objectTrackingEnabled ? { icon: "📍", value: item.object || "—" } : null,
         { icon: "👤", value: item.requestedBy || "Без автора" },
-        { icon: "⏱", value: needDateText },
-        { icon: "🕒", value: createdLabel ? `Создано ${createdLabel}` : "Создано —" },
+        { icon: "⏱", value: datesText, className: "demand-card__meta-line--dates" },
       ];
-      metaItems.filter(Boolean).forEach(({ icon, value }) => {
+      metaItems.filter(Boolean).forEach(({ icon, value, className }) => {
         const line = document.createElement("div");
-        line.className = "demand-card__meta-line";
+        line.className = ["demand-card__meta-line", className].filter(Boolean).join(" ");
         line.innerHTML = `<span class="demand-card__meta-icon" aria-hidden="true">${icon}</span><strong>${escapeHtml(value)}</strong>`;
         meta.appendChild(line);
       });

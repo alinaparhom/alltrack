@@ -31721,7 +31721,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       if (response.ok) {
         link.href = filePath;
         link.classList.remove("is-missing");
-        link.querySelector(".info-instruction-action__status")?.replaceChildren(document.createTextNode("Открыть"));
+        link.setAttribute("data-state", "ready");
         return;
       }
     } catch (error) {
@@ -31729,7 +31729,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
     link.href = getInfoInstructionPlaceholderPath(title, type);
     link.classList.add("is-missing");
-    link.querySelector(".info-instruction-action__status")?.replaceChildren(document.createTextNode("Заглушка"));
+    link.setAttribute("data-state", "missing");
   };
 
   const renderInfoInstructions = () => {
@@ -31741,13 +31741,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       card.innerHTML = `
         <span class="info-instruction-link__icon" aria-hidden="true">${infoInstructionIconMap.get(title) ?? "📘"}</span>
         <span class="info-instruction-link__title"></span>
-        <span class="info-instruction-link__type">Выберите удобный формат</span>
         <span class="info-instruction-actions">
-          <a class="info-instruction-action" href="${getInfoInstructionPlaceholderPath(title, "video")}" target="_blank" rel="noopener noreferrer" aria-label="Открыть видеоинструкцию: ${title}">
-            <span aria-hidden="true">🎬</span><span>Видео</span><small class="info-instruction-action__status">Проверка…</small>
+          <a class="info-instruction-action" href="${getInfoInstructionPlaceholderPath(title, "video")}" target="_blank" rel="noopener noreferrer" aria-label="Открыть видеоинструкцию: ${title}" title="Видеоинструкция">
+            <span class="info-instruction-action__icon" aria-hidden="true">🎬</span>
           </a>
-          <a class="info-instruction-action" href="${getInfoInstructionPlaceholderPath(title, "pdf")}" target="_blank" rel="noopener noreferrer" aria-label="Открыть PDF-инструкцию: ${title}">
-            <span aria-hidden="true">📄</span><span>PDF</span><small class="info-instruction-action__status">Проверка…</small>
+          <a class="info-instruction-action info-instruction-action--pdf" href="${getInfoInstructionPlaceholderPath(title, "pdf")}" target="_blank" rel="noopener noreferrer" aria-label="Открыть PDF-инструкцию: ${title}" title="PDF-инструкция">
+            <span class="info-instruction-action__icon info-instruction-action__icon--pdf" aria-hidden="true"></span>
           </a>
         </span>`;
       const titleEl = card.querySelector(".info-instruction-link__title");

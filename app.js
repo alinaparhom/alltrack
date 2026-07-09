@@ -6414,6 +6414,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const demandDateDaysEl = contentEl.querySelector("[data-demand-date-days]");
   const demandDatePrevEl = contentEl.querySelector("[data-demand-date-prev]");
   const demandDateNextEl = contentEl.querySelector("[data-demand-date-next]");
+  const demandDateCloseEl = contentEl.querySelector("[data-demand-date-close]");
   const demandStepEls = contentEl.querySelectorAll("[data-demand-step]");
   const demandMessageEl = contentEl.querySelector("[data-demand-message]");
   const demandSubmitButton = contentEl.querySelector("[data-demand-submit]");
@@ -10975,6 +10976,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     demandDateVisibleMonth = new Date(demandDateVisibleMonth.getFullYear(), demandDateVisibleMonth.getMonth() + 1, 1);
     renderDemandDateCalendar();
   });
+  demandDateCloseEl?.addEventListener("click", () => {
+    setDemandDateCalendarOpen(false);
+    demandDateTriggerEl?.focus();
+  });
   demandDateDaysEl?.addEventListener("click", (event) => {
     const dayButton = event.target.closest("[data-demand-date-value]");
     if (!dayButton || !demandDateInput) return;
@@ -10986,6 +10991,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   document.addEventListener("click", (event) => {
     if (!demandDatePickerEl || demandDatePickerEl.contains(event.target)) return;
     setDemandDateCalendarOpen(false);
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.key !== "Escape" || demandDateCalendarEl?.classList.contains("is-hidden")) return;
+    setDemandDateCalendarOpen(false);
+    demandDateTriggerEl?.focus();
   });
 
   [demandItemInput, demandQuantityInput, demandObjectInput, demandDateInput].forEach(

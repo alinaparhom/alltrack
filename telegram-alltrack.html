@@ -8939,24 +8939,28 @@
       }
 
       .demand-date-picker__calendar {
-        position: absolute;
-        z-index: 25;
-        top: calc(100% + 8px);
-        left: 0;
-        right: 0;
-        min-width: min(320px, calc(100vw - 32px));
-        padding: 12px;
-        border-radius: 22px;
-        border: 1px solid rgba(148, 163, 184, 0.22);
-        background: linear-gradient(145deg, rgba(255, 255, 255, 0.96), rgba(241, 245, 249, 0.86));
-        box-shadow: 0 24px 55px rgba(15, 23, 42, 0.18);
-        backdrop-filter: blur(18px);
-        -webkit-backdrop-filter: blur(18px);
+        position: fixed;
+        z-index: 120;
+        top: 50%;
+        left: 50%;
+        right: auto;
+        width: min(360px, calc(100vw - 28px));
+        min-width: 0;
+        max-height: min(620px, calc(100vh - 28px - env(safe-area-inset-top) - env(safe-area-inset-bottom)));
+        overflow: auto;
+        padding: 14px;
+        border-radius: 26px;
+        border: 1px solid rgba(148, 163, 184, 0.26);
+        background: linear-gradient(145deg, rgba(255, 255, 255, 0.97), rgba(241, 245, 249, 0.9));
+        box-shadow: 0 28px 70px rgba(15, 23, 42, 0.24);
+        backdrop-filter: blur(22px);
+        -webkit-backdrop-filter: blur(22px);
+        transform: translate(-50%, -50%);
       }
 
       .demand-date-picker__head {
         display: grid;
-        grid-template-columns: 38px 1fr 38px;
+        grid-template-columns: 38px 1fr 38px 38px;
         align-items: center;
         gap: 8px;
         margin-bottom: 10px;
@@ -8971,6 +8975,7 @@
       }
 
       .demand-date-picker__head button,
+      .demand-date-picker__close,
       .demand-date-picker__day {
         border: 0;
         border-radius: 14px;
@@ -8985,6 +8990,14 @@
         height: 38px;
         font-size: 24px;
         color: #2563eb;
+      }
+
+      .demand-date-picker__head .demand-date-picker__close {
+        height: 38px;
+        font-size: 24px;
+        line-height: 1;
+        color: #ef4444;
+        background: rgba(239, 68, 68, 0.1);
       }
 
       .demand-date-picker__week,
@@ -9039,16 +9052,9 @@
         background: rgba(30, 41, 59, 0.82);
       }
 
-      @media (max-width: 520px) {
-        .demand-date-picker__calendar {
-          position: fixed;
-          left: 12px;
-          right: 12px;
-          top: auto;
-          bottom: calc(12px + env(safe-area-inset-bottom));
-          width: auto;
-          min-width: 0;
-        }
+      body[data-theme="dark"] .demand-date-picker__head .demand-date-picker__close {
+        color: #fca5a5;
+        background: rgba(239, 68, 68, 0.16);
       }
 
       .demand-map-toggle__icon {

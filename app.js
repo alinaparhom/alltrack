@@ -9883,7 +9883,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       demandToggleButton.classList.toggle("is-active", isOpen);
       demandToggleButton.setAttribute("aria-expanded", String(isOpen));
     }
-    if (isOpen) demandItemInput?.focus();
+    // Не фокусируем поле автоматически: в Telegram Mini Apps это сразу открывает клавиатуру.
   };
   const setDemandFiltersVisibility = (isOpen) => {
     if (!demandFiltersPanel) return;
@@ -9963,7 +9963,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (demandNoteInput) demandNoteInput.value = entry.note ?? "";
     setDemandPriorityValue(entry.priority ?? "");
     setDemandSubmitButton("edit");
-    demandItemInput?.focus();
   };
 
   const updateDemandSummary = () => {

@@ -717,7 +717,7 @@ export function renderRole(user, options = {}) {
               <div class="settings-modal__title demand-form-modal__title">
                 <span class="demand-modal__eyebrow">Новая потребность</span>
                 <h2 data-demand-form-title>Новая заявка</h2>
-                <p>4 быстрых поля — и заявка сразу попадёт в общий список</p>
+                <p>Заполните главное: что нужно, сколько, куда и к какому сроку.</p>
               </div>
               <button
                 class="button-icon demand-form-modal__close"
@@ -730,9 +730,21 @@ export function renderRole(user, options = {}) {
             </div>
             <div class="settings-modal__body demand-form-modal__body">
               <form class="demand-form form-card" data-demand-form>
+                <div class="demand-form__hero" aria-hidden="true">
+                  <div class="demand-form__hero-icon">🧰</div>
+                  <div class="demand-form__hero-text">
+                    <strong>Создаём понятную заявку</strong>
+                    <span>Подсказки помогут выбрать инструмент и объект без ошибок.</span>
+                  </div>
+                </div>
+                <div class="demand-form__steps" aria-label="Шаги заполнения заявки">
+                  <span><b>1</b> Что нужно</span>
+                  <span><b>2</b> Куда</span>
+                  <span><b>3</b> Срок</span>
+                </div>
                 <div class="demand-form__grid">
-                  <label class="form-field">
-                    <span class="form-label">Что нужно <small>начните вводить название</small></span>
+                  <label class="form-field demand-form__field demand-form__field--item">
+                    <span class="form-label"><span class="demand-form__label-main"><i aria-hidden="true">🔎</i> Что нужно</span> <small>начните вводить название</small></span>
                     <div class="suggestions-field">
                       <input
                         class="form-input"
@@ -748,8 +760,8 @@ export function renderRole(user, options = {}) {
                       ></div>
                     </div>
                   </label>
-                  <label class="form-field demand-form__quantity">
-                    <span class="form-label">Количество <small>сколько нужно</small></span>
+                  <label class="form-field demand-form__field demand-form__quantity">
+                    <span class="form-label"><span class="demand-form__label-main"><i aria-hidden="true">#</i> Количество</span> <small>сколько нужно</small></span>
                     <div class="demand-quantity">
                       <input
                         class="form-input"
@@ -762,8 +774,8 @@ export function renderRole(user, options = {}) {
                       />
                     </div>
                   </label>
-                  <label class="form-field">
-                    <span class="form-label">Объект <small>куда доставить</small></span>
+                  <label class="form-field demand-form__field demand-form__field--object">
+                    <span class="form-label"><span class="demand-form__label-main"><i aria-hidden="true">📍</i> Объект</span> <small>куда доставить</small></span>
                     <div class="suggestions-field">
                       <input
                         class="form-input"
@@ -779,8 +791,8 @@ export function renderRole(user, options = {}) {
                       ></div>
                     </div>
                   </label>
-                  <label class="form-field demand-form__date">
-                    <span class="form-label">Когда нужно <small>выберите дату</small></span>
+                  <label class="form-field demand-form__field demand-form__date">
+                    <span class="form-label"><span class="demand-form__label-main"><i aria-hidden="true">📅</i> Когда нужно</span> <small>выберите дату</small></span>
                     <input
                       class="form-input"
                       type="date"
@@ -789,8 +801,8 @@ export function renderRole(user, options = {}) {
                     />
                   </label>
                 </div>
-                <label class="form-field">
-                  <span class="form-label">Комментарий <small>необязательно</small></span>
+                <label class="form-field demand-form__field demand-form__field--note">
+                  <span class="form-label"><span class="demand-form__label-main"><i aria-hidden="true">💬</i> Комментарий</span> <small>необязательно</small></span>
                   <textarea
                     class="form-input demand-form__note"
                     rows="2"

@@ -1530,14 +1530,74 @@ export function renderRole(user, options = {}) {
                 <h2 data-tools-info-title>Инструмент</h2>
                 <p data-tools-info-subtitle></p>
               </div>
-              <button
-                class="button-icon tools-modal__close"
-                type="button"
-                data-tools-info-close
-                aria-label="Закрыть окно информации"
-              >
-                <span class="button-icon-emoji" aria-hidden="true">✕</span>
-              </button>
+              <div class="tools-info-header-actions" aria-label="Действия с инструментом">
+                <button
+                  class="button-icon tools-info-quick-action tools-info-inline-action"
+                  type="button"
+                  data-tools-info-copy
+                  aria-label="Скопировать информацию об инструменте"
+                  title="Копировать"
+                >
+                  <span
+                    class="tools-info-inline-action__icon tools-info-inline-action__icon--copy"
+                    aria-hidden="true"
+                  >
+                    <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+                      <rect
+                        x="7"
+                        y="7"
+                        width="12"
+                        height="12"
+                        rx="2.5"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2.2"
+                      ></rect>
+                      <rect
+                        x="4"
+                        y="4"
+                        width="12"
+                        height="12"
+                        rx="2.5"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2.2"
+                      ></rect>
+                    </svg>
+                  </span>
+                </button>
+                <button
+                  class="button-icon tools-info-quick-action tools-info-inline-action"
+                  type="button"
+                  data-tools-info-share
+                  aria-label="Поделиться инструментом"
+                  title="Поделиться"
+                >
+                  <span class="tools-info-inline-action__icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+                      <circle cx="6.5" cy="12" r="3.5" fill="currentColor"></circle>
+                      <circle cx="17.5" cy="5.5" r="3.5" fill="currentColor"></circle>
+                      <circle cx="17.5" cy="18.5" r="3.5" fill="currentColor"></circle>
+                      <path
+                        d="M9.7 10.1l4.7-2.8M9.7 13.9l4.7 2.8"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.9"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      ></path>
+                    </svg>
+                  </span>
+                </button>
+                <button
+                  class="button-icon tools-modal__close"
+                  type="button"
+                  data-tools-info-close
+                  aria-label="Закрыть окно информации"
+                >
+                  <span class="button-icon-emoji" aria-hidden="true">✕</span>
+                </button>
+              </div>
             </div>
             <div class="settings-modal__body tools-info-modal__body">
               <div class="tools-info-card">
@@ -1576,68 +1636,7 @@ export function renderRole(user, options = {}) {
                     Переместить
                   </button>
                 </div>
-                <div class="tools-info-actions-right">
-                  <div class="tools-info-quick-actions is-hidden" aria-hidden="true">
-                    <button
-                      class="button-icon tools-info-quick-action tools-info-inline-action"
-                      type="button"
-                      data-tools-info-share
-                      aria-label="Поделиться инструментом"
-                      title="Поделиться"
-                    >
-                      <span class="tools-info-inline-action__icon" aria-hidden="true">
-                        <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
-                          <circle cx="6.5" cy="12" r="3.5" fill="currentColor"></circle>
-                          <circle cx="17.5" cy="5.5" r="3.5" fill="currentColor"></circle>
-                          <circle cx="17.5" cy="18.5" r="3.5" fill="currentColor"></circle>
-                          <path
-                            d="M9.7 10.1l4.7-2.8M9.7 13.9l4.7 2.8"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-width="1.9"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                          ></path>
-                        </svg>
-                      </span>
-                    </button>
-                    <button
-                      class="button-icon tools-info-quick-action tools-info-inline-action"
-                      type="button"
-                      data-tools-info-copy
-                      aria-label="Скопировать информацию об инструменте"
-                      title="Копировать"
-                    >
-                      <span
-                        class="tools-info-inline-action__icon tools-info-inline-action__icon--copy"
-                        aria-hidden="true"
-                      >
-                        <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
-                          <rect
-                            x="7"
-                            y="7"
-                            width="12"
-                            height="12"
-                            rx="2.5"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-width="2.2"
-                          ></rect>
-                          <rect
-                            x="4"
-                            y="4"
-                            width="12"
-                            height="12"
-                            rx="2.5"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-width="2.2"
-                          ></rect>
-                        </svg>
-                      </span>
-                    </button>
-                  </div>
-                </div>
+                <div class="tools-info-actions-right"></div>
                 <div
                   class="tools-info-tabs is-hidden"
                   role="tablist"

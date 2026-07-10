@@ -6668,6 +6668,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const toolsInfoMoveButton = contentEl.querySelector("[data-tools-info-move]");
   const toolsInfoShareButton = contentEl.querySelector("[data-tools-info-share]");
   const toolsInfoCopyButton = contentEl.querySelector("[data-tools-info-copy]");
+  const toolsInfoHeaderActionsEl = contentEl.querySelector(".tools-info-header-actions");
   const toolsInfoHistoryToggleButton = contentEl.querySelector(
     "[data-tools-info-history-toggle]"
   );
@@ -14932,6 +14933,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       String(tool?.["Модель"] ?? "").trim(),
     ].filter(Boolean);
     const isSearchMode = toolsState.mode === "search";
+    if (isSearchMode && toolsInfoHeaderActionsEl) {
+      [toolsInfoCopyButton, toolsInfoShareButton].forEach((button) => {
+        if (!button) return;
+        toolsInfoHeaderActionsEl.insertBefore(button, toolsInfoHeaderActionsEl.querySelector("[data-tools-info-close]"));
+      });
+    }
     toolsInfoGridEl.classList.toggle("tools-info-grid--search-card", isSearchMode);
     const searchStatusText = isSearchMode
       ? normalizeToolsInfoStatus(tool?.["Статус"], Boolean(tool?.__pendingMove))

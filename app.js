@@ -14922,7 +14922,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const hasKitBadge = Array.isArray(tool?.["Комплектация"]) && tool["Комплектация"].some((item) =>
       [item?.["Наименование"], item?.["Количество"], item?.["Бух.номер"]].some((value) => String(value ?? "").trim())
     );
-    const isSearchMoving = searchStatusText === "Перемещается";
     if (isSearchMode) {
       toolsInfoGridEl.innerHTML = `
         <div class="tools-info-search-hero">
@@ -14933,11 +14932,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
             <div class="tools-info-search-title">${escapeHtml(String(tool?.["Наименование"] ?? "").trim() || "Инструмент")}</div>
             <div class="tools-info-search-brand">${escapeHtml([tool?.["Производитель"], tool?.["Модель"]].map((v) => String(v ?? "").trim()).filter(Boolean).join(" · ") || "—")}</div>
             <div class="tools-info-search-numbers">🔢 № ${escapeHtml(formatInfoValue(toolNumber))} · Бух. № ${escapeHtml(formatInfoValue(accountingNumber))}</div>
-            <div class="tools-info-search-badges">
-              <span class="tools-info-search-status">✅ ${escapeHtml(searchStatusText || "—")}</span>
-              ${hasKitBadge ? `<span class="tools-info-search-kit" title="Есть комплектация">🧰 Комплект</span>` : ""}
-            </div>
-            ${isSearchMoving ? `<div class="tools-info-search-moving">↔ ${escapeHtml(searchStatusText)}</div>` : ""}
+            ${hasKitBadge ? `<div class="tools-info-search-badges"><span class="tools-info-search-kit" title="Есть комплектация">🧰 Комплект</span></div>` : ""}
           </div>
         </div>
       `;
@@ -14977,7 +14972,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     info
       .filter(({ label }) => objectTrackingEnabled || !isObjectRelatedLabel(label))
       .filter(({ label }) => !isSearchMode || ["Ответственный", "Объект", "Статус", "Стоимость", "Дата покупки"].includes(label))
-      .filter(({ label }) => !(isSearchMode && isSearchMoving && label === "Статус"))
       .forEach(({ label, value, hideLabelInSearch }) => {
       const row = document.createElement("div");
       row.className = "tools-info-row";
@@ -15020,11 +15014,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           notesButton.title = "Заметки";
           statusActions.appendChild(notesButton);
         }
-        [toolsInfoShareButton, toolsInfoCopyButton].forEach((button) => {
-          if (!button) return;
-          button.classList.add("tools-info-inline-action");
-          statusActions.appendChild(button);
-        });
+        if (!isSearchMode) {
+          [toolsInfoShareButton, toolsInfoCopyButton].forEach((button) => {
+            if (!button) return;
+            button.classList.add("tools-info-inline-action");
+            statusActions.appendChild(button);
+          });
+        }
         if (statusActions.children.length) {
           statusLine.appendChild(statusActions);
         }

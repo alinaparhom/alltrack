@@ -10670,7 +10670,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const demandPathSteps = [
     { id: 1, label: "Сформирована" },
     { id: 2, label: "Принята в работу" },
-    { id: 3, label: "В работе с комментариями" },
+    { id: 3, label: "В работе" },
     { id: 4, label: "В пути" },
     { id: 5, label: "Получен" },
   ];
@@ -10731,6 +10731,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         <span class="demand-path-step__dot" aria-hidden="true"></span>
         <span class="demand-path-step__text"><b>${step.id}</b>${escapeHtml(step.label)}</span>
       `;
+      if (step.id === 3 && demandPathCommentAddButton) {
+        row.classList.add("demand-path-step--with-action");
+        row.appendChild(demandPathCommentAddButton);
+      }
       demandPathStepsEl.appendChild(row);
     });
     setDemandPathEditable(demandState.path.editable);

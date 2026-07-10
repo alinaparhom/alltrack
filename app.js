@@ -14598,6 +14598,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     setToolsStatusStandaloneVisibility(false);
     toolsState.activeReplacementResponsible = "";
     toolsState.searchSortDirection = "desc";
+    toolsState.search = "";
+    if (toolsSearchInput) toolsSearchInput.value = "";
     setToolsTitle("Мои инструменты");
     toolsState.filters.responsible = [];
     toolsState.filters.object = [];

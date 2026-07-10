@@ -23803,6 +23803,39 @@
           inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
       }
 
+
+      /* «Мои инструменты»: строка поиска расположена точно как на странице «Поиск» — снизу экрана. */
+      .tools-modal--my-tools {
+        --my-tools-bottom-search-height: calc(64px + max(0px, env(safe-area-inset-bottom)));
+      }
+
+      .tools-modal--my-tools .tools-modal__body {
+        padding-bottom: 0 !important;
+      }
+
+      .tools-modal--my-tools .tools-list,
+      .tools-modal--my-tools .tools-search-map {
+        padding-bottom: calc(var(--my-tools-bottom-search-height) + 14px) !important;
+      }
+
+      .tools-modal--my-tools .tools-search {
+        position: fixed !important;
+        left: calc(18px + max(0px, env(safe-area-inset-left))) !important;
+        right: calc(18px + max(0px, env(safe-area-inset-right))) !important;
+        bottom: calc(10px + max(0px, env(safe-area-inset-bottom))) !important;
+        z-index: 80 !important;
+        width: auto !important;
+        min-width: 0 !important;
+        height: 48px !important;
+        min-height: 48px !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        border: 0 !important;
+        border-radius: 0 !important;
+        background: transparent !important;
+        box-shadow: none !important;
+      }
+
       /* Страница «Управление фото» скроллится целиком: в ней нет отдельного
          .tools-list, поэтому общий фикс для списков не должен блокировать body. */
       .tools-modal[data-add-photo-modal] .tools-modal__panel {

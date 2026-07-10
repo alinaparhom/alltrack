@@ -11594,7 +11594,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       toolsState.mode === "user" ||
       toolsState.mode === "move-other" ||
       isRepairLikeMode();
-    toolsModalEl.classList.toggle("tools-modal--my-tools", false);
+    toolsModalEl.classList.toggle("tools-modal--my-tools", toolsState.mode === "user");
     toolsModalEl.classList.toggle("tools-modal--searching", isSearchLikeMode);
     toolsModalEl.classList.toggle("tools-modal--global-search", toolsState.mode === "search");
     setToolsSortToggleVisibility();

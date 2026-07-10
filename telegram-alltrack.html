@@ -9466,8 +9466,35 @@
         color: #b91c1c;
       }
 
+      .demand-path-modal {
+        align-items: end;
+        justify-items: center;
+        padding: 10px 10px calc(10px + max(0px, env(safe-area-inset-bottom)));
+      }
+
       .demand-path-modal__panel {
-        width: min(560px, calc(100vw - 20px));
+        width: min(560px, 100%);
+        height: auto;
+        max-height: calc(100svh - 20px - max(0px, env(safe-area-inset-bottom)));
+        overflow: hidden;
+        grid-template-rows: auto minmax(0, 1fr);
+        border-radius: 24px;
+      }
+
+      .demand-path-modal__header {
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
+        padding: 14px 14px 8px;
+      }
+
+      .demand-path-modal__close {
+        align-self: center;
+        margin-top: 0;
+      }
+
+      .demand-path-modal__body {
+        padding: 8px 12px 12px;
+        overflow: auto;
       }
 
       .demand-path-card {
@@ -9485,7 +9512,7 @@
       .demand-path-card__top {
         display: flex;
         gap: 10px;
-        align-items: flex-start;
+        align-items: center;
         justify-content: space-between;
       }
 
@@ -9550,6 +9577,14 @@
         border-radius: 16px;
         background: rgba(255, 255, 255, 0.76);
         border: 1px solid rgba(148, 163, 184, 0.16);
+      }
+
+      .demand-path-step--with-action {
+        grid-template-columns: 22px minmax(0, 1fr) 38px;
+      }
+
+      .demand-path-step--with-action .demand-path-comment-add {
+        justify-self: end;
       }
 
       .demand-path-step input {
@@ -9648,7 +9683,7 @@
 
       @media (max-width: 560px) {
         .demand-path-card__top {
-          display: grid;
+          display: flex;
         }
 
         .demand-path-modal.is-editing .demand-path-actions {

@@ -11596,6 +11596,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       isRepairLikeMode();
     toolsModalEl.classList.toggle("tools-modal--my-tools", false);
     toolsModalEl.classList.toggle("tools-modal--searching", isSearchLikeMode);
+    toolsModalEl.classList.toggle("tools-modal--global-search", toolsState.mode === "search");
     setToolsSortToggleVisibility();
     updateToolsBrokenOnlyToggleUi();
     updateToolsInRepairOnlyToggleUi();
@@ -14816,6 +14817,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     toolsModalEl.classList.add("is-hidden");
     updateToolsReplacementPendingLinkVisibility();
     toolsModalEl.classList.remove("tools-modal--searching");
+    toolsModalEl.classList.remove("tools-modal--global-search");
     toolsModalEl.classList.remove("tools-modal--my-tools");
     if (toolsState.mode === "add-photo") {
       closeAddPhotoDetailModal({ keepBodyLocked: false });

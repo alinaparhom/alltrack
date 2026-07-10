@@ -14858,11 +14858,21 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
   const renderToolsInfoKit = (tool) => {
     if (!toolsInfoKitEl || !toolsInfoKitToggleButton || !toolsInfoKitListEl) return;
-    if (!toolsInfoKitEl.contains(toolsInfoKitToggleButton)) {
-      toolsInfoKitEl.prepend(toolsInfoKitToggleButton);
+    const isSearchMode = toolsState.mode === "search";
+    const closeButton = toolsInfoHeaderActionsEl?.querySelector("[data-tools-info-close]");
+    if (isSearchMode && toolsInfoHeaderActionsEl && closeButton) {
+      toolsInfoHeaderActionsEl.insertBefore(toolsInfoKitToggleButton, closeButton);
+      toolsInfoKitToggleButton.classList.add("tools-info-inline-action", "tools-info-inline-action--emoji");
+      toolsInfoKitToggleButton.classList.remove("button-secondary", "tools-info-kit__toggle");
+      toolsInfoKitToggleButton.setAttribute("title", "Комплектация");
+    } else {
+      if (!toolsInfoKitEl.contains(toolsInfoKitToggleButton)) {
+        toolsInfoKitEl.prepend(toolsInfoKitToggleButton);
+      }
+      toolsInfoKitToggleButton.classList.add("button-secondary", "tools-info-kit__toggle");
+      toolsInfoKitToggleButton.classList.remove("tools-info-inline-action", "tools-info-inline-action--emoji");
+      toolsInfoKitToggleButton.removeAttribute("title");
     }
-    toolsInfoKitToggleButton.classList.remove("tools-info-inline-action", "tools-info-inline-action--emoji");
-    toolsInfoKitToggleButton.removeAttribute("title");
     const kit = Array.isArray(tool?.["Комплектация"]) ? tool["Комплектация"] : [];
     const parseKitCount = (value) => {
       if (value == null) return 0;
@@ -14881,11 +14891,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     );
     const kitToggleLabel = `Комплектация (${totalKitUnits})`;
     toolsInfoKitEl.classList.toggle("is-hidden", !hasKit);
+    toolsInfoKitToggleButton.disabled = isSearchMode && !hasKit;
     if (!hasKit) {
       toolsInfoKitListEl.innerHTML = "";
       toolsInfoState.kitExpanded = false;
       toolsInfoKitContentEl?.classList.add("is-hidden");
-      toolsInfoKitToggleButton.textContent = "Комплектация (0)";
+      toolsInfoKitToggleButton.textContent = isSearchMode ? "🧰" : "Комплектация (0)";
+      toolsInfoKitToggleButton.setAttribute("aria-label", "Комплектация отсутствует");
       return;
     }
 
@@ -14906,7 +14918,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       toolsInfoKitListEl.appendChild(itemEl);
     });
     toolsInfoKitContentEl?.classList.toggle("is-hidden", !toolsInfoState.kitExpanded);
-    toolsInfoKitToggleButton.textContent = kitToggleLabel;
+    toolsInfoKitToggleButton.textContent = isSearchMode ? "🧰" : kitToggleLabel;
+    toolsInfoKitToggleButton.setAttribute("aria-label", kitToggleLabel);
   };
 
   const toggleToolsInfoKit = () => {
@@ -14955,7 +14968,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           <div class="tools-info-search-main">
             <div class="tools-info-search-title">${escapeHtml(String(tool?.["Наименование"] ?? "").trim() || "Инструмент")}</div>
             <div class="tools-info-search-brand">${escapeHtml([tool?.["Производитель"], tool?.["Модель"]].map((v) => String(v ?? "").trim()).filter(Boolean).join(" · ") || "—")}</div>
-            <div class="tools-info-search-numbers"><span>№ ${escapeHtml(formatInfoValue(toolNumber))}</span><span>Бух.номер: ${escapeHtml(formatInfoValue(accountingNumber))}</span></div>
+            <div class="tools-info-search-numbers"><span>Номер: ${escapeHtml(formatInfoValue(toolNumber))}</span><span>Бух.номер: ${escapeHtml(formatInfoValue(accountingNumber))}</span></div>
             ${hasKitBadge ? `<div class="tools-info-search-badges"><span class="tools-info-search-kit" title="Есть комплектация">🧰 Комплект</span></div>` : ""}
           </div>
         </div>

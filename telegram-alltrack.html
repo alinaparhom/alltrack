@@ -11135,18 +11135,25 @@
 
       .tools-info-modal__panel--search .tools-info-header-actions {
         pointer-events: auto;
+        width: calc(100vw - 20px);
         gap: 6px;
+        justify-content: flex-start;
       }
 
-      .tools-info-modal__panel--search .tools-info-header-actions [data-tools-info-share] {
-        margin-right: 12px;
+      .tools-info-modal__panel--search .tools-info-header-actions .tools-modal__close {
+        margin-left: auto;
       }
 
-      .tools-info-modal__panel--search .tools-info-header-actions .tools-info-quick-action {
+      .tools-info-modal__panel--search .tools-info-header-actions .tools-info-quick-action,
+      .tools-info-modal__panel--search .tools-info-header-actions .tools-info-inline-action {
         pointer-events: auto;
         width: 38px;
         height: 38px;
         min-height: 38px;
+      }
+
+      .tools-info-modal__panel--search .tools-info-header-actions .tools-info-inline-action:disabled {
+        opacity: 0.42;
       }
 
       .tools-info-modal__panel--search .tools-info-modal__body {
@@ -11178,6 +11185,8 @@
       .tools-info-modal__panel--search .tools-info-card {
         box-sizing: border-box;
         width: 100%;
+        max-width: 720px;
+        margin-inline: auto;
         padding: 12px;
         border-radius: 26px;
         background: linear-gradient(150deg, rgba(255,255,255,0.94), rgba(248,250,252,0.86));
@@ -11197,6 +11206,8 @@
       .tools-info-modal__panel--search .tools-info-top-actions {
         box-sizing: border-box;
         width: 100%;
+        max-width: 720px;
+        margin-inline: auto;
         gap: 0;
       }
 

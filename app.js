@@ -14795,7 +14795,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       );
     }
     if (toolsInfoPhotosSectionEl) {
-      toolsInfoPhotosSectionEl.classList.toggle("is-hidden", toolsInfoState.historyOpened);
+      const hidePhotosSection = toolsInfoState.historyOpened || toolsState.mode === "search";
+      toolsInfoPhotosSectionEl.classList.toggle("is-hidden", hidePhotosSection);
     }
     if (toolsInfoTabsEl) {
       toolsInfoTabsEl.classList.toggle("is-hidden", !toolsInfoState.historyOpened);

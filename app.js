@@ -11594,9 +11594,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       toolsState.mode === "user" ||
       toolsState.mode === "move-other" ||
       isRepairLikeMode();
-    toolsModalEl.classList.toggle("tools-modal--my-tools", toolsState.mode === "user");
+    toolsModalEl.classList.toggle("tools-modal--my-tools", false);
     toolsModalEl.classList.toggle("tools-modal--searching", isSearchLikeMode);
-    toolsModalEl.classList.toggle("tools-modal--global-search", toolsState.mode === "search");
+    toolsModalEl.classList.toggle(
+      "tools-modal--global-search",
+      toolsState.mode === "search" || toolsState.mode === "user"
+    );
     setToolsSortToggleVisibility();
     updateToolsBrokenOnlyToggleUi();
     updateToolsInRepairOnlyToggleUi();
@@ -13339,11 +13342,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       toolsState.mode === "base" ||
       toolsState.mode === "search" ||
       toolsState.mode === "no-accounting-number" ||
+      toolsState.mode === "user" ||
       toolsState.mode === "move-other" ||
       toolsState.mode === "repair" ||
       toolsState.mode === "write-off-pending";
-    const shouldShowResponsibleAndToolStatus = toolsState.mode !== "user";
-    const isLargeMyToolsCard = viewMode === "large" && toolsState.mode === "user";
+    const shouldShowResponsibleAndToolStatus = true;
+    const isLargeMyToolsCard = false;
     const kitItems = getToolKitItems(tool);
     const hasKit = kitItems.length > 0;
     const normalizeToolStatusLabel = (rawStatus, movingNow = false) => {
@@ -13747,16 +13751,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       toolsState.mode === "move-other" ||
       toolsState.mode === "repair" ||
       toolsState.mode === "write-off-pending";
-    const isMyToolsMode = toolsState.mode === "user";
     table.className = "tools-table";
-    if (isMyToolsMode) {
-      table.classList.add("tools-table--my-tools");
-    }
     const shouldHighlightToolStatus = ["user", "move-other"].includes(toolsState.mode);
     const isSearchMode =
       toolsState.mode === "base" ||
       toolsState.mode === "search" ||
       toolsState.mode === "no-accounting-number" ||
+      toolsState.mode === "user" ||
       toolsState.mode === "move-other" ||
       toolsState.mode === "repair" ||
       toolsState.mode === "write-off-pending";

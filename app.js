@@ -4836,9 +4836,17 @@ function normalizeDemandData(raw) {
       );
       if (!doneSteps.includes(1)) doneSteps.unshift(1);
       if (status === "done" && !doneSteps.includes(5)) doneSteps.push(5);
-      const pathComment = sanitizeDemandLabel(
+      const legacyPathComment = sanitizeDemandLabel(
         pathSource.commentStage3 ?? pathSource.comment ?? item.pathComment ?? ""
       );
+      const pathComments = Array.isArray(pathSource.comments)
+        ? pathSource.comments
+            .map((comment) => sanitizeDemandLabel(comment))
+            .filter(Boolean)
+        : legacyPathComment
+          ? [legacyPathComment]
+          : [];
+      const pathComment = pathComments.at(-1) ?? legacyPathComment;
       const needDate = normalizeDemandNeedDate(
         item.needDate ??
           item.neededDate ??
@@ -4865,6 +4873,7 @@ function normalizeDemandData(raw) {
         path: {
           doneSteps,
           commentStage3: pathComment,
+          comments: pathComments,
         },
       };
     })
@@ -10685,9 +10694,17 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     );
     normalized.add(1);
     if (item?.status === "done") normalized.add(5);
+    const legacyComment = String(path.commentStage3 ?? path.comment ?? "").trim();
+    const comments = Array.isArray(path.comments)
+      ? path.comments
+          .map((comment) => String(comment ?? "").trim())
+          .filter(Boolean)
+      : [];
+    if (legacyComment && !comments.includes(legacyComment)) comments.push(legacyComment);
     return {
       doneSteps: Array.from(normalized).sort((a, b) => a - b),
-      commentStage3: String(path.commentStage3 ?? "").trim(),
+      commentStage3: comments.at(-1) ?? "",
+      comments,
     };
   };
 
@@ -10723,15 +10740,27 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
     if (demandPathCommentEl) demandPathCommentEl.value = "";
     if (demandPathCommentSavedEl) {
-      demandPathCommentSavedEl.textContent = path.commentStage3;
-      demandPathCommentSavedEl.classList.toggle("is-hidden", !path.commentStage3);
+      demandPathCommentSavedEl.innerHTML = "";
+      path.comments.forEach((comment, index) => {
+        const commentEl = document.createElement("div");
+        commentEl.className = "demand-path-comment__item";
+        commentEl.innerHTML = `<span>Комментарий ${index + 1}</span><p>${escapeHtml(comment)}</p>`;
+        demandPathCommentSavedEl.appendChild(commentEl);
+      });
+      demandPathCommentSavedEl.classList.toggle("is-hidden", !path.comments.length);
     }
     demandPathCommentFormEl?.classList.add("is-hidden");
     const commentBoxEl = demandPathCommentFormEl?.closest(".demand-path-comment");
-    commentBoxEl?.classList.toggle("is-hidden", !path.commentStage3);
+    commentBoxEl?.classList.toggle("is-hidden", !path.comments.length);
     demandPathCommentAddButton?.setAttribute("aria-expanded", "false");
     const cardEl = demandPathStepsEl.closest(".demand-path-card");
-    cardEl?.classList.toggle("demand-path-card--important", normalizeDemandPriority(item.priority ?? "") === "red");
+    const priorityKey = normalizeDemandPriority(item.priority ?? "");
+    const isImportant = priorityKey === "red";
+    const isClosed = item.status === "done";
+    const isOverdue = isClosed ? isDemandClosedLate(item) : isDemandOverdue(item);
+    cardEl?.classList.toggle("demand-path-card--important", isImportant);
+    cardEl?.classList.toggle("demand-path-card--overdue", isOverdue);
+    cardEl?.classList.toggle("demand-path-card--important-overdue", isImportant && isOverdue);
     demandPathStepsEl.innerHTML = "";
     demandPathSteps.forEach((step) => {
       const row = document.createElement("label");
@@ -11140,7 +11169,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (!checkedSteps.includes(1)) checkedSteps.unshift(1);
     const doneSteps = Array.from(new Set(checkedSteps)).sort((a, b) => a - b);
     const newComment = String(demandPathCommentEl?.value ?? "").trim();
-    const commentStage3 = newComment || currentPath.commentStage3;
+    const comments = newComment ? [...currentPath.comments, newComment] : currentPath.comments;
+    const commentStage3 = comments.at(-1) ?? "";
     const shouldClose = doneSteps.includes(5);
     demandState.items = demandState.items.map((item) =>
       item.id === id
@@ -11152,6 +11182,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
             path: {
               doneSteps,
               commentStage3,
+              comments,
             },
           }
         : item
@@ -11305,6 +11336,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         path: {
           doneSteps: [1],
           commentStage3: "",
+          comments: [],
         },
       });
     }

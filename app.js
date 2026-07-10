@@ -14953,12 +14953,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       });
     }
     toolsInfoGridEl.classList.toggle("tools-info-grid--search-card", isSearchMode);
-    const searchStatusText = isSearchMode
-      ? normalizeToolsInfoStatus(tool?.["Статус"], Boolean(tool?.__pendingMove))
-      : "";
-    const hasKitBadge = Array.isArray(tool?.["Комплектация"]) && tool["Комплектация"].some((item) =>
-      [item?.["Наименование"], item?.["Количество"], item?.["Бух.номер"]].some((value) => String(value ?? "").trim())
-    );
+    const isMovingToolInSearch = isSearchMode && Boolean(tool?.__pendingMove);
     if (isSearchMode) {
       toolsInfoGridEl.innerHTML = `
         <div class="tools-info-search-hero">
@@ -14969,7 +14964,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
             <div class="tools-info-search-title">${escapeHtml(String(tool?.["Наименование"] ?? "").trim() || "Инструмент")}</div>
             <div class="tools-info-search-brand">${escapeHtml([tool?.["Производитель"], tool?.["Модель"]].map((v) => String(v ?? "").trim()).filter(Boolean).join(" · ") || "—")}</div>
             <div class="tools-info-search-numbers"><span>Номер: ${escapeHtml(formatInfoValue(toolNumber))}</span><span>Бух.номер: ${escapeHtml(formatInfoValue(accountingNumber))}</span></div>
-            ${hasKitBadge ? `<div class="tools-info-search-badges"><span class="tools-info-search-kit" title="Есть комплектация">🧰 Комплект</span></div>` : ""}
+            ${isMovingToolInSearch ? `<div class="tools-info-search-badges"><span class="tools-info-search-moving" title="Инструмент ожидает принятия перемещения">↔ Перемещается</span></div>` : ""}
           </div>
         </div>
       `;
@@ -15068,7 +15063,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         statusBadge.className = "tools-info-status-badge";
         statusBadge.style.setProperty("--tools-info-status-color", resolveToolStatusColor(tool, value));
         const statusLabel = document.createElement("span");
-        statusLabel.textContent = normalizeToolsInfoStatus(value, Boolean(tool?.__pendingMove));
+        statusLabel.textContent = normalizeToolsInfoStatus(value, false);
         statusBadge.append(statusLabel);
         valueEl.appendChild(statusBadge);
       } else {
@@ -15212,12 +15207,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
   const applyToolsInfoPanelTone = (tool) => {
     if (!toolsInfoModalPanelEl) return;
-    const rawStatus = String(tool?.["Статус"] ?? "").trim();
-    const normalizedStatus = rawStatus.toLocaleLowerCase("ru");
-    const isWorkingStatus = normalizedStatus === "рабочий" || normalizedStatus === "исправный";
-    const hasMoveStatus =
-      normalizedStatus === "в процессе перемещения" || normalizedStatus === "перемещается";
-    const shouldHighlightPending = Boolean(tool?.__pendingMove) && (!isWorkingStatus || hasMoveStatus);
+    const shouldHighlightPending = Boolean(tool?.__pendingMove);
     toolsInfoModalPanelEl.classList.toggle(
       "tools-item--broken",
       tool?.__statusTone === "broken"

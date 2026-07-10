@@ -850,10 +850,9 @@ export function renderRole(user, options = {}) {
             <div class="settings-modal__header demand-path-modal__header">
               <div class="settings-modal__title">
                 <h2 data-demand-path-title>Путь заявки</h2>
-                <p data-demand-path-subtitle>От создания до получения</p>
               </div>
               <button
-                class="button-icon demand-path-modal__close"
+                class="button-icon demand-modal__close demand-path-modal__close"
                 type="button"
                 data-demand-path-close
                 aria-label="Закрыть путь заявки"
@@ -868,34 +867,59 @@ export function renderRole(user, options = {}) {
                     <strong data-demand-path-item>Заявка</strong>
                     <span data-demand-path-meta>—</span>
                   </div>
-                  <button
-                    class="demand-path-edit"
-                    type="button"
-                    data-demand-path-edit
-                    aria-pressed="false"
-                    aria-label="Разрешить редактирование пути заявки"
-                  >
-                    <span aria-hidden="true">✎</span>
-                    <b>Редактировать</b>
-                  </button>
+                  <div class="demand-path-tools" aria-label="Действия с путём заявки">
+                    <button
+                      class="demand-path-tool demand-path-edit"
+                      type="button"
+                      data-demand-path-edit
+                      aria-pressed="false"
+                      aria-label="Редактировать путь заявки"
+                      title="Редактировать"
+                    >
+                      <span aria-hidden="true">✎</span>
+                    </button>
+                    <button
+                      class="demand-path-tool demand-path-comment-add"
+                      type="button"
+                      data-demand-path-comment-add
+                      aria-expanded="false"
+                      aria-label="Добавить комментарий"
+                      title="Добавить комментарий"
+                    >
+                      <span aria-hidden="true">💬</span>
+                    </button>
+                  </div>
                 </div>
                 <div class="demand-path-steps" data-demand-path-steps></div>
-                <label class="demand-path-comment">
-                  <span>Комментарий к этапу 3</span>
-                  <textarea
-                    class="form-input"
-                    rows="3"
-                    placeholder="Напишите, что нужно уточнить или что уже обсудили..."
-                    data-demand-path-comment
-                    disabled
-                  ></textarea>
-                </label>
+                <div class="demand-path-comment" data-demand-path-comment-box>
+                  <div class="demand-path-comment__saved is-hidden" data-demand-path-comment-saved></div>
+                  <label class="demand-path-comment__form is-hidden" data-demand-path-comment-form>
+                    <span>Новый комментарий</span>
+                    <div class="demand-path-comment__input">
+                      <textarea
+                        class="form-input"
+                        rows="3"
+                        placeholder="Напишите, что нужно уточнить или что уже обсудили..."
+                        data-demand-path-comment
+                      ></textarea>
+                      <button
+                        class="demand-path-tool demand-path-comment-save"
+                        type="button"
+                        data-demand-path-comment-save
+                        aria-label="Сохранить комментарий"
+                        title="Сохранить комментарий"
+                      >
+                        <span aria-hidden="true">💾</span>
+                      </button>
+                    </div>
+                  </label>
+                </div>
                 <div class="demand-path-actions">
                   <button class="action-secondary" type="button" data-demand-path-cancel>
                     Отмена
                   </button>
                   <button class="action-primary" type="button" data-demand-path-save disabled>
-                    Сохранить путь
+                    Сохранить
                   </button>
                 </div>
                 <div class="form-message" data-demand-path-message></div>

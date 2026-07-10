@@ -11963,6 +11963,23 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     return raw || "—";
   };
 
+  const formatResponsibleShortName = (value) => {
+    const parts = String(value ?? "").trim().split(/\s+/u).filter(Boolean);
+    if (parts.length <= 2) return parts.join(" ") || "—";
+    return parts.slice(0, 2).join(" ");
+  };
+
+  const resolveToolStatusColor = (tool, value) => {
+    const status = String(value ?? tool?.["Статус"] ?? "").trim().toLowerCase();
+    const tone = tool?.__statusTone || resolveToolStatusTone(tool);
+    if (tone === "broken" || status === "сломан") return "#facc15";
+    if (tone === "repair" || status === "в ремонте" || status === "ремонт") return "#fb923c";
+    if (tone === "writeoff" || status === "на списание") return "#ef4444";
+    if (Boolean(tool?.__pendingMove) || status === "в процессе перемещения" || status === "перемещается") return "#3b82f6";
+    if (status === "рабочий" || status === "исправный") return "#22c55e";
+    return "#94a3b8";
+  };
+
   const formatSearchCostValue = (value) => {
     const normalizedValue = formatInfoValue(value);
     if (normalizedValue === "—") return normalizedValue;
@@ -14984,7 +15001,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const searchLabels = {
         "Ответственный": "👤 Ответственный",
         "Объект": "📍 Объект",
-        "Статус": "✅ Статус",
+        "Статус": "Статус",
         "Стоимость": "💰 Стоимость",
         "Дата покупки": "📅 Покупка",
       };
@@ -14992,7 +15009,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const valueEl = document.createElement("div");
       valueEl.className = "tools-info-value";
       const formattedValue = formatInfoValue(value);
-      if (label === "Стоимость" && formattedValue !== "—") {
+      if (label === "Ответственный") {
+        valueEl.textContent = formatResponsibleShortName(value);
+      } else if (label === "Стоимость" && formattedValue !== "—") {
         valueEl.textContent = `${formattedValue} р.`;
       } else if (label === "Статус" && !isSearchMode) {
         const statusLine = document.createElement("div");
@@ -15015,7 +15034,16 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         }
         valueEl.appendChild(statusLine);
       } else if (label === "Статус") {
-        valueEl.textContent = normalizeToolsInfoStatus(value, Boolean(tool?.__pendingMove));
+        const statusBadge = document.createElement("span");
+        statusBadge.className = "tools-info-status-badge";
+        statusBadge.style.setProperty("--tools-info-status-color", resolveToolStatusColor(tool, value));
+        const statusDot = document.createElement("span");
+        statusDot.className = "tools-info-status-dot";
+        statusDot.setAttribute("aria-hidden", "true");
+        const statusLabel = document.createElement("span");
+        statusLabel.textContent = normalizeToolsInfoStatus(value, Boolean(tool?.__pendingMove));
+        statusBadge.append(statusDot, statusLabel);
+        valueEl.appendChild(statusBadge);
       } else {
         valueEl.textContent = formattedValue;
       }

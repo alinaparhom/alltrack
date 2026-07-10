@@ -1007,7 +1007,7 @@ export function renderRole(user, options = {}) {
                     <input
                       class="form-input tools-search__input"
                       type="search"
-                      placeholder="Поиск по номеру, названию, модели..."
+                      placeholder=""
                       data-tools-search
                       autocomplete="off"
                     />

@@ -11135,6 +11135,11 @@
 
       .tools-info-modal__panel--search .tools-info-header-actions {
         pointer-events: auto;
+        gap: 6px;
+      }
+
+      .tools-info-modal__panel--search .tools-info-header-actions [data-tools-info-share] {
+        margin-right: 12px;
       }
 
       .tools-info-modal__panel--search .tools-info-header-actions .tools-info-quick-action {
@@ -11171,6 +11176,8 @@
       }
 
       .tools-info-modal__panel--search .tools-info-card {
+        box-sizing: border-box;
+        width: 100%;
         padding: 12px;
         border-radius: 26px;
         background: linear-gradient(150deg, rgba(255,255,255,0.94), rgba(248,250,252,0.86));
@@ -11188,11 +11195,16 @@
       }
 
       .tools-info-modal__panel--search .tools-info-top-actions {
+        box-sizing: border-box;
+        width: 100%;
         gap: 0;
       }
 
       .tools-info-modal__panel--search .tools-info-tabs {
+        box-sizing: border-box;
+        width: 100%;
         margin-top: 0;
+        margin-inline: 0;
         flex-shrink: 0;
       }
 

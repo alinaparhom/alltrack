@@ -14955,7 +14955,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           <div class="tools-info-search-main">
             <div class="tools-info-search-title">${escapeHtml(String(tool?.["Наименование"] ?? "").trim() || "Инструмент")}</div>
             <div class="tools-info-search-brand">${escapeHtml([tool?.["Производитель"], tool?.["Модель"]].map((v) => String(v ?? "").trim()).filter(Boolean).join(" · ") || "—")}</div>
-            <div class="tools-info-search-numbers"><span>🔢 № ${escapeHtml(formatInfoValue(toolNumber))}</span><span>Бух.номер: ${escapeHtml(formatInfoValue(accountingNumber))}</span></div>
+            <div class="tools-info-search-numbers"><span>№ ${escapeHtml(formatInfoValue(toolNumber))}</span><span>Бух.номер: ${escapeHtml(formatInfoValue(accountingNumber))}</span></div>
             ${hasKitBadge ? `<div class="tools-info-search-badges"><span class="tools-info-search-kit" title="Есть комплектация">🧰 Комплект</span></div>` : ""}
           </div>
         </div>

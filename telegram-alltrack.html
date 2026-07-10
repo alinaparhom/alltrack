@@ -10789,8 +10789,10 @@
       .tools-info-search-numbers {
         width: fit-content;
         max-width: 100%;
-        padding: 5px 8px;
-        border-radius: 999px;
+        display: grid;
+        gap: 2px;
+        padding: 6px 9px;
+        border-radius: 14px;
         color: #475569;
         background: rgba(241, 245, 249, 0.92);
       }
@@ -10840,6 +10842,9 @@
       }
 
       .tools-info-grid--search-card .tools-info-label {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
         font-size: 12px;
         font-weight: 850;
         color: #64748b;
@@ -10909,9 +10914,9 @@
         }
 
         .tools-info-tab {
-          height: 36px;
+          height: 32px;
           min-width: 0;
-          padding: 7px 2px;
+          padding: 4px 2px;
           font-size: 11px;
           letter-spacing: -0.02em;
         }
@@ -11122,9 +11127,6 @@
       }
 
       .tools-info-modal__panel--search .tools-info-card {
-        position: sticky;
-        top: max(8px, env(safe-area-inset-top));
-        z-index: 3;
         padding: 12px;
         border-radius: 26px;
         background: linear-gradient(150deg, rgba(255,255,255,0.94), rgba(248,250,252,0.86));
@@ -11143,6 +11145,12 @@
 
       .tools-info-modal__panel--search .tools-info-tabs {
         margin-top: 0;
+      }
+
+      .tools-info-modal__panel--search .tools-info-search-hero {
+        position: sticky;
+        top: max(8px, env(safe-area-inset-top));
+        z-index: 3;
       }
 
       body[data-theme="dark"] .tools-info-modal__panel--search .tools-modal__close {
@@ -11318,7 +11326,7 @@
         border: 1px solid rgba(226, 232, 240, 0.85);
         background: rgba(255, 255, 255, 0.86);
         color: var(--muted);
-        padding: 10px 0;
+        padding: 6px 0;
         border-radius: 999px;
         font-size: 13.5px;
         font-weight: 600;
@@ -11328,7 +11336,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        min-height: 44px;
+        min-height: 36px;
         text-align: center;
         width: 100%;
       }
@@ -11346,6 +11354,12 @@
         border-radius: 999px;
         background: var(--tools-info-status-color, #94a3b8);
         box-shadow: 0 0 0 4px color-mix(in srgb, var(--tools-info-status-color, #94a3b8) 18%, transparent), 0 0 18px color-mix(in srgb, var(--tools-info-status-color, #94a3b8) 38%, transparent);
+      }
+
+      .tools-info-status-dot--label {
+        width: 10px;
+        height: 10px;
+        flex-basis: 10px;
       }
 
       .tools-info-tab.is-active {

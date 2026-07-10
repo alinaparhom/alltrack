@@ -14948,7 +14948,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           <div class="tools-info-search-main">
             <div class="tools-info-search-title">${escapeHtml(String(tool?.["Наименование"] ?? "").trim() || "Инструмент")}</div>
             <div class="tools-info-search-brand">${escapeHtml([tool?.["Производитель"], tool?.["Модель"]].map((v) => String(v ?? "").trim()).filter(Boolean).join(" · ") || "—")}</div>
-            <div class="tools-info-search-numbers">🔢 № ${escapeHtml(formatInfoValue(toolNumber))} · Бух. № ${escapeHtml(formatInfoValue(accountingNumber))}</div>
+            <div class="tools-info-search-numbers"><span>🔢 № ${escapeHtml(formatInfoValue(toolNumber))}</span><span>Бух.номер: ${escapeHtml(formatInfoValue(accountingNumber))}</span></div>
             ${hasKitBadge ? `<div class="tools-info-search-badges"><span class="tools-info-search-kit" title="Есть комплектация">🧰 Комплект</span></div>` : ""}
           </div>
         </div>
@@ -15005,7 +15005,17 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         "Стоимость": "💰 Стоимость",
         "Дата покупки": "📅 Покупка",
       };
-      labelEl.textContent = isSearchMode ? (searchLabels[label] || label) : (hideLabelInSearch ? "" : label);
+      if (isSearchMode && label === "Статус") {
+        const statusLabelDot = document.createElement("span");
+        statusLabelDot.className = "tools-info-status-dot tools-info-status-dot--label";
+        statusLabelDot.style.setProperty("--tools-info-status-color", resolveToolStatusColor(tool, value));
+        statusLabelDot.setAttribute("aria-hidden", "true");
+        const statusLabelText = document.createElement("span");
+        statusLabelText.textContent = searchLabels[label] || label;
+        labelEl.append(statusLabelDot, statusLabelText);
+      } else {
+        labelEl.textContent = isSearchMode ? (searchLabels[label] || label) : (hideLabelInSearch ? "" : label);
+      }
       const valueEl = document.createElement("div");
       valueEl.className = "tools-info-value";
       const formattedValue = formatInfoValue(value);
@@ -15037,12 +15047,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         const statusBadge = document.createElement("span");
         statusBadge.className = "tools-info-status-badge";
         statusBadge.style.setProperty("--tools-info-status-color", resolveToolStatusColor(tool, value));
-        const statusDot = document.createElement("span");
-        statusDot.className = "tools-info-status-dot";
-        statusDot.setAttribute("aria-hidden", "true");
         const statusLabel = document.createElement("span");
         statusLabel.textContent = normalizeToolsInfoStatus(value, Boolean(tool?.__pendingMove));
-        statusBadge.append(statusDot, statusLabel);
+        statusBadge.append(statusLabel);
         valueEl.appendChild(statusBadge);
       } else {
         valueEl.textContent = formattedValue;

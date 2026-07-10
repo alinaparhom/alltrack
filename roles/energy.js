@@ -839,6 +839,70 @@ export function renderRole(user, options = {}) {
             </div>
           </div>
         </div>
+        <div class="demand-path-modal settings-modal is-hidden" data-demand-path-modal>
+          <div class="settings-modal__backdrop" data-demand-path-backdrop></div>
+          <div
+            class="settings-modal__panel demand-path-modal__panel"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Путь заявки"
+          >
+            <div class="settings-modal__header demand-path-modal__header">
+              <div class="settings-modal__title">
+                <h2 data-demand-path-title>Путь заявки</h2>
+                <p data-demand-path-subtitle>От создания до получения</p>
+              </div>
+              <button
+                class="button-icon demand-path-modal__close"
+                type="button"
+                data-demand-path-close
+                aria-label="Закрыть путь заявки"
+              >
+                <span class="button-icon-emoji" aria-hidden="true">✕</span>
+              </button>
+            </div>
+            <div class="settings-modal__body demand-path-modal__body">
+              <div class="demand-path-card">
+                <div class="demand-path-card__top">
+                  <div>
+                    <strong data-demand-path-item>Заявка</strong>
+                    <span data-demand-path-meta>—</span>
+                  </div>
+                  <button
+                    class="demand-path-edit"
+                    type="button"
+                    data-demand-path-edit
+                    aria-pressed="false"
+                    aria-label="Разрешить редактирование пути заявки"
+                  >
+                    <span aria-hidden="true">✎</span>
+                    <b>Редактировать</b>
+                  </button>
+                </div>
+                <div class="demand-path-steps" data-demand-path-steps></div>
+                <label class="demand-path-comment">
+                  <span>Комментарий к этапу 3</span>
+                  <textarea
+                    class="form-input"
+                    rows="3"
+                    placeholder="Напишите, что нужно уточнить или что уже обсудили..."
+                    data-demand-path-comment
+                    disabled
+                  ></textarea>
+                </label>
+                <div class="demand-path-actions">
+                  <button class="action-secondary" type="button" data-demand-path-cancel>
+                    Отмена
+                  </button>
+                  <button class="action-primary" type="button" data-demand-path-save disabled>
+                    Сохранить путь
+                  </button>
+                </div>
+                <div class="form-message" data-demand-path-message></div>
+              </div>
+            </div>
+          </div>
+        </div>
         <div class="demand-request-map-modal settings-modal is-hidden" data-demand-request-map-modal>
           <div
             class="settings-modal__backdrop"

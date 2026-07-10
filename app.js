@@ -12207,7 +12207,16 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (toolsSearchInput) {
       const searchLabel =
         numberLabel === "Бух.номер" ? "бух.номеру" : "номеру";
-      toolsSearchInput.placeholder = `Поиск по ${searchLabel}, названию, модели...`;
+      toolsSearchInput.placeholder =
+        toolsState.mode === "search"
+          ? ""
+          : `Поиск по ${searchLabel}, названию, модели...`;
+      toolsSearchInput.setAttribute(
+        "aria-label",
+        toolsState.mode === "search"
+          ? "Поиск"
+          : `Поиск по ${searchLabel}, названию, модели`
+      );
     }
   };
 

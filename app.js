@@ -10696,7 +10696,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     demandPathModalEl?.classList.toggle("is-editing", demandState.path.editable);
     if (demandPathEditButton) {
       demandPathEditButton.setAttribute("aria-pressed", String(demandState.path.editable));
-      demandPathEditButton.title = demandState.path.editable ? "Редактирование включено" : "Редактировать";
+      demandPathEditButton.title = demandState.path.editable ? "Сохранить путь" : "Редактировать";
+      demandPathEditButton.setAttribute(
+        "aria-label",
+        demandState.path.editable ? "Сохранить путь заявки" : "Редактировать путь заявки"
+      );
+      const iconEl = demandPathEditButton.querySelector("span");
+      if (iconEl) iconEl.textContent = demandState.path.editable ? "💾" : "✎";
     }
     demandPathStepsEl
       ?.querySelectorAll("input")
@@ -11098,7 +11104,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (item) renderDemandPathModal(item);
   });
   demandPathEditButton?.addEventListener("click", () => {
-    setDemandPathEditable(!demandState.path.editable);
+    if (demandState.path.editable) {
+      void saveDemandPathChanges();
+      return;
+    }
+    setDemandPathEditable(true);
   });
   demandPathStepsEl?.addEventListener("change", (event) => {
     const input = event.target.closest("input");

@@ -9523,11 +9523,27 @@
       }
 
       .demand-path-card--important {
-        border-color: rgba(239, 68, 68, 0.46);
+        border-color: rgba(245, 158, 11, 0.55);
         background:
-          radial-gradient(circle at 18% 0%, rgba(248, 113, 113, 0.20), transparent 38%),
-          linear-gradient(135deg, rgba(255, 245, 245, 0.90), rgba(254, 226, 226, 0.70));
-        box-shadow: 0 16px 38px rgba(239, 68, 68, 0.14);
+          linear-gradient(90deg, rgba(250, 204, 21, 0.42), rgba(250, 204, 21, 0.16) 36%, transparent 68%),
+          linear-gradient(135deg, rgba(255, 255, 255, 0.97), rgba(254, 249, 195, 0.94));
+        box-shadow: 0 8px 22px rgba(245, 158, 11, 0.16);
+      }
+
+      .demand-path-card--overdue {
+        border-color: rgba(239, 68, 68, 0.58);
+        background:
+          linear-gradient(90deg, rgba(248, 113, 113, 0.38), rgba(248, 113, 113, 0.14) 36%, transparent 68%),
+          linear-gradient(135deg, rgba(255, 255, 255, 0.97), rgba(254, 226, 226, 0.94));
+        box-shadow: 0 8px 22px rgba(239, 68, 68, 0.17);
+      }
+
+      .demand-path-card--important-overdue {
+        border-color: rgba(249, 115, 22, 0.62);
+        background:
+          linear-gradient(110deg, rgba(250, 204, 21, 0.46) 0%, rgba(250, 204, 21, 0.3) 42%, rgba(248, 113, 113, 0.42) 100%),
+          linear-gradient(135deg, rgba(255, 255, 255, 0.97), rgba(255, 247, 237, 0.92));
+        box-shadow: 0 8px 24px rgba(249, 115, 22, 0.18);
       }
 
       .demand-path-card__top {
@@ -9670,6 +9686,11 @@
       }
 
       .demand-path-comment__saved {
+        display: grid;
+        gap: 8px;
+      }
+
+      .demand-path-comment__item {
         padding: 10px 12px;
         border: 1px solid rgba(59, 125, 255, 0.14);
         border-radius: 16px;
@@ -9678,6 +9699,20 @@
         font-size: 13px;
         line-height: 1.45;
         white-space: pre-wrap;
+      }
+
+      .demand-path-comment__item span {
+        display: block;
+        margin-bottom: 4px;
+        color: #64748b;
+        font-size: 11px;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+
+      .demand-path-comment__item p {
+        margin: 0;
       }
 
       .demand-path-comment__form {

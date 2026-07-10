@@ -10721,7 +10721,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       demandPathCommentSavedEl.classList.toggle("is-hidden", !path.commentStage3);
     }
     demandPathCommentFormEl?.classList.add("is-hidden");
+    const commentBoxEl = demandPathCommentFormEl?.closest(".demand-path-comment");
+    commentBoxEl?.classList.toggle("is-hidden", !path.commentStage3);
     demandPathCommentAddButton?.setAttribute("aria-expanded", "false");
+    const cardEl = demandPathStepsEl.closest(".demand-path-card");
+    cardEl?.classList.toggle("demand-path-card--important", normalizeDemandPriority(item.priority ?? "") === "red");
     demandPathStepsEl.innerHTML = "";
     demandPathSteps.forEach((step) => {
       const row = document.createElement("label");
@@ -10736,6 +10740,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         row.appendChild(demandPathCommentAddButton);
       }
       demandPathStepsEl.appendChild(row);
+      if (step.id === 3 && commentBoxEl) {
+        demandPathStepsEl.appendChild(commentBoxEl);
+      }
     });
     setDemandPathEditable(demandState.path.editable);
   };
@@ -11100,8 +11107,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   });
   demandPathCommentAddButton?.addEventListener("click", () => {
     const isOpen = !demandPathCommentFormEl?.classList.contains("is-hidden");
+    const commentBoxEl = demandPathCommentFormEl?.closest(".demand-path-comment");
+    commentBoxEl?.classList.remove("is-hidden");
     demandPathCommentFormEl?.classList.toggle("is-hidden", isOpen);
     demandPathCommentAddButton.setAttribute("aria-expanded", String(!isOpen));
+    if (isOpen && !String(demandPathCommentSavedEl?.textContent ?? "").trim()) {
+      commentBoxEl?.classList.add("is-hidden");
+    }
     if (!isOpen) demandPathCommentEl?.focus();
   });
   const saveDemandPathChanges = async ({ saveCommentOnly = false } = {}) => {

@@ -6484,12 +6484,15 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const demandPathBackdropEl = contentEl.querySelector("[data-demand-path-backdrop]");
   const demandPathCloseButton = contentEl.querySelector("[data-demand-path-close]");
   const demandPathTitleEl = contentEl.querySelector("[data-demand-path-title]");
-  const demandPathSubtitleEl = contentEl.querySelector("[data-demand-path-subtitle]");
   const demandPathItemEl = contentEl.querySelector("[data-demand-path-item]");
   const demandPathMetaEl = contentEl.querySelector("[data-demand-path-meta]");
   const demandPathStepsEl = contentEl.querySelector("[data-demand-path-steps]");
   const demandPathEditButton = contentEl.querySelector("[data-demand-path-edit]");
   const demandPathCommentEl = contentEl.querySelector("[data-demand-path-comment]");
+  const demandPathCommentAddButton = contentEl.querySelector("[data-demand-path-comment-add]");
+  const demandPathCommentSaveButton = contentEl.querySelector("[data-demand-path-comment-save]");
+  const demandPathCommentFormEl = contentEl.querySelector("[data-demand-path-comment-form]");
+  const demandPathCommentSavedEl = contentEl.querySelector("[data-demand-path-comment-saved]");
   const demandPathSaveButton = contentEl.querySelector("[data-demand-path-save]");
   const demandPathCancelButton = contentEl.querySelector("[data-demand-path-cancel]");
   const demandPathMessageEl = contentEl.querySelector("[data-demand-path-message]");
@@ -10693,16 +10696,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     demandPathModalEl?.classList.toggle("is-editing", demandState.path.editable);
     if (demandPathEditButton) {
       demandPathEditButton.setAttribute("aria-pressed", String(demandState.path.editable));
-      demandPathEditButton.querySelector("b").textContent = demandState.path.editable
-        ? "Редактируется"
-        : "Редактировать";
+      demandPathEditButton.title = demandState.path.editable ? "Редактирование включено" : "Редактировать";
     }
     demandPathStepsEl
       ?.querySelectorAll("input")
       .forEach((input) => {
         input.disabled = !demandState.path.editable || Number(input.value) === 1;
       });
-    if (demandPathCommentEl) demandPathCommentEl.disabled = !demandState.path.editable;
     if (demandPathSaveButton) demandPathSaveButton.disabled = !demandState.path.editable;
   };
 
@@ -10711,16 +10711,17 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const path = getDemandPath(item);
     const doneSet = new Set(path.doneSteps);
     if (demandPathTitleEl) demandPathTitleEl.textContent = "Путь заявки";
-    if (demandPathSubtitleEl) {
-      demandPathSubtitleEl.textContent = item.status === "done"
-        ? "Заявка получена и закрыта"
-        : "Отмечайте этапы по мере выполнения";
-    }
     if (demandPathItemEl) demandPathItemEl.textContent = item.item || "Заявка";
     if (demandPathMetaEl) {
       demandPathMetaEl.textContent = `${item.object || "Объект не указан"} · ${item.requestedBy || "Без автора"}`;
     }
-    if (demandPathCommentEl) demandPathCommentEl.value = path.commentStage3;
+    if (demandPathCommentEl) demandPathCommentEl.value = "";
+    if (demandPathCommentSavedEl) {
+      demandPathCommentSavedEl.textContent = path.commentStage3;
+      demandPathCommentSavedEl.classList.toggle("is-hidden", !path.commentStage3);
+    }
+    demandPathCommentFormEl?.classList.add("is-hidden");
+    demandPathCommentAddButton?.setAttribute("aria-expanded", "false");
     demandPathStepsEl.innerHTML = "";
     demandPathSteps.forEach((step) => {
       const row = document.createElement("label");
@@ -11080,7 +11081,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   });
   demandPathBackdropEl?.addEventListener("click", closeDemandPathModal);
   demandPathCloseButton?.addEventListener("click", closeDemandPathModal);
-  demandPathCancelButton?.addEventListener("click", closeDemandPathModal);
+  demandPathCancelButton?.addEventListener("click", () => {
+    const item = demandState.items.find((entry) => entry.id === demandState.path.activeId);
+    demandState.path.editable = false;
+    if (item) renderDemandPathModal(item);
+  });
   demandPathEditButton?.addEventListener("click", () => {
     setDemandPathEditable(!demandState.path.editable);
   });
@@ -11089,15 +11094,27 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (!input) return;
     input.closest(".demand-path-step")?.classList.toggle("is-done", input.checked);
   });
-  demandPathSaveButton?.addEventListener("click", async () => {
+  demandPathCommentAddButton?.addEventListener("click", () => {
+    const isOpen = !demandPathCommentFormEl?.classList.contains("is-hidden");
+    demandPathCommentFormEl?.classList.toggle("is-hidden", isOpen);
+    demandPathCommentAddButton.setAttribute("aria-expanded", String(!isOpen));
+    if (!isOpen) demandPathCommentEl?.focus();
+  });
+  const saveDemandPathChanges = async ({ saveCommentOnly = false } = {}) => {
     const id = demandState.path.activeId;
-    if (!id || !demandState.path.editable) return;
-    const checkedSteps = Array.from(demandPathStepsEl?.querySelectorAll("input:checked") ?? [])
-      .map((input) => Number(input.value))
-      .filter((step) => Number.isInteger(step));
+    if (!id) return;
+    if (!saveCommentOnly && !demandState.path.editable) return;
+    const currentItem = demandState.items.find((item) => item.id === id);
+    const currentPath = getDemandPath(currentItem);
+    const checkedSteps = saveCommentOnly
+      ? currentPath.doneSteps
+      : Array.from(demandPathStepsEl?.querySelectorAll("input:checked") ?? [])
+        .map((input) => Number(input.value))
+        .filter((step) => Number.isInteger(step));
     if (!checkedSteps.includes(1)) checkedSteps.unshift(1);
     const doneSteps = Array.from(new Set(checkedSteps)).sort((a, b) => a - b);
-    const commentStage3 = String(demandPathCommentEl?.value ?? "").trim();
+    const newComment = String(demandPathCommentEl?.value ?? "").trim();
+    const commentStage3 = newComment || currentPath.commentStage3;
     const shouldClose = doneSteps.includes(5);
     demandState.items = demandState.items.map((item) =>
       item.id === id
@@ -11113,14 +11130,16 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           }
         : item
     );
-    if (demandPathMessageEl) demandPathMessageEl.textContent = "Сохраняем путь...";
+    if (demandPathMessageEl) demandPathMessageEl.textContent = saveCommentOnly ? "Сохраняем комментарий..." : "Сохраняем путь...";
     await saveDemandItems();
     const updated = demandState.items.find((item) => item.id === id);
     if (updated) renderDemandPathModal(updated);
-    setDemandPathEditable(false);
-    if (demandPathMessageEl) demandPathMessageEl.textContent = "Путь заявки сохранён.";
+    if (!saveCommentOnly) setDemandPathEditable(false);
+    if (demandPathMessageEl) demandPathMessageEl.textContent = saveCommentOnly ? "Комментарий сохранён." : "Путь заявки сохранён.";
     renderDemandList();
-  });
+  };
+  demandPathSaveButton?.addEventListener("click", () => saveDemandPathChanges());
+  demandPathCommentSaveButton?.addEventListener("click", () => saveDemandPathChanges({ saveCommentOnly: true }));
   demandPathModalEl?.addEventListener("keydown", (event) => {
     if (event.key === "Escape") closeDemandPathModal();
   });

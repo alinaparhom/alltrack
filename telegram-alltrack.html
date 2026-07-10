@@ -9489,6 +9489,10 @@
         justify-content: space-between;
       }
 
+      .demand-path-card__top > div:first-child {
+        min-width: 0;
+      }
+
       .demand-path-card__top strong {
         display: block;
         font-size: 16px;
@@ -9502,20 +9506,29 @@
         font-size: 12px;
       }
 
-      .demand-path-edit {
+      .demand-path-tools {
         display: inline-flex;
         align-items: center;
-        gap: 6px;
-        min-height: 36px;
-        padding: 0 12px;
-        border: 1px solid rgba(59, 125, 255, 0.22);
-        border-radius: 999px;
-        background: rgba(59, 125, 255, 0.1);
-        color: #1d4ed8;
-        font-weight: 800;
+        gap: 8px;
+        flex: 0 0 auto;
       }
 
-      .demand-path-modal.is-editing .demand-path-edit {
+      .demand-path-tool {
+        display: inline-grid;
+        place-items: center;
+        width: 38px;
+        height: 38px;
+        border: 1px solid rgba(59, 125, 255, 0.22);
+        border-radius: 14px;
+        background: rgba(59, 125, 255, 0.1);
+        color: #1d4ed8;
+        font-size: 17px;
+        font-weight: 900;
+        box-shadow: 0 10px 22px rgba(59, 125, 255, 0.1);
+      }
+
+      .demand-path-modal.is-editing .demand-path-edit,
+      .demand-path-comment-add[aria-expanded="true"] {
         background: rgba(34, 197, 94, 0.12);
         border-color: rgba(34, 197, 94, 0.34);
         color: #15803d;
@@ -9581,9 +9594,32 @@
 
       .demand-path-comment {
         display: grid;
-        gap: 7px;
+        gap: 8px;
         font-size: 12px;
         font-weight: 800;
+      }
+
+      .demand-path-comment__saved {
+        padding: 10px 12px;
+        border: 1px solid rgba(59, 125, 255, 0.14);
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.72);
+        color: #334155;
+        font-size: 13px;
+        line-height: 1.45;
+        white-space: pre-wrap;
+      }
+
+      .demand-path-comment__form {
+        display: grid;
+        gap: 7px;
+      }
+
+      .demand-path-comment__input {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 42px;
+        gap: 8px;
+        align-items: start;
       }
 
       .demand-path-comment textarea {
@@ -9591,19 +9627,38 @@
         resize: vertical;
       }
 
+      .demand-path-comment-save {
+        width: 42px;
+        height: 42px;
+        border-radius: 14px;
+      }
+
       .demand-path-actions {
+        display: none;
+      }
+
+      .demand-path-modal.is-editing .demand-path-actions {
         display: flex;
+      }
+
+      .demand-path-actions {
         justify-content: flex-end;
         gap: 8px;
       }
 
       @media (max-width: 560px) {
-        .demand-path-card__top,
-        .demand-path-actions {
+        .demand-path-card__top {
           display: grid;
         }
 
-        .demand-path-edit,
+        .demand-path-modal.is-editing .demand-path-actions {
+          display: grid;
+        }
+
+        .demand-path-tools {
+          justify-content: flex-end;
+        }
+
         .demand-path-actions button {
           width: 100%;
           justify-content: center;

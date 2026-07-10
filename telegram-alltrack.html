@@ -11105,10 +11105,31 @@
           rgba(255, 255, 255, 0.72);
       }
 
+      .tools-info-modal__panel--search.tools-item--broken .tools-info-modal__body {
+        background: linear-gradient(160deg, rgba(254, 249, 195, 0.9), rgba(255, 251, 235, 0.74));
+      }
+
+      .tools-info-modal__panel--search.tools-item--repair .tools-info-modal__body {
+        background: linear-gradient(160deg, rgba(255, 237, 213, 0.9), rgba(255, 247, 237, 0.74));
+      }
+
+      .tools-info-modal__panel--search.tools-item--writeoff .tools-info-modal__body {
+        background: linear-gradient(160deg, rgba(254, 226, 226, 0.9), rgba(255, 241, 242, 0.76));
+      }
+
+      .tools-info-modal__panel--search.tools-item--pending-response .tools-info-modal__body {
+        background: linear-gradient(160deg, rgba(219, 234, 254, 0.92), rgba(239, 246, 255, 0.76));
+      }
+
       .tools-info-modal__panel--search .tools-info-card {
+        position: sticky;
+        top: max(8px, env(safe-area-inset-top));
+        z-index: 3;
         padding: 12px;
         border-radius: 26px;
         background: linear-gradient(150deg, rgba(255,255,255,0.94), rgba(248,250,252,0.86));
+        backdrop-filter: blur(18px);
+        -webkit-backdrop-filter: blur(18px);
       }
 
       .tools-info-modal__panel--search .tools-info-top-actions-row,
@@ -11279,9 +11300,9 @@
       .tools-info-tabs {
         display: grid;
         grid-template-columns: repeat(4, minmax(0, 1fr));
-        gap: 8px;
+        gap: 4px;
         width: 100%;
-        padding: 10px;
+        padding: 6px;
         border-radius: 16px;
         border: 1px solid rgba(226, 232, 240, 0.8);
         background: rgba(255, 255, 255, 0.86);
@@ -11297,9 +11318,9 @@
         border: 1px solid rgba(226, 232, 240, 0.85);
         background: rgba(255, 255, 255, 0.86);
         color: var(--muted);
-        padding: 8px 0;
+        padding: 10px 0;
         border-radius: 999px;
-        font-size: 13px;
+        font-size: 13.5px;
         font-weight: 600;
         cursor: pointer;
         transition: all 0.2s ease;
@@ -11307,9 +11328,24 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        height: 40px;
+        min-height: 44px;
         text-align: center;
         width: 100%;
+      }
+
+      .tools-info-status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .tools-info-status-dot {
+        width: 12px;
+        height: 12px;
+        flex: 0 0 12px;
+        border-radius: 999px;
+        background: var(--tools-info-status-color, #94a3b8);
+        box-shadow: 0 0 0 4px color-mix(in srgb, var(--tools-info-status-color, #94a3b8) 18%, transparent), 0 0 18px color-mix(in srgb, var(--tools-info-status-color, #94a3b8) 38%, transparent);
       }
 
       .tools-info-tab.is-active {

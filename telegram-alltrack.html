@@ -9457,7 +9457,19 @@
       }
 
       .demand-action--edit {
-        transform: scaleX(-1);
+        display: inline-grid;
+        place-items: center;
+        font-size: 0;
+        line-height: 1;
+      }
+
+      .demand-action--edit::before {
+        content: "✎";
+        display: block;
+        font-size: 23px;
+        font-weight: 900;
+        line-height: 1;
+        transform: scaleX(-1) translateY(-1px);
       }
 
       .demand-action--danger {
@@ -9477,8 +9489,8 @@
         height: auto;
         max-height: calc(100svh - 20px - max(0px, env(safe-area-inset-bottom)));
         overflow: hidden;
-        grid-template-rows: auto minmax(0, 1fr);
-        border-radius: 24px;
+        grid-template-rows: auto minmax(0, auto);
+        border-radius: 30px;
       }
 
       .demand-path-modal__header {
@@ -9493,20 +9505,28 @@
       }
 
       .demand-path-modal__body {
-        padding: 8px 12px 12px;
+        padding: 8px 12px max(12px, env(safe-area-inset-bottom));
         overflow: auto;
       }
 
       .demand-path-card {
         display: grid;
-        gap: 14px;
+        gap: 12px;
         padding: 14px;
-        border-radius: 22px;
+        border-radius: 26px;
         background:
           radial-gradient(circle at 20% 0%, rgba(59, 125, 255, 0.12), transparent 34%),
           linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(248, 250, 252, 0.82));
         border: 1px solid rgba(148, 163, 184, 0.18);
         box-shadow: 0 16px 38px rgba(15, 23, 42, 0.08);
+      }
+
+      .demand-path-card--important {
+        border-color: rgba(245, 158, 11, 0.55);
+        background:
+          linear-gradient(90deg, rgba(250, 204, 21, 0.42), rgba(250, 204, 21, 0.16) 36%, transparent 68%),
+          linear-gradient(135deg, rgba(255, 255, 255, 0.97), rgba(254, 249, 195, 0.94));
+        box-shadow: 0 16px 38px rgba(245, 158, 11, 0.16);
       }
 
       .demand-path-card__top {
@@ -9564,19 +9584,31 @@
       .demand-path-steps {
         position: relative;
         display: grid;
-        gap: 8px;
+        gap: 0;
       }
 
       .demand-path-step {
+        position: relative;
         display: grid;
-        grid-template-columns: 22px minmax(0, 1fr);
+        grid-template-columns: 24px minmax(0, 1fr);
         align-items: center;
         gap: 10px;
-        min-height: 46px;
-        padding: 9px 11px;
-        border-radius: 16px;
-        background: rgba(255, 255, 255, 0.76);
-        border: 1px solid rgba(148, 163, 184, 0.16);
+        min-height: 50px;
+        padding: 6px 0;
+        border-radius: 0;
+        background: transparent;
+        border: 0;
+      }
+
+      .demand-path-step:not(:last-of-type)::after {
+        content: "";
+        position: absolute;
+        left: 11px;
+        top: 32px;
+        bottom: -18px;
+        width: 2px;
+        border-radius: 999px;
+        background: linear-gradient(180deg, rgba(59, 125, 255, 0.42), rgba(148, 163, 184, 0.28));
       }
 
       .demand-path-step--with-action {
@@ -9630,6 +9662,7 @@
       .demand-path-comment {
         display: grid;
         gap: 8px;
+        margin: 0 0 10px 34px;
         font-size: 12px;
         font-weight: 800;
       }

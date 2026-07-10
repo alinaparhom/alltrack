@@ -4816,6 +4816,29 @@ function normalizeDemandData(raw) {
       const createdAt = sanitizeDemandLabel(item.createdAt ?? item.date ?? "") || getToday();
       const updatedAt = sanitizeDemandLabel(item.updatedAt ?? "");
       const closedAt = getDemandClosedDate(item);
+      const pathSource =
+        item.path && typeof item.path === "object"
+          ? item.path
+          : item.route && typeof item.route === "object"
+            ? item.route
+            : {};
+      const rawDoneSteps = Array.isArray(pathSource.doneSteps)
+        ? pathSource.doneSteps
+        : Array.isArray(item.pathDoneSteps)
+          ? item.pathDoneSteps
+          : [];
+      const doneSteps = Array.from(
+        new Set(
+          rawDoneSteps
+            .map((step) => Number(step))
+            .filter((step) => Number.isInteger(step) && step >= 1 && step <= 5)
+        )
+      );
+      if (!doneSteps.includes(1)) doneSteps.unshift(1);
+      if (status === "done" && !doneSteps.includes(5)) doneSteps.push(5);
+      const pathComment = sanitizeDemandLabel(
+        pathSource.commentStage3 ?? pathSource.comment ?? item.pathComment ?? ""
+      );
       const needDate = normalizeDemandNeedDate(
         item.needDate ??
           item.neededDate ??
@@ -4839,6 +4862,10 @@ function normalizeDemandData(raw) {
         createdAt,
         updatedAt,
         closedAt,
+        path: {
+          doneSteps,
+          commentStage3: pathComment,
+        },
       };
     })
     .filter(Boolean);
@@ -6453,6 +6480,19 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const demandRequestMapSubtitleEl = contentEl.querySelector(
     "[data-demand-request-map-subtitle]"
   );
+  const demandPathModalEl = contentEl.querySelector("[data-demand-path-modal]");
+  const demandPathBackdropEl = contentEl.querySelector("[data-demand-path-backdrop]");
+  const demandPathCloseButton = contentEl.querySelector("[data-demand-path-close]");
+  const demandPathTitleEl = contentEl.querySelector("[data-demand-path-title]");
+  const demandPathSubtitleEl = contentEl.querySelector("[data-demand-path-subtitle]");
+  const demandPathItemEl = contentEl.querySelector("[data-demand-path-item]");
+  const demandPathMetaEl = contentEl.querySelector("[data-demand-path-meta]");
+  const demandPathStepsEl = contentEl.querySelector("[data-demand-path-steps]");
+  const demandPathEditButton = contentEl.querySelector("[data-demand-path-edit]");
+  const demandPathCommentEl = contentEl.querySelector("[data-demand-path-comment]");
+  const demandPathSaveButton = contentEl.querySelector("[data-demand-path-save]");
+  const demandPathCancelButton = contentEl.querySelector("[data-demand-path-cancel]");
+  const demandPathMessageEl = contentEl.querySelector("[data-demand-path-message]");
   const demandEmptyEl = contentEl.querySelector("[data-demand-empty]");
   const demandSubtitleEl = contentEl.querySelector("[data-demand-subtitle]");
   const demandOpenCountEl = contentEl.querySelector("[data-demand-open-count]");
@@ -8557,6 +8597,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       status: "open",
       view: "all",
     },
+    path: {
+      activeId: null,
+      editable: false,
+    },
   };
   const usersState = {
     users: [],
@@ -10620,6 +10664,95 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     void ensureDemandMapReady();
   };
 
+  const demandPathSteps = [
+    { id: 1, label: "Сформирована" },
+    { id: 2, label: "Принята в работу" },
+    { id: 3, label: "В работе с комментариями" },
+    { id: 4, label: "В пути" },
+    { id: 5, label: "Получен" },
+  ];
+
+  const getDemandPath = (item) => {
+    const path = item?.path && typeof item.path === "object" ? item.path : {};
+    const doneSteps = Array.isArray(path.doneSteps) ? path.doneSteps : [];
+    const normalized = new Set(
+      doneSteps
+        .map((step) => Number(step))
+        .filter((step) => Number.isInteger(step) && step >= 1 && step <= 5)
+    );
+    normalized.add(1);
+    if (item?.status === "done") normalized.add(5);
+    return {
+      doneSteps: Array.from(normalized).sort((a, b) => a - b),
+      commentStage3: String(path.commentStage3 ?? "").trim(),
+    };
+  };
+
+  const setDemandPathEditable = (isEditable) => {
+    demandState.path.editable = Boolean(isEditable);
+    demandPathModalEl?.classList.toggle("is-editing", demandState.path.editable);
+    if (demandPathEditButton) {
+      demandPathEditButton.setAttribute("aria-pressed", String(demandState.path.editable));
+      demandPathEditButton.querySelector("b").textContent = demandState.path.editable
+        ? "Редактируется"
+        : "Редактировать";
+    }
+    demandPathStepsEl
+      ?.querySelectorAll("input")
+      .forEach((input) => {
+        input.disabled = !demandState.path.editable || Number(input.value) === 1;
+      });
+    if (demandPathCommentEl) demandPathCommentEl.disabled = !demandState.path.editable;
+    if (demandPathSaveButton) demandPathSaveButton.disabled = !demandState.path.editable;
+  };
+
+  const renderDemandPathModal = (item) => {
+    if (!item || !demandPathStepsEl) return;
+    const path = getDemandPath(item);
+    const doneSet = new Set(path.doneSteps);
+    if (demandPathTitleEl) demandPathTitleEl.textContent = "Путь заявки";
+    if (demandPathSubtitleEl) {
+      demandPathSubtitleEl.textContent = item.status === "done"
+        ? "Заявка получена и закрыта"
+        : "Отмечайте этапы по мере выполнения";
+    }
+    if (demandPathItemEl) demandPathItemEl.textContent = item.item || "Заявка";
+    if (demandPathMetaEl) {
+      demandPathMetaEl.textContent = `${item.object || "Объект не указан"} · ${item.requestedBy || "Без автора"}`;
+    }
+    if (demandPathCommentEl) demandPathCommentEl.value = path.commentStage3;
+    demandPathStepsEl.innerHTML = "";
+    demandPathSteps.forEach((step) => {
+      const row = document.createElement("label");
+      row.className = `demand-path-step${doneSet.has(step.id) ? " is-done" : ""}`;
+      row.innerHTML = `
+        <input type="checkbox" value="${step.id}" ${doneSet.has(step.id) ? "checked" : ""} />
+        <span class="demand-path-step__dot" aria-hidden="true"></span>
+        <span class="demand-path-step__text"><b>${step.id}</b>${escapeHtml(step.label)}</span>
+      `;
+      demandPathStepsEl.appendChild(row);
+    });
+    setDemandPathEditable(demandState.path.editable);
+  };
+
+  const openDemandPathModal = (item) => {
+    if (!demandPathModalEl || !item) return;
+    demandState.path.activeId = item.id;
+    demandState.path.editable = false;
+    if (demandPathMessageEl) demandPathMessageEl.textContent = "";
+    renderDemandPathModal(item);
+    demandPathModalEl.classList.remove("is-hidden");
+    document.body.style.overflow = "hidden";
+  };
+
+  const closeDemandPathModal = () => {
+    if (!demandPathModalEl) return;
+    demandPathModalEl.classList.add("is-hidden");
+    demandState.path.activeId = null;
+    demandState.path.editable = false;
+    document.body.style.overflow = demandModalEl?.classList.contains("is-hidden") ? "" : "hidden";
+  };
+
   const renderDemandList = () => {
     if (!demandListEl) return;
     applyDemandFilters();
@@ -10715,6 +10848,14 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
       const actions = document.createElement("div");
       actions.className = "demand-card__actions";
+      const pathButton = document.createElement("button");
+      pathButton.type = "button";
+      pathButton.className = "demand-action demand-action--path";
+      pathButton.dataset.demandAction = "path";
+      pathButton.dataset.demandId = item.id;
+      pathButton.innerHTML = "🧭";
+      pathButton.setAttribute("aria-label", "Показать путь заявки");
+      pathButton.title = "Путь заявки";
       const toggleButton = document.createElement("button");
       toggleButton.type = "button";
       toggleButton.className = [
@@ -10756,18 +10897,14 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       deleteButton.innerHTML = "🗑️";
       deleteButton.setAttribute("aria-label", "Удалить заявку");
       deleteButton.title = "Удалить заявку";
-      actions.append(toggleButton, requestMapButton, editButton, deleteButton);
+      actions.append(pathButton, toggleButton, requestMapButton, editButton, deleteButton);
 
       if (!note.textContent) {
         content.append(title, chips, meta);
       } else {
         content.append(title, chips, meta, note);
       }
-      if (isClosed) {
-        card.append(content);
-      } else {
-        card.append(content, actions);
-      }
+      card.append(content, actions);
       demandListEl.appendChild(card);
     });
     updateDemandSummary();
@@ -10885,6 +11022,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     setDemandFiltersVisibility(false);
     setDemandContentView("list");
     closeDemandRequestMapModal();
+    closeDemandPathModal();
     resetDemandForm();
     setDemandMessage("");
   };
@@ -10939,6 +11077,52 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (event.key === "Escape") {
       closeDemandRequestMapModal();
     }
+  });
+  demandPathBackdropEl?.addEventListener("click", closeDemandPathModal);
+  demandPathCloseButton?.addEventListener("click", closeDemandPathModal);
+  demandPathCancelButton?.addEventListener("click", closeDemandPathModal);
+  demandPathEditButton?.addEventListener("click", () => {
+    setDemandPathEditable(!demandState.path.editable);
+  });
+  demandPathStepsEl?.addEventListener("change", (event) => {
+    const input = event.target.closest("input");
+    if (!input) return;
+    input.closest(".demand-path-step")?.classList.toggle("is-done", input.checked);
+  });
+  demandPathSaveButton?.addEventListener("click", async () => {
+    const id = demandState.path.activeId;
+    if (!id || !demandState.path.editable) return;
+    const checkedSteps = Array.from(demandPathStepsEl?.querySelectorAll("input:checked") ?? [])
+      .map((input) => Number(input.value))
+      .filter((step) => Number.isInteger(step));
+    if (!checkedSteps.includes(1)) checkedSteps.unshift(1);
+    const doneSteps = Array.from(new Set(checkedSteps)).sort((a, b) => a - b);
+    const commentStage3 = String(demandPathCommentEl?.value ?? "").trim();
+    const shouldClose = doneSteps.includes(5);
+    demandState.items = demandState.items.map((item) =>
+      item.id === id
+        ? {
+            ...item,
+            status: shouldClose ? "done" : item.status === "done" ? "open" : item.status,
+            updatedAt: getToday(),
+            closedAt: shouldClose ? getToday() : item.status === "done" ? "" : item.closedAt,
+            path: {
+              doneSteps,
+              commentStage3,
+            },
+          }
+        : item
+    );
+    if (demandPathMessageEl) demandPathMessageEl.textContent = "Сохраняем путь...";
+    await saveDemandItems();
+    const updated = demandState.items.find((item) => item.id === id);
+    if (updated) renderDemandPathModal(updated);
+    setDemandPathEditable(false);
+    if (demandPathMessageEl) demandPathMessageEl.textContent = "Путь заявки сохранён.";
+    renderDemandList();
+  });
+  demandPathModalEl?.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") closeDemandPathModal();
   });
   demandFormBackdropEl?.addEventListener("click", () => {
     resetDemandForm();
@@ -11073,6 +11257,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         needDate,
         createdAt: now,
         updatedAt: "",
+        path: {
+          doneSteps: [1],
+          commentStage3: "",
+        },
       });
     }
     resetDemandForm();
@@ -11149,16 +11337,33 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       startEditDemand(entry);
       return;
     }
+    if (type === "path") {
+      openDemandPathModal(entry);
+      return;
+    }
     if (type === "toggle") {
       const nextStatus = entry.status === "open" ? "done" : "open";
       demandState.items = demandState.items.map((item) =>
         item.id === id
-          ? {
+          ? (() => {
+              const path = getDemandPath(item);
+              const doneSteps = new Set(path.doneSteps);
+              if (nextStatus === "done") {
+                doneSteps.add(5);
+              } else {
+                doneSteps.delete(5);
+              }
+              return {
               ...item,
               status: nextStatus,
               updatedAt: getToday(),
               closedAt: nextStatus === "done" ? getToday() : "",
-            }
+                path: {
+                  ...path,
+                  doneSteps: Array.from(doneSteps).sort((a, b) => a - b),
+                },
+              };
+            })()
           : item
       );
       await saveDemandItems();

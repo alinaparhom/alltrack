@@ -14976,7 +14976,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const row = document.createElement("div");
       row.className = "tools-info-row";
       if (isSearchMode) row.classList.add("tools-info-row--search");
-      if (label === "Статус") {
+      if (label === "Статус" && !isSearchMode) {
         row.classList.add("tools-info-row--status");
       }
       const labelEl = document.createElement("div");
@@ -14994,7 +14994,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const formattedValue = formatInfoValue(value);
       if (label === "Стоимость" && formattedValue !== "—") {
         valueEl.textContent = `${formattedValue} р.`;
-      } else if (label === "Статус") {
+      } else if (label === "Статус" && !isSearchMode) {
         const statusLine = document.createElement("div");
         statusLine.className = "tools-info-status-line";
         const statusText = document.createElement("span");
@@ -15003,17 +15003,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         statusLine.appendChild(statusText);
         const statusActions = document.createElement("div");
         statusActions.className = "tools-info-inline-actions";
-        if (isSearchMode && toolsInfoKitToggleButton && !toolsInfoKitEl?.classList.contains("is-hidden")) {
-          toolsInfoKitToggleButton.classList.add("tools-info-inline-action", "tools-info-inline-action--emoji");
-          toolsInfoKitToggleButton.textContent = "🧰";
-          toolsInfoKitToggleButton.title = "Комплектация";
-          statusActions.appendChild(toolsInfoKitToggleButton);
-        }
-        if (isSearchMode) {
-          const notesButton = buildToolsNotesButton(tool, "tools-info-inline-action tools-info-inline-action--emoji");
-          notesButton.title = "Заметки";
-          statusActions.appendChild(notesButton);
-        }
         if (!isSearchMode) {
           [toolsInfoShareButton, toolsInfoCopyButton].forEach((button) => {
             if (!button) return;
@@ -15025,6 +15014,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           statusLine.appendChild(statusActions);
         }
         valueEl.appendChild(statusLine);
+      } else if (label === "Статус") {
+        valueEl.textContent = normalizeToolsInfoStatus(value, Boolean(tool?.__pendingMove));
       } else {
         valueEl.textContent = formattedValue;
       }

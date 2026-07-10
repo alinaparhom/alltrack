@@ -1658,6 +1658,15 @@ export function renderRole(user, options = {}) {
                     type="button"
                     role="tab"
                     aria-selected="false"
+                    data-tools-info-tab="repairs"
+                  >
+                    Ремонты
+                  </button>
+                  <button
+                    class="tools-info-tab"
+                    type="button"
+                    role="tab"
+                    aria-selected="false"
                     data-tools-info-tab="breakdowns"
                   >
                     Поломки
@@ -1667,9 +1676,9 @@ export function renderRole(user, options = {}) {
                     type="button"
                     role="tab"
                     aria-selected="false"
-                    data-tools-info-tab="repairs"
+                    data-tools-info-tab="notes"
                   >
-                    Ремонты
+                    Заметки
                   </button>
                 </div>
               </div>
@@ -1701,6 +1710,15 @@ export function renderRole(user, options = {}) {
                   <div class="tools-info-empty is-hidden" data-tools-info-repairs-empty>
                     Ремонтов пока нет.
                   </div>
+                </section>
+                <section class="tools-info-panel" data-tools-info-panel="notes">
+                  <div class="tools-info-summary" data-tools-info-notes-summary></div>
+                  <div class="tools-info-list" data-tools-info-notes-list></div>
+                  <form class="tools-info-notes-form" data-tools-info-notes-form>
+                    <textarea class="form-input tools-info-notes-input" rows="3" placeholder="Новая заметка" data-tools-info-notes-input></textarea>
+                    <button class="action-primary tools-info-notes-save" type="submit" data-tools-info-notes-save>Добавить заметку</button>
+                    <div class="tools-info-summary" data-tools-info-notes-message></div>
+                  </form>
                 </section>
               </div>
             </div>

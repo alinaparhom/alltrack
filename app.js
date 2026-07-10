@@ -6654,6 +6654,14 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const toolsInfoRepairsEmptyEl = contentEl.querySelector(
     "[data-tools-info-repairs-empty]"
   );
+  const toolsInfoNotesSummaryEl = contentEl.querySelector(
+    "[data-tools-info-notes-summary]"
+  );
+  const toolsInfoNotesListEl = contentEl.querySelector("[data-tools-info-notes-list]");
+  const toolsInfoNotesFormEl = contentEl.querySelector("[data-tools-info-notes-form]");
+  const toolsInfoNotesInputEl = contentEl.querySelector("[data-tools-info-notes-input]");
+  const toolsInfoNotesSaveButton = contentEl.querySelector("[data-tools-info-notes-save]");
+  const toolsInfoNotesMessageEl = contentEl.querySelector("[data-tools-info-notes-message]");
   const toolsInfoCancelMoveButton = contentEl.querySelector(
     "[data-tools-info-cancel-move]"
   );
@@ -8829,6 +8837,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     moves: [],
     breakdowns: [],
     repairs: [],
+    isSavingNote: false,
     photos: [],
     kitExpanded: false,
   };
@@ -14820,6 +14829,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           if (toolsInfoRepairsSummaryEl) {
             toolsInfoRepairsSummaryEl.textContent = "Загружаем ремонты...";
           }
+          renderToolsInfoNotes();
           void loadToolsInfoData({ includeHistory: true }).catch((error) => {
             console.warn("Не удалось загрузить историю инструмента.", error);
           });
@@ -14909,6 +14919,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const searchStatusText = isSearchMode
       ? normalizeToolsInfoStatus(tool?.["Статус"], Boolean(tool?.__pendingMove))
       : "";
+    const hasKitBadge = Array.isArray(tool?.["Комплектация"]) && tool["Комплектация"].some((item) =>
+      [item?.["Наименование"], item?.["Количество"], item?.["Бух.номер"]].some((value) => String(value ?? "").trim())
+    );
     const isSearchMoving = searchStatusText === "Перемещается";
     if (isSearchMode) {
       toolsInfoGridEl.innerHTML = `
@@ -14920,6 +14933,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
             <div class="tools-info-search-title">${escapeHtml(String(tool?.["Наименование"] ?? "").trim() || "Инструмент")}</div>
             <div class="tools-info-search-brand">${escapeHtml([tool?.["Производитель"], tool?.["Модель"]].map((v) => String(v ?? "").trim()).filter(Boolean).join(" · ") || "—")}</div>
             <div class="tools-info-search-numbers">🔢 № ${escapeHtml(formatInfoValue(toolNumber))} · Бух. № ${escapeHtml(formatInfoValue(accountingNumber))}</div>
+            <div class="tools-info-search-badges">
+              <span class="tools-info-search-status">✅ ${escapeHtml(searchStatusText || "—")}</span>
+              ${hasKitBadge ? `<span class="tools-info-search-kit" title="Есть комплектация">🧰 Комплект</span>` : ""}
+            </div>
             ${isSearchMoving ? `<div class="tools-info-search-moving">↔ ${escapeHtml(searchStatusText)}</div>` : ""}
           </div>
         </div>
@@ -15351,6 +15368,55 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     });
   };
 
+  const renderToolsInfoNotes = () => {
+    if (!toolsInfoNotesListEl) return;
+    const notes = normalizeToolNotes(toolsInfoState.tool);
+    if (toolsInfoNotesSummaryEl) {
+      const count = notes.length;
+      toolsInfoNotesSummaryEl.textContent = count
+        ? `Заметок: ${count}`
+        : "Заметок пока нет — добавьте первую.";
+    }
+    toolsInfoNotesListEl.innerHTML = "";
+    notes.slice().reverse().forEach((note) => {
+      const item = document.createElement("article");
+      item.className = "tools-info-item tools-info-item--note";
+      const title = document.createElement("div");
+      title.className = "tools-info-item__title";
+      title.textContent = `${note.author || "Пользователь"} · ${formatToolNoteDate(note.createdAt)}`;
+      const text = document.createElement("div");
+      text.className = "tools-info-item__note";
+      text.textContent = note.text;
+      item.append(title, text);
+      toolsInfoNotesListEl.appendChild(item);
+    });
+  };
+
+  const saveToolsInfoNote = async () => {
+    const cleanText = String(toolsInfoNotesInputEl?.value ?? "").trim();
+    if (!cleanText || !toolsInfoState.tool || toolsInfoState.isSavingNote) return;
+    toolsInfoState.isSavingNote = true;
+    if (toolsInfoNotesSaveButton) toolsInfoNotesSaveButton.disabled = true;
+    if (toolsInfoNotesMessageEl) toolsInfoNotesMessageEl.textContent = "Сохраняем...";
+    try {
+      toolsNotesState.tool = toolsInfoState.tool;
+      toolsNotesState.orgFolder = toolsInfoState.orgFolder || toolsState.orgFolder || context.orgFolderName || "";
+      await saveToolNote(cleanText);
+      const freshTool = toolsNotesState.tool;
+      toolsInfoState.tool = freshTool;
+      if (toolsInfoNotesInputEl) toolsInfoNotesInputEl.value = "";
+      renderToolsInfoGrid(freshTool);
+      renderToolsInfoNotes();
+      if (toolsInfoNotesMessageEl) toolsInfoNotesMessageEl.textContent = "Заметка добавлена.";
+    } catch (error) {
+      console.warn("Не удалось сохранить заметку из карточки инструмента.", error);
+      if (toolsInfoNotesMessageEl) toolsInfoNotesMessageEl.textContent = "Не удалось сохранить заметку.";
+    } finally {
+      toolsInfoState.isSavingNote = false;
+      if (toolsInfoNotesSaveButton) toolsInfoNotesSaveButton.disabled = false;
+    }
+  };
+
   const renderToolsInfoRepairs = () => {
     if (toolsInfoRepairsListEl) toolsInfoRepairsListEl.innerHTML = "";
     const repairs = toolsInfoState.repairs;
@@ -15413,6 +15479,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       renderToolsInfoMoves();
       renderToolsInfoBreakdowns();
       renderToolsInfoRepairs();
+      renderToolsInfoNotes();
       renderToolsInfoPhotos();
       return;
     }
@@ -15500,6 +15567,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     renderToolsInfoMoves();
     renderToolsInfoBreakdowns();
     renderToolsInfoRepairs();
+    renderToolsInfoNotes();
   };
 
   const closeToolsInfoModal = () => {
@@ -15552,24 +15620,27 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     renderToolsInfoMoves();
     renderToolsInfoBreakdowns();
     renderToolsInfoRepairs();
+    renderToolsInfoNotes();
     if (toolsInfoPhotosSummaryEl) {
       toolsInfoPhotosSummaryEl.textContent = "Загружаем фото...";
     }
     if (toolsInfoMovesListEl) toolsInfoMovesListEl.innerHTML = "";
     if (toolsInfoBreakdownsListEl) toolsInfoBreakdownsListEl.innerHTML = "";
     if (toolsInfoRepairsListEl) toolsInfoRepairsListEl.innerHTML = "";
+    if (toolsInfoNotesInputEl) toolsInfoNotesInputEl.value = "";
+    if (toolsInfoNotesMessageEl) toolsInfoNotesMessageEl.textContent = "";
     if (toolsInfoMovesEmptyEl) toolsInfoMovesEmptyEl.classList.add("is-hidden");
     if (toolsInfoBreakdownsEmptyEl) {
       toolsInfoBreakdownsEmptyEl.classList.add("is-hidden");
     }
     if (toolsInfoRepairsEmptyEl) toolsInfoRepairsEmptyEl.classList.add("is-hidden");
     setToolsInfoTab("moves");
-    setToolsInfoHistoryOpened(false);
+    setToolsInfoHistoryOpened(toolsState.mode === "search");
     syncToolsInfoMoveButtonVisibility();
     toolsInfoModalEl.classList.remove("is-hidden");
     document.body.style.overflow = "hidden";
     await Promise.all([
-      loadToolsInfoData({ includeHistory: false }),
+      loadToolsInfoData({ includeHistory: toolsState.mode === "search" }),
       syncToolsInfoCancelMoveButton(tool),
     ]);
   };
@@ -19861,6 +19932,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         setToolsInfoTab(tab);
         setToolsInfoHistoryOpened(true);
       });
+    });
+  }
+  if (toolsInfoNotesFormEl) {
+    toolsInfoNotesFormEl.addEventListener("submit", (event) => {
+      event.preventDefault();
+      void saveToolsInfoNote();
     });
   }
   if (toolsInfoHistoryToggleButton) {

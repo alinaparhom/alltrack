@@ -3084,7 +3084,7 @@ export function renderRole(user, options = {}) {
             <div class="settings-modal__body tools-modal__body">
               <div class="tools-controls">
                 <div class="tools-controls__row">
-                  <label class="tools-search breakdowns-search">
+                  <label class="tools-search breakdowns-search repair-search">
                     <input
                       class="form-input tools-search__input"
                       type="search"

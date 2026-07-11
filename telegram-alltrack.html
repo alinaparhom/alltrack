@@ -13753,22 +13753,85 @@
 
       .writeoff-modal__body {
         display: grid;
-        grid-template-rows: auto auto auto minmax(0, 1fr) auto;
+        grid-template-rows: auto auto minmax(0, 1fr) auto;
         align-content: start;
         gap: 6px;
         overflow: hidden;
         padding-left: calc(var(--writeoff-edge-gap, 5px) + max(0px, env(safe-area-inset-left)));
         padding-right: calc(var(--writeoff-edge-gap, 5px) + max(0px, env(safe-area-inset-right)));
-        padding-bottom: calc(var(--writeoff-edge-gap, 5px) + env(safe-area-inset-bottom));
+        padding-bottom: 0;
       }
 
       .writeoff-modal__body [data-writeoff-message] {
         min-height: 0;
       }
 
+      /* «Списать»: строка поиска повторяет страницу «Поиск» и лежит поверх списка,
+         прямо над кнопками действий — удобно нажимать большим пальцем на телефоне. */
+      .writeoff-modal {
+        --writeoff-footer-height: calc(46px + var(--writeoff-edge-gap, 5px) + max(0px, env(safe-area-inset-bottom)));
+        --writeoff-search-height: 48px;
+        --writeoff-search-bottom: calc(var(--writeoff-footer-height) + 8px);
+      }
+
+      .writeoff-search {
+        position: fixed;
+        left: calc(18px + max(0px, env(safe-area-inset-left)));
+        right: calc(18px + max(0px, env(safe-area-inset-right)));
+        bottom: var(--writeoff-search-bottom);
+        z-index: 80;
+        width: auto;
+        min-width: 0;
+        height: var(--writeoff-search-height);
+        min-height: var(--writeoff-search-height);
+        margin: 0;
+        padding: 0;
+        border: 0;
+        border-radius: 0;
+        background: transparent;
+        box-shadow: none;
+      }
+
+      .writeoff-search::before {
+        content: "";
+        position: absolute;
+        left: 18px;
+        top: 50%;
+        z-index: 1;
+        width: 18px;
+        height: 18px;
+        transform: translateY(-50%);
+        pointer-events: none;
+        background: rgba(37, 99, 235, 0.72);
+        -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m20 20-4.2-4.2'/%3E%3C/svg%3E") center / contain no-repeat;
+        mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m20 20-4.2-4.2'/%3E%3C/svg%3E") center / contain no-repeat;
+      }
+
       .writeoff-search .form-input {
-        padding: 8px 14px;
-        font-size: 15px;
+        height: var(--writeoff-search-height);
+        min-height: var(--writeoff-search-height);
+        max-height: var(--writeoff-search-height);
+        padding: 0 16px 0 48px;
+        border: 1px solid rgba(96, 165, 250, 0.28);
+        border-radius: 18px;
+        font-size: 16px;
+        background: linear-gradient(135deg, rgba(239, 248, 255, 0.82), rgba(191, 219, 254, 0.46));
+        box-shadow:
+          0 18px 44px rgba(37, 99, 235, 0.16),
+          inset 0 1px 0 rgba(255, 255, 255, 0.82);
+        backdrop-filter: blur(18px) saturate(130%);
+        -webkit-backdrop-filter: blur(18px) saturate(130%);
+      }
+
+      body[data-theme="dark"] .writeoff-search::before {
+        background: rgba(147, 197, 253, 0.86);
+      }
+
+      body[data-theme="dark"] .writeoff-search .form-input {
+        background: linear-gradient(135deg, rgba(30, 64, 175, 0.38), rgba(15, 23, 42, 0.78));
+        box-shadow:
+          0 18px 44px rgba(0, 0, 0, 0.38),
+          inset 0 1px 0 rgba(255, 255, 255, 0.08);
       }
 
       .writeoff-selection {
@@ -14078,7 +14141,7 @@
         flex-direction: column;
         gap: 12px;
         overflow: auto;
-        padding: 0 0 6px;
+        padding: 0 0 calc(var(--writeoff-footer-height) + var(--writeoff-search-height) + 22px);
       }
 
       .writeoff-item {

@@ -12213,9 +12213,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (toolsSearchInput) {
       const searchLabel =
         numberLabel === "Бух.номер" ? "бух.номеру" : "номеру";
-      const shouldHideSearchPlaceholder = ["search", "user"].includes(
-        toolsState.mode
-      );
+      const shouldHideSearchPlaceholder = [
+        "search",
+        "user",
+        "write-off-pending",
+      ].includes(toolsState.mode);
       toolsSearchInput.placeholder = shouldHideSearchPlaceholder
         ? ""
         : `Поиск по ${searchLabel}, названию, модели...`;

@@ -1861,9 +1861,11 @@ export function renderRole(user, options = {}) {
                 <button
                   class="writeoff-selection__block writeoff-selection__block--status writeoff-selection__status-toggle"
                   type="button"
+                  aria-label="Показать только инструменты на списание"
+                  title="Показать только инструменты на списание"
                   data-writeoff-status-only
                 >
-                  На списание
+                  <span class="tools-filters-toggle__icon" aria-hidden="true">🧾</span>
                 </button>
                 <div
                   class="writeoff-selection__block writeoff-selection__block--filters tools-filter-actions"

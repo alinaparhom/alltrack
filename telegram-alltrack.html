@@ -13836,6 +13836,7 @@
 
       .writeoff-selection {
         display: grid;
+        margin-top: 5px;
         grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
         align-items: center;
         column-gap: 8px;
@@ -14205,6 +14206,11 @@
       }
 
       .writeoff-modal__footer {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 90;
         display: flex;
         justify-content: space-between;
         align-items: center;
@@ -14213,6 +14219,11 @@
         padding: 0 calc(var(--writeoff-edge-gap, 5px) + max(0px, env(safe-area-inset-right))) calc(var(--writeoff-edge-gap, 5px) + env(safe-area-inset-bottom, 0px)) calc(var(--writeoff-edge-gap, 5px) + max(0px, env(safe-area-inset-left)));
         gap: 8px;
         box-sizing: border-box;
+        border-top: 0;
+        background: transparent;
+        box-shadow: none;
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
       }
 
       .writeoff-modal__footer .action-secondary,
@@ -14275,6 +14286,12 @@
         box-shadow:
           0 10px 24px rgba(220, 38, 38, 0.24),
           0 0 0 2px rgba(254, 202, 202, 0.55);
+      }
+
+      body[data-theme="dark"] .writeoff-modal__footer {
+        border-top: 0;
+        background: transparent;
+        box-shadow: none;
       }
 
       body[data-theme="dark"] .writeoff-modal__footer [data-writeoff-cancel] {

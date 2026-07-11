@@ -1847,7 +1847,8 @@ export function renderRole(user, options = {}) {
                 <input
                   class="form-input tools-search__input"
                   type="search"
-                  placeholder="Поиск по бух.номеру"
+                  placeholder=""
+                  aria-label="Поиск по инструментам для списания"
                   data-writeoff-search
                   autocomplete="off"
                 />

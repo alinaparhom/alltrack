@@ -13780,16 +13780,16 @@
         right: calc(18px + max(0px, env(safe-area-inset-right)));
         bottom: var(--writeoff-search-bottom);
         z-index: 80;
-        width: auto;
-        min-width: 0;
+        width: auto !important;
+        min-width: 0 !important;
         height: var(--writeoff-search-height);
         min-height: var(--writeoff-search-height);
         margin: 0;
-        padding: 0;
-        border: 0;
+        padding: 0 !important;
+        border: 0 !important;
         border-radius: 0;
-        background: transparent;
-        box-shadow: none;
+        background: transparent !important;
+        box-shadow: none !important;
       }
 
       .writeoff-search::before {

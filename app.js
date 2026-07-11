@@ -12207,27 +12207,29 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
   };
 
+  const isCompactToolsSearchMode = () =>
+    ["search", "user", "write-off-pending"].includes(toolsState.mode);
+
+  const syncToolsSearchPlaceholder = () => {
+    if (!toolsSearchInput) return;
+    const searchLabel =
+      toolsState.numberLabel === "Бух.номер" ? "бух.номеру" : "номеру";
+    const shouldHideSearchPlaceholder = isCompactToolsSearchMode();
+    toolsSearchInput.placeholder = shouldHideSearchPlaceholder
+      ? ""
+      : `Поиск по ${searchLabel}, названию, модели...`;
+    toolsSearchInput.setAttribute(
+      "aria-label",
+      shouldHideSearchPlaceholder
+        ? "Поиск"
+        : `Поиск по ${searchLabel}, названию, модели`
+    );
+  };
+
   const updateToolsNumberConfig = ({ numberKey, numberLabel }) => {
     toolsState.numberKey = numberKey;
     toolsState.numberLabel = numberLabel;
-    if (toolsSearchInput) {
-      const searchLabel =
-        numberLabel === "Бух.номер" ? "бух.номеру" : "номеру";
-      const shouldHideSearchPlaceholder = [
-        "search",
-        "user",
-        "write-off-pending",
-      ].includes(toolsState.mode);
-      toolsSearchInput.placeholder = shouldHideSearchPlaceholder
-        ? ""
-        : `Поиск по ${searchLabel}, названию, модели...`;
-      toolsSearchInput.setAttribute(
-        "aria-label",
-        shouldHideSearchPlaceholder
-          ? "Поиск"
-          : `Поиск по ${searchLabel}, названию, модели`
-      );
-    }
+    syncToolsSearchPlaceholder();
   };
 
   const resolveToolNumberValue = (tool) => {
@@ -14711,6 +14713,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     toolsState.searchSortDirection = "desc";
     toolsState.activeReplacementResponsible = "";
     setToolsTitle("На списание");
+    syncToolsSearchPlaceholder();
     setToolsStatusStandaloneVisibility(false);
     setToolsResponsibleFilterVisibility(true);
     syncToolsModalModeClass();

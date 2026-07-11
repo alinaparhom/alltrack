@@ -11524,6 +11524,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const shouldShow =
       toolsState.mode === "base" ||
       toolsState.mode === "search" ||
+      toolsState.mode === "write-off-pending" ||
       toolsState.mode === "no-accounting-number" ||
       toolsState.mode === "add-photo" ||
       toolsState.mode === "remove-photo" ||
@@ -11598,7 +11599,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     toolsModalEl.classList.toggle("tools-modal--searching", isSearchLikeMode);
     toolsModalEl.classList.toggle(
       "tools-modal--global-search",
-      toolsState.mode === "search" || toolsState.mode === "user"
+      toolsState.mode === "search" ||
+        toolsState.mode === "user" ||
+        toolsState.mode === "write-off-pending"
     );
     setToolsSortToggleVisibility();
     updateToolsBrokenOnlyToggleUi();

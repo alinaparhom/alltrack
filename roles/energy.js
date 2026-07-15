@@ -657,6 +657,10 @@ export function renderRole(user, options = {}) {
                       <div class="tools-filter-dropdown demand-filter-dropdown" data-demand-dropdown="object">
                         <button type="button" class="form-input tools-filter-dropdown__trigger demand-filter-dropdown__trigger" data-demand-filter-trigger="object">Все объекты</button>
                         <div class="tools-filter-dropdown__menu demand-filter-dropdown__menu is-hidden" data-demand-filter-menu="object">
+                          <div class="demand-filter-dropdown__actions">
+                            <button type="button" class="demand-filter-dropdown__action" data-demand-filter-action="clear" data-demand-filter-action-type="object">Снять всё</button>
+                            <button type="button" class="demand-filter-dropdown__action" data-demand-filter-action="select-all" data-demand-filter-action-type="object">Выделить всё</button>
+                          </div>
                           <div class="tools-filter-dropdown__options" data-demand-filter-options="object"></div>
                         </div>
                         <input type="hidden" data-demand-filter-object />
@@ -667,6 +671,10 @@ export function renderRole(user, options = {}) {
                       <div class="tools-filter-dropdown demand-filter-dropdown" data-demand-dropdown="user">
                         <button type="button" class="form-input tools-filter-dropdown__trigger demand-filter-dropdown__trigger" data-demand-filter-trigger="user">Все авторы</button>
                         <div class="tools-filter-dropdown__menu demand-filter-dropdown__menu is-hidden" data-demand-filter-menu="user">
+                          <div class="demand-filter-dropdown__actions">
+                            <button type="button" class="demand-filter-dropdown__action" data-demand-filter-action="clear" data-demand-filter-action-type="user">Снять всё</button>
+                            <button type="button" class="demand-filter-dropdown__action" data-demand-filter-action="select-all" data-demand-filter-action-type="user">Выделить всё</button>
+                          </div>
                           <div class="tools-filter-dropdown__options" data-demand-filter-options="user"></div>
                         </div>
                         <input type="hidden" data-demand-filter-user />
@@ -679,6 +687,10 @@ export function renderRole(user, options = {}) {
                       <div class="tools-filter-dropdown demand-filter-dropdown" data-demand-dropdown="status">
                         <button type="button" class="form-input tools-filter-dropdown__trigger demand-filter-dropdown__trigger" data-demand-filter-trigger="status">Актуальные</button>
                         <div class="tools-filter-dropdown__menu demand-filter-dropdown__menu is-hidden" data-demand-filter-menu="status">
+                          <div class="demand-filter-dropdown__actions">
+                            <button type="button" class="demand-filter-dropdown__action" data-demand-filter-action="clear" data-demand-filter-action-type="status">Снять всё</button>
+                            <button type="button" class="demand-filter-dropdown__action" data-demand-filter-action="select-all" data-demand-filter-action-type="status">Выделить всё</button>
+                          </div>
                           <div class="tools-filter-dropdown__options" data-demand-filter-options="status"></div>
                         </div>
                         <input type="hidden" data-demand-filter-status value="open" />

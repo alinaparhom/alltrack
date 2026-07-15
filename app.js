@@ -10191,20 +10191,24 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     menu.style.setProperty("--demand-dropdown-max-height", `${maxHeight}px`);
   };
 
+  const getDemandFilterOptionValues = (type) =>
+    Array.from(contentEl.querySelectorAll(`[data-demand-filter-options="${type}"] [data-demand-filter-value]`))
+      .map((item) => String(item.dataset.demandFilterValue ?? ""))
+      .filter(Boolean);
+
   const isDemandFilterAllSelected = (type) => {
     const values = Array.isArray(demandState.filters[type]) ? demandState.filters[type] : [];
-    if (type === "status") return values.includes("all") || values.length === 0;
-    if (type === "object") return values.length === 0;
-    if (type === "user") return values.length === 0;
-    return false;
+    const optionValues = getDemandFilterOptionValues(type);
+    return optionValues.length > 0 && optionValues.every((value) => values.includes(value));
   };
 
   const updateDemandFilterActionButtons = () => {
     demandFilterActionButtons.forEach((button) => {
       const type = button.dataset.demandFilterActionType;
+      const selectedValues = Array.isArray(demandState.filters[type]) ? demandState.filters[type] : [];
       const allSelected = isDemandFilterAllSelected(type);
-      button.dataset.demandFilterAction = allSelected ? "clear" : "select-all";
-      button.textContent = allSelected ? "Снять всё" : "Выделить всё";
+      button.dataset.demandFilterAction = selectedValues.length && allSelected ? "clear" : "select-all";
+      button.textContent = selectedValues.length && allSelected ? "Снять всё" : "Выделить всё";
       button.setAttribute("aria-label", button.textContent);
     });
   };
@@ -10237,11 +10241,15 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (!optionsEl) return;
     const currentValues = Array.isArray(currentValue) ? currentValue : currentValue ? [currentValue] : [];
     const normalizedOptions = options.filter(Boolean).sort((a, b) => a.label.localeCompare(b.label, "ru"));
-    const listOptions = type === "status" ? normalizedOptions : [{ value: "", label: emptyLabel }, ...normalizedOptions];
-    optionsEl.innerHTML = listOptions
-      .map((option) => {
-        const isActive = option.value ? currentValues.includes(option.value) : currentValues.length === 0;
-        return `<button type="button" class="tools-filter-dropdown__option demand-filter-dropdown__option${isActive ? " is-active" : ""}" data-demand-filter-value="${escapeHtml(option.value)}" data-demand-filter-label="${escapeHtml(option.label)}"><span>${isActive ? "✓" : ""}</span>${escapeHtml(option.label)}</button>`;
+    if (!normalizedOptions.length) {
+      optionsEl.innerHTML = `<div class="tools-filter-dropdown__option demand-filter-dropdown__option is-empty">${escapeHtml(emptyLabel)}</div>`;
+      return;
+    }
+    optionsEl.innerHTML = normalizedOptions
+      .map((option, index) => {
+        const isActive = currentValues.includes(option.value);
+        const id = `demand-filter-${type}-${index}`;
+        return `<label class="tools-filter-dropdown__option demand-filter-dropdown__option${isActive ? " is-active" : ""}" for="${id}" data-demand-filter-value="${escapeHtml(option.value)}" data-demand-filter-label="${escapeHtml(option.label)}"><input id="${id}" type="checkbox" ${isActive ? "checked" : ""} tabindex="-1" /> <span>${escapeHtml(option.label)}</span></label>`;
       })
       .join("");
   };
@@ -11467,9 +11475,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const type = button.dataset.demandFilterActionType;
       const action = button.dataset.demandFilterAction;
       if (!type || !action) return;
-      const values = Array.from(contentEl.querySelectorAll(`[data-demand-filter-options="${type}"] [data-demand-filter-value]`))
-        .map((item) => String(item.dataset.demandFilterValue ?? ""))
-        .filter(Boolean);
+      const values = getDemandFilterOptionValues(type);
       const nextValues = action === "select-all" ? values : type === "status" ? ["open"] : [];
       if (type === "object") demandState.filters.object = nextValues;
       if (type === "user") demandState.filters.user = nextValues;
@@ -11482,7 +11488,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   demandFilterOptionsEls.forEach((optionsEl) => {
     optionsEl.addEventListener("click", (event) => {
       const option = event.target.closest("[data-demand-filter-value]");
-      if (!option) return;
+      if (!option || option.classList.contains("is-empty")) return;
+      event.preventDefault();
       const type = optionsEl.dataset.demandFilterOptions;
       const value = String(option.dataset.demandFilterValue ?? "");
       const currentValues = Array.isArray(demandState.filters[type]) ? demandState.filters[type] : [];

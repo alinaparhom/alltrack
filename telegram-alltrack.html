@@ -9604,10 +9604,19 @@
       }
 
       .demand-path-edit span {
-        display: block;
-        font-size: 28px;
+        display: grid;
+        place-items: center;
+        width: 100%;
+        height: 100%;
+        font-size: 22px;
         line-height: 1;
-        transform: scaleX(-1) translateY(-1px);
+        transform: scaleX(-1);
+        transform-origin: center;
+      }
+
+      .demand-path-modal.is-editing .demand-path-edit span {
+        font-size: 20px;
+        transform: none;
       }
 
       .demand-path-modal.is-editing .demand-path-edit,
@@ -9678,22 +9687,26 @@
       }
 
       .demand-path-step__text {
-        display: flex;
-        align-items: center;
-        gap: 9px;
+        display: grid;
+        gap: 3px;
+        min-width: 0;
         font-size: 14px;
         font-weight: 800;
       }
 
-      .demand-path-step__text b {
-        display: inline-grid;
-        place-items: center;
-        width: 24px;
-        height: 24px;
-        border-radius: 9px;
-        background: rgba(15, 23, 42, 0.05);
-        color: var(--muted);
-        font-size: 12px;
+      .demand-path-step__text strong {
+        display: block;
+        color: #0f172a;
+        font-size: 14px;
+        line-height: 1.2;
+      }
+
+      .demand-path-step__text small {
+        display: block;
+        color: #64748b;
+        font-size: 11px;
+        font-weight: 800;
+        line-height: 1.2;
       }
 
       .demand-path-comment {

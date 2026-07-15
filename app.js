@@ -4841,12 +4841,28 @@ function normalizeDemandData(raw) {
       );
       const pathComments = Array.isArray(pathSource.comments)
         ? pathSource.comments
-            .map((comment) => sanitizeDemandLabel(comment))
+            .map((comment) => {
+              if (comment && typeof comment === "object") {
+                const text = sanitizeDemandLabel(comment.text ?? comment.comment ?? comment.value ?? "");
+                if (!text) return null;
+                const date = normalizeDemandNeedDate(comment.date ?? comment.createdAt ?? comment.addedAt ?? item.updatedAt ?? item.createdAt ?? "");
+                return { text, date };
+              }
+              const text = sanitizeDemandLabel(comment);
+              return text ? { text, date: normalizeDemandNeedDate(item.updatedAt ?? item.createdAt ?? "") } : null;
+            })
             .filter(Boolean)
         : legacyPathComment
-          ? [legacyPathComment]
+          ? [{ text: legacyPathComment, date: normalizeDemandNeedDate(item.updatedAt ?? item.createdAt ?? "") }]
           : [];
-      const pathComment = pathComments.at(-1) ?? legacyPathComment;
+      const pathComment = pathComments.at(-1)?.text ?? legacyPathComment;
+      const rawStepDates = pathSource.stepDates && typeof pathSource.stepDates === "object" ? pathSource.stepDates : {};
+      const stepDates = doneSteps.reduce((acc, step) => {
+        const fallbackDate = step === 1 ? createdAt : step === 5 ? closedAt || updatedAt || createdAt : updatedAt || createdAt;
+        const date = normalizeDemandNeedDate(rawStepDates[step] ?? rawStepDates[String(step)] ?? fallbackDate);
+        if (date) acc[step] = date;
+        return acc;
+      }, {});
       const needDate = normalizeDemandNeedDate(
         item.needDate ??
           item.neededDate ??
@@ -4874,6 +4890,7 @@ function normalizeDemandData(raw) {
           doneSteps,
           commentStage3: pathComment,
           comments: pathComments,
+          stepDates,
         },
       };
     })
@@ -10697,14 +10714,36 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const legacyComment = String(path.commentStage3 ?? path.comment ?? "").trim();
     const comments = Array.isArray(path.comments)
       ? path.comments
-          .map((comment) => String(comment ?? "").trim())
+          .map((comment) => {
+            if (comment && typeof comment === "object") {
+              const text = String(comment.text ?? comment.comment ?? comment.value ?? "").trim();
+              if (!text) return null;
+              return {
+                text,
+                date: normalizeDemandNeedDate(comment.date ?? comment.createdAt ?? comment.addedAt ?? item?.updatedAt ?? item?.createdAt ?? ""),
+              };
+            }
+            const text = String(comment ?? "").trim();
+            return text ? { text, date: normalizeDemandNeedDate(item?.updatedAt ?? item?.createdAt ?? "") } : null;
+          })
           .filter(Boolean)
       : [];
-    if (legacyComment && !comments.includes(legacyComment)) comments.push(legacyComment);
+    if (legacyComment && !comments.some((comment) => comment.text === legacyComment)) {
+      comments.push({ text: legacyComment, date: normalizeDemandNeedDate(item?.updatedAt ?? item?.createdAt ?? "") });
+    }
+    const doneSteps = Array.from(normalized).sort((a, b) => a - b);
+    const rawStepDates = path.stepDates && typeof path.stepDates === "object" ? path.stepDates : {};
+    const stepDates = doneSteps.reduce((acc, step) => {
+      const fallbackDate = step === 1 ? item?.createdAt : step === 5 ? getDemandClosedDate(item) || item?.updatedAt || item?.createdAt : item?.updatedAt || item?.createdAt;
+      const date = normalizeDemandNeedDate(rawStepDates[step] ?? rawStepDates[String(step)] ?? fallbackDate);
+      if (date) acc[step] = date;
+      return acc;
+    }, {});
     return {
-      doneSteps: Array.from(normalized).sort((a, b) => a - b),
-      commentStage3: comments.at(-1) ?? "",
+      doneSteps,
+      commentStage3: comments.at(-1)?.text ?? "",
       comments,
+      stepDates,
     };
   };
 
@@ -10744,7 +10783,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       path.comments.forEach((comment, index) => {
         const commentEl = document.createElement("div");
         commentEl.className = "demand-path-comment__item";
-        commentEl.innerHTML = `<span>Комментарий ${index + 1}</span><p>${escapeHtml(comment)}</p>`;
+        const commentDate = formatDemandNeedDate(comment.date);
+        commentEl.innerHTML = `<span>Комментарий ${index + 1}${commentDate ? ` · ${escapeHtml(commentDate)}` : ""}</span><p>${escapeHtml(comment.text)}</p>`;
         demandPathCommentSavedEl.appendChild(commentEl);
       });
       demandPathCommentSavedEl.classList.toggle("is-hidden", !path.comments.length);
@@ -10768,7 +10808,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       row.innerHTML = `
         <input type="checkbox" value="${step.id}" ${doneSet.has(step.id) ? "checked" : ""} />
         <span class="demand-path-step__dot" aria-hidden="true"></span>
-        <span class="demand-path-step__text"><b>${step.id}</b>${escapeHtml(step.label)}</span>
+        <span class="demand-path-step__text"><strong>${escapeHtml(step.label)}</strong>${path.stepDates[step.id] ? `<small>${escapeHtml(formatDemandNeedDate(path.stepDates[step.id]))}</small>` : ""}</span>
       `;
       if (step.id === 3 && demandPathCommentAddButton) {
         row.classList.add("demand-path-step--with-action");
@@ -11169,8 +11209,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (!checkedSteps.includes(1)) checkedSteps.unshift(1);
     const doneSteps = Array.from(new Set(checkedSteps)).sort((a, b) => a - b);
     const newComment = String(demandPathCommentEl?.value ?? "").trim();
-    const comments = newComment ? [...currentPath.comments, newComment] : currentPath.comments;
-    const commentStage3 = comments.at(-1) ?? "";
+    const comments = newComment ? [...currentPath.comments, { text: newComment, date: getToday() }] : currentPath.comments;
+    const commentStage3 = comments.at(-1)?.text ?? "";
+    const previousStepDates = currentPath.stepDates && typeof currentPath.stepDates === "object" ? currentPath.stepDates : {};
+    const stepDates = doneSteps.reduce((acc, step) => {
+      acc[step] = previousStepDates[step] || (step === 1 ? currentItem?.createdAt || getToday() : getToday());
+      return acc;
+    }, {});
     const shouldClose = doneSteps.includes(5);
     demandState.items = demandState.items.map((item) =>
       item.id === id
@@ -11183,6 +11228,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
               doneSteps,
               commentStage3,
               comments,
+              stepDates,
             },
           }
         : item

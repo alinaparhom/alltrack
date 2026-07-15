@@ -6463,6 +6463,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const demandFilterTriggers = contentEl.querySelectorAll("[data-demand-filter-trigger]");
   const demandFilterMenus = contentEl.querySelectorAll("[data-demand-filter-menu]");
   const demandFilterOptionsEls = contentEl.querySelectorAll("[data-demand-filter-options]");
+  const demandFilterActionButtons = contentEl.querySelectorAll("[data-demand-filter-action]");
   const demandFilterViewEl = contentEl.querySelector("[data-demand-filter-view]");
   const demandMapToggleEl = contentEl.querySelector("[data-demand-map-toggle]");
   const demandListEl = contentEl.querySelector("[data-demand-list]");
@@ -10188,17 +10189,16 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const trigger = contentEl.querySelector(`[data-demand-filter-trigger="${type}"]`);
     if (!trigger) return;
     trigger.textContent = value || fallback;
-    trigger.classList.toggle("is-selected", Boolean(value));
+    const isDefaultStatus = type === "status" && demandState.filters.status === "open";
+    trigger.classList.toggle("is-selected", Boolean(value) && !isDefaultStatus);
   };
 
   const renderDemandDropdownOptions = (type, options, currentValue, emptyLabel) => {
     const optionsEl = contentEl.querySelector(`[data-demand-filter-options="${type}"]`);
     if (!optionsEl) return;
     const normalizedOptions = options.filter(Boolean).sort((a, b) => a.label.localeCompare(b.label, "ru"));
-    optionsEl.innerHTML = [
-      { value: "", label: emptyLabel },
-      ...normalizedOptions,
-    ]
+    const listOptions = type === "status" ? normalizedOptions : [{ value: "", label: emptyLabel }, ...normalizedOptions];
+    optionsEl.innerHTML = listOptions
       .map((option) => {
         const isActive = option.value === currentValue;
         return `<button type="button" class="tools-filter-dropdown__option demand-filter-dropdown__option${isActive ? " is-active" : ""}" data-demand-filter-value="${escapeHtml(option.value)}" data-demand-filter-label="${escapeHtml(option.label)}">${escapeHtml(option.label)}</button>`;
@@ -11420,6 +11420,21 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const type = trigger.dataset.demandFilterTrigger;
       const menu = contentEl.querySelector(`[data-demand-filter-menu="${type}"]`);
       setDemandDropdownOpen(type, menu?.classList.contains("is-hidden"));
+    });
+  });
+
+  demandFilterActionButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      const type = button.dataset.demandFilterActionType;
+      const action = button.dataset.demandFilterAction;
+      if (!type || !action) return;
+      const value = action === "select-all" && type === "status" ? "all" : "";
+      if (type === "object") demandState.filters.object = value;
+      if (type === "user") demandState.filters.user = value;
+      if (type === "status") demandState.filters.status = value || "open";
+      renderDemandFilterOptions();
+      setDemandDropdownOpen(type, false);
+      renderDemandList();
     });
   });
 

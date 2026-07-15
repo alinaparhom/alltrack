@@ -8608,9 +8608,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     mapView: "list",
     filters: {
       search: "",
-      object: "",
-      user: "",
-      status: "open",
+      object: [],
+      user: [],
+      status: ["open"],
       view: "all",
     },
     path: {
@@ -10130,9 +10130,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
   const applyDemandFilters = () => {
     const query = demandState.filters.search.trim().toLowerCase();
-    const objectFilter = demandState.filters.object;
-    const userFilter = demandState.filters.user;
-    const statusFilter = demandState.filters.status;
+    const objectFilter = Array.isArray(demandState.filters.object) ? demandState.filters.object : [];
+    const userFilter = Array.isArray(demandState.filters.user) ? demandState.filters.user : [];
+    const statusFilter = Array.isArray(demandState.filters.status) ? demandState.filters.status : [demandState.filters.status || "open"];
     const viewFilter = demandState.filters.view;
     const currentUserKey = buildUserKey(user);
     demandState.filtered = demandState.items.filter((item) => {
@@ -10142,9 +10142,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       } else if (item.status !== "open") {
         return false;
       }
-      if (!isClosedView && statusFilter !== "all" && item.status !== statusFilter) return false;
-      if (objectTrackingEnabled && objectFilter && item.object !== objectFilter) return false;
-      if (userFilter && item.requestedBy !== userFilter) return false;
+      if (!isClosedView && statusFilter.length && !statusFilter.includes("all") && !statusFilter.includes(item.status)) return false;
+      if (objectTrackingEnabled && objectFilter.length && !objectFilter.includes(item.object)) return false;
+      if (userFilter.length && !userFilter.includes(item.requestedBy)) return false;
       if (viewFilter === "mine" && item.requestedById !== currentUserKey) {
         return false;
       }
@@ -10192,9 +10192,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   };
 
   const isDemandFilterAllSelected = (type) => {
-    if (type === "status") return demandState.filters.status === "all";
-    if (type === "object") return !demandState.filters.object;
-    if (type === "user") return !demandState.filters.user;
+    const values = Array.isArray(demandState.filters[type]) ? demandState.filters[type] : [];
+    if (type === "status") return values.includes("all") || values.length === 0;
+    if (type === "object") return values.length === 0;
+    if (type === "user") return values.length === 0;
     return false;
   };
 
@@ -10224,20 +10225,23 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const updateDemandFilterTrigger = (type, value, fallback) => {
     const trigger = contentEl.querySelector(`[data-demand-filter-trigger="${type}"]`);
     if (!trigger) return;
-    trigger.textContent = value || fallback;
-    const isDefaultStatus = type === "status" && demandState.filters.status === "open";
-    trigger.classList.toggle("is-selected", Boolean(value) && !isDefaultStatus);
+    const values = Array.isArray(value) ? value : value ? [value] : [];
+    const label = values.length > 1 ? `Выбрано: ${values.length}` : values[0] || fallback;
+    trigger.textContent = label;
+    const isDefaultStatus = type === "status" && values.length === 1 && values[0] === demandStatusFilterLabels.open;
+    trigger.classList.toggle("is-selected", values.length > 0 && !isDefaultStatus);
   };
 
   const renderDemandDropdownOptions = (type, options, currentValue, emptyLabel) => {
     const optionsEl = contentEl.querySelector(`[data-demand-filter-options="${type}"]`);
     if (!optionsEl) return;
+    const currentValues = Array.isArray(currentValue) ? currentValue : currentValue ? [currentValue] : [];
     const normalizedOptions = options.filter(Boolean).sort((a, b) => a.label.localeCompare(b.label, "ru"));
     const listOptions = type === "status" ? normalizedOptions : [{ value: "", label: emptyLabel }, ...normalizedOptions];
     optionsEl.innerHTML = listOptions
       .map((option) => {
-        const isActive = option.value === currentValue;
-        return `<button type="button" class="tools-filter-dropdown__option demand-filter-dropdown__option${isActive ? " is-active" : ""}" data-demand-filter-value="${escapeHtml(option.value)}" data-demand-filter-label="${escapeHtml(option.label)}">${escapeHtml(option.label)}</button>`;
+        const isActive = option.value ? currentValues.includes(option.value) : currentValues.length === 0;
+        return `<button type="button" class="tools-filter-dropdown__option demand-filter-dropdown__option${isActive ? " is-active" : ""}" data-demand-filter-value="${escapeHtml(option.value)}" data-demand-filter-label="${escapeHtml(option.label)}"><span>${isActive ? "✓" : ""}</span>${escapeHtml(option.label)}</button>`;
       })
       .join("");
   };
@@ -10245,15 +10249,13 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const renderDemandFilterOptions = () => {
     const usedObjects = Array.from(new Set(demandState.items.map((item) => item.object))).filter(Boolean);
     const usedUsers = Array.from(new Set(demandState.items.map((item) => item.requestedBy))).filter(Boolean);
-    if (demandFilterObjectEl && demandState.filters.object && !usedObjects.includes(demandState.filters.object)) {
-      demandState.filters.object = "";
-    }
-    if (demandFilterUserEl && demandState.filters.user && !usedUsers.includes(demandState.filters.user)) {
-      demandState.filters.user = "";
-    }
-    if (demandFilterObjectEl) demandFilterObjectEl.value = demandState.filters.object;
-    if (demandFilterUserEl) demandFilterUserEl.value = demandState.filters.user;
-    if (demandFilterStatusEl) demandFilterStatusEl.value = demandState.filters.status;
+    demandState.filters.object = (Array.isArray(demandState.filters.object) ? demandState.filters.object : []).filter((value) => usedObjects.includes(value));
+    demandState.filters.user = (Array.isArray(demandState.filters.user) ? demandState.filters.user : []).filter((value) => usedUsers.includes(value));
+    demandState.filters.status = (Array.isArray(demandState.filters.status) ? demandState.filters.status : [demandState.filters.status || "open"]).filter(Boolean);
+    if (!demandState.filters.status.length) demandState.filters.status = ["open"];
+    if (demandFilterObjectEl) demandFilterObjectEl.value = demandState.filters.object.join(",");
+    if (demandFilterUserEl) demandFilterUserEl.value = demandState.filters.user.join(",");
+    if (demandFilterStatusEl) demandFilterStatusEl.value = demandState.filters.status.join(",");
     renderDemandDropdownOptions("object", usedObjects.map((value) => ({ value, label: value })), demandState.filters.object, "Все объекты");
     renderDemandDropdownOptions("user", usedUsers.map((value) => ({ value, label: value })), demandState.filters.user, "Все авторы");
     const usedStatuses = Array.from(new Set(demandState.items.map((item) => item.status))).filter(Boolean);
@@ -10261,7 +10263,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     renderDemandDropdownOptions("status", [...statusOptions, { value: "all", label: demandStatusFilterLabels.all }], demandState.filters.status, demandStatusFilterLabels.open);
     updateDemandFilterTrigger("object", demandState.filters.object, "Все объекты");
     updateDemandFilterTrigger("user", demandState.filters.user, "Все авторы");
-    updateDemandFilterTrigger("status", demandStatusFilterLabels[demandState.filters.status] ?? demandStatusFilterLabels.open, demandStatusFilterLabels.open);
+    updateDemandFilterTrigger("status", demandState.filters.status.map((value) => demandStatusFilterLabels[value] ?? value), demandStatusFilterLabels.open);
     updateDemandFilterActionButtons();
   };
 
@@ -11465,12 +11467,14 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const type = button.dataset.demandFilterActionType;
       const action = button.dataset.demandFilterAction;
       if (!type || !action) return;
-      const value = action === "select-all" && type === "status" ? "all" : "";
-      if (type === "object") demandState.filters.object = value;
-      if (type === "user") demandState.filters.user = value;
-      if (type === "status") demandState.filters.status = value || "open";
+      const values = Array.from(contentEl.querySelectorAll(`[data-demand-filter-options="${type}"] [data-demand-filter-value]`))
+        .map((item) => String(item.dataset.demandFilterValue ?? ""))
+        .filter(Boolean);
+      const nextValues = action === "select-all" ? values : type === "status" ? ["open"] : [];
+      if (type === "object") demandState.filters.object = nextValues;
+      if (type === "user") demandState.filters.user = nextValues;
+      if (type === "status") demandState.filters.status = nextValues;
       renderDemandFilterOptions();
-      setDemandDropdownOpen(type, false);
       renderDemandList();
     });
   });
@@ -11481,11 +11485,18 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       if (!option) return;
       const type = optionsEl.dataset.demandFilterOptions;
       const value = String(option.dataset.demandFilterValue ?? "");
-      if (type === "object") demandState.filters.object = value;
-      if (type === "user") demandState.filters.user = value;
-      if (type === "status") demandState.filters.status = value || "open";
+      const currentValues = Array.isArray(demandState.filters[type]) ? demandState.filters[type] : [];
+      let nextValues = [];
+      if (value) {
+        nextValues = currentValues.includes(value)
+          ? currentValues.filter((item) => item !== value)
+          : [...currentValues, value];
+      }
+      if (type === "status" && !nextValues.length) nextValues = ["open"];
+      if (type === "object") demandState.filters.object = nextValues;
+      if (type === "user") demandState.filters.user = nextValues;
+      if (type === "status") demandState.filters.status = nextValues;
       renderDemandFilterOptions();
-      setDemandDropdownOpen(type, false);
       renderDemandList();
     });
   });

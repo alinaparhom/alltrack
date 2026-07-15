@@ -10900,9 +10900,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       pathButton.className = "demand-action demand-action--path";
       pathButton.dataset.demandAction = "path";
       pathButton.dataset.demandId = item.id;
-      pathButton.innerHTML = "🧭";
-      pathButton.setAttribute("aria-label", "Показать путь заявки");
-      pathButton.title = "Путь заявки";
+      pathButton.innerHTML = "📋";
+      pathButton.setAttribute("aria-label", "Показать этапы выполнения заявки");
+      pathButton.title = "Этапы выполнения заявки";
       const toggleButton = document.createElement("button");
       toggleButton.type = "button";
       toggleButton.className = [
@@ -10944,7 +10944,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       deleteButton.innerHTML = "🗑️";
       deleteButton.setAttribute("aria-label", "Удалить заявку");
       deleteButton.title = "Удалить заявку";
-      actions.append(pathButton, toggleButton, requestMapButton, editButton, deleteButton);
+      actions.append(pathButton, deleteButton, requestMapButton, editButton, toggleButton);
 
       if (!note.textContent) {
         content.append(title, chips, meta);

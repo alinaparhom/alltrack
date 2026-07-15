@@ -726,12 +726,6 @@ export function renderRole(user, options = {}) {
             </div>
             <div class="settings-modal__body demand-form-modal__body">
               <form class="demand-form form-card" data-demand-form>
-                <div class="demand-form__hero" aria-hidden="true">
-                  <div class="demand-form__hero-icon">🧰</div>
-                  <div class="demand-form__hero-text">
-                    <strong>Этапы создания</strong>
-                  </div>
-                </div>
                 <div class="demand-form__steps" aria-label="Шаги заполнения заявки">
                   <span data-demand-step="item"><b>1</b> Что нужно</span>
                   <span data-demand-step="object"><b>2</b> Куда</span>

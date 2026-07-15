@@ -10174,15 +10174,51 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
   const demandStatusFilterLabels = { open: "Актуальные", done: "Закрытые", all: "Все" };
 
+  const positionDemandDropdownMenu = (type, menu) => {
+    const trigger = contentEl.querySelector(`[data-demand-filter-trigger="${type}"]`);
+    if (!trigger || !menu) return;
+    const rect = trigger.getBoundingClientRect();
+    const viewportWidth = window.innerWidth || document.documentElement.clientWidth || 0;
+    const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
+    const sideGap = 12;
+    const top = Math.min(rect.bottom + 8, Math.max(sideGap, viewportHeight - 180));
+    const left = Math.max(sideGap, Math.min(rect.left, viewportWidth - rect.width - sideGap));
+    const width = Math.min(rect.width, viewportWidth - sideGap * 2);
+    const maxHeight = Math.max(160, viewportHeight - top - sideGap);
+    menu.style.setProperty("--demand-dropdown-top", `${top}px`);
+    menu.style.setProperty("--demand-dropdown-left", `${left}px`);
+    menu.style.setProperty("--demand-dropdown-width", `${width}px`);
+    menu.style.setProperty("--demand-dropdown-max-height", `${maxHeight}px`);
+  };
+
+  const isDemandFilterAllSelected = (type) => {
+    if (type === "status") return demandState.filters.status === "all";
+    if (type === "object") return !demandState.filters.object;
+    if (type === "user") return !demandState.filters.user;
+    return false;
+  };
+
+  const updateDemandFilterActionButtons = () => {
+    demandFilterActionButtons.forEach((button) => {
+      const type = button.dataset.demandFilterActionType;
+      const allSelected = isDemandFilterAllSelected(type);
+      button.dataset.demandFilterAction = allSelected ? "clear" : "select-all";
+      button.textContent = allSelected ? "Снять всё" : "Выделить всё";
+      button.setAttribute("aria-label", button.textContent);
+    });
+  };
+
   const setDemandDropdownOpen = (type, isOpen) => {
     demandFilterMenus.forEach((menu) => {
       const menuType = menu.dataset.demandFilterMenu;
       const shouldOpen = isOpen && menuType === type;
+      if (shouldOpen) positionDemandDropdownMenu(menuType, menu);
       menu.classList.toggle("is-hidden", !shouldOpen);
       contentEl
         .querySelector(`[data-demand-filter-trigger="${menuType}"]`)
         ?.setAttribute("aria-expanded", String(shouldOpen));
     });
+    updateDemandFilterActionButtons();
   };
 
   const updateDemandFilterTrigger = (type, value, fallback) => {
@@ -10226,6 +10262,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     updateDemandFilterTrigger("object", demandState.filters.object, "Все объекты");
     updateDemandFilterTrigger("user", demandState.filters.user, "Все авторы");
     updateDemandFilterTrigger("status", demandStatusFilterLabels[demandState.filters.status] ?? demandStatusFilterLabels.open, demandStatusFilterLabels.open);
+    updateDemandFilterActionButtons();
   };
 
   const setDemandContentView = (view = "list") => {

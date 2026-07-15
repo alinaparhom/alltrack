@@ -8835,16 +8835,20 @@
       }
 
       .demand-filters {
+        position: relative;
+        z-index: 60;
         display: grid;
-        gap: 8px;
+        gap: 10px;
         margin-top: 0;
         padding: 10px;
-        border: 1px solid rgba(226, 232, 240, 0.78);
-        border-radius: 24px;
-        background: linear-gradient(145deg, rgba(255, 255, 255, 0.78), rgba(248, 251, 255, 0.56));
-        box-shadow: 0 18px 44px rgba(15, 23, 42, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.75);
-        backdrop-filter: blur(18px) saturate(128%);
-        -webkit-backdrop-filter: blur(18px) saturate(128%);
+        border: 1px solid rgba(255, 255, 255, 0.7);
+        border-radius: 26px;
+        background:
+          radial-gradient(circle at 12% 0%, rgba(59, 125, 255, 0.16), transparent 34%),
+          linear-gradient(145deg, rgba(255, 255, 255, 0.86), rgba(245, 249, 255, 0.66));
+        box-shadow: 0 18px 44px rgba(15, 23, 42, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.86);
+        backdrop-filter: blur(22px) saturate(140%);
+        -webkit-backdrop-filter: blur(22px) saturate(140%);
       }
 
       .demand-filters__bar {
@@ -8897,9 +8901,10 @@
         display: grid;
         gap: 10px;
         padding: 10px;
-        border: 1px solid rgba(226, 232, 240, 0.72);
-        border-radius: 20px;
-        background: rgba(255, 255, 255, 0.58);
+        border: 1px solid rgba(255, 255, 255, 0.72);
+        border-radius: 22px;
+        background: rgba(255, 255, 255, 0.62);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75);
       }
 
       .demand-filter-row {
@@ -8954,14 +8959,14 @@
       }
 
       .demand-filter-dropdown__menu {
-        position: absolute;
-        z-index: 30;
-        top: calc(100% + 8px);
-        left: 0;
-        right: 0;
+        position: fixed;
+        z-index: 2147483000;
+        top: var(--demand-dropdown-top, calc(100% + 8px));
+        left: var(--demand-dropdown-left, 12px);
+        width: var(--demand-dropdown-width, calc(100vw - 24px));
         display: grid;
         gap: 6px;
-        max-height: min(280px, 45vh);
+        max-height: min(var(--demand-dropdown-max-height, 280px), 54vh);
         overflow: auto;
         padding: 8px;
         border: 1px solid rgba(226, 232, 240, 0.86);
@@ -8978,7 +8983,7 @@
         top: 0;
         z-index: 2;
         display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-columns: minmax(0, 1fr);
         gap: 6px;
         padding-bottom: 6px;
         background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(255, 255, 255, 0.86));

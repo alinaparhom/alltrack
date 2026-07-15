@@ -654,25 +654,35 @@ export function renderRole(user, options = {}) {
                   <div class="demand-filter-row">
                     <label class="demand-filter">
                       <span>Объект</span>
-                      <select class="form-input" data-demand-filter-object>
-                        <option value="">Все объекты</option>
-                      </select>
+                      <div class="tools-filter-dropdown demand-filter-dropdown" data-demand-dropdown="object">
+                        <button type="button" class="form-input tools-filter-dropdown__trigger demand-filter-dropdown__trigger" data-demand-filter-trigger="object">Все объекты</button>
+                        <div class="tools-filter-dropdown__menu demand-filter-dropdown__menu is-hidden" data-demand-filter-menu="object">
+                          <div class="tools-filter-dropdown__options" data-demand-filter-options="object"></div>
+                        </div>
+                        <input type="hidden" data-demand-filter-object />
+                      </div>
                     </label>
                     <label class="demand-filter">
                       <span>Автор</span>
-                      <select class="form-input" data-demand-filter-user>
-                        <option value="">Все пользователи</option>
-                      </select>
+                      <div class="tools-filter-dropdown demand-filter-dropdown" data-demand-dropdown="user">
+                        <button type="button" class="form-input tools-filter-dropdown__trigger demand-filter-dropdown__trigger" data-demand-filter-trigger="user">Все авторы</button>
+                        <div class="tools-filter-dropdown__menu demand-filter-dropdown__menu is-hidden" data-demand-filter-menu="user">
+                          <div class="tools-filter-dropdown__options" data-demand-filter-options="user"></div>
+                        </div>
+                        <input type="hidden" data-demand-filter-user />
+                      </div>
                     </label>
                   </div>
                   <div class="demand-filter-row demand-filter-row--secondary">
                     <label class="demand-filter">
                       <span>Статус</span>
-                      <select class="form-input" data-demand-filter-status>
-                        <option value="open" selected>Актуальные</option>
-                        <option value="done">Закрытые</option>
-                        <option value="all">Все</option>
-                      </select>
+                      <div class="tools-filter-dropdown demand-filter-dropdown" data-demand-dropdown="status">
+                        <button type="button" class="form-input tools-filter-dropdown__trigger demand-filter-dropdown__trigger" data-demand-filter-trigger="status">Актуальные</button>
+                        <div class="tools-filter-dropdown__menu demand-filter-dropdown__menu is-hidden" data-demand-filter-menu="status">
+                          <div class="tools-filter-dropdown__options" data-demand-filter-options="status"></div>
+                        </div>
+                        <input type="hidden" data-demand-filter-status value="open" />
+                      </div>
                     </label>
                   </div>
                 </div>

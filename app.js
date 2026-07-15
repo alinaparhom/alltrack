@@ -6460,6 +6460,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const demandFilterObjectEl = contentEl.querySelector("[data-demand-filter-object]");
   const demandFilterUserEl = contentEl.querySelector("[data-demand-filter-user]");
   const demandFilterStatusEl = contentEl.querySelector("[data-demand-filter-status]");
+  const demandFilterTriggers = contentEl.querySelectorAll("[data-demand-filter-trigger]");
+  const demandFilterMenus = contentEl.querySelectorAll("[data-demand-filter-menu]");
+  const demandFilterOptionsEls = contentEl.querySelectorAll("[data-demand-filter-options]");
   const demandFilterViewEl = contentEl.querySelector("[data-demand-filter-view]");
   const demandMapToggleEl = contentEl.querySelector("[data-demand-map-toggle]");
   const demandListEl = contentEl.querySelector("[data-demand-list]");
@@ -10168,39 +10171,61 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     });
   };
 
+  const demandStatusFilterLabels = { open: "Актуальные", done: "Закрытые", all: "Все" };
+
+  const setDemandDropdownOpen = (type, isOpen) => {
+    demandFilterMenus.forEach((menu) => {
+      const menuType = menu.dataset.demandFilterMenu;
+      const shouldOpen = isOpen && menuType === type;
+      menu.classList.toggle("is-hidden", !shouldOpen);
+      contentEl
+        .querySelector(`[data-demand-filter-trigger="${menuType}"]`)
+        ?.setAttribute("aria-expanded", String(shouldOpen));
+    });
+  };
+
+  const updateDemandFilterTrigger = (type, value, fallback) => {
+    const trigger = contentEl.querySelector(`[data-demand-filter-trigger="${type}"]`);
+    if (!trigger) return;
+    trigger.textContent = value || fallback;
+    trigger.classList.toggle("is-selected", Boolean(value));
+  };
+
+  const renderDemandDropdownOptions = (type, options, currentValue, emptyLabel) => {
+    const optionsEl = contentEl.querySelector(`[data-demand-filter-options="${type}"]`);
+    if (!optionsEl) return;
+    const normalizedOptions = options.filter(Boolean).sort((a, b) => a.label.localeCompare(b.label, "ru"));
+    optionsEl.innerHTML = [
+      { value: "", label: emptyLabel },
+      ...normalizedOptions,
+    ]
+      .map((option) => {
+        const isActive = option.value === currentValue;
+        return `<button type="button" class="tools-filter-dropdown__option demand-filter-dropdown__option${isActive ? " is-active" : ""}" data-demand-filter-value="${escapeHtml(option.value)}" data-demand-filter-label="${escapeHtml(option.label)}">${escapeHtml(option.label)}</button>`;
+      })
+      .join("");
+  };
+
   const renderDemandFilterOptions = () => {
-    if (demandFilterObjectEl) {
-      const options = Array.from(
-        new Set([
-          ...demandState.objects,
-          ...demandState.items.map((item) => item.object),
-        ])
-      ).filter(Boolean);
-      demandFilterObjectEl.innerHTML = `
-        <option value="">Все объекты</option>
-        ${options
-          .sort((a, b) => a.localeCompare(b, "ru"))
-          .map((value) => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`)
-          .join("")}
-      `;
-      demandFilterObjectEl.value = demandState.filters.object;
+    const usedObjects = Array.from(new Set(demandState.items.map((item) => item.object))).filter(Boolean);
+    const usedUsers = Array.from(new Set(demandState.items.map((item) => item.requestedBy))).filter(Boolean);
+    if (demandFilterObjectEl && demandState.filters.object && !usedObjects.includes(demandState.filters.object)) {
+      demandState.filters.object = "";
     }
-    if (demandFilterUserEl) {
-      const options = Array.from(
-        new Set([
-          ...demandState.users.map((item) => item.name),
-          ...demandState.items.map((item) => item.requestedBy),
-        ])
-      ).filter(Boolean);
-      demandFilterUserEl.innerHTML = `
-        <option value="">Все пользователи</option>
-        ${options
-          .sort((a, b) => a.localeCompare(b, "ru"))
-          .map((value) => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`)
-          .join("")}
-      `;
-      demandFilterUserEl.value = demandState.filters.user;
+    if (demandFilterUserEl && demandState.filters.user && !usedUsers.includes(demandState.filters.user)) {
+      demandState.filters.user = "";
     }
+    if (demandFilterObjectEl) demandFilterObjectEl.value = demandState.filters.object;
+    if (demandFilterUserEl) demandFilterUserEl.value = demandState.filters.user;
+    if (demandFilterStatusEl) demandFilterStatusEl.value = demandState.filters.status;
+    renderDemandDropdownOptions("object", usedObjects.map((value) => ({ value, label: value })), demandState.filters.object, "Все объекты");
+    renderDemandDropdownOptions("user", usedUsers.map((value) => ({ value, label: value })), demandState.filters.user, "Все авторы");
+    const usedStatuses = Array.from(new Set(demandState.items.map((item) => item.status))).filter(Boolean);
+    const statusOptions = ["open", "done"].filter((value) => usedStatuses.includes(value)).map((value) => ({ value, label: demandStatusFilterLabels[value] }));
+    renderDemandDropdownOptions("status", [...statusOptions, { value: "all", label: demandStatusFilterLabels.all }], demandState.filters.status, demandStatusFilterLabels.open);
+    updateDemandFilterTrigger("object", demandState.filters.object, "Все объекты");
+    updateDemandFilterTrigger("user", demandState.filters.user, "Все авторы");
+    updateDemandFilterTrigger("status", demandStatusFilterLabels[demandState.filters.status] ?? demandStatusFilterLabels.open, demandStatusFilterLabels.open);
   };
 
   const setDemandContentView = (view = "list") => {
@@ -11389,19 +11414,33 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     renderDemandList();
   });
 
-  demandFilterObjectEl?.addEventListener("change", (event) => {
-    demandState.filters.object = String(event.target.value ?? "");
-    renderDemandList();
+  demandFilterTriggers.forEach((trigger) => {
+    trigger.setAttribute("aria-expanded", "false");
+    trigger.addEventListener("click", () => {
+      const type = trigger.dataset.demandFilterTrigger;
+      const menu = contentEl.querySelector(`[data-demand-filter-menu="${type}"]`);
+      setDemandDropdownOpen(type, menu?.classList.contains("is-hidden"));
+    });
   });
 
-  demandFilterUserEl?.addEventListener("change", (event) => {
-    demandState.filters.user = String(event.target.value ?? "");
-    renderDemandList();
+  demandFilterOptionsEls.forEach((optionsEl) => {
+    optionsEl.addEventListener("click", (event) => {
+      const option = event.target.closest("[data-demand-filter-value]");
+      if (!option) return;
+      const type = optionsEl.dataset.demandFilterOptions;
+      const value = String(option.dataset.demandFilterValue ?? "");
+      if (type === "object") demandState.filters.object = value;
+      if (type === "user") demandState.filters.user = value;
+      if (type === "status") demandState.filters.status = value || "open";
+      renderDemandFilterOptions();
+      setDemandDropdownOpen(type, false);
+      renderDemandList();
+    });
   });
 
-  demandFilterStatusEl?.addEventListener("change", (event) => {
-    demandState.filters.status = String(event.target.value ?? "open");
-    renderDemandList();
+  document.addEventListener("click", (event) => {
+    if (event.target.closest("[data-demand-dropdown]")) return;
+    setDemandDropdownOpen("", false);
   });
 
   demandFilterViewEl?.addEventListener("click", (event) => {

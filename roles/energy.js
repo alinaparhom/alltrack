@@ -834,6 +834,14 @@ export function renderRole(user, options = {}) {
                     data-demand-note
                   ></textarea>
                 </label>
+                <label class="demand-important-toggle" data-demand-important-toggle>
+                  <input type="checkbox" value="red" data-demand-priority />
+                  <span class="demand-important-toggle__icon" aria-hidden="true">★</span>
+                  <span class="demand-important-toggle__text">
+                    <strong>Важная заявка</strong>
+                    <small>Плашка будет выделена фиолетовым</small>
+                  </span>
+                </label>
                 <div class="demand-form__actions">
                   <button class="action-secondary" type="button" data-demand-cancel>
                     Отмена

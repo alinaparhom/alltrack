@@ -8470,7 +8470,9 @@
 
       .demand-summary__main {
         display: grid;
+        justify-items: center;
         gap: 2px;
+        text-align: center;
       }
 
       .demand-summary__actions {
@@ -9457,6 +9459,7 @@
       }
 
       .demand-action--edit {
+        position: relative;
         display: inline-grid;
         place-items: center;
         font-size: 0;
@@ -9465,14 +9468,17 @@
 
       .demand-action--edit::before {
         content: "✎";
+        position: absolute;
+        left: 50%;
+        top: 50%;
         display: grid;
         place-items: center;
-        width: 100%;
-        height: 100%;
+        width: 18px;
+        height: 18px;
         font-size: 18px;
         font-weight: 900;
         line-height: 1;
-        transform: scaleX(-1);
+        transform: translate(-50%, -50%) scaleX(-1);
         transform-origin: center;
       }
 

@@ -12027,10 +12027,34 @@
         font-size: 13px;
       }
 
-      .tool-documents-modal__close {
+      .tool-documents-modal__close,
+      .tool-documents-modal__close:hover,
+      .tool-documents-modal__close:focus-visible {
+        pointer-events: auto;
         flex: 0 0 auto;
-        color: #ef4444;
-        background: rgba(254, 242, 242, 0.86);
+        width: 38px;
+        height: 38px;
+        min-height: 38px;
+        border-radius: 999px;
+        color: #dc2626;
+        background: linear-gradient(145deg, rgba(254, 242, 242, 0.96), rgba(255, 255, 255, 0.86));
+        border: 1px solid rgba(248, 113, 113, 0.42);
+        box-shadow: 0 12px 30px rgba(220, 38, 38, 0.2);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+      }
+
+      .tool-documents-modal__close .button-icon-emoji {
+        font-size: 18px;
+        line-height: 1;
+      }
+
+      body[data-theme="dark"] .tool-documents-modal__close,
+      body[data-theme="dark"] .tool-documents-modal__close:hover,
+      body[data-theme="dark"] .tool-documents-modal__close:focus-visible {
+        color: #fecaca;
+        background: rgba(127, 29, 29, 0.76);
+        border-color: rgba(248, 113, 113, 0.38);
       }
 
       .tool-documents-modal__body {

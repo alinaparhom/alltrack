@@ -33958,10 +33958,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       <div class="tool-documents-modal__panel" role="dialog" aria-modal="true" aria-label="Документы инструмента">
         <div class="tool-documents-modal__header">
           <div>
-            <h3>Документы инструмента</h3>
-            <p>Накладные покупки и акты ремонта</p>
+            <h3>Накладные и акты</h3>
           </div>
-          <button class="button-icon tool-documents-modal__close" type="button" data-tool-documents-close aria-label="Закрыть документы">✕</button>
+          <button class="button-icon tools-modal__close tool-documents-modal__close" type="button" data-tool-documents-close aria-label="Закрыть документы">
+            <span class="button-icon-emoji" aria-hidden="true">✕</span>
+          </button>
         </div>
         <div class="tool-documents-modal__body" data-tool-documents-body>
           <div class="tool-documents-modal__loading">Ищем файлы...</div>

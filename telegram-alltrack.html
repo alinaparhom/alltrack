@@ -24266,10 +24266,12 @@
         padding-bottom: calc(18px + env(safe-area-inset-bottom)) !important;
       }
 
-      /* Страница «Поиск»: список плашек тянется до низа экрана, а поиск
-         лежит поверх контента внизу — удобно для большого пальца на телефоне. */
+      /* Страница «Поиск»: плашки занимают пространство между переключателем вида
+         и строкой поиска. Поиск больше не перекрывает карточки и совпадает с ними по ширине. */
       .tools-modal--global-search {
-        --global-search-bottom-bar-height: calc(64px + max(0px, env(safe-area-inset-bottom)));
+        --global-search-bottom-bar-height: 56px;
+        --global-search-gutter: calc(18px + max(0px, env(safe-area-inset-left)));
+        --global-search-gutter-right: calc(18px + max(0px, env(safe-area-inset-right)));
       }
 
       .tools-modal--global-search .tools-modal__panel {
@@ -24280,30 +24282,45 @@
       }
 
       .tools-modal--global-search .tools-modal__body {
-        grid-template-rows: auto minmax(0, 1fr) !important;
+        grid-template-rows: auto minmax(0, 1fr) auto !important;
         min-height: 0 !important;
         height: 100% !important;
-        padding-top: 5px !important;
-        padding-bottom: 0 !important;
+        padding: 5px var(--global-search-gutter-right) calc(10px + max(0px, env(safe-area-inset-bottom))) var(--global-search-gutter) !important;
         overflow: hidden !important;
+      }
+
+      .tools-modal--global-search .tools-controls {
+        display: contents !important;
+      }
+
+      .tools-modal--global-search .tools-controls__row {
+        display: contents !important;
+      }
+
+      .tools-modal--global-search .tools-actions {
+        order: 1 !important;
+        margin-left: 0 !important;
+        width: 100% !important;
       }
 
       .tools-modal--global-search .tools-list,
       .tools-modal--global-search .tools-search-map {
-        min-height: 100% !important;
-        height: 100% !important;
-        max-height: 100% !important;
-        padding-bottom: calc(var(--global-search-bottom-bar-height) + 14px) !important;
+        order: 2 !important;
+        min-height: 0 !important;
+        height: auto !important;
+        max-height: none !important;
+        padding-bottom: 12px !important;
         align-content: start !important;
       }
 
       .tools-modal--global-search .tools-search {
-        position: fixed !important;
-        left: calc(18px + max(0px, env(safe-area-inset-left))) !important;
-        right: calc(18px + max(0px, env(safe-area-inset-right))) !important;
-        bottom: calc(10px + max(0px, env(safe-area-inset-bottom))) !important;
-        z-index: 80 !important;
-        width: auto !important;
+        order: 3 !important;
+        position: relative !important;
+        left: auto !important;
+        right: auto !important;
+        bottom: auto !important;
+        z-index: 1 !important;
+        width: 100% !important;
         min-width: 0 !important;
         padding: 0 !important;
         border: 0 !important;

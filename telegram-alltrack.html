@@ -11792,24 +11792,37 @@
         max-height: 100vh;
         overflow-y: auto;
         background:
-          radial-gradient(circle at 12% 0%, rgba(59, 130, 246, 0.13), transparent 34%),
-          rgba(255, 255, 255, 0.72);
+          radial-gradient(circle at 12% 0%, rgba(59, 130, 246, 0.28), transparent 34%),
+          radial-gradient(circle at 92% 10%, rgba(14, 165, 233, 0.22), transparent 32%),
+          linear-gradient(160deg, rgba(224, 242, 254, 0.98), rgba(248, 250, 252, 0.9));
       }
 
       .tools-info-modal__panel--search.tools-item--broken .tools-info-modal__body {
-        background: linear-gradient(160deg, rgba(254, 249, 195, 0.9), rgba(255, 251, 235, 0.74));
+        background:
+          radial-gradient(circle at 16% 0%, rgba(250, 204, 21, 0.42), transparent 36%),
+          radial-gradient(circle at 96% 12%, rgba(251, 191, 36, 0.26), transparent 32%),
+          linear-gradient(160deg, rgba(254, 240, 138, 0.98), rgba(255, 251, 235, 0.9));
       }
 
       .tools-info-modal__panel--search.tools-item--repair .tools-info-modal__body {
-        background: linear-gradient(160deg, rgba(255, 237, 213, 0.9), rgba(255, 247, 237, 0.74));
+        background:
+          radial-gradient(circle at 14% 0%, rgba(249, 115, 22, 0.36), transparent 36%),
+          radial-gradient(circle at 94% 10%, rgba(251, 146, 60, 0.24), transparent 32%),
+          linear-gradient(160deg, rgba(255, 213, 166, 0.98), rgba(255, 247, 237, 0.9));
       }
 
       .tools-info-modal__panel--search.tools-item--writeoff .tools-info-modal__body {
-        background: linear-gradient(160deg, rgba(254, 226, 226, 0.9), rgba(255, 241, 242, 0.76));
+        background:
+          radial-gradient(circle at 14% 0%, rgba(239, 68, 68, 0.38), transparent 36%),
+          radial-gradient(circle at 94% 10%, rgba(244, 63, 94, 0.26), transparent 32%),
+          linear-gradient(160deg, rgba(254, 202, 202, 0.98), rgba(255, 241, 242, 0.9));
       }
 
       .tools-info-modal__panel--search.tools-item--pending-response .tools-info-modal__body {
-        background: linear-gradient(160deg, rgba(219, 234, 254, 0.92), rgba(239, 246, 255, 0.76));
+        background:
+          radial-gradient(circle at 14% 0%, rgba(59, 130, 246, 0.38), transparent 36%),
+          radial-gradient(circle at 94% 10%, rgba(14, 165, 233, 0.24), transparent 32%),
+          linear-gradient(160deg, rgba(191, 219, 254, 0.98), rgba(239, 246, 255, 0.9));
       }
 
       .tools-info-modal__panel--search .tools-info-card {
@@ -11818,10 +11831,34 @@
         max-width: 720px;
         margin-inline: auto;
         padding: 12px;
+        border: 2px solid rgba(96, 165, 250, 0.42);
         border-radius: 26px;
-        background: linear-gradient(150deg, rgba(255,255,255,0.94), rgba(248,250,252,0.86));
+        background: linear-gradient(150deg, rgba(255,255,255,0.96), rgba(248,250,252,0.88));
+        box-shadow:
+          0 0 0 1px rgba(255, 255, 255, 0.72) inset,
+          0 18px 42px rgba(37, 99, 235, 0.14);
         backdrop-filter: blur(18px);
         -webkit-backdrop-filter: blur(18px);
+      }
+
+      .tools-info-modal__panel--search.tools-item--broken .tools-info-card {
+        border-color: rgba(250, 204, 21, 0.9);
+        box-shadow: 0 0 0 1px rgba(254, 240, 138, 0.46) inset, 0 18px 42px rgba(202, 138, 4, 0.22);
+      }
+
+      .tools-info-modal__panel--search.tools-item--repair .tools-info-card {
+        border-color: rgba(249, 115, 22, 0.86);
+        box-shadow: 0 0 0 1px rgba(255, 237, 213, 0.5) inset, 0 18px 42px rgba(234, 88, 12, 0.22);
+      }
+
+      .tools-info-modal__panel--search.tools-item--writeoff .tools-info-card {
+        border-color: rgba(239, 68, 68, 0.88);
+        box-shadow: 0 0 0 1px rgba(254, 226, 226, 0.54) inset, 0 18px 42px rgba(220, 38, 38, 0.24);
+      }
+
+      .tools-info-modal__panel--search.tools-item--pending-response .tools-info-card {
+        border-color: rgba(59, 130, 246, 0.86);
+        box-shadow: 0 0 0 1px rgba(219, 234, 254, 0.54) inset, 0 18px 42px rgba(37, 99, 235, 0.24);
       }
 
       .tools-info-modal__panel--search .tools-info-top-actions-row,
@@ -11865,6 +11902,30 @@
         background:
           radial-gradient(circle at 12% 0%, rgba(96, 165, 250, 0.14), transparent 34%),
           rgba(15, 23, 42, 0.72);
+      }
+
+      body[data-theme="dark"] .tools-info-modal__panel--search.tools-item--broken .tools-info-modal__body {
+        background:
+          radial-gradient(circle at 16% 0%, rgba(250, 204, 21, 0.3), transparent 36%),
+          linear-gradient(160deg, rgba(76, 62, 12, 0.96), rgba(15, 23, 42, 0.88));
+      }
+
+      body[data-theme="dark"] .tools-info-modal__panel--search.tools-item--repair .tools-info-modal__body {
+        background:
+          radial-gradient(circle at 14% 0%, rgba(249, 115, 22, 0.32), transparent 36%),
+          linear-gradient(160deg, rgba(124, 45, 18, 0.94), rgba(15, 23, 42, 0.88));
+      }
+
+      body[data-theme="dark"] .tools-info-modal__panel--search.tools-item--writeoff .tools-info-modal__body {
+        background:
+          radial-gradient(circle at 14% 0%, rgba(248, 113, 113, 0.34), transparent 36%),
+          linear-gradient(160deg, rgba(127, 29, 29, 0.96), rgba(15, 23, 42, 0.88));
+      }
+
+      body[data-theme="dark"] .tools-info-modal__panel--search.tools-item--pending-response .tools-info-modal__body {
+        background:
+          radial-gradient(circle at 14% 0%, rgba(59, 130, 246, 0.36), transparent 36%),
+          linear-gradient(160deg, rgba(30, 58, 138, 0.92), rgba(15, 23, 42, 0.88));
       }
 
       body[data-theme="dark"] .tools-info-modal__panel--search .tools-info-card {

@@ -30068,7 +30068,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         );
         const model = normalizeSuggestionValue(formData.get("tool-model"));
         const accountingName = normalizeSuggestionValue(
-          formData.get("tool-accounting-name")
+          formData.get("tool-accounting-name") || formData.get("tool-name")
         );
         const costValue = normalizeCostValue(formData.get("tool-cost"));
         const responsibleRaw = normalizeSuggestionValue(

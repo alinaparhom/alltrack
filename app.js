@@ -28655,7 +28655,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
 
   const getAddToolContextFilters = (excludeKey = "") => {
     const keys = [
-      "Бух.номер",
       "Наименование",
       "Производитель",
       "Модель",
@@ -28731,7 +28730,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   };
 
   const getKitRowContextFilters = (rowEl, excludeKey = "") =>
-    ["Наименование", "Количество", "Бух.номер"]
+    ["Наименование", "Количество"]
       .filter((key) => key !== excludeKey)
       .map((key) => ({
         key,
@@ -28861,12 +28860,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     showOnFocus: true,
   });
 
-  attachDynamicSuggestions({
-    inputEl: addToolAccountingNumberInput,
-    containerEl: addToolAccountingNumberSuggestionsEl,
-    getItems: (query) => getToolContextSuggestions("Бух.номер", query),
-    showOnFocus: true,
-  });
+  addToolAccountingNumberSuggestionsEl?.classList.add("is-hidden");
 
   attachDynamicSuggestions({
     inputEl: demandItemInput,
@@ -29286,7 +29280,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       <label class="form-field add-tool-kit__field add-tool-kit__field--accounting">
         <span class="form-label">Бух.номер</span>
         <input class="form-input" type="text" inputmode="text" name="tool-kit-accounting-${rowId}" placeholder="Необязательно" autocomplete="off" />
-        <div class="suggestions is-hidden" data-tool-kit-accounting-suggestions></div>
       </label>
       <button class="button-icon add-tool-kit__remove" type="button" data-add-tool-kit-remove aria-label="Удалить позицию">
         <span class="button-icon-emoji" aria-hidden="true">✕</span>
@@ -29304,12 +29297,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       inputEl: rowEl.querySelector('input[name^="tool-kit-count-"]'),
       containerEl: rowEl.querySelector("[data-tool-kit-count-suggestions]"),
       getItems: (query) => getToolKitSuggestions("Количество", query, rowEl),
-      showOnFocus: true,
-    });
-    attachDynamicSuggestions({
-      inputEl: rowEl.querySelector('input[name^="tool-kit-accounting-"]'),
-      containerEl: rowEl.querySelector("[data-tool-kit-accounting-suggestions]"),
-      getItems: (query) => getToolKitSuggestions("Бух.номер", query, rowEl),
       showOnFocus: true,
     });
   };

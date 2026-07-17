@@ -24280,7 +24280,7 @@
       }
 
       .tools-modal--global-search .tools-modal__body {
-        grid-template-rows: auto minmax(0, 1fr) !important;
+        grid-template-rows: minmax(0, 1fr) auto !important;
         min-height: 0 !important;
         height: 100% !important;
         padding-top: 5px !important;
@@ -24288,8 +24288,13 @@
         overflow: hidden !important;
       }
 
+      .tools-modal--global-search .tools-controls {
+        order: 2 !important;
+      }
+
       .tools-modal--global-search .tools-list,
       .tools-modal--global-search .tools-search-map {
+        order: 1 !important;
         min-height: 100% !important;
         height: 100% !important;
         max-height: 100% !important;

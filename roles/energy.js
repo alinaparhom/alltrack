@@ -1673,6 +1673,21 @@ export function renderRole(user, options = {}) {
                 <button
                   class="button-icon tools-info-quick-action tools-info-inline-action"
                   type="button"
+                  data-tools-info-documents
+                  aria-label="Открыть документы инструмента"
+                  title="Документы"
+                >
+                  <span class="tools-info-inline-action__icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+                      <path d="M7 3.8h6.2L18 8.6v11.6H7z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"></path>
+                      <path d="M13 4v5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"></path>
+                      <path d="M9.5 13h5M9.5 16h4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path>
+                    </svg>
+                  </span>
+                </button>
+                <button
+                  class="button-icon tools-info-quick-action tools-info-inline-action"
+                  type="button"
                   data-tools-info-share
                   aria-label="Поделиться инструментом"
                   title="Поделиться"

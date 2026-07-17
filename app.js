@@ -6724,6 +6724,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const toolsInfoMoveButton = contentEl.querySelector("[data-tools-info-move]");
   const toolsInfoShareButton = contentEl.querySelector("[data-tools-info-share]");
   const toolsInfoCopyButton = contentEl.querySelector("[data-tools-info-copy]");
+  const toolsInfoDocumentsButton = contentEl.querySelector("[data-tools-info-documents]");
   const toolsInfoHeaderActionsEl = contentEl.querySelector(".tools-info-header-actions");
   const toolsInfoHistoryToggleButton = contentEl.querySelector(
     "[data-tools-info-history-toggle]"
@@ -15405,8 +15406,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       String(tool?.["Модель"] ?? "").trim(),
     ].filter(Boolean);
     const isSearchMode = toolsState.mode === "search";
+    if (toolsInfoDocumentsButton) {
+      toolsInfoDocumentsButton.classList.toggle("is-hidden", !isSearchMode);
+    }
     if (isSearchMode && toolsInfoHeaderActionsEl) {
-      [toolsInfoCopyButton, toolsInfoShareButton].forEach((button) => {
+      [toolsInfoKitToggleButton, toolsInfoDocumentsButton, toolsInfoCopyButton, toolsInfoShareButton].forEach((button) => {
         if (!button) return;
         toolsInfoHeaderActionsEl.insertBefore(button, toolsInfoHeaderActionsEl.querySelector("[data-tools-info-close]"));
       });
@@ -20445,6 +20449,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       toolsState.selectedIds.add(selectionId);
       closeToolsInfoModal();
       await openToolsMoveModal();
+    });
+  }
+  if (toolsInfoDocumentsButton) {
+    toolsInfoDocumentsButton.addEventListener("click", () => {
+      void openToolDocumentsViewer();
     });
   }
   if (toolsInfoShareButton) {
@@ -33908,6 +33917,125 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     });
     wrap.appendChild(list);
     downloadMessageEl.appendChild(wrap);
+  };
+
+  const buildToolDocumentItem = ({ tool, files, orgFolder, folderName, title, emptyText }) => {
+    const toolNumberVariants = new Set([
+      ...getToolNumberVariants(tool?.["Номер"]),
+      ...getToolNumberVariants(tool?.["Бух.номер"]),
+    ]);
+    const normalizedVariants = Array.from(toolNumberVariants)
+      .map((variant) => normalizeToolNumberValue(variant))
+      .filter(Boolean);
+    const linkedFiles = (Array.isArray(files) ? files : []).filter((fileName) => {
+      const firstPart = String(fileName ?? "").trim().split("_")[0] ?? "";
+      const normalizedFileNumber = normalizeToolNumberValue(firstPart);
+      return normalizedFileNumber && normalizedVariants.includes(normalizedFileNumber);
+    });
+    const uniqueFiles = Array.from(new Set(linkedFiles)).sort((a, b) => a.localeCompare(b, "ru"));
+    return {
+      title,
+      emptyText,
+      files: uniqueFiles,
+      urls: uniqueFiles.map((fileName) =>
+        new URL(
+          `./${orgFolder}/${folderName}/${encodeURIComponent(fileName)}`,
+          window.location.href
+        ).href
+      ),
+    };
+  };
+
+  const openToolDocumentsViewer = async () => {
+    const tool = toolsInfoState.tool;
+    const orgFolder = toolsInfoState.orgFolder || toolsState.orgFolder || context.orgFolderName || "";
+    if (!tool || !orgFolder) return;
+    setToolsInfoSubtitleMessage("Загружаем документы...");
+    const overlay = document.createElement("div");
+    overlay.className = "tool-documents-modal";
+    overlay.innerHTML = `
+      <div class="tool-documents-modal__backdrop" data-tool-documents-close></div>
+      <div class="tool-documents-modal__panel" role="dialog" aria-modal="true" aria-label="Документы инструмента">
+        <div class="tool-documents-modal__header">
+          <div>
+            <h3>Документы инструмента</h3>
+            <p>Накладные покупки и акты ремонта</p>
+          </div>
+          <button class="button-icon tool-documents-modal__close" type="button" data-tool-documents-close aria-label="Закрыть документы">✕</button>
+        </div>
+        <div class="tool-documents-modal__body" data-tool-documents-body>
+          <div class="tool-documents-modal__loading">Ищем файлы...</div>
+        </div>
+      </div>
+    `;
+    const close = () => {
+      overlay.remove();
+      document.removeEventListener("keydown", handleKeydown);
+    };
+    const handleKeydown = (event) => {
+      if (event.key === "Escape") close();
+    };
+    overlay.addEventListener("click", (event) => {
+      if (event.target.closest("[data-tool-documents-close]")) close();
+    });
+    document.addEventListener("keydown", handleKeydown);
+    document.body.appendChild(overlay);
+    const body = overlay.querySelector("[data-tool-documents-body]");
+    try {
+      const [invoiceFiles, repairFiles] = await Promise.all([
+        listFolderFilesViaEndpoint(orgFolder, "Накладные покупка").catch(() => []),
+        listFolderFilesViaEndpoint(orgFolder, "Акты ремонтов").catch(() => []),
+      ]);
+      const sections = [
+        buildToolDocumentItem({
+          tool,
+          files: invoiceFiles,
+          orgFolder,
+          folderName: "Накладные покупка",
+          title: "Накладные покупка",
+          emptyText: "Накладных на покупку для этого инструмента нет.",
+        }),
+        buildToolDocumentItem({
+          tool,
+          files: repairFiles,
+          orgFolder,
+          folderName: "Акты ремонтов",
+          title: "Акты ремонт",
+          emptyText: "Актов ремонта для этого инструмента нет.",
+        }),
+      ];
+      if (!body) return;
+      body.innerHTML = "";
+      sections.forEach((section) => {
+        const sectionEl = document.createElement("section");
+        sectionEl.className = "tool-documents-section";
+        const titleEl = document.createElement("h4");
+        titleEl.textContent = section.title;
+        sectionEl.appendChild(titleEl);
+        if (!section.files.length) {
+          const empty = document.createElement("div");
+          empty.className = "tool-documents-section__empty";
+          empty.textContent = section.emptyText;
+          sectionEl.appendChild(empty);
+        } else {
+          section.files.forEach((fileName, index) => {
+            const link = document.createElement("a");
+            link.className = "tool-documents-section__file";
+            link.href = section.urls[index];
+            link.target = "_blank";
+            link.rel = "noopener noreferrer";
+            link.textContent = fileName;
+            sectionEl.appendChild(link);
+          });
+        }
+        body.appendChild(sectionEl);
+      });
+      setToolsInfoSubtitleMessage("Документы открыты.");
+    } catch (error) {
+      console.warn("Не удалось открыть документы инструмента.", error);
+      if (body) body.innerHTML = `<div class="tool-documents-section__empty">Не удалось загрузить документы.</div>`;
+      setToolsInfoSubtitleMessage("Не удалось загрузить документы.");
+    }
   };
 
   const renderInvoiceDownloadOptions = (items, query = "") => {

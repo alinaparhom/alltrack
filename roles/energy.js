@@ -3697,21 +3697,11 @@ export function renderRole(user, options = {}) {
                       data-tool-model-suggestions
                     ></div>
                   </label>
-                  <label class="form-field">
-                    <span class="form-label">Наименование по бухгалтерии</span>
-                    <input
-                      class="form-input"
-                      id="tool-accounting-name-input"
-                      type="text"
-                      name="tool-accounting-name"
-                      placeholder="Можно оставить пустым"
-                      autocomplete="off"
-                    />
-                    <div
-                      class="suggestions is-hidden"
-                      data-tool-accounting-name-suggestions
-                    ></div>
-                  </label>
+                  <input
+                    id="tool-accounting-name-input"
+                    type="hidden"
+                    name="tool-accounting-name"
+                  />
                   <label class="form-field form-field--required">
                     <span class="form-label">Стоимость</span>
                     <input

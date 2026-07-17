@@ -6520,6 +6520,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     "[data-tools-open-replacement-pending]"
   );
   const toolsSearchInput = contentEl.querySelector("[data-tools-search]");
+  const toolsSearchEl = toolsSearchInput?.closest(".tools-search") ?? null;
+  const toolsSearchHomeEl = toolsSearchEl?.parentElement ?? null;
   const toolsListEl = contentEl.querySelector("[data-tools-list]");
   const toolsSearchMapEl = contentEl.querySelector("[data-tools-search-map]");
   const toolsSearchMapCanvasEl = contentEl.querySelector(
@@ -11732,6 +11734,19 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     toolsInRepairOnlyToggleEl.setAttribute("title", title);
   };
 
+  const syncToolsSearchPlacement = () => {
+    if (!toolsSearchEl || !toolsSearchHomeEl || !toolsListEl) return;
+    const shouldPlaceAfterList =
+      toolsState.mode === "search" ||
+      toolsState.mode === "user" ||
+      toolsState.mode === "write-off-pending";
+    if (shouldPlaceAfterList) {
+      toolsListEl.insertAdjacentElement("afterend", toolsSearchEl);
+      return;
+    }
+    toolsSearchHomeEl.insertBefore(toolsSearchEl, toolsSearchHomeEl.firstChild);
+  };
+
   const setToolsMoveButtonVisibility = () => {
     if (!toolsMoveButtonEl) return;
     const shouldShow = toolsState.mode === "user" || toolsState.mode === "move-other";
@@ -11757,6 +11772,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         toolsState.mode === "user" ||
         toolsState.mode === "write-off-pending"
     );
+    syncToolsSearchPlacement();
     setToolsSortToggleVisibility();
     updateToolsBrokenOnlyToggleUi();
     updateToolsInRepairOnlyToggleUi();

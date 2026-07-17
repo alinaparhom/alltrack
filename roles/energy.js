@@ -3979,8 +3979,19 @@ export function renderRole(user, options = {}) {
                 <div class="success-card__label" data-add-tool-success-label>
                   Присвоенный номер
                 </div>
-                <div class="success-card__number" data-add-tool-success-number>
-                  —
+                <div class="success-card__number-row">
+                  <div class="success-card__number" data-add-tool-success-number>
+                    —
+                  </div>
+                  <button
+                    class="button-icon success-card__repeat"
+                    type="button"
+                    data-add-tool-success-repeat
+                    aria-label="Повторить данные в новой МТЦ"
+                    title="Создать похожую МТЦ"
+                  >
+                    <span class="button-icon-emoji" aria-hidden="true">↻</span>
+                  </button>
                 </div>
               </div>
             </div>

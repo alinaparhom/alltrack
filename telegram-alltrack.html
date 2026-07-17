@@ -8119,9 +8119,41 @@
       }
 
       .success-card__number {
+        min-width: 0;
+        overflow-wrap: anywhere;
         font-size: 32px;
         font-weight: 700;
         color: var(--title);
+      }
+
+      .success-card__number-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .success-card__repeat {
+        flex: 0 0 auto;
+        width: 46px;
+        height: 46px;
+        border-radius: 16px;
+        color: #2563eb;
+        background: rgba(239, 246, 255, 0.92);
+        border: 1px solid rgba(37, 99, 235, 0.18);
+        box-shadow: 0 10px 24px rgba(37, 99, 235, 0.14);
+      }
+
+      .success-card__repeat:hover,
+      .success-card__repeat:focus-visible {
+        color: #1d4ed8;
+        background: rgba(219, 234, 254, 0.98);
+        transform: translateY(-1px);
+      }
+
+      .success-card__repeat .button-icon-emoji {
+        font-size: 24px;
+        line-height: 1;
       }
 
       .success-card__note {

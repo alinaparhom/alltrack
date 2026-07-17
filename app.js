@@ -7136,6 +7136,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const addToolSuccessAddPhotoButton = contentEl.querySelector(
     "[data-add-tool-success-add-photo]"
   );
+  const addToolSuccessRepeatButton = contentEl.querySelector(
+    "[data-add-tool-success-repeat]"
+  );
   const addToolSuccessNumberEl = contentEl.querySelector(
     "[data-add-tool-success-number]"
   );
@@ -29259,8 +29262,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       : "Добавить комплектацию";
   };
 
-  const createAddToolKitRow = () => {
-    if (!addToolKitListEl) return;
+  const createAddToolKitRow = (item = null) => {
+    if (!addToolKitListEl) return null;
     addToolKitRowCounter += 1;
     const rowId = String(addToolKitRowCounter);
     const rowEl = document.createElement("div");
@@ -29286,6 +29289,28 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       </button>
     `;
     addToolKitListEl.append(rowEl);
+    if (item && typeof item === "object") {
+      const nameInput = rowEl.querySelector('input[name^="tool-kit-name-"]');
+      const countInput = rowEl.querySelector('input[name^="tool-kit-count-"]');
+      const accountingInput = rowEl.querySelector(
+        'input[name^="tool-kit-accounting-"]'
+      );
+      if (nameInput) {
+        nameInput.value = normalizeSuggestionValue(
+          item.name ?? item["Наименование"] ?? ""
+        );
+      }
+      if (countInput) {
+        countInput.value = normalizeSuggestionValue(
+          item.count ?? item["Количество"] ?? ""
+        );
+      }
+      if (accountingInput) {
+        accountingInput.value = normalizeSuggestionValue(
+          item.accountingNumber ?? item["Бух.номер"] ?? ""
+        );
+      }
+    }
 
     attachDynamicSuggestions({
       inputEl: rowEl.querySelector('input[name^="tool-kit-name-"]'),
@@ -29299,6 +29324,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       getItems: (query) => getToolKitSuggestions("Количество", query, rowEl),
       showOnFocus: true,
     });
+    return rowEl;
   };
 
   const clearAddToolKitRows = () => {
@@ -29832,13 +29858,50 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
   };
 
-  const openAddToolModal = async () => {
+  const applyAddToolPrefill = (tool) => {
+    if (!tool || typeof tool !== "object") return;
+    const setValue = (input, value) => {
+      if (!input) return;
+      input.value = normalizeSuggestionValue(value ?? "");
+    };
+    setValue(addToolNameInput, tool["Наименование"]);
+    setValue(addToolManufacturerInput, tool["Производитель"]);
+    setValue(addToolModelInput, tool["Модель"]);
+    setValue(
+      addToolAccountingNameInput,
+      tool["Наименование по бухгалтерии"] || tool["Наименование"]
+    );
+    setValue(addToolCostInput, tool["Стоимость"]);
+    setValue(addToolResponsibleInput, tool["Ответственный"]);
+    setValue(
+      addToolObjectInput,
+      objectTrackingEnabled ? tool["Объект"] : defaultObjectName
+    );
+    setValue(addToolGroupInput, tool["Граппа инструментов"]);
+    addToolState.selectedResponsible = normalizeSuggestionValue(
+      tool["Ответственный"] ?? ""
+    );
+    clearAddToolKitRows();
+    const kitItems = Array.isArray(tool["Комплектация"])
+      ? tool["Комплектация"]
+      : [];
+    if (kitItems.length) {
+      setAddToolKitExpanded(true);
+      kitItems.forEach((item) => createAddToolKitRow(item));
+    } else {
+      setAddToolKitExpanded(false);
+    }
+    updateAddToolFilledStates();
+  };
+
+  const openAddToolModal = async ({ prefillTool = null } = {}) => {
     if (!addToolModalEl) return;
     addToolModalEl.classList.remove("is-hidden");
     attachAddToolViewportListeners();
     updateAddToolKeyboardOffset();
     resetAddToolForm();
     await loadAddToolReferences();
+    applyAddToolPrefill(prefillTool);
   };
 
   const closeAddToolModal = () => {
@@ -29938,6 +30001,18 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     addToolSuccessAddPhotoButton.addEventListener("click", () => {
       openCreatedToolPhotoModal().catch((error) => {
         console.error("Не удалось открыть добавление фото для новой МТЦ.", error);
+      });
+    });
+  }
+  if (addToolSuccessRepeatButton) {
+    addToolSuccessRepeatButton.addEventListener("click", () => {
+      const sourceTool = addToolSuccessTool;
+      closeAddToolSuccessModal();
+      openAddToolModal({ prefillTool: sourceTool }).catch((error) => {
+        console.error("Не удалось открыть новую МТЦ с повтором данных.", error);
+        reportAddToolIssue(
+          "Не удалось повторить данные. Откройте форму ещё раз."
+        );
       });
     });
   }

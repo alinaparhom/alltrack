@@ -15756,13 +15756,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const moves = toolsInfoState.moves.filter((move) => String(move?.["Ответ"] ?? "").trim());
     setToolsInfoTabBadge("moves", moves.length);
     if (toolsInfoMovesSummaryEl) {
-      toolsInfoMovesSummaryEl.textContent = moves.length
-        ? ""
-        : "Перемещений с ответом пока нет.";
+      toolsInfoMovesSummaryEl.textContent = "";
     }
     if (toolsInfoMovesEmptyEl) {
-      toolsInfoMovesEmptyEl.classList.toggle("is-hidden", moves.length > 0);
-      toolsInfoMovesEmptyEl.textContent = "Перемещений с ответом пока нет.";
+      toolsInfoMovesEmptyEl.classList.add("is-hidden");
+      toolsInfoMovesEmptyEl.textContent = "";
     }
     if (!toolsInfoMovesListEl) return;
     moves.forEach((move) => {
@@ -15876,13 +15874,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (toolsInfoBreakdownsSummaryEl) {
       toolsInfoBreakdownsSummaryEl.textContent = breakdowns.length
         ? `Суммарно: ${formatDaysValue(totalDays)}`
-        : "Поломок пока нет.";
+        : "";
     }
     if (toolsInfoBreakdownsEmptyEl) {
-      toolsInfoBreakdownsEmptyEl.classList.toggle(
-        "is-hidden",
-        breakdowns.length > 0
-      );
+      toolsInfoBreakdownsEmptyEl.classList.add("is-hidden");
+      toolsInfoBreakdownsEmptyEl.textContent = "";
     }
     if (!toolsInfoBreakdownsListEl) return;
     breakdowns.forEach((entry) => {
@@ -15920,9 +15916,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (toolsInfoNotesSummaryEl) {
       const count = notes.length;
       setToolsInfoTabBadge("notes", count);
-      toolsInfoNotesSummaryEl.textContent = count
-        ? ""
-        : "Заметок пока нет — добавьте первую.";
+      toolsInfoNotesSummaryEl.textContent = "";
     }
     toolsInfoNotesListEl.innerHTML = "";
     notes.slice().reverse().forEach((note) => {
@@ -15978,10 +15972,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (toolsInfoRepairsSummaryEl) {
       toolsInfoRepairsSummaryEl.textContent = repairs.length
         ? `Суммарно: ${formatDaysValue(totalDays)}`
-        : "Ремонтов пока нет.";
+        : "";
     }
     if (toolsInfoRepairsEmptyEl) {
-      toolsInfoRepairsEmptyEl.classList.toggle("is-hidden", repairs.length > 0);
+      toolsInfoRepairsEmptyEl.classList.add("is-hidden");
+      toolsInfoRepairsEmptyEl.textContent = "";
     }
     if (!toolsInfoRepairsListEl) return;
     repairs.forEach((entry) => {

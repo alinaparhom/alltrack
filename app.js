@@ -6679,6 +6679,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     contentEl.querySelectorAll("[data-tools-info-tab]")
   );
   const toolsInfoTabsEl = contentEl.querySelector("[data-tools-info-tabs]");
+  const toolsInfoTabBadges = {
+    moves: contentEl.querySelector('[data-tools-info-tab-badge="moves"]'),
+    repairs: contentEl.querySelector('[data-tools-info-tab-badge="repairs"]'),
+    breakdowns: contentEl.querySelector('[data-tools-info-tab-badge="breakdowns"]'),
+    notes: contentEl.querySelector('[data-tools-info-tab-badge="notes"]'),
+  };
   const toolsInfoPanelsContainerEl = contentEl.querySelector(
     "[data-tools-info-panels]"
   );
@@ -15738,12 +15744,20 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     };
   };
 
+  const setToolsInfoTabBadge = (tab, count) => {
+    const badge = toolsInfoTabBadges[tab];
+    if (!badge) return;
+    badge.textContent = String(count);
+    badge.setAttribute("aria-label", `Количество: ${count}`);
+  };
+
   const renderToolsInfoMoves = () => {
     if (toolsInfoMovesListEl) toolsInfoMovesListEl.innerHTML = "";
     const moves = toolsInfoState.moves.filter((move) => String(move?.["Ответ"] ?? "").trim());
+    setToolsInfoTabBadge("moves", moves.length);
     if (toolsInfoMovesSummaryEl) {
       toolsInfoMovesSummaryEl.textContent = moves.length
-        ? `Перемещений с ответом: ${moves.length}`
+        ? ""
         : "Перемещений с ответом пока нет.";
     }
     if (toolsInfoMovesEmptyEl) {
@@ -15858,9 +15872,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const endDate = parseDateValue(entry?.["Дата ремонта"]) || new Date();
       totalDays += getDaysDifference(endDate, startDate);
     });
+    setToolsInfoTabBadge("breakdowns", breakdowns.length);
     if (toolsInfoBreakdownsSummaryEl) {
       toolsInfoBreakdownsSummaryEl.textContent = breakdowns.length
-        ? `Поломок: ${breakdowns.length} · Суммарно: ${formatDaysValue(totalDays)}`
+        ? `Суммарно: ${formatDaysValue(totalDays)}`
         : "Поломок пока нет.";
     }
     if (toolsInfoBreakdownsEmptyEl) {
@@ -15904,8 +15919,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const notes = normalizeToolNotes(toolsInfoState.tool);
     if (toolsInfoNotesSummaryEl) {
       const count = notes.length;
+      setToolsInfoTabBadge("notes", count);
       toolsInfoNotesSummaryEl.textContent = count
-        ? `Заметок: ${count}`
+        ? ""
         : "Заметок пока нет — добавьте первую.";
     }
     toolsInfoNotesListEl.innerHTML = "";
@@ -15958,9 +15974,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       const endDate = parseDateValue(entry?.["Дата ремонта"]) || new Date();
       totalDays += getDaysDifference(endDate, startDate);
     });
+    setToolsInfoTabBadge("repairs", repairs.length);
     if (toolsInfoRepairsSummaryEl) {
       toolsInfoRepairsSummaryEl.textContent = repairs.length
-        ? `Ремонтов: ${repairs.length} · Суммарно: ${formatDaysValue(totalDays)}`
+        ? `Суммарно: ${formatDaysValue(totalDays)}`
         : "Ремонтов пока нет.";
     }
     if (toolsInfoRepairsEmptyEl) {

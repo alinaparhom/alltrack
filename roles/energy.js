@@ -1815,23 +1815,17 @@ export function renderRole(user, options = {}) {
                 <section class="tools-info-panel" data-tools-info-panel="moves">
                   <div class="tools-info-summary" data-tools-info-moves-summary></div>
                   <div class="tools-info-list" data-tools-info-moves-list></div>
-                  <div class="tools-info-empty is-hidden" data-tools-info-moves-empty>
-                    Перемещений пока нет.
-                  </div>
+                  <div class="tools-info-empty is-hidden" data-tools-info-moves-empty></div>
                 </section>
                 <section class="tools-info-panel" data-tools-info-panel="repairs">
                   <div class="tools-info-summary" data-tools-info-repairs-summary></div>
                   <div class="tools-info-list" data-tools-info-repairs-list></div>
-                  <div class="tools-info-empty is-hidden" data-tools-info-repairs-empty>
-                    Ремонтов пока нет.
-                  </div>
+                  <div class="tools-info-empty is-hidden" data-tools-info-repairs-empty></div>
                 </section>
                 <section class="tools-info-panel" data-tools-info-panel="breakdowns">
                   <div class="tools-info-summary" data-tools-info-breakdowns-summary></div>
                   <div class="tools-info-list" data-tools-info-breakdowns-list></div>
-                  <div class="tools-info-empty is-hidden" data-tools-info-breakdowns-empty>
-                    Поломок пока нет.
-                  </div>
+                  <div class="tools-info-empty is-hidden" data-tools-info-breakdowns-empty></div>
                 </section>
                 <section class="tools-info-panel" data-tools-info-panel="notes">
                   <div class="tools-info-summary" data-tools-info-notes-summary></div>

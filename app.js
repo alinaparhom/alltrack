@@ -15364,8 +15364,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       kit.reduce((sum, item) => sum + parseKitCount(item?.["Количество"]), 0)
     );
     const kitToggleLabel = `Комплектация (${totalKitUnits})`;
-    toolsInfoKitEl.classList.toggle("is-hidden", !hasKit);
+    toolsInfoKitEl.classList.toggle("is-hidden", !isSearchMode && !hasKit);
     toolsInfoKitToggleButton.disabled = isSearchMode && !hasKit;
+    toolsInfoKitToggleButton.classList.toggle("tools-info-inline-action--muted", isSearchMode && !hasKit);
     if (!hasKit) {
       toolsInfoKitListEl.innerHTML = "";
       toolsInfoState.kitExpanded = false;
@@ -15440,9 +15441,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (isSearchMode) {
       toolsInfoGridEl.innerHTML = `
         <div class="tools-info-search-hero">
-          <button class="tools-info-search-photo" type="button" data-tools-info-cover-open aria-label="Открыть фото инструмента">
-            <img data-tools-info-cover-image src="${escapeHtml(toolPhotoPlaceholder)}" alt="Фото инструмента" loading="lazy" />
-          </button>
+          <div class="tools-info-search-photo">
+            <button class="tools-info-search-photo__button" type="button" data-tools-info-cover-open aria-label="Открыть фото инструмента">
+              <img data-tools-info-cover-image src="${escapeHtml(toolPhotoPlaceholder)}" alt="Фото инструмента" loading="lazy" />
+            </button>
+            <span class="tools-info-search-kit-slot" data-tools-info-search-kit-slot></span>
+          </div>
           <div class="tools-info-search-main">
             <div class="tools-info-search-title">${escapeHtml(String(tool?.["Наименование"] ?? "").trim() || "Инструмент")}</div>
             <div class="tools-info-search-brand">${escapeHtml([tool?.["Производитель"], tool?.["Модель"]].map((v) => String(v ?? "").trim()).filter(Boolean).join(" · ") || "—")}</div>
@@ -15453,9 +15457,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         </div>
       `;
       const searchActionsEl = toolsInfoGridEl.querySelector("[data-tools-info-search-actions]");
+      const searchKitSlotEl = toolsInfoGridEl.querySelector("[data-tools-info-search-kit-slot]");
+      if (toolsInfoKitToggleButton) searchKitSlotEl?.appendChild(toolsInfoKitToggleButton);
       [
         toolsInfoCloseButton,
-        toolsInfoKitToggleButton,
         toolsInfoDocumentsButton,
         toolsInfoCopyButton,
         toolsInfoShareButton,

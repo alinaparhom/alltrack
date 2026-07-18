@@ -1769,7 +1769,8 @@ export function renderRole(user, options = {}) {
                     aria-selected="false"
                     data-tools-info-tab="moves"
                   >
-                    Перемещения
+                    <span>Перемещения</span>
+                    <span class="tools-info-tab__badge tools-info-tab__badge--moves" data-tools-info-tab-badge="moves">0</span>
                   </button>
                   <button
                     class="tools-info-tab"
@@ -1778,7 +1779,8 @@ export function renderRole(user, options = {}) {
                     aria-selected="false"
                     data-tools-info-tab="repairs"
                   >
-                    Ремонты
+                    <span>Ремонты</span>
+                    <span class="tools-info-tab__badge tools-info-tab__badge--repairs" data-tools-info-tab-badge="repairs">0</span>
                   </button>
                   <button
                     class="tools-info-tab"
@@ -1787,7 +1789,8 @@ export function renderRole(user, options = {}) {
                     aria-selected="false"
                     data-tools-info-tab="breakdowns"
                   >
-                    Поломки
+                    <span>Поломки</span>
+                    <span class="tools-info-tab__badge tools-info-tab__badge--breakdowns" data-tools-info-tab-badge="breakdowns">0</span>
                   </button>
                   <button
                     class="tools-info-tab"
@@ -1796,7 +1799,8 @@ export function renderRole(user, options = {}) {
                     aria-selected="false"
                     data-tools-info-tab="notes"
                   >
-                    Заметки
+                    <span>Заметки</span>
+                    <span class="tools-info-tab__badge tools-info-tab__badge--notes" data-tools-info-tab-badge="notes">0</span>
                   </button>
                 </div>
               </div>
@@ -1815,18 +1819,18 @@ export function renderRole(user, options = {}) {
                     Перемещений пока нет.
                   </div>
                 </section>
-                <section class="tools-info-panel" data-tools-info-panel="breakdowns">
-                  <div class="tools-info-summary" data-tools-info-breakdowns-summary></div>
-                  <div class="tools-info-list" data-tools-info-breakdowns-list></div>
-                  <div class="tools-info-empty is-hidden" data-tools-info-breakdowns-empty>
-                    Поломок пока нет.
-                  </div>
-                </section>
                 <section class="tools-info-panel" data-tools-info-panel="repairs">
                   <div class="tools-info-summary" data-tools-info-repairs-summary></div>
                   <div class="tools-info-list" data-tools-info-repairs-list></div>
                   <div class="tools-info-empty is-hidden" data-tools-info-repairs-empty>
                     Ремонтов пока нет.
+                  </div>
+                </section>
+                <section class="tools-info-panel" data-tools-info-panel="breakdowns">
+                  <div class="tools-info-summary" data-tools-info-breakdowns-summary></div>
+                  <div class="tools-info-list" data-tools-info-breakdowns-list></div>
+                  <div class="tools-info-empty is-hidden" data-tools-info-breakdowns-empty>
+                    Поломок пока нет.
                   </div>
                 </section>
                 <section class="tools-info-panel" data-tools-info-panel="notes">

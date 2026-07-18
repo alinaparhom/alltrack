@@ -15454,11 +15454,11 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       `;
       const searchActionsEl = toolsInfoGridEl.querySelector("[data-tools-info-search-actions]");
       [
+        toolsInfoCloseButton,
         toolsInfoKitToggleButton,
         toolsInfoDocumentsButton,
         toolsInfoCopyButton,
         toolsInfoShareButton,
-        toolsInfoCloseButton,
       ].forEach((button) => {
         if (button) searchActionsEl?.appendChild(button);
       });

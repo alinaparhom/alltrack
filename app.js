@@ -15335,9 +15335,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const renderToolsInfoKit = (tool) => {
     if (!toolsInfoKitEl || !toolsInfoKitToggleButton || !toolsInfoKitListEl) return;
     const isSearchMode = toolsState.mode === "search";
-    const closeButton = toolsInfoHeaderActionsEl?.querySelector("[data-tools-info-close]");
-    if (isSearchMode && toolsInfoHeaderActionsEl && closeButton) {
-      toolsInfoHeaderActionsEl.insertBefore(toolsInfoKitToggleButton, closeButton);
+    if (isSearchMode) {
       toolsInfoKitToggleButton.classList.add("tools-info-inline-action", "tools-info-inline-action--emoji");
       toolsInfoKitToggleButton.classList.remove("button-secondary", "tools-info-kit__toggle");
       toolsInfoKitToggleButton.setAttribute("title", "Комплектация");
@@ -15425,11 +15423,17 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (toolsInfoDocumentsButton) {
       toolsInfoDocumentsButton.classList.toggle("is-hidden", !isSearchMode);
     }
-    if (isSearchMode && toolsInfoHeaderActionsEl) {
-      [toolsInfoKitToggleButton, toolsInfoDocumentsButton, toolsInfoCopyButton, toolsInfoShareButton].forEach((button) => {
-        if (!button) return;
-        toolsInfoHeaderActionsEl.insertBefore(button, toolsInfoHeaderActionsEl.querySelector("[data-tools-info-close]"));
+    if (!isSearchMode && toolsInfoHeaderActionsEl) {
+      [toolsInfoCopyButton, toolsInfoDocumentsButton, toolsInfoShareButton, toolsInfoCloseButton].forEach((button) => {
+        if (button) toolsInfoHeaderActionsEl.appendChild(button);
       });
+    }
+    if (toolsInfoDocumentsButton) {
+      toolsInfoDocumentsButton.setAttribute("title", isSearchMode ? "Накладные" : "Документы");
+      toolsInfoDocumentsButton.setAttribute(
+        "aria-label",
+        isSearchMode ? "Открыть накладные инструмента" : "Открыть документы инструмента"
+      );
     }
     toolsInfoGridEl.classList.toggle("tools-info-grid--search-card", isSearchMode);
     const isMovingToolInSearch = isSearchMode && Boolean(tool?.__pendingMove);
@@ -15442,11 +15446,22 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           <div class="tools-info-search-main">
             <div class="tools-info-search-title">${escapeHtml(String(tool?.["Наименование"] ?? "").trim() || "Инструмент")}</div>
             <div class="tools-info-search-brand">${escapeHtml([tool?.["Производитель"], tool?.["Модель"]].map((v) => String(v ?? "").trim()).filter(Boolean).join(" · ") || "—")}</div>
-            <div class="tools-info-search-numbers"><span>Номер: ${escapeHtml(formatInfoValue(toolNumber))}</span><span>Бух.номер: ${escapeHtml(formatInfoValue(accountingNumber))}</span></div>
+            <div class="tools-info-search-numbers"><span>${escapeHtml(formatInfoValue(toolNumber))}</span><span>${escapeHtml(formatInfoValue(accountingNumber))}</span></div>
             ${isMovingToolInSearch ? `<div class="tools-info-search-badges"><span class="tools-info-search-moving" title="Инструмент ожидает принятия перемещения">↔ Перемещается</span></div>` : ""}
           </div>
+          <div class="tools-info-search-actions" data-tools-info-search-actions aria-label="Действия с инструментом"></div>
         </div>
       `;
+      const searchActionsEl = toolsInfoGridEl.querySelector("[data-tools-info-search-actions]");
+      [
+        toolsInfoKitToggleButton,
+        toolsInfoDocumentsButton,
+        toolsInfoCopyButton,
+        toolsInfoShareButton,
+        toolsInfoCloseButton,
+      ].forEach((button) => {
+        if (button) searchActionsEl?.appendChild(button);
+      });
     }
     const info = isWriteOffInfoMode
       ? [

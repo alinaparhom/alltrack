@@ -11922,7 +11922,7 @@
 
       .tools-info-modal__panel--search .tools-info-modal__body {
         padding: max(8px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
-        gap: 10px;
+        gap: 5px;
         max-height: 100vh;
         overflow-y: auto;
         background:
@@ -12009,7 +12009,7 @@
         width: 100%;
         max-width: 720px;
         margin-inline: auto;
-        gap: 0;
+        gap: 5px;
       }
 
       .tools-info-modal__panel--search .tools-info-tabs {
@@ -12018,6 +12018,14 @@
         margin-top: 0;
         margin-inline: 0;
         flex-shrink: 0;
+      }
+
+      .tools-info-modal__panel--search .tools-info-panels,
+      .tools-info-modal__panel--search .tools-info-photos {
+        box-sizing: border-box;
+        width: 100%;
+        max-width: 720px;
+        margin: 0 auto;
       }
 
       .tools-info-modal__panel--search .tools-info-search-hero {

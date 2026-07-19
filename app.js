@@ -15371,8 +15371,12 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     );
     const kitToggleLabel = `Комплектация (${totalKitUnits})`;
     toolsInfoKitEl.classList.toggle("is-hidden", !isSearchMode && !hasKit);
-    toolsInfoKitToggleButton.disabled = isSearchMode && !hasKit;
-    toolsInfoKitToggleButton.classList.toggle("tools-info-inline-action--muted", isSearchMode && !hasKit);
+    const kitUnavailable = isSearchMode && !hasKit;
+    // В поиске значок комплектации остаётся на фото всегда: при отсутствии комплекта
+    // он только приглушён и недоступен для нажатия.
+    toolsInfoKitToggleButton.disabled = kitUnavailable;
+    toolsInfoKitToggleButton.setAttribute("aria-disabled", kitUnavailable ? "true" : "false");
+    toolsInfoKitToggleButton.classList.toggle("tools-info-inline-action--muted", kitUnavailable);
     if (!hasKit) {
       toolsInfoKitListEl.innerHTML = "";
       toolsInfoState.kitExpanded = false;

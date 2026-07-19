@@ -11968,12 +11968,14 @@
 
       .tools-info-modal__panel--search .tools-info-overview {
         --tools-info-overview-outline: rgba(96, 165, 250, 0.42);
+        /* Единый отступ между информацией об инструменте и блоком истории. */
+        --tools-info-search-section-gap: 5px;
         box-sizing: border-box;
         width: 100%;
         max-width: 720px;
         margin: 5px auto 0;
         display: grid;
-        gap: 5px;
+        gap: var(--tools-info-search-section-gap);
         padding: 5px;
         border: 2px solid var(--tools-info-overview-outline);
         border-radius: 26px;
@@ -12029,7 +12031,7 @@
         width: 100%;
         max-width: none;
         margin: 0;
-        gap: 5px;
+        gap: var(--tools-info-search-section-gap);
       }
 
       .tools-info-modal__panel--search .tools-info-tabs {

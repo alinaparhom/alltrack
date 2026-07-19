@@ -15769,7 +15769,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (!toolsInfoMovesListEl) return;
     moves.forEach((move) => {
       const response = String(move?.["Ответ"] ?? "").trim().toLowerCase();
-      const isRejected = response.includes("не прин");
+      const isRejected = response.includes("не прин") || response.includes("отказ");
       const isCancelled = response.includes("отмена");
       const isObjectChange = response.includes("смена объекта");
       const item = document.createElement("div");
@@ -15790,33 +15790,59 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         ? String(move?.["Ответственный до перемещения"] ?? "").trim()
         : "";
       const movedByEnergy = String(move?.["Переместил энергетик"] ?? "").trim();
-      grid.append(
-        ...[
-          buildToolsInfoRow("Номер инструмента", move?.["Номер"]),
-          buildToolsInfoRow("Бухгалтерский номер", move?.["Бух.номер"]),
-          buildToolsInfoRow("Переместил", move?.["Переместил"]),
-          objectTrackingEnabled ? buildToolsInfoRow("Старый объект", move?.["Старый объект"]) : null,
-          buildToolsInfoRow("Принял", move?.["Принял"]),
-          objectTrackingEnabled ? buildToolsInfoRow("Новый объект", move?.["Новый объект"]) : null,
-          buildToolsInfoRow("Дата ответа", move?.["Дата ответа"]),
-        ].filter(Boolean)
-      );
-      if (previousResponsible) {
-        grid.append(
+      const senderSection = document.createElement("div");
+      senderSection.className = "tools-info-item__move-section";
+      const receiverSection = document.createElement("div");
+      receiverSection.className = "tools-info-item__move-section";
+
+      if (movedByEnergy) {
+        senderSection.append(
+          buildToolsInfoRow("Переместил энергетик", movedByEnergy),
           buildToolsInfoRow(
             "Ответственный до перемещения",
             previousResponsible
           )
         );
+      } else {
+        senderSection.append(buildToolsInfoRow("Переместил", move?.["Переместил"]));
+        if (previousResponsible) {
+          senderSection.append(
+            buildToolsInfoRow(
+              "Ответственный до перемещения",
+              previousResponsible
+            )
+          );
+        }
       }
-      if (movedByEnergy) {
-        grid.append(buildToolsInfoRow("Переместил энергетик", movedByEnergy));
+      if (objectTrackingEnabled) {
+        senderSection.append(buildToolsInfoRow("Старый объект", move?.["Старый объект"]));
+      }
+      receiverSection.append(buildToolsInfoRow("Принял", move?.["Принял"]));
+      if (objectTrackingEnabled) {
+        receiverSection.append(buildToolsInfoRow("Новый объект", move?.["Новый объект"]));
+      }
+
+      const divider = document.createElement("div");
+      divider.className = "tools-info-item__move-divider";
+      grid.append(senderSection, divider, receiverSection);
+      if (move?.["Дата ответа"]) {
+        grid.append(buildToolsInfoRow("Дата ответа", move?.["Дата ответа"]));
       }
       item.append(title, grid);
-      if (isRejected) {
-        const reason = formatInfoValue(move?.["Причина отказа"] || move?.["Комментарий к ответу"]);
+      const moveReason = String(move?.["Причина перемещения"] ?? "").trim();
+      if (moveReason) {
         const note = document.createElement("div");
         note.className = "tools-info-item__note";
+        note.textContent = `Причина перемещения: ${moveReason}`;
+        item.appendChild(note);
+      }
+      const refusalReason = String(move?.["Причина отказа"] ?? "").trim();
+      if (isRejected || refusalReason) {
+        const reason = formatInfoValue(
+          refusalReason || move?.["Комментарий к ответу"]
+        );
+        const note = document.createElement("div");
+        note.className = "tools-info-item__note tools-info-item__note--danger";
         note.textContent = `Причина отказа: ${reason}`;
         item.appendChild(note);
       }

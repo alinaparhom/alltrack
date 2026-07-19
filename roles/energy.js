@@ -1719,91 +1719,93 @@ export function renderRole(user, options = {}) {
               </div>
             </div>
             <div class="settings-modal__body tools-info-modal__body">
-              <div class="tools-info-card">
-                <div class="tools-info-grid" data-tools-info-grid></div>
-                <div class="tools-info-kit is-hidden" data-tools-info-kit>
-                  <button
-                    class="button-secondary tools-info-kit__toggle"
-                    type="button"
-                    data-tools-info-kit-toggle
-                  >
-                    Комплектация (0)
-                  </button>
-                  <div
-                    class="tools-info-kit__content is-hidden"
-                    data-tools-info-kit-content
-                  >
-                    <div class="tools-info-kit__list" data-tools-info-kit-list></div>
+              <section class="tools-info-overview" aria-label="Информация и история инструмента">
+                <div class="tools-info-card">
+                  <div class="tools-info-grid" data-tools-info-grid></div>
+                  <div class="tools-info-kit is-hidden" data-tools-info-kit>
+                    <button
+                      class="button-secondary tools-info-kit__toggle"
+                      type="button"
+                      data-tools-info-kit-toggle
+                    >
+                      Комплектация (0)
+                    </button>
+                    <div
+                      class="tools-info-kit__content is-hidden"
+                      data-tools-info-kit-content
+                    >
+                      <div class="tools-info-kit__list" data-tools-info-kit-list></div>
+                    </div>
                   </div>
                 </div>
-              </div>
-              <div class="tools-info-top-actions">
-                <div class="tools-info-top-actions-row">
-                  <button
-                    class="tools-info-history-menu__trigger"
-                    type="button"
-                    data-tools-info-history-toggle
-                    aria-pressed="false"
+                <div class="tools-info-top-actions">
+                  <div class="tools-info-top-actions-row">
+                    <button
+                      class="tools-info-history-menu__trigger"
+                      type="button"
+                      data-tools-info-history-toggle
+                      aria-pressed="false"
+                    >
+                      История
+                    </button>
+                    <button
+                      class="action-primary tools-info-move"
+                      type="button"
+                      data-tools-info-move
+                    >
+                      Переместить
+                    </button>
+                  </div>
+                  <div class="tools-info-actions-right"></div>
+                  <div
+                    class="tools-info-tabs is-hidden"
+                    role="tablist"
+                    aria-label="История"
+                    data-tools-info-tabs
                   >
-                    История
-                  </button>
-                  <button
-                    class="action-primary tools-info-move"
-                    type="button"
-                    data-tools-info-move
-                  >
-                    Переместить
-                  </button>
+                    <button
+                      class="tools-info-tab"
+                      type="button"
+                      role="tab"
+                      aria-selected="false"
+                      data-tools-info-tab="moves"
+                    >
+                      <span>Перемещения</span>
+                      <span class="tools-info-tab__badge tools-info-tab__badge--moves" data-tools-info-tab-badge="moves">0</span>
+                    </button>
+                    <button
+                      class="tools-info-tab"
+                      type="button"
+                      role="tab"
+                      aria-selected="false"
+                      data-tools-info-tab="repairs"
+                    >
+                      <span>Ремонты</span>
+                      <span class="tools-info-tab__badge tools-info-tab__badge--repairs" data-tools-info-tab-badge="repairs">0</span>
+                    </button>
+                    <button
+                      class="tools-info-tab"
+                      type="button"
+                      role="tab"
+                      aria-selected="false"
+                      data-tools-info-tab="breakdowns"
+                    >
+                      <span>Поломки</span>
+                      <span class="tools-info-tab__badge tools-info-tab__badge--breakdowns" data-tools-info-tab-badge="breakdowns">0</span>
+                    </button>
+                    <button
+                      class="tools-info-tab"
+                      type="button"
+                      role="tab"
+                      aria-selected="false"
+                      data-tools-info-tab="notes"
+                    >
+                      <span>Заметки</span>
+                      <span class="tools-info-tab__badge tools-info-tab__badge--notes" data-tools-info-tab-badge="notes">0</span>
+                    </button>
+                  </div>
                 </div>
-                <div class="tools-info-actions-right"></div>
-                <div
-                  class="tools-info-tabs is-hidden"
-                  role="tablist"
-                  aria-label="История"
-                  data-tools-info-tabs
-                >
-                  <button
-                    class="tools-info-tab"
-                    type="button"
-                    role="tab"
-                    aria-selected="false"
-                    data-tools-info-tab="moves"
-                  >
-                    <span>Перемещения</span>
-                    <span class="tools-info-tab__badge tools-info-tab__badge--moves" data-tools-info-tab-badge="moves">0</span>
-                  </button>
-                  <button
-                    class="tools-info-tab"
-                    type="button"
-                    role="tab"
-                    aria-selected="false"
-                    data-tools-info-tab="repairs"
-                  >
-                    <span>Ремонты</span>
-                    <span class="tools-info-tab__badge tools-info-tab__badge--repairs" data-tools-info-tab-badge="repairs">0</span>
-                  </button>
-                  <button
-                    class="tools-info-tab"
-                    type="button"
-                    role="tab"
-                    aria-selected="false"
-                    data-tools-info-tab="breakdowns"
-                  >
-                    <span>Поломки</span>
-                    <span class="tools-info-tab__badge tools-info-tab__badge--breakdowns" data-tools-info-tab-badge="breakdowns">0</span>
-                  </button>
-                  <button
-                    class="tools-info-tab"
-                    type="button"
-                    role="tab"
-                    aria-selected="false"
-                    data-tools-info-tab="notes"
-                  >
-                    <span>Заметки</span>
-                    <span class="tools-info-tab__badge tools-info-tab__badge--notes" data-tools-info-tab-badge="notes">0</span>
-                  </button>
-                </div>
-              </div>
+              </section>
               <section class="tools-info-photos" data-tools-info-photos>
                 <div class="tools-info-summary" data-tools-info-photos-summary></div>
                 <div class="tools-info-photos-grid" data-tools-info-photos-grid></div>

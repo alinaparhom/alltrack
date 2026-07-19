@@ -1778,20 +1778,20 @@ export function renderRole(user, options = {}) {
                       type="button"
                       role="tab"
                       aria-selected="false"
-                      data-tools-info-tab="repairs"
+                      data-tools-info-tab="breakdowns"
                     >
-                      <span>Ремонты</span>
-                      <span class="tools-info-tab__badge tools-info-tab__badge--repairs" data-tools-info-tab-badge="repairs">0</span>
+                      <span>Поломки</span>
+                      <span class="tools-info-tab__badge tools-info-tab__badge--breakdowns" data-tools-info-tab-badge="breakdowns">0</span>
                     </button>
                     <button
                       class="tools-info-tab"
                       type="button"
                       role="tab"
                       aria-selected="false"
-                      data-tools-info-tab="breakdowns"
+                      data-tools-info-tab="repairs"
                     >
-                      <span>Поломки</span>
-                      <span class="tools-info-tab__badge tools-info-tab__badge--breakdowns" data-tools-info-tab-badge="breakdowns">0</span>
+                      <span>Ремонты</span>
+                      <span class="tools-info-tab__badge tools-info-tab__badge--repairs" data-tools-info-tab-badge="repairs">0</span>
                     </button>
                     <button
                       class="tools-info-tab"

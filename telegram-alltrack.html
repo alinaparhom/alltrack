@@ -12034,6 +12034,12 @@
         gap: var(--tools-info-search-section-gap);
       }
 
+      /* Отделяет сведения об инструменте от доступной истории в карточке поиска. */
+      .tools-info-modal__panel--search .tools-info-top-actions:has(.tools-info-tabs:not(.is-hidden)) {
+        padding-top: var(--tools-info-search-section-gap);
+        border-top: 2px solid var(--tools-info-overview-outline);
+      }
+
       .tools-info-modal__panel--search .tools-info-tabs {
         box-sizing: border-box;
         width: 100%;

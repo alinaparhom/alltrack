@@ -905,7 +905,7 @@ export function renderRole(user) {
                     required
                     placeholder="Выберите роль"
                     data-users-edit-role-input
-                    data-role-options="Энергетик|Ответственный|Руководитель|Бухгалтерия|Главный инженер|Контроль|Супер-администратор"
+                    data-role-options="Энергетик|Ответственный|Руководитель|Бухгалтерия|Главный инженер|Контроль|Механик|Супер-администратор"
                   />
                   <div class="suggestions is-hidden users-edit-role-field__suggestions" data-users-edit-role-suggestions></div>
                 </div>
@@ -1019,6 +1019,7 @@ export function renderRole(user) {
                     <option value="Контроль">Контроль</option>
                     <option value="Руководитель">Руководитель</option>
                     <option value="Ответственный">Ответственный</option>
+                    <option value="Механик">Механик</option>
                   </select>
                 </div>
                 <div class="form-field">

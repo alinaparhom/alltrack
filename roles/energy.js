@@ -26,16 +26,37 @@ export const mechanismsAction = {
   id: "mechanisms",
   title: "Механизмы",
   icon: `
-    <svg class="mechanisms-action-icon" viewBox="0 0 64 64" aria-hidden="true" focusable="false">
-      <path fill="#f5b81d" d="M27 12h14v25H27z" />
-      <path fill="#ffe17a" d="M30 15h8v12h-8z" />
-      <path fill="#d99311" d="M40 20h5l10 24-5 2z" />
-      <path fill="#f5b81d" d="m53 42 7 2-3 5-7-2zM19 37h25v11H19z" />
-      <path fill="#4b5568" d="M15 48h33a7 7 0 0 1 0 14H15a7 7 0 0 1 0-14z" />
-      <path fill="#8793a8" d="M20 52h23a3 3 0 0 1 0 6H20a3 3 0 0 1 0-6z" />
-      <circle cx="24" cy="55" r="2" fill="#3b4555" />
-      <circle cx="39" cy="55" r="2" fill="#3b4555" />
-      <path fill="#d99311" d="M22 33h7v4h-7z" />
+    <svg class="mechanisms-action-icon" viewBox="0 0 80 64" aria-hidden="true" focusable="false">
+      <defs>
+        <linearGradient id="mechanisms-yellow" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0" stop-color="#ffd94e" />
+          <stop offset=".5" stop-color="#f8ba20" />
+          <stop offset="1" stop-color="#d88909" />
+        </linearGradient>
+        <linearGradient id="mechanisms-glass" x1="0" x2="1" y1="0" y2="1">
+          <stop stop-color="#dff5ff" />
+          <stop offset=".5" stop-color="#6d9cb2" />
+          <stop offset="1" stop-color="#293d4a" />
+        </linearGradient>
+      </defs>
+      <path d="M8 12 6 15l12 18 3-2-5-9 13 4 2-4z" fill="url(#mechanisms-yellow)" stroke="#af6806" stroke-linejoin="round" stroke-width="1.5" />
+      <path d="m6 15-3 2 12 19 4-3z" fill="#e89b0d" stroke="#af6806" stroke-linejoin="round" stroke-width="1.5" />
+      <path d="m2 35 7-4 5 6-4 5-7-2z" fill="#4b5558" stroke="#283238" stroke-linejoin="round" stroke-width="1.5" />
+      <path d="M26 32h27l7 7H25z" fill="url(#mechanisms-yellow)" stroke="#a96507" stroke-linejoin="round" stroke-width="1.5" />
+      <path d="M39 15h12l7 24H34z" fill="#eaa30d" stroke="#9f6107" stroke-linejoin="round" stroke-width="1.5" />
+      <path d="M41 17h9l5 18H37z" fill="url(#mechanisms-glass)" stroke="#24343c" stroke-linejoin="round" stroke-width="1.5" />
+      <path d="m47 17-2 19M37 28h17" fill="none" stroke="#314954" stroke-width="1" opacity=".8" />
+      <path d="M23 39h39v7H22z" fill="#d88909" stroke="#9f6107" stroke-linejoin="round" stroke-width="1.5" />
+      <path d="M55 36h8l7 7-2 3H57z" fill="url(#mechanisms-yellow)" stroke="#a96507" stroke-linejoin="round" stroke-width="1.5" />
+      <path d="m69 42 8 2-1 7-11-2z" fill="#e7a20e" stroke="#9f6107" stroke-linejoin="round" stroke-width="1.5" />
+      <path d="m70 50 7 1-2 4-8-1z" fill="#555e61" stroke="#283238" stroke-linejoin="round" stroke-width="1.5" />
+      <path d="M29 43h31" stroke="#8f5708" stroke-width="2" />
+      <circle cx="32" cy="50" r="8" fill="#242b30" stroke="#11181b" stroke-width="1.5" />
+      <circle cx="32" cy="50" r="3.7" fill="#8d9696" stroke="#3a4548" stroke-width="1.5" />
+      <circle cx="58" cy="50" r="8" fill="#242b30" stroke="#11181b" stroke-width="1.5" />
+      <circle cx="58" cy="50" r="3.7" fill="#8d9696" stroke="#3a4548" stroke-width="1.5" />
+      <path d="M25 41h5v2h-5z" fill="#fff3aa" opacity=".9" />
+      <path d="M61 40h3v2h-3z" fill="#d93827" />
     </svg>`,
 };
 

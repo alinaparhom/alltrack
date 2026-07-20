@@ -94,6 +94,10 @@ const energySettingsRoles = [
   accountingRole,
   controlRole,
 ];
+const getEnergySettingsAccessRoles = (dataUsage = {}) =>
+  dataUsage?.mechanisms === true
+    ? [...energySettingsRoles, mechanicRole]
+    : energySettingsRoles;
 const energyFineOptions = [
   { id: "lateReply", title: "Поздний ответ", defaultDays: 3, defaultAmount: 0 },
   { id: "noPhoto", title: "Нет фото", defaultDays: 1, defaultAmount: 0 },
@@ -5006,7 +5010,7 @@ function escapeHtml(value = "") {
 function buildEnergyOrganizationDefaults() {
   const actionIds = energyAccessOptions.map((action) => action.id);
   const access = {};
-  energySettingsRoles.forEach((role) => {
+  getEnergySettingsAccessRoles({ mechanisms: true }).forEach((role) => {
     access[role] = [...actionIds];
   });
   const fines = {};
@@ -5227,11 +5231,18 @@ function normalizeEnergyOrganizationSettings(raw) {
   const defaults = buildEnergyOrganizationDefaults();
   const source = raw && typeof raw === "object" && !Array.isArray(raw) ? raw : {};
   const telegramGroups = normalizeTelegramGroupsList(source.telegramGroups);
+  const dataUsage = {};
+  energyDataUsageOptions.forEach((option) => {
+    const data = source.dataUsage?.[option.id];
+    dataUsage[option.id] =
+      typeof data === "boolean" ? data : defaults.dataUsage[option.id];
+  });
   const access = {};
-  energySettingsRoles.forEach((role) => {
+  getEnergySettingsAccessRoles(dataUsage).forEach((role) => {
     const roleAccessFromSettings = source.access?.[role];
     const hasRoleAccessInSettings = Array.isArray(roleAccessFromSettings);
-    const fallbackRole = role === chiefEngineerRole ? responsibleRole : role;
+    const fallbackRole =
+      role === chiefEngineerRole || role === mechanicRole ? responsibleRole : role;
     const fallbackAccessFromSettings = source.access?.[fallbackRole];
     const allowed = hasRoleAccessInSettings
       ? roleAccessFromSettings
@@ -5294,12 +5305,6 @@ function normalizeEnergyOrganizationSettings(raw) {
         data.attachPhoto ?? defaults.notifications[option.id].attachPhoto
       ),
     };
-  });
-  const dataUsage = {};
-  energyDataUsageOptions.forEach((option) => {
-    const data = source.dataUsage?.[option.id];
-    dataUsage[option.id] =
-      typeof data === "boolean" ? data : defaults.dataUsage[option.id];
   });
   const movesTable = normalizeMovesTableSettings(source.movesTable, {
     objectTrackingEnabled: dataUsage.object !== false,
@@ -5397,7 +5402,7 @@ function getEnergyOrganizationSettings(settingsData) {
 }
 
 function buildEnergySettingsMarkup(settings) {
-  const accessMarkup = energySettingsRoles
+  const accessMarkup = getEnergySettingsAccessRoles(settings.dataUsage)
     .map((role) => {
       const roleKey = buildRoleKey(role);
       const allowed = new Set(settings.access?.[role] ?? []);
@@ -6039,7 +6044,7 @@ async function resolveUserOrganizationFullName(user) {
 }
 
 function resolveEnergyAccessRole(role) {
-  if (energyResponsibleAccessRoles.has(role) || role === mechanicRole) {
+  if (energyResponsibleAccessRoles.has(role)) {
     return responsibleRole;
   }
   return role;
@@ -34672,8 +34677,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       settingsMessageEl.textContent = "Сохраняем настройки...";
     }
     const formData = new FormData(settingsFormEl);
-    const nextAccess = {};
-    energySettingsRoles.forEach((role) => {
+    const nextAccess = { ...(settingsData.organization?.access ?? {}) };
+    getEnergySettingsAccessRoles(organizationSettings.dataUsage).forEach((role) => {
       const roleKey = buildRoleKey(role);
       const values = formData.getAll(`access-${roleKey}`).map(String);
       nextAccess[role] = values;

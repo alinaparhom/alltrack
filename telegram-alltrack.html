@@ -24652,10 +24652,10 @@
           inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
       }
 
-      /* Страница «Поиск»: строка находится под панелью инструментов и не
-         перекрывает список на мобильных устройствах. */
+      /* Страница «Поиск»: строка остается в потоке под списком карточек,
+         поэтому не перекрывает последние инструменты на мобильных устройствах. */
       .tools-modal--search-page .tools-modal__body {
-        grid-template-rows: auto minmax(0, 1fr) !important;
+        grid-template-rows: auto minmax(0, 1fr) auto !important;
       }
 
       .tools-modal--search-page .tools-list,
@@ -24676,17 +24676,6 @@
         margin: 0 0 5px !important;
         padding: 0 !important;
         align-self: stretch !important;
-        background: transparent !important;
-        box-shadow: none !important;
-        backdrop-filter: none !important;
-        -webkit-backdrop-filter: none !important;
-      }
-
-      /* Не добавляем светлую плашку вокруг строки поиска: остается только
-         контур поля, читаемый и на светлой, и на темной теме. */
-      .tools-modal--search-page .tools-search__input {
-        background: transparent !important;
-        box-shadow: none !important;
       }
 
       /* Страница «Мои инструменты»: поле поиска визуально совпадает со страницей «Поиск». */

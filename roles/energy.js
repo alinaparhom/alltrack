@@ -22,7 +22,22 @@ export const energyActions = [
   { id: "settings", title: "Настройки", icon: "⚙️" },
 ];
 
-export const mechanismsAction = { id: "mechanisms", title: "Механизмы", icon: "⚙️" };
+export const mechanismsAction = {
+  id: "mechanisms",
+  title: "Механизмы",
+  icon: `
+    <svg class="mechanisms-action-icon" viewBox="0 0 64 64" aria-hidden="true" focusable="false">
+      <path fill="#f5b81d" d="M27 12h14v25H27z" />
+      <path fill="#ffe17a" d="M30 15h8v12h-8z" />
+      <path fill="#d99311" d="M40 20h5l10 24-5 2z" />
+      <path fill="#f5b81d" d="m53 42 7 2-3 5-7-2zM19 37h25v11H19z" />
+      <path fill="#4b5568" d="M15 48h33a7 7 0 0 1 0 14H15a7 7 0 0 1 0-14z" />
+      <path fill="#8793a8" d="M20 52h23a3 3 0 0 1 0 6H20a3 3 0 0 1 0-6z" />
+      <circle cx="24" cy="55" r="2" fill="#3b4555" />
+      <circle cx="39" cy="55" r="2" fill="#3b4555" />
+      <path fill="#d99311" d="M22 33h7v4h-7z" />
+    </svg>`,
+};
 
 function renderActionCard(action) {
   const settingsClass = action.id === "settings" ? " action-card--settings" : "";

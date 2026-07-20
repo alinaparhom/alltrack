@@ -24652,14 +24652,10 @@
           inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
       }
 
-      /* Страница «Поиск»: строка закреплена у нижнего края экрана с небольшим
-         отступом, а список сохраняет место под ней на мобильных устройствах. */
-      .tools-modal--search-page {
-        --search-page-bottom-bar-height: calc(53px + max(0px, env(safe-area-inset-bottom)));
-      }
-
+      /* Страница «Поиск»: строка остается в потоке под списком карточек,
+         поэтому не перекрывает последние инструменты на мобильных устройствах. */
       .tools-modal--search-page .tools-modal__body {
-        grid-template-rows: auto minmax(0, 1fr) !important;
+        grid-template-rows: auto minmax(0, 1fr) auto !important;
       }
 
       .tools-modal--search-page .tools-list,
@@ -24667,27 +24663,18 @@
         min-height: 0 !important;
         height: 100% !important;
         max-height: 100% !important;
-        padding-bottom: calc(var(--search-page-bottom-bar-height) + 14px) !important;
+        padding-bottom: calc(18px + env(safe-area-inset-bottom)) !important;
       }
 
       .tools-modal--search-page .tools-search {
-        position: fixed !important;
-        left: calc(18px + max(0px, env(safe-area-inset-left))) !important;
-        right: calc(18px + max(0px, env(safe-area-inset-right))) !important;
-        bottom: calc(5px + max(0px, env(safe-area-inset-bottom))) !important;
-        z-index: 80 !important;
+        position: relative !important;
+        inset: auto !important;
+        z-index: auto !important;
         width: auto !important;
         min-width: 0 !important;
-        height: 48px !important;
-        min-height: 48px !important;
         margin: 0 !important;
         padding: 0 !important;
-        border: 0 !important;
-        border-radius: 0 !important;
-        background: transparent !important;
-        box-shadow: none !important;
-        backdrop-filter: none !important;
-        -webkit-backdrop-filter: none !important;
+        align-self: stretch !important;
       }
 
       /* Страница «Мои инструменты»: поле поиска визуально совпадает со страницей «Поиск». */

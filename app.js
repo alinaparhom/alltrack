@@ -1,5 +1,6 @@
 import { roleId as superAdminRole, renderRole as renderSuperAdmin } from "./roles/super-admin.js";
 import { roleId as responsibleRole, renderRole as renderResponsible } from "./roles/responsible.js";
+import { roleId as mechanicRole, renderRole as renderMechanic } from "./roles/mechanic.js";
 import { roleId as chiefEngineerRole, renderRole as renderChiefEngineer } from "./roles/chief-engineer.js";
 import { roleId as leaderRole, renderRole as renderLeader } from "./roles/leader.js";
 import { roleId as accountingRole, renderRole as renderAccounting } from "./roles/accounting.js";
@@ -7,12 +8,14 @@ import {
   roleId as energyRole,
   renderRole as renderEnergy,
   energyActions,
+  mechanismsAction,
 } from "./roles/energy.js";
 import { roleId as controlRole, renderRole as renderControl } from "./roles/control.js";
 
 const roleMap = new Map([
   [superAdminRole, renderSuperAdmin],
   [responsibleRole, renderResponsible],
+  [mechanicRole, renderMechanic],
   [chiefEngineerRole, renderChiefEngineer],
   [leaderRole, renderLeader],
   [accountingRole, renderAccounting],
@@ -151,6 +154,7 @@ const energyDataUsageOptions = [
   { id: "serialNumber", title: "Серийный номер" },
   { id: "cost", title: "Стоимость" },
   { id: "serviceLife", title: "Срок службы" },
+  { id: "mechanisms", title: "Механизмы" },
 ];
 const energyMovesTableColumnOptions = [
   { id: "appNumber", title: "Номер" },
@@ -195,16 +199,30 @@ const energyDashboardRoles = new Set([
   chiefEngineerRole,
   leaderRole,
   accountingRole,
+  mechanicRole,
 ]);
 const energyResponsibleAccessRoles = new Set([leaderRole]);
-const responsibleLikeRoles = new Set([responsibleRole, chiefEngineerRole]);
+const responsibleLikeRoles = new Set([responsibleRole, mechanicRole, chiefEngineerRole]);
 const isControlRole = (role) => String(role ?? "").trim() === controlRole;
 const workerRole = "Рабочий";
 const workerTelegramIdMarker = "не нужен";
 const usersEditableRoleOptions = Array.from(
   new Set([...roleMap.keys(), workerRole].map((role) => String(role ?? "").trim()).filter(Boolean))
 );
-const getUsersEditableRoleOptions = () => [...usersEditableRoleOptions];
+const getUsersEditableRoleOptions = (settingsData = currentSettingsContext?.settingsData) => {
+  const mechanismsEnabled = getEnergyOrganizationSettings(settingsData).dataUsage?.mechanisms === true;
+  return usersEditableRoleOptions.filter(
+    (role) => role !== mechanicRole || mechanismsEnabled
+  );
+};
+const setMechanicRoleSelectionEnabled = (form, enabled) => {
+  const select = form?.elements?.["users-add-role"];
+  const option = select?.querySelector('option[value="Механик"]');
+  if (!option) return;
+  option.hidden = !enabled;
+  option.disabled = !enabled;
+  if (!enabled && select.value === mechanicRole) select.value = "";
+};
 const isWorkerRole = (role) => String(role ?? "").trim() === workerRole;
 const isWorkerUser = (entry) => isWorkerRole(entry?.role);
 const isHiddenListUser = (entry) => isControlRole(entry?.role);
@@ -5017,7 +5035,7 @@ function buildEnergyOrganizationDefaults() {
   });
   const dataUsage = {};
   energyDataUsageOptions.forEach((option) => {
-    dataUsage[option.id] = true;
+    dataUsage[option.id] = option.id !== "mechanisms";
   });
   return {
     access,
@@ -6021,7 +6039,7 @@ async function resolveUserOrganizationFullName(user) {
 }
 
 function resolveEnergyAccessRole(role) {
-  if (energyResponsibleAccessRoles.has(role)) {
+  if (energyResponsibleAccessRoles.has(role) || role === mechanicRole) {
     return responsibleRole;
   }
   return role;
@@ -6054,6 +6072,9 @@ function resolveEnergyDashboardActionsForRole(settingsData, role) {
     : [...energyActions];
   if (!objectTrackingEnabled) {
     actions = actions.filter((action) => action.id !== "objects");
+  }
+  if (organizationSettings.dataUsage?.mechanisms) {
+    actions = [...actions, mechanismsAction];
   }
   if (accessRole === accountingRole) {
     const existingActionIds = new Set(actions.map((action) => action.id));
@@ -31060,6 +31081,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       usersAddOrgNameEl.textContent =
         selectedUsersOrgDisplayName || selectedUsersOrgName;
     }
+    setMechanicRoleSelectionEnabled(
+      usersAddFormEl,
+      getEnergyOrganizationSettings(context.settingsData).dataUsage?.mechanisms === true
+    );
     resetUsersAddForm();
     usersAddModalEl.classList.remove("is-hidden");
     document.body.style.overflow = "hidden";
@@ -34739,6 +34764,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       openToolsModal();
       return true;
     }
+    if (actionId === "mechanisms") {
+      openToolsModal();
+      return true;
+    }
     if (isToolsReplacementActionId(actionId)) {
       const replacementFullName = actionId.replace(toolsReplacementActionPrefix, "");
       openReplacementToolsModal(replacementFullName);
@@ -38370,6 +38399,17 @@ function setupSuperAdmin() {
     if (usersAddOrgNameEl) {
       usersAddOrgNameEl.textContent = selectedUsersOrgName;
     }
+    const selectedOrg = orgsState.organizations.find(
+      (item) => getOrgDisplayName(item) === selectedUsersOrgName
+    );
+    const orgFolder = sanitizeOrganizationFolderName(
+      String(selectedOrg?.short_name ?? selectedOrg?.shortName ?? selectedOrg?.full_name ?? selectedOrg?.fullName ?? selectedUsersOrgName).trim()
+    );
+    const settingsData = await loadJson(`./${orgFolder}/Настройки.json`).catch(() => ({}));
+    setMechanicRoleSelectionEnabled(
+      usersAddFormEl,
+      getEnergyOrganizationSettings(settingsData).dataUsage?.mechanisms === true
+    );
     resetUsersAddForm();
     usersAddModalEl.classList.remove("is-hidden");
     document.body.style.overflow = "hidden";

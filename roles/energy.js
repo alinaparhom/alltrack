@@ -22,6 +22,8 @@ export const energyActions = [
   { id: "settings", title: "Настройки", icon: "⚙️" },
 ];
 
+export const mechanismsAction = { id: "mechanisms", title: "Механизмы", icon: "⚙️" };
+
 function renderActionCard(action) {
   const settingsClass = action.id === "settings" ? " action-card--settings" : "";
   return `
@@ -4279,7 +4281,7 @@ export function renderRole(user, options = {}) {
                       required
                       placeholder="Выберите роль"
                       data-users-edit-role-input
-                      data-role-options="Бухгалтерия|Главный инженер|Энергетик|Контроль|Руководитель|Ответственный"
+                      data-role-options="Бухгалтерия|Главный инженер|Энергетик|Контроль|Руководитель|Ответственный|Механик"
                     />
                     <div class="suggestions is-hidden users-edit-role-field__suggestions" data-users-edit-role-suggestions></div>
                   </div>
@@ -4394,6 +4396,7 @@ export function renderRole(user, options = {}) {
                       <option value="Контроль">Контроль</option>
                       <option value="Руководитель">Руководитель</option>
                       <option value="Ответственный">Ответственный</option>
+                      <option value="Механик">Механик</option>
                     </select>
                   </div>
                   <div class="form-field">

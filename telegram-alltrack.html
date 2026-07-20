@@ -24566,8 +24566,8 @@
         padding-bottom: calc(18px + env(safe-area-inset-bottom)) !important;
       }
 
-      /* Страница «Поиск»: список плашек тянется до низа экрана, а поиск
-         лежит поверх контента внизу — удобно для большого пальца на телефоне. */
+      /* Общий полноэкранный макет для поиска, инструментов пользователя
+         и ожидающих списания. */
       .tools-modal--global-search {
         --global-search-bottom-bar-height: calc(64px + max(0px, env(safe-area-inset-bottom)));
       }
@@ -24650,6 +24650,31 @@
         box-shadow:
           0 18px 44px rgba(0, 0, 0, 0.38),
           inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+      }
+
+      /* Страница «Поиск»: строка остается в потоке под списком карточек,
+         поэтому не перекрывает последние инструменты на мобильных устройствах. */
+      .tools-modal--search-page .tools-modal__body {
+        grid-template-rows: auto minmax(0, 1fr) auto !important;
+      }
+
+      .tools-modal--search-page .tools-list,
+      .tools-modal--search-page .tools-search-map {
+        min-height: 0 !important;
+        height: 100% !important;
+        max-height: 100% !important;
+        padding-bottom: calc(18px + env(safe-area-inset-bottom)) !important;
+      }
+
+      .tools-modal--search-page .tools-search {
+        position: relative !important;
+        inset: auto !important;
+        z-index: auto !important;
+        width: auto !important;
+        min-width: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        align-self: stretch !important;
       }
 
       /* Страница «Мои инструменты»: поле поиска визуально совпадает со страницей «Поиск». */

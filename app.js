@@ -6522,6 +6522,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const toolsSearchInput = contentEl.querySelector("[data-tools-search]");
   const toolsSearchEl = toolsSearchInput?.closest(".tools-search") ?? null;
   const toolsSearchHomeEl = toolsSearchEl?.parentElement ?? null;
+  const toolsControlsEl = toolsSearchEl?.closest(".tools-controls") ?? null;
   const toolsListEl = contentEl.querySelector("[data-tools-list]");
   const toolsSearchMapEl = contentEl.querySelector("[data-tools-search-map]");
   const toolsSearchMapCanvasEl = contentEl.querySelector(
@@ -11743,11 +11744,14 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const syncToolsSearchPlacement = () => {
     if (!toolsSearchEl || !toolsSearchHomeEl || !toolsListEl) return;
     const shouldPlaceAfterList =
-      toolsState.mode === "search" ||
-      toolsState.mode === "user" ||
-      toolsState.mode === "write-off-pending";
+      toolsState.mode === "user" || toolsState.mode === "write-off-pending";
     if (shouldPlaceAfterList) {
       toolsListEl.insertAdjacentElement("afterend", toolsSearchEl);
+      return;
+    }
+    if (toolsState.mode === "search" && toolsControlsEl) {
+      // На странице поиска поле находится после панели с переключателями и фильтрами.
+      toolsControlsEl.append(toolsSearchEl);
       return;
     }
     toolsSearchHomeEl.insertBefore(toolsSearchEl, toolsSearchHomeEl.firstChild);

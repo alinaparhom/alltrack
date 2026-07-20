@@ -11778,6 +11778,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         toolsState.mode === "user" ||
         toolsState.mode === "write-off-pending"
     );
+    toolsModalEl.classList.toggle("tools-modal--search-page", toolsState.mode === "search");
     syncToolsSearchPlacement();
     setToolsSortToggleVisibility();
     updateToolsBrokenOnlyToggleUi();
@@ -15016,6 +15017,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     updateToolsReplacementPendingLinkVisibility();
     toolsModalEl.classList.remove("tools-modal--searching");
     toolsModalEl.classList.remove("tools-modal--global-search");
+    toolsModalEl.classList.remove("tools-modal--search-page");
     toolsModalEl.classList.remove("tools-modal--my-tools");
     if (toolsState.mode === "add-photo") {
       closeAddPhotoDetailModal({ keepBodyLocked: false });

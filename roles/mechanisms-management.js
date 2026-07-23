@@ -34,6 +34,29 @@ const workTimeValues = (workTime) => {
 
 const hourOptions = (selected) => workHours.map((hour) => `<option value="${hour}" ${hour === selected ? "selected" : ""}>${hour}</option>`).join("");
 
+/** Не даёт выбрать окончание смены раньше её начала прямо в списке часов. */
+const syncWorkTimeRange = (form, changedField) => {
+  const from = form?.elements.workTimeFrom;
+  const to = form?.elements.workTimeTo;
+  if (!from || !to) return;
+
+  if (changedField === from && from.value >= to.value) {
+    const nextHour = workHours.find((hour) => hour > from.value);
+    if (nextHour) to.value = nextHour;
+    else from.value = workHours.at(-2);
+  }
+  if (changedField === to && from.value >= to.value) {
+    from.value = [...workHours].reverse().find((hour) => hour < to.value) || workHours[0];
+  }
+  if (!changedField && from.value >= to.value) {
+    from.value = workHours[0];
+    to.value = workHours.at(-1);
+  }
+
+  [...from.options].forEach((option) => { option.disabled = option.value >= to.value; });
+  [...to.options].forEach((option) => { option.disabled = option.value <= from.value; });
+};
+
 const photoControl = (item, key) => `
   <div class="mechanisms-photo" data-mechanism-photo>
     <div class="mechanisms-photo__preview ${item.photo ? "has-photo" : ""}" data-mechanism-photo-preview>${item.photo ? `<img src="${escapeHtml(item.photo)}" alt="Фото ${escapeHtml([item.name, item.model].filter(Boolean).join(" "))}">` : "<span>🚜</span>"}</div>
@@ -67,7 +90,7 @@ export function createMechanismsManagement({ container, path, loadJson, saveJson
             <label class="mechanisms-management__field">Стоимость, Br<input name="cost" required type="number" min="0" step="0.01" inputmode="decimal" placeholder="0"></label>
             <label class="mechanisms-management__field">Машино-час, Br/ч<input name="hourlyRate" required type="number" min="0" step="0.01" inputmode="decimal" placeholder="0"></label>
             <label class="mechanisms-management__field">Режим работы<span class="mechanisms-select"><select name="schedule"><option value="5/2">5/2</option><option value="7/0">7/0</option><option value="manual">Вручную</option></select></span></label>
-            <fieldset class="mechanisms-management__field mechanisms-management__field--wide mechanisms-work-time"><legend>Время работы</legend><div class="mechanisms-work-time__range"><label>С<span class="mechanisms-select"><select name="workTimeFrom">${hourOptions("08:00")}</select></span></label><span>—</span><label>До<span class="mechanisms-select"><select name="workTimeTo">${hourOptions("17:00")}</select></span></label></div></fieldset>
+            <fieldset class="mechanisms-management__field mechanisms-management__field--wide mechanisms-work-time"><legend>Время работы</legend><div class="mechanisms-work-time__range"><label>С<span class="mechanisms-select"><select name="workTimeFrom" aria-label="Начало рабочего времени">${hourOptions("08:00")}</select></span></label><span aria-hidden="true">—</span><label>До<span class="mechanisms-select"><select name="workTimeTo" aria-label="Окончание рабочего времени">${hourOptions("17:00")}</select></span></label></div></fieldset>
             ${photoControl({}, "new")}
           </div>
         </form>
@@ -75,6 +98,7 @@ export function createMechanismsManagement({ container, path, loadJson, saveJson
         <p class="mechanisms-management__status" data-mechanisms-management-status aria-live="polite"></p>
       </div>`;
     renderList();
+    container.querySelectorAll("form").forEach((form) => syncWorkTimeRange(form));
   };
 
   const renderList = () => {
@@ -93,7 +117,7 @@ export function createMechanismsManagement({ container, path, loadJson, saveJson
           <label class="mechanisms-management__field">Стоимость, Br<input name="cost" required type="number" min="0" step="0.01" inputmode="decimal" value="${item.cost}"></label>
           <label class="mechanisms-management__field">Машино-час, Br/ч<input name="hourlyRate" required type="number" min="0" step="0.01" inputmode="decimal" value="${item.hourlyRate}"></label>
           <label class="mechanisms-management__field">Режим работы<span class="mechanisms-select"><select name="schedule"><option value="5/2" ${item.schedule === "5/2" ? "selected" : ""}>5/2</option><option value="7/0" ${item.schedule === "7/0" ? "selected" : ""}>7/0</option><option value="manual" ${item.schedule === "manual" ? "selected" : ""}>Вручную</option></select></span></label>
-          <fieldset class="mechanisms-management__field mechanisms-management__field--wide mechanisms-work-time"><legend>Время работы</legend><div class="mechanisms-work-time__range"><label>С<span class="mechanisms-select"><select name="workTimeFrom">${hourOptions(workTimeValues(item.workTime).from)}</select></span></label><span>—</span><label>До<span class="mechanisms-select"><select name="workTimeTo">${hourOptions(workTimeValues(item.workTime).to)}</select></span></label></div></fieldset>
+          <fieldset class="mechanisms-management__field mechanisms-management__field--wide mechanisms-work-time"><legend>Время работы</legend><div class="mechanisms-work-time__range"><label>С<span class="mechanisms-select"><select name="workTimeFrom" aria-label="Начало рабочего времени">${hourOptions(workTimeValues(item.workTime).from)}</select></span></label><span aria-hidden="true">—</span><label>До<span class="mechanisms-select"><select name="workTimeTo" aria-label="Окончание рабочего времени">${hourOptions(workTimeValues(item.workTime).to)}</select></span></label></div></fieldset>
           ${photoControl(item, item.id)}
         </div>
         <div class="mechanisms-machine__actions"><button class="mechanisms-secondary" type="submit">Сохранить изменения</button></div>
@@ -114,6 +138,10 @@ export function createMechanismsManagement({ container, path, loadJson, saveJson
   };
 
   container.addEventListener("change", async (event) => {
+    if (event.target.matches('select[name="workTimeFrom"], select[name="workTimeTo"]')) {
+      syncWorkTimeRange(event.target.form, event.target);
+      return;
+    }
     const input = event.target.closest("[data-mechanism-photo-input]");
     if (!input?.files?.[0]) return;
     try {

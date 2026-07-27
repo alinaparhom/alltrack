@@ -64,7 +64,7 @@ const syncWorkTimeRange = (form, changedField) => {
 const photoControl = (item, key) => `
   <div class="mechanisms-photo" data-mechanism-photo>
     <div class="mechanisms-photo__preview ${item.photo ? "has-photo" : ""}" data-mechanism-photo-preview>${item.photo ? `<img src="${escapeHtml(item.photo)}" alt="Фото ${escapeHtml([item.name, item.model].filter(Boolean).join(" "))}">` : "<span>🚜</span>"}</div>
-    <div class="mechanisms-photo__content"><b>Фото техники</b><span>JPG, PNG или WebP до 12 МБ</span><div class="mechanisms-photo__actions"><label class="mechanisms-photo__upload">Выбрать фото<input type="file" accept="image/jpeg,image/png,image/webp" data-mechanism-photo-input data-photo-key="${key}"></label><button class="mechanisms-photo__remove" type="button" data-mechanism-photo-remove ${item.photo ? "" : "hidden"}>Удалить</button></div></div>
+    <div class="mechanisms-photo__content"><b>Фото техники</b><span>JPG, PNG или WebP до 12 МБ</span><div class="mechanisms-photo__actions"><label class="mechanisms-photo__upload">Снять или выбрать фото<input type="file" accept="image/jpeg,image/png,image/webp" capture="environment" data-mechanism-photo-input data-photo-key="${key}"></label><button class="mechanisms-photo__remove" type="button" data-mechanism-photo-remove ${item.photo ? "" : "hidden"}>Удалить</button></div></div>
   </div>`;
 
 /** Рендерит самостоятельный мобильный интерфейс управления парком механизмов. */

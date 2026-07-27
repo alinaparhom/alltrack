@@ -1,12 +1,13 @@
 const MAX_IMAGE_SIDE = 1280;
 const JPEG_QUALITY = 0.82;
+const SUPPORTED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 
 /**
  * Готовит фотографию техники для хранения вместе с её карточкой.
  * Уменьшение снимка сохраняет быстрый интерфейс и не раздувает JSON-файл.
  */
 export async function prepareMechanismPhoto(file) {
-  if (!file?.type?.startsWith("image/")) {
+  if (!SUPPORTED_IMAGE_TYPES.has(file?.type)) {
     throw new Error("Выберите изображение в формате JPG, PNG или WebP.");
   }
   if (file.size > 12 * 1024 * 1024) {

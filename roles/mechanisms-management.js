@@ -68,7 +68,7 @@ const syncWorkTimeRange = (form, changedField) => {
 const photoControl = (item, key) => `
   <div class="mechanisms-photo" data-mechanism-photo>
     <div class="mechanisms-photo__preview ${item.photo ? "has-photo" : ""}" data-mechanism-photo-preview>${item.photo ? `<img src="${escapeHtml(item.photo)}" alt="Фото ${escapeHtml([item.name, item.model].filter(Boolean).join(" "))}">` : "<span>🚜</span>"}</div>
-    <div class="mechanisms-photo__content"><b>Фото техники</b><span>JPG, PNG или WebP до 12 МБ</span><div class="mechanisms-photo__actions"><label class="mechanisms-photo__upload">Снять или выбрать фото<input type="file" accept="image/jpeg,image/png,image/webp" aria-label="Снять или выбрать фото техники" data-mechanism-photo-input data-photo-key="${key}"></label><button class="mechanisms-photo__remove" type="button" data-mechanism-photo-remove ${item.photo ? "" : "hidden"}>Удалить</button></div></div>
+    <div class="mechanisms-photo__content"><b>Фото техники</b><span>JPG, PNG или WebP до 12 МБ</span><div class="mechanisms-photo__actions"><label class="mechanisms-photo__upload">Сделать фото<input type="file" accept="image/jpeg,image/png,image/webp" capture="environment" aria-label="Сделать фото техники" data-mechanism-photo-input data-photo-key="${key}"></label><label class="mechanisms-photo__upload">Выбрать из галереи<input type="file" accept="image/jpeg,image/png,image/webp" aria-label="Выбрать фото техники из галереи" data-mechanism-photo-input data-photo-key="${key}"></label><button class="mechanisms-photo__remove" type="button" data-mechanism-photo-remove ${item.photo ? "" : "hidden"}>Удалить</button></div></div>
   </div>`;
 
 /** Рендерит самостоятельный мобильный интерфейс управления парком механизмов. */
@@ -157,7 +157,7 @@ export function createMechanismsManagement({ container, path, loadJson, saveJson
     status("Подготавливаем фотографию…");
     try {
       const photo = await prepareMechanismPhoto(input.files[0]);
-      input.dataset.photoData = photo;
+      control.dataset.photoData = photo;
       const preview = control.querySelector("[data-mechanism-photo-preview]");
       preview.classList.add("has-photo");
       preview.innerHTML = `<img src="${photo}" alt="Предпросмотр фото техники">`;
@@ -175,8 +175,8 @@ export function createMechanismsManagement({ container, path, loadJson, saveJson
     const removePhoto = event.target.closest("[data-mechanism-photo-remove]");
     if (removePhoto) {
       const control = removePhoto.closest("[data-mechanism-photo]");
-      control.querySelector("[data-mechanism-photo-input]").dataset.photoData = "";
-      control.querySelector("[data-mechanism-photo-input]").value = "";
+      control.dataset.photoData = "";
+      control.querySelectorAll("[data-mechanism-photo-input]").forEach((input) => { input.value = ""; });
       control.querySelector("[data-mechanism-photo-preview]").classList.remove("has-photo");
       control.querySelector("[data-mechanism-photo-preview]").innerHTML = "<span>🚜</span>";
       removePhoto.hidden = true;
@@ -200,9 +200,9 @@ export function createMechanismsManagement({ container, path, loadJson, saveJson
     if (values.workTimeFrom >= values.workTimeTo) { status("Время окончания должно быть позже времени начала.", true); return; }
     item.workTime = `${values.workTimeFrom}–${values.workTimeTo}`;
     const id = form.dataset.mechanismId;
-    const photoInput = form.querySelector("[data-mechanism-photo-input]");
+    const photoControl = form.querySelector("[data-mechanism-photo]");
     const current = mechanisms.find((mechanism) => mechanism.id === id);
-    item.photo = photoInput?.dataset.photoData ?? current?.photo ?? "";
+    item.photo = photoControl?.dataset.photoData ?? current?.photo ?? "";
     if (id) {
       mechanisms = mechanisms.map((current) => current.id === id ? { ...item, id } : current);
       render(); await save("Изменения сохранены.");

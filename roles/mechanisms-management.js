@@ -1,10 +1,10 @@
 import { prepareMechanismPhoto } from "./mechanism-photo.js";
 import { formatMechanismMoney, formatMechanismMoneyInput } from "./mechanism-money-input.js";
+import { mechanismScheduleSelect, setupMechanismScheduleSelects } from "./mechanism-schedule-select.js";
 import {
   MECHANISM_END_TIMES,
   MECHANISM_SCHEDULES,
   MECHANISM_START_TIMES,
-  mechanismScheduleOptions,
   mechanismTimeOptions,
 } from "./mechanism-form-options.js";
 
@@ -100,7 +100,7 @@ export function createMechanismsManagement({ container, path, loadJson, saveJson
             <label class="mechanisms-management__field">Модель<input name="model" required maxlength="80" autocomplete="off" placeholder="Например, CAT 320"></label>
             <label class="mechanisms-management__field">Стоимость, Br<input name="cost" required type="text" inputmode="decimal" autocomplete="off" placeholder="0" data-mechanism-money></label>
             <label class="mechanisms-management__field">Машино-час, Br/ч<input name="hourlyRate" required type="text" inputmode="decimal" autocomplete="off" placeholder="0" data-mechanism-money></label>
-            <label class="mechanisms-management__field">Режим работы<span class="mechanisms-select"><select name="schedule" required aria-label="Режим работы">${mechanismScheduleOptions()}</select></span></label>
+            <label class="mechanisms-management__field">Режим работы${mechanismScheduleSelect()}</label>
             <fieldset class="mechanisms-management__field mechanisms-management__field--wide mechanisms-work-time"><legend>Время работы</legend><div class="mechanisms-work-time__range"><label>С<span class="mechanisms-select"><select name="workTimeFrom" aria-label="Начало рабочего времени">${mechanismTimeOptions(MECHANISM_START_TIMES, "08:00")}</select></span></label><span aria-hidden="true">—</span><label>До<span class="mechanisms-select"><select name="workTimeTo" aria-label="Окончание рабочего времени">${mechanismTimeOptions(MECHANISM_END_TIMES, "17:00")}</select></span></label></div></fieldset>
             ${photoControl({}, "new")}
             <div class="mechanisms-management__add-action"><button class="mechanisms-primary" type="submit">Добавить технику</button></div>
@@ -129,7 +129,7 @@ export function createMechanismsManagement({ container, path, loadJson, saveJson
           <label class="mechanisms-management__field">Модель<input name="model" required maxlength="80" value="${escapeHtml(item.model)}" placeholder="Например, CAT 320"></label>
           <label class="mechanisms-management__field">Стоимость, Br<input name="cost" required type="text" inputmode="decimal" value="${formatMechanismMoney(item.cost)}" data-mechanism-money></label>
           <label class="mechanisms-management__field">Машино-час, Br/ч<input name="hourlyRate" required type="text" inputmode="decimal" value="${formatMechanismMoney(item.hourlyRate)}" data-mechanism-money></label>
-          <label class="mechanisms-management__field">Режим работы<span class="mechanisms-select"><select name="schedule" required aria-label="Режим работы">${mechanismScheduleOptions(item.schedule)}</select></span></label>
+          <label class="mechanisms-management__field">Режим работы${mechanismScheduleSelect(item.schedule)}</label>
           <fieldset class="mechanisms-management__field mechanisms-management__field--wide mechanisms-work-time"><legend>Время работы</legend><div class="mechanisms-work-time__range"><label>С<span class="mechanisms-select"><select name="workTimeFrom" aria-label="Начало рабочего времени">${mechanismTimeOptions(MECHANISM_START_TIMES, workTimeValues(item.workTime).from)}</select></span></label><span aria-hidden="true">—</span><label>До<span class="mechanisms-select"><select name="workTimeTo" aria-label="Окончание рабочего времени">${mechanismTimeOptions(MECHANISM_END_TIMES, workTimeValues(item.workTime).to)}</select></span></label></div></fieldset>
           ${photoControl(item, item.id)}
         </div>
@@ -231,5 +231,6 @@ export function createMechanismsManagement({ container, path, loadJson, saveJson
       console.info("Список техники пока не создан.");
     }
   };
+  setupMechanismScheduleSelects(container);
   return { initialize };
 }

@@ -1,7 +1,8 @@
 import { prepareMechanismPhoto } from "./mechanism-photo.js";
 
 const scheduleLabels = { "5/2": "5/2", "7/0": "7/0", manual: "Вручную" };
-const workHours = Array.from({ length: 24 }, (_, hour) => `${String(hour).padStart(2, "0")}:00`);
+const workStartHours = Array.from({ length: 24 }, (_, hour) => `${String(hour).padStart(2, "0")}:00`);
+const workEndHours = [...workStartHours.slice(1), "24:00"];
 
 const escapeHtml = (value = "") => String(value)
   .replaceAll("&", "&amp;")
@@ -29,10 +30,13 @@ const normalizeMechanism = (item = {}) => ({
 
 const workTimeValues = (workTime) => {
   const [from = "08:00", to = "17:00"] = String(workTime).match(/\d{2}:\d{2}/g) || [];
-  return { from: workHours.includes(from) ? from : "08:00", to: workHours.includes(to) ? to : "17:00" };
+  return {
+    from: workStartHours.includes(from) ? from : "08:00",
+    to: workEndHours.includes(to) ? to : "17:00",
+  };
 };
 
-const hourOptions = (selected) => workHours.map((hour) => `<option value="${hour}" ${hour === selected ? "selected" : ""}>${hour}</option>`).join("");
+const hourOptions = (hours, selected) => hours.map((hour) => `<option value="${hour}" ${hour === selected ? "selected" : ""}>${hour}</option>`).join("");
 
 /** Не даёт выбрать окончание смены раньше её начала прямо в списке часов. */
 const syncWorkTimeRange = (form, changedField) => {
@@ -41,16 +45,16 @@ const syncWorkTimeRange = (form, changedField) => {
   if (!from || !to) return;
 
   if (changedField === from && from.value >= to.value) {
-    const nextHour = workHours.find((hour) => hour > from.value);
+    const nextHour = workEndHours.find((hour) => hour > from.value);
     if (nextHour) to.value = nextHour;
-    else from.value = workHours.at(-2);
+    else from.value = workStartHours.at(-1);
   }
   if (changedField === to && from.value >= to.value) {
-    from.value = [...workHours].reverse().find((hour) => hour < to.value) || workHours[0];
+    from.value = [...workStartHours].reverse().find((hour) => hour < to.value) || workStartHours[0];
   }
   if (!changedField && from.value >= to.value) {
-    from.value = workHours[0];
-    to.value = workHours.at(-1);
+    from.value = workStartHours[0];
+    to.value = workEndHours.at(-1);
   }
 
   [...from.options].forEach((option) => { option.disabled = option.value >= to.value; });
@@ -86,11 +90,11 @@ export function createMechanismsManagement({ container, path, loadJson, saveJson
           <div class="mechanisms-management__form-head"><div><h4>Новая техника</h4><span>Все поля сохраняются для вашей организации.</span></div><button class="mechanisms-primary" type="submit">Добавить технику</button></div>
           <div class="mechanisms-management__fields">
             <label class="mechanisms-management__field">Наименование<input name="name" required maxlength="80" autocomplete="off" placeholder="Например, Экскаватор"></label>
-            <label class="mechanisms-management__field">Модель<input name="model" maxlength="80" autocomplete="off" placeholder="Например, CAT 320"></label>
+            <label class="mechanisms-management__field">Модель<input name="model" required maxlength="80" autocomplete="off" placeholder="Например, CAT 320"></label>
             <label class="mechanisms-management__field">Стоимость, Br<input name="cost" required type="number" min="0" step="0.01" inputmode="decimal" placeholder="0"></label>
             <label class="mechanisms-management__field">Машино-час, Br/ч<input name="hourlyRate" required type="number" min="0" step="0.01" inputmode="decimal" placeholder="0"></label>
-            <label class="mechanisms-management__field">Режим работы<span class="mechanisms-select"><select name="schedule"><option value="5/2">5/2</option><option value="7/0">7/0</option><option value="manual">Вручную</option></select></span></label>
-            <fieldset class="mechanisms-management__field mechanisms-management__field--wide mechanisms-work-time"><legend>Время работы</legend><div class="mechanisms-work-time__range"><label>С<span class="mechanisms-select"><select name="workTimeFrom" aria-label="Начало рабочего времени">${hourOptions("08:00")}</select></span></label><span aria-hidden="true">—</span><label>До<span class="mechanisms-select"><select name="workTimeTo" aria-label="Окончание рабочего времени">${hourOptions("17:00")}</select></span></label></div></fieldset>
+            <label class="mechanisms-management__field">Режим работы<span class="mechanisms-select"><select name="schedule"><option value="5/2">5/2 — по будням</option><option value="7/0">7/0 — ежедневно</option><option value="manual">Вручную — свой график</option></select></span></label>
+            <fieldset class="mechanisms-management__field mechanisms-management__field--wide mechanisms-work-time"><legend>Время работы</legend><div class="mechanisms-work-time__range"><label>С<span class="mechanisms-select"><select name="workTimeFrom" aria-label="Начало рабочего времени">${hourOptions(workStartHours, "08:00")}</select></span></label><span aria-hidden="true">—</span><label>До<span class="mechanisms-select"><select name="workTimeTo" aria-label="Окончание рабочего времени">${hourOptions(workEndHours, "17:00")}</select></span></label></div></fieldset>
             ${photoControl({}, "new")}
           </div>
         </form>
@@ -113,11 +117,11 @@ export function createMechanismsManagement({ container, path, loadJson, saveJson
         <div class="mechanisms-machine__head"><div class="mechanisms-machine__badge">${item.photo ? `<img src="${escapeHtml(item.photo)}" alt="">` : "🚜"}</div><div><b>${escapeHtml([item.name, item.model].filter(Boolean).join(" "))}</b><span>${scheduleLabels[item.schedule]} · ${escapeHtml(item.workTime || "время не указано")}</span></div><button class="mechanisms-machine__delete" type="button" data-mechanism-delete aria-label="Удалить ${escapeHtml(item.name)}">Удалить</button></div>
         <div class="mechanisms-management__fields">
           <label class="mechanisms-management__field">Наименование<input name="name" required maxlength="80" value="${escapeHtml(item.name)}"></label>
-          <label class="mechanisms-management__field">Модель<input name="model" maxlength="80" value="${escapeHtml(item.model)}" placeholder="Например, CAT 320"></label>
+          <label class="mechanisms-management__field">Модель<input name="model" required maxlength="80" value="${escapeHtml(item.model)}" placeholder="Например, CAT 320"></label>
           <label class="mechanisms-management__field">Стоимость, Br<input name="cost" required type="number" min="0" step="0.01" inputmode="decimal" value="${item.cost}"></label>
           <label class="mechanisms-management__field">Машино-час, Br/ч<input name="hourlyRate" required type="number" min="0" step="0.01" inputmode="decimal" value="${item.hourlyRate}"></label>
-          <label class="mechanisms-management__field">Режим работы<span class="mechanisms-select"><select name="schedule"><option value="5/2" ${item.schedule === "5/2" ? "selected" : ""}>5/2</option><option value="7/0" ${item.schedule === "7/0" ? "selected" : ""}>7/0</option><option value="manual" ${item.schedule === "manual" ? "selected" : ""}>Вручную</option></select></span></label>
-          <fieldset class="mechanisms-management__field mechanisms-management__field--wide mechanisms-work-time"><legend>Время работы</legend><div class="mechanisms-work-time__range"><label>С<span class="mechanisms-select"><select name="workTimeFrom" aria-label="Начало рабочего времени">${hourOptions(workTimeValues(item.workTime).from)}</select></span></label><span aria-hidden="true">—</span><label>До<span class="mechanisms-select"><select name="workTimeTo" aria-label="Окончание рабочего времени">${hourOptions(workTimeValues(item.workTime).to)}</select></span></label></div></fieldset>
+          <label class="mechanisms-management__field">Режим работы<span class="mechanisms-select"><select name="schedule"><option value="5/2" ${item.schedule === "5/2" ? "selected" : ""}>5/2 — по будням</option><option value="7/0" ${item.schedule === "7/0" ? "selected" : ""}>7/0 — ежедневно</option><option value="manual" ${item.schedule === "manual" ? "selected" : ""}>Вручную — свой график</option></select></span></label>
+          <fieldset class="mechanisms-management__field mechanisms-management__field--wide mechanisms-work-time"><legend>Время работы</legend><div class="mechanisms-work-time__range"><label>С<span class="mechanisms-select"><select name="workTimeFrom" aria-label="Начало рабочего времени">${hourOptions(workStartHours, workTimeValues(item.workTime).from)}</select></span></label><span aria-hidden="true">—</span><label>До<span class="mechanisms-select"><select name="workTimeTo" aria-label="Окончание рабочего времени">${hourOptions(workEndHours, workTimeValues(item.workTime).to)}</select></span></label></div></fieldset>
           ${photoControl(item, item.id)}
         </div>
         <div class="mechanisms-machine__actions"><button class="mechanisms-secondary" type="submit">Сохранить изменения</button></div>

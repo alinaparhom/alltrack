@@ -1,11 +1,11 @@
 import { prepareMechanismPhoto } from "./mechanism-photo.js";
 import { formatMechanismMoney, formatMechanismMoneyInput } from "./mechanism-money-input.js";
-import { mechanismScheduleSelect, setupMechanismScheduleSelects } from "./mechanism-schedule-select.js";
+import { setupMechanismScheduleSelects } from "./mechanism-schedule-select.js";
+import { mechanismEditorModal } from "./mechanism-editor-modal.js";
 import {
   MECHANISM_END_TIMES,
   MECHANISM_SCHEDULES,
   MECHANISM_START_TIMES,
-  mechanismTimeOptions,
 } from "./mechanism-form-options.js";
 
 const scheduleLabels = Object.fromEntries(MECHANISM_SCHEDULES.map(({ value, shortLabel }) => [value, shortLabel]));
@@ -88,26 +88,10 @@ export function createMechanismsManagement({ container, path, loadJson, saveJson
   const render = () => {
     container.innerHTML = `
       <div class="mechanisms-management">
-        <section class="mechanisms-management__intro">
-          <div><p class="mechanisms-management__eyebrow">Парк техники</p><h3>Управление техникой</h3><p>Добавляйте машины, указывайте их стоимость, ставку за машино-час и рабочий режим.</p></div>
-          <div class="mechanisms-management__count"><b>${mechanisms.length}</b><span>ед. техники</span></div>
-        </section>
-        <form class="mechanisms-management__form" data-mechanisms-add-form>
-          <div class="mechanisms-management__form-head"><div><h4>Новая техника</h4><span>Все поля сохраняются для вашей организации.</span></div></div>
-          <div class="mechanisms-management__fields">
-            <label class="mechanisms-management__field">Наименование<input name="name" required maxlength="80" autocomplete="off" placeholder="Например, Экскаватор"></label>
-            <label class="mechanisms-management__field">Производитель<input name="manufacturer" required maxlength="80" autocomplete="organization" placeholder="Например, Caterpillar"></label>
-            <label class="mechanisms-management__field">Модель<input name="model" required maxlength="80" autocomplete="off" placeholder="Например, CAT 320"></label>
-            <label class="mechanisms-management__field">Стоимость, Br<input name="cost" required type="text" inputmode="decimal" autocomplete="off" placeholder="0" data-mechanism-money></label>
-            <label class="mechanisms-management__field">Машино-час, Br/ч<input name="hourlyRate" required type="text" inputmode="decimal" autocomplete="off" placeholder="0" data-mechanism-money></label>
-            <label class="mechanisms-management__field">Режим работы${mechanismScheduleSelect()}</label>
-            <fieldset class="mechanisms-management__field mechanisms-management__field--wide mechanisms-work-time"><legend>Время работы</legend><div class="mechanisms-work-time__range"><label>С<span class="mechanisms-select"><select name="workTimeFrom" aria-label="Начало рабочего времени">${mechanismTimeOptions(MECHANISM_START_TIMES, "08:00")}</select></span></label><span aria-hidden="true">—</span><label>До<span class="mechanisms-select"><select name="workTimeTo" aria-label="Окончание рабочего времени">${mechanismTimeOptions(MECHANISM_END_TIMES, "17:00")}</select></span></label></div></fieldset>
-            ${photoControl({}, "new")}
-            <div class="mechanisms-management__add-action"><button class="mechanisms-primary" type="submit">Добавить технику</button></div>
-          </div>
-        </form>
         <div class="mechanisms-management__list" data-mechanisms-management-list></div>
         <p class="mechanisms-management__status" data-mechanisms-management-status aria-live="polite"></p>
+        <button class="mechanisms-management__open-add mechanisms-primary" type="button" data-mechanisms-editor-open><span aria-hidden="true">＋</span>Добавить механизм</button>
+        <div data-mechanisms-editor-host></div>
       </div>`;
     renderList();
     container.querySelectorAll("form").forEach((form) => syncWorkTimeRange(form));
@@ -117,24 +101,21 @@ export function createMechanismsManagement({ container, path, loadJson, saveJson
     const list = container.querySelector("[data-mechanisms-management-list]");
     if (!list) return;
     if (!mechanisms.length) {
-      list.innerHTML = `<div class="mechanisms-management__empty"><span>🚜</span><b>Техника ещё не добавлена</b><p>Заполните форму выше, чтобы создать первую карточку техники.</p></div>`;
+      list.innerHTML = `<div class="mechanisms-management__empty"><span>🚜</span><b>Техника ещё не добавлена</b><p>Нажмите кнопку внизу, чтобы создать первую карточку.</p></div>`;
       return;
     }
     list.innerHTML = mechanisms.map((item) => `
-      <form class="mechanisms-machine" data-mechanism-id="${escapeHtml(item.id)}">
-        <div class="mechanisms-machine__head"><div class="mechanisms-machine__badge">${item.photo ? `<img src="${escapeHtml(item.photo)}" alt="">` : "🚜"}</div><div><b>${escapeHtml([item.name, item.manufacturer, item.model].filter(Boolean).join(" "))}</b><span>${scheduleLabels[item.schedule]} · ${escapeHtml(item.workTime || "время не указано")}</span></div><button class="mechanisms-machine__delete" type="button" data-mechanism-delete aria-label="Удалить ${escapeHtml(item.name)}">Удалить</button></div>
-        <div class="mechanisms-management__fields">
-          <label class="mechanisms-management__field">Наименование<input name="name" required maxlength="80" value="${escapeHtml(item.name)}"></label>
-          <label class="mechanisms-management__field">Производитель<input name="manufacturer" required maxlength="80" value="${escapeHtml(item.manufacturer)}" placeholder="Например, Caterpillar"></label>
-          <label class="mechanisms-management__field">Модель<input name="model" required maxlength="80" value="${escapeHtml(item.model)}" placeholder="Например, CAT 320"></label>
-          <label class="mechanisms-management__field">Стоимость, Br<input name="cost" required type="text" inputmode="decimal" value="${formatMechanismMoney(item.cost)}" data-mechanism-money></label>
-          <label class="mechanisms-management__field">Машино-час, Br/ч<input name="hourlyRate" required type="text" inputmode="decimal" value="${formatMechanismMoney(item.hourlyRate)}" data-mechanism-money></label>
-          <label class="mechanisms-management__field">Режим работы${mechanismScheduleSelect(item.schedule)}</label>
-          <fieldset class="mechanisms-management__field mechanisms-management__field--wide mechanisms-work-time"><legend>Время работы</legend><div class="mechanisms-work-time__range"><label>С<span class="mechanisms-select"><select name="workTimeFrom" aria-label="Начало рабочего времени">${mechanismTimeOptions(MECHANISM_START_TIMES, workTimeValues(item.workTime).from)}</select></span></label><span aria-hidden="true">—</span><label>До<span class="mechanisms-select"><select name="workTimeTo" aria-label="Окончание рабочего времени">${mechanismTimeOptions(MECHANISM_END_TIMES, workTimeValues(item.workTime).to)}</select></span></label></div></fieldset>
-          ${photoControl(item, item.id)}
-        </div>
-        <div class="mechanisms-machine__actions"><button class="mechanisms-secondary" type="submit">Сохранить изменения</button></div>
-      </form>`).join("");
+      <article class="mechanisms-machine" data-mechanism-id="${escapeHtml(item.id)}">
+        <div class="mechanisms-machine__head"><div class="mechanisms-machine__badge">${item.photo ? `<img src="${escapeHtml(item.photo)}" alt="">` : "🚜"}</div><div><b>${escapeHtml([item.name, item.manufacturer, item.model].filter(Boolean).join(" "))}</b><span>${scheduleLabels[item.schedule]} · ${escapeHtml(item.workTime || "время не указано")}</span><small>${formatMechanismMoney(item.hourlyRate)} Br/ч</small></div><button class="mechanisms-machine__edit" type="button" data-mechanism-edit aria-label="Редактировать ${escapeHtml(item.name)}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4 16.5-.8 4.3 4.3-.8L19 8.5 15.5 5 4 16.5Zm13-13 3.5 3.5 1-1a2.5 2.5 0 0 0-3.5-3.5l-1 1Z"/></svg></button></div>
+      </article>`).join("");
+  };
+
+  const openEditor = (item = {}) => {
+    const host = container.querySelector("[data-mechanisms-editor-host]");
+    host.innerHTML = mechanismEditorModal({ item, escapeHtml, formatMoney: formatMechanismMoney, photoControl, workTimeValues });
+    const form = host.querySelector("form");
+    syncWorkTimeRange(form);
+    form.elements.name?.focus();
   };
 
   const save = async (message) => {
@@ -179,6 +160,14 @@ export function createMechanismsManagement({ container, path, loadJson, saveJson
     if (event.target.matches("[data-mechanism-money]")) formatMechanismMoneyInput(event.target);
   });
   container.addEventListener("click", async (event) => {
+    if (event.target.closest("[data-mechanisms-editor-open]")) { openEditor(); return; }
+    if (event.target.closest("[data-mechanism-edit]")) {
+      const card = event.target.closest("[data-mechanism-id]");
+      openEditor(mechanisms.find(({ id }) => id === card?.dataset.mechanismId)); return;
+    }
+    if (event.target.closest("[data-mechanisms-editor-close]") || event.target.matches("[data-mechanisms-editor]")) {
+      container.querySelector("[data-mechanisms-editor-host]").innerHTML = ""; return;
+    }
     const button = event.target.closest("[data-mechanism-delete]");
     const removePhoto = event.target.closest("[data-mechanism-photo-remove]");
     if (removePhoto) {

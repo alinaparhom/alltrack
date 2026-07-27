@@ -1,4 +1,5 @@
 import { prepareMechanismPhoto } from "./mechanism-photo.js";
+import { formatMechanismMoney, formatMechanismMoneyInput } from "./mechanism-money-input.js";
 import {
   MECHANISM_END_TIMES,
   MECHANISM_SCHEDULES,
@@ -26,6 +27,7 @@ const numberValue = (value) => {
 const normalizeMechanism = (item = {}) => ({
   id: String(item.id || crypto.randomUUID?.() || `${Date.now()}-${Math.random()}`),
   name: String(item.name || "").trim(),
+  manufacturer: String(item.manufacturer || "").trim(),
   model: String(item.model || "").trim(),
   cost: numberValue(item.cost),
   hourlyRate: numberValue(item.hourlyRate),
@@ -91,15 +93,17 @@ export function createMechanismsManagement({ container, path, loadJson, saveJson
           <div class="mechanisms-management__count"><b>${mechanisms.length}</b><span>ед. техники</span></div>
         </section>
         <form class="mechanisms-management__form" data-mechanisms-add-form>
-          <div class="mechanisms-management__form-head"><div><h4>Новая техника</h4><span>Все поля сохраняются для вашей организации.</span></div><button class="mechanisms-primary" type="submit">Добавить технику</button></div>
+          <div class="mechanisms-management__form-head"><div><h4>Новая техника</h4><span>Все поля сохраняются для вашей организации.</span></div></div>
           <div class="mechanisms-management__fields">
             <label class="mechanisms-management__field">Наименование<input name="name" required maxlength="80" autocomplete="off" placeholder="Например, Экскаватор"></label>
+            <label class="mechanisms-management__field">Производитель<input name="manufacturer" required maxlength="80" autocomplete="organization" placeholder="Например, Caterpillar"></label>
             <label class="mechanisms-management__field">Модель<input name="model" required maxlength="80" autocomplete="off" placeholder="Например, CAT 320"></label>
-            <label class="mechanisms-management__field">Стоимость, Br<input name="cost" required type="number" min="0" step="0.01" inputmode="decimal" placeholder="0"></label>
-            <label class="mechanisms-management__field">Машино-час, Br/ч<input name="hourlyRate" required type="number" min="0" step="0.01" inputmode="decimal" placeholder="0"></label>
-            <label class="mechanisms-management__field">Режим работы<span class="mechanisms-select"><select name="schedule">${mechanismScheduleOptions()}</select></span></label>
+            <label class="mechanisms-management__field">Стоимость, Br<input name="cost" required type="text" inputmode="decimal" autocomplete="off" placeholder="0" data-mechanism-money></label>
+            <label class="mechanisms-management__field">Машино-час, Br/ч<input name="hourlyRate" required type="text" inputmode="decimal" autocomplete="off" placeholder="0" data-mechanism-money></label>
+            <label class="mechanisms-management__field">Режим работы<span class="mechanisms-select"><select name="schedule" required aria-label="Режим работы">${mechanismScheduleOptions()}</select></span></label>
             <fieldset class="mechanisms-management__field mechanisms-management__field--wide mechanisms-work-time"><legend>Время работы</legend><div class="mechanisms-work-time__range"><label>С<span class="mechanisms-select"><select name="workTimeFrom" aria-label="Начало рабочего времени">${mechanismTimeOptions(MECHANISM_START_TIMES, "08:00")}</select></span></label><span aria-hidden="true">—</span><label>До<span class="mechanisms-select"><select name="workTimeTo" aria-label="Окончание рабочего времени">${mechanismTimeOptions(MECHANISM_END_TIMES, "17:00")}</select></span></label></div></fieldset>
             ${photoControl({}, "new")}
+            <div class="mechanisms-management__add-action"><button class="mechanisms-primary" type="submit">Добавить технику</button></div>
           </div>
         </form>
         <div class="mechanisms-management__list" data-mechanisms-management-list></div>
@@ -118,13 +122,14 @@ export function createMechanismsManagement({ container, path, loadJson, saveJson
     }
     list.innerHTML = mechanisms.map((item) => `
       <form class="mechanisms-machine" data-mechanism-id="${escapeHtml(item.id)}">
-        <div class="mechanisms-machine__head"><div class="mechanisms-machine__badge">${item.photo ? `<img src="${escapeHtml(item.photo)}" alt="">` : "🚜"}</div><div><b>${escapeHtml([item.name, item.model].filter(Boolean).join(" "))}</b><span>${scheduleLabels[item.schedule]} · ${escapeHtml(item.workTime || "время не указано")}</span></div><button class="mechanisms-machine__delete" type="button" data-mechanism-delete aria-label="Удалить ${escapeHtml(item.name)}">Удалить</button></div>
+        <div class="mechanisms-machine__head"><div class="mechanisms-machine__badge">${item.photo ? `<img src="${escapeHtml(item.photo)}" alt="">` : "🚜"}</div><div><b>${escapeHtml([item.name, item.manufacturer, item.model].filter(Boolean).join(" "))}</b><span>${scheduleLabels[item.schedule]} · ${escapeHtml(item.workTime || "время не указано")}</span></div><button class="mechanisms-machine__delete" type="button" data-mechanism-delete aria-label="Удалить ${escapeHtml(item.name)}">Удалить</button></div>
         <div class="mechanisms-management__fields">
           <label class="mechanisms-management__field">Наименование<input name="name" required maxlength="80" value="${escapeHtml(item.name)}"></label>
+          <label class="mechanisms-management__field">Производитель<input name="manufacturer" required maxlength="80" value="${escapeHtml(item.manufacturer)}" placeholder="Например, Caterpillar"></label>
           <label class="mechanisms-management__field">Модель<input name="model" required maxlength="80" value="${escapeHtml(item.model)}" placeholder="Например, CAT 320"></label>
-          <label class="mechanisms-management__field">Стоимость, Br<input name="cost" required type="number" min="0" step="0.01" inputmode="decimal" value="${item.cost}"></label>
-          <label class="mechanisms-management__field">Машино-час, Br/ч<input name="hourlyRate" required type="number" min="0" step="0.01" inputmode="decimal" value="${item.hourlyRate}"></label>
-          <label class="mechanisms-management__field">Режим работы<span class="mechanisms-select"><select name="schedule">${mechanismScheduleOptions(item.schedule)}</select></span></label>
+          <label class="mechanisms-management__field">Стоимость, Br<input name="cost" required type="text" inputmode="decimal" value="${formatMechanismMoney(item.cost)}" data-mechanism-money></label>
+          <label class="mechanisms-management__field">Машино-час, Br/ч<input name="hourlyRate" required type="text" inputmode="decimal" value="${formatMechanismMoney(item.hourlyRate)}" data-mechanism-money></label>
+          <label class="mechanisms-management__field">Режим работы<span class="mechanisms-select"><select name="schedule" required aria-label="Режим работы">${mechanismScheduleOptions(item.schedule)}</select></span></label>
           <fieldset class="mechanisms-management__field mechanisms-management__field--wide mechanisms-work-time"><legend>Время работы</legend><div class="mechanisms-work-time__range"><label>С<span class="mechanisms-select"><select name="workTimeFrom" aria-label="Начало рабочего времени">${mechanismTimeOptions(MECHANISM_START_TIMES, workTimeValues(item.workTime).from)}</select></span></label><span aria-hidden="true">—</span><label>До<span class="mechanisms-select"><select name="workTimeTo" aria-label="Окончание рабочего времени">${mechanismTimeOptions(MECHANISM_END_TIMES, workTimeValues(item.workTime).to)}</select></span></label></div></fieldset>
           ${photoControl(item, item.id)}
         </div>
@@ -169,6 +174,9 @@ export function createMechanismsManagement({ container, path, loadJson, saveJson
     } finally {
       control.classList.remove("is-loading");
     }
+  });
+  container.addEventListener("input", (event) => {
+    if (event.target.matches("[data-mechanism-money]")) formatMechanismMoneyInput(event.target);
   });
   container.addEventListener("click", async (event) => {
     const button = event.target.closest("[data-mechanism-delete]");

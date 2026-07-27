@@ -32,6 +32,11 @@ export async function prepareMechanismPhoto(file) {
   const canvas = document.createElement("canvas");
   canvas.width = width;
   canvas.height = height;
-  canvas.getContext("2d").drawImage(image, 0, 0, width, height);
+  const context = canvas.getContext("2d");
+  if (!context) throw new Error("Не удалось подготовить фотографию на этом устройстве.");
+  // JPEG не поддерживает прозрачность: белый фон сохраняет PNG/WebP без чёрных областей.
+  context.fillStyle = "#ffffff";
+  context.fillRect(0, 0, width, height);
+  context.drawImage(image, 0, 0, width, height);
   return canvas.toDataURL("image/jpeg", JPEG_QUALITY);
 }

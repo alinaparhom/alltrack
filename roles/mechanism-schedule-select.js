@@ -14,6 +14,14 @@ export const mechanismScheduleSelect = (selected = "5/2") => {
   </div>`;
 };
 
+/** Унифицированный фирменный список времени вместо системного select. */
+export const mechanismTimeSelect = (name, times, selected, label) => `
+  <div class="mechanisms-schedule-select mechanisms-time-select" data-mechanism-schedule-select>
+    <input type="hidden" name="${name}" value="${escapeHtml(selected)}">
+    <button class="mechanisms-schedule-select__trigger" type="button" aria-haspopup="listbox" aria-expanded="false" data-mechanism-schedule-trigger><span data-mechanism-schedule-label>${escapeHtml(selected)}</span><span class="mechanisms-schedule-select__chevron" aria-hidden="true"></span></button>
+    <div class="mechanisms-schedule-select__menu" role="listbox" aria-label="${escapeHtml(label)}" hidden>${times.map((value) => `<button class="mechanisms-schedule-select__option ${value === selected ? "is-selected" : ""}" type="button" role="option" aria-selected="${value === selected}" data-mechanism-schedule-option="${value}"><span>${value}</span><span class="mechanisms-schedule-select__check" aria-hidden="true">✓</span></button>`).join("")}</div>
+  </div>`;
+
 /** Подключает управление списками через делегирование, включая клавиатуру. */
 export const setupMechanismScheduleSelects = (container) => {
   const closeAll = (except = null) => container.querySelectorAll("[data-mechanism-schedule-select]").forEach((select) => {
@@ -39,7 +47,8 @@ export const setupMechanismScheduleSelects = (container) => {
     }
     if (option) {
       const select = option.closest("[data-mechanism-schedule-select]");
-      select.querySelector('input[name="schedule"]').value = option.dataset.mechanismScheduleOption;
+      select.querySelector('input[type="hidden"]').value = option.dataset.mechanismScheduleOption;
+      select.querySelector('input[type="hidden"]').dispatchEvent(new Event("change", { bubbles: true }));
       select.querySelector("[data-mechanism-schedule-label]").textContent = option.firstElementChild.textContent;
       select.querySelectorAll("[data-mechanism-schedule-option]").forEach((item) => {
         const isSelected = item === option;

@@ -1,11 +1,11 @@
 import { prepareMechanismPhoto } from "./mechanism-photo.js";
 import { formatMechanismMoney, formatMechanismMoneyInput } from "./mechanism-money-input.js";
-import { mechanismScheduleSelect, setupMechanismScheduleSelects } from "./mechanism-schedule-select.js";
+import { mechanismScheduleSelect, mechanismTimeSelect, setupMechanismScheduleSelects } from "./mechanism-schedule-select.js";
+import { setupMechanismSuggestions } from "./mechanism-suggestions.js";
 import {
   MECHANISM_END_TIMES,
   MECHANISM_SCHEDULES,
   MECHANISM_START_TIMES,
-  mechanismTimeOptions,
 } from "./mechanism-form-options.js";
 
 const scheduleLabels = Object.fromEntries(MECHANISM_SCHEDULES.map(({ value, shortLabel }) => [value, shortLabel]));
@@ -50,21 +50,36 @@ const syncWorkTimeRange = (form, changedField) => {
   const to = form?.elements.workTimeTo;
   if (!from || !to) return;
 
+  const setTime = (input, value) => {
+    input.value = value;
+    const select = input.closest("[data-mechanism-schedule-select]");
+    const label = select?.querySelector("[data-mechanism-schedule-label]");
+    if (label) label.textContent = value;
+    select?.querySelectorAll("[data-mechanism-schedule-option]").forEach((option) => {
+      const selected = option.dataset.mechanismScheduleOption === value;
+      option.classList.toggle("is-selected", selected);
+      option.setAttribute("aria-selected", String(selected));
+    });
+  };
+
   if (changedField === from && from.value >= to.value) {
     const nextHour = MECHANISM_END_TIMES.find((hour) => hour > from.value);
-    if (nextHour) to.value = nextHour;
-    else from.value = MECHANISM_START_TIMES.at(-1);
+    if (nextHour) setTime(to, nextHour);
+    else setTime(from, MECHANISM_START_TIMES.at(-1));
   }
   if (changedField === to && from.value >= to.value) {
-    from.value = [...MECHANISM_START_TIMES].reverse().find((hour) => hour < to.value) || MECHANISM_START_TIMES[0];
+    setTime(from, [...MECHANISM_START_TIMES].reverse().find((hour) => hour < to.value) || MECHANISM_START_TIMES[0]);
   }
   if (!changedField && from.value >= to.value) {
-    from.value = MECHANISM_START_TIMES[0];
-    to.value = MECHANISM_END_TIMES.at(-1);
+    setTime(from, MECHANISM_START_TIMES[0]);
+    setTime(to, MECHANISM_END_TIMES.at(-1));
   }
 
-  [...from.options].forEach((option) => { option.disabled = option.value >= to.value; });
-  [...to.options].forEach((option) => { option.disabled = option.value <= from.value; });
+  form.querySelectorAll('[data-mechanism-schedule-option]').forEach((option) => {
+    const owner = option.closest("[data-mechanism-schedule-select]")?.querySelector('input[type="hidden"]');
+    if (owner === from) option.disabled = option.dataset.mechanismScheduleOption >= to.value;
+    if (owner === to) option.disabled = option.dataset.mechanismScheduleOption <= from.value;
+  });
 };
 
 const photoControl = (item, key) => `
@@ -98,7 +113,10 @@ export function createMechanismsManagement({ container, path, loadJson, saveJson
         </div>
       </div>`;
     renderList();
-    container.querySelectorAll("form").forEach((form) => syncWorkTimeRange(form));
+    container.querySelectorAll("form").forEach((form) => {
+      syncWorkTimeRange(form);
+      setupMechanismSuggestions(form, mechanisms);
+    });
   };
 
   const mechanismForm = (item = {}) => {
@@ -107,13 +125,13 @@ export function createMechanismsManagement({ container, path, loadJson, saveJson
     return `<form class="mechanisms-management__form mechanisms-editor__dialog" data-mechanism-form ${item.id ? `data-mechanism-id="${escapeHtml(item.id)}"` : ""} role="dialog" aria-modal="true" aria-label="${isNew ? "Добавление механизма" : "Редактирование механизма"}">
           <div class="mechanisms-management__form-head"><div><h4>${isNew ? "Новый механизм" : "Редактирование"}</h4><span>${isNew ? "Заполните данные новой единицы техники." : escapeHtml([item.name, item.manufacturer, item.model].filter(Boolean).join(" "))}</span></div><button class="mechanisms-editor__close" type="button" data-mechanism-editor-close aria-label="Закрыть">✕</button></div>
           <div class="mechanisms-management__fields">
-            <label class="mechanisms-management__field">Наименование<input name="name" required maxlength="80" autocomplete="off" value="${escapeHtml(item.name)}" placeholder="Например, Экскаватор"></label>
-            <label class="mechanisms-management__field">Производитель<input name="manufacturer" required maxlength="80" autocomplete="organization" value="${escapeHtml(item.manufacturer)}" placeholder="Например, Caterpillar"></label>
-            <label class="mechanisms-management__field">Модель<input name="model" required maxlength="80" autocomplete="off" value="${escapeHtml(item.model)}" placeholder="Например, CAT 320"></label>
+            <label class="mechanisms-management__field mechanisms-suggest-field">Наименование<input name="name" required maxlength="80" autocomplete="off" value="${escapeHtml(item.name)}" placeholder="Например, Экскаватор" data-mechanism-suggest-field="name"><span class="mechanisms-suggestions" data-mechanism-suggest hidden></span></label>
+            <label class="mechanisms-management__field mechanisms-suggest-field">Производитель<input name="manufacturer" required maxlength="80" autocomplete="off" value="${escapeHtml(item.manufacturer)}" placeholder="Например, Caterpillar" data-mechanism-suggest-field="manufacturer"><span class="mechanisms-suggestions" data-mechanism-suggest hidden></span></label>
+            <label class="mechanisms-management__field mechanisms-suggest-field">Модель<input name="model" required maxlength="80" autocomplete="off" value="${escapeHtml(item.model)}" placeholder="Например, CAT 320" data-mechanism-suggest-field="model"><span class="mechanisms-suggestions" data-mechanism-suggest hidden></span></label>
             <label class="mechanisms-management__field">Стоимость, Br<input name="cost" required type="text" inputmode="decimal" autocomplete="off" value="${isNew ? "" : formatMechanismMoney(item.cost)}" placeholder="0" data-mechanism-money></label>
             <label class="mechanisms-management__field">Машино-час, Br/ч<input name="hourlyRate" required type="text" inputmode="decimal" autocomplete="off" value="${isNew ? "" : formatMechanismMoney(item.hourlyRate)}" placeholder="0" data-mechanism-money></label>
             <label class="mechanisms-management__field">Режим работы${mechanismScheduleSelect(item.schedule)}</label>
-            <fieldset class="mechanisms-management__field mechanisms-management__field--wide mechanisms-work-time"><legend>Время работы</legend><div class="mechanisms-work-time__range"><label>С<span class="mechanisms-select"><select name="workTimeFrom" aria-label="Начало рабочего времени">${mechanismTimeOptions(MECHANISM_START_TIMES, time.from)}</select></span></label><span aria-hidden="true">—</span><label>До<span class="mechanisms-select"><select name="workTimeTo" aria-label="Окончание рабочего времени">${mechanismTimeOptions(MECHANISM_END_TIMES, time.to)}</select></span></label></div></fieldset>
+            <fieldset class="mechanisms-management__field mechanisms-management__field--wide mechanisms-work-time"><legend>Время работы</legend><div class="mechanisms-work-time__range"><label>С${mechanismTimeSelect("workTimeFrom", MECHANISM_START_TIMES, time.from, "Начало рабочего времени")}</label><span aria-hidden="true">—</span><label>До${mechanismTimeSelect("workTimeTo", MECHANISM_END_TIMES, time.to, "Окончание рабочего времени")}</label></div></fieldset>
             ${photoControl(item, item.id || "new")}
             <div class="mechanisms-management__add-action">${isNew ? "" : '<button class="mechanisms-danger" type="button" data-mechanism-delete>Удалить механизм</button>'}<button class="mechanisms-primary" type="submit">${isNew ? "Добавить" : "Сохранить"}</button></div>
           </div>
@@ -147,7 +165,7 @@ export function createMechanismsManagement({ container, path, loadJson, saveJson
   };
 
   container.addEventListener("change", async (event) => {
-    if (event.target.matches('select[name="workTimeFrom"], select[name="workTimeTo"]')) {
+    if (event.target.matches('input[name="workTimeFrom"], input[name="workTimeTo"]')) {
       syncWorkTimeRange(event.target.form, event.target);
       return;
     }

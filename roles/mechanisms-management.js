@@ -1,11 +1,12 @@
 import { prepareMechanismPhoto } from "./mechanism-photo.js";
 import { formatMechanismMoney, formatMechanismMoneyInput } from "./mechanism-money-input.js";
 import { mechanismScheduleSelect, setupMechanismScheduleSelects } from "./mechanism-schedule-select.js";
+import { mechanismAutocompleteInput, setupMechanismAutocomplete } from "./mechanism-autocomplete.js";
+import { mechanismTimeSelect, setupMechanismTimeSelects } from "./mechanism-time-select.js";
 import {
   MECHANISM_END_TIMES,
   MECHANISM_SCHEDULES,
   MECHANISM_START_TIMES,
-  mechanismTimeOptions,
 } from "./mechanism-form-options.js";
 
 const scheduleLabels = Object.fromEntries(MECHANISM_SCHEDULES.map(({ value, shortLabel }) => [value, shortLabel]));
@@ -63,8 +64,8 @@ const syncWorkTimeRange = (form, changedField) => {
     to.value = MECHANISM_END_TIMES.at(-1);
   }
 
-  [...from.options].forEach((option) => { option.disabled = option.value >= to.value; });
-  [...to.options].forEach((option) => { option.disabled = option.value <= from.value; });
+  form.querySelectorAll('[name="workTimeFrom"] ~ * [data-value]').forEach((option) => { option.disabled = option.dataset.value >= to.value; });
+  form.querySelectorAll('[name="workTimeTo"] ~ * [data-value]').forEach((option) => { option.disabled = option.dataset.value <= from.value; });
 };
 
 const photoControl = (item, key) => `
@@ -107,13 +108,13 @@ export function createMechanismsManagement({ container, path, loadJson, saveJson
     return `<form class="mechanisms-management__form mechanisms-editor__dialog" data-mechanism-form ${item.id ? `data-mechanism-id="${escapeHtml(item.id)}"` : ""} role="dialog" aria-modal="true" aria-label="${isNew ? "Добавление механизма" : "Редактирование механизма"}">
           <div class="mechanisms-management__form-head"><div><h4>${isNew ? "Новый механизм" : "Редактирование"}</h4><span>${isNew ? "Заполните данные новой единицы техники." : escapeHtml([item.name, item.manufacturer, item.model].filter(Boolean).join(" "))}</span></div><button class="mechanisms-editor__close" type="button" data-mechanism-editor-close aria-label="Закрыть">✕</button></div>
           <div class="mechanisms-management__fields">
-            <label class="mechanisms-management__field">Наименование<input name="name" required maxlength="80" autocomplete="off" value="${escapeHtml(item.name)}" placeholder="Например, Экскаватор"></label>
-            <label class="mechanisms-management__field">Производитель<input name="manufacturer" required maxlength="80" autocomplete="organization" value="${escapeHtml(item.manufacturer)}" placeholder="Например, Caterpillar"></label>
-            <label class="mechanisms-management__field">Модель<input name="model" required maxlength="80" autocomplete="off" value="${escapeHtml(item.model)}" placeholder="Например, CAT 320"></label>
+            <label class="mechanisms-management__field">Наименование${mechanismAutocompleteInput({ name: "name", value: item.name, placeholder: "Например, Экскаватор" })}</label>
+            <label class="mechanisms-management__field">Производитель${mechanismAutocompleteInput({ name: "manufacturer", value: item.manufacturer, placeholder: "Например, Caterpillar", autocomplete: "organization" })}</label>
+            <label class="mechanisms-management__field">Модель${mechanismAutocompleteInput({ name: "model", value: item.model, placeholder: "Например, CAT 320" })}</label>
             <label class="mechanisms-management__field">Стоимость, Br<input name="cost" required type="text" inputmode="decimal" autocomplete="off" value="${isNew ? "" : formatMechanismMoney(item.cost)}" placeholder="0" data-mechanism-money></label>
             <label class="mechanisms-management__field">Машино-час, Br/ч<input name="hourlyRate" required type="text" inputmode="decimal" autocomplete="off" value="${isNew ? "" : formatMechanismMoney(item.hourlyRate)}" placeholder="0" data-mechanism-money></label>
             <label class="mechanisms-management__field">Режим работы${mechanismScheduleSelect(item.schedule)}</label>
-            <fieldset class="mechanisms-management__field mechanisms-management__field--wide mechanisms-work-time"><legend>Время работы</legend><div class="mechanisms-work-time__range"><label>С<span class="mechanisms-select"><select name="workTimeFrom" aria-label="Начало рабочего времени">${mechanismTimeOptions(MECHANISM_START_TIMES, time.from)}</select></span></label><span aria-hidden="true">—</span><label>До<span class="mechanisms-select"><select name="workTimeTo" aria-label="Окончание рабочего времени">${mechanismTimeOptions(MECHANISM_END_TIMES, time.to)}</select></span></label></div></fieldset>
+            <fieldset class="mechanisms-management__field mechanisms-management__field--wide mechanisms-work-time"><legend>Время работы</legend><div class="mechanisms-work-time__range"><label>С${mechanismTimeSelect("workTimeFrom", MECHANISM_START_TIMES, time.from, "Начало рабочего времени")}</label><span aria-hidden="true">—</span><label>До${mechanismTimeSelect("workTimeTo", MECHANISM_END_TIMES, time.to, "Окончание рабочего времени")}</label></div></fieldset>
             ${photoControl(item, item.id || "new")}
             <div class="mechanisms-management__add-action">${isNew ? "" : '<button class="mechanisms-danger" type="button" data-mechanism-delete>Удалить механизм</button>'}<button class="mechanisms-primary" type="submit">${isNew ? "Добавить" : "Сохранить"}</button></div>
           </div>
@@ -147,7 +148,7 @@ export function createMechanismsManagement({ container, path, loadJson, saveJson
   };
 
   container.addEventListener("change", async (event) => {
-    if (event.target.matches('select[name="workTimeFrom"], select[name="workTimeTo"]')) {
+    if (event.target.matches('[name="workTimeFrom"], [name="workTimeTo"]')) {
       syncWorkTimeRange(event.target.form, event.target);
       return;
     }
@@ -247,5 +248,7 @@ export function createMechanismsManagement({ container, path, loadJson, saveJson
     }
   };
   setupMechanismScheduleSelects(container);
+  setupMechanismTimeSelects(container);
+  setupMechanismAutocomplete(container, () => mechanisms);
   return { initialize };
 }

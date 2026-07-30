@@ -2719,6 +2719,8 @@ function createOrganizationFolders(array $newOrganizations): void {
     "Поломки.json" => [],
     "Настройки.json" => ["users" => []],
     "Журнал посещений.json" => ["entries" => []],
+    "Механизмы.json" => ["mechanisms" => []],
+    "Брони механизмов.json" => ["bookings" => []],
   ];
   $folders = [
     "Фото инструментов",
@@ -2783,6 +2785,7 @@ function resolveTargetPath(array $entry, array $allowedFiles): string {
     "Списания.json",
     "Поломки.json",
     "Механизмы.json",
+    "Брони механизмов.json",
   ];
   if (!in_array($fileName, $orgScopedFiles, true)) {
     http_response_code(403);

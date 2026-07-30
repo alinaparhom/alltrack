@@ -14801,16 +14801,53 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     }
   };
 
-  // Раздел пока является интерактивным макетом: данные и сохранение будут
-  // подключены к нему отдельным этапом, не смешиваясь с учётом инструмента.
   let mechanismsModalEl = null;
+  let organizationMechanisms = [];
+  let organizationMechanismBookings = [];
+  let organizationObjects = [];
+  const mechanismsPath = `./${context.orgFolderName}/Механизмы.json`;
+  const mechanismBookingsPath = `./${context.orgFolderName}/Брони механизмов.json`;
 
-  const openMechanismsBooking = (source) => {
+  const mechanismTitle = (item = {}) => [item.name, item.manufacturer, item.model].filter(Boolean).join(" ") || "Механизм";
+  const extractOrganizationObjects = (data) => (Array.isArray(data) ? data : data?.objects || [])
+    .map((item) => String(item?.name ?? item ?? "").trim()).filter(Boolean);
+
+  const renderMechanismsBase = () => {
+    const target = mechanismsModalEl?.querySelector("[data-mechanisms-overview]");
+    if (!target) return;
+    const orgTitle = escapeHtml(String(user?.organization || context.orgFolderName || "Организация"));
+    target.innerHTML = `<div class="mechanisms-base-head"><div><span>База заказчика</span><h3>${orgTitle}</h3><p>Здесь отображается техника только вашей организации.</p></div><strong>${organizationMechanisms.length}<small>единиц</small></strong></div>
+      <div class="mechanisms-base-list">${organizationMechanisms.length ? organizationMechanisms.map((item) => `<button class="mechanisms-base-item" type="button" data-mechanisms-booking-id="${escapeHtml(item.id)}"><span class="mechanisms-base-item__photo">${item.photo ? `<img src="${escapeHtml(item.photo)}" alt="">` : "🚜"}</span><span class="mechanisms-base-item__body"><b>${escapeHtml(mechanismTitle(item))}</b><small>${escapeHtml(item.workTime || "Время работы не указано")} · ${Number(item.hourlyRate || 0).toLocaleString("ru-RU")} Br/ч</small></span><span class="mechanisms-base-item__action">Забронировать</span></button>`).join("") : `<div class="mechanisms-base-empty"><span>🚜</span><b>В базе пока нет механизмов</b><p>Механик может добавить технику во вкладке «Управление».</p></div>`}</div>
+      ${organizationMechanismBookings.length ? `<div class="mechanisms-bookings"><h3>Ближайшие брони</h3>${organizationMechanismBookings.slice().sort((a,b) => String(a.date).localeCompare(String(b.date))).slice(0,6).map((booking) => `<div><b>${escapeHtml(booking.mechanismTitle)}</b><span>${escapeHtml(booking.date)} · ${escapeHtml(booking.timeFrom)}–${escapeHtml(booking.timeTo)} · ${escapeHtml(booking.object)}</span></div>`).join("")}</div>` : ""}`;
+  };
+
+  const loadMechanismsBase = async () => {
+    const target = mechanismsModalEl?.querySelector("[data-mechanisms-overview]");
+    if (target) target.innerHTML = '<div class="mechanisms-base-empty"><span>⏳</span><b>Загружаем базу организации…</b></div>';
+    const [mechanismsData, bookingsData, objectsData] = await Promise.all([
+      loadJson(mechanismsPath).catch(() => ({ mechanisms: [] })),
+      loadJson(mechanismBookingsPath).catch(() => ({ bookings: [] })),
+      loadJson(`./${context.orgFolderName}/Объекты.json`).catch(() => []),
+    ]);
+    organizationMechanisms = Array.isArray(mechanismsData) ? mechanismsData : (mechanismsData?.mechanisms || []);
+    organizationMechanismBookings = Array.isArray(bookingsData) ? bookingsData : (bookingsData?.bookings || []);
+    organizationObjects = extractOrganizationObjects(objectsData);
+    renderMechanismsBase();
+  };
+
+  const openMechanismsBooking = (mechanismId) => {
     const dialog = mechanismsModalEl?.querySelector("[data-mechanisms-booking-dialog]");
-    if (!dialog) return;
-    dialog.querySelector("[data-mechanisms-booking-source]").textContent = source;
+    const form = dialog?.querySelector("form");
+    const mechanism = organizationMechanisms.find((item) => String(item.id) === String(mechanismId));
+    if (!dialog || !form || !mechanism) return;
+    form.reset();
+    form.elements.mechanismId.value = mechanism.id;
+    form.elements.date.min = new Date().toISOString().slice(0, 10);
+    form.elements.date.value = form.elements.date.min;
+    form.querySelector("[data-mechanisms-booking-source]").textContent = mechanismTitle(mechanism);
+    form.elements.object.innerHTML = '<option value="">Выберите объект</option>' + organizationObjects.map((name) => `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`).join("");
     dialog.hidden = false;
-    dialog.querySelector("select")?.focus();
+    form.elements.object.focus();
   };
 
   const openMechanismsModal = () => {
@@ -14830,7 +14867,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         .mechanisms-editor{display:block;padding:0;background:linear-gradient(145deg,#f7faff,#eef4ff)}.mechanisms-editor__backdrop{display:none}.mechanisms-editor__dialog{box-sizing:border-box;width:100%;height:100dvh;max-height:none;overflow:auto;border:0;border-radius:0;background:rgba(248,251,255,.96);box-shadow:none;padding:max(24px,env(safe-area-inset-top)) max(24px,calc((100vw - 1040px)/2)) max(28px,env(safe-area-inset-bottom))}.mechanisms-editor__dialog .mechanisms-management__form-head{position:sticky;z-index:8;top:calc(-1 * max(24px,env(safe-area-inset-top)));margin:calc(-1 * max(24px,env(safe-area-inset-top))) calc(-1 * max(24px,calc((100vw - 1040px)/2))) 22px;padding:max(18px,env(safe-area-inset-top)) max(24px,calc((100vw - 1040px)/2)) 16px;background:rgba(248,251,255,.88);border-bottom:1px solid rgba(148,163,184,.18);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}.mechanisms-editor__dialog .mechanisms-management__fields{margin-top:0}.mechanisms-suggest-field{position:relative}.mechanisms-suggestions{position:absolute;z-index:15;top:calc(100% + 5px);left:0;right:0;display:grid;gap:3px;overflow:auto;max-height:250px;padding:6px;border:1px solid rgba(148,163,184,.25);border-radius:14px;background:rgba(255,255,255,.97);box-shadow:0 18px 45px rgba(15,23,42,.14);backdrop-filter:blur(18px)}.mechanisms-suggestions[hidden]{display:none}.mechanisms-suggestions button{min-height:42px;border:0;border-radius:10px;background:transparent;padding:9px 11px;color:var(--text);font:inherit;font-size:13px;text-align:left;cursor:pointer}.mechanisms-suggestions button:hover,.mechanisms-suggestions button:focus-visible{outline:0;background:var(--accent-soft);color:var(--accent)}.mechanisms-time-select .mechanisms-schedule-select__menu{max-height:min(320px,45dvh)}.mechanisms-time-select .mechanisms-schedule-select__option:disabled{display:none}
         @media(max-width:720px){.mechanisms-editor__dialog{width:100%;height:100dvh;max-height:none;border-radius:0;padding:max(14px,env(safe-area-inset-top)) 14px calc(18px + env(safe-area-inset-bottom))}.mechanisms-editor__dialog .mechanisms-management__form-head{align-items:center;flex-direction:row;top:calc(-1 * max(14px,env(safe-area-inset-top)));margin:calc(-1 * max(14px,env(safe-area-inset-top))) -14px 18px;padding:max(12px,env(safe-area-inset-top)) 14px 12px}}
         .mechanisms-booking{position:fixed;inset:0;z-index:2;display:grid;place-items:center;padding:16px;background:rgba(15,23,42,.32);backdrop-filter:blur(5px)}.mechanisms-booking[hidden]{display:none}.mechanisms-booking__panel{width:min(100%,430px);border:1px solid rgba(148,163,184,.25);border-radius:20px;background:var(--glass);box-shadow:0 24px 70px rgba(15,23,42,.22);padding:20px}.mechanisms-booking__head{display:flex;align-items:start;justify-content:space-between;gap:12px}.mechanisms-booking h3{margin:0;font-size:18px}.mechanisms-booking p{margin:6px 0 0;color:var(--muted);font-size:13px}.mechanisms-booking__close{border:0;background:transparent;color:var(--muted);font-size:24px;line-height:1;cursor:pointer}.mechanisms-booking label{display:grid;gap:6px;margin-top:14px;color:var(--muted);font-size:12px;font-weight:700}.mechanisms-booking select{min-height:42px;border:1px solid rgba(148,163,184,.3);border-radius:11px;background:rgba(255,255,255,.7);padding:0 10px;color:var(--text);font:inherit}.mechanisms-booking__actions{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}
-        @media(max-width:720px){.mechanisms-modal__panel{padding:0 14px calc(18px + env(safe-area-inset-bottom))}.mechanisms-modal__head{padding:18px 0 12px}.mechanisms-summary{grid-template-columns:1fr;gap:10px}.mechanisms-summary__total{display:flex;align-items:baseline;gap:6px}.mechanisms-summary__total b{display:inline}.mechanisms-grid{grid-template-columns:1fr}.mechanisms-card{padding:14px}.mechanisms-calendar{grid-template-columns:59px repeat(3,minmax(74px,1fr))}.mechanisms-calendar>*{padding:7px 5px}.mechanisms-management__intro{padding:15px}.mechanisms-management__form{padding:14px}.mechanisms-machine{padding:7px 7px 7px 14px}.mechanisms-management__fields{grid-template-columns:1fr}.mechanisms-management__field--wide,.mechanisms-photo,.mechanisms-management__add-action{grid-column:auto}.mechanisms-management__add-action .mechanisms-primary{width:100%}.mechanisms-management__form-head{align-items:stretch;flex-direction:column}.mechanisms-management__form-head .mechanisms-primary{width:100%;min-height:44px}.mechanisms-machine__head{align-items:center}.mechanisms-machine__badge{flex-basis:62px;width:62px;height:62px}.mechanisms-management__open-add{width:calc(100% - 28px)}.mechanisms-editor{align-items:end;padding:0}.mechanisms-editor__dialog{width:100%;max-height:92dvh;border-radius:22px 22px 0 0;padding:18px 14px calc(18px + env(safe-area-inset-bottom))}.mechanisms-management__add-action{display:grid;grid-template-columns:1fr}.mechanisms-management__add-action .mechanisms-danger{grid-row:2;margin:3px auto 0}.mechanisms-booking{align-items:end;padding:0}.mechanisms-booking__panel{width:100%;border-radius:20px 20px 0 0;padding:20px 16px calc(20px + env(safe-area-inset-bottom))}}
+        .mechanisms-base-head{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:20px;border:1px solid rgba(148,163,184,.2);border-radius:22px;background:linear-gradient(135deg,rgba(255,255,255,.82),rgba(228,239,255,.62));box-shadow:0 14px 38px rgba(71,85,105,.07)}.mechanisms-base-head span{color:var(--accent);font-size:11px;font-weight:800;letter-spacing:.07em;text-transform:uppercase}.mechanisms-base-head h3{margin:4px 0 0;font-size:21px}.mechanisms-base-head p{margin:5px 0 0;color:var(--muted);font-size:12px}.mechanisms-base-head>strong{display:grid;min-width:72px;place-items:center;padding:11px;border-radius:16px;background:rgba(255,255,255,.7);color:var(--text);font-size:24px}.mechanisms-base-head small{color:var(--muted);font-size:10px;font-weight:600}.mechanisms-base-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:14px}.mechanisms-base-item{display:flex;align-items:center;gap:12px;min-width:0;border:1px solid rgba(148,163,184,.19);border-radius:18px;background:rgba(255,255,255,.62);padding:11px;text-align:left;font:inherit;cursor:pointer;transition:transform .16s ease,box-shadow .16s ease}.mechanisms-base-item:hover{transform:translateY(-1px);box-shadow:0 12px 28px rgba(71,85,105,.09)}.mechanisms-base-item__photo{display:grid;flex:0 0 58px;place-items:center;width:58px;height:58px;overflow:hidden;border-radius:14px;background:var(--accent-soft);font-size:25px}.mechanisms-base-item__photo img{width:100%;height:100%;object-fit:cover}.mechanisms-base-item__body{min-width:0;flex:1}.mechanisms-base-item__body b,.mechanisms-base-item__body small{display:block}.mechanisms-base-item__body small{overflow:hidden;margin-top:5px;color:var(--muted);font-size:11px;text-overflow:ellipsis;white-space:nowrap}.mechanisms-base-item__action{border-radius:11px;background:var(--accent-soft);padding:8px 10px;color:var(--accent);font-size:11px;font-weight:800}.mechanisms-base-empty{grid-column:1/-1;display:grid;min-height:180px;place-items:center;align-content:center;text-align:center;border:1px dashed rgba(59,125,255,.3);border-radius:20px;background:rgba(255,255,255,.4);padding:20px}.mechanisms-base-empty>span{font-size:30px}.mechanisms-base-empty b{margin-top:8px}.mechanisms-base-empty p{margin:5px 0 0;color:var(--muted);font-size:12px}.mechanisms-bookings{margin-top:18px;padding:16px;border-radius:19px;background:rgba(255,255,255,.55)}.mechanisms-bookings h3{margin:0 0 8px;font-size:15px}.mechanisms-bookings>div{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid rgba(148,163,184,.16);font-size:12px}.mechanisms-bookings>div:last-child{border:0}.mechanisms-bookings span{color:var(--muted);text-align:right}.mechanisms-booking input,.mechanisms-booking textarea{box-sizing:border-box;width:100%;min-height:42px;border:1px solid rgba(148,163,184,.3);border-radius:11px;background:rgba(255,255,255,.7);padding:9px 10px;color:var(--text);font:inherit}.mechanisms-booking textarea{resize:vertical}.mechanisms-booking__times{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+        @media(max-width:720px){.mechanisms-base-head{padding:16px}.mechanisms-base-list{grid-template-columns:1fr}.mechanisms-base-item__action{padding:7px;font-size:10px}.mechanisms-bookings>div{display:grid;gap:4px}.mechanisms-bookings span{text-align:left}.mechanisms-modal__panel{padding:0 14px calc(18px + env(safe-area-inset-bottom))}.mechanisms-modal__head{padding:18px 0 12px}.mechanisms-summary{grid-template-columns:1fr;gap:10px}.mechanisms-summary__total{display:flex;align-items:baseline;gap:6px}.mechanisms-summary__total b{display:inline}.mechanisms-grid{grid-template-columns:1fr}.mechanisms-card{padding:14px}.mechanisms-calendar{grid-template-columns:59px repeat(3,minmax(74px,1fr))}.mechanisms-calendar>*{padding:7px 5px}.mechanisms-management__intro{padding:15px}.mechanisms-management__form{padding:14px}.mechanisms-machine{padding:7px 7px 7px 14px}.mechanisms-management__fields{grid-template-columns:1fr}.mechanisms-management__field--wide,.mechanisms-photo,.mechanisms-management__add-action{grid-column:auto}.mechanisms-management__add-action .mechanisms-primary{width:100%}.mechanisms-management__form-head{align-items:stretch;flex-direction:column}.mechanisms-management__form-head .mechanisms-primary{width:100%;min-height:44px}.mechanisms-machine__head{align-items:center}.mechanisms-machine__badge{flex-basis:62px;width:62px;height:62px}.mechanisms-management__open-add{width:calc(100% - 28px)}.mechanisms-editor{align-items:end;padding:0}.mechanisms-editor__dialog{width:100%;max-height:92dvh;border-radius:22px 22px 0 0;padding:18px 14px calc(18px + env(safe-area-inset-bottom))}.mechanisms-management__add-action{display:grid;grid-template-columns:1fr}.mechanisms-management__add-action .mechanisms-danger{grid-row:2;margin:3px auto 0}.mechanisms-booking{align-items:end;padding:0}.mechanisms-booking__panel{width:100%;border-radius:20px 20px 0 0;padding:20px 16px calc(20px + env(safe-area-inset-bottom))}}
         .mechanisms-editor__dialog .mechanisms-management__fields{padding-bottom:86px}
         .mechanisms-editor__close{border:0;border-radius:0;background:transparent;box-shadow:none}
         .mechanisms-management__add-action{position:fixed;z-index:20;right:0;bottom:0;left:0;display:flex;justify-content:flex-end;gap:10px;padding:12px max(24px,calc((100vw - 1040px)/2)) calc(12px + env(safe-area-inset-bottom));border-top:1px solid rgba(148,163,184,.2);background:rgba(248,251,255,.9);box-shadow:0 -12px 32px rgba(15,23,42,.08);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}
@@ -14846,7 +14884,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           <nav class="mechanisms-tabs" aria-label="Разделы механизмов">
             <button class="mechanisms-tab is-active" type="button" data-mechanisms-tab="overview">Бронирование</button><button class="mechanisms-tab" type="button" data-mechanisms-tab="rent">Аренда</button><button class="mechanisms-tab" type="button" data-mechanisms-tab="requests">Заявки</button><button class="mechanisms-tab" type="button" data-mechanisms-tab="fact">Факт</button><button class="mechanisms-tab" type="button" data-mechanisms-tab="history">История</button><button class="mechanisms-tab" type="button" data-mechanisms-tab="repairs">Ремонты</button><button class="mechanisms-tab" type="button" data-mechanisms-tab="stats">Статистика</button>${isMechanic ? '<button class="mechanisms-tab" type="button" data-mechanisms-tab="management">Управление</button>' : ""}
           </nav>
-          <div class="mechanisms-section is-active" data-mechanisms-section="overview"><div class="mechanisms-overview"><div class="mechanisms-summary" aria-label="Состояние парка: 12 единиц"><div class="mechanisms-summary__total"><b>12</b> единиц техники</div><div class="mechanisms-summary__chart"><div class="mechanisms-summary__line" aria-hidden="true"><span class="mechanisms-summary__segment mechanisms-summary__segment--free" style="width:42%"></span><span class="mechanisms-summary__segment mechanisms-summary__segment--busy" style="width:50%"></span><span class="mechanisms-summary__segment mechanisms-summary__segment--repair" style="width:8%"></span></div><div class="mechanisms-summary__legend"><span><b>5</b> свободны</span><span><b>6</b> в работе</span><span><b>1</b> ремонт</span></div></div></div><div class="mechanisms-grid"><article class="mechanisms-card"><div class="mechanisms-card__top"><h3>Календарь загрузки</h3></div><div class="mechanisms-calendar"><div></div><div class="mechanisms-calendar__day">Сегодня<br>20 июл</div><div class="mechanisms-calendar__day">Завтра<br>21 июл</div><div class="mechanisms-calendar__day">Ср<br>22 июл</div><div class="mechanisms-calendar__name">Экскаватор<br>CAT 320</div><div><div class="mechanisms-slot mechanisms-slot--busy">08:00–12:00<br>ЖК Северный</div><button class="mechanisms-slot" data-mechanisms-booking="Экскаватор CAT 320 · сегодня, 13:00–17:00" type="button">13:00–17:00<br>Свободен</button></div><div><button class="mechanisms-slot" data-mechanisms-booking="Экскаватор CAT 320 · завтра" type="button">Свободен</button></div><div><div class="mechanisms-slot mechanisms-slot--busy">09:00–18:00<br>Склад № 2</div></div><div class="mechanisms-calendar__name">Автокран<br>КС-55713</div><div><div class="mechanisms-slot mechanisms-slot--busy">08:00–16:00<br>Объект «Река»</div></div><div><button class="mechanisms-slot" data-mechanisms-booking="Автокран КС-55713 · завтра" type="button">Свободен</button></div><div><button class="mechanisms-slot" data-mechanisms-booking="Автокран КС-55713 · среда" type="button">Свободен</button></div><div class="mechanisms-calendar__name">Погрузчик<br>JCB 3CX</div><div><div class="mechanisms-slot mechanisms-slot--repair">Диагностика</div></div><div><div class="mechanisms-slot mechanisms-slot--repair">Ремонт</div></div><div><button class="mechanisms-slot" data-mechanisms-booking="Погрузчик JCB 3CX · среда" type="button">Свободен</button></div></div></article><article class="mechanisms-card"><div class="mechanisms-card__top"><h3>Доступно для брони</h3></div><div class="mechanisms-list"><button class="mechanisms-item" data-mechanisms-booking="Экскаватор CAT 320 · сегодня с 13:00" type="button"><div class="mechanisms-item__icon">🚜</div><div class="mechanisms-item__body"><b>Экскаватор CAT 320</b><span>сегодня с 13:00 · 3 500 Br/ч</span></div><span class="mechanisms-status">Свободен</span></button><button class="mechanisms-item" data-mechanisms-booking="Автокран КС-55713 · завтра весь день" type="button"><div class="mechanisms-item__icon">🏗️</div><div class="mechanisms-item__body"><b>Автокран КС-55713</b><span>завтра весь день · 5 200 Br/ч</span></div><span class="mechanisms-status">Свободен</span></button><div class="mechanisms-item"><div class="mechanisms-item__icon">🚚</div><div class="mechanisms-item__body"><b>Самосвал КамАЗ</b><span>сегодня с 15:00 · 2 800 Br/ч</span></div><span class="mechanisms-status mechanisms-status--busy">Занят до 15:00</span></div></div></article></div></div></div>
+          <div class="mechanisms-section is-active" data-mechanisms-section="overview" data-mechanisms-overview></div>
           <div class="mechanisms-section" data-mechanisms-section="fact"><div class="mechanisms-placeholder"><div><div class="mechanisms-placeholder__icon">⏱️</div><h3>План и факт работы</h3><p>Фиксируйте часы по каждому объекту: отработано, простой, сокращение или переработка.</p></div></div></div>
           <div class="mechanisms-section" data-mechanisms-section="history"><div class="mechanisms-placeholder"><div><div class="mechanisms-placeholder__icon">🗂️</div><h3>История механизмов</h3><p>Журнал покажет брони, перемещения и фактическую работу.</p></div></div></div>
           <div class="mechanisms-section" data-mechanisms-section="repairs"><div class="mechanisms-placeholder"><div><div class="mechanisms-placeholder__icon">🛠️</div><h3>Поломки и ремонты</h3><p>Здесь будет регистрация поломки и статус ремонта.</p></div></div></div>
@@ -14856,7 +14894,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           ${isMechanic ? '<div class="mechanisms-section" data-mechanisms-section="management" data-mechanisms-management></div>' : ""}
           <div class="mechanisms-toast" data-mechanisms-toast aria-live="polite"></div>
         </section>
-        <div class="mechanisms-booking" data-mechanisms-booking-dialog hidden><form class="mechanisms-booking__panel"><div class="mechanisms-booking__head"><div><h3>Новая бронь</h3><p data-mechanisms-booking-source></p></div><button class="mechanisms-booking__close" type="button" data-mechanisms-booking-close aria-label="Закрыть">×</button></div><label>Объект<select required><option value="">Выберите объект</option><option>ЖК Северный</option><option>Склад № 2</option><option>Объект «Река»</option></select></label><div class="mechanisms-booking__actions"><button class="mechanisms-primary" type="submit">Продолжить</button></div></form></div>`;
+        <div class="mechanisms-booking" data-mechanisms-booking-dialog hidden><form class="mechanisms-booking__panel"><div class="mechanisms-booking__head"><div><h3>Новая бронь</h3><p data-mechanisms-booking-source></p></div><button class="mechanisms-booking__close" type="button" data-mechanisms-booking-close aria-label="Закрыть">×</button></div><input type="hidden" name="mechanismId"><label>Объект<select name="object" required></select></label><label>Дата<input name="date" type="date" required></label><div class="mechanisms-booking__times"><label>С<input name="timeFrom" type="time" value="08:00" required></label><label>До<input name="timeTo" type="time" value="17:00" required></label></div><label>Комментарий<textarea name="comment" maxlength="300" rows="3" placeholder="Задача или дополнительная информация"></textarea></label><div class="mechanisms-booking__actions"><button class="mechanisms-primary" type="submit">Сохранить бронь</button></div></form></div>`;
       document.body.appendChild(mechanismsModalEl);
       if (isMechanic) {
         const management = mechanismsModalEl.querySelector("[data-mechanisms-management]");
@@ -14873,8 +14911,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           mechanismsModalEl.querySelector("[data-mechanisms-booking-dialog]").hidden = true;
           mechanismsModalEl.classList.add("is-hidden"); document.body.style.overflow = ""; return;
         }
-        const bookingTrigger = event.target.closest("[data-mechanisms-booking]");
-        if (bookingTrigger) { openMechanismsBooking(bookingTrigger.dataset.mechanismsBooking); return; }
+        const bookingTrigger = event.target.closest("[data-mechanisms-booking-id]");
+        if (bookingTrigger) { openMechanismsBooking(bookingTrigger.dataset.mechanismsBookingId); return; }
         if (event.target.closest("[data-mechanisms-booking-close]") || event.target.closest("[data-mechanisms-booking-dialog]") === event.target) {
           mechanismsModalEl.querySelector("[data-mechanisms-booking-dialog]").hidden = true; return;
         }
@@ -14886,14 +14924,48 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           mechanismsModalEl.querySelector(".mechanisms-modal__panel")?.scrollTo({ top: 0, behavior: "smooth" });
         }
       });
-      mechanismsModalEl.querySelector("form")?.addEventListener("submit", (event) => {
+      mechanismsModalEl.querySelector("[data-mechanisms-booking-dialog] form")?.addEventListener("submit", async (event) => {
         event.preventDefault();
-        mechanismsModalEl.querySelector("[data-mechanisms-booking-dialog]").hidden = true;
-        mechanismsModalEl.querySelector("[data-mechanisms-toast]").textContent = "Бронирование сохранено как черновик";
+        const form = event.currentTarget;
+        const mechanism = organizationMechanisms.find((item) => String(item.id) === form.elements.mechanismId.value);
+        if (!mechanism || form.elements.timeFrom.value >= form.elements.timeTo.value) {
+          mechanismsModalEl.querySelector("[data-mechanisms-toast]").textContent = "Проверьте время начала и окончания";
+          return;
+        }
+        const submit = form.querySelector('[type="submit"]');
+        submit.disabled = true;
+        try {
+          organizationMechanismBookings.push({
+            id: crypto.randomUUID?.() || `booking-${Date.now()}`,
+            mechanismId: mechanism.id,
+            mechanismTitle: mechanismTitle(mechanism),
+            object: form.elements.object.value,
+            date: form.elements.date.value,
+            timeFrom: form.elements.timeFrom.value,
+            timeTo: form.elements.timeTo.value,
+            comment: form.elements.comment.value.trim(),
+            organization: String(user?.organization || context.orgFolderName || ""),
+            createdAt: new Date().toISOString(),
+            createdBy: String(currentUser?.full_name || currentUser?.name || ""),
+          });
+          await saveJson(mechanismBookingsPath, { bookings: organizationMechanismBookings, updatedAt: new Date().toISOString() }, { user: currentUser });
+          mechanismsModalEl.querySelector("[data-mechanisms-booking-dialog]").hidden = true;
+          mechanismsModalEl.querySelector("[data-mechanisms-toast]").textContent = "Бронь сохранена в базе организации";
+          renderMechanismsBase();
+        } catch (error) {
+          organizationMechanismBookings.pop();
+          mechanismsModalEl.querySelector("[data-mechanisms-toast]").textContent = "Не удалось сохранить бронь. Повторите попытку";
+          console.error("Не удалось сохранить бронь механизма.", error);
+        } finally { submit.disabled = false; }
       });
     }
     mechanismsModalEl.classList.remove("is-hidden");
     document.body.style.overflow = "hidden";
+    loadMechanismsBase().catch((error) => {
+      console.error("Не удалось загрузить базу механизмов.", error);
+      const target = mechanismsModalEl.querySelector("[data-mechanisms-overview]");
+      if (target) target.innerHTML = '<div class="mechanisms-base-empty"><span>⚠️</span><b>Не удалось загрузить базу организации</b><p>Закройте страницу и попробуйте снова.</p></div>';
+    });
   };
 
   const openToolsModal = async (options = {}) => {

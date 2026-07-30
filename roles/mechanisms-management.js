@@ -180,7 +180,7 @@ export function createMechanismsManagement({ container, path, loadJson, saveJson
             <label class="mechanisms-management__field">Режим работы${mechanismScheduleSelect(item.schedule)}</label>
             <fieldset class="mechanisms-management__field mechanisms-management__field--wide mechanisms-work-time"><legend>Время работы</legend><div class="mechanisms-work-time__range"><label>С${mechanismTimeSelect("workTimeFrom", MECHANISM_START_TIMES, time.from, "Начало рабочего времени")}</label><span aria-hidden="true">—</span><label>До${mechanismTimeSelect("workTimeTo", MECHANISM_END_TIMES, time.to, "Окончание рабочего времени")}</label></div></fieldset>
             ${photoControl(item, item.id || "new")}
-            <div class="mechanisms-management__add-action">${isNew ? "" : '<button class="mechanisms-danger" type="button" data-mechanism-delete>Удалить механизм</button>'}<button class="mechanisms-primary" type="submit">${isNew ? "Добавить" : "Сохранить"}</button></div>
+            <div class="mechanisms-management__add-action">${isNew ? "" : '<button class="mechanisms-danger" type="button" data-mechanism-delete>Удалить механизм</button>'}<button class="mechanisms-cancel" type="button" data-mechanism-editor-close>Отмена</button><button class="mechanisms-save" type="submit">Сохранить</button></div>
           </div>
         </form>`;
   };
@@ -243,14 +243,12 @@ export function createMechanismsManagement({ container, path, loadJson, saveJson
     if (event.target.closest("[data-mechanism-add]")) {
       editor = "new";
       render();
-      container.querySelector("[data-mechanism-form] input")?.focus();
       return;
     }
     const editButton = event.target.closest("[data-mechanism-edit]");
     if (editButton) {
       editor = editButton.closest("[data-mechanism-id]")?.dataset.mechanismId;
       render();
-      container.querySelector("[data-mechanism-form] input")?.focus();
       return;
     }
     if (event.target.closest("[data-mechanism-editor-close]")) {

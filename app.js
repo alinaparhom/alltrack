@@ -1410,6 +1410,14 @@ function createVisitLogSessionId() {
   return `visit-${randomPart}`;
 }
 
+function createMovementId() {
+  const randomPart =
+    typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  return `move-${randomPart}`;
+}
+
 function getVisitLogSessionId() {
   if (visitLogSessionId) return visitLogSessionId;
   try {
@@ -22304,6 +22312,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
         }
         eligibleTools.push(tool);
         const entry = {
+          "ID перемещения": createMovementId(),
           Номер: String(tool?.["Номер"] ?? "").trim(),
           "Бух.номер": accountingNumber,
           "Дата перемещения": formatDateValue(now),

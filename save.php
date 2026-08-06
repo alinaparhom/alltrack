@@ -3162,6 +3162,42 @@ function saveVisitLogEntry(array $entry): void {
   });
 }
 
+function addMissingMovementIds(mixed $data): mixed {
+  $moves = null;
+  if (is_array($data) && array_is_list($data)) {
+    $moves =& $data;
+  } elseif (is_array($data) && isset($data["moves"]) && is_array($data["moves"])) {
+    $moves =& $data["moves"];
+  }
+
+  if ($moves === null) {
+    return $data;
+  }
+
+  $usedIds = [];
+  foreach ($moves as &$move) {
+    if (!is_array($move)) {
+      continue;
+    }
+
+    $movementId = trim((string) ($move["ID перемещения"] ?? ""));
+    if ($movementId === "" || isset($usedIds[$movementId])) {
+      do {
+        try {
+          $movementId = "move-" . bin2hex(random_bytes(16));
+        } catch (Throwable) {
+          $movementId = uniqid("move-", true);
+        }
+      } while (isset($usedIds[$movementId]));
+      $move["ID перемещения"] = $movementId;
+    }
+    $usedIds[$movementId] = true;
+  }
+  unset($move);
+
+  return $data;
+}
+
 function saveEntry(array $entry, array $allowedFiles): void {
   if (($entry["type"] ?? "") === "file") {
     saveFileEntry($entry);
@@ -3192,6 +3228,9 @@ function saveEntry(array $entry, array $allowedFiles): void {
   $fileName = basename((string) $path);
 
   $targetPath = resolveTargetPath($entry, $allowedFiles);
+  if ($fileName === "Перемещения.json") {
+    $data = addMissingMovementIds($data);
+  }
   $encoded = json_encode($data, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 
   if ($encoded === false) {

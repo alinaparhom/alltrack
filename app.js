@@ -14928,6 +14928,9 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     const form = dialog?.querySelector("form");
     const mechanism = organizationMechanisms.find((item) => String(item.id) === String(mechanismId));
     if (!dialog || !form || !mechanism) return;
+    // Сначала показываем экран: ошибка в дополнительной настройке поля не должна
+    // оставлять нажатие по свободной ячейке без видимого результата.
+    dialog.hidden = false;
     form.reset();
     form.elements.mechanismId.value = mechanism.id;
     mechanismsBookingControls?.reset(bookingDate || new Date().toISOString().slice(0, 10));
@@ -14940,8 +14943,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     photo.innerHTML = mechanism.photo ? `<img src="${escapeHtml(mechanism.photo)}" alt="${escapeHtml(mechanismTitle(mechanism))}">` : '<span aria-hidden="true">🚜</span>';
     const rate = Number(mechanism.hourlyRate || 0).toLocaleString("ru-RU", { maximumFractionDigits: 2 });
     form.querySelector("[data-mechanisms-booking-rate]").textContent = `${rate} Br/час`;
-    dialog.hidden = false;
-    form.querySelector("[data-booking-select-trigger]")?.focus();
+    requestAnimationFrame(() => form.querySelector("[data-booking-select-trigger]")?.focus());
   };
 
   const openMechanismsBookingDetails = (bookingId) => {
@@ -15011,7 +15013,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
           ${isMechanic ? '<div class="mechanisms-section" data-mechanisms-section="management" data-mechanisms-management></div>' : ""}
           <div class="mechanisms-toast" data-mechanisms-toast aria-live="polite"></div>
         </section>
-        <div class="mechanisms-booking mechanisms-booking--editor" data-mechanisms-booking-dialog hidden><form class="mechanisms-booking__panel"><div class="mechanisms-booking__head"><div><h3 class="mechanisms-booking__title">Бронирование техники</h3></div><button class="mechanisms-booking__close" type="button" data-mechanisms-booking-close aria-label="Закрыть">×</button></div><div class="mechanisms-booking__machine"><div class="mechanisms-booking__photo" data-mechanisms-booking-photo></div><div><b data-mechanisms-booking-source></b><span>Стоимость работы</span><strong data-mechanisms-booking-rate></strong></div></div><input type="hidden" name="mechanismId"><div class="mechanisms-booking__fields"><label>Объект${mechanismObjectSelect()}</label><label>Дата${mechanismDateRange()}</label><fieldset class="mechanisms-booking__time-field"><legend>Время работы</legend><div class="mechanisms-booking__times"><label>С${mechanismTimeSelect("timeFrom", MECHANISM_START_TIMES, "08:00", "Время начала")}</label><label>До${mechanismTimeSelect("timeTo", MECHANISM_END_TIMES, "17:00", "Время окончания")}</label></div></fieldset><label class="mechanisms-booking__comment">Комментарий<textarea name="comment" maxlength="300" rows="3" placeholder="Задача или дополнительная информация"></textarea></label></div><div class="mechanisms-booking__actions"><button class="mechanisms-primary" type="submit">Сохранить бронь</button></div></form></div>
+        <div class="mechanisms-booking mechanisms-booking--editor" data-mechanisms-booking-dialog role="dialog" aria-modal="true" aria-labelledby="mechanisms-booking-title" hidden><form class="mechanisms-booking__panel"><div class="mechanisms-booking__head"><div><h3 class="mechanisms-booking__title" id="mechanisms-booking-title">Бронирование техники</h3></div><button class="mechanisms-booking__close" type="button" data-mechanisms-booking-close aria-label="Закрыть">×</button></div><div class="mechanisms-booking__machine"><div class="mechanisms-booking__photo" data-mechanisms-booking-photo></div><div><b data-mechanisms-booking-source></b><span>Стоимость работы</span><strong data-mechanisms-booking-rate></strong></div></div><input type="hidden" name="mechanismId"><div class="mechanisms-booking__fields"><label>Объект${mechanismObjectSelect()}</label><label>Дата${mechanismDateRange()}</label><fieldset class="mechanisms-booking__time-field"><legend>Время работы</legend><div class="mechanisms-booking__times"><label>С${mechanismTimeSelect("timeFrom", MECHANISM_START_TIMES, "08:00", "Время начала")}</label><label>До${mechanismTimeSelect("timeTo", MECHANISM_END_TIMES, "17:00", "Время окончания")}</label></div></fieldset><label class="mechanisms-booking__comment">Комментарий<textarea name="comment" maxlength="300" rows="3" placeholder="Задача или дополнительная информация"></textarea></label></div><div class="mechanisms-booking__actions"><button class="mechanisms-primary" type="submit">Сохранить бронь</button></div></form></div>
         <div class="mechanisms-booking" data-mechanisms-booking-details-dialog hidden><section class="mechanisms-booking__panel" role="dialog" aria-modal="true" aria-labelledby="mechanisms-booking-details-title"><div class="mechanisms-booking__head"><div><h3 id="mechanisms-booking-details-title">Информация о бронировании</h3><p>Актуальные данные выбранной брони</p></div><button class="mechanisms-booking__close" type="button" data-mechanisms-booking-details-close aria-label="Закрыть">×</button></div><div class="mechanisms-booking-details__content" data-mechanisms-booking-details-content></div></section></div>`;
       document.body.appendChild(mechanismsModalEl);
       const bookingForm = mechanismsModalEl.querySelector("[data-mechanisms-booking-dialog] form");

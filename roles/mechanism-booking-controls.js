@@ -14,7 +14,11 @@ const formatDate = (value) => parseDate(value).toLocaleDateString("ru-RU", { day
 export const mechanismObjectSelect = (objects = []) => `<div class="mechanisms-booking-select" data-booking-select>
   <input type="hidden" name="object" required>
   <button class="mechanisms-booking-control" type="button" data-booking-select-trigger aria-haspopup="listbox" aria-expanded="false"><span data-booking-select-label>Выберите объект</span><span class="mechanisms-booking-control__chevron" aria-hidden="true"></span></button>
-  <div class="mechanisms-booking-select__menu" role="listbox" hidden>${objects.map((name) => `<button type="button" role="option" aria-selected="false" data-booking-object="${escapeHtml(name)}"><span>${escapeHtml(name)}</span><b aria-hidden="true">✓</b></button>`).join("") || '<p>Объекты пока не добавлены</p>'}</div>
+  <div class="mechanisms-booking-select__menu" role="listbox" hidden>
+    <div class="mechanisms-booking-select__search"><span aria-hidden="true">⌕</span><input type="search" data-booking-object-search placeholder="Быстрый поиск" aria-label="Поиск объекта" autocomplete="off"></div>
+    <div class="mechanisms-booking-select__options" data-booking-object-options>${objects.map((name) => `<button type="button" role="option" aria-selected="false" data-booking-object="${escapeHtml(name)}"><span>${escapeHtml(name)}</span><b aria-hidden="true">✓</b></button>`).join("") || '<p>Объекты пока не добавлены</p>'}</div>
+    <p class="mechanisms-booking-select__empty" data-booking-object-empty hidden>Ничего не найдено</p>
+  </div>
 </div>`;
 
 export const mechanismDateRange = () => `<div class="mechanisms-date" data-booking-calendar>
@@ -27,6 +31,7 @@ export const mechanismDateRange = () => `<div class="mechanisms-date" data-booki
 export const setupMechanismBookingControls = (form) => {
   const select = form.querySelector("[data-booking-select]");
   const calendar = form.querySelector("[data-booking-calendar]");
+  const objectSearch = select.querySelector("[data-booking-object-search]");
   let viewDate = new Date(); viewDate.setDate(1); viewDate.setHours(12, 0, 0, 0);
 
   const closePopovers = (except) => {
@@ -62,7 +67,9 @@ export const setupMechanismBookingControls = (form) => {
     const selectTrigger = event.target.closest("[data-booking-select-trigger]");
     if (selectTrigger) {
       const menu = select.querySelector('[role="listbox"]'); const open = menu.hidden;
-      closePopovers(select); menu.hidden = !open; select.classList.toggle("is-open", open); selectTrigger.setAttribute("aria-expanded", String(open)); return;
+      closePopovers(select); menu.hidden = !open; select.classList.toggle("is-open", open); selectTrigger.setAttribute("aria-expanded", String(open));
+      if (open) { objectSearch.value = ""; objectSearch.dispatchEvent(new Event("input")); requestAnimationFrame(() => objectSearch.focus()); }
+      return;
     }
     const object = event.target.closest("[data-booking-object]");
     if (object) {
@@ -86,6 +93,16 @@ export const setupMechanismBookingControls = (form) => {
       updateDateLabel(); renderCalendar();
       if (form.elements.dateTo.value) closePopovers();
     }
+  });
+  objectSearch.addEventListener("input", () => {
+    const query = objectSearch.value.trim().toLocaleLowerCase("ru-RU");
+    let visibleCount = 0;
+    select.querySelectorAll("[data-booking-object]").forEach((item) => {
+      const visible = !query || item.dataset.bookingObject.toLocaleLowerCase("ru-RU").includes(query);
+      item.hidden = !visible;
+      if (visible) visibleCount += 1;
+    });
+    select.querySelector("[data-booking-object-empty]").hidden = !query || visibleCount > 0;
   });
   return {
     reset(date = dateKey(new Date())) {

@@ -14883,7 +14883,10 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     };
     const schedulePeriods = [{ days: 3, label: "3 дня" }, { days: 7, label: "7 дней" }, { days: 30, label: "Месяц" }];
     const renderSearchableFilter = ({ name, value, allValue, allLabel, placeholder, options }) => `<div class="mechanisms-filter-select" data-mechanisms-filter-select><label class="mechanisms-filter-search"><span class="mechanisms-filter-search__icon" aria-hidden="true">⌕</span><input type="search" inputmode="search" autocomplete="off" placeholder="${escapeHtml(placeholder)}" aria-label="${escapeHtml(placeholder)}" data-mechanisms-option-search></label><div class="mechanisms-filter-options" role="listbox">${[{ value: allValue, label: allLabel }, ...options].map((option) => `<button class="mechanisms-filter-option${value === option.value ? " is-selected" : ""}" type="button" role="option" aria-selected="${value === option.value}" data-mechanisms-filter-option="${escapeHtml(name)}" data-mechanisms-filter-value="${escapeHtml(option.value)}" data-mechanisms-option-label="${escapeHtml(option.label.toLocaleLowerCase("ru-RU"))}"><span>${escapeHtml(option.label)}</span><span class="mechanisms-filter-option__check" aria-hidden="true">✓</span></button>`).join("")}<div class="mechanisms-filter-options__empty" data-mechanisms-options-empty hidden>Ничего не найдено</div></div></div>`;
-    const mechanismOptions = [...new Set(organizationMechanisms.map(mechanismTitle))]
+    const mechanismOptions = [...new Set(organizationMechanisms.flatMap((mechanism) => [
+      String(mechanism?.name ?? "").trim(),
+      mechanismTitle(mechanism),
+    ]).filter(Boolean))]
       .sort((a, b) => a.localeCompare(b, "ru", { numeric: true }))
       .map((title) => ({ value: title, label: title }));
     const objectOptions = [...new Set(organizationObjects)]

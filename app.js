@@ -15,6 +15,7 @@ import { createMechanismsManagement } from "./roles/mechanisms-management.js";
 import { mechanismTimeSelect, setupMechanismScheduleSelects } from "./roles/mechanism-schedule-select.js";
 import { MECHANISM_START_TIMES, MECHANISM_END_TIMES } from "./roles/mechanism-form-options.js";
 import { mechanismObjectSelect, mechanismDateRange, setupMechanismBookingControls } from "./roles/mechanism-booking-controls.js";
+import { normalizeMechanismBookingObjects } from "./roles/mechanism-booking-objects.js";
 
 const roleMap = new Map([
   [superAdminRole, renderSuperAdmin],
@@ -14833,9 +14834,6 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
       ? `<img src="${escapeHtml(source)}" alt="${escapeHtml(alt)}" data-mechanism-photo-image>`
       : '<span aria-hidden="true">🚜</span>';
   };
-  const extractOrganizationObjects = (data) => (Array.isArray(data) ? data : data?.objects || [])
-    .map((item) => String(item?.name ?? item ?? "").trim()).filter(Boolean);
-
   const renderMechanismsBase = () => {
     const target = mechanismsModalEl?.querySelector("[data-mechanisms-overview]");
     if (!target) return;
@@ -14929,7 +14927,8 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     ]);
     organizationMechanisms = Array.isArray(mechanismsData) ? mechanismsData : (mechanismsData?.mechanisms || []);
     organizationMechanismBookings = Array.isArray(bookingsData) ? bookingsData : (bookingsData?.bookings || []);
-    organizationObjects = extractOrganizationObjects(objectsData);
+    organizationObjects = normalizeMechanismBookingObjects(objectsData);
+    mechanismsBookingControls?.setObjects(organizationObjects);
     renderMechanismsBase();
   };
 
@@ -14950,7 +14949,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (timeTo) form.elements.timeTo.value = timeTo;
     form.querySelectorAll("[data-mechanism-schedule-label]").forEach((label) => { const input = label.closest("[data-mechanism-schedule-select]")?.querySelector('input[type="hidden"]'); if (input) label.textContent = input.value; });
     form.querySelector("[data-mechanisms-booking-source]").textContent = mechanismTitle(mechanism);
-    form.querySelector("[data-booking-object-options]").innerHTML = organizationObjects.map((name) => `<button type="button" role="option" aria-selected="false" data-booking-object="${escapeHtml(name)}"><span>${escapeHtml(name)}</span><b aria-hidden="true">✓</b></button>`).join("") || "<p>Объекты пока не добавлены</p>";
+    mechanismsBookingControls?.setObjects(organizationObjects);
     const photo = form.querySelector("[data-mechanisms-booking-photo]");
     photo.innerHTML = renderMechanismPhoto(mechanism, mechanismTitle(mechanism));
     const rate = Number(mechanism.hourlyRate || 0).toLocaleString("ru-RU", { maximumFractionDigits: 2 });

@@ -1339,7 +1339,10 @@ function getInitDataFromUrl() {
     cacheInitData(queryData);
     return queryData;
   }
-  if (!url.hash) return null;
+  // На Android и iOS Telegram иногда убирает служебный hash после перехода
+  // с index.html. В этом случае initData уже сохранены страницей-переходником.
+  // Не выходим раньше чтения кэша, иначе Telegram ID и роль не определятся.
+  if (!url.hash) return getCachedInitData();
   const rawHash = url.hash.replace(/^#/, "");
   const hashParams = new URLSearchParams(rawHash);
   const hashData = hashParams.get("tgWebAppData");
@@ -40315,6 +40318,7 @@ async function loadUser() {
   const initialContext = collectTelegramContext();
   void appendAuthLog("init", initialContext);
 
+  if (appTitlePositionEl) appTitlePositionEl.textContent = "Определяем доступ…";
   const telegramId = await waitForTelegramId({ timeoutMs: 20000, intervalMs: 250 });
 
   try {
@@ -40331,12 +40335,16 @@ async function loadUser() {
         (item) => normalizePersonName(item?.full_name ?? "") === fallbackName
       );
 
-      if (nameMatches.length === 1) {
-        user = nameMatches[0];
+      if (nameMatches.length > 0) {
+        user =
+          nameMatches.length > 1
+            ? await askUserOrganizationChoice(nameMatches)
+            : nameMatches[0];
         userLabel = `Вы вошли как <strong>${formatShortName(user?.full_name ?? "")}</strong>`;
         void appendAuthLog("telegram_id_fallback_by_name", {
           fullName: fallbackName,
           resolvedUserId: normalizeTelegramId(user?.telegram_id ?? null),
+          matches: nameMatches.length,
         });
       } else {
         renderError("Telegram ID не получен. Откройте приложение через кнопку Mini App в боте.");

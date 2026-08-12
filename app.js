@@ -1339,7 +1339,10 @@ function getInitDataFromUrl() {
     cacheInitData(queryData);
     return queryData;
   }
-  if (!url.hash) return null;
+  // Страница-переходник сохраняет initData перед открытием приложения.
+  // Telegram на Android и iOS может убрать hash при переходе, поэтому
+  // восстанавливаем данные из sessionStorage и продолжаем узнавать пользователя.
+  if (!url.hash) return getCachedInitData();
   const rawHash = url.hash.replace(/^#/, "");
   const hashParams = new URLSearchParams(rawHash);
   const hashData = hashParams.get("tgWebAppData");

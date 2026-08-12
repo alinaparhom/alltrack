@@ -14,9 +14,7 @@ import { roleId as controlRole, renderRole as renderControl } from "./roles/cont
 import { createMechanismsManagement } from "./roles/mechanisms-management.js";
 import { mechanismTimeSelect, setupMechanismScheduleSelects } from "./roles/mechanism-schedule-select.js";
 import { MECHANISM_START_TIMES, MECHANISM_END_TIMES } from "./roles/mechanism-form-options.js";
-import { mechanismObjectSelect, mechanismDateRange, normalizeMechanismBookingObjects, setupMechanismBookingControls } from "./roles/mechanism-booking-controls.js";
-import { getMechanismPhoto } from "./roles/mechanism-photo.js";
-import { findUserAccessProfiles } from "./auth/user-access.js";
+import { mechanismObjectSelect, mechanismDateRange, setupMechanismBookingControls } from "./roles/mechanism-booking-controls.js";
 
 const roleMap = new Map([
   [superAdminRole, renderSuperAdmin],
@@ -1170,10 +1168,7 @@ async function syncCurrentUserTelegramPhoto(user) {
     const usersData = await loadJson(usersFilePath).catch(() => ({ users: [] }));
     const users = Array.isArray(usersData?.users) ? [...usersData.users] : [];
     const userIndex = users.findIndex(
-      (item) =>
-        normalizeTelegramId(item?.telegram_id) === telegramId &&
-        String(item?.organization ?? "").trim() === String(user?.organization ?? "").trim() &&
-        String(item?.role ?? "").trim() === String(user?.role ?? "").trim()
+      (item) => normalizeTelegramId(item?.telegram_id) === telegramId
     );
     if (userIndex < 0) return user;
 
@@ -1343,10 +1338,7 @@ function getInitDataFromUrl() {
     cacheInitData(queryData);
     return queryData;
   }
-  // На Android и iOS Telegram иногда убирает служебный hash после перехода
-  // с index.html. В этом случае initData уже сохранены страницей-переходником.
-  // Не выходим раньше чтения кэша, иначе Telegram ID и роль не определятся.
-  if (!url.hash) return getCachedInitData();
+  if (!url.hash) return null;
   const rawHash = url.hash.replace(/^#/, "");
   const hashParams = new URLSearchParams(rawHash);
   const hashData = hashParams.get("tgWebAppData");
@@ -14831,12 +14823,19 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
   const mechanismBookingsPath = `./${context.orgFolderName}/Брони механизмов.json`;
 
   const mechanismTitle = (item = {}) => [item.name, item.manufacturer, item.model].filter(Boolean).join(" ") || "Механизм";
+  const mechanismPhoto = (item = {}) => {
+    const source = item.photo ?? item.photoUrl ?? item["Фото"] ?? item.photos?.[0] ?? "";
+    return String(source || "").trim();
+  };
   const renderMechanismPhoto = (item, alt = "") => {
-    const source = getMechanismPhoto(item);
+    const source = mechanismPhoto(item);
     return source
       ? `<img src="${escapeHtml(source)}" alt="${escapeHtml(alt)}" data-mechanism-photo-image>`
       : '<span aria-hidden="true">🚜</span>';
   };
+  const extractOrganizationObjects = (data) => (Array.isArray(data) ? data : data?.objects || [])
+    .map((item) => String(item?.name ?? item ?? "").trim()).filter(Boolean);
+
   const renderMechanismsBase = () => {
     const target = mechanismsModalEl?.querySelector("[data-mechanisms-overview]");
     if (!target) return;
@@ -14930,8 +14929,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     ]);
     organizationMechanisms = Array.isArray(mechanismsData) ? mechanismsData : (mechanismsData?.mechanisms || []);
     organizationMechanismBookings = Array.isArray(bookingsData) ? bookingsData : (bookingsData?.bookings || []);
-    organizationObjects = normalizeMechanismBookingObjects(objectsData);
-    mechanismsBookingControls?.setObjects(organizationObjects);
+    organizationObjects = extractOrganizationObjects(objectsData);
     renderMechanismsBase();
   };
 
@@ -14952,7 +14950,7 @@ async function setupEnergyDashboard(user, preferences, contextOverride) {
     if (timeTo) form.elements.timeTo.value = timeTo;
     form.querySelectorAll("[data-mechanism-schedule-label]").forEach((label) => { const input = label.closest("[data-mechanism-schedule-select]")?.querySelector('input[type="hidden"]'); if (input) label.textContent = input.value; });
     form.querySelector("[data-mechanisms-booking-source]").textContent = mechanismTitle(mechanism);
-    mechanismsBookingControls?.setObjects(organizationObjects);
+    form.querySelector("[data-booking-object-options]").innerHTML = organizationObjects.map((name) => `<button type="button" role="option" aria-selected="false" data-booking-object="${escapeHtml(name)}"><span>${escapeHtml(name)}</span><b aria-hidden="true">✓</b></button>`).join("") || "<p>Объекты пока не добавлены</p>";
     const photo = form.querySelector("[data-mechanisms-booking-photo]");
     photo.innerHTML = renderMechanismPhoto(mechanism, mechanismTitle(mechanism));
     const rate = Number(mechanism.hourlyRate || 0).toLocaleString("ru-RU", { maximumFractionDigits: 2 });
@@ -40322,7 +40320,6 @@ async function loadUser() {
   const initialContext = collectTelegramContext();
   void appendAuthLog("init", initialContext);
 
-  if (appTitlePositionEl) appTitlePositionEl.textContent = "Определяем доступ…";
   const telegramId = await waitForTelegramId({ timeoutMs: 20000, intervalMs: 250 });
 
   try {
@@ -40335,18 +40332,16 @@ async function loadUser() {
     if (!telegramIdKey) {
       const data = await loadJson(usersFilePath).catch(() => ({ users: [] }));
       const fallbackName = normalizePersonName(resolveTelegramUserDisplayName());
-      const nameMatches = findUserAccessProfiles(data.users, { telegramName: fallbackName });
+      const nameMatches = (data.users ?? []).filter(
+        (item) => normalizePersonName(item?.full_name ?? "") === fallbackName
+      );
 
-      if (nameMatches.length > 0) {
-        user =
-          nameMatches.length > 1
-            ? await askUserOrganizationChoice(nameMatches)
-            : nameMatches[0];
+      if (nameMatches.length === 1) {
+        user = nameMatches[0];
         userLabel = `Вы вошли как <strong>${formatShortName(user?.full_name ?? "")}</strong>`;
         void appendAuthLog("telegram_id_fallback_by_name", {
           fullName: fallbackName,
           resolvedUserId: normalizeTelegramId(user?.telegram_id ?? null),
-          matches: nameMatches.length,
         });
       } else {
         renderError("Telegram ID не получен. Откройте приложение через кнопку Mini App в боте.");
@@ -40370,14 +40365,11 @@ async function loadUser() {
       }
     }
 
-    // После приглашения также перечитываем базу: у человека уже могут быть
-    // доступы к другим организациям, и их нельзя обходить первым совпадением.
-    if (!user || registrationToken) {
+    if (!user) {
       const data = await loadJson(usersFilePath);
-      const matchedUsers = findUserAccessProfiles(data.users, {
-        telegramId: telegramIdKey,
-        telegramName: user?.full_name ?? resolveTelegramUserDisplayName(),
-      });
+      const matchedUsers = (data.users ?? []).filter(
+        (item) => normalizeTelegramId(item.telegram_id) === telegramIdKey
+      );
 
       if (matchedUsers.length > 1) {
         user = await askUserOrganizationChoice(matchedUsers);

@@ -2,6 +2,14 @@ const MAX_IMAGE_SIDE = 1280;
 const JPEG_QUALITY = 0.82;
 const SUPPORTED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 
+/** Возвращает фото из актуального или старого формата карточки механизма. */
+export function getMechanismPhoto(item = {}) {
+  const photos = Array.isArray(item.photos) ? item.photos : [];
+  const source = item.photo ?? item.photoUrl ?? item.image ?? item.imageUrl
+    ?? item["Фото"] ?? photos[0]?.url ?? photos[0] ?? "";
+  return String(source || "").trim();
+}
+
 /**
  * Готовит фотографию техники для хранения вместе с её карточкой.
  * Уменьшение снимка сохраняет быстрый интерфейс и не раздувает JSON-файл.

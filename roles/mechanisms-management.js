@@ -1,4 +1,4 @@
-import { getMechanismPhoto, prepareMechanismPhoto } from "./mechanism-photo.js";
+import { prepareMechanismPhoto } from "./mechanism-photo.js";
 import { formatMechanismMoney, formatMechanismMoneyInput } from "./mechanism-money-input.js";
 import { mechanismScheduleSelect, mechanismTimeSelect, setupMechanismScheduleSelects } from "./mechanism-schedule-select.js";
 import {
@@ -38,7 +38,7 @@ const normalizeMechanism = (item = {}) => ({
   hourlyRate: numberValue(item.hourlyRate),
   schedule: scheduleValues.includes(item.schedule) ? item.schedule : "5/2",
   workTime: String(item.workTime || "08:00–17:00").trim(),
-  photo: getMechanismPhoto(item),
+  photo: String(item.photo || ""),
 });
 
 const workTimeValues = (workTime) => {

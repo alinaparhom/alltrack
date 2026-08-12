@@ -2,6 +2,22 @@ const escapeHtml = (value = "") => String(value)
   .replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;")
   .replaceAll('"', "&quot;").replaceAll("'", "&#039;");
 
+/** Приводит поддерживаемые форматы «Объекты.json» к списку названий. */
+export const normalizeMechanismBookingObjects = (data) => {
+  const items = Array.isArray(data)
+    ? data
+    : [data?.objects, data?.items, data?.data].find(Array.isArray) || [];
+  return [...new Set(items.map((item) => String(
+    typeof item === "string"
+      ? item
+      : item?.name ?? item?.title ?? item?.["Название"] ?? item?.["Объект"] ?? ""
+  ).trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, "ru", { numeric: true }));
+};
+
+const renderObjects = (objects = []) => objects.length
+  ? objects.map((name) => `<button type="button" role="option" aria-selected="false" data-booking-object="${escapeHtml(name)}"><span>${escapeHtml(name)}</span><b aria-hidden="true">✓</b></button>`).join("")
+  : '<p>Объекты пока не добавлены</p>';
+
 const dateKey = (date) => {
   const copy = new Date(date);
   copy.setMinutes(copy.getMinutes() - copy.getTimezoneOffset());
@@ -16,7 +32,7 @@ export const mechanismObjectSelect = (objects = []) => `<div class="mechanisms-b
   <button class="mechanisms-booking-control" type="button" data-booking-select-trigger aria-haspopup="listbox" aria-expanded="false"><span data-booking-select-label>Выберите объект</span><span class="mechanisms-booking-control__chevron" aria-hidden="true"></span></button>
   <div class="mechanisms-booking-select__menu" role="listbox" hidden>
     <div class="mechanisms-booking-select__search"><span aria-hidden="true">⌕</span><input type="search" data-booking-object-search placeholder="Быстрый поиск" aria-label="Поиск объекта" autocomplete="off"></div>
-    <div class="mechanisms-booking-select__options" data-booking-object-options>${objects.map((name) => `<button type="button" role="option" aria-selected="false" data-booking-object="${escapeHtml(name)}"><span>${escapeHtml(name)}</span><b aria-hidden="true">✓</b></button>`).join("") || '<p>Объекты пока не добавлены</p>'}</div>
+    <div class="mechanisms-booking-select__options" data-booking-object-options>${renderObjects(objects)}</div>
     <p class="mechanisms-booking-select__empty" data-booking-object-empty hidden>Ничего не найдено</p>
   </div>
 </div>`;
@@ -105,6 +121,11 @@ export const setupMechanismBookingControls = (form) => {
     select.querySelector("[data-booking-object-empty]").hidden = !query || visibleCount > 0;
   });
   return {
+    setObjects(objects = []) {
+      select.querySelector("[data-booking-object-options]").innerHTML = renderObjects(objects);
+      objectSearch.value = "";
+      select.querySelector("[data-booking-object-empty]").hidden = true;
+    },
     reset(date = dateKey(new Date())) {
       form.elements.object.value = ""; form.elements.dateFrom.value = date; form.elements.dateTo.value = date;
       select.querySelector("[data-booking-select-label]").textContent = "Выберите объект";

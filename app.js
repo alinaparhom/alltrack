@@ -16,6 +16,7 @@ import { mechanismTimeSelect, setupMechanismScheduleSelects } from "./roles/mech
 import { MECHANISM_START_TIMES, MECHANISM_END_TIMES } from "./roles/mechanism-form-options.js";
 import { mechanismObjectSelect, mechanismDateRange, normalizeMechanismBookingObjects, setupMechanismBookingControls } from "./roles/mechanism-booking-controls.js";
 import { getMechanismPhoto } from "./roles/mechanism-photo.js";
+import { findUserAccessProfiles } from "./auth/user-access.js";
 
 const roleMap = new Map([
   [superAdminRole, renderSuperAdmin],
@@ -1169,7 +1170,10 @@ async function syncCurrentUserTelegramPhoto(user) {
     const usersData = await loadJson(usersFilePath).catch(() => ({ users: [] }));
     const users = Array.isArray(usersData?.users) ? [...usersData.users] : [];
     const userIndex = users.findIndex(
-      (item) => normalizeTelegramId(item?.telegram_id) === telegramId
+      (item) =>
+        normalizeTelegramId(item?.telegram_id) === telegramId &&
+        String(item?.organization ?? "").trim() === String(user?.organization ?? "").trim() &&
+        String(item?.role ?? "").trim() === String(user?.role ?? "").trim()
     );
     if (userIndex < 0) return user;
 
@@ -40331,9 +40335,7 @@ async function loadUser() {
     if (!telegramIdKey) {
       const data = await loadJson(usersFilePath).catch(() => ({ users: [] }));
       const fallbackName = normalizePersonName(resolveTelegramUserDisplayName());
-      const nameMatches = (data.users ?? []).filter(
-        (item) => normalizePersonName(item?.full_name ?? "") === fallbackName
-      );
+      const nameMatches = findUserAccessProfiles(data.users, { telegramName: fallbackName });
 
       if (nameMatches.length > 0) {
         user =
@@ -40368,11 +40370,14 @@ async function loadUser() {
       }
     }
 
-    if (!user) {
+    // После приглашения также перечитываем базу: у человека уже могут быть
+    // доступы к другим организациям, и их нельзя обходить первым совпадением.
+    if (!user || registrationToken) {
       const data = await loadJson(usersFilePath);
-      const matchedUsers = (data.users ?? []).filter(
-        (item) => normalizeTelegramId(item.telegram_id) === telegramIdKey
-      );
+      const matchedUsers = findUserAccessProfiles(data.users, {
+        telegramId: telegramIdKey,
+        telegramName: user?.full_name ?? resolveTelegramUserDisplayName(),
+      });
 
       if (matchedUsers.length > 1) {
         user = await askUserOrganizationChoice(matchedUsers);

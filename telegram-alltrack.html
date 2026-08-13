@@ -12003,6 +12003,12 @@
         -webkit-backdrop-filter: none;
       }
 
+      /* Продолжаем внешний контур карточки вокруг блока с фотографией без зазоров. */
+      .tools-info-modal__panel--search .tools-info-search-hero {
+        margin: -5px -5px 0;
+        border-color: var(--tools-info-overview-outline);
+      }
+
       .tools-info-modal__panel--search.tools-item--broken .tools-info-overview {
         --tools-info-overview-outline: rgba(250, 204, 21, 0.9);
         box-shadow: 0 0 0 1px rgba(254, 240, 138, 0.46) inset, 0 18px 42px rgba(202, 138, 4, 0.22);
@@ -12040,10 +12046,10 @@
         gap: var(--tools-info-search-section-gap);
       }
 
-      /* Отделяет сведения об инструменте от доступной истории в карточке поиска. */
+      /* История продолжает карточку с тем же ритмом, что и строки информации. */
       .tools-info-modal__panel--search .tools-info-top-actions:has(.tools-info-tabs:not(.is-hidden)) {
-        padding-top: var(--tools-info-search-section-gap);
-        border-top: 2px solid var(--tools-info-overview-outline);
+        padding-top: 0;
+        border-top: 0;
       }
 
       .tools-info-modal__panel--search .tools-info-tabs {

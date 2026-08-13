@@ -11975,12 +11975,13 @@
 
       .tools-info-modal__panel--search .tools-info-overview {
         --tools-info-overview-outline: rgba(96, 165, 250, 0.42);
+        --tools-info-card-actions-gap: 5px;
         box-sizing: border-box;
         width: 100%;
         max-width: 720px;
         margin: 5px auto 0;
         display: grid;
-        row-gap: 0;
+        row-gap: var(--tools-info-card-actions-gap);
         column-gap: 0;
         padding: 0 5px 5px;
         border: 2px solid var(--tools-info-overview-outline);
@@ -12051,10 +12052,8 @@
         gap: 5px;
       }
 
-      /* Отступ задан самой паре блоков и не зависит от сетки или размера экрана. */
-      .tools-info-modal__panel--search .tools-info-card + .tools-info-top-actions {
-        margin-top: 5px;
-      }
+      /* Фиксированный промежуток создаёт сетка overview: он не схлопывается и
+       * остаётся ровно 5px при любом размере экрана и состоянии вкладок. */
 
       /* История продолжает карточку с тем же ритмом, что и строки информации. */
       .tools-info-modal__panel--search .tools-info-top-actions:has(.tools-info-tabs:not(.is-hidden)) {

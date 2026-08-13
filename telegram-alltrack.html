@@ -11980,8 +11980,7 @@
         max-width: 720px;
         margin: 5px auto 0;
         display: grid;
-        /* Фиксированный отступ карточки от кнопок истории на любом экране. */
-        row-gap: 5px;
+        row-gap: 0;
         column-gap: 0;
         padding: 0 5px 5px;
         border: 2px solid var(--tools-info-overview-outline);
@@ -12050,6 +12049,11 @@
         max-width: none;
         margin: 0;
         gap: 5px;
+      }
+
+      /* Отступ задан самой паре блоков и не зависит от сетки или размера экрана. */
+      .tools-info-modal__panel--search .tools-info-card + .tools-info-top-actions {
+        margin-top: 5px;
       }
 
       /* История продолжает карточку с тем же ритмом, что и строки информации. */
@@ -12132,7 +12136,6 @@
 
         .tools-info-modal__panel--search .tools-info-overview {
           padding: 0 5px 5px;
-          row-gap: 5px;
           border-radius: 22px;
         }
       }

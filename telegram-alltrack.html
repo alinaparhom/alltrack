@@ -11975,14 +11975,14 @@
 
       .tools-info-modal__panel--search .tools-info-overview {
         --tools-info-overview-outline: rgba(96, 165, 250, 0.42);
-        /* Этот шаг одновременно разделяет строки информации и блок истории. */
-        --tools-info-search-section-gap: 5px;
         box-sizing: border-box;
         width: 100%;
         max-width: 720px;
         margin: 5px auto 0;
         display: grid;
-        gap: var(--tools-info-search-section-gap);
+        /* Фиксированный отступ карточки от кнопок истории на любом экране. */
+        row-gap: 5px;
+        column-gap: 0;
         padding: 0 5px 5px;
         border: 2px solid var(--tools-info-overview-outline);
         border-radius: 26px;
@@ -12049,7 +12049,7 @@
         width: 100%;
         max-width: none;
         margin: 0;
-        gap: var(--tools-info-search-section-gap);
+        gap: 5px;
       }
 
       /* История продолжает карточку с тем же ритмом, что и строки информации. */
@@ -12131,8 +12131,8 @@
         }
 
         .tools-info-modal__panel--search .tools-info-overview {
-          /* Сохраняем ровно 5 px между информацией и кнопками истории на телефонах. */
           padding: 0 5px 5px;
+          row-gap: 5px;
           border-radius: 22px;
         }
       }

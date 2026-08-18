@@ -11980,6 +11980,7 @@
         max-width: 720px;
         margin: 5px auto 0;
         display: grid;
+        grid-template-rows: auto 5px auto;
         row-gap: 0;
         column-gap: 0;
         padding: 0 5px 5px;
@@ -12051,15 +12052,19 @@
         gap: 5px;
       }
 
-      /* Отдельный элемент гарантирует ровно 5px между информацией и вкладками:
-       * его размер не зависит от grid/flex, экрана или состояния истории. */
+      /* Средняя строка сетки жёстко зафиксирована на 5px: отступ не может
+       * растянуться из-за содержимого, общих стилей или размера экрана. */
       .tools-info-modal__panel--search .tools-info-card-actions-spacer {
         display: block;
+        box-sizing: border-box;
         width: 100%;
-        height: 5px;
+        height: 100%;
         min-height: 5px;
         max-height: 5px;
-        flex: 0 0 5px;
+        margin: 0;
+        padding: 0;
+        border: 0;
+        align-self: stretch;
         overflow: hidden;
         pointer-events: none;
       }

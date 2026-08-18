@@ -11975,6 +11975,7 @@
 
       .tools-info-modal__panel--search .tools-info-overview {
         --tools-info-overview-outline: rgba(96, 165, 250, 0.42);
+        --tools-info-search-section-gap: 5px;
         box-sizing: border-box;
         width: 100%;
         max-width: 720px;
@@ -11982,8 +11983,8 @@
         display: grid;
         grid-template-rows: auto auto;
         align-content: start;
-        /* Фиксированный стык карточки и вкладок повторяет интервал строк «Объект»/«Статус». */
-        gap: 5px 0;
+        /* Одна фиксированная величина для строк и стыка карточки с вкладками. */
+        gap: var(--tools-info-search-section-gap) 0;
         padding: 0 5px 5px;
         border: 2px solid var(--tools-info-overview-outline);
         border-radius: 26px;
@@ -12053,7 +12054,7 @@
         max-width: none;
         margin: 0;
         align-self: start;
-        gap: 5px;
+        gap: var(--tools-info-search-section-gap);
       }
 
       /* История продолжает карточку с тем же ритмом, что и строки информации. */

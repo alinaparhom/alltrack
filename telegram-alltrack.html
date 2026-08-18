@@ -11980,9 +11980,10 @@
         max-width: 720px;
         margin: 5px auto 0;
         display: grid;
-        grid-template-rows: auto 5px auto;
+        grid-template-rows: auto auto;
         align-content: start;
-        row-gap: 0;
+        /* Ровно тот же интервал, что и между строками «Объект» и «Статус». */
+        row-gap: var(--tools-info-search-section-gap, 5px);
         column-gap: 0;
         padding: 0 5px 5px;
         border: 2px solid var(--tools-info-overview-outline);
@@ -12051,28 +12052,6 @@
         max-width: none;
         margin: 0;
         gap: 5px;
-      }
-
-      /* Средняя строка сетки жёстко зафиксирована на 5px: отступ не может
-       * растянуться из-за содержимого, общих стилей или размера экрана. */
-      .tools-info-modal__panel--search .tools-info-card-actions-spacer {
-        display: block;
-        box-sizing: border-box;
-        width: 100%;
-        height: 5px;
-        block-size: 5px;
-        min-height: 5px;
-        max-height: 5px;
-        margin: 0;
-        padding: 0;
-        border: 0;
-        align-self: stretch;
-        overflow: hidden;
-        pointer-events: none;
-      }
-
-      .tools-info-modal__panel:not(.tools-info-modal__panel--search) .tools-info-card-actions-spacer {
-        display: none;
       }
 
       /* История продолжает карточку с тем же ритмом, что и строки информации. */

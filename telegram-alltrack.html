@@ -11982,9 +11982,12 @@
         margin: 5px auto 0;
         display: grid;
         grid-template-rows: auto auto;
+        grid-auto-rows: max-content;
         align-content: start;
         /* Одна фиксированная величина для строк и стыка карточки с вкладками. */
         gap: var(--tools-info-search-section-gap) 0;
+        height: fit-content;
+        min-height: 0;
         padding: 0 5px 5px;
         border: 2px solid var(--tools-info-overview-outline);
         border-radius: 26px;
@@ -11998,6 +12001,8 @@
 
       .tools-info-modal__panel--search .tools-info-card {
         align-self: start;
+        height: fit-content;
+        min-height: 0;
         margin: 0;
         padding: 0;
         border: 0;
@@ -12054,6 +12059,8 @@
         max-width: none;
         margin: 0;
         align-self: start;
+        height: fit-content;
+        min-height: 0;
         gap: var(--tools-info-search-section-gap);
       }
 

@@ -11982,9 +11982,8 @@
         display: grid;
         grid-template-rows: auto auto;
         align-content: start;
-        /* Ровно тот же интервал, что и между строками «Объект» и «Статус». */
-        row-gap: var(--tools-info-search-section-gap, 5px);
-        column-gap: 0;
+        /* Фиксированный стык карточки и вкладок повторяет интервал строк «Объект»/«Статус». */
+        gap: 5px 0;
         padding: 0 5px 5px;
         border: 2px solid var(--tools-info-overview-outline);
         border-radius: 26px;
@@ -11997,6 +11996,8 @@
       }
 
       .tools-info-modal__panel--search .tools-info-card {
+        align-self: start;
+        margin: 0;
         padding: 0;
         border: 0;
         border-radius: 21px;
@@ -12051,6 +12052,7 @@
         width: 100%;
         max-width: none;
         margin: 0;
+        align-self: start;
         gap: 5px;
       }
 

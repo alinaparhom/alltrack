@@ -1776,6 +1776,7 @@ export function renderRole(user, options = {}) {
                     </div>
                   </div>
                 </div>
+                <div class="tools-info-card-actions-spacer" aria-hidden="true"></div>
                 <div class="tools-info-top-actions">
                   <div class="tools-info-top-actions-row">
                     <button

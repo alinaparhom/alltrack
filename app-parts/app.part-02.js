@@ -5999,10 +5999,7 @@
           fileInput.setAttribute("data-source", "camera");
         }
         fileInput.className = "tools-table__thumb-input";
-        fileInput.addEventListener("change", async () => {
-          const [file] = fileInput.files ?? [];
-          if (!file) return;
-          fileInput.value = "";
+        bindPhotoFileInput(fileInput, async ([file]) => {
           await handleAddPhotoUpload(tool, file);
         });
         uploadButton.appendChild(fileInput);
@@ -6576,9 +6573,7 @@
       fileInput.setAttribute("data-source", "camera");
     }
     fileInput.className = "tools-table__thumb-input";
-    fileInput.addEventListener("change", async () => {
-      const [file] = fileInput.files ?? [];
-      fileInput.value = "";
+    bindPhotoFileInput(fileInput, async ([file]) => {
       await uploadAddPhotoFileFromDetail(tool, file, {
         replaceExisting: replace,
         replacePhotoName,
@@ -6639,9 +6634,7 @@
       fileInput.type = "file";
       fileInput.accept = "image/*";
       fileInput.className = "tools-table__thumb-input";
-      fileInput.addEventListener("change", async () => {
-        const [file] = fileInput.files ?? [];
-        fileInput.value = "";
+      bindPhotoFileInput(fileInput, async ([file]) => {
         await uploadAddPhotoFileFromDetail(tool, file, {
           replaceExisting: true,
           replacePhotoName: photo.name,
@@ -6783,9 +6776,7 @@
         fileInput.accept = "image/*";
         fileInput.multiple = true;
         fileInput.className = "tools-table__thumb-input";
-        fileInput.addEventListener("change", () => {
-          const files = Array.from(fileInput.files ?? []);
-          fileInput.value = "";
+        bindPhotoFileInput(fileInput, (files) => {
           addSelectedFiles(files);
         });
         uploadButton.appendChild(fileInput);

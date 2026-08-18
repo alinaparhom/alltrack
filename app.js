@@ -14,6 +14,7 @@ const modulePaths = [
   ["mechanism-schedule-select.js", "mechanismTimeSelect, setupMechanismScheduleSelects"],
   ["mechanism-form-options.js", "MECHANISM_START_TIMES, MECHANISM_END_TIMES"],
   ["mechanism-booking-controls.js", "mechanismObjectSelect, mechanismDateRange, setupMechanismBookingControls"],
+  ["photo-file-input.js", "bindPhotoFileInput"],
 ];
 
 const partPaths = [

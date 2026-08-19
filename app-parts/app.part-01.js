@@ -4846,8 +4846,13 @@
     const editButton = document.createElement("button");
     editButton.type = "button";
     editButton.className = "tools-note-item__edit";
-    editButton.textContent = "Изменить";
+    editButton.innerHTML = `
+      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path d="M13.5 6.5 17.5 10.5M4 20l4.25-.85L19 8.4a2.83 2.83 0 0 0-4-4L4.85 14.55 4 20Z" />
+      </svg>
+    `;
     editButton.setAttribute("aria-label", "Редактировать свою заметку");
+    editButton.title = "Редактировать заметку";
     actions.appendChild(editButton);
     editButton.addEventListener("click", () => {
       const item = editButton.closest("article");

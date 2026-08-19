@@ -16153,7 +16153,49 @@
         margin-top: 10px;
       }
 
-      .tools-note-item__edit,
+      .tools-note-item__edit {
+        display: inline-grid;
+        place-items: center;
+        width: 40px;
+        min-width: 40px;
+        height: 40px;
+        padding: 0;
+        border: 1px solid rgba(37, 99, 235, 0.2);
+        border-radius: 13px;
+        color: #2563eb;
+        background: rgba(239, 246, 255, 0.76);
+        box-shadow: 0 6px 18px rgba(37, 99, 235, 0.08);
+        cursor: pointer;
+        touch-action: manipulation;
+        transition: transform 160ms ease, background-color 160ms ease,
+          box-shadow 160ms ease;
+      }
+
+      .tools-note-item__edit svg {
+        width: 19px;
+        height: 19px;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 1.8;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+
+      .tools-note-item__edit:hover {
+        background: rgba(219, 234, 254, 0.92);
+        box-shadow: 0 8px 22px rgba(37, 99, 235, 0.14);
+        transform: translateY(-1px);
+      }
+
+      .tools-note-item__edit:active {
+        transform: scale(0.96);
+      }
+
+      .tools-note-item__edit:focus-visible {
+        outline: 3px solid rgba(59, 130, 246, 0.24);
+        outline-offset: 2px;
+      }
+
       .tools-note-item__cancel {
         min-height: 38px;
         padding: 8px 13px;
@@ -16279,6 +16321,7 @@
 
         .tools-note-item__edit {
           grid-column: 2;
+          justify-self: end;
         }
       }
 

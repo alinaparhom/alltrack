@@ -25391,6 +25391,31 @@
         top: var(--tools-info-search-spacing);
       }
 
+      /*
+       * Общая информация остаётся перед глазами, пока пользователь листает
+       * выбранную историю. Фон и высокий z-index не дают записям истории
+       * визуально смешиваться с закреплённой стеклянной карточкой.
+       */
+      .tools-info-modal__panel--search .tools-info-overview {
+        position: sticky;
+        top: var(--tools-info-search-spacing);
+        z-index: 5;
+        flex: 0 0 auto;
+      }
+
+      /* Вложенное фото двигается вместе со всей закреплённой карточкой. */
+      .tools-info-modal__panel--search .tools-info-search-hero {
+        position: relative;
+        top: auto;
+        z-index: auto;
+      }
+
+      .tools-info-modal__panel--search .tools-info-panels {
+        position: relative;
+        z-index: 1;
+        scroll-margin-top: var(--tools-info-search-spacing);
+      }
+
     </style>
   </head>
   <body>

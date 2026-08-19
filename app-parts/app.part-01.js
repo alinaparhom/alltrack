@@ -4821,12 +4821,79 @@
     const notes = tool?.["Заметки"] ?? tool?.notes ?? [];
     if (!Array.isArray(notes)) return [];
     return notes
-      .map((note) => ({
+      .map((note, sourceIndex) => ({
         text: String(note?.text ?? note?.["Текст"] ?? "").trim(),
         author: String(note?.author ?? note?.["Автор"] ?? "").trim(),
+        authorId: String(note?.authorId ?? note?.["ID автора"] ?? "").trim(),
         createdAt: String(note?.createdAt ?? note?.["Дата"] ?? "").trim(),
+        updatedAt: String(note?.updatedAt ?? note?.["Дата изменения"] ?? "").trim(),
+        sourceIndex,
       }))
       .filter((note) => note.text);
+  };
+
+  const getCurrentToolNotesUserId = () =>
+    String(currentUser?.telegram_id ?? currentUser?.telegramId ?? "").trim();
+
+  const canEditToolNote = (note) => {
+    const currentUserId = getCurrentToolNotesUserId();
+    return Boolean(currentUserId && note?.authorId && note.authorId === currentUserId);
+  };
+
+  const buildToolNoteEditor = (note, onSaved) => {
+    const actions = document.createElement("div");
+    actions.className = "tools-note-item__actions";
+    const editButton = document.createElement("button");
+    editButton.type = "button";
+    editButton.className = "tools-note-item__edit";
+    editButton.textContent = "Изменить";
+    editButton.setAttribute("aria-label", "Редактировать свою заметку");
+    actions.appendChild(editButton);
+    editButton.addEventListener("click", () => {
+      const item = editButton.closest("article");
+      if (!item || item.classList.contains("is-editing")) return;
+      item.classList.add("is-editing");
+      const textEl = item.querySelector(".tools-note-item__text, .tools-info-item__note");
+      if (textEl) textEl.hidden = true;
+      actions.innerHTML = "";
+      const textarea = document.createElement("textarea");
+      textarea.className = "form-input tools-note-item__textarea";
+      textarea.value = note.text;
+      textarea.rows = 3;
+      textarea.maxLength = 2000;
+      textarea.setAttribute("aria-label", "Текст заметки");
+      const saveButton = document.createElement("button");
+      saveButton.type = "button";
+      saveButton.className = "action-primary tools-note-item__save";
+      saveButton.textContent = "Сохранить";
+      const cancelButton = document.createElement("button");
+      cancelButton.type = "button";
+      cancelButton.className = "tools-note-item__cancel";
+      cancelButton.textContent = "Отмена";
+      actions.append(saveButton, cancelButton);
+      item.insertBefore(textarea, actions);
+      textarea.focus();
+      textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+      cancelButton.addEventListener("click", () => onSaved());
+      saveButton.addEventListener("click", async () => {
+        const value = textarea.value.trim();
+        if (!value) {
+          textarea.focus();
+          return;
+        }
+        saveButton.disabled = true;
+        cancelButton.disabled = true;
+        try {
+          await updateToolNote(note, value);
+          onSaved();
+        } catch (error) {
+          console.warn("Не удалось изменить заметку.", error);
+          saveButton.disabled = false;
+          cancelButton.disabled = false;
+        }
+      });
+    });
+    return actions;
   };
 
   const getToolNotesCount = (tool) => normalizeToolNotes(tool).length;
@@ -4897,7 +4964,7 @@
         meta.className = "tools-note-item__meta";
         meta.textContent = `${note.author || "Пользователь"} · ${formatToolNoteDate(
           note.createdAt
-        )}`;
+        )}${note.updatedAt ? " · изменено" : ""}`;
         const text = document.createElement("div");
         text.className = "tools-note-item__text";
         text.textContent = note.text;
@@ -4906,6 +4973,9 @@
         dot.setAttribute("aria-hidden", "true");
         item.append(dot);
         item.append(meta, text);
+        if (canEditToolNote(note)) {
+          item.appendChild(buildToolNoteEditor(note, renderToolsNotesList));
+        }
         toolsNotesListEl.appendChild(item);
       });
   };
@@ -4960,7 +5030,12 @@
       String(
         currentUser?.full_name ?? currentUser?.fullName ?? currentUserLabel ?? "Пользователь"
       ).trim() || "Пользователь";
-    const note = { text: cleanText, author, createdAt: new Date().toISOString() };
+    const note = {
+      text: cleanText,
+      author,
+      authorId: getCurrentToolNotesUserId(),
+      createdAt: new Date().toISOString(),
+    };
     const toolsPath = `./${orgFolder}/База с инструментами.json`;
     const raw = await loadJson(toolsPath);
     const tools = Array.isArray(raw) ? raw : Array.isArray(raw?.tools) ? raw.tools : [];
@@ -4970,7 +5045,10 @@
     if (index < 0) throw new Error("Инструмент не найден в базе.");
     const updatedTool = {
       ...tools[index],
-      "Заметки": [...normalizeToolNotes(tools[index]), note],
+      "Заметки": [
+        ...normalizeToolNotes(tools[index]).map(({ sourceIndex, ...entry }) => entry),
+        note,
+      ],
     };
     tools[index] = updatedTool;
     const payload = Array.isArray(raw) ? tools : { ...raw, tools };
@@ -4993,6 +5071,53 @@
     if (toolsNotesMessageEl) toolsNotesMessageEl.textContent = "Заметка сохранена.";
     toolsNotesState.isSaving = false;
     if (toolsNotesSaveButton) toolsNotesSaveButton.disabled = false;
+  };
+
+  const updateToolNote = async (note, text) => {
+    if (!canEditToolNote(note)) {
+      throw new Error("Можно редактировать только свои заметки.");
+    }
+    const cleanText = String(text ?? "").trim();
+    if (!cleanText) throw new Error("Заметка не может быть пустой.");
+    const isNotesModalOpen = !toolsNotesModalEl.classList.contains("is-hidden");
+    const activeTool = isNotesModalOpen ? toolsNotesState.tool : toolsInfoState.tool;
+    const orgFolder = (isNotesModalOpen
+      ? toolsNotesState.orgFolder
+      : toolsInfoState.orgFolder) || toolsState.orgFolder || context.orgFolderName || "";
+    if (!activeTool || !orgFolder) throw new Error("Не удалось определить инструмент.");
+    const toolsPath = `./${orgFolder}/База с инструментами.json`;
+    const raw = await loadJson(toolsPath);
+    const tools = Array.isArray(raw) ? raw : Array.isArray(raw?.tools) ? raw.tools : [];
+    const toolIndex = tools.findIndex((entry) => isSamePersistentTool(entry, activeTool));
+    if (toolIndex < 0) throw new Error("Инструмент не найден в базе.");
+    const storedNotes = normalizeToolNotes(tools[toolIndex]);
+    const storedNote = storedNotes.find((entry) => entry.sourceIndex === note.sourceIndex);
+    if (!storedNote || !canEditToolNote(storedNote)) {
+      throw new Error("Эта заметка принадлежит другому пользователю.");
+    }
+    const updatedNotes = storedNotes.map((entry) => ({
+      text: entry.sourceIndex === note.sourceIndex ? cleanText : entry.text,
+      author: entry.author,
+      authorId: entry.authorId,
+      createdAt: entry.createdAt,
+      ...(entry.sourceIndex === note.sourceIndex
+        ? { updatedAt: new Date().toISOString() }
+        : entry.updatedAt ? { updatedAt: entry.updatedAt } : {}),
+    }));
+    tools[toolIndex] = { ...tools[toolIndex], "Заметки": updatedNotes };
+    await saveJson(toolsPath, Array.isArray(raw) ? tools : { ...raw, tools }, { user: currentUser });
+    const applyNotes = (entry) => isSamePersistentTool(entry, activeTool)
+      ? { ...entry, "Заметки": updatedNotes }
+      : entry;
+    toolsState.tools = toolsState.tools.map(applyNotes);
+    toolsState.filtered = toolsState.filtered.map(applyNotes);
+    const updatedTool = { ...activeTool, "Заметки": updatedNotes };
+    toolsNotesState.tool = updatedTool;
+    if (toolsInfoState.tool && isSamePersistentTool(toolsInfoState.tool, activeTool)) {
+      toolsInfoState.tool = updatedTool;
+    }
+    toolsState.toolMap = new Map(toolsState.tools.map((entry) => [entry.__selectionId, entry]));
+    renderToolsList();
   };
 
   const renderToolCard = (
@@ -7857,11 +7982,14 @@
       item.className = "tools-info-item tools-info-item--note";
       const title = document.createElement("div");
       title.className = "tools-info-item__title";
-      title.textContent = `${note.author || "Пользователь"} · ${formatToolNoteDate(note.createdAt)}`;
+      title.textContent = `${note.author || "Пользователь"} · ${formatToolNoteDate(note.createdAt)}${note.updatedAt ? " · изменено" : ""}`;
       const text = document.createElement("div");
-      text.className = "tools-info-item__note";
+      text.className = "tools-info-item__note tools-note-item__text";
       text.textContent = note.text;
       item.append(title, text);
+      if (canEditToolNote(note)) {
+        item.appendChild(buildToolNoteEditor(note, renderToolsInfoNotes));
+      }
       toolsInfoNotesListEl.appendChild(item);
     });
   };
